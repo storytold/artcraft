@@ -15,6 +15,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
@@ -36,6 +37,7 @@ use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::ins
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
+use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::{require_api_or_web_session, SessionType};
 use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
@@ -43,6 +45,7 @@ use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
 /// Generate an image using the omni-gen unified endpoint.
+/// Authenticates as either a web-session (cookie) user or an API-key (`Authorization` header) user.
 #[utoipa::path(
   post,
   tag = "Omni Gen",
@@ -76,25 +79,18 @@ pub async fn omni_gen_image_generate_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  let maybe_user_session = server_state
-    .session_checker
-    .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
-    .await
-    .map_err(|e| {
-      warn!("Session checker error: {:?}", e);
-      CommonWebError::from(e)
-    })?;
-
-  let session = match maybe_user_session.as_ref() {
-    Some(session) => session,
-    None => return Err(CommonWebError::NotAuthorized),
-  };
+  // Either an API-key user (Authorization header) or a web-session (cookie) user.
+  let session = require_api_or_web_session(
+    &http_request,
+    &server_state.session_checker,
+    &server_state.avt_cookie_manager,
+    &mut *mysql_connection,
+  ).await?;
 
   let user_token = &session.user_token;
 
-  let maybe_avt_token = server_state
-    .avt_cookie_manager
-    .get_avt_token_from_request(&http_request);
+  // AVT tokens are web-session only; API-key sessions never carry one.
+  let maybe_avt_token = session.maybe_avt_token.clone();
 
   // ==================== MODEL ACCESS CHECK ==================== //
 
@@ -215,7 +211,10 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== WRITE RESULT ==================== //
 
-  let maybe_platform_type = get_request_platform_type(&http_request);
+  let maybe_platform_type = match session.session_type {
+    SessionType::Api => Some(PlatformType::ApiKey),
+    SessionType::WebSession => get_request_platform_type(&http_request),
+  };
 
   let mut transaction = mysql_connection
     .begin()

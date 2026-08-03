@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n  users.token as `user_token: UserToken`,\n  users.username,\n  users.display_name,\n  users.email_address,\n  users.user_role_slug,\n  users.is_banned,\n  user_roles.can_ban_users\nFROM user_sessions\nINNER JOIN users\n  ON users.token = user_sessions.user_token\nLEFT OUTER JOIN user_roles\n  ON users.user_role_slug = user_roles.slug\nWHERE user_sessions.token = ?\n  AND user_sessions.deleted_at IS NULL\n  AND users.user_deleted_at IS NULL\n  AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "query": "\nSELECT\n  users.token as `user_token: UserToken`,\n  users.username,\n  users.display_name,\n  users.email_address,\n  users.user_role_slug,\n  users.is_banned,\n  user_roles.can_ban_users,\n  users.maybe_feature_flags,\n  api_keys.token as `api_key_token: ApiKeyToken`\nFROM api_keys\nINNER JOIN users\n  ON users.token = api_keys.owner_user_token\nLEFT OUTER JOIN user_roles\n  ON users.user_role_slug = user_roles.slug\nWHERE api_keys.api_key = ?\n  AND api_keys.maybe_deleted_at IS NULL\n  AND users.user_deleted_at IS NULL\n  AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
   "describe": {
     "columns": [
       {
@@ -72,6 +72,26 @@
           "char_set": 63,
           "max_size": 1
         }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_feature_flags",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "api_key_token: ApiKeyToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
       }
     ],
     "parameters": {
@@ -84,8 +104,10 @@
       false,
       false,
       false,
-      true
+      true,
+      true,
+      false
     ]
   },
-  "hash": "c77126adb36f9e2f0248720eb4d8c1cd9d14719f64a02678d8021e26addd2c18"
+  "hash": "62b3e2e058331a6819acd98c634b3bf2d10aa38d43b49ab69fb8637497beec2f"
 }

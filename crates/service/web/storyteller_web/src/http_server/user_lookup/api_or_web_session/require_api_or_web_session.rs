@@ -37,6 +37,9 @@ pub struct ApiOrWebSession {
   pub user_role_slug: String,
   pub can_ban_users: bool,
 
+  /// Optional comma-separated list of parseable `UserFeatureFlag` enum features.
+  pub maybe_feature_flags: Option<String>,
+
   /// Only present for API-key sessions.
   pub maybe_api_key_token: Option<ApiKeyToken>,
 
@@ -184,6 +187,7 @@ fn into_session_rejecting_banned(
     email_address: record.email_address,
     user_role_slug: record.user_role_slug,
     can_ban_users: record.can_ban_users,
+    maybe_feature_flags: record.maybe_feature_flags,
     maybe_api_key_token: record.maybe_api_key_token,
     maybe_avt_token,
   })
