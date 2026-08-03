@@ -9,11 +9,17 @@ that could. It is a separate Nx project that is never built into, imported by,
 or deployed alongside anything that reaches production.
 
 ```
-nx serve fake-storyteller-web     # http://localhost:12345
-nx serve artcraft-webapp          # http://localhost:4201, already points at :12345
+nx serve fake-storyteller-web         # http://localhost:12345
+nx serve artcraft-webapp --mode fake  # http://localhost:4201, pointed at the fake
 ```
 
 Log in as `localdev1` / `localdev1pass`.
+
+`--mode fake` loads `apps/artcraft-webapp/.env.fake`, which sets
+`VITE_DEV_API_HOST=http://localhost:12345`. **Without it, `nx serve
+artcraft-webapp` talks to production** — the dev server's `/v1` proxy forwards
+to `api.storyteller.ai`, so local work reads and writes real data and spends
+real credits. Nothing about that changed; the flag is how you opt out of it.
 
 ## Why this exists
 

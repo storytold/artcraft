@@ -15,17 +15,23 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
 
-// In development, route API through the Vite dev server origin to avoid CORS
+// In development, route API calls through the Vite dev server origin to avoid
+// CORS. NB: that origin's `/v1` proxy forwards to https://api.storyteller.ai,
+// so the default dev target is PRODUCTION — local work reads and writes real
+// data and spends real credits.
+//
+// VITE_DEV_API_HOST overrides it. `nx serve artcraft-webapp --mode fake` sets
+// it to http://localhost:12345, the local fake-storyteller-web stand-in (see
+// apps/fake-storyteller-web/README.md); that is also how to point at a local
+// storyteller-web, replacing the old commented-out setDevelopment() call.
+//
+// `import.meta.env.DEV` is statically false in a production build, so this
+// block is dropped from the bundle entirely.
 if (import.meta.env.DEV) {
   try {
     StorytellerApiHostStore.getInstance().setApiSchemeAndHost(
-      window.location.origin,
+      import.meta.env.VITE_DEV_API_HOST || window.location.origin,
     );
-    // NB: This is for Brandon to test with storyteller-web locally:
-    // (disabled — it overrides the origin above and points at localhost:12345,
-    // which breaks dev unless a local backend is running. Re-enable only when
-    // testing against a local storyteller-web.)
-    //StorytellerApiHostStore.getInstance().setDevelopment();
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }
