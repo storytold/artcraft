@@ -16,6 +16,9 @@ pub struct ApiOrWebSessionUserRecord {
   pub is_banned: bool,
   pub can_ban_users: bool,
 
+  /// Optional comma-separated list of parseable `UserFeatureFlag` enum features.
+  pub maybe_feature_flags: Option<String>,
+
   /// Only set when the lookup was by API key.
   pub maybe_api_key_token: Option<ApiKeyToken>,
 }

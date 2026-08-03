@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n  users.token as `user_token: UserToken`,\n  users.username,\n  users.display_name,\n  users.email_address,\n  users.user_role_slug,\n  users.is_banned,\n  user_roles.can_ban_users,\n  api_keys.token as `api_key_token: ApiKeyToken`\nFROM api_keys\nINNER JOIN users\n  ON users.token = api_keys.owner_user_token\nLEFT OUTER JOIN user_roles\n  ON users.user_role_slug = user_roles.slug\nWHERE api_keys.api_key = ?\n  AND api_keys.maybe_deleted_at IS NULL\n  AND users.user_deleted_at IS NULL\n  AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "query": "\nSELECT\n  users.token as `user_token: UserToken`,\n  users.username,\n  users.display_name,\n  users.email_address,\n  users.user_role_slug,\n  users.is_banned,\n  user_roles.can_ban_users,\n  users.maybe_feature_flags\nFROM user_sessions\nINNER JOIN users\n  ON users.token = user_sessions.user_token\nLEFT OUTER JOIN user_roles\n  ON users.user_role_slug = user_roles.slug\nWHERE user_sessions.token = ?\n  AND user_sessions.deleted_at IS NULL\n  AND users.user_deleted_at IS NULL\n  AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
   "describe": {
     "columns": [
       {
@@ -75,12 +75,12 @@
       },
       {
         "ordinal": 7,
-        "name": "api_key_token: ApiKeyToken",
+        "name": "maybe_feature_flags",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "flags": "BINARY",
           "char_set": 224,
-          "max_size": 128
+          "max_size": 1020
         }
       }
     ],
@@ -95,8 +95,8 @@
       false,
       false,
       true,
-      false
+      true
     ]
   },
-  "hash": "9188e235caa439d50628333c2f4722b9f1a8f575c192d4d36a2039709c412ac0"
+  "hash": "cf2794c87868e77dfaa45bdbe630ae276dbb8c2d041442ba465af0b7a6d61af6"
 }
