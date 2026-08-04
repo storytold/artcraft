@@ -23,6 +23,8 @@ use crate::generate::generate_video::providers::artcraft::kling_3p0_pro::cost::A
 use crate::generate::generate_video::providers::artcraft::kling_3p0_pro::request::ArtcraftKling3p0ProRequestState;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_standard::cost::ArtcraftKling3p0StandardCostState;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_standard::request::ArtcraftKling3p0StandardRequestState;
+use crate::generate::generate_video::providers::artcraft::minimax_h3::cost::ArtcraftMinimaxH3CostState;
+use crate::generate::generate_video::providers::artcraft::minimax_h3::request::ArtcraftMinimaxH3RequestState;
 use crate::generate::generate_video::providers::artcraft::preview_model::cost::ArtcraftPreviewModelCostState;
 use crate::generate::generate_video::providers::artcraft::preview_model::request::ArtcraftPreviewModelRequestState;
 use crate::generate::generate_video::providers::artcraft::preview_model_fast::cost::ArtcraftPreviewModelFastCostState;
@@ -89,6 +91,8 @@ use crate::generate::generate_video::providers::fal::kling_3p0_pro::cost::FalKli
 use crate::generate::generate_video::providers::fal::kling_3p0_pro::request::FalKling3p0ProRequestState;
 use crate::generate::generate_video::providers::fal::kling_3p0_standard::cost::FalKling3p0StandardCostState;
 use crate::generate::generate_video::providers::fal::kling_3p0_standard::request::FalKling3p0StandardRequestState;
+use crate::generate::generate_video::providers::fal::minimax_h3::cost::FalMinimaxH3CostState;
+use crate::generate::generate_video::providers::fal::minimax_h3::request::FalMinimaxH3RequestState;
 use crate::generate::generate_video::providers::fal::seedance_1p0_lite::cost::FalSeedance10LiteCostState;
 use crate::generate::generate_video::providers::fal::seedance_1p0_lite::request::FalSeedance10LiteRequestState;
 use crate::generate::generate_video::providers::fal::sora_2::cost::FalSora2CostState;
@@ -144,6 +148,7 @@ pub enum VideoGenerationRequest {
   ArtcraftKling2p6Pro(ArtcraftKling2p6ProRequestState),
   ArtcraftKling3p0Pro(ArtcraftKling3p0ProRequestState),
   ArtcraftKling3p0Standard(ArtcraftKling3p0StandardRequestState),
+  ArtcraftMinimaxH3(ArtcraftMinimaxH3RequestState),
   ArtcraftPreviewModel(ArtcraftPreviewModelRequestState),
   ArtcraftPreviewModelFast(ArtcraftPreviewModelFastRequestState),
   ArtcraftSeedance10Lite(ArtcraftSeedance10LiteRequestState),
@@ -177,6 +182,7 @@ pub enum VideoGenerationRequest {
   FalKling2p6Pro(FalKling2p6ProRequestState),
   FalKling3p0Pro(FalKling3p0ProRequestState),
   FalKling3p0Standard(FalKling3p0StandardRequestState),
+  FalMinimaxH3(FalMinimaxH3RequestState),
   FalSeedance10Lite(FalSeedance10LiteRequestState),
   FalSeedance1p5Pro(FalSeedance1p5ProRequestState),
   FalSora2(FalSora2RequestState),
@@ -214,6 +220,7 @@ impl VideoGenerationRequest {
       Self::ArtcraftKling2p6Pro(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling3p0Pro(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling3p0Standard(_) => RouterProvider::Artcraft,
+      Self::ArtcraftMinimaxH3(_) => RouterProvider::Artcraft,
       Self::ArtcraftPreviewModel(_) => RouterProvider::Artcraft,
       Self::ArtcraftPreviewModelFast(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance10Lite(_) => RouterProvider::Artcraft,
@@ -247,6 +254,7 @@ impl VideoGenerationRequest {
       Self::FalKling2p6Pro(_) => RouterProvider::Fal,
       Self::FalKling3p0Pro(_) => RouterProvider::Fal,
       Self::FalKling3p0Standard(_) => RouterProvider::Fal,
+      Self::FalMinimaxH3(_) => RouterProvider::Fal,
       Self::FalSeedance10Lite(_) => RouterProvider::Fal,
       Self::FalSeedance1p5Pro(_) => RouterProvider::Fal,
       Self::FalSora2(_) => RouterProvider::Fal,
@@ -284,6 +292,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftKling2p6Pro(request) => Ok(ArtcraftKling2p6ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling3p0Pro(request) => Ok(ArtcraftKling3p0ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling3p0Standard(request) => Ok(ArtcraftKling3p0StandardCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftMinimaxH3(request) => Ok(ArtcraftMinimaxH3CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModel(request) => Ok(ArtcraftPreviewModelCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModelFast(request) => Ok(ArtcraftPreviewModelFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance10Lite(request) => Ok(ArtcraftSeedance10LiteCostState::from_request(request).estimate_cost()),
@@ -317,6 +326,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::FalKling2p6Pro(request) => Ok(FalKling2p6ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling3p0Pro(request) => Ok(FalKling3p0ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling3p0Standard(request) => Ok(FalKling3p0StandardCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalMinimaxH3(request) => Ok(FalMinimaxH3CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance10Lite(request) => Ok(FalSeedance10LiteCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance1p5Pro(request) => Ok(FalSeedance1p5ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSora2(request) => Ok(FalSora2CostState::from_request(request).estimate_cost()),
@@ -382,6 +392,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftKling3p0Standard(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftMinimaxH3(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
@@ -514,6 +528,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::FalKling3p0Standard(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalMinimaxH3(request) => {
         let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },

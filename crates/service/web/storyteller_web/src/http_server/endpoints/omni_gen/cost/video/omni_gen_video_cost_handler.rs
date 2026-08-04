@@ -53,6 +53,7 @@ mod tests {
   use actix_http::StatusCode;
   use actix_web::test::TestRequest;
   use actix_web::ResponseError;
+  use enums::common::generation::common_resolution::CommonResolution;
   use enums::common::generation::common_video_model::CommonVideoModel;
 
   use super::*;
@@ -74,11 +75,29 @@ mod tests {
       assert!(response.cost_in_credits.unwrap() > 0);
     }
 
+    /// MiniMax H3 defaults (5s, 2K) quote at 150 credits; the 768P tier
+    /// (720p and below) quotes at 92 for 5s.
+    #[tokio::test]
+    async fn minimax_h3_quotes_by_resolution_tier() {
+      let default_quote = post_cost_request(base_request(CommonVideoModel::MinimaxH3))
+        .await
+        .expect("minimax h3 default cost estimate should succeed");
+      assert_eq!(default_quote.cost_in_credits, Some(150));
+
+      let mut low_res = base_request(CommonVideoModel::MinimaxH3);
+      low_res.resolution = Some(CommonResolution::SevenTwentyP);
+      let low_res_quote = post_cost_request(low_res)
+        .await
+        .expect("minimax h3 768P-tier cost estimate should succeed");
+      assert_eq!(low_res_quote.cost_in_credits, Some(92));
+    }
+
     #[tokio::test]
     async fn bare_model_gets_a_quote_for_representative_models() {
       for model in [
         CommonVideoModel::GrokImagineVideo,
         CommonVideoModel::Kling3p0Pro,
+        CommonVideoModel::MinimaxH3,
         CommonVideoModel::Seedance2p0,
         CommonVideoModel::Sora2,
         CommonVideoModel::Veo3p1,

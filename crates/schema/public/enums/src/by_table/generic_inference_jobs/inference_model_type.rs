@@ -180,6 +180,8 @@ pub enum InferenceModelType {
   Kling3p0Pro,
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -366,6 +368,7 @@ impl InferenceModelType {
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::MinimaxH3 => "minimax_h3",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -497,6 +500,7 @@ impl InferenceModelType {
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "minimax_h3" => Ok(Self::MinimaxH3),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -632,6 +636,7 @@ impl InferenceModelType {
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
+      Self::MinimaxH3,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -750,6 +755,7 @@ impl InferenceModelType {
       CommonModelType::Kling3p0Standard => Self::Kling3p0Standard,
       CommonModelType::Kling3p0Pro => Self::Kling3p0Pro,
       CommonModelType::HappyHorse1p0 => Self::HappyHorse1p0,
+      CommonModelType::MinimaxH3 => Self::MinimaxH3,
       CommonModelType::Seedance10Lite => Self::Seedance10Lite,
       CommonModelType::Seedance10Pro => Self::Seedance10Pro,
       CommonModelType::Seedance1p5Pro => Self::Seedance1p5Pro,
@@ -890,6 +896,7 @@ mod tests {
       assert_serialization(InferenceModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(InferenceModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(InferenceModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(InferenceModelType::MinimaxH3, "minimax_h3");
       assert_serialization(InferenceModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(InferenceModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(InferenceModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -1017,6 +1024,7 @@ mod tests {
       assert_eq!(InferenceModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(InferenceModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(InferenceModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(InferenceModelType::MinimaxH3.to_str(), "minimax_h3");
       assert_eq!(InferenceModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(InferenceModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(InferenceModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -1146,6 +1154,7 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("kling_3p0_standard").unwrap(), InferenceModelType::Kling3p0Standard);
       assert_eq!(InferenceModelType::from_str("kling_3p0_pro").unwrap(), InferenceModelType::Kling3p0Pro);
       assert_eq!(InferenceModelType::from_str("happy_horse_1p0").unwrap(), InferenceModelType::HappyHorse1p0);
+      assert_eq!(InferenceModelType::from_str("minimax_h3").unwrap(), InferenceModelType::MinimaxH3);
       assert_eq!(InferenceModelType::from_str("seedance_1p0_lite").unwrap(), InferenceModelType::Seedance10Lite);
       assert_eq!(InferenceModelType::from_str("seedance_1p0_pro").unwrap(), InferenceModelType::Seedance10Pro);
       assert_eq!(InferenceModelType::from_str("seedance_1p5_pro").unwrap(), InferenceModelType::Seedance1p5Pro);
