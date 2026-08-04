@@ -1,12 +1,14 @@
-import { useContext, useRef } from "react";
+import { useContext, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFilm,
+  faPlus,
   faRepeat,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
+  addBakedClipToObject,
   moveClipLane,
   removeClipLane,
   resizeClipLane,
@@ -17,11 +19,19 @@ import {
   type ClipLane,
 } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
+import { ToastTypes } from "../../enums";
 import { fractionToTime, quantizeToFrame, timeToFraction } from "./timelineUtils";
 
 interface TimelineClipRowProps {
+  objectUuid: string;
   lanes: ClipLane[];
   duration: number;
+  // Display names of the clips baked into the object's own GLB; non-empty
+  // renders the "+" baked-clip picker in the label column.
+  bakedClips?: string[];
+  // Whether animation drags can land on this row (skinned objects). Rows for
+  // baked-only objects render without the drop hint.
+  droppable?: boolean;
 }
 
 // Drag intent for the current pointer gesture.
@@ -29,16 +39,36 @@ type Drag =
   | { laneId: string; kind: "move"; grabOffset: number } // seconds pointer→start
   | { laneId: string; kind: "resize" };
 
-// A character's skeletal-animation clips on ONE shared row (single row per
-// character; the overlap guard in TimelineController keeps them a
-// non-overlapping sequence). Each strip drags to move, its right edge trims
-// length, the loop chip toggles repeat, the × removes it. Dropping a clip from
-// the Animations drawer is handled by the character block wrapper in
-// TimelineEditor, so an empty row still accepts drops.
-export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
+// An object's animation clips on ONE shared row (the overlap guard in
+// TimelineController keeps them a non-overlapping sequence). Each strip drags
+// to move, its right edge trims length, the loop chip toggles repeat, the ×
+// removes it (for baked clips that only unschedules — the clip itself stays
+// on the model and in the picker). Library-clip drops are handled by the row
+// wrapper in TimelineEditor, so an empty row still accepts drops; baked clips
+// are added through the "+" picker.
+export const TimelineClipRow = ({
+  objectUuid,
+  lanes,
+  duration,
+  bakedClips,
+  droppable,
+}: TimelineClipRowProps) => {
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const addBaked = (clipIndex: number) => {
+    setPickerOpen(false);
+    if (!editor) return;
+    const laneId = addBakedClipToObject(editor, objectUuid, clipIndex);
+    if (!laneId) {
+      editor.adapter.showToast(
+        ToastTypes.WARNING,
+        "No room left on this row for that clip.",
+      );
+    }
+  };
 
   const fps =
     editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
@@ -73,6 +103,43 @@ export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
       <div className="flex w-32 shrink-0 items-center gap-2 truncate ps-6 text-xs text-base-fg/50">
         <FontAwesomeIcon icon={faFilm} className="h-3 w-3 opacity-60" />
         <span className="truncate">Animation</span>
+        {bakedClips && bakedClips.length > 0 && (
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              title="Add one of this object's baked animations"
+              className={`flex h-4 w-4 items-center justify-center rounded-[4px] transition-colors ${
+                pickerOpen
+                  ? "bg-brand-primary text-white"
+                  : "bg-white/10 text-base-fg/70 hover:bg-white/20 hover:text-base-fg"
+              }`}
+              onClick={() => setPickerOpen((open) => !open)}
+            >
+              <FontAwesomeIcon icon={faPlus} className="h-2.5 w-2.5" />
+            </button>
+            {pickerOpen && (
+              <>
+                {/* click-away backdrop */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setPickerOpen(false)}
+                />
+                <div className="absolute bottom-full left-0 z-50 mb-1 max-h-40 w-44 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls py-1 shadow-xl">
+                  {bakedClips.map((clipName, clipIndex) => (
+                    <button
+                      key={clipIndex}
+                      type="button"
+                      className="block w-full truncate px-2.5 py-1 text-left text-[11px] text-base-fg/90 hover:bg-white/10"
+                      onClick={() => addBaked(clipIndex)}
+                    >
+                      {clipName}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div
@@ -85,7 +152,9 @@ export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
       >
         {lanes.length === 0 && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md border border-dashed border-white/15 text-[10px] text-base-fg/30">
-            Drag an animation here
+            {droppable
+              ? "Drag an animation here"
+              : "Add a baked animation with +"}
           </div>
         )}
 

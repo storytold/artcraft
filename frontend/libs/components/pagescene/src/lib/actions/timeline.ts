@@ -90,6 +90,32 @@ export function addClipToCharacter(
   });
 }
 
+// Place one of an object's own baked clips (object.animations[clipIndex]) on
+// its clip row at the earliest free slot (or an explicit `atTime`). The clip's
+// real length is known up front, so no autoDuration placeholder is needed.
+// Returns null when the object/clip doesn't exist or the row has no free slot.
+export function addBakedClipToObject(
+  editor: Editor,
+  objectUuid: string,
+  clipIndex: number,
+  atTime = 0,
+): string | null {
+  const object = editor.activeScene.scene.getObjectByProperty(
+    "uuid",
+    objectUuid,
+  );
+  const clip = object?.animations?.[clipIndex];
+  if (!clip) return null;
+  return editor.timelineController.addClipLane(objectUuid, {
+    sourceMediaId: "",
+    bakedClipIndex: clipIndex,
+    name: clip.name || `Clip ${clipIndex + 1}`,
+    startTime: atTime,
+    duration: clip.duration || DEFAULT_CLIP_DURATION,
+    loop: false,
+  });
+}
+
 export function moveClipLane(
   editor: Editor,
   laneId: string,

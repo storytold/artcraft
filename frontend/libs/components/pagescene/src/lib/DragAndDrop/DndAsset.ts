@@ -338,8 +338,9 @@ class DndAsset {
     return { characterUuid, time };
   }
 
-  // Raycast only against character roots (gizmo and other objects are never
-  // candidates), then walk the hit back up to the root it belongs to.
+  // Raycast only against clip-eligible roots — characters plus any skinned
+  // object (creatures, rigged uploads); the gizmo and everything else are
+  // never candidates — then walk the hit back up to the root it belongs to.
   private characterUnderPointer(
     clientX: number,
     clientY: number,
@@ -349,10 +350,16 @@ class DndAsset {
     const camera = editor.cameraController.camera;
     const canvas = editor.renderer?.domElement;
     if (!camera || !canvas) return null;
+    const store = usePageSceneStore.getState();
     const scene = editor.activeScene.scene;
+    const candidateIds = new Set<string>();
+    for (const character of store.characters) candidateIds.add(character.id);
+    for (const item of store.outlinerItems) {
+      if (item.hasSkeleton) candidateIds.add(item.id);
+    }
     const roots: THREE.Object3D[] = [];
-    for (const character of usePageSceneStore.getState().characters) {
-      const root = scene.getObjectByProperty("uuid", character.id);
+    for (const id of candidateIds) {
+      const root = scene.getObjectByProperty("uuid", id);
       if (root) roots.push(root);
     }
     if (roots.length === 0) return null;

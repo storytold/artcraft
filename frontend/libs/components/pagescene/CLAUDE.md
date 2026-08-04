@@ -239,6 +239,20 @@ then one row per character is the right model.
 - **Drag preview**: animation drags ride the same pointer-based `DndAsset` pipeline as every
   other asset card, so the shared `DragGhost` (tilt card) works unchanged — plus the
   compatibility badge described above.
+- **Clip-row eligibility (widened)**: rows are no longer characters-only. Any **skinned** object
+  (creatures, rigged uploads — `OutlinerItem.hasSkeleton`, computed in `convert_object`) accepts
+  animation drags (bind check still gates), and any object with **baked clips**
+  (`OutlinerItem.bakedClips`, from `object.animations`) gets a clip row even without a skeleton.
+- **Baked-in clips**: `ClipStrip.bakedClipIndex` marks a strip sourced from the object's own
+  `animations[]` (with `sourceMediaId: ""`); `CharacterAnimationManager.addLane` resolves it
+  synchronously from the model instead of `loadRawGlb`. Added via the **"+" picker** on the
+  object's clip row (`TimelineClipRow`, `addBakedClipToObject`, earliest free slot, real length
+  known up front so no `autoDuration`). INVARIANT: baked clips are **never removed from the THREE
+  model** — removing a baked strip only unschedules it (mixer uncache is mixer-state only); the
+  clip stays on `object.animations` and in the picker. Library-sourced strips remain fully
+  removable. ⚠️ Runtime-unverified: whether `object.animations` survives the save/load roundtrip
+  (the stash in `scene.ts` is gated on `auto_add`), and that the outliner refresh timing surfaces
+  `bakedClips` after async GLB loads.
 - **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
   `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
   `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length

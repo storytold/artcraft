@@ -29,12 +29,18 @@ export interface TimelineTrack {
   keyframes: Keyframe[]; // kept sorted ascending by time
 }
 
-// A skeletal animation clip (Mixamo) placed on a character's lane. Only the
-// reference + placement is serialized; the actual THREE.AnimationClip is
-// resolved from `sourceMediaId` and retargeted onto the character at runtime.
+// An animation clip placed on an object's clip row. Only the reference +
+// placement is serialized; the actual THREE.AnimationClip is resolved at
+// runtime — from the `sourceMediaId` GLB for library clips, or from the
+// object's own baked `animations[]` when `bakedClipIndex` is set.
 export interface ClipStrip {
   id: string;
-  sourceMediaId: string; // media id of the animation GLB (reload + retarget)
+  sourceMediaId: string; // media id of the animation GLB ("" for baked clips)
+  // Set for a clip baked into the object's own GLB: index into the object's
+  // `animations[]` array. Baked clips are never removed from the THREE model —
+  // removing/disabling a baked strip only stops scheduling it; the clip stays
+  // on the object (and in the row's picker) for later reuse.
+  bakedClipIndex?: number;
   name: string; // display label
   startTime: number; // seconds from timeline start
   duration: number; // seconds (clip length on the timeline)
@@ -42,16 +48,18 @@ export interface ClipStrip {
   // True until the clip GLB has loaded and its real length is known. While
   // true, `duration` is only a placeholder width and gets replaced by the
   // clip's natural length on load. A user trim clears this so the natural
-  // length never clobbers a hand-set duration on reload.
+  // length never clobbers a hand-set duration on reload. Baked strips know
+  // their length up front and never set this.
   autoDuration?: boolean;
 }
 
-// One animation lane under a character. Multiple lanes (stacked) = multiple
-// clips on the same character; each lane holds a single clip strip. Only
-// character objects get clip lanes.
+// One animation lane under an object; each lane holds a single clip strip.
+// All of an object's strips render on ONE row and never overlap (see the
+// overlap guard in TimelineController). Rows exist for characters and for
+// any object with a skeleton or baked clips.
 export interface ClipLane {
   id: string;
-  objectUuid: string; // the character this lane animates
+  objectUuid: string; // the object this lane animates
   strip: ClipStrip;
 }
 

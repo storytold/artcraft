@@ -80,6 +80,12 @@ export interface OutlinerItem {
   // True for the render-camera placeholder ("::CAM::") — the outliner shows a
   // view-from-camera button for these rows.
   isCamera?: boolean;
+  // True when the object contains a SkinnedMesh — the timeline gives it a
+  // clip row and animation drags can target it (bind check still applies).
+  hasSkeleton?: boolean;
+  // Display names of clips baked into the object's own GLB, in index order.
+  // Non-empty → the timeline clip row offers a baked-clip picker.
+  bakedClips?: string[];
 }
 
 // The currently inspected object in the right-hand control panel.

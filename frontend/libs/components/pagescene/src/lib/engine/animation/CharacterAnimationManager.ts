@@ -121,18 +121,36 @@ export class CharacterAnimationManager {
     const character = this.findObject(lane.objectUuid);
     if (!character) return;
 
-    const glb = await this.editor.activeScene.loadRawGlb(lane.strip.sourceMediaId);
-    // Bail if this lane was removed/replaced while the clip was loading.
-    if (this.loadTokens.get(lane.id) !== token || !this.lanes.has(lane.id)) {
-      return;
-    }
-    const clip = glb?.animations?.[0];
-    if (!clip) {
-      console.warn(
-        "Animation clip has no animations track:",
+    let clip: THREE.AnimationClip | undefined;
+    if (lane.strip.bakedClipIndex !== undefined) {
+      // Baked clip: sourced from the object's own `animations[]`, kept intact
+      // for the object's lifetime — we only read from it, never remove or
+      // mutate it. Disabling/removing a baked strip just stops scheduling the
+      // clip; it stays on the model (and in the row's picker). Resolves
+      // synchronously, so no load-token dance is needed.
+      clip = character.animations?.[lane.strip.bakedClipIndex];
+      if (!clip) {
+        console.warn(
+          `Baked clip index ${lane.strip.bakedClipIndex} not found on object ${lane.objectUuid} (object has ${character.animations?.length ?? 0} baked clips).`,
+        );
+        return;
+      }
+    } else {
+      const glb = await this.editor.activeScene.loadRawGlb(
         lane.strip.sourceMediaId,
       );
-      return;
+      // Bail if this lane was removed/replaced while the clip was loading.
+      if (this.loadTokens.get(lane.id) !== token || !this.lanes.has(lane.id)) {
+        return;
+      }
+      clip = glb?.animations?.[0];
+      if (!clip) {
+        console.warn(
+          "Animation clip has no animations track:",
+          lane.strip.sourceMediaId,
+        );
+        return;
+      }
     }
 
     const mixer = this.getMixer(lane.objectUuid, character);
@@ -147,8 +165,12 @@ export class CharacterAnimationManager {
 
     // Diagnostic for the direct-bind vs retarget question: if none of the
     // clip's tracks resolve to a node on the character, the character won't
-    // move — that's the signal to wire SkeletonUtils.retargetClip.
-    if (!this.clipBindsToCharacter(clip, character)) {
+    // move — that's the signal to wire SkeletonUtils.retargetClip. (A baked
+    // clip trivially binds to its own model; the check is skipped.)
+    if (
+      lane.strip.bakedClipIndex === undefined &&
+      !this.clipBindsToCharacter(clip, character)
+    ) {
       console.warn(
         `Animation clip "${clip.name}" bound 0 tracks on character ${lane.objectUuid} — likely a rig/bone-name mismatch (retarget needed).`,
       );
@@ -164,6 +186,9 @@ export class CharacterAnimationManager {
     this.evaluateAt(this.editor.timelineController.getPlayhead());
   }
 
+  // NB: uncaching releases MIXER state only — for baked clips the underlying
+  // AnimationClip stays untouched on the object's `animations[]` (baked clips
+  // are never removed from the model, only unscheduled).
   private disposeLane(laneId: string): void {
     const rt = this.lanes.get(laneId);
     if (!rt) return;

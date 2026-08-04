@@ -60,9 +60,16 @@ export const TimelineEditor = () => {
   const trackByUuid = new Map(tracks.map((t) => [t.objectUuid, t]));
   const rows = outlinerItems;
 
-  // Only characters get skeletal-animation clip lanes. Clip drags are accepted
-  // on a character's block; other rows ignore them.
+  // Clip-row eligibility: characters and any skinned object (creatures,
+  // rigged uploads) accept animation drags — the bind check still gates the
+  // drop — and any object with baked clips gets a row for its picker even
+  // without a skeleton (baked transform animations play through the mixer
+  // too).
   const characterIds = new Set(characters.map((c) => c.id));
+  const acceptsClipDrops = (item: (typeof rows)[number]) =>
+    characterIds.has(item.id) || !!item.hasSkeleton;
+  const hasClipRow = (item: (typeof rows)[number]) =>
+    acceptsClipDrops(item) || (item.bakedClips?.length ?? 0) > 0;
   const clipLanesByChar = new Map<string, typeof clipLanes>();
   for (const lane of clipLanes) {
     const list = clipLanesByChar.get(lane.objectUuid) ?? [];
@@ -277,23 +284,30 @@ export const TimelineEditor = () => {
              alignment with the ruler-driven playhead. */
           <div className="max-h-[154px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {rows.map((item) => {
-              const isCharacter = characterIds.has(item.id);
-              const lanes = isCharacter ? clipLanesByChar.get(item.id) : undefined;
+              const droppable = acceptsClipDrops(item);
+              const clipRow = hasClipRow(item);
+              const lanes = clipRow ? clipLanesByChar.get(item.id) : undefined;
               return (
-                /* Character rows advertise themselves as clip-drop targets;
+                /* Clip-eligible rows advertise themselves as drop targets;
                    DndAsset hit-tests this attribute during animation drags
                    (pointer-based — no HTML5 DnD). Other rows stay untagged. */
                 <div
                   key={item.id}
-                  data-clip-drop-uuid={isCharacter ? item.id : undefined}
+                  data-clip-drop-uuid={droppable ? item.id : undefined}
                 >
                   <TimelineTrackRow
                     item={item}
                     track={trackByUuid.get(item.id)}
                     duration={duration}
                   />
-                  {isCharacter && (
-                    <TimelineClipRow lanes={lanes ?? []} duration={duration} />
+                  {clipRow && (
+                    <TimelineClipRow
+                      objectUuid={item.id}
+                      lanes={lanes ?? []}
+                      duration={duration}
+                      bakedClips={item.bakedClips}
+                      droppable={droppable}
+                    />
                   )}
                 </div>
               );
