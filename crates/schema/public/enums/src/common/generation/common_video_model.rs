@@ -17,6 +17,12 @@ pub enum CommonVideoModel {
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
 
+  #[serde(rename = "flux_3")]
+  Flux3,
+
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
+
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
 
@@ -134,6 +140,8 @@ impl CommonVideoModel {
       Self::GrokVideo => CommonModelType::GrokVideo,
       Self::GrokImagineVideo => CommonModelType::GrokImagineVideo,
       Self::GrokImagineVideo1p5 => CommonModelType::GrokImagineVideo1p5,
+      Self::Flux3 => CommonModelType::Flux3,
+      Self::Flux3Draft => CommonModelType::Flux3Draft,
       Self::Kling16Pro => CommonModelType::Kling16Pro,
       Self::Kling21Pro => CommonModelType::Kling21Pro,
       Self::Kling21Master => CommonModelType::Kling21Master,
@@ -184,6 +192,8 @@ mod tests {
     assert_serialization(CommonVideoModel::GrokVideo, "grok_video");
     assert_serialization(CommonVideoModel::GrokImagineVideo, "grok_imagine_video");
     assert_serialization(CommonVideoModel::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+    assert_serialization(CommonVideoModel::Flux3, "flux_3");
+    assert_serialization(CommonVideoModel::Flux3Draft, "flux_3_draft");
     assert_serialization(CommonVideoModel::Kling16Pro, "kling_1p6_pro");
     assert_serialization(CommonVideoModel::Kling21Pro, "kling_2p1_pro");
     assert_serialization(CommonVideoModel::Kling21Master, "kling_2p1_master");
@@ -227,6 +237,8 @@ mod tests {
       ("grok_video", CommonVideoModel::GrokVideo),
       ("grok_imagine_video", CommonVideoModel::GrokImagineVideo),
       ("grok_imagine_video_1p5", CommonVideoModel::GrokImagineVideo1p5),
+      ("flux_3", CommonVideoModel::Flux3),
+      ("flux_3_draft", CommonVideoModel::Flux3Draft),
       ("kling_1p6_pro", CommonVideoModel::Kling16Pro),
       ("kling_2p1_pro", CommonVideoModel::Kling21Pro),
       ("kling_2p1_master", CommonVideoModel::Kling21Master),
@@ -277,6 +289,8 @@ mod tests {
       CommonVideoModel::GrokVideo,
       CommonVideoModel::GrokImagineVideo,
       CommonVideoModel::GrokImagineVideo1p5,
+      CommonVideoModel::Flux3,
+      CommonVideoModel::Flux3Draft,
       CommonVideoModel::Kling16Pro,
       CommonVideoModel::Kling21Pro,
       CommonVideoModel::Kling21Master,
@@ -326,6 +340,8 @@ mod tests {
       (CommonVideoModel::GrokVideo, CommonModelType::GrokVideo),
       (CommonVideoModel::GrokImagineVideo, CommonModelType::GrokImagineVideo),
       (CommonVideoModel::GrokImagineVideo1p5, CommonModelType::GrokImagineVideo1p5),
+      (CommonVideoModel::Flux3, CommonModelType::Flux3),
+      (CommonVideoModel::Flux3Draft, CommonModelType::Flux3Draft),
       (CommonVideoModel::Kling16Pro, CommonModelType::Kling16Pro),
       (CommonVideoModel::Kling21Pro, CommonModelType::Kling21Pro),
       (CommonVideoModel::Kling21Master, CommonModelType::Kling21Master),

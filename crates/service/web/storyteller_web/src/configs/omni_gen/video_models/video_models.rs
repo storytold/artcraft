@@ -3,6 +3,7 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
 
+use super::by_type::flux_video_models::flux_video_models;
 use super::by_type::grok_video_models::grok_video_models;
 use super::by_type::happy_horse_video_models::happy_horse_video_models;
 use super::by_type::kling_video_models::{kling_disabled_video_models, kling_video_models};
@@ -27,6 +28,7 @@ pub const OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS: Lazy<OmniGenVideoModelsResponse> 
 fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   let mut models = Vec::new();
 
+  models.extend(flux_video_models());
   models.extend(grok_video_models());
   models.extend(happy_horse_video_models());
   models.extend(kling_video_models());
@@ -103,6 +105,14 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
       },
       OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::MinimaxH3,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Flux3,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Flux3Draft,
         overrides: None,
       },
       OmniGenVideoProviderModelDetails {

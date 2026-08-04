@@ -1,3 +1,4 @@
+pub mod flux_video_models;
 pub mod grok_video_models;
 pub mod happy_horse_video_models;
 pub mod kling_video_models;

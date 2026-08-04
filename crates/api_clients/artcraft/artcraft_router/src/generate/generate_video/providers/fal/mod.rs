@@ -1,3 +1,5 @@
+pub mod flux_3;
+pub mod flux_3_draft;
 pub mod kling_1_6_pro;
 pub mod kling_2_1_master;
 pub mod kling_2_1_pro;
