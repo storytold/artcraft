@@ -18,6 +18,9 @@
       "path": "../file-uploader"
     },
     {
+      "path": "../select"
+    },
+    {
       "path": "../list-dropdown"
     },
     {
