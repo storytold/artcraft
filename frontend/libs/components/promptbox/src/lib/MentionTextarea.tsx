@@ -430,6 +430,9 @@ function MentionDropdown({
       // clicks here are not outside clicks; `pointerEvents: auto` re-enables
       // interaction under the Radix modal's body-wide pointer-events lock.
       data-modal-outside-safe=""
+      // Lets the editor's blur handler recognize focus moving into this
+      // panel (Android taps focus the row button before click fires).
+      data-mention-dropdown=""
       // The focus-mode modal's scroll lock (react-remove-scroll) blocks any
       // wheel/touch event that bubbles to document from outside the dialog —
       // and this panel is body-portaled, so it counts as outside. Stopping
@@ -461,12 +464,15 @@ function MentionDropdown({
               i === activeIndex ? "bg-white/10" : "hover:bg-white/5",
             )}
             onPointerDown={(e) => {
-              // pointerdown (not click) keeps the editor focused, and works
-              // for both mouse and touch — the old mousedown-only handler
-              // made taps unreliable on mobile.
-              e.preventDefault();
-              onSelect(item);
+              // Mouse only: preventDefault keeps the editor focused (its
+              // blur would close this panel). Touch must pass through
+              // untouched — pointerdown fires before the browser knows
+              // whether the finger is tapping or starting a scroll, so
+              // selecting here made scroll attempts pick an item. Selection
+              // happens on click, which the browser only fires for taps.
+              if (e.pointerType === "mouse") e.preventDefault();
             }}
+            onClick={() => onSelect(item)}
             onMouseEnter={() => onHover(i)}
           >
             <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20 flex items-center justify-center bg-black/20">
@@ -841,8 +847,23 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         // A collapsed range adjacent to a non-editable chip span can measure
         // as an all-zero rect — returning it would pin the dropdown to the
-        // viewport's top-left corner. Anchor to the editor's box instead.
+        // viewport's top-left corner. This happens when the trigger offset
+        // is a rendered chip's start (e.g. deleting the space right after a
+        // chip reopens the dropdown), so anchor to that chip's own box;
+        // fall back to the editor's box when no chip starts there.
         if (rect.left === 0 && rect.top === 0 && rect.bottom === 0) {
+          for (const chip of Array.from(
+            el.querySelectorAll<HTMLElement>("[data-mention]"),
+          )) {
+            if (getNodeStartOffset(el, chip) === charOffset) {
+              const chipRect = chip.getBoundingClientRect();
+              return {
+                left: chipRect.left,
+                caretTop: chipRect.top,
+                caretBottom: chipRect.bottom,
+              };
+            }
+          }
           const elRect = el.getBoundingClientRect();
           return {
             left: elRect.left,
@@ -1328,6 +1349,14 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         const target = e.target as HTMLElement;
         const chip = target.closest?.("[data-mention]") as HTMLElement | null;
         if (chip && el.contains(chip)) {
+          // Clicking the chip whose menu is already open toggles it closed.
+          // Works because the menu's outside-pointerdown close skips its
+          // anchor chip — otherwise that close would fire first and this
+          // click would just reopen it.
+          if (chipMenu?.node === chip) {
+            setChipMenu(null);
+            return;
+          }
           const label = chip.dataset.mention ?? "";
           setMentionState((prev) =>
             prev.isOpen ? { ...prev, isOpen: false } : prev,
@@ -1346,7 +1375,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         if (sel && !sel.isCollapsed) return; // preserve text selection
         detectMention(value, getCaretOffset(el), true);
       },
-      [value, detectMention],
+      [value, detectMention, chipMenu],
     );
 
     const handlePaste = useCallback(
@@ -1409,9 +1438,20 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           onCopy={handleCopy}
           onCut={handleCut}
           onFocus={onFocus}
-          onBlur={() => {
-            // Focus left the editor (dropdown item clicks preventDefault
-            // pointerdown, so they never land here) — the trigger context is
+          onBlur={(e) => {
+            // Mouse clicks on dropdown items preventDefault pointerdown, so
+            // they never land here — but touch taps can move focus into the
+            // panel (Android focuses the row button) before its click fires.
+            // Closing then would unmount the row and swallow the tap; the
+            // selection refocuses the editor itself, so skip entirely.
+            if (
+              (e.relatedTarget as HTMLElement | null)?.closest?.(
+                "[data-mention-dropdown]",
+              )
+            ) {
+              return;
+            }
+            // Focus genuinely left the editor — the trigger context is
             // gone; close the dropdown instead of leaving it floating.
             setMentionState((prev) =>
               prev.isOpen ? { ...prev, isOpen: false } : prev,
@@ -1440,6 +1480,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         {chipMenu && (
           <MentionChipMenu
             anchorRect={chipMenu.rect}
+            anchorNode={chipMenu.node}
             currentLabel={chipMenu.label}
             currentPreview={chipMenuItem ? chipMenuItem.preview : undefined}
             replaceItems={replaceItems}
