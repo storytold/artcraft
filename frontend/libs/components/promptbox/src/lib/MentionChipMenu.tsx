@@ -20,6 +20,12 @@ const MENU_ROW =
 export interface MentionChipMenuProps {
   /** Viewport-space rect of the clicked chip. */
   anchorRect: DOMRect;
+  /**
+   * The clicked chip element. Pointerdowns on it must not outside-close the
+   * menu — the chip's own click handler toggles it, and closing here first
+   * would turn that toggle into a close-then-reopen flash.
+   */
+  anchorNode?: HTMLElement;
   /** Canonical mention label including the "@", e.g. "@robot cartoon". */
   currentLabel: string;
   /** Avatar of the currently attached character, shown in the menu header. */
@@ -43,6 +49,7 @@ export interface MentionChipMenuProps {
  */
 export function MentionChipMenu({
   anchorRect,
+  anchorNode,
   currentLabel,
   currentPreview,
   replaceItems,
@@ -97,7 +104,9 @@ export function MentionChipMenu({
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
       const panel = panelRef.current;
-      if (panel && !panel.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      if (anchorNode?.contains(target)) return;
+      if (panel && !panel.contains(target)) onClose();
     };
     const handleScroll = (e: Event) => {
       const panel = panelRef.current;
@@ -117,7 +126,7 @@ export function MentionChipMenu({
       window.removeEventListener("resize", onClose);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, anchorNode]);
 
   const handleRowKeyActivate = useCallback(
     (e: React.PointerEvent) => e.preventDefault(),
