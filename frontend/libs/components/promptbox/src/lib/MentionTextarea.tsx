@@ -80,8 +80,11 @@ interface ChipMenuState {
 // edge — which makes the chip ride high against the surrounding text.
 // No select-none: chips must paint the native selection highlight so users
 // can see they're included when sweep-selecting text to copy.
+// Touch (hover:none) darkens the chip: the mobile prompt form's textarea is
+// itself bg-ui-controls, so the default bg-ui-controls/80 chip disappears
+// against it.
 const CHIP_CLASS =
-  "mention-chip mx-0.5 inline-flex max-w-[10rem] cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-ui-controls/80 px-1.5 py-0.5 align-middle leading-tight transition-colors hover:border-white/25 hover:bg-white/15";
+  "mention-chip mx-0.5 inline-flex max-w-[10rem] cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-ui-controls/80 px-1.5 py-0.5 align-middle leading-tight transition-colors hover:border-white/25 hover:bg-white/15 [@media(hover:none)]:bg-black/30 [@media(hover:none)]:border-white/15";
 const CHIP_IMG_CLASS =
   "pointer-events-none h-4 w-4 shrink-0 rounded object-cover select-none";
 const CHIP_NAME_CLASS = "pointer-events-none truncate";
@@ -485,7 +488,7 @@ function MentionDropdown({
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
       onScroll={() => (lastScrollTs.current = performance.now())}
-      className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl"
+      className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
       style={{
         pointerEvents: "auto",
         ...(placement
@@ -503,7 +506,7 @@ function MentionDropdown({
             }),
       }}
     >
-      <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
+      <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
         References
       </div>
       <div>
@@ -512,8 +515,8 @@ function MentionDropdown({
             key={item.token ?? `${item.label}-${i}`}
             type="button"
             className={twMerge(
-              "flex w-full items-center gap-2.5 px-3 py-2 text-sm text-base-fg transition-colors cursor-pointer",
-              i === activeIndex ? "bg-white/10" : "hover:bg-white/5",
+              "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base-fg transition-colors cursor-pointer",
+              i === activeIndex ? "bg-ui-controls/80" : "hover:bg-ui-controls/60",
             )}
             // Selection happens on pointerup, not click: on mobile the
             // editor's blur (which closes this panel) fires BETWEEN pointerup
@@ -559,7 +562,7 @@ function MentionDropdown({
             onClick={() => onSelect(item)}
             onMouseEnter={() => onHover(i)}
           >
-            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20 flex items-center justify-center bg-black/20">
+            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/10 flex items-center justify-center bg-black/20">
               {item.type === "character" && item.preview ? (
                 <img
                   src={item.preview}
