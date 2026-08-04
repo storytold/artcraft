@@ -13,6 +13,11 @@ import type { MentionItem } from "./MentionTextarea";
 
 const VIEWPORT_MARGIN = 8;
 const ANCHOR_GAP = 4;
+// Window after opening during which scroll/resize re-anchors the menu
+// instead of closing it. Opening the menu on touch blurs the editor, and the
+// on-screen keyboard's dismissal fires exactly those events — closing on
+// them would dismiss the menu before the user's first tap.
+const OPEN_GRACE_MS = 700;
 
 const MENU_ROW =
   "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base-fg transition-colors hover:bg-ui-controls/60 cursor-pointer";
@@ -59,6 +64,10 @@ export function MentionChipMenu({
   onClose,
 }: MentionChipMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const openedAt = useRef(performance.now());
+  // Anchor rect the placement actually uses — re-measured from anchorNode
+  // when the viewport shifts during the opening grace window.
+  const [liveRect, setLiveRect] = useState(anchorRect);
   const [view, setView] = useState<"menu" | "replace">("menu");
   const [placement, setPlacement] = useState<{
     left: number;
@@ -70,6 +79,9 @@ export function MentionChipMenu({
 
   const currentName = currentLabel.replace(/^@/, "");
 
+  // Keep the live anchor in sync when the caller hands us a new chip rect.
+  useEffect(() => setLiveRect(anchorRect), [anchorRect]);
+
   // Position below the chip, flipped above when there is no room, clamped
   // horizontally into the viewport. Re-measured when the view swaps (the
   // replace panel is taller than the menu).
@@ -79,21 +91,21 @@ export function MentionChipMenu({
     const width = panel.offsetWidth;
     const height = panel.offsetHeight;
 
-    let top = anchorRect.bottom + ANCHOR_GAP;
+    let top = liveRect.bottom + ANCHOR_GAP;
     let flippedAbove = false;
     if (top + height > window.innerHeight - VIEWPORT_MARGIN) {
-      top = anchorRect.top - height - ANCHOR_GAP;
+      top = liveRect.top - height - ANCHOR_GAP;
       flippedAbove = true;
     }
     top = Math.max(VIEWPORT_MARGIN, top);
 
     const left = Math.max(
       VIEWPORT_MARGIN,
-      Math.min(anchorRect.left, window.innerWidth - width - VIEWPORT_MARGIN),
+      Math.min(liveRect.left, window.innerWidth - width - VIEWPORT_MARGIN),
     );
 
     setPlacement({ left, top, flippedAbove });
-  }, [anchorRect, view, replaceItems.length]);
+  }, [liveRect, view, replaceItems.length]);
 
   useEffect(() => {
     if (!placement || entered) return;
@@ -108,22 +120,35 @@ export function MentionChipMenu({
       if (anchorNode?.contains(target)) return;
       if (panel && !panel.contains(target)) onClose();
     };
+    // During the opening grace window, viewport churn re-anchors the menu to
+    // its chip instead of closing (see OPEN_GRACE_MS); afterwards scrolling
+    // or resizing dismisses as usual.
+    const repositionOrClose = () => {
+      if (
+        performance.now() - openedAt.current < OPEN_GRACE_MS &&
+        anchorNode?.isConnected
+      ) {
+        setLiveRect(anchorNode.getBoundingClientRect());
+        return;
+      }
+      onClose();
+    };
     const handleScroll = (e: Event) => {
       const panel = panelRef.current;
       if (panel && e.target instanceof Node && panel.contains(e.target)) return;
-      onClose();
+      repositionOrClose();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("pointerdown", handlePointerDown, true);
     window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", onClose);
+    window.addEventListener("resize", repositionOrClose);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown, true);
       window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", onClose);
+      window.removeEventListener("resize", repositionOrClose);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClose, anchorNode]);
@@ -159,8 +184,8 @@ export function MentionChipMenu({
         ...(placement
           ? { left: placement.left, top: placement.top }
           : {
-              left: anchorRect.left,
-              top: anchorRect.bottom + ANCHOR_GAP,
+              left: liveRect.left,
+              top: liveRect.bottom + ANCHOR_GAP,
               visibility: "hidden",
             }),
       }}

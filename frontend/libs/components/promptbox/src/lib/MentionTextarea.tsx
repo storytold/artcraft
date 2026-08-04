@@ -86,6 +86,14 @@ const CHIP_IMG_CLASS =
   "pointer-events-none h-4 w-4 shrink-0 rounded object-cover select-none";
 const CHIP_NAME_CLASS = "pointer-events-none truncate";
 
+/** Coarse-pointer (touch) device — no hover, on-screen keyboard. */
+function isTouchDevice(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(hover: none)").matches === true
+  );
+}
+
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -364,6 +372,10 @@ function scrollCaretIntoView(el: HTMLElement) {
 // ---------------------------------------------------------------------------
 
 const DROPDOWN_MARGIN = 8;
+// Natural height cap — must match the panel's `max-h-72` class.
+const DROPDOWN_MAX_HEIGHT = 288;
+// Minimum useful panel height before placement stops shrinking it further.
+const DROPDOWN_MIN_HEIGHT = 96;
 
 function MentionDropdown({
   items,
@@ -394,32 +406,59 @@ function MentionDropdown({
   const [placement, setPlacement] = useState<{
     left: number;
     top: number;
+    maxHeight?: number;
   } | null>(null);
 
   useLayoutEffect(() => {
     const panel = listRef.current;
     if (!panel) return;
 
-    const panelWidth = panel.offsetWidth;
-    const panelHeight = panel.offsetHeight;
+    // Bound placement to the VISUAL viewport. With the on-screen keyboard
+    // up, window.innerHeight still spans the keyboard-covered / scrolled-away
+    // area, so clamping against it parked the panel above the visible screen
+    // (users had to scroll up to find it).
+    const vv = window.visualViewport;
+    const vpTop = vv?.offsetTop ?? 0;
+    const vpLeft = vv?.offsetLeft ?? 0;
+    const vpHeight = vv?.height ?? window.innerHeight;
+    const vpWidth = vv?.width ?? window.innerWidth;
 
-    const left = Math.max(
-      DROPDOWN_MARGIN,
-      Math.min(position.left, window.innerWidth - panelWidth - DROPDOWN_MARGIN),
+    const panelWidth = panel.offsetWidth;
+    // scrollHeight, not offsetHeight: offsetHeight reflects a maxHeight this
+    // effect previously applied, which would feed back into the next measure.
+    const naturalHeight = Math.min(
+      panel.scrollHeight + 2,
+      DROPDOWN_MAX_HEIGHT,
     );
 
-    const spaceAbove = position.caretTop - DROPDOWN_MARGIN;
-    const spaceBelow =
-      window.innerHeight - position.caretBottom - DROPDOWN_MARGIN;
+    const left = Math.max(
+      vpLeft + DROPDOWN_MARGIN,
+      Math.min(position.left, vpLeft + vpWidth - panelWidth - DROPDOWN_MARGIN),
+    );
 
+    const spaceAbove = position.caretTop - vpTop - DROPDOWN_MARGIN;
+    const spaceBelow =
+      vpTop + vpHeight - position.caretBottom - DROPDOWN_MARGIN;
+
+    // Shrink the panel to the space on its side of the caret rather than
+    // letting it overflow the visible area (it scrolls internally).
     let top: number;
-    if (panelHeight > spaceAbove && spaceBelow > spaceAbove) {
+    let maxHeight: number | undefined;
+    if (naturalHeight > spaceAbove && spaceBelow > spaceAbove) {
       top = position.caretBottom + 4;
+      if (naturalHeight > spaceBelow) {
+        maxHeight = Math.max(DROPDOWN_MIN_HEIGHT, spaceBelow);
+      }
     } else {
-      top = Math.max(DROPDOWN_MARGIN, position.caretTop - panelHeight - 4);
+      const height = Math.min(
+        naturalHeight,
+        Math.max(DROPDOWN_MIN_HEIGHT, spaceAbove),
+      );
+      if (height < naturalHeight) maxHeight = height;
+      top = Math.max(vpTop + DROPDOWN_MARGIN, position.caretTop - height - 4);
     }
 
-    setPlacement({ left, top });
+    setPlacement({ left, top, maxHeight });
   }, [position, items]);
 
   useEffect(() => {
@@ -450,7 +489,13 @@ function MentionDropdown({
       style={{
         pointerEvents: "auto",
         ...(placement
-          ? { left: placement.left, top: placement.top }
+          ? {
+              left: placement.left,
+              top: placement.top,
+              ...(placement.maxHeight != null
+                ? { maxHeight: placement.maxHeight }
+                : {}),
+            }
           : {
               left: position.left,
               top: position.caretBottom + 4,
@@ -1002,10 +1047,17 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       };
       window.addEventListener("scroll", reposition, true);
       window.addEventListener("resize", reposition);
+      // Mobile keyboard show/hide moves the visual viewport without firing
+      // window resize — re-anchor on those too.
+      const vv = window.visualViewport;
+      vv?.addEventListener("resize", reposition);
+      vv?.addEventListener("scroll", reposition);
       return () => {
         cancelAnimationFrame(raf);
         window.removeEventListener("scroll", reposition, true);
         window.removeEventListener("resize", reposition);
+        vv?.removeEventListener("resize", reposition);
+        vv?.removeEventListener("scroll", reposition);
       };
     }, [mentionState.isOpen, mentionState.triggerIndex, getOffsetRect]);
 
@@ -1162,7 +1214,12 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       (next: MentionItem) => {
         if (!chipMenu) return;
         setChipMenu(null);
-        if (selectChipRange(chipMenu, false)) {
+        // The execCommand path exists to put the edit on the desktop undo
+        // stack. On touch it must not run: selectChipRange refocuses the
+        // editor (re-summoning the keyboard we dismissed), and mobile IMEs
+        // interact badly with execCommand — the replaced label came back
+        // duplicated as plain text after the chip.
+        if (!isTouchDevice() && selectChipRange(chipMenu, false)) {
           suppressMentionDetect.current = true;
           document.execCommand(
             "insertHTML",
@@ -1176,14 +1233,19 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
             suppressMentionDetect.current = false;
           });
         } else {
-          // Chip element detached (DOM rebuilt) — splice the value instead.
+          // Touch, or chip element detached — splice the value instead.
           const start = chipStart(chipMenu);
           if (start === -1) return;
           const newValue =
             value.slice(0, start) +
             next.label +
             value.slice(start + chipMenu.label.length);
-          pendingCaret.current = start + next.label.length;
+          // Restoring the caret moves the selection into the editor, which
+          // Chrome treats as focus — only do it when it's already focused,
+          // so a blurred mobile editor doesn't pop the keyboard back up.
+          if (document.activeElement === editorRef.current) {
+            pendingCaret.current = start + next.label.length;
+          }
           onChange(newValue);
         }
         onMentionSelect?.(next);
@@ -1203,7 +1265,8 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     const handleChipRemove = useCallback(() => {
       if (!chipMenu) return;
       setChipMenu(null);
-      if (selectChipRange(chipMenu, true)) {
+      // Same touch guard as handleChipReplace.
+      if (!isTouchDevice() && selectChipRange(chipMenu, true)) {
         document.execCommand("delete");
         handleInput();
       } else {
@@ -1211,7 +1274,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         if (start === -1) return;
         let end = start + chipMenu.label.length;
         if (value[end] === " ") end += 1;
-        pendingCaret.current = start;
+        if (document.activeElement === editorRef.current) {
+          pendingCaret.current = start;
+        }
         onChange(value.slice(0, start) + value.slice(end));
       }
     }, [chipMenu, selectChipRange, handleInput, chipStart, value, onChange]);
@@ -1396,6 +1461,11 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
             setChipMenu(null);
             return;
           }
+          // Dismiss the on-screen keyboard: keeping the editor focused
+          // squeezes the viewport, and the keyboard-dismissal scroll/resize
+          // fired by the user's FIRST tap inside the menu (e.g. Replace)
+          // would close it before that tap registered.
+          if (isTouchDevice()) el.blur();
           const label = chip.dataset.mention ?? "";
           setMentionState((prev) =>
             prev.isOpen ? { ...prev, isOpen: false } : prev,
