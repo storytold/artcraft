@@ -380,6 +380,12 @@ function MentionDropdown({
   position: { left: number; caretTop: number; caretBottom: number };
 }) {
   const listRef = useRef<HTMLDivElement>(null);
+  // Touch-tap bookkeeping for the rows: where the finger landed and whether
+  // the list was momentum-scrolling at that moment (see the row handlers).
+  const touchTap = useRef<{ x: number; y: number; scrolling: boolean } | null>(
+    null,
+  );
+  const lastScrollTs = useRef(0);
   // Body-portaled with `position: fixed` so the panel never contributes
   // scrollable overflow to an ancestor — absolutely positioned inside the
   // editor wrapper it widened the fullscreen modal's scroll area, and the
@@ -439,6 +445,7 @@ function MentionDropdown({
       // propagation here keeps the list's native scrolling working.
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
+      onScroll={() => (lastScrollTs.current = performance.now())}
       className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl"
       style={{
         pointerEvents: "auto",
@@ -463,15 +470,47 @@ function MentionDropdown({
               "flex w-full items-center gap-2.5 px-3 py-2 text-sm text-base-fg transition-colors cursor-pointer",
               i === activeIndex ? "bg-white/10" : "hover:bg-white/5",
             )}
+            // Selection happens on pointerup, not click: on mobile the
+            // editor's blur (which closes this panel) fires BETWEEN pointerup
+            // and click, so a click handler never runs — the tap just closed
+            // the panel. pointerup fires before any blur. Scrolling stays
+            // safe: once the browser claims the gesture for scrolling it
+            // fires pointercancel instead of pointerup.
             onPointerDown={(e) => {
-              // Mouse only: preventDefault keeps the editor focused (its
-              // blur would close this panel). Touch must pass through
-              // untouched — pointerdown fires before the browser knows
-              // whether the finger is tapping or starting a scroll, so
-              // selecting here made scroll attempts pick an item. Selection
-              // happens on click, which the browser only fires for taps.
-              if (e.pointerType === "mouse") e.preventDefault();
+              if (e.pointerType === "mouse") {
+                // Keeps the editor focused so its blur never fires.
+                e.preventDefault();
+                return;
+              }
+              // Touch must pass through untouched (preventDefault would
+              // block scrolling). Record the landing point, and whether the
+              // list was momentum-scrolling — a tap that merely stops the
+              // glide must not select.
+              touchTap.current = {
+                x: e.clientX,
+                y: e.clientY,
+                scrolling: performance.now() - lastScrollTs.current < 100,
+              };
             }}
+            onPointerUp={(e) => {
+              if (e.pointerType === "mouse") {
+                onSelect(item);
+                return;
+              }
+              const start = touchTap.current;
+              touchTap.current = null;
+              if (!start || start.scrolling) return;
+              // Implicit touch capture keeps pointerup on this row even if
+              // the finger slid without panning — require a genuine tap.
+              if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 12) {
+                return;
+              }
+              onSelect(item);
+            }}
+            onPointerCancel={() => (touchTap.current = null)}
+            // Assistive-tech activation can dispatch click without pointer
+            // events; after a pointerup selection the panel unmounts before
+            // the click task, so this can't double-fire.
             onClick={() => onSelect(item)}
             onMouseEnter={() => onHover(i)}
           >
