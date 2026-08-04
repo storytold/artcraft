@@ -62,6 +62,8 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::Seedance2p0Fast => Some(CommonModelType::Seedance2p0Fast),
     RouterVideoModel::HappyHorse1p0 => Some(CommonModelType::HappyHorse1p0),
     RouterVideoModel::MinimaxH3 => Some(CommonModelType::MinimaxH3),
+    RouterVideoModel::Flux3 => Some(CommonModelType::Flux3),
+    RouterVideoModel::Flux3Draft => Some(CommonModelType::Flux3Draft),
     RouterVideoModel::Sora2 => Some(CommonModelType::Sora2),
     RouterVideoModel::Sora2Pro => Some(CommonModelType::Sora2Pro),
     RouterVideoModel::Veo2 => Some(CommonModelType::Veo2),

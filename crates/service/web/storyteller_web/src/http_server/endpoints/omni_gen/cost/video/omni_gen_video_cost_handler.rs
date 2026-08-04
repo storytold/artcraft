@@ -75,6 +75,28 @@ mod tests {
       assert!(response.cost_in_credits.unwrap() > 0);
     }
 
+    /// Flux 3 defaults (5s, 720p) quote at 98 credits; the 1080p tier quotes
+    /// at 167 for 5s. Flux 3 Draft (always 720p) quotes at 35 for 5s.
+    #[tokio::test]
+    async fn flux_3_quotes_by_variant_and_resolution_tier() {
+      let full_default = post_cost_request(base_request(CommonVideoModel::Flux3))
+        .await
+        .expect("flux 3 default cost estimate should succeed");
+      assert_eq!(full_default.cost_in_credits, Some(98));
+
+      let mut full_high_res = base_request(CommonVideoModel::Flux3);
+      full_high_res.resolution = Some(CommonResolution::TenEightyP);
+      let full_high_res_quote = post_cost_request(full_high_res)
+        .await
+        .expect("flux 3 1080p cost estimate should succeed");
+      assert_eq!(full_high_res_quote.cost_in_credits, Some(167));
+
+      let draft_default = post_cost_request(base_request(CommonVideoModel::Flux3Draft))
+        .await
+        .expect("flux 3 draft cost estimate should succeed");
+      assert_eq!(draft_default.cost_in_credits, Some(35));
+    }
+
     /// MiniMax H3 defaults (5s, 2K) quote at 150 credits; the 768P tier
     /// (720p and below) quotes at 92 for 5s.
     #[tokio::test]
@@ -95,6 +117,8 @@ mod tests {
     #[tokio::test]
     async fn bare_model_gets_a_quote_for_representative_models() {
       for model in [
+        CommonVideoModel::Flux3,
+        CommonVideoModel::Flux3Draft,
         CommonVideoModel::GrokImagineVideo,
         CommonVideoModel::Kling3p0Pro,
         CommonVideoModel::MinimaxH3,

@@ -164,6 +164,10 @@ pub enum InferenceModelType {
   GrokImagineVideo,
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
+  #[serde(rename = "flux_3")]
+  Flux3,
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2p1_pro")]
@@ -360,6 +364,8 @@ impl InferenceModelType {
       Self::GrokVideo => "grok_video",
       Self::GrokImagineVideo => "grok_imagine_video",
       Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
+      Self::Flux3 => "flux_3",
+      Self::Flux3Draft => "flux_3_draft",
       Self::Kling16Pro => "kling_1p6_pro",
       Self::Kling21Pro => "kling_2p1_pro",
       Self::Kling21Master => "kling_2p1_master",
@@ -492,6 +498,8 @@ impl InferenceModelType {
       "grok_video" => Ok(Self::GrokVideo),
       "grok_imagine_video" => Ok(Self::GrokImagineVideo),
       "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
+      "flux_3" => Ok(Self::Flux3),
+      "flux_3_draft" => Ok(Self::Flux3Draft),
       "kling_1p6_pro" => Ok(Self::Kling16Pro),
       "kling_2p1_pro" => Ok(Self::Kling21Pro),
       "kling_2p1_master" => Ok(Self::Kling21Master),
@@ -628,6 +636,8 @@ impl InferenceModelType {
       Self::GrokVideo,
       Self::GrokImagineVideo,
       Self::GrokImagineVideo1p5,
+      Self::Flux3,
+      Self::Flux3Draft,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -747,6 +757,8 @@ impl InferenceModelType {
       CommonModelType::GrokVideo => Self::GrokVideo,
       CommonModelType::GrokImagineVideo => Self::GrokImagineVideo,
       CommonModelType::GrokImagineVideo1p5 => Self::GrokImagineVideo1p5,
+      CommonModelType::Flux3 => Self::Flux3,
+      CommonModelType::Flux3Draft => Self::Flux3Draft,
       CommonModelType::Kling16Pro => Self::Kling16Pro,
       CommonModelType::Kling21Pro => Self::Kling21Pro,
       CommonModelType::Kling21Master => Self::Kling21Master,
@@ -888,6 +900,8 @@ mod tests {
       assert_serialization(InferenceModelType::GrokVideo, "grok_video");
       assert_serialization(InferenceModelType::GrokImagineVideo, "grok_imagine_video");
       assert_serialization(InferenceModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+      assert_serialization(InferenceModelType::Flux3, "flux_3");
+      assert_serialization(InferenceModelType::Flux3Draft, "flux_3_draft");
       assert_serialization(InferenceModelType::Kling16Pro, "kling_1p6_pro");
       assert_serialization(InferenceModelType::Kling21Pro, "kling_2p1_pro");
       assert_serialization(InferenceModelType::Kling21Master, "kling_2p1_master");
@@ -1016,6 +1030,8 @@ mod tests {
       assert_eq!(InferenceModelType::GrokVideo.to_str(), "grok_video");
       assert_eq!(InferenceModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
       assert_eq!(InferenceModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
+      assert_eq!(InferenceModelType::Flux3.to_str(), "flux_3");
+      assert_eq!(InferenceModelType::Flux3Draft.to_str(), "flux_3_draft");
       assert_eq!(InferenceModelType::Kling16Pro.to_str(), "kling_1p6_pro");
       assert_eq!(InferenceModelType::Kling21Pro.to_str(), "kling_2p1_pro");
       assert_eq!(InferenceModelType::Kling21Master.to_str(), "kling_2p1_master");
@@ -1146,6 +1162,8 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("grok_video").unwrap(), InferenceModelType::GrokVideo);
       assert_eq!(InferenceModelType::from_str("grok_imagine_video").unwrap(), InferenceModelType::GrokImagineVideo);
       assert_eq!(InferenceModelType::from_str("grok_imagine_video_1p5").unwrap(), InferenceModelType::GrokImagineVideo1p5);
+      assert_eq!(InferenceModelType::from_str("flux_3").unwrap(), InferenceModelType::Flux3);
+      assert_eq!(InferenceModelType::from_str("flux_3_draft").unwrap(), InferenceModelType::Flux3Draft);
       assert_eq!(InferenceModelType::from_str("kling_1p6_pro").unwrap(), InferenceModelType::Kling16Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_pro").unwrap(), InferenceModelType::Kling21Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_master").unwrap(), InferenceModelType::Kling21Master);

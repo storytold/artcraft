@@ -14,6 +14,12 @@ pub enum RouterVideoModel {
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
 
+  #[serde(rename = "flux_3")]
+  Flux3,
+
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
+
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
 
@@ -151,6 +157,14 @@ mod tests {
     assert_serde_round_trip(RouterVideoModel::Veo3p1Lite, "veo_3p1_lite");
     assert_serde_round_trip(RouterVideoModel::ViduQ3, "vidu_q3");
     assert_serde_round_trip(RouterVideoModel::ViduQ3Turbo, "vidu_q3_turbo");
+  }
+
+  #[test]
+  fn flux_3_variants_serialize() {
+    // NB: These strings must match `CommonVideoModel` — the two enums convert
+    // via serde string round-trip in the omni handlers.
+    assert_serde_round_trip(RouterVideoModel::Flux3, "flux_3");
+    assert_serde_round_trip(RouterVideoModel::Flux3Draft, "flux_3_draft");
   }
 
   #[test]

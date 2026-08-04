@@ -133,6 +133,8 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::GrokVideo => RouterVideoModel::GrokVideo,
     CommonVideoModel::GrokImagineVideo => RouterVideoModel::GrokImagineVideo,
     CommonVideoModel::GrokImagineVideo1p5 => RouterVideoModel::GrokImagineVideo1p5,
+    CommonVideoModel::Flux3 => RouterVideoModel::Flux3,
+    CommonVideoModel::Flux3Draft => RouterVideoModel::Flux3Draft,
     CommonVideoModel::Kling16Pro => RouterVideoModel::Kling16Pro,
     CommonVideoModel::Kling21Pro => RouterVideoModel::Kling21Pro,
     CommonVideoModel::Kling21Master => RouterVideoModel::Kling21Master,

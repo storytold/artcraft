@@ -135,6 +135,10 @@ pub enum CommonModelType {
   /// xAI's Grok Imagine video 1.5 preview model (grok-imagine-video-1.5-preview).
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
+  #[serde(rename = "flux_3")]
+  Flux3,
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2p1_pro")]
@@ -315,6 +319,8 @@ impl CommonModelType {
       Self::GrokVideo => "grok_video",
       Self::GrokImagineVideo => "grok_imagine_video",
       Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
+      Self::Flux3 => "flux_3",
+      Self::Flux3Draft => "flux_3_draft",
       Self::Kling16Pro => "kling_1p6_pro",
       Self::Kling21Pro => "kling_2p1_pro",
       Self::Kling21Master => "kling_2p1_master",
@@ -430,6 +436,8 @@ impl CommonModelType {
       "grok_video" => Ok(Self::GrokVideo),
       "grok_imagine_video" => Ok(Self::GrokImagineVideo),
       "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
+      "flux_3" => Ok(Self::Flux3),
+      "flux_3_draft" => Ok(Self::Flux3Draft),
       "kling_1p6_pro" => Ok(Self::Kling16Pro),
       "kling_2p1_pro" => Ok(Self::Kling21Pro),
       "kling_2p1_master" => Ok(Self::Kling21Master),
@@ -549,6 +557,8 @@ impl CommonModelType {
       Self::GrokVideo,
       Self::GrokImagineVideo,
       Self::GrokImagineVideo1p5,
+      Self::Flux3,
+      Self::Flux3Draft,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -665,6 +675,8 @@ impl CommonModelType {
       Self::GrokVideo => CommonModelClass::Video,
       Self::GrokImagineVideo => CommonModelClass::Video,
       Self::GrokImagineVideo1p5 => CommonModelClass::Video,
+      Self::Flux3 => CommonModelClass::Video,
+      Self::Flux3Draft => CommonModelClass::Video,
       Self::Kling16Pro => CommonModelClass::Video,
       Self::Kling21Pro => CommonModelClass::Video,
       Self::Kling21Master => CommonModelClass::Video,
@@ -790,6 +802,8 @@ mod tests {
       assert_serialization(CommonModelType::GrokVideo, "grok_video");
       assert_serialization(CommonModelType::GrokImagineVideo, "grok_imagine_video");
       assert_serialization(CommonModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+      assert_serialization(CommonModelType::Flux3, "flux_3");
+      assert_serialization(CommonModelType::Flux3Draft, "flux_3_draft");
       assert_serialization(CommonModelType::Kling16Pro, "kling_1p6_pro");
       assert_serialization(CommonModelType::Kling21Pro, "kling_2p1_pro");
       assert_serialization(CommonModelType::Kling21Master, "kling_2p1_master");
@@ -900,6 +914,8 @@ mod tests {
       assert_eq!(CommonModelType::GrokVideo.to_str(), "grok_video");
       assert_eq!(CommonModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
       assert_eq!(CommonModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
+      assert_eq!(CommonModelType::Flux3.to_str(), "flux_3");
+      assert_eq!(CommonModelType::Flux3Draft.to_str(), "flux_3_draft");
       assert_eq!(CommonModelType::Kling16Pro.to_str(), "kling_1p6_pro");
       assert_eq!(CommonModelType::Kling21Pro.to_str(), "kling_2p1_pro");
       assert_eq!(CommonModelType::Kling21Master.to_str(), "kling_2p1_master");
@@ -1012,6 +1028,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("grok_video").unwrap(), CommonModelType::GrokVideo);
       assert_eq!(CommonModelType::from_str("grok_imagine_video").unwrap(), CommonModelType::GrokImagineVideo);
       assert_eq!(CommonModelType::from_str("grok_imagine_video_1p5").unwrap(), CommonModelType::GrokImagineVideo1p5);
+      assert_eq!(CommonModelType::from_str("flux_3").unwrap(), CommonModelType::Flux3);
+      assert_eq!(CommonModelType::from_str("flux_3_draft").unwrap(), CommonModelType::Flux3Draft);
       assert_eq!(CommonModelType::from_str("kling_1p6_pro").unwrap(), CommonModelType::Kling16Pro);
       assert_eq!(CommonModelType::from_str("kling_2p1_pro").unwrap(), CommonModelType::Kling21Pro);
       assert_eq!(CommonModelType::from_str("kling_2p1_master").unwrap(), CommonModelType::Kling21Master);
@@ -1080,7 +1098,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 100);
+      assert_eq!(variants.len(), 102);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1124,6 +1142,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokVideo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo1p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux3Draft));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling16Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling21Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling21Master));
