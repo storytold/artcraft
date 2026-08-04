@@ -317,22 +317,19 @@ export class TimelineController {
   }
 
   // Called by CharacterAnimationManager once a clip GLB has loaded and its
-  // real length is known. Adopts the natural length only for a fresh drop
-  // (autoDuration still set) — a user-trimmed strip keeps its hand-set length.
+  // real length is known. Fresh strips default to a compact width
+  // (DEFAULT_CLIP_DURATION in actions/timeline.ts); if the clip is actually
+  // SHORTER than that placeholder, shrink the strip so it never claims time
+  // the clip can't fill. Never grows — a long clip stays at the compact
+  // width until the user trims it out. User-trimmed strips are untouched.
   resolveClipDuration(laneId: string, naturalDuration: number): void {
     if (!this.timeline || !(naturalDuration > 0)) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane || lane.strip.autoDuration === false) return;
-    // Adopt the natural length but never let it overrun the next clip or the
-    // timeline end (single-row, non-overlapping).
-    const nextStart = this.nextStartAfter(
-      lane.objectUuid,
-      laneId,
-      lane.strip.startTime,
-    );
-    const maxDur = nextStart - lane.strip.startTime;
-    lane.strip.duration = Math.min(naturalDuration, maxDur);
+    lane.strip.duration = Math.min(lane.strip.duration, naturalDuration);
     lane.strip.autoDuration = false;
+    // Keep the runtime's strip window in sync with the (possibly shrunk) width.
+    this.syncClipLanes();
     this.emitChanged();
   }
 
@@ -341,6 +338,23 @@ export class TimelineController {
     this.timeline.clipLanes = this.timeline.clipLanes.filter(
       (l) => l.id !== laneId,
     );
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  getClipLane(laneId: string): ClipLane | null {
+    return this.timeline?.clipLanes.find((l) => l.id === laneId) ?? null;
+  }
+
+  // Re-insert a previously removed lane verbatim (undo of a removal). The
+  // strip returns to its exact prior slot; in the rare case another clip was
+  // moved onto that slot after the delete, the strips can momentarily
+  // overlap — the overlap guard re-applies on the next add/move.
+  restoreClipLane(lane: ClipLane): void {
+    if (!this.timeline) return;
+    if (this.timeline.clipLanes.some((l) => l.id === lane.id)) return;
+    this.timeline.clipLanes.push(JSON.parse(JSON.stringify(lane)));
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();

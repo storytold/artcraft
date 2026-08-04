@@ -46,10 +46,10 @@ export interface ClipStrip {
   duration: number; // seconds (clip length on the timeline)
   loop: boolean;
   // True until the clip GLB has loaded and its real length is known. While
-  // true, `duration` is only a placeholder width and gets replaced by the
-  // clip's natural length on load. A user trim clears this so the natural
-  // length never clobbers a hand-set duration on reload. Baked strips know
-  // their length up front and never set this.
+  // true, `duration` is the compact default width; on load the strip only
+  // SHRINKS (when the clip is shorter than the default) — it never grows.
+  // A user trim clears this so a hand-set duration survives reloads. Baked
+  // strips know their length up front and never set this.
   autoDuration?: boolean;
 }
 

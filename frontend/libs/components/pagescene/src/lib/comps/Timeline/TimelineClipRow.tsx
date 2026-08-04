@@ -57,6 +57,9 @@ export const TimelineClipRow = ({
   const laneRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const selectedLaneId = usePageSceneStore(
+    (s) => s.timelineSelectedClipLaneId,
+  );
 
   const addBaked = (clipIndex: number) => {
     setPickerOpen(false);
@@ -160,17 +163,29 @@ export const TimelineClipRow = ({
 
         {lanes.map((lane) => {
           const strip = lane.strip;
+          const isSelected = selectedLaneId === lane.id;
           const leftPct = timeToFraction(strip.startTime, duration) * 100;
           const widthPct = Math.max(
             (strip.duration / Math.max(duration, 1e-6)) * 100,
             1.5, // stay visible while a fresh clip's real length is loading
           );
           return (
+            /* data-clip-strip: exempt from the click-away deselect in
+               TimelineEditor (pointerdown selects; the same gesture must
+               not immediately deselect). */
             <div
               key={lane.id}
-              className="absolute inset-y-0 flex items-center gap-1 rounded-md border border-brand-primary/60 bg-brand-primary/25 pe-1 ps-1.5 text-[10px] text-white"
+              data-clip-strip
+              className={`absolute inset-y-0 flex items-center gap-1 rounded-md border pe-1 ps-1.5 text-[10px] text-white ${
+                isSelected
+                  ? "border-white/80 bg-brand-primary/45"
+                  : "border-brand-primary/60 bg-brand-primary/25"
+              }`}
               style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
               onPointerDown={(e) => {
+                usePageSceneStore
+                  .getState()
+                  .setTimelineSelectedClipLane(lane.id);
                 e.currentTarget.setPointerCapture(e.pointerId);
                 drag.current = {
                   laneId: lane.id,
@@ -201,15 +216,26 @@ export const TimelineClipRow = ({
 
               <span className="min-w-0 flex-1 truncate">{strip.name}</span>
 
-              <button
-                type="button"
-                title="Remove animation"
-                className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] text-white/70 hover:bg-white/20 hover:text-white"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => editor && removeClipLane(editor, lane.id)}
-              >
-                <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
-              </button>
+              {/* × only on the selected strip — an always-visible remove was
+                  far too easy to hit by accident. Del/Backspace also removes
+                  the selected strip, and removal is undoable. */}
+              {isSelected && (
+                <button
+                  type="button"
+                  title="Remove animation (Del)"
+                  className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] text-white/70 hover:bg-white/20 hover:text-white"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    if (!editor) return;
+                    removeClipLane(editor, lane.id);
+                    usePageSceneStore
+                      .getState()
+                      .setTimelineSelectedClipLane(null);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                </button>
+              )}
 
               {/* right-edge trim handle */}
               <div

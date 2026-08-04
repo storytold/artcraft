@@ -5,6 +5,7 @@
 
 import type Editor from "../engine/editor";
 import type { EasingSpec } from "../engine/timeline/types";
+import { RemoveClipLaneAction } from "../engine/editor/actions/RemoveClipLaneAction";
 
 // The clip source only needs an id + label — both a full MediaItem (drawer
 // click) and a drag payload (drop) satisfy this.
@@ -13,9 +14,11 @@ interface ClipSource {
   name?: string;
 }
 
-// Placeholder strip length (seconds) until the clip GLB reports its real
-// duration; playback uses the loaded clip's actual length regardless.
-const DEFAULT_CLIP_DURATION = 2;
+// Default on-timeline width (seconds) for a fresh strip. Deliberately compact:
+// the strip is the play WINDOW, not the clip length — long clips get one
+// second by default and the user trims the strip wider to reveal more. Strips
+// only auto-shrink below this when the clip itself is shorter.
+const DEFAULT_CLIP_DURATION = 1;
 
 export function createTimeline(editor: Editor): void {
   editor.timelineController.create();
@@ -69,9 +72,9 @@ export function setKeyframeEasing(
 // Defaults to the current playhead; pass an explicit `atTime` for a precise
 // timeline drop, or 0 to take the earliest free slot. Either way the
 // controller snaps to a non-overlapping position and returns null when the
-// row has no free slot. The real clip length replaces DEFAULT_CLIP_DURATION
-// once the GLB loads (the strip starts at the placeholder width, flagged
-// autoDuration).
+// row has no free slot. Strips start at the compact DEFAULT_CLIP_DURATION
+// width (the play window — trim wider to reveal more of the clip); once the
+// GLB loads the strip shrinks if the clip is shorter (autoDuration).
 export function addClipToCharacter(
   editor: Editor,
   characterUuid: string,
@@ -111,7 +114,7 @@ export function addBakedClipToObject(
     bakedClipIndex: clipIndex,
     name: clip.name || `Clip ${clipIndex + 1}`,
     startTime: atTime,
-    duration: clip.duration || DEFAULT_CLIP_DURATION,
+    duration: Math.min(clip.duration || DEFAULT_CLIP_DURATION, DEFAULT_CLIP_DURATION),
     loop: false,
   });
 }
@@ -140,8 +143,14 @@ export function setClipLoop(
   editor.timelineController.setClipLoop(laneId, loop);
 }
 
+// Individually undoable (RemoveClipLaneAction) — both the strip's × button
+// and Del/Backspace route through here.
 export function removeClipLane(editor: Editor, laneId: string): void {
-  editor.timelineController.removeClipLane(laneId);
+  const lane = editor.timelineController.getClipLane(laneId);
+  if (!lane) return;
+  const action = new RemoveClipLaneAction(editor.timelineController, lane);
+  action.apply();
+  editor.history.record(action);
 }
 
 export function saveTimeline(editor: Editor): void {

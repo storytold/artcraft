@@ -25,7 +25,20 @@ interface LaneRuntime {
   startTime: number;
   loop: boolean;
   action: THREE.AnimationAction | null;
+  // The clip's natural length (drives loop modulo / end clamping).
   clipDuration: number;
+  // The strip's on-timeline length — the authoritative play window. Strips
+  // default to a compact width, so this is usually shorter than the clip;
+  // a non-loop strip longer than the clip freezes on the last frame.
+  stripDuration: number;
+}
+
+// Captured local transform of one node, for rest-pose restoration.
+interface RestTransform {
+  node: THREE.Object3D;
+  position: THREE.Vector3;
+  quaternion: THREE.Quaternion;
+  scale: THREE.Vector3;
 }
 
 export class CharacterAnimationManager {
@@ -35,8 +48,14 @@ export class CharacterAnimationManager {
   private lanes = new Map<string, LaneRuntime>();
   // laneId → monotonic token, so a superseded async load can't clobber state.
   private loadTokens = new Map<string, number>();
-  // characterUuid → its skeleton(s), cached so bind-pose resets don't re-traverse.
-  private skeletons = new Map<string, THREE.Skeleton[]>();
+  // characterUuid → rest pose of every node BELOW the root (the root itself
+  // is excluded — its transform belongs to the user/gizmo/keyframes),
+  // captured when the mixer is first created. Restored in gaps instead of
+  // THREE.Skeleton.pose(): pose() rebuilds bone locals from inverse bind
+  // matrices, which mis-scales rigs whose armature carries a baked scale
+  // (mixamo cm-rigs) — that made characters visually vanish the moment a
+  // strip moved off the playhead.
+  private restPoses = new Map<string, RestTransform[]>();
 
   constructor(private readonly editor: Editor) {}
 
@@ -52,9 +71,10 @@ export class CharacterAnimationManager {
       if (!rt) {
         void this.addLane(lane);
       } else {
-        // Placement can change without a reload.
+        // Placement and trim can change without a reload.
         rt.startTime = lane.strip.startTime;
         rt.loop = lane.strip.loop;
+        rt.stripDuration = lane.strip.duration;
       }
     }
     this.pruneMixers();
@@ -70,8 +90,10 @@ export class CharacterAnimationManager {
       const action = rt.action;
       if (!action) continue;
       let local = playhead - rt.startTime;
+      // The strip's on-timeline width is the play window; the clip's natural
+      // length only drives the loop modulo / final-frame clamp inside it.
       const dur = rt.clipDuration;
-      const active = local >= 0 && (rt.loop || local <= dur);
+      const active = local >= 0 && local <= rt.stripDuration;
       if (!active) {
         action.enabled = false;
         continue;
@@ -86,19 +108,20 @@ export class CharacterAnimationManager {
     }
     // Gaps between strips (and before the first / after the last) have no active
     // clip. A disabled action leaves the skeleton frozen on its last evaluated
-    // frame, so explicitly restore the bind pose for those characters — the
-    // "default state" when nothing is under the scrubber.
+    // frame, so explicitly restore the captured rest pose for those characters —
+    // the "default state" when nothing is under the scrubber.
     for (const uuid of this.mixers.keys()) {
-      if (!posed.has(uuid)) this.resetToBindPose(uuid);
+      if (!posed.has(uuid)) this.resetToRestPose(uuid);
     }
     for (const mixer of this.mixers.values()) mixer.update(0);
   }
 
   clear(): void {
     for (const laneId of [...this.lanes.keys()]) this.disposeLane(laneId);
+    for (const uuid of this.mixers.keys()) this.resetToRestPose(uuid);
     for (const mixer of this.mixers.values()) mixer.stopAllAction();
     this.mixers.clear();
-    this.skeletons.clear();
+    this.restPoses.clear();
   }
 
   // ─── internals ────────────────────────────────────────────────────────
@@ -115,6 +138,7 @@ export class CharacterAnimationManager {
       loop: lane.strip.loop,
       action: null,
       clipDuration: lane.strip.duration,
+      stripDuration: lane.strip.duration,
     };
     this.lanes.set(lane.id, rt);
 
@@ -202,14 +226,17 @@ export class CharacterAnimationManager {
     this.lanes.delete(laneId);
   }
 
-  // Drop mixers whose character no longer has any lanes.
+  // Drop mixers whose character no longer has any lanes. The character is
+  // restored to its rest pose first so removing the last strip doesn't
+  // leave it frozen mid-animation.
   private pruneMixers(): void {
     const live = new Set([...this.lanes.values()].map((l) => l.characterUuid));
     for (const uuid of [...this.mixers.keys()]) {
       if (!live.has(uuid)) {
+        this.resetToRestPose(uuid);
         this.mixers.get(uuid)?.stopAllAction();
         this.mixers.delete(uuid);
-        this.skeletons.delete(uuid);
+        this.restPoses.delete(uuid);
       }
     }
   }
@@ -219,27 +246,40 @@ export class CharacterAnimationManager {
     if (!mixer) {
       mixer = new THREE.AnimationMixer(root);
       this.mixers.set(uuid, mixer);
-      this.skeletons.set(uuid, this.collectSkeletons(root));
+      this.restPoses.set(uuid, this.captureRestPose(root));
     }
     return mixer;
   }
 
-  // Reset a character's skeleton(s) to their bind (rest) pose. For Mixamo rigs
-  // the bind pose is the T-pose — the "default state" shown wherever no clip
-  // covers the playhead.
-  private resetToBindPose(characterUuid: string): void {
-    const skeletons = this.skeletons.get(characterUuid);
-    if (!skeletons) return;
-    for (const skeleton of skeletons) skeleton.pose();
+  // Snapshot the local transforms of every node BELOW the root — the pose the
+  // model is in when its first clip arrives (normally the load/T pose). The
+  // root is excluded: its transform is owned by the gizmo/keyframe system and
+  // must never snap back on a gap.
+  private captureRestPose(root: THREE.Object3D): RestTransform[] {
+    const rest: RestTransform[] = [];
+    for (const child of root.children) {
+      child.traverse((node) => {
+        rest.push({
+          node,
+          position: node.position.clone(),
+          quaternion: node.quaternion.clone(),
+          scale: node.scale.clone(),
+        });
+      });
+    }
+    return rest;
   }
 
-  private collectSkeletons(root: THREE.Object3D): THREE.Skeleton[] {
-    const skeletons: THREE.Skeleton[] = [];
-    root.traverse((o) => {
-      const sm = o as THREE.SkinnedMesh;
-      if (sm.isSkinnedMesh && sm.skeleton) skeletons.push(sm.skeleton);
-    });
-    return skeletons;
+  // Restore a character to the pose captured at mixer creation — the
+  // "default state" shown wherever no clip covers the playhead.
+  private resetToRestPose(characterUuid: string): void {
+    const rest = this.restPoses.get(characterUuid);
+    if (!rest) return;
+    for (const { node, position, quaternion, scale } of rest) {
+      node.position.copy(position);
+      node.quaternion.copy(quaternion);
+      node.scale.copy(scale);
+    }
   }
 
   // True if at least one of the clip's tracks names a node that exists under

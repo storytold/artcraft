@@ -261,6 +261,7 @@ class Editor {
         getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
           ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
           : undefined,
+        onGlbLoaded: () => this.selection.refreshOutliner(),
       },
     );
     this.activeScene.initialize();

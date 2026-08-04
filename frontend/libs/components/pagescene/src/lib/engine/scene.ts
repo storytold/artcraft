@@ -36,6 +36,11 @@ export type SceneDeps = {
   // Scene.warmMediaURLs falls back to Promise.all of the single-token
   // method.
   getMediaUrlsByTokens?: (tokens: string[]) => Promise<Record<string, string>>;
+  // Fired after a GLB finishes loading into the scene. Outliner metadata
+  // (hasSkeleton, bakedClips) is computed at refresh time, so the editor
+  // uses this to refresh rows that were rendered before the async load
+  // completed (e.g. saved-scene proxy loads).
+  onGlbLoaded?: () => void;
 };
 
 class Scene {
@@ -933,6 +938,7 @@ class Scene {
       if (glb.animations.length > 0) {
         child_result.animations = glb.animations;
       }
+      this.deps.onGlbLoaded?.();
     }
     this.updateSurfaceIdAttributeToMesh(this.scene);
     return child_result;

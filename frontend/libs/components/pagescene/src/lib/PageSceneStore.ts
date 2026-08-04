@@ -196,6 +196,9 @@ interface PageSceneState {
   timelineTracks: TimelineTrack[];
   timelineClipLanes: ClipLane[];
   timelineSelectedKeyframeId: string | null;
+  // Selected clip strip (click-to-select). Drives the strip's × visibility
+  // and Del/Backspace removal — mirrors keyframe selection.
+  timelineSelectedClipLaneId: string | null;
   // Left keyframe of the segment whose easing curve is being edited in the
   // Motion popover (opened from the curve chip BETWEEN two keyframes).
   // Distinct from timelineSelectedKeyframeId, which drives selection/delete.
@@ -311,6 +314,7 @@ interface PageSceneState {
   setTimelineTracks: (tracks: TimelineTrack[]) => void;
   setTimelineClipLanes: (clipLanes: ClipLane[]) => void;
   setTimelineSelectedKeyframe: (id: string | null) => void;
+  setTimelineSelectedClipLane: (id: string | null) => void;
   setTimelineEasingKeyframe: (id: string | null) => void;
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
   clearProducedArtifact: () => void;
@@ -408,6 +412,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineTracks: [],
   timelineClipLanes: [],
   timelineSelectedKeyframeId: null,
+  timelineSelectedClipLaneId: null,
   timelineEasingKeyframeId: null,
   producedArtifact: null,
   recordingProgress: null,
@@ -516,6 +521,8 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
   setTimelineClipLanes: (clipLanes) => set({ timelineClipLanes: clipLanes }),
   setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
+  setTimelineSelectedClipLane: (id) =>
+    set({ timelineSelectedClipLaneId: id }),
   setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
   setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),
   clearProducedArtifact: () =>

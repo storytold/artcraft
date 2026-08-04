@@ -15,6 +15,7 @@ import {
   deleteKeyframe,
   pauseTimeline,
   playTimeline,
+  removeClipLane,
   saveTimeline,
   seekTimeline,
 } from "../../actions";
@@ -51,6 +52,9 @@ export const TimelineEditor = () => {
   const outlinerItems = usePageSceneStore((s) => s.outlinerItems);
   const selectedKeyframeId = usePageSceneStore(
     (s) => s.timelineSelectedKeyframeId,
+  );
+  const selectedClipLaneId = usePageSceneStore(
+    (s) => s.timelineSelectedClipLaneId,
   );
   const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
 
@@ -142,6 +146,43 @@ export const TimelineEditor = () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, [selectedKeyframeId, editor]);
+
+  // Selected clip strip: Del/Backspace removes it (undoable via
+  // RemoveClipLaneAction), and clicking anything that isn't a strip
+  // deselects. Mirrors the keyframe selection handlers above; both keydown
+  // listeners can coexist since strip-selection clears keyframe-selection
+  // (a strip isn't [data-keyframe]) and vice versa — the guard below is
+  // belt-and-braces for the impossible both-selected case.
+  useEffect(() => {
+    if (!selectedClipLaneId) return undefined;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+      if (usePageSceneStore.getState().timelineSelectedKeyframeId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (editor) removeClipLane(editor, selectedClipLaneId);
+      usePageSceneStore.getState().setTimelineSelectedClipLane(null);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("[data-clip-strip]")) return;
+      usePageSceneStore.getState().setTimelineSelectedClipLane(null);
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [selectedClipLaneId, editor]);
 
   // Clicking anywhere outside the popover (canvas included) dismisses it;
   // the easing chips opt out so they can toggle it themselves.

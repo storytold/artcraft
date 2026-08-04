@@ -224,18 +224,21 @@ then one row per character is the right model.
   character** (rendered even when empty, as a drop hint) holding all that character's strips
   end-to-end under its keyframe row in `TimelineEditor`. Strip body drags to **move**
   (`moveClipLane`), the right edge drags to **trim** length (`resizeClipLane`), a loop chip toggles
-  repeat (`setClipLoop`), the × removes it (`removeClipLane`). Each character row is a **drop target**
-  for clip drags (`dropClipOnCharacter` → `addClipToCharacter(…, atTime)`, time from the ruler rect).
-  Non-character rows ignore clip drags. No per-op undo by design — clip edits ride the timeline
-  **Save/Cancel** session exactly like keyframes (`cancel()` restores + re-syncs).
+  repeat (`setClipLoop`), the × (selected strip only) removes it (`removeClipLane`, undoable — see
+  the selection bullet below). Clip-eligible rows are drop targets via `data-clip-drop-uuid` (see
+  the DnD bullet). Other clip edits (move/trim/loop) ride the timeline **Save/Cancel** session
+  exactly like keyframes (`cancel()` restores + re-syncs).
 - **Overlap guard (single row)**: `TimelineController.resolveFreeStart` snaps add/move to the nearest
   gap so a character's strips never overlap; `nextStartAfter` bounds trim (`resizeClipLane`) and
   auto-length (`resolveClipDuration`) against the following clip. `evaluateAt` then has at most one
   active clip at any playhead, so playback is an unambiguous sequence.
-- **Bind-pose in gaps**: a disabled three.js action leaves the skeleton frozen on its last frame, so
-  `evaluateAt` resets any character with no clip under the playhead to its **bind (T) pose** via
-  `resetToBindPose` → `Skeleton.pose()` (skeletons cached per character in `getMixer`). Gaps between
-  strips, before the first, and after the last therefore show the default T-pose, not a held frame.
+- **Rest-pose in gaps** (was bind-pose): a disabled three.js action leaves the skeleton frozen on
+  its last frame, so `evaluateAt` resets any character with no clip under the playhead to a **rest
+  pose captured at mixer creation** (`captureRestPose` — local transforms of every node BELOW the
+  root; the root is excluded so gizmo/keyframe placement never snaps back). `Skeleton.pose()` was
+  abandoned: it rebuilds bone locals from inverse bind matrices and mis-scales rigs whose armature
+  carries a baked scale (mixamo cm-rigs), which made characters visually VANISH when a strip moved
+  off the playhead. `pruneMixers` also restores the rest pose before dropping a character's mixer.
 - **Drag preview**: animation drags ride the same pointer-based `DndAsset` pipeline as every
   other asset card, so the shared `DragGhost` (tilt card) works unchanged — plus the
   compatibility badge described above.
@@ -253,11 +256,19 @@ then one row per character is the right model.
   removable. ⚠️ Runtime-unverified: whether `object.animations` survives the save/load roundtrip
   (the stash in `scene.ts` is gated on `auto_add`), and that the outliner refresh timing surfaces
   `bakedClips` after async GLB loads.
-- **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
-  `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
-  `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length
-  (and re-clamp start). A user trim clears `autoDuration` so the natural length never clobbers a
-  hand-set duration on reload.
+- **Strip width = play window (revised)**: fresh strips default to a compact
+  `DEFAULT_CLIP_DURATION` (1 s) instead of adopting the clip's natural length — long clips were
+  eating the whole row. The strip's on-timeline width is the **authoritative play window**
+  (`LaneRuntime.stripDuration` in `evaluateAt`); the clip's natural length only drives the loop
+  modulo / final-frame clamp inside it, so trimming a strip shorter genuinely cuts playback and a
+  non-loop strip trimmed longer than the clip freezes on the last frame. `resolveClipDuration` now
+  only SHRINKS an `autoDuration` strip when the clip is shorter than the default.
+- **Strip selection + delete UX**: strips are click-to-select
+  (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
+  click-away deselect). The **× renders only on the selected strip** (always-visible was too easy
+  to hit); **Del/Backspace** removes the selected strip. Removal (either path) is **individually
+  undoable** via `RemoveClipLaneAction` (deep-cloned lane; undo re-inserts verbatim through
+  `TimelineController.restoreClipLane`) — the one exception to "clip edits ride Save/Cancel".
 - **Rig-mismatch diagnostic**: `CharacterAnimationManager.clipBindsToCharacter` warns (console) when
   a clip's tracks resolve to **0** nodes on the character — the signal that `SkeletonUtils.retargetClip`
   is needed. Retarget itself is still **not wired** (direct-bind first).
