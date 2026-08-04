@@ -11,6 +11,7 @@ import {
   faXmark,
   faPen,
   faTrashAlt,
+  faEye,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import {
@@ -23,6 +24,7 @@ import { toast } from "@storyteller/ui-toaster";
 import { v4 as uuidv4 } from "uuid";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { useCharactersStore } from "./promptStore";
+import { DeckPreviewModal } from "./deck/DeckCard";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { Label } from "@storyteller/ui-label";
@@ -228,6 +230,9 @@ const CharacterListView = ({
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(
+    null,
+  );
 
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
@@ -439,30 +444,50 @@ const CharacterListView = ({
                   </div>
                 </button>
 
-                {/* Edit / Delete overlay buttons (user-created only) */}
-                {isUserCreated && (
-                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditCharacter(character);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
-                    >
-                      <FontAwesomeIcon icon={faPen} className="text-[10px]" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(character);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
-                    >
-                      <FontAwesomeIcon
-                        icon={faTrashAlt}
-                        className="text-[10px]"
-                      />
-                    </button>
+                {/* View / Edit / Delete overlay buttons. Hover-revealed on
+                    desktop; always visible on touch devices (no hover). */}
+                {(character.maybe_avatar?.cdn_url || isUserCreated) && (
+                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                    {character.maybe_avatar?.cdn_url && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewCharacter(character);
+                        }}
+                        title="View full size"
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                      >
+                        <FontAwesomeIcon icon={faEye} className="text-[10px]" />
+                      </button>
+                    )}
+                    {isUserCreated && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCharacter(character);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                        >
+                          <FontAwesomeIcon
+                            icon={faPen}
+                            className="text-[10px]"
+                          />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(character);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                        >
+                          <FontAwesomeIcon
+                            icon={faTrashAlt}
+                            className="text-[10px]"
+                          />
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -471,6 +496,19 @@ const CharacterListView = ({
         </div>
       )}
 
+      <DeckPreviewModal
+        item={
+          previewCharacter?.maybe_avatar?.cdn_url
+            ? {
+                id: previewCharacter.token,
+                kind: "image",
+                url: previewCharacter.maybe_avatar.cdn_url,
+                name: previewCharacter.name,
+              }
+            : null
+        }
+        onClose={() => setPreviewCharacter(null)}
+      />
     </div>
   );
 };
