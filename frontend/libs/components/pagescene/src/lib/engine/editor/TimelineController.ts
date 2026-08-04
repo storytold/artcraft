@@ -238,7 +238,8 @@ export class TimelineController {
 
   // Add a new stacked clip lane for `objectUuid` (a character). The clip is
   // dropped at `startTime`, clamped so it starts within the timeline. Returns
-  // the new lane id, or null if there is no timeline.
+  // the new lane id, or null if there is no timeline or no free slot left on
+  // the character's row (callers surface that to the user).
   addClipLane(objectUuid: string, strip: Omit<ClipStrip, "id">): string | null {
     if (!this.timeline) return null;
     // Characters hold clips on a single row: snap the drop to the nearest free
@@ -249,6 +250,7 @@ export class TimelineController {
       strip.startTime,
       strip.duration,
     );
+    if (startTime === null) return null;
     const lane: ClipLane = {
       id: THREE.MathUtils.generateUUID(),
       objectUuid,
@@ -267,12 +269,16 @@ export class TimelineController {
     if (!this.timeline) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane) return;
-    lane.strip.startTime = this.resolveFreeStart(
+    const freeStart = this.resolveFreeStart(
       lane.objectUuid,
       laneId,
       startTime,
       lane.strip.duration,
     );
+    // No free slot for the drag target — keep the strip where it was (its
+    // current position is always valid since it's excluded from the search).
+    if (freeStart === null) return;
+    lane.strip.startTime = freeStart;
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
@@ -405,12 +411,13 @@ export class TimelineController {
   // Snap `desiredStart` to the nearest position where a `duration`-long strip
   // fits without overlapping the character's other clips, within the timeline.
   // Used by add + move so a character's clips stay a non-overlapping sequence.
+  // Returns null when the row has no free slot for `duration` at all.
   private resolveFreeStart(
     characterUuid: string,
     exceptLaneId: string | null,
     desiredStart: number,
     duration: number,
-  ): number {
+  ): number | null {
     if (!this.timeline) return desiredStart;
     const maxStart = Math.max(0, this.timeline.duration - duration);
     const clamp = (s: number) => Math.max(0, Math.min(s, maxStart));
@@ -426,7 +433,7 @@ export class TimelineController {
     const valid = candidates
       .map(clamp)
       .filter((s) => !this.overlapsAny(s, duration, others));
-    if (valid.length === 0) return desired; // no room — accept the clamp
+    if (valid.length === 0) return null; // row is full — reject the drop
     valid.sort((a, b) => Math.abs(a - desired) - Math.abs(b - desired));
     return valid[0];
   }

@@ -205,9 +205,14 @@ then one row per character is the right model.
   relies on the shared `mixorig:*` naming so a clip's tracks resolve against the character's bones
   directly (direct-bind first; `SkeletonUtils.retargetClip` is the documented fallback if a rig uses
   different bone names — **not yet wired**, pending the runtime spike).
-- **Trigger UI (done)**: `comps/AnimationsDrawer/` — right-docked, only when a character is
-  selected (build mode; hidden via CSS in record). Clips are **click-to-add** (drops at the playhead)
-  **and draggable** onto the timeline (`ANIMATION_CLIP_MIME` payload `{media_id, name}`).
+- **Trigger UI (done — moved)**: the old right-docked `comps/AnimationsDrawer/` is retired. The
+  clip source is now the **"Animations" tab in `comps/AssetMenu/AssetModal.tsx`**: server-curated
+  animations (`list_featured` with `engine_category=animation`, GLB/GLTF only) REPLACE the 37
+  `demoAnimationItems` when the API returns any; the demos are only the empty-API fallback.
+  Animation cards are **click-to-add** (clip onto the selected character's row at the playhead,
+  snapped to the next free slot; toast if no character is selected or the row is full). Timeline
+  drag/drop from the modal is the next slice (DndAsset `ANIMATION` branch + compatibility ghost).
+  A full row (`resolveFreeStart` → null) now **rejects** the add instead of overlapping.
 - **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders **one row per
   character** (rendered even when empty, as a drop hint) holding all that character's strips
   end-to-end under its keyframe row in `TimelineEditor`. Strip body drags to **move**

@@ -11,6 +11,7 @@ import {
   faMountainCity,
   faDog,
   faFaceGrinStars,
+  faPersonRunning,
   faUpFromLine,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -38,6 +39,7 @@ import {
   demoShapeItems,
   demoCharacterItems,
   demoMemeItems,
+  demoAnimationItems,
 } from "../../signals/demoAssets";
 import { usePageSceneStore } from "../../PageSceneStore";
 import type { MediaItem } from "../../models/assets";
@@ -252,6 +254,17 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching featured image planes",
   });
 
+  // Skeletal animation clips (Mixamo-style). GLB/GLTF only — the timeline's
+  // clip loader (Scene.loadRawGlb) can't consume other formats (e.g. vmd).
+  const {
+    featuredObjects: featuredAnimations,
+    featuredFetchStatus: featuredAnimationsFetchStatus,
+  } = useFeaturedObjects({
+    filterEngineCategories: [FilterEngineCategories.ANIMATION],
+    filterMediaTypes: [FilterMediaType.GLB, FilterMediaType.GLTF],
+    defaultErrorMessage: "Error fetching featured animations",
+  });
+
   const isFetching = isAnyStatusFetching([
     userCharactersFetchStatus,
     userObjectsFetchStatus,
@@ -263,6 +276,7 @@ export const AssetModal = () => {
     featuredSetsFetchStatus,
     featuredCreaturesFetchStatus,
     featuredImagePlanesFetchStatus,
+    featuredAnimationsFetchStatus,
   ]);
 
   const assetTabs = useMemo<AssetTab[]>(() => {
@@ -346,6 +360,22 @@ export const AssetModal = () => {
             : (userCreatures ?? []),
       },
       {
+        id: "animations",
+        label: "Animations",
+        labelSingle: "Animation",
+        icon: faPersonRunning,
+        engineCategory: FilterEngineCategories.ANIMATION,
+        // Server-curated animations take over when present; the hardcoded
+        // demo clips are only the fallback while the API has none (or the
+        // fetch hasn't landed yet). Deliberately replace, not merge.
+        items:
+          activeLibraryTab === "library"
+            ? featuredAnimations?.length
+              ? featuredAnimations
+              : demoAnimationItems
+            : [],
+      },
+      {
         id: "skybox",
         label: "Skybox",
         labelSingle: "Skybox",
@@ -357,6 +387,7 @@ export const AssetModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
+      featuredAnimations,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,
