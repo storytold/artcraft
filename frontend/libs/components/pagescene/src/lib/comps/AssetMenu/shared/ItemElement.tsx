@@ -60,7 +60,8 @@ export const ItemElement = ({ item }: Props) => {
       );
       return;
     }
-    const laneId = addClipToCharacter(editor, character.id, item);
+    // atTime 0 → resolveFreeStart snaps to the earliest free slot on the row.
+    const laneId = addClipToCharacter(editor, character.id, item, 0);
     if (!laneId) {
       editor.adapter.showToast(
         ToastTypes.WARNING,

@@ -209,10 +209,17 @@ then one row per character is the right model.
   clip source is now the **"Animations" tab in `comps/AssetMenu/AssetModal.tsx`**: server-curated
   animations (`list_featured` with `engine_category=animation`, GLB/GLTF only) REPLACE the 37
   `demoAnimationItems` when the API returns any; the demos are only the empty-API fallback.
-  Animation cards are **click-to-add** (clip onto the selected character's row at the playhead,
-  snapped to the next free slot; toast if no character is selected or the row is full). Timeline
-  drag/drop from the modal is the next slice (DndAsset `ANIMATION` branch + compatibility ghost).
-  A full row (`resolveFreeStart` → null) now **rejects** the add instead of overlapping.
+  Animation cards are **click-to-add** (earliest free slot on the selected character's row; toast
+  if no character is selected or the row is full) **and pointer-draggable** via the shared
+  `DndAsset` singleton (`ANIMATION` branch): drop on a character in the 3D scene (earliest free
+  slot) or on a character's timeline row (pointer-x → time via the `data-timeline-ruler` rect;
+  rows tag `data-clip-drop-uuid`). While dragging, the shared `DragGhost` shows a green/red
+  **compatibility badge** (`PageSceneStore.animationDropState`): DndAsset preloads the clip's
+  track node names (`loadRawGlb`, cached per media id) and checks them against the hovered
+  character's nodes — the same direct-bind rule `CharacterAnimationManager` plays by; no
+  retargeting. Incompatible or slot-less drops are rejected with a toast. The old HTML5 DnD
+  path (`ANIMATION_CLIP_MIME`) is removed. A full row (`resolveFreeStart` → null) **rejects**
+  the add instead of overlapping.
 - **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders **one row per
   character** (rendered even when empty, as a drop hint) holding all that character's strips
   end-to-end under its keyframe row in `TimelineEditor`. Strip body drags to **move**
@@ -229,9 +236,9 @@ then one row per character is the right model.
   `evaluateAt` resets any character with no clip under the playhead to its **bind (T) pose** via
   `resetToBindPose` → `Skeleton.pose()` (skeletons cached per character in `getMixer`). Gaps between
   strips, before the first, and after the last therefore show the default T-pose, not a held frame.
-- **Drag preview**: dragging a clip drives the shared `DragGhost` (tilt card) by setting
-  `dragItem`/`dragPosition`/`assetDraggingUnder` on the store in the drawer's native-DnD handlers,
-  and suppresses the browser's default drag image — matching object/character pickup motion.
+- **Drag preview**: animation drags ride the same pointer-based `DndAsset` pipeline as every
+  other asset card, so the shared `DragGhost` (tilt card) works unchanged — plus the
+  compatibility badge described above.
 - **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
   `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
   `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length

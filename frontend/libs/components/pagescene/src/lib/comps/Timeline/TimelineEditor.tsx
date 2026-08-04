@@ -11,7 +11,6 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
-  addClipToCharacter,
   cancelTimeline,
   deleteKeyframe,
   pauseTimeline,
@@ -22,7 +21,6 @@ import {
 import { usePageSceneStore } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
 import {
-  ANIMATION_CLIP_MIME,
   formatTimecode,
   formatTimecodeFrames,
   fractionToTime,
@@ -184,35 +182,6 @@ export const TimelineEditor = () => {
     );
   };
 
-  // Drop an animation clip (dragged from the Animations drawer) onto a
-  // character at the pointer's time. Lane geometry matches the ruler, so the
-  // ruler rect converts pointer-x → time exactly as scrubbing does.
-  const dropClipOnCharacter = (characterId: string, e: React.DragEvent) => {
-    const ruler = rulerRef.current;
-    if (!ruler || !editor) return;
-    const raw = e.dataTransfer.getData(ANIMATION_CLIP_MIME);
-    if (!raw) return;
-    e.preventDefault();
-    let payload: { media_id?: string; name?: string };
-    try {
-      payload = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    if (!payload.media_id) return;
-    const rect = ruler.getBoundingClientRect();
-    const time = quantizeToFrame(
-      fractionToTime((e.clientX - rect.left) / rect.width, duration),
-      fps,
-    );
-    addClipToCharacter(
-      editor,
-      characterId,
-      { media_id: payload.media_id, name: payload.name },
-      time,
-    );
-  };
-
   return (
     <div
       id="timeline-editor"
@@ -267,6 +236,10 @@ export const TimelineEditor = () => {
           <div className="w-32 shrink-0" />
           <div
             ref={rulerRef}
+            // Tagged so DndAsset can convert an animation drop's pointer-x
+            // into a timeline time using this exact rect (lane geometry
+            // matches the ruler, same conversion scrubbing uses).
+            data-timeline-ruler=""
             className="relative h-5 flex-1 cursor-pointer touch-none text-[10px] text-base-fg/50"
             onPointerDown={(e) => {
               isScrubbing.current = true;
@@ -307,23 +280,12 @@ export const TimelineEditor = () => {
               const isCharacter = characterIds.has(item.id);
               const lanes = isCharacter ? clipLanesByChar.get(item.id) : undefined;
               return (
+                /* Character rows advertise themselves as clip-drop targets;
+                   DndAsset hit-tests this attribute during animation drags
+                   (pointer-based — no HTML5 DnD). Other rows stay untagged. */
                 <div
                   key={item.id}
-                  onDragOver={
-                    isCharacter
-                      ? (e) => {
-                          // Allow the drop only when it carries an animation clip.
-                          if (e.dataTransfer.types.includes(ANIMATION_CLIP_MIME)) {
-                            e.preventDefault();
-                          }
-                        }
-                      : undefined
-                  }
-                  onDrop={
-                    isCharacter
-                      ? (e) => dropClipOnCharacter(item.id, e)
-                      : undefined
-                  }
+                  data-clip-drop-uuid={isCharacter ? item.id : undefined}
                 >
                   <TimelineTrackRow
                     item={item}

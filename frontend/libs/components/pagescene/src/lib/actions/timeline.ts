@@ -65,11 +65,13 @@ export function setKeyframeEasing(
   editor.timelineController.setEasing(keyframeId, easing);
 }
 
-// Place a skeletal-animation clip (a Mixamo demo item) as a new stacked lane
-// under `characterUuid`. Drops at the current playhead by default, or at an
-// explicit `atTime` when dropped onto a specific point in the timeline. The
-// real clip length replaces DEFAULT_CLIP_DURATION once the GLB loads (the
-// strip starts at the placeholder width, flagged autoDuration).
+// Place a skeletal-animation clip on `characterUuid`'s single clip row.
+// Defaults to the current playhead; pass an explicit `atTime` for a precise
+// timeline drop, or 0 to take the earliest free slot. Either way the
+// controller snaps to a non-overlapping position and returns null when the
+// row has no free slot. The real clip length replaces DEFAULT_CLIP_DURATION
+// once the GLB loads (the strip starts at the placeholder width, flagged
+// autoDuration).
 export function addClipToCharacter(
   editor: Editor,
   characterUuid: string,

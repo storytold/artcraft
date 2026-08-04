@@ -1,11 +1,18 @@
 import React from "react";
+import * as THREE from "three";
 import { MediaItem } from "../models";
 import { usePageSceneStore } from "../PageSceneStore";
-import { AssetType } from "../enums";
+import { AssetType, ToastTypes } from "../enums";
 import type Editor from "../engine/editor";
 import { pickDropPosition } from "../engine/pickDropPosition";
+import { DEFAULT_TIMELINE_FPS } from "../engine/timeline/types";
+import {
+  fractionToTime,
+  quantizeToFrame,
+} from "../comps/Timeline/timelineUtils";
 import {
   addCharacter,
+  addClipToCharacter,
   addObject,
   addShape,
 } from "../actions";
@@ -15,6 +22,23 @@ import {
 // future host needs a different value the dnd-asset would gain a
 // dropTop deps callback. Today it's a constant.
 const TOP_BAR_PX = 69;
+
+// Timeline character rows tag themselves with this attribute so an animation
+// drag can drop a clip at a precise time on a specific character's row.
+const CLIP_DROP_ATTR = "data-clip-drop-uuid";
+// The timeline ruler carries this tag; its rect maps pointer-x → time.
+const TIMELINE_RULER_SELECTOR = "[data-timeline-ruler]";
+
+// Hover-validation throttle for animation drags (raycast + DOM hit-test).
+const HOVER_CHECK_MS = 33;
+
+// Where an animation drag would land: a character row in the timeline (with a
+// pointer-derived time) or a character in the 3D scene (time 0 → the clip
+// snaps to the earliest free slot on the row).
+interface AnimationDropTarget {
+  characterUuid: string;
+  time: number;
+}
 
 class DndAsset {
   public dropId: string = "";
@@ -26,6 +50,15 @@ class DndAsset {
   public isDragging: boolean = false;
   public dragThreshold: number = 5;
   private editor: Editor | null = null;
+
+  // Animation-drag state. The node names a clip's tracks address are cached
+  // across drags (they never change for a media id); compatibility verdicts
+  // are cached per hovered character for the current drag only.
+  private clipNodeNamesCache = new Map<string, Promise<string[] | null>>();
+  // undefined = still loading; null = clip unreadable/has no animation.
+  private activeClipNames: string[] | null | undefined = undefined;
+  private compatByCharacter = new Map<string, boolean>();
+  private lastHoverCheck = 0;
 
   constructor() {
     this.onPointerMove = this.onPointerMove.bind(this);
@@ -46,7 +79,11 @@ class DndAsset {
       this.initY = event.pageY;
       this.isDragging = false;
       store.setCanDrop(false);
+      store.setAnimationDropState("none");
       this.notDropText = "";
+      if (item.type === AssetType.ANIMATION && editor) {
+        this.beginClipInspection(editor, item.media_id);
+      }
       window.addEventListener("pointerup", this.onPointerUp);
       window.addEventListener("pointermove", this.onPointerMove);
     }
@@ -60,6 +97,9 @@ class DndAsset {
       this.overElement = null;
       this.notDropText = "";
     }
+    store.setAnimationDropState("none");
+    this.activeClipNames = undefined;
+    this.compatByCharacter.clear();
     if (store.reopenAfterDrag) {
       // Refocus the library (un-dim, restore pointer events).
       store.setAssetDraggingUnder(false);
@@ -105,6 +145,15 @@ class DndAsset {
 
     const editor = this.editor;
     const mediaItem = store.dragItem;
+    if (mediaItem && editor && mediaItem.type === AssetType.ANIMATION) {
+      // Animations don't land at a world position — they land on a character
+      // (scene hover) or on a character's timeline row. Validated against the
+      // clip's bone names; a mismatch is rejected with a toast, mirroring the
+      // red badge shown during the drag.
+      this.dropAnimation(event, mediaItem, editor);
+      this.endDrag();
+      return;
+    }
     if (mediaItem && editor) {
       const positionX = event.pageX;
       const positionY = event.pageY;
@@ -159,6 +208,9 @@ class DndAsset {
         currX: this.initX + deltaX,
         currY: this.initY + deltaY,
       });
+      if (this.isDragging && store.dragItem.type === AssetType.ANIMATION) {
+        this.updateAnimationDropState(event);
+      }
       if (this.overElement) {
         const pos = this.overElement;
         const eventY = event.pageY;
@@ -175,6 +227,203 @@ class DndAsset {
         this.notDropText = "";
       }
     }
+  }
+
+  // ─── animation-clip drags ─────────────────────────────────────────────
+
+  // Resolve + complete an animation drop. Silently cancels when nothing
+  // droppable is under the cursor; toasts when the target is incompatible or
+  // its clip row has no free slot (mirrors the ghost's red badge).
+  private dropAnimation(
+    event: PointerEvent,
+    item: MediaItem,
+    editor: Editor,
+  ): void {
+    const target = this.findAnimationDropTarget(event);
+    if (!target) return;
+    if (this.activeClipNames === undefined) {
+      editor.adapter.showToast(
+        ToastTypes.WARNING,
+        "Still loading that animation — try dropping it again in a moment.",
+      );
+      return;
+    }
+    if (this.activeClipNames === null) {
+      editor.adapter.showToast(
+        ToastTypes.ERROR,
+        `Couldn't read an animation from "${item.name ?? item.media_id}".`,
+      );
+      return;
+    }
+    if (!this.characterAcceptsClip(target.characterUuid)) {
+      editor.adapter.showToast(
+        ToastTypes.WARNING,
+        "This animation doesn't match the character's skeleton.",
+      );
+      return;
+    }
+    const laneId = addClipToCharacter(
+      editor,
+      target.characterUuid,
+      item,
+      target.time,
+    );
+    if (!laneId) {
+      editor.adapter.showToast(
+        ToastTypes.WARNING,
+        "No room left on the character's timeline for this clip.",
+      );
+    }
+  }
+
+  // Recompute the ghost's compatibility badge for the cursor position.
+  // Throttled: it runs a DOM hit-test plus (over the canvas) a raycast.
+  private updateAnimationDropState(event: MouseEvent): void {
+    const now = performance.now();
+    if (now - this.lastHoverCheck < HOVER_CHECK_MS) return;
+    this.lastHoverCheck = now;
+    const store = usePageSceneStore.getState();
+    const target = this.findAnimationDropTarget(event);
+    let state: "checking" | "ok" | "blocked";
+    if (!target) {
+      state = "blocked";
+    } else if (this.activeClipNames === undefined) {
+      state = "checking";
+    } else if (
+      this.activeClipNames !== null &&
+      this.characterAcceptsClip(target.characterUuid)
+    ) {
+      state = "ok";
+    } else {
+      state = "blocked";
+    }
+    if (store.animationDropState !== state) {
+      store.setAnimationDropState(state);
+    }
+  }
+
+  // Timeline character row under the cursor first (precise time), then a
+  // character hit in the 3D scene (time 0 → earliest free slot on the row).
+  private findAnimationDropTarget(
+    event: MouseEvent | PointerEvent,
+  ): AnimationDropTarget | null {
+    const rowTarget = this.timelineRowTarget(event.clientX, event.clientY);
+    if (rowTarget) return rowTarget;
+    const characterUuid = this.characterUnderPointer(
+      event.clientX,
+      event.clientY,
+    );
+    return characterUuid ? { characterUuid, time: 0 } : null;
+  }
+
+  private timelineRowTarget(
+    clientX: number,
+    clientY: number,
+  ): AnimationDropTarget | null {
+    const editor = this.editor;
+    if (!editor) return null;
+    const row = document
+      .elementFromPoint(clientX, clientY)
+      ?.closest?.(`[${CLIP_DROP_ATTR}]`);
+    const characterUuid = row?.getAttribute(CLIP_DROP_ATTR);
+    if (!characterUuid) return null;
+    const timeline = editor.timelineController.getTimeline();
+    const ruler = document.querySelector(TIMELINE_RULER_SELECTOR);
+    if (!timeline || !ruler) return { characterUuid, time: 0 };
+    const rect = ruler.getBoundingClientRect();
+    const time = quantizeToFrame(
+      fractionToTime((clientX - rect.left) / rect.width, timeline.duration),
+      timeline.fps || DEFAULT_TIMELINE_FPS,
+    );
+    return { characterUuid, time };
+  }
+
+  // Raycast only against character roots (gizmo and other objects are never
+  // candidates), then walk the hit back up to the root it belongs to.
+  private characterUnderPointer(
+    clientX: number,
+    clientY: number,
+  ): string | null {
+    const editor = this.editor;
+    if (!editor) return null;
+    const camera = editor.cameraController.camera;
+    const canvas = editor.renderer?.domElement;
+    if (!camera || !canvas) return null;
+    const scene = editor.activeScene.scene;
+    const roots: THREE.Object3D[] = [];
+    for (const character of usePageSceneStore.getState().characters) {
+      const root = scene.getObjectByProperty("uuid", character.id);
+      if (root) roots.push(root);
+    }
+    if (roots.length === 0) return null;
+    const rect = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.layers.enable(0);
+    raycaster.layers.enable(1);
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(roots, true);
+    if (hits.length === 0) return null;
+    let node: THREE.Object3D | null = hits[0].object;
+    while (node) {
+      if (roots.includes(node)) return node.uuid;
+      node = node.parent;
+    }
+    return null;
+  }
+
+  // Kick off (or reuse) the clip's node-name inspection for compatibility
+  // checks. The loaded GLB itself is not kept — only the set of node names the
+  // clip's tracks address; the drop path re-loads the GLB through the lane
+  // runtime as before.
+  private beginClipInspection(editor: Editor, mediaId: string): void {
+    this.activeClipNames = undefined;
+    this.compatByCharacter.clear();
+    let promise = this.clipNodeNamesCache.get(mediaId);
+    if (!promise) {
+      promise = editor.activeScene.loadRawGlb(mediaId).then((glb) => {
+        const clip = glb?.animations?.[0];
+        if (!clip) {
+          // Unreadable or animation-less: don't cache, so a transient load
+          // failure can retry on the next drag.
+          this.clipNodeNamesCache.delete(mediaId);
+          return null;
+        }
+        const names = new Set<string>();
+        for (const track of clip.tracks) {
+          const nodeName = track.name.split(".")[0];
+          if (nodeName) names.add(nodeName);
+        }
+        return [...names];
+      });
+      this.clipNodeNamesCache.set(mediaId, promise);
+    }
+    void promise.then((names) => {
+      // Ignore if this drag ended or another item's drag superseded it.
+      if (usePageSceneStore.getState().dragItem?.media_id !== mediaId) return;
+      this.activeClipNames = names;
+      this.compatByCharacter.clear();
+    });
+  }
+
+  // True when at least one of the clip's tracks resolves to a node under the
+  // character — the same direct-bind rule CharacterAnimationManager plays by.
+  private characterAcceptsClip(characterUuid: string): boolean {
+    const cached = this.compatByCharacter.get(characterUuid);
+    if (cached !== undefined) return cached;
+    const names = this.activeClipNames;
+    if (!names || names.length === 0) return false;
+    const root = this.editor?.activeScene.scene.getObjectByProperty(
+      "uuid",
+      characterUuid,
+    );
+    const accepts =
+      !!root && names.some((name) => root.getObjectByName(name) !== undefined);
+    this.compatByCharacter.set(characterUuid, accepts);
+    return accepts;
   }
 }
 

@@ -98,6 +98,9 @@ export interface DragPosition {
   currY: number;
 }
 
+// See PageSceneState.animationDropState.
+export type AnimationDropState = "none" | "checking" | "ok" | "blocked";
+
 export interface PrecisionSelectorCoords {
   x: number;
   y: number;
@@ -220,6 +223,11 @@ interface PageSceneState {
   canDrop: boolean;
   dragItem: MediaItem | null;
   dragPosition: DragPosition;
+  // Live verdict for the animation-clip drag under the cursor, shown as a
+  // badge on the drag ghost: "none" (not an animation drag), "checking"
+  // (clip still loading), "ok" (target binds the clip), "blocked"
+  // (no target, or a rig/bone-name mismatch).
+  animationDropState: AnimationDropState;
 
   // object panel (right-hand inspector for selected object)
   objectPanelShowing: boolean;
@@ -324,6 +332,7 @@ interface PageSceneState {
   setCanDrop: (canDrop: boolean) => void;
   setDragItem: (item: MediaItem | null) => void;
   setDragPosition: (pos: DragPosition) => void;
+  setAnimationDropState: (state: AnimationDropState) => void;
 
   // object panel
   showObjectPanel: (obj?: ObjectPanelObject) => void;
@@ -415,6 +424,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   canDrop: false,
   dragItem: null,
   dragPosition: { currX: 0, currY: 0 },
+  animationDropState: "none",
 
   objectPanelShowing: false,
   objectPanelCurrent: undefined,
@@ -558,6 +568,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setCanDrop: (canDrop) => set({ canDrop }),
   setDragItem: (item) => set({ dragItem: item }),
   setDragPosition: (pos) => set({ dragPosition: pos }),
+  setAnimationDropState: (state) => set({ animationDropState: state }),
 
   // object panel actions
   showObjectPanel: (obj) =>
