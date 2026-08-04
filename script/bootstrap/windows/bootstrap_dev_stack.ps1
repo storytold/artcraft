@@ -19,7 +19,8 @@
 # After it succeeds:
 #   .\script\bootstrap\windows\run_backend_dev.ps1     # API on :12345
 #   .\script\bootstrap\windows\seed_demo_user.ps1      # demo login
-#   cd frontend; npx nx dev artcraft-webapp            # webapp on :4201
+#   cd frontend; npx nx dev artcraft-webapp            # webapp on :4201, but see
+#                                                      # VITE_DEV_API_HOST below
 param(
   [switch]$Yes,
   [switch]$SkipTools,
@@ -457,8 +458,9 @@ The dev stack is bootstrapped. Next steps:
        .\script\bootstrap\windows\seed_demo_user.ps1
      Credentials: $DemoUsername / $DemoPassword
 
-  3. Start the webapp (binds http://localhost:4201; in dev it talks to
-     $DevBackendUrl automatically):
+  3. Start the webapp (binds http://localhost:4201). NB: by default the dev
+     webapp proxies to PRODUCTION - aim it at your backend explicitly:
+       `$env:VITE_DEV_API_HOST = "$DevBackendUrl"
        cd frontend; npx nx dev artcraft-webapp
 
   Health checks at any time:

@@ -344,9 +344,9 @@ The dev stack is bootstrapped. Next steps:
        ./script/bootstrap/seed_demo_user.sh
      Credentials: ${DEMO_USERNAME} / ${DEMO_PASSWORD}
 
-  3. Start the webapp (binds http://localhost:4201; in dev it talks to
-     ${DEV_BACKEND_URL} automatically):
-       cd frontend && npx nx dev artcraft-webapp
+  3. Start the webapp (binds http://localhost:4201). NB: by default the dev
+     webapp proxies to PRODUCTION — aim it at your backend explicitly:
+       cd frontend && VITE_DEV_API_HOST=${DEV_BACKEND_URL} npx nx dev artcraft-webapp
 
   Health checks at any time:
        ./script/bootstrap/dev_stack_doctor.sh

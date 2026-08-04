@@ -120,4 +120,5 @@ if (-not $walletRow) {
 Write-Log "Demo user is ready."
 Write-Log "  Username: $DemoUsername"
 Write-Log "  Password: $DemoPassword"
-Write-Log "Log in at the webapp /login page (http://localhost:4201/login once 'nx dev artcraft-webapp' is running)."
+Write-Log "Log in at http://localhost:4201/login once the webapp is running - start it with"
+Write-Log "VITE_DEV_API_HOST=$DevBackendUrl set, or it will talk to production instead."
