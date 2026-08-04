@@ -168,7 +168,18 @@ export function MentionChipMenu({
       {view === "menu" ? (
         <>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <ChipAvatar preview={currentPreview} name={currentName} />
+            <button
+              type="button"
+              onClick={onPreview}
+              title="View full size"
+              aria-label={`View ${currentName}`}
+              className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-md"
+            >
+              <ChipAvatar preview={currentPreview} name={currentName} />
+              <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/avatar:opacity-100">
+                <FontAwesomeIcon icon={faEye} className="h-3 w-3 text-white" />
+              </span>
+            </button>
             <div className="min-w-0">
               <div className="truncate text-sm font-medium text-base-fg">
                 {currentName}

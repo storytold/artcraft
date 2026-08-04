@@ -475,9 +475,12 @@
   }
 }
 
+/* --ac-drawer-drag-y: set inline by SettingsDrawer when a pull-down gesture
+   dismisses the sheet, so the slide-down starts from where the finger let go
+   instead of snapping back to the top first. Fresh mounts default to 0. */
 @keyframes ac-drawer-down {
   from {
-    transform: translateY(0);
+    transform: translateY(var(--ac-drawer-drag-y, 0px));
   }
   to {
     transform: translateY(100%);
