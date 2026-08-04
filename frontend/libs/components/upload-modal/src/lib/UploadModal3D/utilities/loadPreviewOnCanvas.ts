@@ -10,21 +10,30 @@ interface LoaderInterface {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
   statusCallback: (statusObject: { type: string; message?: string }) => void;
+  // Receives the model's baked AnimationClips (possibly empty) once loaded.
+  onAnimations?: (clips: THREE.AnimationClip[]) => void;
 }
 
 interface PreviewReturn {
   renderer: THREE.WebGLRenderer;
   camera: THREE.PerspectiveCamera;
+  // Switch the previewed animation: a clip index, or -1 for none (skinned
+  // models rest in their bind/T-pose). No-op for animation-less models.
+  selectAnimation: (index: number) => void;
 }
 
 export const loadPreviewOnCanvas = ({
   file,
   canvas,
   statusCallback,
+  onAnimationsAvailable,
 }: {
   file: File;
   canvas: HTMLCanvasElement;
   statusCallback: (error: { type: string; message?: string }) => void;
+  // Called with the clips' display names when the loaded model has baked
+  // animations (never called with an empty list). The first clip autoplays.
+  onAnimationsAvailable?: (names: string[]) => void;
 }): PreviewReturn => {
   const scene = new THREE.Scene();
 
@@ -57,8 +66,46 @@ export const loadPreviewOnCanvas = ({
 
   let splatMesh: SplatMesh | null = null;
 
+  // Animation playback state for GLBs with baked clips. The mixer is rooted
+  // at the preview scene (the GLB's children are re-parented into it) — clip
+  // tracks resolve their nodes by name, so binding still works.
+  const clock = new THREE.Clock();
+  let mixer: THREE.AnimationMixer | null = null;
+  let clips: THREE.AnimationClip[] = [];
+
+  const selectAnimation = (index: number) => {
+    if (!mixer) return;
+    mixer.stopAllAction();
+    if (index >= 0) {
+      const clip = clips[index];
+      if (clip) mixer.clipAction(clip).reset().play();
+    } else {
+      // "None": rest skinned models in their bind (T) pose — a stopped
+      // action would freeze the skeleton on its last evaluated frame.
+      scene.traverse((child) => {
+        const skinned = child as THREE.SkinnedMesh;
+        if (skinned.isSkinnedMesh && skinned.skeleton) skinned.skeleton.pose();
+      });
+    }
+  };
+
   if (file.name.endsWith(".glb")) {
-    glbLoader({ file, scene, camera, renderer, statusCallback });
+    glbLoader({
+      file,
+      scene,
+      camera,
+      renderer,
+      statusCallback,
+      onAnimations: (loadedClips) => {
+        clips = loadedClips;
+        if (clips.length === 0) return;
+        mixer = new THREE.AnimationMixer(scene);
+        mixer.clipAction(clips[0]).play(); // autoplay the first clip
+        onAnimationsAvailable?.(
+          clips.map((clip, index) => clip.name || `Clip ${index + 1}`),
+        );
+      },
+    });
   } else if (file.name.endsWith(".pmd")) {
     pmdLoader({ file, scene, camera, renderer, statusCallback });
   } else if (
@@ -104,12 +151,16 @@ export const loadPreviewOnCanvas = ({
   }
 
   const animate = function () {
+    // Tick the clock every frame (not just when a mixer exists) so the first
+    // mixer update doesn't get a giant delta.
+    const delta = clock.getDelta();
+    mixer?.update(delta);
     renderer.render(scene, camera);
     splatMesh?.rotateY(0.01);
   };
   renderer.setAnimationLoop(animate);
 
-  return { renderer, camera };
+  return { renderer, camera, selectAnimation };
 };
 
 const glbLoader = ({
@@ -118,12 +169,17 @@ const glbLoader = ({
   scene,
   renderer,
   statusCallback,
+  onAnimations,
 }: LoaderInterface) => {
   const loader = new GLTFLoader();
   loader.load(
     URL.createObjectURL(file),
     (data) => {
-      data.scene.children.forEach((child) => {
+      // Surface the GLB's baked clips (previously discarded with the wrapper).
+      onAnimations?.(data.animations ?? []);
+      // Iterate a COPY: scene.add() re-parents the child, which mutates
+      // data.scene.children mid-loop and would skip every other child.
+      [...data.scene.children].forEach((child) => {
         child.userData["color"] = "#FFFFFF";
         scene.add(child);
 

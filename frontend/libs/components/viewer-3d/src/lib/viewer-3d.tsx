@@ -3,6 +3,11 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SplatMesh } from "@sparkjsdev/spark";
+import { Select } from "@storyteller/ui-select";
+
+// Dropdown value for the "no animation" choice (models rest in their bind /
+// T-pose). Clip values are their stringified index.
+const NO_ANIMATION_VALUE = "-1";
 
 export interface Viewer3DProps {
   modelUrl?: string;
@@ -32,6 +37,29 @@ export function Viewer3D({
   const gridRef = useRef<THREE.GridHelper | null>(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const thumbnailCapturedRef = useRef(false);
+
+  // Animation playback for models that ship clips. The dropdown only renders
+  // when the loaded model actually has animations; the first clip autoplays.
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const clipsRef = useRef<THREE.AnimationClip[]>([]);
+  const clockRef = useRef(new THREE.Clock());
+  const [animationNames, setAnimationNames] = useState<string[]>([]);
+  const [selectedClip, setSelectedClip] = useState(-1);
+
+  const stopAnimations = () => {
+    mixerRef.current?.stopAllAction();
+    mixerRef.current = null;
+    clipsRef.current = [];
+  };
+
+  // Rest pose for skinned models when "no animation" is chosen — a stopped
+  // action would otherwise freeze the skeleton on its last evaluated frame.
+  const restoreBindPose = (model: THREE.Object3D) => {
+    model.traverse((child) => {
+      const skinned = child as THREE.SkinnedMesh;
+      if (skinned.isSkinnedMesh && skinned.skeleton) skinned.skeleton.pose();
+    });
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -118,6 +146,11 @@ export function Viewer3D({
           cubeRef.current.rotation.y += 0.01;
         }
 
+        // Tick the clock every frame (not just when a mixer exists) so the
+        // first mixer update after a model loads doesn't get a giant delta.
+        const delta = clockRef.current.getDelta();
+        mixerRef.current?.update(delta);
+
         controls.update();
         renderer.render(scene, camera);
       };
@@ -200,6 +233,9 @@ export function Viewer3D({
       scene.remove(loadedModelRef.current);
       loadedModelRef.current = null;
     }
+    stopAnimations();
+    setAnimationNames([]);
+    setSelectedClip(-1);
 
     if (cubeRef.current) {
       cubeRef.current.visible = false;
@@ -338,6 +374,18 @@ export function Viewer3D({
           console.log("[Viewer3D] Model loaded successfully");
           const model = gltf.scene;
           onModelLoaded(model);
+          // Wire up any clips the model ships with; autoplay the first one.
+          const clips = gltf.animations ?? [];
+          if (clips.length > 0) {
+            const mixer = new THREE.AnimationMixer(model);
+            mixerRef.current = mixer;
+            clipsRef.current = clips;
+            mixer.clipAction(clips[0]).play();
+            setAnimationNames(
+              clips.map((clip, index) => clip.name || `Clip ${index + 1}`),
+            );
+            setSelectedClip(0);
+          }
         },
         (progress) => {
           console.log(
@@ -355,12 +403,28 @@ export function Viewer3D({
     }
 
     return () => {
+      stopAnimations();
       if (loadedModelRef.current && sceneRef.current) {
         sceneRef.current.remove(loadedModelRef.current);
         loadedModelRef.current = null;
       }
     };
   }, [modelUrl, onThumbnailCapture, showGrid]);
+
+  // Switch the playing clip when the dropdown changes. The load path starts
+  // clip 0 directly, so this only needs to handle user switches.
+  useEffect(() => {
+    const mixer = mixerRef.current;
+    const model = loadedModelRef.current;
+    if (!mixer) return;
+    mixer.stopAllAction();
+    if (selectedClip >= 0) {
+      const clip = clipsRef.current[selectedClip];
+      if (clip) mixer.clipAction(clip).reset().play();
+    } else if (model) {
+      restoreBindPose(model);
+    }
+  }, [selectedClip]);
 
   // Update grid visibility when prop changes
   useEffect(() => {
@@ -393,6 +457,24 @@ export function Viewer3D({
       {showSpinner && (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <div className="h-16 w-16 animate-spin rounded-full border-[5px] border-white/20 border-t-primary" />
+        </div>
+      )}
+
+      {/* Animation picker — only for models that actually ship clips.
+          Animation-less models stay static with no extra chrome. */}
+      {showViewer && animationNames.length > 0 && (
+        <div className="absolute right-2.5 top-2.5 z-20 w-44">
+          <Select
+            value={String(selectedClip)}
+            onChange={(value) => setSelectedClip(Number(value))}
+            options={[
+              ...animationNames.map((name, index) => ({
+                label: name,
+                value: String(index),
+              })),
+              { label: "T-pose (none)", value: NO_ANIMATION_VALUE },
+            ]}
+          />
         </div>
       )}
 

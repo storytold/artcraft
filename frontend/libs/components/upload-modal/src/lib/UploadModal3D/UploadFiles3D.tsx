@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
+import { Select } from "@storyteller/ui-select";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -109,6 +110,20 @@ export const UploadFiles3D = ({
   } | null>(null);
   const [selectionError, setSelectionError] = useState<string | undefined>();
 
+  // Baked-animation preview: clip names reported by the loader (empty for
+  // still models — the picker only renders when there are clips), the
+  // selected clip (-1 = none/T-pose; the first clip autoplays), and the
+  // loader's switch function for the current preview.
+  const [previewAnimations, setPreviewAnimations] = useState<string[]>([]);
+  const [previewClip, setPreviewClip] = useState(0);
+  const selectAnimationRef = useRef<((index: number) => void) | null>(null);
+
+  const handlePreviewClipChange = (value: string | number) => {
+    const index = Number(value);
+    setPreviewClip(index);
+    selectAnimationRef.current?.(index);
+  };
+
   const disposeRenderer = () => {
     if (rendererRef.current) {
       rendererRef.current.setAnimationLoop(null);
@@ -123,14 +138,19 @@ export const UploadFiles3D = ({
 
     disposeRenderer();
     setPreviewStatus({ type: "init" });
+    setPreviewAnimations([]);
+    setPreviewClip(0);
+    selectAnimationRef.current = null;
 
-    const { renderer, camera } = loadPreviewOnCanvas({
+    const { renderer, camera, selectAnimation } = loadPreviewOnCanvas({
       file: currentFile,
       canvas: canvasRef.current,
       statusCallback: setPreviewStatus,
+      onAnimationsAvailable: setPreviewAnimations,
     });
     rendererRef.current = renderer;
     cameraRef.current = camera;
+    selectAnimationRef.current = selectAnimation;
 
     return disposeRenderer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -320,6 +340,24 @@ export const UploadFiles3D = ({
     });
   };
 
+  // Overlayed on the preview canvas when the current model has baked clips;
+  // still models get no extra chrome. Shared by the single and multi layouts.
+  const animationPicker = previewAnimations.length > 0 && (
+    <div className="pointer-events-auto absolute right-2 top-2 z-10 w-44">
+      <Select
+        value={String(previewClip)}
+        onChange={handlePreviewClipChange}
+        options={[
+          ...previewAnimations.map((name, index) => ({
+            label: name,
+            value: String(index),
+          })),
+          { label: "T-pose (none)", value: "-1" },
+        ]}
+      />
+    </div>
+  );
+
   const isMulti = fileEntries.length > 1;
   const anyFailed = fileEntries.some((e) => e.status === "error");
   const anyUploading = fileEntries.some((e) => e.status === "uploading");
@@ -426,6 +464,7 @@ export const UploadFiles3D = ({
                 className="pointer-events-none h-full min-h-48 !w-full"
                 ref={canvasCallbackRef}
               />
+              {animationPicker}
               {!currentFile && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
                   <FontAwesomeIcon icon={faCube} />
@@ -472,6 +511,7 @@ export const UploadFiles3D = ({
             className="pointer-events-none h-full min-h-48 !w-full"
             ref={canvasCallbackRef}
           />
+          {animationPicker}
           {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
               <FontAwesomeIcon icon={faCube} />
