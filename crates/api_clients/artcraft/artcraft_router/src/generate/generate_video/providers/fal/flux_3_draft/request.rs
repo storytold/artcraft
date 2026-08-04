@@ -1,10 +1,8 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::api::video::extend::flux_3_draft::api::Flux3DraftExtendVideoRequest;
 use fal_client::requests::api::video::image::flux_3_draft::api::Flux3DraftImageToVideoRequest;
 use fal_client::requests::api::video::images::flux_3_draft::api::Flux3DraftFirstLastFrameToVideoRequest;
-use fal_client::requests::api::video::keyframes::flux_3_draft::api::Flux3DraftKeyframesToVideoRequest;
 use fal_client::requests::api::video::text::flux_3_draft::api::Flux3DraftTextToVideoRequest;
 use fal_client::requests::traits::fal_endpoint_trait::FalEndpoint;
 
@@ -19,8 +17,6 @@ pub enum FalFlux3DraftMode {
   TextToVideo(Flux3DraftTextToVideoRequest),
   ImageToVideo(Flux3DraftImageToVideoRequest),
   FirstLastFrameToVideo(Flux3DraftFirstLastFrameToVideoRequest),
-  KeyframesToVideo(Flux3DraftKeyframesToVideoRequest),
-  ExtendVideo(Flux3DraftExtendVideoRequest),
 }
 
 #[derive(Clone, Debug)]
@@ -34,8 +30,6 @@ impl FalFlux3DraftRequestState {
       FalFlux3DraftMode::TextToVideo(request) => send_request(request, client).await,
       FalFlux3DraftMode::ImageToVideo(request) => send_request(request, client).await,
       FalFlux3DraftMode::FirstLastFrameToVideo(request) => send_request(request, client).await,
-      FalFlux3DraftMode::KeyframesToVideo(request) => send_request(request, client).await,
-      FalFlux3DraftMode::ExtendVideo(request) => send_request(request, client).await,
     }
   }
 }

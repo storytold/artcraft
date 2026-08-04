@@ -1,8 +1,5 @@
-use fal_client::requests::api::video::extend::flux_3::api::Flux3ExtendVideoRequest;
 use fal_client::requests::api::video::image::flux_3::api::Flux3ImageToVideoRequest;
 use fal_client::requests::api::video::images::flux_3::api::Flux3FirstLastFrameToVideoRequest;
-use fal_client::requests::api::video::keyframes::flux_3::api::Flux3KeyframesToVideoRequest;
-use fal_client::requests::api::video::keyframes::flux_3::raw_request::Flux3Keyframe;
 use fal_client::requests::api::video::text::flux_3::api::{
   Flux3AspectRatio, Flux3Duration, Flux3Resolution, Flux3TextToVideoRequest,
 };
@@ -23,13 +20,8 @@ use crate::generate::generate_video::providers::fal::flux_3::request::{
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
-pub(crate) const MAX_KEYFRAME_IMAGES: usize = 10;
 pub(crate) const MIN_DURATION_SECONDS: u16 = 5;
 pub(crate) const MAX_DURATION_SECONDS: u16 = 20;
-
-/// Frames per second of Flux 3 output; keyframe positions are expressed in
-/// frames.
-const OUTPUT_FPS: u32 = 24;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum PlanAspectRatio {
@@ -54,12 +46,12 @@ pub(crate) fn build_fal_flux_3_state(
 ) -> Result<FalFlux3RequestState, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 
-  reject_reference_audio(&builder.reference_audio)?;
+  // Flux 3 exposes no reference modality here — only text, starting keyframe,
+  // and start/end keyframes.
+  reject_references(&builder)?;
 
   let start = optional_url(builder.start_frame.clone())?;
   let end = optional_url(builder.end_frame.clone())?;
-  let reference_images = reference_image_urls(builder.reference_images.clone())?;
-  let reference_videos = reference_video_urls(builder.reference_videos.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(builder.aspect_ratio, strategy)?;
   let resolution = plan_resolution(builder.resolution, strategy)?;
@@ -68,103 +60,45 @@ pub(crate) fn build_fal_flux_3_state(
   let prompt = builder.prompt.clone().unwrap_or_default();
   let generate_audio = builder.generate_audio;
 
-  // Modality dispatch, most specific inputs first:
-  //   1. reference video     → extend-video
-  //   2. reference images    → keyframes-to-video (evenly spaced)
-  //   3. start + end frames  → first-last-frame-to-video
-  //   4. start frame only    → image-to-video
-  //   5. no media            → text-to-video
-  let mode = if let Some(video_urls) = reference_videos {
-    if reference_images.is_some() {
-      return Err(unsupported(
-        "reference_images",
-        "Flux 3 extend-video cannot combine reference_images with a reference video",
-      ));
-    }
-    if start.is_some() || end.is_some() {
-      return Err(unsupported(
-        "start_frame",
-        "Flux 3 extend-video cannot combine start_frame or end_frame with a reference video",
-      ));
-    }
-    if video_urls.len() != 1 {
-      return Err(unsupported(
-        "reference_videos",
-        &format!("Flux 3 extend-video requires exactly 1 reference video, got {}", video_urls.len()),
-      ));
-    }
-    let video_url = video_urls.into_iter().next().expect("checked len == 1");
-    FalFlux3Mode::ExtendVideo(Flux3ExtendVideoRequest {
+  // Modality dispatch:
+  //   start + end frames → first-last-frame-to-video
+  //   start frame only   → image-to-video
+  //   no media           → text-to-video
+  let mode = match (start, end) {
+    (None, None) => FalFlux3Mode::TextToVideo(Flux3TextToVideoRequest {
       prompt,
-      video_url,
       duration: flexible_duration,
       resolution,
       aspect_ratio: aspect_ratio.map(to_flux_3_aspect_ratio),
       generate_audio,
-      safety_tolerance: None,
-    })
-  } else if let Some(image_urls) = reference_images {
-    if start.is_some() || end.is_some() {
-      return Err(unsupported(
-        "start_frame",
-        "Flux 3 keyframes-to-video cannot combine start_frame or end_frame with reference_images",
-      ));
-    }
-    if image_urls.len() > MAX_KEYFRAME_IMAGES {
-      return Err(unsupported(
-        "reference_images",
-        &format!("Flux 3 supports at most {} keyframe images, got {}", MAX_KEYFRAME_IMAGES, image_urls.len()),
-      ));
-    }
-    // Reference images map onto Flux 3's keyframes: evenly spaced positions
-    // from the first frame to the last across the (default 5s) duration.
-    let keyframes = to_evenly_spaced_keyframes(image_urls, fixed_duration.unwrap_or(5));
-    FalFlux3Mode::KeyframesToVideo(Flux3KeyframesToVideoRequest {
+      safety_tolerance: Some(4), // NB: 4 is the most permissive.
+    }),
+    (Some(image_url), None) => FalFlux3Mode::ImageToVideo(Flux3ImageToVideoRequest {
       prompt,
-      keyframes,
-      duration: fixed_duration,
+      image_url,
+      duration: flexible_duration,
       resolution,
       aspect_ratio: aspect_ratio.map(to_flux_3_aspect_ratio),
       generate_audio,
-      safety_tolerance: None,
-    })
-  } else {
-    match (start, end) {
-      (None, None) => FalFlux3Mode::TextToVideo(Flux3TextToVideoRequest {
+      safety_tolerance: Some(4), // NB: 4 is the most permissive.
+    }),
+    (Some(start_image_url), Some(end_image_url)) => FalFlux3Mode::FirstLastFrameToVideo(
+      Flux3FirstLastFrameToVideoRequest {
         prompt,
-        duration: flexible_duration,
+        start_image_url,
+        end_image_url,
+        duration: fixed_duration,
         resolution,
         aspect_ratio: aspect_ratio.map(to_flux_3_aspect_ratio),
         generate_audio,
-        safety_tolerance: None,
-      }),
-      (Some(image_url), None) => FalFlux3Mode::ImageToVideo(Flux3ImageToVideoRequest {
-        prompt,
-        image_url,
-        duration: flexible_duration,
-        resolution,
-        aspect_ratio: aspect_ratio.map(to_flux_3_aspect_ratio),
-        generate_audio,
-        safety_tolerance: None,
-      }),
-      (Some(start_image_url), Some(end_image_url)) => FalFlux3Mode::FirstLastFrameToVideo(
-        Flux3FirstLastFrameToVideoRequest {
-          prompt,
-          start_image_url,
-          end_image_url,
-          duration: fixed_duration,
-          resolution,
-          aspect_ratio: aspect_ratio.map(to_flux_3_aspect_ratio),
-          generate_audio,
-          safety_tolerance: None,
-        },
-      ),
-      (None, Some(_)) => {
-        return Err(unsupported(
-          "end_frame",
-          "Flux 3 requires a start_frame when end_frame is provided",
-        ));
-      }
+        safety_tolerance: Some(4), // NB: 4 is the most permissive.
+      },
+    ),
+    (None, Some(_)) => {
+      return Err(unsupported(
+        "end_frame",
+        "Flux 3 requires a start_frame when end_frame is provided",
+      ));
     }
   };
 
@@ -180,10 +114,27 @@ pub(crate) fn unsupported(field: &'static str, value: &str) -> ArtcraftRouterErr
   })
 }
 
-pub(crate) fn reject_reference_audio(
-  reference_audio: &Option<AudioListRef>,
-) -> Result<(), ArtcraftRouterError> {
-  let has_reference_audio = match reference_audio {
+/// Flux 3 supports no reference inputs — no image, video, or audio references.
+pub(crate) fn reject_references(builder: &GenerateVideoRequestBuilder) -> Result<(), ArtcraftRouterError> {
+  let has_reference_images = match &builder.reference_images {
+    None => false,
+    Some(ImageListRef::Urls(urls)) => !urls.is_empty(),
+    Some(ImageListRef::MediaFileTokens(tokens)) => !tokens.is_empty(),
+  };
+  if has_reference_images {
+    return Err(unsupported("reference_images", "Flux 3 does not support image references"));
+  }
+
+  let has_reference_videos = match &builder.reference_videos {
+    None => false,
+    Some(VideoListRef::Urls(urls)) => !urls.is_empty(),
+    Some(VideoListRef::MediaFileTokens(tokens)) => !tokens.is_empty(),
+  };
+  if has_reference_videos {
+    return Err(unsupported("reference_videos", "Flux 3 does not support video references"));
+  }
+
+  let has_reference_audio = match &builder.reference_audio {
     None => false,
     Some(AudioListRef::Urls(urls)) => !urls.is_empty(),
     Some(AudioListRef::MediaFileTokens(tokens)) => !tokens.is_empty(),
@@ -191,6 +142,7 @@ pub(crate) fn reject_reference_audio(
   if has_reference_audio {
     return Err(unsupported("reference_audio", "Flux 3 does not support audio references"));
   }
+
   Ok(())
 }
 
@@ -202,45 +154,6 @@ pub(crate) fn optional_url(image_ref: Option<ImageRef>) -> Result<Option<String>
       Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
     }
   }
-}
-
-pub(crate) fn reference_image_urls(refs: Option<ImageListRef>) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
-  match refs {
-    None => Ok(None),
-    Some(ImageListRef::Urls(urls)) if urls.is_empty() => Ok(None),
-    Some(ImageListRef::Urls(urls)) => Ok(Some(urls)),
-    Some(ImageListRef::MediaFileTokens(tokens)) if tokens.is_empty() => Ok(None),
-    Some(ImageListRef::MediaFileTokens(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
-    }
-  }
-}
-
-pub(crate) fn reference_video_urls(refs: Option<VideoListRef>) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
-  match refs {
-    None => Ok(None),
-    Some(VideoListRef::Urls(urls)) if urls.is_empty() => Ok(None),
-    Some(VideoListRef::Urls(urls)) => Ok(Some(urls)),
-    Some(VideoListRef::MediaFileTokens(tokens)) if tokens.is_empty() => Ok(None),
-    Some(VideoListRef::MediaFileTokens(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
-    }
-  }
-}
-
-/// Distribute keyframe images evenly across the video: the first at frame 0,
-/// the last at the final frame, the rest at equal intervals.
-pub(crate) fn to_evenly_spaced_keyframes(image_urls: Vec<String>, duration_secs: u8) -> Vec<Flux3Keyframe> {
-  let count = image_urls.len() as u32;
-  let last_frame = u32::from(duration_secs) * OUTPUT_FPS;
-  image_urls
-    .into_iter()
-    .enumerate()
-    .map(|(i, image_url)| Flux3Keyframe {
-      image_url,
-      frame_index: if count <= 1 { 0 } else { (i as u32) * last_frame / (count - 1) },
-    })
-    .collect()
 }
 
 // ── Plan helpers (shared with the draft variant) ──
@@ -296,8 +209,8 @@ pub(crate) fn plan_resolution(
   }
 }
 
-/// Duration for the modalities that accept `auto` (text, image, extend).
-/// `None` stays unset so fal's `auto` default applies.
+/// Duration for the modalities that accept `auto` (text, image). `None` stays
+/// unset so fal's `auto` default applies.
 pub(crate) fn plan_flexible_duration(
   duration_seconds: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -305,8 +218,8 @@ pub(crate) fn plan_flexible_duration(
   Ok(plan_fixed_duration(duration_seconds, strategy)?.map(Flux3Duration::Seconds))
 }
 
-/// Duration for the fixed-duration modalities (first-last-frame, keyframes).
-/// `None` stays unset so fal's 5-second default applies.
+/// Duration for the fixed-duration first-last-frame modality. `None` stays
+/// unset so fal's 5-second default applies.
 pub(crate) fn plan_fixed_duration(
   duration_seconds: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -351,7 +264,6 @@ mod tests {
 
   const START_URL: &str = "https://example.com/start.png";
   const END_URL: &str = "https://example.com/end.png";
-  const VIDEO_URL: &str = "https://example.com/source.mp4";
 
   mod dispatch_tests {
     use super::*;
@@ -391,52 +303,16 @@ mod tests {
     }
 
     #[test]
-    fn reference_images_pick_keyframes() {
-      let state = build_fal_flux_3_state(builder_with_references(3)).expect("build");
-      let FalFlux3Mode::KeyframesToVideo(req) = state.mode else {
-        panic!("expected KeyframesToVideo");
-      };
-      assert_eq!(req.keyframes.len(), 3);
-    }
-
-    #[test]
-    fn eleven_reference_images_error() {
-      assert!(build_fal_flux_3_state(builder_with_references(11)).is_err());
-    }
-
-    #[test]
-    fn reference_video_picks_extend() {
+    fn reference_images_error() {
       let mut b = base_builder();
-      b.reference_videos = Some(VideoListRef::Urls(vec![VIDEO_URL.to_string()]));
-      let state = build_fal_flux_3_state(b).expect("build");
-      let FalFlux3Mode::ExtendVideo(req) = state.mode else {
-        panic!("expected ExtendVideo");
-      };
-      assert_eq!(req.video_url, VIDEO_URL);
-    }
-
-    #[test]
-    fn two_reference_videos_error() {
-      let mut b = base_builder();
-      b.reference_videos = Some(VideoListRef::Urls(vec![
-        VIDEO_URL.to_string(),
-        "https://example.com/other.mp4".to_string(),
-      ]));
+      b.reference_images = Some(ImageListRef::Urls(vec!["https://example.com/ref.png".to_string()]));
       assert!(build_fal_flux_3_state(b).is_err());
     }
 
     #[test]
-    fn reference_video_with_start_frame_errors() {
+    fn reference_videos_error() {
       let mut b = base_builder();
-      b.reference_videos = Some(VideoListRef::Urls(vec![VIDEO_URL.to_string()]));
-      b.start_frame = Some(ImageRef::Url(START_URL.to_string()));
-      assert!(build_fal_flux_3_state(b).is_err());
-    }
-
-    #[test]
-    fn reference_images_with_start_frame_error() {
-      let mut b = builder_with_references(2);
-      b.start_frame = Some(ImageRef::Url(START_URL.to_string()));
+      b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
       assert!(build_fal_flux_3_state(b).is_err());
     }
 
@@ -446,44 +322,15 @@ mod tests {
       b.reference_audio = Some(AudioListRef::Urls(vec!["https://example.com/a.mp3".to_string()]));
       assert!(build_fal_flux_3_state(b).is_err());
     }
-  }
-
-  mod keyframe_spacing_tests {
-    use super::*;
 
     #[test]
-    fn single_image_pins_to_frame_zero() {
-      let keyframes = to_evenly_spaced_keyframes(vec!["a".to_string()], 5);
-      assert_eq!(keyframes.len(), 1);
-      assert_eq!(keyframes[0].frame_index, 0);
-    }
-
-    #[test]
-    fn two_images_pin_to_first_and_last_frames() {
-      let keyframes = to_evenly_spaced_keyframes(vec!["a".to_string(), "b".to_string()], 5);
-      assert_eq!(keyframes[0].frame_index, 0);
-      assert_eq!(keyframes[1].frame_index, 120); // 5s × 24fps
-    }
-
-    #[test]
-    fn three_images_space_evenly() {
-      let keyframes = to_evenly_spaced_keyframes(
-        vec!["a".to_string(), "b".to_string(), "c".to_string()], 10);
-      assert_eq!(keyframes[0].frame_index, 0);
-      assert_eq!(keyframes[1].frame_index, 120); // midpoint of 240
-      assert_eq!(keyframes[2].frame_index, 240); // 10s × 24fps
-    }
-
-    #[test]
-    fn frame_indices_are_unique_and_within_bounds() {
-      for count in 1..=10usize {
-        let urls = (0..count).map(|i| format!("u{i}")).collect::<Vec<String>>();
-        let keyframes = to_evenly_spaced_keyframes(urls, 5);
-        let mut indices: Vec<u32> = keyframes.iter().map(|k| k.frame_index).collect();
-        assert!(indices.iter().all(|&i| i <= 120), "count={count}");
-        indices.dedup();
-        assert_eq!(indices.len(), count, "count={count} produced duplicate frame indices");
-      }
+    fn empty_reference_lists_are_ignored() {
+      let mut b = base_builder();
+      b.reference_images = Some(ImageListRef::Urls(vec![]));
+      b.reference_videos = Some(VideoListRef::Urls(vec![]));
+      b.reference_audio = Some(AudioListRef::Urls(vec![]));
+      let state = build_fal_flux_3_state(b).expect("build");
+      assert!(matches!(state.mode, FalFlux3Mode::TextToVideo(_)));
     }
   }
 
@@ -565,14 +412,5 @@ mod tests {
       prompt: Some("test".to_string()),
       ..Default::default()
     }
-  }
-
-  fn builder_with_references(count: usize) -> GenerateVideoRequestBuilder {
-    let urls = (0..count)
-      .map(|i| format!("https://example.com/ref-{}.png", i))
-      .collect();
-    let mut b = base_builder();
-    b.reference_images = Some(ImageListRef::Urls(urls));
-    b
   }
 }

@@ -1,10 +1,8 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::api::video::extend::flux_3::api::Flux3ExtendVideoRequest;
 use fal_client::requests::api::video::image::flux_3::api::Flux3ImageToVideoRequest;
 use fal_client::requests::api::video::images::flux_3::api::Flux3FirstLastFrameToVideoRequest;
-use fal_client::requests::api::video::keyframes::flux_3::api::Flux3KeyframesToVideoRequest;
 use fal_client::requests::api::video::text::flux_3::api::Flux3TextToVideoRequest;
 use fal_client::requests::traits::fal_endpoint_trait::FalEndpoint;
 
@@ -19,8 +17,6 @@ pub enum FalFlux3Mode {
   TextToVideo(Flux3TextToVideoRequest),
   ImageToVideo(Flux3ImageToVideoRequest),
   FirstLastFrameToVideo(Flux3FirstLastFrameToVideoRequest),
-  KeyframesToVideo(Flux3KeyframesToVideoRequest),
-  ExtendVideo(Flux3ExtendVideoRequest),
 }
 
 #[derive(Clone, Debug)]
@@ -34,8 +30,6 @@ impl FalFlux3RequestState {
       FalFlux3Mode::TextToVideo(request) => send_request(request, client).await,
       FalFlux3Mode::ImageToVideo(request) => send_request(request, client).await,
       FalFlux3Mode::FirstLastFrameToVideo(request) => send_request(request, client).await,
-      FalFlux3Mode::KeyframesToVideo(request) => send_request(request, client).await,
-      FalFlux3Mode::ExtendVideo(request) => send_request(request, client).await,
     }
   }
 }
@@ -106,7 +100,7 @@ mod tests {
         resolution: Some(Flux3Resolution::SevenTwentyP),
         aspect_ratio: Some(Flux3AspectRatio::SixteenByNine),
         generate_audio: Some(false),
-        safety_tolerance: None,
+        safety_tolerance: Some(4), // NB: 4 is the most permissive.
       }),
     };
     let response = state.send(&client_with_webhook()).await.expect("send should succeed");

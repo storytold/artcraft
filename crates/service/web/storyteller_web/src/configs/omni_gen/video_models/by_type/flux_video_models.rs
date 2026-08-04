@@ -6,9 +6,8 @@ use enums::common::generation::model_creator::ModelCreator;
 
 /// Black Forest Labs Flux video models.
 ///
-/// Both variants cover the same five fal modalities: text, image, first-last
-/// frame, keyframes (mapped from image references, evenly spaced), and extend
-/// (mapped from a single video reference).
+/// Both variants cover text-to-video, starting keyframe (image-to-video), and
+/// start/end keyframes (first-last-frame). No reference inputs.
 pub fn flux_video_models() -> Vec<OmniGenVideoModelDetails> {
   let mut models = Vec::new();
 
@@ -19,10 +18,6 @@ pub fn flux_video_models() -> Vec<OmniGenVideoModelDetails> {
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
-    image_references_supported: Some(true),
-    image_references_max: Some(10),
-    video_references_supported: Some(true),
-    video_references_max: Some(1),
     show_generate_with_sound_toggle: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::Auto,
@@ -53,10 +48,6 @@ pub fn flux_video_models() -> Vec<OmniGenVideoModelDetails> {
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
-    image_references_supported: Some(true),
-    image_references_max: Some(10),
-    video_references_supported: Some(true),
-    video_references_max: Some(1),
     show_generate_with_sound_toggle: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::Auto,

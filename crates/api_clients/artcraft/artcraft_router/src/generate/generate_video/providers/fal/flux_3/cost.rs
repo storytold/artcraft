@@ -19,8 +19,6 @@ impl FalFlux3CostState {
       FalFlux3Mode::TextToVideo(req) => req.calculate_cost_in_cents(),
       FalFlux3Mode::ImageToVideo(req) => req.calculate_cost_in_cents(),
       FalFlux3Mode::FirstLastFrameToVideo(req) => req.calculate_cost_in_cents(),
-      FalFlux3Mode::KeyframesToVideo(req) => req.calculate_cost_in_cents(),
-      FalFlux3Mode::ExtendVideo(req) => req.calculate_cost_in_cents(),
     };
     Self { cost_in_usd_cents }
   }
@@ -40,20 +38,17 @@ impl FalFlux3CostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::router_provider::RouterProvider;
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::video_list_ref::VideoListRef;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::providers::fal::flux_3::build::build_fal_flux_3_state;
 
   use super::*;
 
   // Pricing (from fal_client's flux_3 cost modules):
-  //   Standard (text/image/first-last/keyframes): 720p $0.17/s, 1080p $0.29/s
-  //   Extend:                                     720p $0.41/s, 1080p $0.53/s
+  //   720p: $0.17/s, 1080p: $0.29/s (all modalities)
   // fal defaults when unset: duration = 5s (auto estimates at the 5s floor),
   // resolution = 720p.
 
@@ -80,30 +75,6 @@ mod tests {
     b.start_frame = Some(ImageRef::Url("https://example.com/start.png".to_string()));
     b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
     assert_eq!(cost_cents(b), 580);
-  }
-
-  #[test]
-  fn keyframes_5s_720p_is_85() {
-    let mut b = base_builder(Some(5), Some(RouterResolution::SevenTwentyP));
-    b.reference_images = Some(ImageListRef::Urls(vec![
-      "https://example.com/a.png".to_string(),
-      "https://example.com/b.png".to_string(),
-    ]));
-    assert_eq!(cost_cents(b), 85);
-  }
-
-  #[test]
-  fn extend_5s_720p_is_205() {
-    let mut b = base_builder(Some(5), Some(RouterResolution::SevenTwentyP));
-    b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
-    assert_eq!(cost_cents(b), 205);
-  }
-
-  #[test]
-  fn extend_10s_1080p_is_530() {
-    let mut b = base_builder(Some(10), Some(RouterResolution::TenEightyP));
-    b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
-    assert_eq!(cost_cents(b), 530);
   }
 
   #[test]

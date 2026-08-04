@@ -19,8 +19,6 @@ impl FalFlux3DraftCostState {
       FalFlux3DraftMode::TextToVideo(req) => req.calculate_cost_in_cents(),
       FalFlux3DraftMode::ImageToVideo(req) => req.calculate_cost_in_cents(),
       FalFlux3DraftMode::FirstLastFrameToVideo(req) => req.calculate_cost_in_cents(),
-      FalFlux3DraftMode::KeyframesToVideo(req) => req.calculate_cost_in_cents(),
-      FalFlux3DraftMode::ExtendVideo(req) => req.calculate_cost_in_cents(),
     };
     Self { cost_in_usd_cents }
   }
@@ -42,15 +40,13 @@ impl FalFlux3DraftCostState {
 mod tests {
   use crate::api::router_provider::RouterProvider;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::video_list_ref::VideoListRef;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::providers::fal::flux_3_draft::build::build_fal_flux_3_draft_state;
 
   use super::*;
 
   // Pricing (from fal_client's flux_3_draft cost modules):
-  //   Generation (text/image/first-last/keyframes): $0.06/s (always 720p)
-  //   Extend:                                       $0.12/s
+  //   $0.06/s (always 720p, all modalities)
   // fal defaults when unset: duration = 5s (auto estimates at the 5s floor).
 
   #[test]
@@ -61,13 +57,6 @@ mod tests {
   #[test]
   fn t2v_20s_is_120() {
     assert_eq!(cost_cents(base_builder(Some(20))), 120);
-  }
-
-  #[test]
-  fn extend_5s_is_60() {
-    let mut b = base_builder(Some(5));
-    b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
-    assert_eq!(cost_cents(b), 60);
   }
 
   fn base_builder(duration_seconds: Option<u16>) -> GenerateVideoRequestBuilder {
