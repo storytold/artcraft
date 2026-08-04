@@ -43,6 +43,7 @@ use crate::generate::generate_video::providers::artcraft::veo_3_fast::build::bui
 use crate::generate::generate_video::providers::artcraft::veo_3p1::build::build_artcraft_veo_3p1;
 use crate::generate::generate_video::providers::artcraft::veo_3p1_fast::build::build_artcraft_veo_3p1_fast;
 use crate::generate::generate_video::providers::artcraft::veo_3p1_lite::build::build_artcraft_veo_3p1_lite;
+use crate::generate::generate_video::providers::artcraft::minimax_h3::build::build_artcraft_minimax_h3;
 use crate::generate::generate_video::providers::artcraft::vidu_q3::build::build_artcraft_vidu_q3;
 use crate::generate::generate_video::providers::artcraft::vidu_q3_turbo::build::build_artcraft_vidu_q3_turbo;
 use crate::generate::generate_video::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
@@ -68,6 +69,7 @@ use crate::generate::generate_video::providers::fal::veo_3_fast::build::build_fa
 use crate::generate::generate_video::providers::fal::veo_3p1::build::build_fal_veo_3p1;
 use crate::generate::generate_video::providers::fal::veo_3p1_fast::build::build_fal_veo_3p1_fast;
 use crate::generate::generate_video::providers::fal::veo_3p1_lite::build::build_fal_veo_3p1_lite;
+use crate::generate::generate_video::providers::fal::minimax_h3::build::build_fal_minimax_h3;
 use crate::generate::generate_video::providers::fal::vidu_q3::build::build_fal_vidu_q3;
 use crate::generate::generate_video::providers::fal::vidu_q3_turbo::build::build_fal_vidu_q3_turbo;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
@@ -180,6 +182,7 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Artcraft, RouterVideoModel::Kling2p6Pro) => build_artcraft_kling_2_6_pro(self),
       (RouterProvider::Artcraft, RouterVideoModel::Kling3p0Pro) => build_artcraft_kling_3p0_pro(self),
       (RouterProvider::Artcraft, RouterVideoModel::Kling3p0Standard) => build_artcraft_kling_3p0_standard(self),
+      (RouterProvider::Artcraft, RouterVideoModel::MinimaxH3) => build_artcraft_minimax_h3(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0) => build_artcraft_seedance_2p0(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0Fast) => build_artcraft_seedance_2p0_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0Ultra) => build_artcraft_seedance_2p0_u(self),
@@ -214,6 +217,7 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Fal, RouterVideoModel::Kling2p6Pro) => build_fal_kling_2_6_pro(self),
       (RouterProvider::Fal, RouterVideoModel::Kling3p0Pro) => build_fal_kling_3p0_pro(self),
       (RouterProvider::Fal, RouterVideoModel::Kling3p0Standard) => build_fal_kling_3p0_standard(self),
+      (RouterProvider::Fal, RouterVideoModel::MinimaxH3) => build_fal_minimax_h3(self),
       (RouterProvider::Fal, RouterVideoModel::Seedance10Lite) => build_fal_seedance_1p0_lite(self),
       (RouterProvider::Fal, RouterVideoModel::Seedance1p5Pro) => build_fal_seedance_1p5_pro(self),
       (RouterProvider::Fal, RouterVideoModel::Sora2) => build_fal_sora_2(self),

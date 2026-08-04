@@ -12,6 +12,7 @@ pub mod kling_2_5_turbo_pro;
 pub mod kling_2_6_pro;
 pub mod kling_3p0_pro;
 pub mod kling_3p0_standard;
+pub mod minimax_h3;
 pub mod preview_model;
 pub mod preview_model_fast;
 pub(crate) mod request_common;

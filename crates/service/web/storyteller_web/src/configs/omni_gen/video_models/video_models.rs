@@ -6,6 +6,7 @@ use once_cell::sync::Lazy;
 use super::by_type::grok_video_models::grok_video_models;
 use super::by_type::happy_horse_video_models::happy_horse_video_models;
 use super::by_type::kling_video_models::{kling_disabled_video_models, kling_video_models};
+use super::by_type::minimax_video_models::minimax_video_models;
 use super::by_type::seedance_1x_video_models::{seedance_1p0_video_models, seedance_1p5_video_models};
 use super::by_type::seedance_2p0_video_models::seedance_2p0_video_models;
 use super::by_type::seedance_2p5_video_models::seedance_2p5_video_models;
@@ -30,6 +31,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.extend(happy_horse_video_models());
   models.extend(kling_video_models());
   models.extend(kling_disabled_video_models());
+  models.extend(minimax_video_models());
   models.extend(seedance_1p0_video_models());
   models.extend(seedance_1p5_video_models());
   models.extend(seedance_2p0_video_models());
@@ -97,6 +99,10 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
       },
       OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::ViduQ3Turbo,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::MinimaxH3,
         overrides: None,
       },
       OmniGenVideoProviderModelDetails {
