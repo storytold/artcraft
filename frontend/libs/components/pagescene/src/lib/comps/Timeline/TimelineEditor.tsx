@@ -373,11 +373,41 @@ export const TimelineEditor = () => {
               isScrubbing.current = false;
             }}
           >
-            <span className="absolute left-0">{formatTimecode(0)}</span>
+            {/* labels are centered on their ticks (the edge ones spill a
+                little into the spacer columns, which is intentional) */}
+            <span className="absolute left-0 -translate-x-1/2">
+              {formatTimecode(0)}
+            </span>
             <span className="absolute left-1/2 -translate-x-1/2">
               {formatTimecode(duration / 2)}
             </span>
-            <DurationLabel className="absolute right-0" />
+            <DurationLabel className="absolute right-0 translate-x-1/2" />
+            {/* tick marks in three tiers: major every 5 s, second ticks,
+                and faint sub-ticks between them. Sub-tick density adapts
+                to the timeline length so long timelines don't turn the
+                ruler into a solid smear. */}
+            {(() => {
+              const subsPerSecond = duration <= 15 ? 4 : duration <= 30 ? 2 : 1;
+              const count = Math.floor(duration * subsPerSecond) + 1;
+              return Array.from({ length: count }, (_, i) => {
+                const t = i / subsPerSecond;
+                const isSecond = i % subsPerSecond === 0;
+                const isMajor = isSecond && t % 5 === 0;
+                return (
+                  <span
+                    key={i}
+                    className={`pointer-events-none absolute bottom-0 w-px ${
+                      isMajor
+                        ? "h-2 bg-white/30"
+                        : isSecond
+                          ? "h-1.5 bg-white/20"
+                          : "h-1 bg-white/10"
+                    }`}
+                    style={{ left: `${timeToFraction(t, duration) * 100}%` }}
+                  />
+                );
+              });
+            })()}
           </div>
           <div className="w-7 shrink-0" />
         </div>

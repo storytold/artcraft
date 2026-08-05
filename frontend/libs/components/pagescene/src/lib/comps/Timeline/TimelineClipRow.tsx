@@ -176,7 +176,9 @@ export const TimelineClipRow = ({
             <div
               key={lane.id}
               data-clip-strip
-              className={`absolute inset-y-0 flex items-center gap-1 rounded-md border pe-1 ps-1.5 text-[10px] text-white ${
+              /* pe-2.5 keeps the × (and name) clear of the absolute w-1.5
+                 trim handle on the right edge */
+              className={`absolute inset-y-0 flex items-center gap-1 rounded-md border pe-2.5 ps-1.5 text-[10px] text-white ${
                 isSelected
                   ? "border-white/80 bg-brand-primary/45"
                   : "border-brand-primary/60 bg-brand-primary/25"
