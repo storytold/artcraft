@@ -1,7 +1,8 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Badge } from "@storyteller/ui-badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faCube,
   faPersonRunning,
   faUpDownLeftRight,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -42,6 +43,9 @@ const patchExpressionObjectType = (mediaType: string) => {
 
 export const ItemElement = ({ item }: Props) => {
   const editor = useContext(EngineContext);
+  // Broken thumbnail URL (404, CORS) → swap to the icon placeholder instead
+  // of the browser's broken-image glyph + alt text.
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   // Animation cards are click-to-add (clip onto the selected character's
   // timeline row, next free slot via the controller's overlap guard) — parity
@@ -67,6 +71,14 @@ export const ItemElement = ({ item }: Props) => {
         ToastTypes.WARNING,
         `No room left on ${character.name}'s timeline for "${item.name}".`,
       );
+      return;
+    }
+    // Successful add: honor the same "Reopen after adding" preference drags
+    // use, so with reopen off the library closes and the expanded timeline
+    // (addClipToCharacter reveals it) is unobstructed.
+    if (!store.reopenAfterDrag) {
+      if (store.assetModalVisible) store.setAssetModalVisible(false);
+      if (store.animationsModalVisible) store.setAnimationsModalVisible(false);
     }
   };
 
@@ -92,13 +104,27 @@ export const ItemElement = ({ item }: Props) => {
         onClick={handleClick}
         style={{ cursor: "grab", pointerEvents: "auto" }}
       >
-        <img
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-          src={item.thumbnail}
-          alt={item.name}
-          className="h-full w-full object-cover object-center"
-        />
+        {item.thumbnail && !thumbnailFailed ? (
+          <img
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+            src={item.thumbnail}
+            alt={item.name}
+            className="h-full w-full object-cover object-center"
+            onError={() => setThumbnailFailed(true)}
+          />
+        ) : (
+          /* Missing/broken thumbnail: type icon on a slightly lighter card
+             so it reads as a deliberate placeholder, not a load failure. */
+          <div className="flex h-full w-full items-center justify-center bg-brand-secondary-500/60">
+            <FontAwesomeIcon
+              icon={
+                item.type === AssetType.ANIMATION ? faPersonRunning : faCube
+              }
+              className="text-2xl text-white/30"
+            />
+          </div>
+        )}
 
         <div className="text-shadow-md absolute inset-0 flex items-center justify-center bg-brand-primary-950/50 text-[13px] font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           {item.type === AssetType.ANIMATION ? (

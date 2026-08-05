@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faPause, faChevronDown } from "@fortawesome/pro-solid-svg-icons";
+import { faPlay, faPause, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { pauseTimeline, playTimeline, seekTimeline } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
@@ -66,7 +66,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
           onClick={() => setExpanded(true)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+          <FontAwesomeIcon icon={faChevronUp} className="h-3 w-3" />
         </button>
       )}
     </div>

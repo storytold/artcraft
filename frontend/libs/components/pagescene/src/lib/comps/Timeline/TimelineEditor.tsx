@@ -4,11 +4,13 @@ import {
   faPlay,
   faPause,
   faBackwardStep,
+  faCrosshairs,
   faForwardStep,
-  faChevronUp,
+  faChevronDown,
   faTrash,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
   cancelTimeline,
@@ -56,13 +58,28 @@ export const TimelineEditor = () => {
   const selectedClipLaneId = usePageSceneStore(
     (s) => s.timelineSelectedClipLaneId,
   );
+  const revealObjectUuid = usePageSceneStore(
+    (s) => s.timelineRevealObjectUuid,
+  );
+  const selectedObject = usePageSceneStore((s) => s.selectedObject);
+  const focusSelected = usePageSceneStore((s) => s.timelineFocusSelected);
+  const setFocusSelected = usePageSceneStore(
+    (s) => s.setTimelineFocusSelected,
+  );
   const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
 
   // Every scene object gets a track row (empty lanes included), so the
   // editor never looks blank while the scene has content — no selection
-  // required to see where keyframes can go.
+  // required to see where keyframes can go. The focus toggle narrows the
+  // list to the selected object's row; with nothing selected (or the
+  // selection not an outliner row) it falls back to showing everything
+  // rather than an empty list.
   const trackByUuid = new Map(tracks.map((t) => [t.objectUuid, t]));
-  const rows = outlinerItems;
+  const focusedRows =
+    focusSelected && selectedObject
+      ? outlinerItems.filter((item) => item.id === selectedObject.id)
+      : [];
+  const rows = focusedRows.length > 0 ? focusedRows : outlinerItems;
 
   // Clip-row eligibility: characters and any skinned object (creatures,
   // rigged uploads) accept animation drags — the bind check still gates the
@@ -184,6 +201,32 @@ export const TimelineEditor = () => {
     };
   }, [selectedClipLaneId, editor]);
 
+  // Scroll the row list to the object whose clip was just added
+  // (addClipToCharacter sets the uuid alongside timelineExpanded). A store
+  // field rather than a call because the editor is unmounted while
+  // collapsed: expanding mounts it, this effect runs post-mount with the
+  // uuid already set, scrolls, then clears.
+  useEffect(() => {
+    if (!revealObjectUuid) return;
+    const store = usePageSceneStore.getState();
+    // Focus mode can hide the revealed row (clip dropped onto a character
+    // that isn't the selected object): fall back to all tracks so the new
+    // clip is visible. The effect re-runs off the focusSelected dep once
+    // the row exists, then scrolls.
+    if (
+      store.timelineFocusSelected &&
+      store.selectedObject?.id !== revealObjectUuid
+    ) {
+      store.setTimelineFocusSelected(false);
+      return;
+    }
+    const row = document.querySelector(
+      `[data-timeline-row-uuid="${CSS.escape(revealObjectUuid)}"]`,
+    );
+    row?.scrollIntoView({ block: "nearest" });
+    store.setTimelineRevealObjectUuid(null);
+  }, [revealObjectUuid, focusSelected]);
+
   // Clicking anywhere outside the popover (canvas included) dismisses it;
   // the easing chips opt out so they can toggle it themselves.
   useEffect(() => {
@@ -268,13 +311,39 @@ export const TimelineEditor = () => {
         <span className="ml-2 tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
         </span>
+        {/* ml-auto lives on a wrapper: Tooltip's className styles the popup
+            panel, and its trigger div is hard-coded to "relative". */}
+        <div className="ml-auto">
+          <Tooltip
+            content={
+              focusSelected
+                ? "Show all tracks"
+                : "Show only the selected object's track"
+            }
+            position="top"
+            delay={300}
+            closeOnClick
+          >
+            <button
+              type="button"
+              onClick={() => setFocusSelected(!focusSelected)}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                focusSelected
+                  ? "bg-primary/20 text-white"
+                  : "text-base-fg/60 hover:bg-white/10"
+              }`}
+            >
+              <FontAwesomeIcon icon={faCrosshairs} className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        </div>
         <button
           type="button"
           title="Collapse timeline"
           onClick={() => setExpanded(false)}
-          className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faChevronUp} className="h-3 w-3" />
+          <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
         </button>
       </div>
 
@@ -331,9 +400,12 @@ export const TimelineEditor = () => {
               return (
                 /* Clip-eligible rows advertise themselves as drop targets;
                    DndAsset hit-tests this attribute during animation drags
-                   (pointer-based — no HTML5 DnD). Other rows stay untagged. */
+                   (pointer-based — no HTML5 DnD). Other rows stay untagged.
+                   data-timeline-row-uuid tags EVERY row; it's the scroll
+                   target for the post-add reveal effect above. */
                 <div
                   key={item.id}
+                  data-timeline-row-uuid={item.id}
                   data-clip-drop-uuid={droppable ? item.id : undefined}
                 >
                   <TimelineTrackRow

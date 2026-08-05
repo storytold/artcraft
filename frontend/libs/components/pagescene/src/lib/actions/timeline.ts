@@ -6,6 +6,7 @@
 import type Editor from "../engine/editor";
 import type { EasingSpec } from "../engine/timeline/types";
 import { RemoveClipLaneAction } from "../engine/editor/actions/RemoveClipLaneAction";
+import { usePageSceneStore } from "../PageSceneStore";
 
 // The clip source only needs an id + label — both a full MediaItem (drawer
 // click) and a drag payload (drop) satisfy this.
@@ -75,6 +76,9 @@ export function setKeyframeEasing(
 // row has no free slot. Strips start at the compact DEFAULT_CLIP_DURATION
 // width (the play window — trim wider to reveal more of the clip); once the
 // GLB loads the strip shrinks if the clip is shorter (autoDuration).
+// A successful add expands the timeline and scrolls its row list to the
+// character (timelineRevealObjectUuid, consumed by TimelineEditor) so the
+// new strip is immediately visible.
 export function addClipToCharacter(
   editor: Editor,
   characterUuid: string,
@@ -83,7 +87,7 @@ export function addClipToCharacter(
 ): string | null {
   if (!item.media_id) return null;
   const startTime = atTime ?? editor.timelineController.getPlayhead();
-  return editor.timelineController.addClipLane(characterUuid, {
+  const laneId = editor.timelineController.addClipLane(characterUuid, {
     sourceMediaId: item.media_id,
     name: item.name ?? "Animation",
     startTime,
@@ -91,6 +95,12 @@ export function addClipToCharacter(
     loop: false,
     autoDuration: true,
   });
+  if (laneId) {
+    const store = usePageSceneStore.getState();
+    store.setTimelineRevealObjectUuid(characterUuid);
+    store.setTimelineExpanded(true);
+  }
+  return laneId;
 }
 
 // Place one of an object's own baked clips (object.animations[clipIndex]) on

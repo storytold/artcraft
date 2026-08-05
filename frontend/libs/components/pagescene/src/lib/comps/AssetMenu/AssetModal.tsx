@@ -31,7 +31,11 @@ import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { ItemElements } from "./shared/ItemElements";
-import { useUserObjects, useFeaturedObjects } from "./hooks";
+import {
+  useAnimationLibrary,
+  useUserObjects,
+  useFeaturedObjects,
+} from "./hooks";
 import { isAnyStatusFetching } from "./utilities/misc";
 import { FilterEngineCategories, FilterMediaType } from "../../enums";
 import {
@@ -39,7 +43,6 @@ import {
   demoShapeItems,
   demoCharacterItems,
   demoMemeItems,
-  demoAnimationItems,
 } from "../../signals/demoAssets";
 import { usePageSceneStore } from "../../PageSceneStore";
 import type { MediaItem } from "../../models/assets";
@@ -259,30 +262,14 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching featured image planes",
   });
 
-  // Skeletal animation clips (Mixamo-style). GLB/GLTF only — the timeline's
-  // clip loader (Scene.loadRawGlb) can't consume other formats (e.g. vmd).
-  const {
-    featuredObjects: featuredAnimations,
-    featuredFetchStatus: featuredAnimationsFetchStatus,
-  } = useFeaturedObjects({
-    filterEngineCategories: [FilterEngineCategories.ANIMATION],
-    filterMediaTypes: [FilterMediaType.GLB, FilterMediaType.GLTF],
-    defaultErrorMessage: "Error fetching featured animations",
-  });
-
-  // The user's own uploaded animations, shown ahead of the featured set.
-  // Unlike the other user-asset hooks (dead "Mine" tab), this fetches on
+  // Animations data shared with the standalone AnimationsModal. Unlike the
+  // other user-asset hooks (dead "Mine" tab), fetchUserAnimations fires on
   // every modal open — silently, since anonymous users legitimately 401.
   const {
-    userObjects: userAnimations,
-    userFetchStatus: userAnimationsFetchStatus,
-    fetchUserObjects: fetchUserAnimations,
-  } = useUserObjects({
-    filterEngineCategories: [FilterEngineCategories.ANIMATION],
-    filterMediaTypes: [FilterMediaType.GLB, FilterMediaType.GLTF],
-    defaultErrorMessage: "Error fetching your animations",
-    suppressErrorToast: true,
-  });
+    allAnimations,
+    fetchUserAnimations,
+    fetchStatuses: animationFetchStatuses,
+  } = useAnimationLibrary();
 
   const isFetching = isAnyStatusFetching([
     userCharactersFetchStatus,
@@ -295,8 +282,7 @@ export const AssetModal = () => {
     featuredSetsFetchStatus,
     featuredCreaturesFetchStatus,
     featuredImagePlanesFetchStatus,
-    featuredAnimationsFetchStatus,
-    userAnimationsFetchStatus,
+    ...animationFetchStatuses,
   ]);
 
   const assetTabs = useMemo<AssetTab[]>(() => {
@@ -385,18 +371,9 @@ export const AssetModal = () => {
         labelSingle: "Animation",
         icon: faPersonRunning,
         engineCategory: FilterEngineCategories.ANIMATION,
-        // The user's own uploads lead, then the server-curated set; the
-        // hardcoded demo clips are only the fallback while the API has no
-        // featured animations (deliberately replace, not merge).
-        items:
-          activeLibraryTab === "library"
-            ? [
-                ...(userAnimations ?? []),
-                ...(featuredAnimations?.length
-                  ? featuredAnimations
-                  : demoAnimationItems),
-              ]
-            : [],
+        // Uploads-first ordering with the demo-clip fallback lives in
+        // useAnimationLibrary (shared with the standalone AnimationsModal).
+        items: activeLibraryTab === "library" ? allAnimations : [],
       },
       {
         id: "skybox",
@@ -410,8 +387,7 @@ export const AssetModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
-      featuredAnimations,
-      userAnimations,
+      allAnimations,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,

@@ -2,9 +2,14 @@ import React from "react";
 import { useShallow } from "zustand/shallow";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
-import { faCheck, faPersonRunning } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCheck,
+  faFilm,
+  faPersonRunning,
+} from "@fortawesome/pro-solid-svg-icons";
 import { usePageSceneStore } from "../PageSceneStore";
 import { getActiveEditor } from "../contexts/EngineContext/EngineContext";
+import { openAnimationsModal } from "../actions";
 
 interface PoseModeSelectorProps {}
 
@@ -58,6 +63,24 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
           )}
         </>
       </Tooltip>
+      {/* Animations-only library for the selected character. Hidden while
+          posing so the row stays a single "Done" affordance. */}
+      {poseMode === "select" && (
+        <Tooltip
+          content={"Add an animation to this character"}
+          position={"bottom"}
+          delay={300}
+          closeOnClick={true}
+        >
+          <Button
+            icon={faFilm}
+            onClick={() => openAnimationsModal()}
+            className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
+          >
+            Add Animation
+          </Button>
+        </Tooltip>
+      )}
     </div>
   );
 };

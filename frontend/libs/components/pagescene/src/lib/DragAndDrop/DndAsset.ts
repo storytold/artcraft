@@ -104,10 +104,12 @@ class DndAsset {
       // Refocus the library (un-dim, restore pointer events).
       store.setAssetDraggingUnder(false);
     } else {
-      // Close it after adding. Keep `assetDraggingUnder` true so the panel stays
-      // faded-out through the close instead of flashing back up; it's reset when
-      // the library is reopened.
-      store.setAssetModalVisible(false);
+      // Close whichever library panel sourced the drag (at most one is open;
+      // see openAssetModal/openAnimationsModal). Keep `assetDraggingUnder`
+      // true so the panel stays faded-out through the close instead of
+      // flashing back up; it's reset when the library is reopened.
+      if (store.assetModalVisible) store.setAssetModalVisible(false);
+      if (store.animationsModalVisible) store.setAnimationsModalVisible(false);
     }
     this.isDragging = false;
     this.editor = null;

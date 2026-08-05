@@ -4,6 +4,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import {
   faArrowsRotate,
   faArrowsUpDownLeftRight,
+  faFilm,
   faGlobe,
   faMagicWandSparkles,
   faPlus,
@@ -25,9 +26,13 @@ import {
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { openAssetModal, setTransformMode } from "../../actions";
+import {
+  openAnimationsModal,
+  openAssetModal,
+  setTransformMode,
+} from "../../actions";
 import { usePageSceneStore, type TransformMode } from "../../PageSceneStore";
-import { AssetModal } from "../AssetMenu";
+import { AnimationsModal, AssetModal } from "../AssetMenu";
 
 export interface Controls3DProps {
   /** Show the magic-wand "Create 3D model from image" shortcut next
@@ -120,6 +125,9 @@ export const Controls3D = ({
       case "presets":
         openAssetModal();
         break;
+      case "animations":
+        openAnimationsModal();
+        break;
       case "library":
         handleOpenGalleryModal();
         break;
@@ -195,6 +203,14 @@ export const Controls3D = ({
                           <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
                         ),
                         action: "presets",
+                      },
+                      {
+                        label: "Animations",
+                        selected: false,
+                        icon: (
+                          <FontAwesomeIcon icon={faFilm} className="h-4 w-4" />
+                        ),
+                        action: "animations",
                       },
                       {
                         label: "My Library",
@@ -319,6 +335,7 @@ export const Controls3D = ({
       </div>
 
       <AssetModal />
+      <AnimationsModal />
 
       {editor &&
         editor.adapter.renderAssetUploader({

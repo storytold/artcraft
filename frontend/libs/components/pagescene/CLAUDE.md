@@ -220,6 +220,27 @@ then one row per character is the right model.
   retargeting. Incompatible or slot-less drops are rejected with a toast. The old HTML5 DnD
   path (`ANIMATION_CLIP_MIME`) is removed. A full row (`resolveFreeStart` → null) **rejects**
   the add instead of overlapping.
+- **Standalone AnimationsModal (done)**: `comps/AssetMenu/AnimationsModal.tsx` — an
+  animations-only sibling of `AssetModal` (same `@storyteller/ui-modal` floating-panel props,
+  same `ItemElements` grid, same drag-under semantics) with All / Presets / Uploaded tabs.
+  Opened by the **"Add Animation" button** next to "Enter Pose Mode" (`PoseModeSelector`,
+  visible when a character is selected and not posing) and by the **"Animations" entry in the
+  Controls3D "+" popover** (not auth-gated, like "presets"), both via
+  `actions/openAnimationsModal.ts`.
+  The two library modals are **mutually exclusive** (each open action closes the other), so
+  `DndAsset.endDrag` and `ItemElement`'s click-add close whichever is visible (reopen-off
+  path). Animations data (uploads-first + featured-else-demos fallback) lives in the shared
+  `comps/AssetMenu/hooks/useAnimationLibrary.tsx`, consumed by both modals.
+- **Timeline reveal on add (done)**: a successful `addClipToCharacter` (click or drop, either
+  modal) sets `timelineExpanded` + `timelineRevealObjectUuid`; an effect in `TimelineEditor`
+  scrolls the row list to `[data-timeline-row-uuid]` (every row is tagged) then clears the
+  field. A store field because `TimelineEditor` is unmounted while collapsed — expand + scroll
+  can't happen in the caller's tick.
+- **Timeline focus toggle (done)**: crosshair button in the `TimelineEditor` transport bar
+  (`timelineFocusSelected`, store-held so it survives the collapse/expand remount) narrows the
+  row list to the selected object's track. Falls back to all rows when nothing is selected (or
+  the selection has no outliner row), and the reveal effect switches focus off when a clip
+  lands on a non-selected object so the new strip is never hidden.
 - **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders **one row per
   character** (rendered even when empty, as a drop hint) holding all that character's strips
   end-to-end under its keyframe row in `TimelineEditor`. Strip body drags to **move**

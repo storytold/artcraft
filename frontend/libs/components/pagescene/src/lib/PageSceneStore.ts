@@ -206,6 +206,15 @@ interface PageSceneState {
   // Motion popover (opened from the curve chip BETWEEN two keyframes).
   // Distinct from timelineSelectedKeyframeId, which drives selection/delete.
   timelineEasingKeyframeId: string | null;
+  // Object whose timeline row should be scrolled into view. Set (with
+  // timelineExpanded) after a clip is added; consumed and cleared by an
+  // effect in TimelineEditor. A store field because TimelineEditor is
+  // unmounted while collapsed, so expand + scroll can't happen in one tick.
+  timelineRevealObjectUuid: string | null;
+  // Timeline "focus" toggle: show only the selected object's track row.
+  // Follows the selection; with nothing selected, all rows show. Store-held
+  // (not TimelineEditor state) so it survives the collapse/expand remount.
+  timelineFocusSelected: boolean;
 
   // record output
   producedArtifact: ProducedArtifact | null;
@@ -213,6 +222,10 @@ interface PageSceneState {
 
   // layout / panels
   assetModalVisible: boolean;
+  // The standalone animations-only library modal ("Add Animation" button).
+  // Mutually exclusive with assetModalVisible (see openAnimationsModal /
+  // openAssetModal), so at most one library panel is ever open.
+  animationsModalVisible: boolean;
   assetModalVisibleDuringDrag: boolean;
   // True while an asset is being dragged out of the library modal. The modal
   // stays open but goes pointer-transparent (and translucent when reopen is on)
@@ -319,6 +332,8 @@ interface PageSceneState {
   setTimelineSelectedKeyframe: (id: string | null) => void;
   setTimelineSelectedClipLane: (id: string | null) => void;
   setTimelineEasingKeyframe: (id: string | null) => void;
+  setTimelineRevealObjectUuid: (uuid: string | null) => void;
+  setTimelineFocusSelected: (focus: boolean) => void;
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
   clearProducedArtifact: () => void;
   setRecordingProgress: (progress: RecordingProgress | null) => void;
@@ -330,6 +345,7 @@ interface PageSceneState {
 
   // layout
   setAssetModalVisible: (visible: boolean) => void;
+  setAnimationsModalVisible: (visible: boolean) => void;
   setAssetModalVisibleDuringDrag: (visible: boolean) => void;
   setAssetDraggingUnder: (dragging: boolean) => void;
   setReopenAfterDrag: (reopen: boolean) => void;
@@ -417,6 +433,8 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineSelectedKeyframeId: null,
   timelineSelectedClipLaneId: null,
   timelineEasingKeyframeId: null,
+  timelineRevealObjectUuid: null,
+  timelineFocusSelected: false,
   producedArtifact: null,
   recordingProgress: null,
   ignoreKeyDelete: false,
@@ -424,6 +442,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   isPromptBoxFocused: false,
 
   assetModalVisible: false,
+  animationsModalVisible: false,
   assetModalVisibleDuringDrag: true,
   assetDraggingUnder: false,
   reopenAfterDrag: false,
@@ -527,6 +546,9 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineSelectedClipLane: (id) =>
     set({ timelineSelectedClipLaneId: id }),
   setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
+  setTimelineRevealObjectUuid: (uuid) =>
+    set({ timelineRevealObjectUuid: uuid }),
+  setTimelineFocusSelected: (focus) => set({ timelineFocusSelected: focus }),
   setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),
   clearProducedArtifact: () =>
     set((s) => {
@@ -556,6 +578,8 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   // layout actions
   setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),
+  setAnimationsModalVisible: (visible) =>
+    set({ animationsModalVisible: visible }),
   setAssetModalVisibleDuringDrag: (visible) =>
     set({ assetModalVisibleDuringDrag: visible }),
   setAssetDraggingUnder: (dragging) => set({ assetDraggingUnder: dragging }),
