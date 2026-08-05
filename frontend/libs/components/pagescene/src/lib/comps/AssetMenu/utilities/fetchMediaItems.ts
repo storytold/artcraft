@@ -25,6 +25,9 @@ interface fetchMediaItemsInterface {
   defaultErrorMessage?: string;
   nextPageCursor?: string; // for featured items' infinite pagination
   nextPageIndex?: number; // for user item's normal pagination
+  // Fail quietly instead of toasting — for background fetches that are
+  // EXPECTED to fail sometimes (e.g. user-asset lists for anonymous users).
+  suppressErrorToast?: boolean;
 }
 
 export const fetchUserMediaItems = async (
@@ -36,6 +39,7 @@ export const fetchUserMediaItems = async (
     filterMediaType,
     defaultErrorMessage,
     nextPageIndex,
+    suppressErrorToast,
   } = args;
 
   const response = await adapter.listUserMediaFiles({
@@ -56,12 +60,14 @@ export const fetchUserMediaItems = async (
       status: FetchStatus.SUCCESS,
     };
   }
-  adapter.showToast(
-    ToastTypes.ERROR,
-    response.errorMessage ??
-      defaultErrorMessage ??
-      "Unknown Error in Fetching Media Items",
-  );
+  if (!suppressErrorToast) {
+    adapter.showToast(
+      ToastTypes.ERROR,
+      response.errorMessage ??
+        defaultErrorMessage ??
+        "Unknown Error in Fetching Media Items",
+    );
+  }
   return { status: FetchStatus.ERROR };
 };
 

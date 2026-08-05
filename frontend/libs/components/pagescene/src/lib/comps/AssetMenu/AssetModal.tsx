@@ -87,6 +87,7 @@ const AllTabSection = ({
 // Mapping from upload category to AssetTab id, so the modal can
 // auto-switch the user to the tab matching what they just uploaded.
 const categoryToTabIdMap: Partial<Record<FilterEngineCategories, string>> = {
+  [FilterEngineCategories.ANIMATION]: "animations",
   [FilterEngineCategories.CHARACTER]: "characters",
   [FilterEngineCategories.CREATURE]: "creatures",
   [FilterEngineCategories.IMAGE_PLANE]: "image-planes",
@@ -152,6 +153,10 @@ export const AssetModal = () => {
       // upload-reopen). It can't clobber an active drag: `assetModalVisible`
       // doesn't change mid-drag, so this effect doesn't re-run then.
       usePageSceneStore.getState().setAssetDraggingUnder(false);
+
+      // Pick up animations the user uploaded since the last open (silent
+      // for anonymous users — see the hook's suppressErrorToast).
+      fetchUserAnimations();
 
       const lastUploadedTab = sessionStorage.getItem("lastUploadedTab");
       if (lastUploadedTab) {
@@ -265,6 +270,20 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching featured animations",
   });
 
+  // The user's own uploaded animations, shown ahead of the featured set.
+  // Unlike the other user-asset hooks (dead "Mine" tab), this fetches on
+  // every modal open — silently, since anonymous users legitimately 401.
+  const {
+    userObjects: userAnimations,
+    userFetchStatus: userAnimationsFetchStatus,
+    fetchUserObjects: fetchUserAnimations,
+  } = useUserObjects({
+    filterEngineCategories: [FilterEngineCategories.ANIMATION],
+    filterMediaTypes: [FilterMediaType.GLB, FilterMediaType.GLTF],
+    defaultErrorMessage: "Error fetching your animations",
+    suppressErrorToast: true,
+  });
+
   const isFetching = isAnyStatusFetching([
     userCharactersFetchStatus,
     userObjectsFetchStatus,
@@ -277,6 +296,7 @@ export const AssetModal = () => {
     featuredCreaturesFetchStatus,
     featuredImagePlanesFetchStatus,
     featuredAnimationsFetchStatus,
+    userAnimationsFetchStatus,
   ]);
 
   const assetTabs = useMemo<AssetTab[]>(() => {
@@ -365,14 +385,17 @@ export const AssetModal = () => {
         labelSingle: "Animation",
         icon: faPersonRunning,
         engineCategory: FilterEngineCategories.ANIMATION,
-        // Server-curated animations take over when present; the hardcoded
-        // demo clips are only the fallback while the API has none (or the
-        // fetch hasn't landed yet). Deliberately replace, not merge.
+        // The user's own uploads lead, then the server-curated set; the
+        // hardcoded demo clips are only the fallback while the API has no
+        // featured animations (deliberately replace, not merge).
         items:
           activeLibraryTab === "library"
-            ? featuredAnimations?.length
-              ? featuredAnimations
-              : demoAnimationItems
+            ? [
+                ...(userAnimations ?? []),
+                ...(featuredAnimations?.length
+                  ? featuredAnimations
+                  : demoAnimationItems),
+              ]
             : [],
       },
       {
@@ -388,6 +411,7 @@ export const AssetModal = () => {
     [
       activeLibraryTab,
       featuredAnimations,
+      userAnimations,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,
@@ -490,6 +514,7 @@ export const AssetModal = () => {
     fetchUserSets();
     fetchUserCreatures();
     fetchUserImagePlanes();
+    fetchUserAnimations();
   };
 
   const clearSearch = () => setSearchTerm("");

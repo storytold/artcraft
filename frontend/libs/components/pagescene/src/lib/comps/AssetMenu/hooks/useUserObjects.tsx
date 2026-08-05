@@ -14,6 +14,9 @@ interface useUserObjectsProps {
   defaultErrorMessage: string;
   filterEngineCategories: FilterEngineCategories[];
   filterMediaTypes?: FilterMediaType[];
+  // Fail quietly (no toast) — for fetches expected to fail for anonymous
+  // users, e.g. the Animations tab's background "my animations" load.
+  suppressErrorToast?: boolean;
 }
 
 export const useUserObjects = (props: useUserObjectsProps) => {
@@ -51,14 +54,19 @@ export const useUserObjects = (props: useUserObjectsProps) => {
         return;
       }
 
-      const { filterEngineCategories, filterMediaTypes, defaultErrorMessage } =
-        props;
+      const {
+        filterEngineCategories,
+        filterMediaTypes,
+        defaultErrorMessage,
+        suppressErrorToast,
+      } = props;
       const result = await fetchUserMediaItems(
         {
           filterEngineCategories,
           filterMediaType: filterMediaTypes,
           defaultErrorMessage,
           nextPageIndex,
+          suppressErrorToast,
         },
         editor.adapter,
       );
