@@ -12,6 +12,7 @@ use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
@@ -38,6 +39,9 @@ where
   pub maybe_origin_product_category: Option<MediaFileOriginProductCategory>,
   pub maybe_prompt_token: Option<&'a PromptToken>,
   pub maybe_platform_type: Option<PlatformType>,
+
+  /// The generation job the cover belongs to.
+  pub maybe_source_job_token: Option<&'a InferenceJobToken>,
 
   pub mysql_executor: E,
   pub phantom: PhantomData<&'c E>,
@@ -95,6 +99,7 @@ where
     is_user_upload: false,
     maybe_audio_encoding: None,
     maybe_batch_token: None,
+    maybe_source_job_token: args.maybe_source_job_token,
     maybe_cover_image_media_file_token: None,
     maybe_creator_category_synthetic_id: None,
     maybe_creator_file_synthetic_id: None,

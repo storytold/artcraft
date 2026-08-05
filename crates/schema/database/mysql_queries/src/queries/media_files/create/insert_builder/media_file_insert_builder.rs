@@ -13,6 +13,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
@@ -75,6 +76,9 @@ pub struct MediaFileInsertBuilder {
   // // If batch generated, this is the batch token.
   maybe_batch_generation_token: Option<BatchGenerationToken>,
 
+  // If produced by an inference job, the job that generated this file.
+  maybe_source_job_token: Option<InferenceJobToken>,
+
   // Cover image (e.g. thumbnail for 3D splats)
   maybe_cover_image_media_file_token: Option<MediaFileToken>,
 
@@ -117,6 +121,7 @@ impl MediaFileInsertBuilder {
       maybe_origin_filename: None,
       maybe_engine_category: None,
       maybe_batch_generation_token: None,
+      maybe_source_job_token: None,
       maybe_cover_image_media_file_token: None,
       public_bucket_directory_hash: None,
       maybe_prompt_token: None,
@@ -263,6 +268,11 @@ impl MediaFileInsertBuilder {
     self
   }
 
+  pub fn maybe_source_job_token(mut self, maybe_job_token: Option<&InferenceJobToken>) -> Self {
+    self.maybe_source_job_token = maybe_job_token.cloned();
+    self
+  }
+
   pub fn maybe_cover_image_media_file_token(mut self, maybe_token: Option<&MediaFileToken>) -> Self {
     self.maybe_cover_image_media_file_token = maybe_token.cloned();
     self
@@ -348,6 +358,7 @@ impl MediaFileInsertBuilder {
       maybe_scene_source_media_file_token: None, // TODO
       maybe_prompt_token: self.maybe_prompt_token.as_ref(),
       maybe_batch_token: self.maybe_batch_generation_token.as_ref(),
+      maybe_source_job_token: self.maybe_source_job_token.as_ref(),
       public_bucket_directory_hash: bucket_path.get_object_hash(),
       maybe_public_bucket_prefix: bucket_path.get_optional_prefix(),
       maybe_public_bucket_extension: bucket_path.get_optional_extension(),
