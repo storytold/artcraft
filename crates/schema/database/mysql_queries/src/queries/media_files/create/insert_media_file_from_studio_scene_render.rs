@@ -108,6 +108,7 @@ pub async fn insert_media_file_from_studio_scene_render(
     maybe_text_transcript: None,
     maybe_origin_filename: None,
     maybe_batch_token: None,
+    maybe_source_job_token: None, // NB: Studio renders are client-side, not job outputs.
     maybe_prompt_token: None,
     maybe_mod_user_token: None,
     maybe_engine_category: None,

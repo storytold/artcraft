@@ -95,6 +95,9 @@ where
     is_user_upload: false,
     maybe_audio_encoding: None,
     maybe_batch_token: None,
+    // NB: Covers/thumbnails never carry a source job token — only the primary
+    // outputs of a job do.
+    maybe_source_job_token: None,
     maybe_cover_image_media_file_token: None,
     maybe_creator_category_synthetic_id: None,
     maybe_creator_file_synthetic_id: None,

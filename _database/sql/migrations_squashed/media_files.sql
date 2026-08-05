@@ -102,6 +102,10 @@ CREATE TABLE media_files (
   -- If the media file is generated as part of a batch, this designates the batch.
   maybe_batch_token VARCHAR(32) DEFAULT NULL,
 
+  -- The inference job ('jinf_...') whose completion produced this media file.
+  -- Only set for files written as job outputs; uploads and other origins stay NULL.
+  maybe_source_job_token VARCHAR(32) DEFAULT NULL,
+
   -- ========== METADATA ==========
 
   -- If the file is a user upload (not including studio renders).
@@ -327,6 +331,7 @@ CREATE TABLE media_files (
   KEY fk_maybe_origin_model_token (maybe_origin_model_token),
   KEY fk_maybe_origin_model_type_and_token (maybe_origin_model_type, maybe_origin_model_token),
   KEY index_maybe_batch_token (maybe_batch_token),
+  KEY index_maybe_source_job_token (maybe_source_job_token),
   KEY index_is_user_upload (is_user_upload),
   KEY index_is_intermediate_system_file (is_intermediate_system_file),
   KEY index_maybe_scene_source_media_file_token (maybe_scene_source_media_file_token),

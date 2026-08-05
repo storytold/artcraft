@@ -99,6 +99,7 @@ pub async fn insert_media_file_generic_from_job(
         is_user_upload: false, // NB: Jobs typically won't be user uploads. Maybe this becomes a param in the future(?)
         maybe_audio_encoding: args.maybe_audio_encoding,
         maybe_batch_token: args.maybe_batch_token,
+        maybe_source_job_token: Some(&args.job.inference_job_token),
         maybe_creator_anonymous_visitor_token: args.job.maybe_creator_anonymous_visitor_token_typed.as_ref(),
         maybe_creator_category_synthetic_id_category: args.maybe_creator_category_synthetic_id_category,
         maybe_creator_file_synthetic_id_category: args.maybe_creator_file_synthetic_id_category,

@@ -14,6 +14,7 @@ use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::prompts::PromptToken;
@@ -73,6 +74,9 @@ where
 
     // If batch generated, this is the batch token.
     pub maybe_batch_token: Option<&'a BatchGenerationToken>,
+
+    // If produced by an inference job, the job that generated this file.
+    pub maybe_source_job_token: Option<&'a InferenceJobToken>,
 
     // Storage details
     pub public_bucket_directory_hash: &'a str,
@@ -159,6 +163,7 @@ where
             maybe_origin_filename = ?,
 
             maybe_batch_token = ?,
+            maybe_source_job_token = ?,
 
             maybe_mime_type = ?,
             file_size_bytes = ?,
@@ -218,6 +223,7 @@ where
         args.maybe_origin_filename,
 
         args.maybe_batch_token.map(|t| t.as_str()),
+        args.maybe_source_job_token.map(|t| t.as_str()),
 
         args.maybe_mime_type,
         args.file_size_bytes,
