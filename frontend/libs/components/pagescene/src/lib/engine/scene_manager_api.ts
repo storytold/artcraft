@@ -27,6 +27,8 @@ export type SceneObject = {
   // True when the object contains a SkinnedMesh — it can accept skeletal
   // animation clips (subject to the bone-name bind check).
   hasSkeleton: boolean;
+  // Whether the persistent skeleton overlay is toggled on (userData flag).
+  skeletonVisible: boolean;
   // Display names of the clips baked into the object's own GLB
   // (object.animations), in index order. Empty for objects without baked
   // animations.
@@ -247,6 +249,7 @@ export class SceneManager implements SceneManagerAPI {
       isCamera: object.name == "::CAM::",
       hasSkeleton,
       bakedClips,
+      skeletonVisible: object.userData["skeletonVisible"] === true,
     };
   }
 

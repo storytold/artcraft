@@ -86,6 +86,9 @@ export interface OutlinerItem {
   // Display names of clips baked into the object's own GLB, in index order.
   // Non-empty → the timeline clip row offers a baked-clip picker.
   bakedClips?: string[];
+  // Whether the persistent skeleton overlay (outliner bone icon) is on for
+  // this object. Mirrors object.userData.skeletonVisible.
+  skeletonVisible?: boolean;
 }
 
 // The currently inspected object in the right-hand control panel.

@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRightToBracket,
+  faBone,
   faEye,
   faEyeSlash,
   faLock,
@@ -18,6 +19,7 @@ import { OutlinerItem, usePageSceneStore } from "../../PageSceneStore";
 import { openAssetModal } from "../../actions/openAssetModal";
 import { toggleObjectLock } from "../../actions/toggleObjectLock";
 import { toggleObjectVisibility } from "../../actions/toggleObjectVisibility";
+import { toggleSkeletonHelper } from "../../actions/toggleSkeletonHelper";
 import { toggleCameraView } from "../../actions/cameraView";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
@@ -55,6 +57,12 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
     toggleCameraView(editorEngine);
   };
 
+  const handleToggleSkeleton = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editorEngine) return;
+    toggleSkeletonHelper(editorEngine, item.id);
+  };
+
   return (
     <div
       role="button"
@@ -89,6 +97,22 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
           >
             <div className="w-3">
               <FontAwesomeIcon icon={faArrowRightToBracket} />
+            </div>
+          </button>
+        )}
+        {item.hasSkeleton && (
+          /* Editor-only skeleton overlay (never part of renders); state
+             persists with the scene. */
+          <button
+            onClick={handleToggleSkeleton}
+            title={item.skeletonVisible ? "Hide skeleton" : "Show skeleton"}
+            className={twMerge(
+              "text-white/60 transition-colors duration-100 hover:text-white text-xs",
+              item.skeletonVisible && "text-white/90",
+            )}
+          >
+            <div className="w-3">
+              <FontAwesomeIcon icon={faBone} />
             </div>
           </button>
         )}

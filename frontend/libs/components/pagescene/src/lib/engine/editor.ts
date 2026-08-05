@@ -22,6 +22,7 @@ import { CameraController } from "./editor/CameraController";
 import { HistoryManager } from "./editor/HistoryManager";
 import { TimelineController } from "./editor/TimelineController";
 import { CharacterAnimationManager } from "./animation/CharacterAnimationManager";
+import { SkeletonHelperController } from "./editor/SkeletonHelperController";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
 
@@ -38,6 +39,8 @@ import {
   GridVisibleChangedEvent,
   CameraViewToggleRequestedEvent,
   InspectorPanelChangedEvent,
+  OutlinerRefreshedEvent,
+  PoseModeChangedEvent,
   SceneLoadedEvent,
   SceneResetEvent,
   TransformSpaceChangedEvent,
@@ -110,6 +113,13 @@ class Editor {
   // mesh in/out of the THREE.js scene). Cleared on unmountEngine.
   private gridSubscription: () => void;
   private cameraViewSubscription: () => void;
+  private skeletonSyncSubscription: () => void;
+  private poseModeSubscription: () => void;
+
+  // Persistent per-object skeleton overlays (outliner bone icon).
+  readonly skeletonHelpers = new SkeletonHelperController(
+    () => this.activeScene.scene,
+  );
 
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
@@ -195,6 +205,25 @@ class Editor {
       CameraViewToggleRequestedEvent,
       () => this.cameraController.switchCameraView(),
     );
+
+    // Skeleton overlays reconcile on every outliner refresh — add/delete/
+    // load/new-scene all funnel through one, so no bespoke lifecycle hooks.
+    this.skeletonSyncSubscription = this.bus.subscribe(
+      OutlinerRefreshedEvent,
+      () => this.skeletonHelpers.sync(),
+    );
+    // FK/pose mode draws its own rig overlay for the posed character —
+    // suppress our persistent helper for it so bones aren't double-drawn,
+    // and restore when pose mode exits.
+    this.poseModeSubscription = this.bus.subscribe(PoseModeChangedEvent, (e) => {
+      if (e.mode === "pose") {
+        this.skeletonHelpers.suppress(
+          this.mouse_controls?.selected?.[0]?.uuid ?? null,
+        );
+      } else {
+        this.skeletonHelpers.suppress(null);
+      }
+    });
 
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
@@ -1055,6 +1084,9 @@ class Editor {
     this.bus.emit(new EngineInitializedEvent(false));
     this.gridSubscription();
     this.cameraViewSubscription();
+    this.skeletonSyncSubscription();
+    this.poseModeSubscription();
+    this.skeletonHelpers.clear();
     this.storeBridge.dispose();
     console.log("3D Editor Engine unmounted");
   }
