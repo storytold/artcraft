@@ -128,7 +128,6 @@ pub(crate) async fn attach_cover_image(
     public_bucket_path: &public_upload_path,
     maybe_origin_product_category,
     maybe_prompt_token: job.maybe_prompt_token.as_ref(),
-    maybe_source_job_token: Some(&job.job_token),
     maybe_platform_type: job.maybe_platform_type,
     mysql_executor: &server_state.mysql_pool,
     phantom: Default::default(),

@@ -238,7 +238,6 @@ async fn download_and_upload_thumbnail(
     .file_size_bytes(thumb_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
-    .maybe_source_job_token(Some(&job.job_token))
     .maybe_platform_type(job.maybe_platform_type)
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
