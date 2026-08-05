@@ -6,6 +6,7 @@ import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faBone,
   faCube,
   faXmark,
   faCheck,
@@ -135,10 +136,26 @@ export const UploadFiles3D = ({
   const [previewClip, setPreviewClip] = useState(0);
   const selectAnimationRef = useRef<((index: number) => void) | null>(null);
 
+  // Skeleton overlay: offered for any rigged model, on by default for
+  // mesh-less ones (there'd be nothing else to see).
+  const [previewHasBones, setPreviewHasBones] = useState(false);
+  const [previewSkeletonVisible, setPreviewSkeletonVisible] = useState(false);
+  const setSkeletonVisibleRef = useRef<((visible: boolean) => void) | null>(
+    null,
+  );
+
   const handlePreviewClipChange = (value: string | number) => {
     const index = Number(value);
     setPreviewClip(index);
     selectAnimationRef.current?.(index);
+  };
+
+  const handleSkeletonToggle = () => {
+    setPreviewSkeletonVisible((visible) => {
+      const next = !visible;
+      setSkeletonVisibleRef.current?.(next);
+      return next;
+    });
   };
 
   const disposeRenderer = () => {
@@ -202,20 +219,27 @@ export const UploadFiles3D = ({
     setPreviewStatus({ type: "init" });
     setPreviewAnimations([]);
     setPreviewClip(0);
+    setPreviewHasBones(false);
+    setPreviewSkeletonVisible(false);
     selectAnimationRef.current = null;
+    setSkeletonVisibleRef.current = null;
 
-    const { renderer, camera, selectAnimation } = loadPreviewOnCanvas({
-      file: currentFile,
-      canvas: canvasRef.current,
-      statusCallback: setPreviewStatus,
-      onAnimationsAvailable: setPreviewAnimations,
-      onModelInfo: (info) => {
-        if (!info.hasMesh) onMeshlessDetected?.();
-      },
-    });
+    const { renderer, camera, selectAnimation, setSkeletonVisible } =
+      loadPreviewOnCanvas({
+        file: currentFile,
+        canvas: canvasRef.current,
+        statusCallback: setPreviewStatus,
+        onAnimationsAvailable: setPreviewAnimations,
+        onModelInfo: (info) => {
+          if (!info.hasMesh) onMeshlessDetected?.();
+          setPreviewHasBones(info.hasBones);
+          setPreviewSkeletonVisible(info.hasBones && !info.hasMesh);
+        },
+      });
     rendererRef.current = renderer;
     cameraRef.current = camera;
     selectAnimationRef.current = selectAnimation;
+    setSkeletonVisibleRef.current = setSkeletonVisible;
 
     return disposeRenderer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -505,21 +529,43 @@ export const UploadFiles3D = ({
     });
   };
 
-  // Overlayed on the preview canvas when the current model has baked clips;
-  // still models get no extra chrome. Shared by the single and multi layouts.
-  const animationPicker = previewAnimations.length > 0 && (
-    <div className="pointer-events-auto absolute right-2 top-2 z-10 w-44">
-      <Select
-        value={String(previewClip)}
-        onChange={handlePreviewClipChange}
-        options={[
-          ...previewAnimations.map((name, index) => ({
-            label: name,
-            value: String(index),
-          })),
-          { label: "T-pose (none)", value: "-1" },
-        ]}
-      />
+  // Overlayed on the preview canvas: bone toggle for rigged models and the
+  // clip picker for models with baked animations; still models get no extra
+  // chrome. Shared by the single and multi layouts.
+  const animationPicker = (previewAnimations.length > 0 ||
+    previewHasBones) && (
+    <div className="pointer-events-auto absolute right-2 top-2 z-10 flex items-start gap-2">
+      {previewHasBones && (
+        <button
+          type="button"
+          title={
+            previewSkeletonVisible ? "Hide skeleton" : "Show skeleton"
+          }
+          onClick={handleSkeletonToggle}
+          className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+            previewSkeletonVisible
+              ? "border-primary bg-primary/20 text-white"
+              : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"
+          }`}
+        >
+          <FontAwesomeIcon icon={faBone} />
+        </button>
+      )}
+      {previewAnimations.length > 0 && (
+        <div className="w-44">
+          <Select
+            value={String(previewClip)}
+            onChange={handlePreviewClipChange}
+            options={[
+              ...previewAnimations.map((name, index) => ({
+                label: name,
+                value: String(index),
+              })),
+              { label: "T-pose (none)", value: "-1" },
+            ]}
+          />
+        </div>
+      )}
     </div>
   );
 

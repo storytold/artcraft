@@ -3,11 +3,34 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SplatMesh } from "@sparkjsdev/spark";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBone } from "@fortawesome/pro-solid-svg-icons";
 import { Select } from "@storyteller/ui-select";
 
 // Dropdown value for the "no animation" choice (models rest in their bind /
 // T-pose). Clip values are their stringified index.
 const NO_ANIMATION_VALUE = "-1";
+
+// Bounding box for camera framing. Geometry-less models (skeleton/animation-
+// only exports) produce an EMPTY Box3 from setFromObject — which would NaN
+// the camera math — so fall back to the bone world positions, then to a
+// humanoid-ish default so framing always succeeds.
+const computeModelBox = (target: THREE.Object3D): THREE.Box3 => {
+  const box = new THREE.Box3().setFromObject(target);
+  if (box.isEmpty()) {
+    target.updateMatrixWorld(true);
+    const point = new THREE.Vector3();
+    target.traverse((node) => {
+      if ((node as THREE.Bone).isBone) {
+        box.expandByPoint(node.getWorldPosition(point));
+      }
+    });
+  }
+  if (box.isEmpty()) {
+    box.set(new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 2, 1));
+  }
+  return box;
+};
 
 export interface Viewer3DProps {
   modelUrl?: string;
@@ -46,10 +69,25 @@ export function Viewer3D({
   const [animationNames, setAnimationNames] = useState<string[]>([]);
   const [selectedClip, setSelectedClip] = useState(-1);
 
+  // Skeleton overlay for rigged models. Defaults ON for mesh-less models
+  // (skeleton/animation-only exports would otherwise render nothing).
+  const skeletonHelperRef = useRef<THREE.SkeletonHelper | null>(null);
+  const [hasBones, setHasBones] = useState(false);
+  const [skeletonVisible, setSkeletonVisible] = useState(false);
+
   const stopAnimations = () => {
     mixerRef.current?.stopAllAction();
     mixerRef.current = null;
     clipsRef.current = [];
+  };
+
+  const removeSkeletonHelper = () => {
+    const helper = skeletonHelperRef.current;
+    if (helper) {
+      sceneRef.current?.remove(helper);
+      helper.dispose();
+      skeletonHelperRef.current = null;
+    }
   };
 
   // Rest pose for skinned models when "no animation" is chosen — a stopped
@@ -234,22 +272,25 @@ export function Viewer3D({
       loadedModelRef.current = null;
     }
     stopAnimations();
+    removeSkeletonHelper();
     setAnimationNames([]);
     setSelectedClip(-1);
+    setHasBones(false);
+    setSkeletonVisible(false);
 
     if (cubeRef.current) {
       cubeRef.current.visible = false;
     }
 
     const onModelLoaded = (model: THREE.Object3D) => {
-      const box = new THREE.Box3().setFromObject(model);
+      const box = computeModelBox(model);
       const size = box.getSize(new THREE.Vector3());
 
       const maxDim = Math.max(size.x, size.y, size.z);
       const scale = 2 / maxDim;
       model.scale.multiplyScalar(scale);
 
-      const scaledBox = new THREE.Box3().setFromObject(model);
+      const scaledBox = computeModelBox(model);
       const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
       const scaledSize = scaledBox.getSize(new THREE.Vector3());
 
@@ -386,6 +427,22 @@ export function Viewer3D({
             );
             setSelectedClip(0);
           }
+          // Skeleton overlay: available for any rigged model, shown by
+          // default when there's no mesh to look at.
+          let modelHasBones = false;
+          let modelHasMesh = false;
+          model.traverse((node) => {
+            if ((node as THREE.Bone).isBone) modelHasBones = true;
+            if ((node as THREE.Mesh).isMesh) modelHasMesh = true;
+          });
+          if (modelHasBones) {
+            const helper = new THREE.SkeletonHelper(model);
+            helper.visible = !modelHasMesh;
+            scene.add(helper);
+            skeletonHelperRef.current = helper;
+            setHasBones(true);
+            setSkeletonVisible(!modelHasMesh);
+          }
         },
         (progress) => {
           console.log(
@@ -404,12 +461,20 @@ export function Viewer3D({
 
     return () => {
       stopAnimations();
+      removeSkeletonHelper();
       if (loadedModelRef.current && sceneRef.current) {
         sceneRef.current.remove(loadedModelRef.current);
         loadedModelRef.current = null;
       }
     };
   }, [modelUrl, onThumbnailCapture, showGrid]);
+
+  // Reflect the toggle onto the helper.
+  useEffect(() => {
+    if (skeletonHelperRef.current) {
+      skeletonHelperRef.current.visible = skeletonVisible;
+    }
+  }, [skeletonVisible]);
 
   // Switch the playing clip when the dropdown changes. The load path starts
   // clip 0 directly, so this only needs to handle user switches.
@@ -460,21 +525,40 @@ export function Viewer3D({
         </div>
       )}
 
-      {/* Animation picker — only for models that actually ship clips.
-          Animation-less models stay static with no extra chrome. */}
-      {showViewer && animationNames.length > 0 && (
-        <div className="absolute right-2.5 top-2.5 z-20 w-44">
-          <Select
-            value={String(selectedClip)}
-            onChange={(value) => setSelectedClip(Number(value))}
-            options={[
-              ...animationNames.map((name, index) => ({
-                label: name,
-                value: String(index),
-              })),
-              { label: "T-pose (none)", value: NO_ANIMATION_VALUE },
-            ]}
-          />
+      {/* Top-right controls: skeleton overlay toggle (rigged models) and
+          the animation picker (models that ship clips). Models with
+          neither get no extra chrome. */}
+      {showViewer && (hasBones || animationNames.length > 0) && (
+        <div className="absolute right-2.5 top-2.5 z-20 flex items-start gap-2">
+          {hasBones && (
+            <button
+              type="button"
+              title={skeletonVisible ? "Hide skeleton" : "Show skeleton"}
+              onClick={() => setSkeletonVisible((visible) => !visible)}
+              className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+                skeletonVisible
+                  ? "border-primary bg-primary/20 text-white"
+                  : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"
+              }`}
+            >
+              <FontAwesomeIcon icon={faBone} />
+            </button>
+          )}
+          {animationNames.length > 0 && (
+            <div className="w-44">
+              <Select
+                value={String(selectedClip)}
+                onChange={(value) => setSelectedClip(Number(value))}
+                options={[
+                  ...animationNames.map((name, index) => ({
+                    label: name,
+                    value: String(index),
+                  })),
+                  { label: "T-pose (none)", value: NO_ANIMATION_VALUE },
+                ]}
+              />
+            </div>
+          )}
         </div>
       )}
 
