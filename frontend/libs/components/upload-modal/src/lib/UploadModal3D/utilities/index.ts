@@ -1,5 +1,6 @@
 export * from "./convertFbxToGlb";
 export * from "./loadPreviewOnCanvas";
+export * from "./readGlbAnimationDuration";
 export * from "./thumbnailHelpers";
 export * from "./uploadAsset";
 export * from "./upload3DObjects";

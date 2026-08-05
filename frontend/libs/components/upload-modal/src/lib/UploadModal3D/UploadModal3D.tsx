@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
@@ -40,25 +40,33 @@ export function UploadModal3D(props: Props) {
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
   const [isCharacter, setIsCharacter] = useState(false);
+  const [isAnimation, setIsAnimation] = useState(false);
+  // Once the user has touched either toggle, mesh-less auto-detection stops
+  // overriding their choice.
+  const userTouchedCategory = useRef(false);
 
-  const selectedCategory = isCharacter
-    ? FilterEngineCategories.CHARACTER
-    : FilterEngineCategories.OBJECT;
+  const selectedCategory = isAnimation
+    ? FilterEngineCategories.ANIMATION
+    : isCharacter
+      ? FilterEngineCategories.CHARACTER
+      : FilterEngineCategories.OBJECT;
 
-  const characterAnimationOptions = useMemo(() => {
-    if (!isCharacter) return undefined;
+  // Rig-type options for character AND animation uploads; the default
+  // (first entry) differs — characters lead with Mixamo ArKit, plain
+  // animation clips with Mixamo.
+  const rigTypeOptions = useMemo(() => {
+    if (!isCharacter && !isAnimation) return undefined;
+    const preferred = isAnimation
+      ? MediaFileAnimationType.Mixamo
+      : MediaFileAnimationType.MixamoArKit;
     const values = Object.values(MediaFileAnimationType);
     const sorted = values.sort((a, b) =>
-      a === MediaFileAnimationType.MixamoArKit
-        ? -1
-        : b === MediaFileAnimationType.MixamoArKit
-          ? 1
-          : a.localeCompare(b),
+      a === preferred ? -1 : b === preferred ? 1 : a.localeCompare(b),
     );
     const toLabel = (v: string) =>
       v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     return sorted.map((v) => ({ [toLabel(v)]: v }));
-  }, [isCharacter]);
+  }, [isCharacter, isAnimation]);
 
   const updateUploaderState = (newState: UploaderState) => {
     setUploaderState(newState);
@@ -72,6 +80,8 @@ export function UploadModal3D(props: Props) {
     if (isOpen) {
       resetModalState();
       setIsCharacter(false);
+      setIsAnimation(false);
+      userTouchedCategory.current = false;
     }
   }, [isOpen]);
 
@@ -81,12 +91,31 @@ export function UploadModal3D(props: Props) {
       case UploaderStates.ready:
         return (
           <div className="space-y-4">
-            <Checkbox
-              id="upload-as-character"
-              checked={isCharacter}
-              onChange={(e) => setIsCharacter(e.target.checked)}
-              label="Upload as Character"
-            />
+            {/* Mutually exclusive category toggles. Mesh-less skeleton files
+                preselect Animation (onMeshlessDetected below), but the user
+                stays in control once they've clicked either. */}
+            <div className="flex items-center gap-6">
+              <Checkbox
+                id="upload-as-character"
+                checked={isCharacter}
+                onChange={(e) => {
+                  userTouchedCategory.current = true;
+                  setIsCharacter(e.target.checked);
+                  if (e.target.checked) setIsAnimation(false);
+                }}
+                label="Upload as Character"
+              />
+              <Checkbox
+                id="upload-as-animation"
+                checked={isAnimation}
+                onChange={(e) => {
+                  userTouchedCategory.current = true;
+                  setIsAnimation(e.target.checked);
+                  if (e.target.checked) setIsCharacter(false);
+                }}
+                label="Upload as Animation"
+              />
+            </div>
             <UploadFiles3D
               title={title}
               engineCategory={selectedCategory}
@@ -94,10 +123,15 @@ export function UploadModal3D(props: Props) {
               initialFiles={initialFiles}
               options={{
                 ...(options ?? {}),
-                fileSubtypes: characterAnimationOptions,
+                fileSubtypes: rigTypeOptions,
               }}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
+              onMeshlessDetected={() => {
+                if (userTouchedCategory.current) return;
+                setIsAnimation(true);
+                setIsCharacter(false);
+              }}
             />
           </div>
         );
@@ -119,7 +153,7 @@ export function UploadModal3D(props: Props) {
       case UploaderStates.success: {
         return (
           <UploadSuccess
-            title="3D model"
+            title={isAnimation ? "Animation" : "3D model"}
             onOk={() => {
               galleryModalVisibleViewMode.value = true;
               galleryModalVisibleDuringDrag.value = true;

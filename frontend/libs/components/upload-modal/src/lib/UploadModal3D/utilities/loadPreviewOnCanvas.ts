@@ -12,6 +12,9 @@ interface LoaderInterface {
   statusCallback: (statusObject: { type: string; message?: string }) => void;
   // Receives the model's baked AnimationClips (possibly empty) once loaded.
   onAnimations?: (clips: THREE.AnimationClip[]) => void;
+  // Reports what the loaded model contains — hasMesh:false means a
+  // skeleton/animation-only file (e.g. a Mixamo "without skin" export).
+  onModelInfo?: (info: { hasMesh: boolean }) => void;
 }
 
 interface PreviewReturn {
@@ -27,6 +30,7 @@ export const loadPreviewOnCanvas = ({
   canvas,
   statusCallback,
   onAnimationsAvailable,
+  onModelInfo,
 }: {
   file: File;
   canvas: HTMLCanvasElement;
@@ -34,6 +38,9 @@ export const loadPreviewOnCanvas = ({
   // Called with the clips' display names when the loaded model has baked
   // animations (never called with an empty list). The first clip autoplays.
   onAnimationsAvailable?: (names: string[]) => void;
+  // Reports model contents (GLB only) — used to preselect "Upload as
+  // Animation" for mesh-less skeleton files.
+  onModelInfo?: (info: { hasMesh: boolean }) => void;
 }): PreviewReturn => {
   const scene = new THREE.Scene();
 
@@ -96,6 +103,7 @@ export const loadPreviewOnCanvas = ({
       camera,
       renderer,
       statusCallback,
+      onModelInfo,
       onAnimations: (loadedClips) => {
         clips = loadedClips;
         if (clips.length === 0) return;
@@ -170,6 +178,7 @@ const glbLoader = ({
   renderer,
   statusCallback,
   onAnimations,
+  onModelInfo,
 }: LoaderInterface) => {
   const loader = new GLTFLoader();
   loader.load(
@@ -177,6 +186,11 @@ const glbLoader = ({
     (data) => {
       // Surface the GLB's baked clips (previously discarded with the wrapper).
       onAnimations?.(data.animations ?? []);
+      let hasMesh = false;
+      data.scene.traverse((node) => {
+        if ((node as THREE.Mesh).isMesh) hasMesh = true;
+      });
+      onModelInfo?.({ hasMesh });
       // Iterate a COPY: scene.add() re-parents the child, which mutates
       // data.scene.children mid-loop and would skip every other child.
       [...data.scene.children].forEach((child) => {

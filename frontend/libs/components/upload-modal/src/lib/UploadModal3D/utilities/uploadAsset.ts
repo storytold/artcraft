@@ -11,11 +11,14 @@ export const uploadAsset = async ({
   title,
   engineCategory,
   animationType,
+  durationMillis,
 }: {
   file: File;
   title: string;
   engineCategory: FilterEngineCategories;
   animationType?: MediaFileAnimationType;
+  // Required by the backend when engineCategory is "animation".
+  durationMillis?: number;
 }) => {
   const mediaUploadApi = new MediaUploadApi();
   const fileExtension = getFileExtension(file);
@@ -44,6 +47,7 @@ export const uploadAsset = async ({
         engine_category: engineCategory,
         maybe_title: title,
         maybe_animation_type: animationType,
+        maybe_duration_millis: durationMillis,
         uuid: uuidv4(),
       });
   }

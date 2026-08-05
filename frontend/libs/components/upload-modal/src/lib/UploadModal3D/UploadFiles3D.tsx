@@ -19,6 +19,7 @@ import * as THREE from "three";
 import {
   convertFbxToGlb,
   loadPreviewOnCanvas,
+  readGlbAnimationDurationMillis,
   snapshotCanvasAsThumbnail,
 } from "./utilities";
 import { upload3DObjects } from "./utilities/upload3DObjects";
@@ -49,6 +50,9 @@ interface Props {
   };
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
+  // Fired when a previewed model turns out to be a mesh-less skeleton
+  // (animation-only export) — the modal preselects "Upload as Animation".
+  onMeshlessDetected?: () => void;
 }
 
 export const UploadFiles3D = ({
@@ -58,6 +62,7 @@ export const UploadFiles3D = ({
   options,
   onClose,
   onUploadProgress,
+  onMeshlessDetected,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | undefined>(undefined);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -204,6 +209,9 @@ export const UploadFiles3D = ({
       canvas: canvasRef.current,
       statusCallback: setPreviewStatus,
       onAnimationsAvailable: setPreviewAnimations,
+      onModelInfo: (info) => {
+        if (!info.hasMesh) onMeshlessDetected?.();
+      },
     });
     rendererRef.current = renderer;
     cameraRef.current = camera;
@@ -260,6 +268,41 @@ export const UploadFiles3D = ({
     setFilesVersion((v) => v + 1);
   };
 
+  // Resolve the backend-required clip durations for an animation upload.
+  // Files with no clips are marked as errors (the backend would reject them)
+  // and excluded from the returned map.
+  const resolveAnimationDurations = async (
+    files: File[],
+  ): Promise<Map<File, number>> => {
+    const durations = new Map<File, number>();
+    await Promise.all(
+      files.map(async (file) => {
+        const millis = await readGlbAnimationDurationMillis(file).catch(
+          () => null,
+        );
+        if (millis === null) {
+          setFileEntries((prev) =>
+            prev.map((entry) =>
+              entry.file === file
+                ? {
+                    ...entry,
+                    status: "error" as FileEntryStatus,
+                    errorMessage: "No animation clips found in this file.",
+                  }
+                : entry,
+            ),
+          );
+        } else {
+          durations.set(file, millis);
+        }
+      }),
+    );
+    return durations;
+  };
+
+  const isAnimationUpload =
+    engineCategory === FilterEngineCategories.ANIMATION;
+
   const retrySingleFile = async (index: number) => {
     const entry = fileEntries[index];
     if (!entry || entry.status === "uploading" || entry.status === "converting")
@@ -271,12 +314,24 @@ export const UploadFiles3D = ({
       beginFbxConversion(entry.file);
       return;
     }
+    let durationMillis: number | undefined;
+    if (isAnimationUpload) {
+      const millis = await readGlbAnimationDurationMillis(entry.file).catch(
+        () => null,
+      );
+      if (millis === null) {
+        updateFileStatus(index, "error", "No animation clips found in this file.");
+        return;
+      }
+      durationMillis = millis;
+    }
     updateFileStatus(index, "uploading");
     await upload3DObjects({
       title: entry.file.name.slice(0, entry.file.name.lastIndexOf(".")),
       assetFile: entry.file,
       engineCategory,
       animationType: subtype,
+      durationMillis,
       thumbnailSnapshot: thumbnails.get(entry.file),
       progressCallback: (state) => {
         if (state.status === UploaderStates.success) {
@@ -308,7 +363,7 @@ export const UploadFiles3D = ({
     files.filter(isFbx).forEach(beginFbxConversion);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (fileEntries.length === 0) {
       setSelectionError("Please select a file to upload.");
       return;
@@ -328,10 +383,25 @@ export const UploadFiles3D = ({
           entry.file !== undefined &&
           !isFbx(entry.file),
       );
-    const files = pendingEntries.map(({ entry }) => entry.file!);
-    const originalIndices = pendingEntries.map(
+    let files = pendingEntries.map(({ entry }) => entry.file!);
+    let originalIndices = pendingEntries.map(
       ({ originalIndex }) => originalIndex,
     );
+
+    // Animation uploads must carry the clip duration; clip-less files are
+    // flagged and dropped from the submission.
+    let durations: Map<File, number> | undefined;
+    if (isAnimationUpload) {
+      durations = await resolveAnimationDurations(files);
+      const keep = files.map((file) => durations!.has(file));
+      files = files.filter((_, i) => keep[i]);
+      originalIndices = originalIndices.filter((_, i) => keep[i]);
+      if (files.length === 0) {
+        setSelectionError("No animation clips found in the selected file(s).");
+        return;
+      }
+    }
+
     const pendingThumbnails = new Map<File, Blob>(
       files
         .map((file) => [file, thumbnails.get(file) ?? undefined])
@@ -344,6 +414,7 @@ export const UploadFiles3D = ({
         assetFile: files[0],
         engineCategory,
         animationType: subtype,
+        durationMillis: durations?.get(files[0]),
         thumbnailSnapshot: thumbnails.get(files[0]),
         progressCallback: onUploadProgress,
       });
@@ -358,6 +429,7 @@ export const UploadFiles3D = ({
       thumbnails: pendingThumbnails,
       engineCategory,
       animationType: subtype,
+      durationsMillis: durations,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
         updateFileStatus(originalIndices[batchIndex], status, errorMessage),
       onOverallProgress: (completed, total) =>
@@ -376,17 +448,27 @@ export const UploadFiles3D = ({
     });
   };
 
-  const retryAllFailed = () => {
+  const retryAllFailed = async () => {
     // FBX conversion failures are excluded (they retry per-row as a
     // re-conversion); this batch path only re-uploads real GLBs.
-    const failedIndices = fileEntries
+    let failedIndices = fileEntries
       .map((e, i) => (e.status === "error" && !isFbx(e.file) ? i : -1))
       .filter((i) => i !== -1);
     if (failedIndices.length === 0) return;
 
-    const failedFiles = failedIndices
+    let failedFiles = failedIndices
       .map((i) => fileEntries[i].file!)
       .filter((file) => file !== undefined);
+
+    let durations: Map<File, number> | undefined;
+    if (isAnimationUpload) {
+      durations = await resolveAnimationDurations(failedFiles);
+      const keep = failedFiles.map((file) => durations!.has(file));
+      failedFiles = failedFiles.filter((_, i) => keep[i]);
+      failedIndices = failedIndices.filter((_, i) => keep[i]);
+      if (failedFiles.length === 0) return;
+    }
+
     const failedThumbnails = new Map<File, Blob>(
       failedFiles
         .map((file): [File, Blob | undefined] => [
@@ -404,6 +486,7 @@ export const UploadFiles3D = ({
       thumbnails: failedThumbnails,
       engineCategory,
       animationType: subtype,
+      durationsMillis: durations,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
         updateFileStatus(failedIndices[batchIndex], status, errorMessage),
       onOverallProgress: (completed, total) =>
