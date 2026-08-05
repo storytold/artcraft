@@ -1,6 +1,7 @@
 pub mod _keys;
 pub mod count_untried_jobs_of_type;
 pub mod list_available_generic_inference_jobs;
+pub mod list_media_files_by_source_job;
 pub mod mark_generic_inference_job_completely_failed;
 pub mod mark_generic_inference_job_failure;
 pub mod mark_job_failed_by_token;

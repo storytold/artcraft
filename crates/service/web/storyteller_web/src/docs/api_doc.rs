@@ -356,6 +356,7 @@ use artcraft_api_defs::credits::get_session_credits::*;
 use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 use artcraft_api_defs::media_file::list::by_type::list_session_common::*;
+use artcraft_api_defs::media_file::job::list_media_files_by_job::*;
 use artcraft_api_defs::media_file::list::by_type::list_session_mesh_media_files::*;
 use artcraft_api_defs::media_file::list::by_type::list_session_splat_media_files::*;
 use artcraft_api_defs::media_file::list_session_project_media_files::*;
@@ -495,6 +496,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::edit::set_media_file_cover_image_handler::set_media_file_cover_image_handler,
     crate::http_server::endpoints::media_files::get::batch_get_media_files_handler::batch_get_media_files_handler,
     crate::http_server::endpoints::media_files::get::get_media_file_handler::get_media_file_handler,
+    crate::http_server::endpoints::media_files::job::list_media_files_by_job_handler::list_media_files_by_job_handler,
     crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::list_featured_media_files_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_by_batch_token_handler::list_media_files_by_batch_token_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_for_user_handler::list_media_files_for_user_handler,
@@ -791,6 +793,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 
     // Common response structs
     JobDetailsLivePortraitRequest,
+    JobMediaFileInfo,
     JobDetailsLipsyncRequest,
     MediaFileLivePortraitDetails,
     MediaFileModelDetails,
@@ -1125,6 +1128,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListUserImpersonationRequestsSuccessResponse,
     ListMediaFilesByBatchPathInfo,
     ListMediaFilesByBatchSuccessResponse,
+    ListMediaFilesByJobSuccessResponse,
     ListMediaFilesForUserPathInfo,
     ListMediaFilesForUserQueryParams,
     ListMediaFilesForUserSuccessResponse,
