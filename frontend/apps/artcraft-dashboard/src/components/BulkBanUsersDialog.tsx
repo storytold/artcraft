@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ModerationApi } from "@/api/ModerationApi";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
@@ -23,33 +25,31 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  IconAlertCircle,
-  IconBan,
-  IconShieldCheck,
-} from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
+import { IconAlertCircle, IconBan } from "@tabler/icons-react";
 
-interface BanUserDialogProps {
+export interface BulkBanUser {
   username: string;
   displayName: string;
-  isBanned: boolean;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
 }
 
-export function BanUserDialog({
-  username,
-  displayName,
-  isBanned,
+interface BulkBanUsersDialogProps {
+  users: BulkBanUser[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called with the usernames that were banned, including on partial failure. */
+  onBanned?: (bannedUsernames: string[]) => void;
+}
+
+export function BulkBanUsersDialog({
+  users,
   open,
   onOpenChange,
-  onSuccess,
-}: BanUserDialogProps) {
+  onBanned,
+}: BulkBanUsersDialogProps) {
   const [modNotes, setModNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,34 +57,54 @@ export function BanUserDialog({
       setModNotes("");
       setConfirmOpen(false);
       setIsSubmitting(false);
+      setProgress(0);
       setError(null);
     }
   }, [open]);
 
   const trimmedNotes = modNotes.trim();
-  const isValid = trimmedNotes.length > 0;
-  const willBan = !isBanned;
-  const actionLabel = willBan ? "Ban" : "Unban";
-  const ActionIcon = willBan ? IconBan : IconShieldCheck;
+  const isValid = trimmedNotes.length > 0 && users.length > 0;
+  const userCountLabel = users.length === 1 ? "1 user" : `${users.length} users`;
 
   const handleConfirm = async () => {
     if (!isValid || isSubmitting) return;
     setIsSubmitting(true);
     setError(null);
     const modApi = new ModerationApi();
-    const resp = await modApi.ManageUserBan({
-      username,
-      is_banned: willBan,
-      mod_notes: trimmedNotes,
-    });
+    const banned: string[] = [];
+    const failed: string[] = [];
+    for (const [index, user] of users.entries()) {
+      setProgress(index + 1);
+      const resp = await modApi.ManageUserBan({
+        username: user.username,
+        is_banned: true,
+        mod_notes: trimmedNotes,
+      });
+      if (resp.success) {
+        banned.push(user.username);
+      } else {
+        failed.push(user.username);
+      }
+    }
     setIsSubmitting(false);
-    if (resp.success) {
-      setConfirmOpen(false);
+    setConfirmOpen(false);
+    if (banned.length > 0) {
+      onBanned?.(banned);
+    }
+    if (failed.length === 0) {
       onOpenChange(false);
-      onSuccess?.();
+      toast.success(
+        banned.length === 1
+          ? `Banned @${banned[0]}`
+          : `Banned ${banned.length} users`,
+      );
     } else {
-      setError(resp.errorMessage || "Failed to update ban status");
-      setConfirmOpen(false);
+      // Keep the dialog open so the failed users (still selected) can be retried.
+      setError(
+        `Banned ${banned.length} of ${users.length} users. Failed: ${failed
+          .map((username) => `@${username}`)
+          .join(", ")}`,
+      );
     }
   };
 
@@ -94,49 +114,42 @@ export function BanUserDialog({
         <DialogContent className="sm:max-w-md" overlayClassName="bg-black/70">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ActionIcon
-                className={cn(
-                  "size-5",
-                  willBan ? "text-destructive" : "text-emerald-400",
-                )}
-              />
-              {actionLabel} User
+              <IconBan className="size-5 text-destructive" />
+              Ban {userCountLabel}
             </DialogTitle>
             <DialogDescription>
-              {willBan ? (
-                <>
-                  You are about to ban{" "}
-                  <span className="font-semibold text-foreground/80">
-                    {displayName}
-                  </span>{" "}
-                  (@{username}). They will lose access to their account.
-                </>
-              ) : (
-                <>
-                  You are about to unban{" "}
-                  <span className="font-semibold text-foreground/80">
-                    {displayName}
-                  </span>{" "}
-                  (@{username}). They will regain access to their account.
-                </>
-              )}
+              You are about to ban {userCountLabel}. They will lose access to
+              their accounts.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
+            <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto rounded-md border bg-muted/20 p-2">
+              {users.map((user) => (
+                <Badge
+                  key={user.username}
+                  variant="secondary"
+                  className="text-xs"
+                  title={user.displayName}
+                >
+                  @{user.username}
+                </Badge>
+              ))}
+            </div>
+
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="mod-notes" className="text-sm font-medium">
+              <Label htmlFor="bulk-ban-mod-notes" className="text-sm font-medium">
                 Moderator notes
               </Label>
               <Textarea
-                id="mod-notes"
+                id="bulk-ban-mod-notes"
                 rows={4}
                 placeholder="Reason for this action (required)"
                 value={modNotes}
                 onChange={(e) => setModNotes(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Recorded in the staff audit log.
+                Applied to every user and recorded in the staff audit log.
               </p>
             </div>
 
@@ -159,12 +172,12 @@ export function BanUserDialog({
             </Button>
             <Button
               size="sm"
-              variant={willBan ? "destructive" : "default"}
+              variant="destructive"
               disabled={!isValid || isSubmitting}
               onClick={() => setConfirmOpen(true)}
             >
-              <ActionIcon className="size-3.5" />
-              {actionLabel} User
+              <IconBan className="size-3.5" />
+              Ban {userCountLabel}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -173,16 +186,13 @@ export function BanUserDialog({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent overlayClassName="bg-black/70">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm {actionLabel}</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Ban</AlertDialogTitle>
             <AlertDialogDescription>
               You are about to{" "}
               <span className="font-semibold text-foreground">
-                {actionLabel.toLowerCase()}
-              </span>{" "}
-              <span className="font-semibold text-foreground">
-                {displayName}
-              </span>{" "}
-              (@{username}). This action is recorded in the staff audit log.
+                ban {userCountLabel}
+              </span>
+              . This action is recorded in the staff audit log.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -190,7 +200,7 @@ export function BanUserDialog({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              variant={willBan ? "destructive" : "default"}
+              variant="destructive"
               disabled={isSubmitting}
               onClick={(e) => {
                 e.preventDefault();
@@ -200,9 +210,11 @@ export function BanUserDialog({
               {isSubmitting ? (
                 <Spinner className="size-3.5" />
               ) : (
-                <ActionIcon className="size-3.5" />
+                <IconBan className="size-3.5" />
               )}
-              {isSubmitting ? "Saving..." : `Confirm ${actionLabel}`}
+              {isSubmitting
+                ? `Banning ${progress} of ${users.length}...`
+                : "Confirm Ban"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
