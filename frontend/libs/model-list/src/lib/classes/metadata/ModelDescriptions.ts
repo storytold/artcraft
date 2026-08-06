@@ -18,7 +18,10 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   seedream_4: "High-fidelity photorealistic generation",
   seedream_4p5: "ByteDance's next-gen 4K model",
   seedream_5_lite: "Lightweight, fast visual reasoning",
+  seedream_5p0_pro: "Seedream's flagship image quality",
+  seedream_5p0_pro_u: "Highest-fidelity Seedream tier",
   // ── Video models ── (seedance_2p0 intentionally omitted)
+  flux_3: "Video generation by Black Forest Labs",
   grok_video: "Stylized video generation by xAI",
   grok_imagine_video: "Versatile video styles by xAI",
   grok_imagine_video_1p5: "Image-to-video styles by xAI",
@@ -29,6 +32,7 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   kling_2p6_pro: "Refined motion and prompt control",
   kling_3p0_standard: "Next-gen temporal consistency",
   kling_3p0_pro: "Kling's flagship cinematic video",
+  minimax_h3: "2K video with multi-media refs",
   seedance_1p0_lite: "Fast, lightweight video clips",
   seedance_1p5_pro: "Keyframes with synced audio",
   happy_horse_1p0: "Expressive motion from a frame",
@@ -39,8 +43,24 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   veo_3_fast: "Faster Veo 3 with audio",
   veo_3p1: "Latest Veo with finer control",
   veo_3p1_fast: "Speed-tuned Veo 3.1",
+  veo_3p1_lite: "Light, low-cost Veo 3.1",
+  vidu_q3: "Reference-driven video generation",
+  vidu_q3_turbo: "Speed-optimized Vidu Q3",
   // ── Edit / VFX ──
   switch_x: "Swap or relight backgrounds",
+  // ── 3D mesh models ──
+  hunyuan_3d_2p0: "Reliable image-to-3D meshes",
+  hunyuan_3d_2p1: "Improved detail and topology",
+  hunyuan_3d_3: "High-detail 3D generation",
+  hunyuan_3d_3_sketch: "3D meshes from sketches",
+  hunyuan_3d_3p1_pro: "Hunyuan's flagship 3D quality",
+  tripo3d_h3p1: "Fast, clean 3D meshes",
+  meshy_v6: "Production-ready 3D assets",
+  // ── World / splat models ──
+  marble_1p0: "Explorable 3D worlds",
+  marble_1p0_draft: "Quick draft world generation",
+  marble_1p1: "Sharper, more coherent worlds",
+  marble_1p1_plus: "Marble's highest-quality worlds",
   // ── Audio models ──
   suno_music: "Full songs from a text prompt",
   suno_remix: "Remix an existing track",

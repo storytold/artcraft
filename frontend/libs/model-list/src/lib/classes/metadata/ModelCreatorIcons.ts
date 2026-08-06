@@ -25,6 +25,7 @@ const CREATOR_ICON_FILES: Partial<Record<ModelCreator, string>> = {
   [ModelCreator.Vidu]: "vidu.svg",
   [ModelCreator.ArtCraft]: "artcraft.svg",
   [ModelCreator.Grok]: "grok.svg",
+  [ModelCreator.Hailuo]: "minimax.svg",
   [ModelCreator.WorldLabs]: "worldlabs.svg",
   [ModelCreator.Suno]: "suno.svg",
 };

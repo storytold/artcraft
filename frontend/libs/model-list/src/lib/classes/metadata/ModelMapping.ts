@@ -54,6 +54,8 @@ export const getModelDisplayName = (
     flux_pro_kontext_max: "Flux Pro Kontext Max",
     flux_dev_juggernaut: "Flux Dev Juggernaut",
     flux_pro_1: "Flux Pro (Inpainting)",
+    flux_3: "Flux 3",
+    flux_3_draft: "Flux 3 Draft",
     // Aliases (dot-normalized underscores)
     flux_pro_1_1: "Flux Pro 1.1",
     flux_pro_1_1_ultra: "Flux Pro 1.1 Ultra",
@@ -102,6 +104,9 @@ export const getModelDisplayName = (
 
     // Happy Horse (Alibaba wanvideo)
     happy_horse_1p0: "Happy Horse 1.0",
+
+    // MiniMax (Hailuo)
+    minimax_h3: "MiniMax H3",
 
     // Seedream / SeedEdit (ByteDance)
     seedream_4: "Seedream 4",
