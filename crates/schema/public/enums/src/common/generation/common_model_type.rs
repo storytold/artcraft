@@ -157,6 +157,10 @@ pub enum CommonModelType {
   HappyHorse1p0,
   #[serde(rename = "minimax_h3")]
   MinimaxH3,
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -330,6 +334,8 @@ impl CommonModelType {
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
       Self::MinimaxH3 => "minimax_h3",
+      Self::MinimaxH3Turbo => "minimax_h3_turbo",
+      Self::MinimaxH3Ultra => "minimax_h3_ultra",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -447,6 +453,8 @@ impl CommonModelType {
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
       "minimax_h3" => Ok(Self::MinimaxH3),
+      "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
+      "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -568,6 +576,8 @@ impl CommonModelType {
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
       Self::MinimaxH3,
+      Self::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -686,6 +696,8 @@ impl CommonModelType {
       Self::Kling3p0Pro => CommonModelClass::Video,
       Self::HappyHorse1p0 => CommonModelClass::Video,
       Self::MinimaxH3 => CommonModelClass::Video,
+      Self::MinimaxH3Turbo => CommonModelClass::Video,
+      Self::MinimaxH3Ultra => CommonModelClass::Video,
       Self::Seedance10Lite => CommonModelClass::Video,
       Self::Seedance10Pro => CommonModelClass::Video,
       Self::Seedance1p5Pro => CommonModelClass::Video,
@@ -813,6 +825,8 @@ mod tests {
       assert_serialization(CommonModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(CommonModelType::HappyHorse1p0, "happy_horse_1p0");
       assert_serialization(CommonModelType::MinimaxH3, "minimax_h3");
+      assert_serialization(CommonModelType::MinimaxH3Turbo, "minimax_h3_turbo");
+      assert_serialization(CommonModelType::MinimaxH3Ultra, "minimax_h3_ultra");
       assert_serialization(CommonModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(CommonModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(CommonModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -925,6 +939,8 @@ mod tests {
       assert_eq!(CommonModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(CommonModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
       assert_eq!(CommonModelType::MinimaxH3.to_str(), "minimax_h3");
+      assert_eq!(CommonModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
+      assert_eq!(CommonModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
       assert_eq!(CommonModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(CommonModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(CommonModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -1039,6 +1055,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("kling_3p0_pro").unwrap(), CommonModelType::Kling3p0Pro);
       assert_eq!(CommonModelType::from_str("happy_horse_1p0").unwrap(), CommonModelType::HappyHorse1p0);
       assert_eq!(CommonModelType::from_str("minimax_h3").unwrap(), CommonModelType::MinimaxH3);
+      assert_eq!(CommonModelType::from_str("minimax_h3_turbo").unwrap(), CommonModelType::MinimaxH3Turbo);
+      assert_eq!(CommonModelType::from_str("minimax_h3_ultra").unwrap(), CommonModelType::MinimaxH3Ultra);
       assert_eq!(CommonModelType::from_str("seedance_1p0_lite").unwrap(), CommonModelType::Seedance10Lite);
       assert_eq!(CommonModelType::from_str("seedance_1p0_pro").unwrap(), CommonModelType::Seedance10Pro);
       assert_eq!(CommonModelType::from_str("seedance_1p5_pro").unwrap(), CommonModelType::Seedance1p5Pro);
@@ -1098,7 +1116,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 102);
+      assert_eq!(variants.len(), 104);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1153,6 +1171,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::HappyHorse1p0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Turbo));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Ultra));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Lite));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance1p5Pro));

@@ -44,6 +44,12 @@ pub enum RouterVideoModel {
   #[serde(rename = "minimax_h3")]
   MinimaxH3,
 
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
+
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
 
@@ -172,5 +178,13 @@ mod tests {
     // NB: This string must match `CommonVideoModel` — the two enums convert
     // via serde string round-trip in the omni handlers.
     assert_serde_round_trip(RouterVideoModel::MinimaxH3, "minimax_h3");
+  }
+
+  #[test]
+  fn minimax_h3_turbo_and_ultra_serialize() {
+    // NB: These strings must match `CommonVideoModel` — the two enums convert
+    // via serde string round-trip in the omni handlers.
+    assert_serde_round_trip(RouterVideoModel::MinimaxH3Turbo, "minimax_h3_turbo");
+    assert_serde_round_trip(RouterVideoModel::MinimaxH3Ultra, "minimax_h3_ultra");
   }
 }
