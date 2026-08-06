@@ -217,9 +217,11 @@ then one row per character is the right model.
   **compatibility badge** (`PageSceneStore.animationDropState`): DndAsset preloads the clip's
   track node names (`loadRawGlb`, cached per media id) and checks them against the hovered
   character's nodes — the same direct-bind rule `CharacterAnimationManager` plays by; no
-  retargeting. Incompatible or slot-less drops are rejected with a toast. The old HTML5 DnD
-  path (`ANIMATION_CLIP_MIME`) is removed. A full row (`resolveFreeStart` → null) **rejects**
-  the add instead of overlapping.
+  retargeting. Incompatible or slot-less drops are rejected with a toast. A drop that beats the
+  clip's name-inspection fetch is **queued** and completes (fully validated) when the names
+  resolve — never punted back to the user (`completeAnimationDrop`; superseded queued drops are
+  dropped via a token). The old HTML5 DnD path (`ANIMATION_CLIP_MIME`) is removed. A full row
+  (`resolveFreeStart` → null) **rejects** the add instead of overlapping.
 - **Standalone AnimationsModal (done)**: `comps/AssetMenu/AnimationsModal.tsx` — an
   animations-only sibling of `AssetModal` (same `@storyteller/ui-modal` floating-panel props,
   same `ItemElements` grid, same drag-under semantics) with All / Presets / Uploaded tabs.

@@ -233,9 +233,19 @@ class DndAsset {
 
   // ─── animation-clip drags ─────────────────────────────────────────────
 
+  // Monotonic token so a queued drop (below) that gets superseded by a
+  // newer drop never lands twice.
+  private pendingDropToken = 0;
+
   // Resolve + complete an animation drop. Silently cancels when nothing
   // droppable is under the cursor; toasts when the target is incompatible or
   // its clip row has no free slot (mirrors the ghost's red badge).
+  //
+  // If the clip's node names are still loading (a quick drag beats the
+  // cold-cache GLB fetch that started on pointer-down), the drop is QUEUED
+  // and completes — fully validated — when the inspection resolves. Punting
+  // back to the user with a "try again" toast for losing that race was a
+  // bug: click-to-add never waits, so drops shouldn't either.
   private dropAnimation(
     event: PointerEvent,
     item: MediaItem,
@@ -243,21 +253,45 @@ class DndAsset {
   ): void {
     const target = this.findAnimationDropTarget(event);
     if (!target) return;
-    if (this.activeClipNames === undefined) {
-      editor.adapter.showToast(
-        ToastTypes.WARNING,
-        "Still loading that animation — try dropping it again in a moment.",
-      );
+    const token = ++this.pendingDropToken;
+    if (this.activeClipNames !== undefined) {
+      this.completeAnimationDrop(editor, item, target, this.activeClipNames);
       return;
     }
-    if (this.activeClipNames === null) {
+    const inspection = this.clipNodeNamesCache.get(item.media_id);
+    if (!inspection) {
+      // No inspection in flight (shouldn't happen — pointer-down starts
+      // one): add unvalidated, matching the ungated click-to-add path.
+      this.completeAnimationDrop(editor, item, target, undefined);
+      return;
+    }
+    void inspection.then((names) => {
+      if (token !== this.pendingDropToken) return; // superseded by a newer drop
+      this.completeAnimationDrop(editor, item, target, names);
+    });
+  }
+
+  // Final validation + insert, decoupled from per-drag state so it can run
+  // after endDrag() when the drop was queued. `names`: string[] = validate
+  // the bind, null = clip unreadable, undefined = skip validation.
+  private completeAnimationDrop(
+    editor: Editor,
+    item: MediaItem,
+    target: AnimationDropTarget,
+    names: string[] | null | undefined,
+  ): void {
+    const root = editor.activeScene.scene.children.find(
+      (child) => child.uuid === target.characterUuid,
+    );
+    if (!root) return; // target left the scene while the clip loaded
+    if (names === null) {
       editor.adapter.showToast(
         ToastTypes.ERROR,
         `Couldn't read an animation from "${item.name ?? item.media_id}".`,
       );
       return;
     }
-    if (!this.characterAcceptsClip(target.characterUuid)) {
+    if (names && !names.some((name) => root.getObjectByName(name))) {
       editor.adapter.showToast(
         ToastTypes.WARNING,
         "This animation doesn't match the character's skeleton.",
