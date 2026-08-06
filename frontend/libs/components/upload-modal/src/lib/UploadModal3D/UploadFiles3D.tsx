@@ -127,6 +127,11 @@ export const UploadFiles3D = ({
     total: number;
   } | null>(null);
   const [selectionError, setSelectionError] = useState<string | undefined>();
+  // In-flight submission guard (see handleSubmit): the state drives the
+  // Upload button, the ref blocks same-tick re-entry before the disabled
+  // state has re-rendered.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // Baked-animation preview: clip names reported by the loader (empty for
   // still models — the picker only renders when there are clips), the
@@ -390,12 +395,21 @@ export const UploadFiles3D = ({
   };
 
   const handleSubmit = async () => {
+    // Animation submissions await GLB parsing for hundreds of ms before any
+    // state changes, so a second click in that window would run the whole
+    // submission twice (duplicate backend assets).
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
     if (fileEntries.length === 0) {
       setSelectionError("Please select a file to upload.");
+      releaseSubmitGuard();
       return;
     }
     if (fileEntries.some((e) => e.status === "converting")) {
       setSelectionError("Still converting FBX files — one moment.");
+      releaseSubmitGuard();
       return;
     }
 
@@ -409,10 +423,26 @@ export const UploadFiles3D = ({
           entry.file !== undefined &&
           !isFbx(entry.file),
       );
+    // Entries dropped from the submission (failed FBX conversions here,
+    // clip-less animation files below) still count against the run's
+    // outcome — a run that silently skips files must not report success.
+    let excludedCount =
+      fileEntries.filter((e) => e.status !== "success").length -
+      pendingEntries.length;
     let files = pendingEntries.map(({ entry }) => entry.file!);
     let originalIndices = pendingEntries.map(
       ({ originalIndex }) => originalIndex,
     );
+
+    if (files.length === 0) {
+      setSelectionError(
+        excludedCount > 0
+          ? `${excludedCount} file(s) could not be converted and cannot be uploaded.`
+          : "Please select a file to upload.",
+      );
+      releaseSubmitGuard();
+      return;
+    }
 
     // Animation uploads must carry the clip duration; clip-less files are
     // flagged and dropped from the submission.
@@ -420,10 +450,12 @@ export const UploadFiles3D = ({
     if (isAnimationUpload) {
       durations = await resolveAnimationDurations(files);
       const keep = files.map((file) => durations!.has(file));
+      excludedCount += keep.filter((kept) => !kept).length;
       files = files.filter((_, i) => keep[i]);
       originalIndices = originalIndices.filter((_, i) => keep[i]);
       if (files.length === 0) {
         setSelectionError("No animation clips found in the selected file(s).");
+        releaseSubmitGuard();
         return;
       }
     }
@@ -434,7 +466,10 @@ export const UploadFiles3D = ({
         .filter((pair): pair is [File, Blob] => pair[1] !== undefined),
     );
 
-    if (files.length === 1 && fileEntries.length === 1) {
+    // Exclusions force fileEntries.length > files.length, so this fast path
+    // can only ever be a clean single-file submission; the excludedCount
+    // check makes that invariant explicit rather than incidental.
+    if (excludedCount === 0 && files.length === 1 && fileEntries.length === 1) {
       upload3DObjects({
         title: files[0].name.slice(0, files[0].name.lastIndexOf(".")),
         assetFile: files[0],
@@ -444,6 +479,9 @@ export const UploadFiles3D = ({
         thumbnailSnapshot: thumbnails.get(files[0]),
         progressCallback: onUploadProgress,
       });
+      // upload3DObjects reports uploadingAsset synchronously, so the modal
+      // has already switched off this view — safe to release the guard.
+      releaseSubmitGuard();
       return;
     }
 
@@ -462,7 +500,11 @@ export const UploadFiles3D = ({
         setOverallProgress({ current: completed, total }),
       onComplete: (allSucceeded, anySucceeded) => {
         setIsUploading(false);
-        if (allSucceeded) {
+        releaseSubmitGuard();
+        // allSucceeded only covers the files actually submitted; excluded
+        // entries count as failures, so a partial run stays on the list
+        // view where per-row errors and the failure count tell the truth.
+        if (allSucceeded && excludedCount === 0) {
           onUploadProgress({ status: UploaderStates.success });
         } else if (!anySucceeded) {
           onUploadProgress({
@@ -472,6 +514,11 @@ export const UploadFiles3D = ({
         }
       },
     });
+  };
+
+  const releaseSubmitGuard = () => {
+    isSubmittingRef.current = false;
+    setIsSubmitting(false);
   };
 
   const retryAllFailed = async () => {
@@ -791,9 +838,13 @@ export const UploadFiles3D = ({
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={fileEntries.length === 0 || anyConverting}
+            disabled={fileEntries.length === 0 || anyConverting || isSubmitting}
           >
-            {anyConverting ? "Converting..." : "Upload"}
+            {anyConverting
+              ? "Converting..."
+              : isSubmitting
+                ? "Uploading..."
+                : "Upload"}
           </Button>
         )}
       </div>
