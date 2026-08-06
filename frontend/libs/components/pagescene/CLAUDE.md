@@ -231,6 +231,15 @@ then one row per character is the right model.
   `DndAsset.endDrag` and `ItemElement`'s click-add close whichever is visible (reopen-off
   path). Animations data (uploads-first + featured-else-demos fallback) lives in the shared
   `comps/AssetMenu/hooks/useAnimationLibrary.tsx`, consumed by both modals.
+  **Upload from the modal**: an "Upload animation" button (sidebar bottom, above "Reopen
+  after adding") plus an empty-state CTA on the Uploaded tab open the host uploader through
+  the same `renderAssetUploader` adapter slot AssetModal uses. The slot (and `UploadModal3D`)
+  gained an optional `initialCategory?: "animation" | "character"` (literal strings — the
+  pagescene and upload-modal `FilterEngineCategories` enums aren't cross-assignable): it
+  pre-checks the matching "Upload as ..." toggle and suppresses the My-Library popup on
+  success (the panel shows the result itself). On success the modal refetches user
+  animations and jumps to the Uploaded tab (only if the category stayed Animation).
+  Anonymous users get `promptSignup("upload-3d")` instead, same as the Controls3D entries.
 - **Timeline reveal on add (done)**: a successful `addClipToCharacter` (click or drop, either
   modal) sets `timelineExpanded` + `timelineRevealObjectUuid`; an effect in `TimelineEditor`
   scrolls the row list to `[data-timeline-row-uuid]` (every row is tagged) then clears the

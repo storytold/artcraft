@@ -26,6 +26,12 @@ interface Props {
   title: string;
   titleIcon: IconDefinition;
   initialFiles?: File[];
+  // Preselects the matching "Upload as ..." toggle on open (the user can
+  // still change it) and, being a scoped open, skips auto-opening the
+  // gallery on success — the scoped caller shows the result itself.
+  // Literal strings so callers aren't coupled to this lib's
+  // FilterEngineCategories declaration.
+  initialCategory?: "animation" | "character";
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -36,7 +42,16 @@ interface Props {
 const objectFileTypes = Object.values(OBJECT_FILE_TYPE);
 
 export function UploadModal3D(props: Props) {
-  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles, options } = props;
+  const {
+    isOpen,
+    onClose,
+    onSuccess,
+    title,
+    titleIcon,
+    initialFiles,
+    initialCategory,
+    options,
+  } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
   const [isCharacter, setIsCharacter] = useState(false);
@@ -79,11 +94,11 @@ export function UploadModal3D(props: Props) {
   useEffect(() => {
     if (isOpen) {
       resetModalState();
-      setIsCharacter(false);
-      setIsAnimation(false);
+      setIsCharacter(initialCategory === "character");
+      setIsAnimation(initialCategory === "animation");
       userTouchedCategory.current = false;
     }
-  }, [isOpen]);
+  }, [isOpen, initialCategory]);
 
 
   const UploaderModalContent = () => {
@@ -155,8 +170,12 @@ export function UploadModal3D(props: Props) {
           <UploadSuccess
             title={isAnimation ? "Animation" : "3D model"}
             onOk={() => {
-              galleryModalVisibleViewMode.value = true;
-              galleryModalVisibleDuringDrag.value = true;
+              // Category-scoped opens come from a library panel that shows
+              // the upload itself — don't pop My Library over it.
+              if (initialCategory == null) {
+                galleryModalVisibleViewMode.value = true;
+                galleryModalVisibleDuringDrag.value = true;
+              }
               onSuccess(selectedCategory);
               onClose();
             }}

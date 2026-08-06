@@ -200,15 +200,22 @@ export interface PageSceneAdapter {
   }): ReactNode;
 
   // "Upload your own model" host modal. Rendered from inside the lib's
-  // AssetModal — the lib owns the trigger button + modal control state,
-  // the host owns the actual upload UI (file picker, validation,
-  // progress, splat conversion, etc.).
+  // AssetModal / AnimationsModal — the lib owns the trigger button + modal
+  // control state, the host owns the actual upload UI (file picker,
+  // validation, progress, splat conversion, etc.).
   renderAssetUploader(props: {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: (category: FilterEngineCategories) => void;
     title: string;
     titleIcon: IconDefinition;
+    // Preselect the uploader's "Upload as ..." category toggle when opened
+    // from a scoped library (the animations panel passes "animation"); a
+    // scoped open also keeps the host's My Library from popping over that
+    // panel on success. Literal strings rather than FilterEngineCategories:
+    // the upload-modal lib declares its own copy of that enum, and the two
+    // enum types aren't assignable across package boundaries.
+    initialCategory?: "animation" | "character";
   }): ReactNode;
 
   // Image upload modal — distinct from renderAssetUploader because

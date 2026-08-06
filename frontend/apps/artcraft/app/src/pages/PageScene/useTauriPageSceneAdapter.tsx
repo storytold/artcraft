@@ -338,6 +338,7 @@ export const useTauriPageSceneAdapter = (
           onSuccess={props.onSuccess}
           title={props.title}
           titleIcon={props.titleIcon}
+          initialCategory={props.initialCategory}
         />
       ),
 
