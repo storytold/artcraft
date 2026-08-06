@@ -43,6 +43,14 @@ pub enum InferenceJobType {
   #[serde(rename = "seedance2pro_bpu_queue")]
   Seedance2ProBytePlusUltraQueue,
 
+  /// First-party Minimax H3 Turbo jobs. These run on our own GPU inference.
+  #[serde(rename = "artcraft_minimax_h3_turbo")]
+  ArtcraftMinimaxH3Turbo,
+
+  /// First-party Minimax H3 Ultra jobs. These run on our own GPU inference.
+  #[serde(rename = "artcraft_minimax_h3_ultra")]
+  ArtcraftMinimaxH3Ultra,
+
   /// Beeble jobs. We poll for results.
   #[serde(rename = "beeble_queue")]
   BeebleQueue,
@@ -144,6 +152,8 @@ impl InferenceJobType {
       Self::FalQueue => "fal_queue",
       Self::GmiCloudQueue => "gmicloud_queue",
       Self::GrokApiQueue => "grok_api_queue",
+      Self::ArtcraftMinimaxH3Turbo => "artcraft_minimax_h3_turbo",
+      Self::ArtcraftMinimaxH3Ultra => "artcraft_minimax_h3_ultra",
       Self::BeebleQueue => "beeble_queue",
       Self::Seedance2ProQueue => "seedance2pro_queue",
       Self::Seedance2ProAltQueue => "seedance2pro_alt_queue",
@@ -178,6 +188,8 @@ impl InferenceJobType {
       "fal_queue" => Ok(Self::FalQueue),
       "gmicloud_queue" => Ok(Self::GmiCloudQueue),
       "grok_api_queue" => Ok(Self::GrokApiQueue),
+      "artcraft_minimax_h3_turbo" => Ok(Self::ArtcraftMinimaxH3Turbo),
+      "artcraft_minimax_h3_ultra" => Ok(Self::ArtcraftMinimaxH3Ultra),
       "beeble_queue" => Ok(Self::BeebleQueue),
       "seedance2pro_queue" => Ok(Self::Seedance2ProQueue),
       "seedance2pro_character" => Ok(Self::Seedance2ProCharacter),
@@ -215,6 +227,8 @@ impl InferenceJobType {
       Self::FalQueue,
       Self::GmiCloudQueue,
       Self::GrokApiQueue,
+      Self::ArtcraftMinimaxH3Turbo,
+      Self::ArtcraftMinimaxH3Ultra,
       Self::BeebleQueue,
       Self::Seedance2ProQueue,
       Self::Seedance2ProCharacter,
@@ -263,6 +277,8 @@ mod tests {
       assert_serialization(InferenceJobType::FalQueue, "fal_queue");
       assert_serialization(InferenceJobType::GmiCloudQueue, "gmicloud_queue");
       assert_serialization(InferenceJobType::GrokApiQueue, "grok_api_queue");
+      assert_serialization(InferenceJobType::ArtcraftMinimaxH3Turbo, "artcraft_minimax_h3_turbo");
+      assert_serialization(InferenceJobType::ArtcraftMinimaxH3Ultra, "artcraft_minimax_h3_ultra");
       assert_serialization(InferenceJobType::BeebleQueue, "beeble_queue");
       assert_serialization(InferenceJobType::Seedance2ProQueue, "seedance2pro_queue");
       assert_serialization(InferenceJobType::Seedance2ProCharacter, "seedance2pro_character");
@@ -296,6 +312,8 @@ mod tests {
       assert_eq!(InferenceJobType::FalQueue.to_str(), "fal_queue");
       assert_eq!(InferenceJobType::GmiCloudQueue.to_str(), "gmicloud_queue");
       assert_eq!(InferenceJobType::GrokApiQueue.to_str(), "grok_api_queue");
+      assert_eq!(InferenceJobType::ArtcraftMinimaxH3Turbo.to_str(), "artcraft_minimax_h3_turbo");
+      assert_eq!(InferenceJobType::ArtcraftMinimaxH3Ultra.to_str(), "artcraft_minimax_h3_ultra");
       assert_eq!(InferenceJobType::BeebleQueue.to_str(), "beeble_queue");
       assert_eq!(InferenceJobType::Seedance2ProQueue.to_str(), "seedance2pro_queue");
       assert_eq!(InferenceJobType::Seedance2ProCharacter.to_str(), "seedance2pro_character");
@@ -329,6 +347,8 @@ mod tests {
       assert_eq!(InferenceJobType::from_str("fal_queue").unwrap(), InferenceJobType::FalQueue);
       assert_eq!(InferenceJobType::from_str("gmicloud_queue").unwrap(), InferenceJobType::GmiCloudQueue);
       assert_eq!(InferenceJobType::from_str("grok_api_queue").unwrap(), InferenceJobType::GrokApiQueue);
+      assert_eq!(InferenceJobType::from_str("artcraft_minimax_h3_turbo").unwrap(), InferenceJobType::ArtcraftMinimaxH3Turbo);
+      assert_eq!(InferenceJobType::from_str("artcraft_minimax_h3_ultra").unwrap(), InferenceJobType::ArtcraftMinimaxH3Ultra);
       assert_eq!(InferenceJobType::from_str("beeble_queue").unwrap(), InferenceJobType::BeebleQueue);
       assert_eq!(InferenceJobType::from_str("seedance2pro_queue").unwrap(), InferenceJobType::Seedance2ProQueue);
       assert_eq!(InferenceJobType::from_str("seedance2pro_character").unwrap(), InferenceJobType::Seedance2ProCharacter);
@@ -360,7 +380,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 29;
+      const EXPECTED_COUNT : usize = 31;
       
       assert_eq!(InferenceJobType::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobType::iter().len(), EXPECTED_COUNT);

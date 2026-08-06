@@ -50,6 +50,12 @@ pub enum CommonVideoModel {
   #[serde(rename = "minimax_h3")]
   MinimaxH3,
 
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
+
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
 
@@ -151,6 +157,8 @@ impl CommonVideoModel {
       Self::Kling3p0Pro => CommonModelType::Kling3p0Pro,
       Self::HappyHorse1p0 => CommonModelType::HappyHorse1p0,
       Self::MinimaxH3 => CommonModelType::MinimaxH3,
+      Self::MinimaxH3Turbo => CommonModelType::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra => CommonModelType::MinimaxH3Ultra,
       Self::Seedance10Lite => CommonModelType::Seedance10Lite,
       Self::Seedance1p5Pro => CommonModelType::Seedance1p5Pro,
       Self::Seedance2p0 => CommonModelType::Seedance2p0,
@@ -203,6 +211,8 @@ mod tests {
     assert_serialization(CommonVideoModel::Kling3p0Pro, "kling_3p0_pro");
     assert_serialization(CommonVideoModel::HappyHorse1p0, "happy_horse_1p0");
     assert_serialization(CommonVideoModel::MinimaxH3, "minimax_h3");
+    assert_serialization(CommonVideoModel::MinimaxH3Turbo, "minimax_h3_turbo");
+    assert_serialization(CommonVideoModel::MinimaxH3Ultra, "minimax_h3_ultra");
     assert_serialization(CommonVideoModel::Seedance10Lite, "seedance_1p0_lite");
     assert_serialization(CommonVideoModel::Seedance1p5Pro, "seedance_1p5_pro");
     assert_serialization(CommonVideoModel::Seedance2p0, "seedance_2p0");
@@ -248,6 +258,8 @@ mod tests {
       ("kling_3p0_pro", CommonVideoModel::Kling3p0Pro),
       ("happy_horse_1p0", CommonVideoModel::HappyHorse1p0),
       ("minimax_h3", CommonVideoModel::MinimaxH3),
+      ("minimax_h3_turbo", CommonVideoModel::MinimaxH3Turbo),
+      ("minimax_h3_ultra", CommonVideoModel::MinimaxH3Ultra),
       ("seedance_1p0_lite", CommonVideoModel::Seedance10Lite),
       ("seedance_1p5_pro", CommonVideoModel::Seedance1p5Pro),
       ("seedance_2p0", CommonVideoModel::Seedance2p0),
@@ -300,6 +312,8 @@ mod tests {
       CommonVideoModel::Kling3p0Pro,
       CommonVideoModel::HappyHorse1p0,
       CommonVideoModel::MinimaxH3,
+      CommonVideoModel::MinimaxH3Turbo,
+      CommonVideoModel::MinimaxH3Ultra,
       CommonVideoModel::Seedance10Lite,
       CommonVideoModel::Seedance1p5Pro,
       CommonVideoModel::Seedance2p0,
@@ -351,6 +365,8 @@ mod tests {
       (CommonVideoModel::Kling3p0Pro, CommonModelType::Kling3p0Pro),
       (CommonVideoModel::HappyHorse1p0, CommonModelType::HappyHorse1p0),
       (CommonVideoModel::MinimaxH3, CommonModelType::MinimaxH3),
+      (CommonVideoModel::MinimaxH3Turbo, CommonModelType::MinimaxH3Turbo),
+      (CommonVideoModel::MinimaxH3Ultra, CommonModelType::MinimaxH3Ultra),
       (CommonVideoModel::Seedance10Lite, CommonModelType::Seedance10Lite),
       (CommonVideoModel::Seedance1p5Pro, CommonModelType::Seedance1p5Pro),
       (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),

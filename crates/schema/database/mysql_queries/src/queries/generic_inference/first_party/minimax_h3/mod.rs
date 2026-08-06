@@ -1,0 +1,1 @@
+pub mod insert_generic_inference_job_for_first_party_minimax_h3_with_apriori_job_token;

@@ -22,8 +22,16 @@ pub enum InferenceJobProductCategory {
   #[default]
   DownloadGptSoVits,
   
+  // =============== ARTCRAFT FIRST PARTY ===============
+
+  /// First-party (our own GPU inference) Minimax H3 video generation.
+  /// Covers both the Turbo and Ultra variants; the `job_type` column
+  /// distinguishes them.
+  #[serde(rename = "artcraft_minimax_h3")]
+  ArtcraftMinimaxH3,
+
   // =============== FAL ===============
-  
+
   FalImage,
   FalVideo,
   FalAudio,
@@ -173,6 +181,7 @@ impl InferenceJobProductCategory {
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::DownloadGptSoVits => "download_gpt_so_vits",
+      Self::ArtcraftMinimaxH3 => "artcraft_minimax_h3",
       Self::FalImage => "fal_image",
       Self::FalVideo => "fal_video",
       Self::FalAudio => "fal_audio",
@@ -217,6 +226,7 @@ impl InferenceJobProductCategory {
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "download_gpt_so_vits" => Ok(Self::DownloadGptSoVits),
+      "artcraft_minimax_h3" => Ok(Self::ArtcraftMinimaxH3),
       "fal_image" => Ok(Self::FalImage),
       "fal_video" => Ok(Self::FalVideo),
       "fal_audio" => Ok(Self::FalAudio),
@@ -264,6 +274,7 @@ impl InferenceJobProductCategory {
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::DownloadGptSoVits,
+      Self::ArtcraftMinimaxH3,
       Self::FalImage,
       Self::FalVideo,
       Self::FalAudio,
@@ -317,6 +328,7 @@ mod tests {
     #[test]
     fn test_serialization() {
       assert_serialization(InferenceJobProductCategory::DownloadGptSoVits, "download_gpt_so_vits");
+      assert_serialization(InferenceJobProductCategory::ArtcraftMinimaxH3, "artcraft_minimax_h3");
       assert_serialization(InferenceJobProductCategory::FalImage, "fal_image");
       assert_serialization(InferenceJobProductCategory::FalVideo, "fal_video");
       assert_serialization(InferenceJobProductCategory::FalAudio, "fal_audio");
@@ -360,6 +372,7 @@ mod tests {
     #[test]
     fn to_str() {
       assert_eq!(InferenceJobProductCategory::DownloadGptSoVits.to_str(), "download_gpt_so_vits");
+      assert_eq!(InferenceJobProductCategory::ArtcraftMinimaxH3.to_str(), "artcraft_minimax_h3");
       assert_eq!(InferenceJobProductCategory::FalImage.to_str(), "fal_image");
       assert_eq!(InferenceJobProductCategory::FalVideo.to_str(), "fal_video");
       assert_eq!(InferenceJobProductCategory::FalAudio.to_str(), "fal_audio");
@@ -402,6 +415,7 @@ mod tests {
     #[test]
     fn from_str() {
       assert_eq!(InferenceJobProductCategory::from_str("download_gpt_so_vits").unwrap(), InferenceJobProductCategory::DownloadGptSoVits);
+      assert_eq!(InferenceJobProductCategory::from_str("artcraft_minimax_h3").unwrap(), InferenceJobProductCategory::ArtcraftMinimaxH3);
       assert_eq!(InferenceJobProductCategory::from_str("fal_image").unwrap(), InferenceJobProductCategory::FalImage);
       assert_eq!(InferenceJobProductCategory::from_str("fal_video").unwrap(), InferenceJobProductCategory::FalVideo);
       assert_eq!(InferenceJobProductCategory::from_str("fal_audio").unwrap(), InferenceJobProductCategory::FalAudio);
@@ -444,7 +458,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 39;
+      const EXPECTED_COUNT : usize = 40;
 
       assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);
