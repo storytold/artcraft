@@ -10,14 +10,22 @@ use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_requ
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
+use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
+use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
+  insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
+};
+use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -27,9 +35,6 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_api::generate::video::check_request::check_request;
-use crate::http_server::endpoints::omni_api::generate::video::first_party_minimax_h3::enqueue_first_party_minimax_h3_job::{
-  enqueue_first_party_minimax_h3_job, first_party_minimax_h3_model, EnqueueFirstPartyMinimaxH3JobArgs,
-};
 use crate::http_server::endpoints::omni_api::generate::video::ingest_url_inputs::ingest_url_inputs;
 use crate::http_server::endpoints::omni_api::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_api::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
@@ -38,9 +43,6 @@ use crate::http_server::endpoints::omni_api::generate::video::insert_db_job::ins
 use crate::http_server::endpoints::omni_api::generate::video::insert_db_job::insert_grok_api_job::{insert_grok_api_job, InsertGrokApiJobArgs};
 use crate::http_server::endpoints::omni_api::generate::video::insert_db_job::insert_kinovi_web_jobs::{insert_kinovi_web_jobs, InsertKinoviWebJobsArgs};
 use crate::http_server::endpoints::omni_api::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
-use crate::http_server::endpoints::omni_api::generate::video::helpers::write_prompt_records::{
-  write_prompt_records, WritePromptRecordsArgs,
-};
 use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_api::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_api::shared_utils::video::validate_video_request::validate_video_request;
@@ -216,24 +218,6 @@ pub async fn omni_api_video_generate_handler(
     warn!("Failed to insert HTTP request debug log: {:?}", err);
   }
 
-  // ==================== FIRST-PARTY MINIMAX H3 (TURBO / ULTRA) ==================== //
-
-  // These models run on our own GPU inference — no provider call is made.
-  // The module bills the wallet (Ultra only), writes the prompt + job
-  // records, and returns; a scheduler picks the pending jobs up later.
-  if let Some(minimax_model) = first_party_minimax_h3_model(request.model) {
-    return enqueue_first_party_minimax_h3_job(EnqueueFirstPartyMinimaxH3JobArgs {
-      minimax_model,
-      request: &request,
-      user_token,
-      maybe_prompt_model_type,
-      idempotency_token: &idempotency_token,
-      ip_address: &ip_address,
-      debug_log_event_token: &debug_log_event_token,
-      mysql_connection,
-    }).await;
-  }
-
   // NB: The pipeline takes over the connection for its remaining pre-request DB writes (billing,
   // outbound provider request debug log) and releases it before the (slow, external) generation
   // call — holding a pool slot across that call is what starves the pool and causes PoolTimedOut
@@ -297,15 +281,79 @@ pub async fn omni_api_video_generate_handler(
     CommonWebError::from_error(err)
   })?;
 
-  // -- Prompt + context items --
+  // -- Prompt --
 
-  let prompt_token = write_prompt_records(WritePromptRecordsArgs {
-    request: &request,
-    user_token,
-    maybe_prompt_model_type,
-    ip_address: &ip_address,
-    transaction: &mut transaction,
-  }).await;
+  let prompt_token = match insert_prompt(InsertPromptArgs {
+    maybe_apriori_prompt_token: None,
+    prompt_type: PromptType::ArtcraftApp,
+    maybe_creator_user_token: Some(user_token),
+    maybe_model_type: maybe_prompt_model_type,
+    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_positive_prompt: request.prompt.as_deref(),
+    maybe_negative_prompt: request.negative_prompt.as_deref(),
+    maybe_other_args: None,
+    maybe_generation_mode: Some(determine_generation_mode(&request)),
+    maybe_aspect_ratio: request.aspect_ratio,
+    maybe_resolution: request.resolution,
+    maybe_bitrate: request.bitrate,
+    maybe_batch_count: request.video_batch_count.map(|c| c as u8),
+    maybe_generate_audio: request.generate_audio,
+    maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),
+    creator_ip_address: &ip_address,
+    mysql_executor: &mut *transaction,
+    phantom: Default::default(),
+  }).await {
+    Ok(token) => Some(token),
+    Err(err) => {
+      warn!("Error inserting prompt: {:?}", err);
+      None
+    }
+  };
+
+  // -- Prompt context items --
+
+  if let Some(token) = prompt_token.as_ref() {
+    let mut context_items = Vec::new();
+
+    if let Some(media_token) = &request.start_frame_image_media_token {
+      context_items.push(PromptContextItem {
+        media_token: media_token.clone(),
+        context_semantic_type: PromptContextSemanticType::VidStartFrame,
+      });
+    }
+    if let Some(media_token) = &request.end_frame_image_media_token {
+      context_items.push(PromptContextItem {
+        media_token: media_token.clone(),
+        context_semantic_type: PromptContextSemanticType::VidEndFrame,
+      });
+    }
+    if let Some(ref_tokens) = &request.reference_image_media_tokens {
+      for media_token in ref_tokens {
+        context_items.push(PromptContextItem {
+          media_token: media_token.clone(),
+          context_semantic_type: PromptContextSemanticType::Imgref,
+        });
+      }
+    }
+    if let Some(ref_tokens) = &request.reference_video_media_tokens {
+      for media_token in ref_tokens {
+        context_items.push(PromptContextItem {
+          media_token: media_token.clone(),
+          context_semantic_type: PromptContextSemanticType::VidRef,
+        });
+      }
+    }
+
+    if !context_items.is_empty() {
+      if let Err(err) = insert_batch_prompt_context_items(InsertBatchArgs {
+        prompt_token: token.clone(),
+        items: context_items,
+        transaction: &mut transaction,
+      }).await {
+        warn!("Error inserting batch prompt context items: {:?}", err);
+      }
+    }
+  }
 
   // -- Inference job --
 
@@ -438,4 +486,24 @@ pub async fn omni_api_video_generate_handler(
     inference_job_token: primary_job_token,
     all_job_tokens,
   }))
+}
+
+fn determine_generation_mode(request: &OmniApiVideoGenerateRequest) -> CommonGenerationMode {
+  let has_keyframe = request.start_frame_image_media_token.is_some()
+    || request.end_frame_image_media_token.is_some();
+
+  if has_keyframe {
+    return CommonGenerationMode::Keyframe;
+  }
+
+  let has_reference = request.reference_image_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_video_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_audio_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_character_tokens.as_ref().is_some_and(|t| !t.is_empty());
+
+  if has_reference {
+    return CommonGenerationMode::Reference;
+  }
+
+  CommonGenerationMode::Text
 }
