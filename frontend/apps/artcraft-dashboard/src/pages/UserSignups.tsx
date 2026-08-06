@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ModerationApi } from "@/api/ModerationApi";
 import type { SignupUser } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -14,9 +15,11 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { BulkBanUsersDialog } from "@/components/BulkBanUsersDialog";
 import { useTableHeight } from "@/hooks/useTableHeight";
 import {
   IconAlertCircle,
+  IconBan,
   IconExternalLink,
   IconUsers,
   IconUserPlus,
@@ -32,6 +35,10 @@ export function UserSignups() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const [selectedUsernames, setSelectedUsernames] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
 
   const cancelledRef = useRef(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -71,7 +78,34 @@ export function UserSignups() {
   const handleRefresh = () => {
     setUsers([]);
     setNextCursor(null);
+    setSelectedUsernames(new Set());
     loadData();
+  };
+
+  const toggleUser = (username: string, checked: boolean) => {
+    setSelectedUsernames((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(username);
+      } else {
+        next.delete(username);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = (checked: boolean) => {
+    setSelectedUsernames(
+      checked ? new Set(users.map((user) => user.username)) : new Set(),
+    );
+  };
+
+  const handleBanned = (bannedUsernames: string[]) => {
+    setSelectedUsernames((prev) => {
+      const next = new Set(prev);
+      bannedUsernames.forEach((username) => next.delete(username));
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -107,6 +141,16 @@ export function UserSignups() {
 
   const { ref: tableRef, height: tableHeight } = useTableHeight();
 
+  const selectedUsers = useMemo(
+    () => users.filter((user) => selectedUsernames.has(user.username)),
+    [users, selectedUsernames],
+  );
+
+  const headerCheckboxState =
+    selectedUsers.length === 0
+      ? false
+      : selectedUsers.length === users.length || ("indeterminate" as const);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
@@ -138,20 +182,45 @@ export function UserSignups() {
       )}
 
       <div className="flex flex-col gap-4 flex-1 min-h-0">
-        <h3 className="text-xl font-bold flex items-center gap-2">
-          <IconUsers className="size-5 text-muted-foreground" />
-          All Users
-          {!isLoading && (
-            <span className="text-sm font-normal text-muted-foreground ml-1">
-              ({users.length}{nextCursor != null ? "+" : ""})
-            </span>
+        <div className="flex items-center gap-2 min-h-8">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <IconUsers className="size-5 text-muted-foreground" />
+            All Users
+            {!isLoading && (
+              <span className="text-sm font-normal text-muted-foreground ml-1">
+                ({users.length}{nextCursor != null ? "+" : ""})
+              </span>
+            )}
+          </h3>
+          {selectedUsers.length > 0 && (
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {selectedUsers.length} selected
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedUsernames(new Set())}
+              >
+                Clear
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBanDialogOpen(true)}
+              >
+                <IconBan className="size-4" />
+                Ban Selected
+              </Button>
+            </div>
           )}
-        </h3>
+        </div>
         <div ref={tableRef}>
           {isLoading ? (
             <Table containerClassName="rounded-xl border bg-card shadow-sm overflow-hidden">
               <TableHeader>
                 <TableRow className="hover:bg-transparent bg-muted/30">
+                  <TableHead className="w-8"></TableHead>
                   <TableHead className="text-xs">Username</TableHead>
                   <TableHead className="text-xs">Display Name</TableHead>
                   <TableHead className="text-xs">Email</TableHead>
@@ -165,6 +234,7 @@ export function UserSignups() {
               <TableBody>
                 {Array.from({ length: 10 }).map((_, i) => (
                   <TableRow key={i}>
+                    <TableCell><Skeleton className="size-4 rounded-[4px]" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-36" /></TableCell>
@@ -189,6 +259,13 @@ export function UserSignups() {
             >
               <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow className="hover:bg-transparent bg-muted/30">
+                  <TableHead className="w-8">
+                    <Checkbox
+                      checked={headerCheckboxState}
+                      onCheckedChange={(checked) => toggleAll(checked === true)}
+                      aria-label="Select all users"
+                    />
+                  </TableHead>
                   <TableHead className="text-xs">Username</TableHead>
                   <TableHead className="text-xs">Display Name</TableHead>
                   <TableHead className="text-xs">Email</TableHead>
@@ -201,7 +278,24 @@ export function UserSignups() {
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id} className="group">
+                  <TableRow
+                    key={user.id}
+                    className="group"
+                    data-state={
+                      selectedUsernames.has(user.username)
+                        ? "selected"
+                        : undefined
+                    }
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedUsernames.has(user.username)}
+                        onCheckedChange={(checked) =>
+                          toggleUser(user.username, checked === true)
+                        }
+                        aria-label={`Select @${user.username}`}
+                      />
+                    </TableCell>
                     <TableCell className="text-sm font-medium">
                       <Link
                         to={`/user/profile/${user.username}`}
@@ -279,7 +373,7 @@ export function UserSignups() {
                 ))}
                 {nextCursor != null && (
                   <TableRow ref={sentinelRef}>
-                    <TableCell colSpan={8} className="text-center py-4">
+                    <TableCell colSpan={9} className="text-center py-4">
                       {isLoadingMore ? (
                         <div className="flex items-center justify-center gap-2 text-muted-foreground">
                           <IconLoader2 className="size-4 animate-spin" />
@@ -296,6 +390,16 @@ export function UserSignups() {
           )}
         </div>
       </div>
+
+      <BulkBanUsersDialog
+        users={selectedUsers.map((user) => ({
+          username: user.username,
+          displayName: user.display_name,
+        }))}
+        open={banDialogOpen}
+        onOpenChange={setBanDialogOpen}
+        onBanned={handleBanned}
+      />
     </div>
   );
 }
