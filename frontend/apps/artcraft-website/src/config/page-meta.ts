@@ -65,6 +65,12 @@ export const PAGE_META: Record<string, PageMeta> = {
     description:
       "Simple pricing for ArtCraft. Generate AI video and images with every model in one open desktop app. No subscriptions needed — you own ArtCraft.",
   },
+  "/beta": {
+    title: "Beta Signup - ArtCraft. AI Video and Images.",
+    ogTitle: "Join the ArtCraft Beta",
+    description:
+      "Apply for early access to new ArtCraft features. Test unreleased models and tools before anyone else, and help shape the fastest open desktop app for AI video and images.",
+  },
 };
 
 // Resolve full metadata for a pathname, filling any missing fields from the

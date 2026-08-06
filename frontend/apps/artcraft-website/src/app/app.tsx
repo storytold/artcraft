@@ -26,6 +26,7 @@ import FaqArticle from "../pages/faq/article";
 import NewsIndex from "../pages/news/news-index";
 import NewsPost from "../pages/news/news-post";
 import Pricing from "../pages/pricing";
+import Beta from "../pages/beta";
 import Support from "../pages/support/support";
 import Login from "../pages/login";
 import Signup from "../pages/signup";
@@ -81,6 +82,7 @@ export function App() {
         <Route path="/news" element={<NewsIndex basePath="/news" />} />
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/beta" element={<Beta />} />
 
         {/* App routes — flip USE_WEBAPP_FOR_APP_FEATURES in config/links.ts
             to render these locally instead of redirecting to the webapp. */}

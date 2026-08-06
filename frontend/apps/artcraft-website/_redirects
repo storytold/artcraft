@@ -58,6 +58,10 @@
 /pricing/ /pricing/index.html 200
 /pricing/* /index.html 200
 
+/beta /beta/index.html 200
+/beta/ /beta/index.html 200
+/beta/* /index.html 200
+
 /faq /index.html 200
 /faq/ /index.html 200
 /faq/* /index.html 200
