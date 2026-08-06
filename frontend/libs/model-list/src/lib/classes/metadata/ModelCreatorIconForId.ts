@@ -22,6 +22,7 @@ export const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
   ["vidu", ModelCreator.Vidu],
   ["recraft", ModelCreator.Recraft],
   ["happy_horse", ModelCreator.Alibaba],
+  ["minimax", ModelCreator.Hailuo],
   ["qwen", ModelCreator.Alibaba],
   ["suno", ModelCreator.Suno],
   ["seed_audio", ModelCreator.Bytedance],
