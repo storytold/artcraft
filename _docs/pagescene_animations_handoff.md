@@ -28,6 +28,10 @@ upload Mixamo FBX files (with or without mesh) end to end.
 | `00ebeae10c` | User's uploaded animations merged into the Animations tab                |
 | `e1c7a0c7b0` | Persistent skeleton-helper toggle in the outliner                        |
 | `30f40c0ddb` | Previewer bone toggles + mesh-less framing/mixer-binding fixes           |
+| `5f7ba7bbc5` | AnimationsModal (All/Presets/Uploaded) + timeline quality-of-life        |
+| `d55735620a` | Timeline ruler tick marks + strip button spacing                         |
+| `79875d8c76` | Upload animations from the AnimationsModal (initialCategory)             |
+| *(this)*     | NodeHierarchyHelper: bone toggle works for converted mesh-less GLBs      |
 
 ## Features
 
@@ -88,9 +92,14 @@ upload Mixamo FBX files (with or without mesh) end to end.
 
 - Both play baked clips: autoplay the first, dropdown with every clip + "T-pose (none)", hidden
   entirely for animation-less models.
-- Both have a bone icon toggling a `THREE.SkeletonHelper` — default ON when the model has bones
-  but no mesh (Mixamo "without skin" exports), so animation-only files are visible. The upload
-  thumbnail snapshot then captures the skeleton render.
+- Both have a bone icon toggling a skeleton overlay — default ON when the model has no mesh
+  (Mixamo "without skin" exports), so animation-only files are visible. The upload thumbnail
+  snapshot then captures the skeleton render.
+- The overlay adapts to the rig kind: real `THREE.Bone` joints get `THREE.SkeletonHelper`;
+  mesh-less models whose joints re-imported as plain nodes get `NodeHierarchyHelper`
+  (exported from `viewer-3d`) — GLTF only round-trips bone-ness through a *skin*, and a
+  mesh-less export has no skin, so converted FBX animations lose `Bone`-ness entirely. The
+  toggle shows for `hasBones || !hasMesh`.
 - Latent bugs fixed: upload preview discarded `gltf.animations`; its child re-parenting loop
   skipped every other child (`scene.add` mutates the array mid-forEach); its mixer bound before
   the model entered the scene (silently played nothing); camera framing NaN'd on empty
@@ -146,10 +155,21 @@ upload Mixamo FBX files (with or without mesh) end to end.
 - [ ] Previewer dropdown + bone toggle across lightbox, media page, lightbox-modal,
       ImageTo3DExperience, upload modal.
 
+## Landed since the original handoff
+
+- **AnimationsModal** (was deferred — now built, `5f7ba7bbc5`/`79875d8c76`): standalone modal
+  with All / Presets / Uploaded tabs, opened from an "Add Animation" button next to Enter Pose
+  Mode and from the "+" add-asset menu. Adding a clip expands the timeline and scrolls to the
+  character (`timelineRevealObjectUuid`); the modal closes after an add unless "Reopen after
+  adding" is on. Its "Upload animation" button opens `UploadModal3D` with
+  `initialCategory="animation"` (anonymous users get the signup prompt), landing on the
+  Uploaded tab afterwards. `AssetModal`'s animations tab was folded into this.
+- **Timeline QoL**: ruler tick marks (major/second/sub-tick), selected-object-only track
+  filter, directional expand/collapse chevrons, thumbnail-less animation cards get an icon
+  placeholder.
+
 ## Deferred (explicitly out of scope for this branch)
 
-- **AnimationsModal** — unified browser for drawer + baked + uploaded animations. Planned as a
-  separate feature once the above is confirmed working.
 - **Split-screen preview window** (based on the `?output=` `DemoOutputOverlay`) — parked until
   explicit approval.
 - **Retargeting** (`SkeletonUtils.retargetClip`) — too complex for now; mismatched rigs are

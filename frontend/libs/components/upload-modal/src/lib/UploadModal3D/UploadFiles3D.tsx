@@ -136,9 +136,11 @@ export const UploadFiles3D = ({
   const [previewClip, setPreviewClip] = useState(0);
   const selectAnimationRef = useRef<((index: number) => void) | null>(null);
 
-  // Skeleton overlay: offered for any rigged model, on by default for
-  // mesh-less ones (there'd be nothing else to see).
-  const [previewHasBones, setPreviewHasBones] = useState(false);
+  // Skeleton overlay: offered for any rigged model — real bones OR a
+  // mesh-less node hierarchy (converted animation exports lose bone-ness;
+  // see NodeHierarchyHelper) — on by default for mesh-less ones, where
+  // there'd otherwise be nothing to see.
+  const [previewHasRig, setPreviewHasRig] = useState(false);
   const [previewSkeletonVisible, setPreviewSkeletonVisible] = useState(false);
   const setSkeletonVisibleRef = useRef<((visible: boolean) => void) | null>(
     null,
@@ -219,7 +221,7 @@ export const UploadFiles3D = ({
     setPreviewStatus({ type: "init" });
     setPreviewAnimations([]);
     setPreviewClip(0);
-    setPreviewHasBones(false);
+    setPreviewHasRig(false);
     setPreviewSkeletonVisible(false);
     selectAnimationRef.current = null;
     setSkeletonVisibleRef.current = null;
@@ -232,8 +234,8 @@ export const UploadFiles3D = ({
         onAnimationsAvailable: setPreviewAnimations,
         onModelInfo: (info) => {
           if (!info.hasMesh) onMeshlessDetected?.();
-          setPreviewHasBones(info.hasBones);
-          setPreviewSkeletonVisible(info.hasBones && !info.hasMesh);
+          setPreviewHasRig(info.hasBones || !info.hasMesh);
+          setPreviewSkeletonVisible(!info.hasMesh);
         },
       });
     rendererRef.current = renderer;
@@ -533,9 +535,9 @@ export const UploadFiles3D = ({
   // clip picker for models with baked animations; still models get no extra
   // chrome. Shared by the single and multi layouts.
   const animationPicker = (previewAnimations.length > 0 ||
-    previewHasBones) && (
+    previewHasRig) && (
     <div className="pointer-events-auto absolute right-2 top-2 z-10 flex items-start gap-2">
-      {previewHasBones && (
+      {previewHasRig && (
         <button
           type="button"
           title={

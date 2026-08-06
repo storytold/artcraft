@@ -6,6 +6,10 @@ import { SplatMesh } from "@sparkjsdev/spark";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBone } from "@fortawesome/pro-solid-svg-icons";
 import { Select } from "@storyteller/ui-select";
+import {
+  NodeHierarchyHelper,
+  createRigHelper,
+} from "./NodeHierarchyHelper";
 
 // Dropdown value for the "no animation" choice (models rest in their bind /
 // T-pose). Clip values are their stringified index.
@@ -70,9 +74,14 @@ export function Viewer3D({
   const [selectedClip, setSelectedClip] = useState(-1);
 
   // Skeleton overlay for rigged models. Defaults ON for mesh-less models
-  // (skeleton/animation-only exports would otherwise render nothing).
-  const skeletonHelperRef = useRef<THREE.SkeletonHelper | null>(null);
-  const [hasBones, setHasBones] = useState(false);
+  // (skeleton/animation-only exports would otherwise render nothing). Real
+  // bones get THREE.SkeletonHelper; converted mesh-less exports (whose
+  // joints re-import as plain nodes — GLTF only round-trips bone-ness via a
+  // skin) get the generic NodeHierarchyHelper.
+  const skeletonHelperRef = useRef<
+    THREE.SkeletonHelper | NodeHierarchyHelper | null
+  >(null);
+  const [hasRig, setHasRig] = useState(false);
   const [skeletonVisible, setSkeletonVisible] = useState(false);
 
   const stopAnimations = () => {
@@ -275,7 +284,7 @@ export function Viewer3D({
     removeSkeletonHelper();
     setAnimationNames([]);
     setSelectedClip(-1);
-    setHasBones(false);
+    setHasRig(false);
     setSkeletonVisible(false);
 
     if (cubeRef.current) {
@@ -427,20 +436,22 @@ export function Viewer3D({
             );
             setSelectedClip(0);
           }
-          // Skeleton overlay: available for any rigged model, shown by
-          // default when there's no mesh to look at.
+          // Skeleton overlay: offered for any model with real bones, and for
+          // any MESH-LESS model regardless (its joints may have re-imported
+          // as plain nodes — without the overlay there is nothing to see).
+          // Shown by default only in the mesh-less case.
           let modelHasBones = false;
           let modelHasMesh = false;
           model.traverse((node) => {
             if ((node as THREE.Bone).isBone) modelHasBones = true;
             if ((node as THREE.Mesh).isMesh) modelHasMesh = true;
           });
-          if (modelHasBones) {
-            const helper = new THREE.SkeletonHelper(model);
+          if (modelHasBones || !modelHasMesh) {
+            const helper = createRigHelper(model);
             helper.visible = !modelHasMesh;
             scene.add(helper);
             skeletonHelperRef.current = helper;
-            setHasBones(true);
+            setHasRig(true);
             setSkeletonVisible(!modelHasMesh);
           }
         },
@@ -528,9 +539,9 @@ export function Viewer3D({
       {/* Top-right controls: skeleton overlay toggle (rigged models) and
           the animation picker (models that ship clips). Models with
           neither get no extra chrome. */}
-      {showViewer && (hasBones || animationNames.length > 0) && (
+      {showViewer && (hasRig || animationNames.length > 0) && (
         <div className="absolute right-2.5 top-2.5 z-20 flex items-start gap-2">
-          {hasBones && (
+          {hasRig && (
             <button
               type="button"
               title={skeletonVisible ? "Hide skeleton" : "Show skeleton"}

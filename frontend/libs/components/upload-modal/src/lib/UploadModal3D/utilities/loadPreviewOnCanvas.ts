@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { SplatFileType, SplatMesh } from "@sparkjsdev/spark";
+import { NodeHierarchyHelper } from "@storyteller/ui-viewer-3d";
 
 interface LoaderInterface {
   file: File;
@@ -101,7 +102,10 @@ export const loadPreviewOnCanvas = ({
 
   // Skeleton overlay for rigged GLBs, shown by default when the model has
   // no mesh (skeleton/animation-only exports would otherwise be invisible).
-  let skeletonHelper: THREE.SkeletonHelper | null = null;
+  // Real bones get THREE.SkeletonHelper; mesh-less models whose joints
+  // re-imported as plain nodes (GLTF only round-trips bone-ness through a
+  // skin, and mesh-less exports have none) get the generic hierarchy lines.
+  let skeletonHelper: THREE.SkeletonHelper | NodeHierarchyHelper | null = null;
   const setSkeletonVisible = (visible: boolean) => {
     if (skeletonHelper) skeletonHelper.visible = visible;
   };
@@ -114,8 +118,10 @@ export const loadPreviewOnCanvas = ({
       renderer,
       statusCallback,
       onModelInfo: (info) => {
-        if (info.hasBones) {
-          skeletonHelper = new THREE.SkeletonHelper(scene);
+        if (info.hasBones || !info.hasMesh) {
+          skeletonHelper = info.hasBones
+            ? new THREE.SkeletonHelper(scene)
+            : new NodeHierarchyHelper(scene);
           skeletonHelper.visible = !info.hasMesh;
           scene.add(skeletonHelper);
         }
