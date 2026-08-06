@@ -5,15 +5,25 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import { getLandingUrl, getReferrer } from "@storyteller/common";
+import { getReferrer } from "@storyteller/common";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 
-// Google Apps Script web app URL that appends each signup to the Google Sheet.
-// See .env.example for setup instructions.
-const SIGNUP_ENDPOINT = import.meta.env.VITE_BETA_SIGNUP_ENDPOINT as
-  | string
-  | undefined;
+// Submissions go to a Google Form whose responses land in a Google Sheet.
+// The form URL and field IDs are public by nature (they ship in the bundle);
+// docs/beta-signup.md covers how to regenerate the IDs if the form changes.
+const FORM_RESPONSE_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSfjRVkOzfBlR0uefebHWSaoEm7R0DRLhUKqwHQlNvBE8bmd-w/formResponse";
+
+const FORM_FIELD_IDS = {
+  name: "entry.666666785",
+  company: "entry.121325393",
+  email: "entry.467034813",
+  type: "entry.2139364913",
+  typeDetail: "entry.1914395461",
+  page: "entry.709868934",
+  referrer: "entry.617211358",
+} as const;
 
 const USER_TYPES = [
   "Business",
@@ -88,7 +98,7 @@ const Beta = () => {
 
     setIsLoading(true);
     try {
-      await submitToSheet();
+      await submitToGoogleForm();
       setIsSubmitted(true);
     } catch (err) {
       console.error("Beta signup submission failed", err);
@@ -118,44 +128,25 @@ const Beta = () => {
     return errors;
   };
 
-  const submitToSheet = async () => {
-    const payload = {
-      name: name.trim(),
-      company: company.trim(),
-      email: email.trim(),
-      type: userType,
-      typeDetail: userType === "Other" ? typeOther.trim() : "",
-      page: window.location.href,
-      referrer: getReferrer() ?? "",
-      landingUrl: getLandingUrl() ?? "",
-    };
-
-    if (!SIGNUP_ENDPOINT) {
-      if (import.meta.env.DEV) {
-        console.warn(
-          "VITE_BETA_SIGNUP_ENDPOINT is not set; simulating a successful submission.",
-          payload
-        );
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        return;
-      }
-      throw new Error("VITE_BETA_SIGNUP_ENDPOINT is not configured");
-    }
-
-    // text/plain keeps this a CORS "simple request" so the Apps Script web
-    // app can answer without a preflight it isn't able to handle.
-    const response = await fetch(SIGNUP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
+  const submitToGoogleForm = async () => {
+    const body = new URLSearchParams({
+      [FORM_FIELD_IDS.name]: name.trim(),
+      [FORM_FIELD_IDS.company]: company.trim(),
+      [FORM_FIELD_IDS.email]: email.trim(),
+      [FORM_FIELD_IDS.type]: userType ?? "",
+      [FORM_FIELD_IDS.typeDetail]: userType === "Other" ? typeOther.trim() : "",
+      [FORM_FIELD_IDS.page]: window.location.href,
+      [FORM_FIELD_IDS.referrer]: getReferrer() ?? "",
     });
-    if (!response.ok) {
-      throw new Error(`Signup endpoint returned ${response.status}`);
-    }
-    const result = (await response.json()) as { success?: boolean };
-    if (!result.success) {
-      throw new Error("Signup endpoint reported a failure");
-    }
+
+    // Google Forms doesn't send CORS headers, so this is a fire-and-forget
+    // no-cors request: the response is opaque and we treat "request completed"
+    // as success. Only network-level failures reject.
+    await fetch(FORM_RESPONSE_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body,
+    });
   };
 
   const selectType = (type: UserType) => {
