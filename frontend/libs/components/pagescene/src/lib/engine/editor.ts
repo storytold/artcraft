@@ -206,11 +206,17 @@ class Editor {
       () => this.cameraController.switchCameraView(),
     );
 
-    // Skeleton overlays reconcile on every outliner refresh — add/delete/
-    // load/new-scene all funnel through one, so no bespoke lifecycle hooks.
+    // Skeleton overlays and animation runtimes reconcile on every outliner
+    // refresh — add/delete/load/new-scene all funnel through one, so no
+    // bespoke lifecycle hooks. The runtime revalidation matters for objects
+    // recreated under the same uuid (delete→undo, in-session scene reloads),
+    // whose mixers would otherwise stay bound to the detached old instance.
     this.skeletonSyncSubscription = this.bus.subscribe(
       OutlinerRefreshedEvent,
-      () => this.skeletonHelpers.sync(),
+      () => {
+        this.skeletonHelpers.sync();
+        this.characterAnimationManager.revalidate();
+      },
     );
     // FK/pose mode draws its own rig overlay for the posed character —
     // suppress our persistent helper for it so bones aren't double-drawn,

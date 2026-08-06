@@ -116,6 +116,40 @@ export class CharacterAnimationManager {
     for (const mixer of this.mixers.values()) mixer.update(0);
   }
 
+  // Re-bind characters whose scene object was REPLACED under the same uuid.
+  // Delete→undo restores and in-session scene reloads (loadScene/loadCache/
+  // Reset-to-original) recreate objects with their saved uuids, but mixers
+  // and rest poses hold OBJECT-INSTANCE references — without this, the
+  // runtime keeps animating the detached old root forever while the visible
+  // replacement never plays. Called on every outliner refresh (the funnel
+  // all object-lifecycle changes already pass through); cheap when nothing
+  // changed.
+  revalidate(): void {
+    const timeline = this.editor.timelineController.getTimeline();
+    if (!timeline) return;
+    const staleUuids = new Set<string>();
+    for (const [uuid, mixer] of this.mixers) {
+      const current = this.findObject(uuid);
+      if (!current || mixer.getRoot() !== current) staleUuids.add(uuid);
+    }
+    if (staleUuids.size > 0) {
+      for (const rt of [...this.lanes.values()]) {
+        if (staleUuids.has(rt.characterUuid)) this.disposeLane(rt.laneId);
+      }
+      for (const uuid of staleUuids) {
+        this.mixers.get(uuid)?.stopAllAction();
+        this.mixers.delete(uuid);
+        this.restPoses.delete(uuid);
+      }
+    }
+    // sync() recreates runtimes for the lanes purged above — and for lanes
+    // that never got one because their object didn't exist at add time
+    // (addLane drops the registration when the object is unresolvable).
+    // Re-posing happens in addLane's own tail evaluate, so nothing more to
+    // do here.
+    this.sync(timeline.clipLanes);
+  }
+
   clear(): void {
     for (const laneId of [...this.lanes.keys()]) this.disposeLane(laneId);
     for (const uuid of this.mixers.keys()) this.resetToRestPose(uuid);
@@ -143,22 +177,33 @@ export class CharacterAnimationManager {
     this.lanes.set(lane.id, rt);
 
     const character = this.findObject(lane.objectUuid);
-    if (!character) return;
+    if (!character) {
+      // Unresolvable object: drop the registration instead of keeping a dead
+      // runtime, so a later sync()/revalidate() retries once the object
+      // (re)appears — e.g. undo restoring a deleted character.
+      this.lanes.delete(lane.id);
+      return;
+    }
 
     let clip: THREE.AnimationClip | undefined;
     if (lane.strip.bakedClipIndex !== undefined) {
-      // Baked clip: sourced from the object's own `animations[]`, kept intact
-      // for the object's lifetime — we only read from it, never remove or
-      // mutate it. Disabling/removing a baked strip just stops scheduling the
-      // clip; it stays on the model (and in the row's picker). Resolves
-      // synchronously, so no load-token dance is needed.
-      clip = character.animations?.[lane.strip.bakedClipIndex];
-      if (!clip) {
+      // Baked clip: sourced from the object's own `animations[]`, which is
+      // never mutated (baked clips stay on the model and in the picker).
+      // CLONED per lane: mixer.clipAction caches one action per (clip, root),
+      // so handing two strips the same AnimationClip instance makes them
+      // fight over a single action — whichever lane evaluates last wins,
+      // freezing the other strip's window — and disposeLane's uncacheClip
+      // would kill the surviving strip's action along with the removed one.
+      // Clones share the underlying keyframe arrays, so this is cheap.
+      // Resolves synchronously, so no load-token dance is needed.
+      const source = character.animations?.[lane.strip.bakedClipIndex];
+      if (!source) {
         console.warn(
           `Baked clip index ${lane.strip.bakedClipIndex} not found on object ${lane.objectUuid} (object has ${character.animations?.length ?? 0} baked clips).`,
         );
         return;
       }
+      clip = source.clone();
     } else {
       const glb = await this.editor.activeScene.loadRawGlb(
         lane.strip.sourceMediaId,

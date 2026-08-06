@@ -264,6 +264,12 @@ then one row per character is the right model.
   gap so a character's strips never overlap; `nextStartAfter` bounds trim (`resizeClipLane`) and
   auto-length (`resolveClipDuration`) against the following clip. `evaluateAt` then has at most one
   active clip at any playhead, so playback is an unambiguous sequence.
+- **Runtime revalidation**: mixers/rest poses hold object-INSTANCE refs, but delete→undo and
+  in-session scene reloads recreate objects under the same uuids. `CharacterAnimationManager.
+  revalidate()` (subscribed to `OutlinerRefreshedEvent` alongside the skeleton-helper sync)
+  purges runtimes whose mixer root no longer matches the live object and re-binds their lanes;
+  `addLane` drops (rather than keeps) the runtime registration when the object is unresolvable
+  so the retry can happen.
 - **Rest-pose in gaps** (was bind-pose): a disabled three.js action leaves the skeleton frozen on
   its last frame, so `evaluateAt` resets any character with no clip under the playhead to a **rest
   pose captured at mixer creation** (`captureRestPose` — local transforms of every node BELOW the
@@ -280,7 +286,9 @@ then one row per character is the right model.
   (`OutlinerItem.bakedClips`, from `object.animations`) gets a clip row even without a skeleton.
 - **Baked-in clips**: `ClipStrip.bakedClipIndex` marks a strip sourced from the object's own
   `animations[]` (with `sourceMediaId: ""`); `CharacterAnimationManager.addLane` resolves it
-  synchronously from the model instead of `loadRawGlb`. Added via the **"+" picker** on the
+  synchronously from the model instead of `loadRawGlb`, and **CLONES the clip per lane** —
+  `mixer.clipAction` caches one action per (clip, root), so two strips of the same raw baked
+  clip would fight over a single action and `uncacheClip` on removal would kill the sibling's. Added via the **"+" picker** on the
   object's clip row (`TimelineClipRow`, `addBakedClipToObject`, earliest free slot, real length
   known up front so no `autoDuration`). INVARIANT: baked clips are **never removed from the THREE
   model** — removing a baked strip only unschedules it (mixer uncache is mixer-state only); the
