@@ -7,6 +7,7 @@ import { usePageSceneStore } from "../PageSceneStore";
 export function openAssetModal(): void {
   const store = usePageSceneStore.getState();
   store.setAssetModalVisibleDuringDrag(true);
+  store.setAnimationsModalVisible(false); // one library panel at a time
   store.setAssetModalVisible(true);
   store.setAssetDraggingUnder(false);
 }

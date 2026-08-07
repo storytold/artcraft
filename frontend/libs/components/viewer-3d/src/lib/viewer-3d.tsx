@@ -3,6 +3,41 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SplatMesh } from "@sparkjsdev/spark";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBone } from "@fortawesome/pro-solid-svg-icons";
+import { Select } from "@storyteller/ui-select";
+import {
+  NodeHierarchyHelper,
+  createRigHelper,
+} from "./NodeHierarchyHelper";
+
+// Dropdown value for the "no animation" choice (models rest in their bind /
+// T-pose). Clip values are their stringified index.
+const NO_ANIMATION_VALUE = "-1";
+
+// Bounding box for camera framing. Geometry-less models (skeleton/animation-
+// only exports) produce an EMPTY Box3 from setFromObject — which would NaN
+// the camera math — so fall back to sampling EVERY node's world position:
+// the joints of converted mesh-less exports are plain Object3Ds, not Bones
+// (GLTF only round-trips bone-ness through a skin), so a bones-only fallback
+// found nothing for exactly the models that need it. A final humanoid-ish
+// default covers truly empty/degenerate models (a lone node collapses to a
+// point, which would blow up the 2/maxDim scale math).
+const computeModelBox = (target: THREE.Object3D): THREE.Box3 => {
+  const box = new THREE.Box3().setFromObject(target);
+  if (box.isEmpty()) {
+    target.updateMatrixWorld(true);
+    const point = new THREE.Vector3();
+    target.traverse((node) => {
+      box.expandByPoint(node.getWorldPosition(point));
+    });
+  }
+  const size = box.getSize(new THREE.Vector3());
+  if (Math.max(size.x, size.y, size.z) < 1e-4) {
+    box.set(new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 2, 1));
+  }
+  return box;
+};
 
 export interface Viewer3DProps {
   modelUrl?: string;
@@ -32,6 +67,75 @@ export function Viewer3D({
   const gridRef = useRef<THREE.GridHelper | null>(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const thumbnailCapturedRef = useRef(false);
+
+  // Animation playback for models that ship clips. The dropdown only renders
+  // when the loaded model actually has animations; the first clip autoplays.
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const clipsRef = useRef<THREE.AnimationClip[]>([]);
+  const clockRef = useRef(new THREE.Clock());
+  const [animationNames, setAnimationNames] = useState<string[]>([]);
+  const [selectedClip, setSelectedClip] = useState(-1);
+
+  // Skeleton overlay for rigged models. Defaults ON for mesh-less models
+  // (skeleton/animation-only exports would otherwise render nothing). Real
+  // bones get THREE.SkeletonHelper; converted mesh-less exports (whose
+  // joints re-import as plain nodes — GLTF only round-trips bone-ness via a
+  // skin) get the generic NodeHierarchyHelper.
+  const skeletonHelperRef = useRef<
+    THREE.SkeletonHelper | NodeHierarchyHelper | null
+  >(null);
+  const [hasRig, setHasRig] = useState(false);
+  const [skeletonVisible, setSkeletonVisible] = useState(false);
+
+  const stopAnimations = () => {
+    mixerRef.current?.stopAllAction();
+    mixerRef.current = null;
+    clipsRef.current = [];
+  };
+
+  const removeSkeletonHelper = () => {
+    const helper = skeletonHelperRef.current;
+    if (helper) {
+      sceneRef.current?.remove(helper);
+      helper.dispose();
+      skeletonHelperRef.current = null;
+    }
+  };
+
+  // Rest pose for "T-pose (none)": local transforms of every model node,
+  // captured at load before any clip plays. THREE.Skeleton.pose() is
+  // deliberately NOT used — it rebuilds bone locals from inverse bind
+  // matrices and mis-scales rigs whose armature bakes a scale (mixamo
+  // cm-rigs), the same mechanism as the timeline's "vanishing character"
+  // bug — and plain-node converted rigs have no Skeleton to pose at all.
+  const restPoseRef = useRef<Array<{
+    node: THREE.Object3D;
+    position: THREE.Vector3;
+    quaternion: THREE.Quaternion;
+    scale: THREE.Vector3;
+  }> | null>(null);
+
+  const captureRestPose = (model: THREE.Object3D) => {
+    const rest: NonNullable<typeof restPoseRef.current> = [];
+    model.traverse((node) => {
+      rest.push({
+        node,
+        position: node.position.clone(),
+        quaternion: node.quaternion.clone(),
+        scale: node.scale.clone(),
+      });
+    });
+    restPoseRef.current = rest;
+  };
+
+  const restoreRestPose = () => {
+    for (const { node, position, quaternion, scale } of restPoseRef.current ??
+      []) {
+      node.position.copy(position);
+      node.quaternion.copy(quaternion);
+      node.scale.copy(scale);
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -118,6 +222,11 @@ export function Viewer3D({
           cubeRef.current.rotation.y += 0.01;
         }
 
+        // Tick the clock every frame (not just when a mixer exists) so the
+        // first mixer update after a model loads doesn't get a giant delta.
+        const delta = clockRef.current.getDelta();
+        mixerRef.current?.update(delta);
+
         controls.update();
         renderer.render(scene, camera);
       };
@@ -200,20 +309,27 @@ export function Viewer3D({
       scene.remove(loadedModelRef.current);
       loadedModelRef.current = null;
     }
+    stopAnimations();
+    removeSkeletonHelper();
+    restPoseRef.current = null;
+    setAnimationNames([]);
+    setSelectedClip(-1);
+    setHasRig(false);
+    setSkeletonVisible(false);
 
     if (cubeRef.current) {
       cubeRef.current.visible = false;
     }
 
     const onModelLoaded = (model: THREE.Object3D) => {
-      const box = new THREE.Box3().setFromObject(model);
+      const box = computeModelBox(model);
       const size = box.getSize(new THREE.Vector3());
 
       const maxDim = Math.max(size.x, size.y, size.z);
       const scale = 2 / maxDim;
       model.scale.multiplyScalar(scale);
 
-      const scaledBox = new THREE.Box3().setFromObject(model);
+      const scaledBox = computeModelBox(model);
       const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
       const scaledSize = scaledBox.getSize(new THREE.Vector3());
 
@@ -338,6 +454,39 @@ export function Viewer3D({
           console.log("[Viewer3D] Model loaded successfully");
           const model = gltf.scene;
           onModelLoaded(model);
+          // Snapshot the load pose before any action can evaluate (the
+          // first mixer.update runs on the next animation frame).
+          captureRestPose(model);
+          // Wire up any clips the model ships with; autoplay the first one.
+          const clips = gltf.animations ?? [];
+          if (clips.length > 0) {
+            const mixer = new THREE.AnimationMixer(model);
+            mixerRef.current = mixer;
+            clipsRef.current = clips;
+            mixer.clipAction(clips[0]).play();
+            setAnimationNames(
+              clips.map((clip, index) => clip.name || `Clip ${index + 1}`),
+            );
+            setSelectedClip(0);
+          }
+          // Skeleton overlay: offered for any model with real bones, and for
+          // any MESH-LESS model regardless (its joints may have re-imported
+          // as plain nodes — without the overlay there is nothing to see).
+          // Shown by default only in the mesh-less case.
+          let modelHasBones = false;
+          let modelHasMesh = false;
+          model.traverse((node) => {
+            if ((node as THREE.Bone).isBone) modelHasBones = true;
+            if ((node as THREE.Mesh).isMesh) modelHasMesh = true;
+          });
+          if (modelHasBones || !modelHasMesh) {
+            const helper = createRigHelper(model);
+            helper.visible = !modelHasMesh;
+            scene.add(helper);
+            skeletonHelperRef.current = helper;
+            setHasRig(true);
+            setSkeletonVisible(!modelHasMesh);
+          }
         },
         (progress) => {
           console.log(
@@ -355,12 +504,35 @@ export function Viewer3D({
     }
 
     return () => {
+      stopAnimations();
+      removeSkeletonHelper();
       if (loadedModelRef.current && sceneRef.current) {
         sceneRef.current.remove(loadedModelRef.current);
         loadedModelRef.current = null;
       }
     };
   }, [modelUrl, onThumbnailCapture, showGrid]);
+
+  // Reflect the toggle onto the helper.
+  useEffect(() => {
+    if (skeletonHelperRef.current) {
+      skeletonHelperRef.current.visible = skeletonVisible;
+    }
+  }, [skeletonVisible]);
+
+  // Switch the playing clip when the dropdown changes. The load path starts
+  // clip 0 directly, so this only needs to handle user switches.
+  useEffect(() => {
+    const mixer = mixerRef.current;
+    if (!mixer) return;
+    mixer.stopAllAction();
+    if (selectedClip >= 0) {
+      const clip = clipsRef.current[selectedClip];
+      if (clip) mixer.clipAction(clip).reset().play();
+    } else {
+      restoreRestPose();
+    }
+  }, [selectedClip]);
 
   // Update grid visibility when prop changes
   useEffect(() => {
@@ -393,6 +565,43 @@ export function Viewer3D({
       {showSpinner && (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <div className="h-16 w-16 animate-spin rounded-full border-[5px] border-white/20 border-t-primary" />
+        </div>
+      )}
+
+      {/* Top-right controls: skeleton overlay toggle (rigged models) and
+          the animation picker (models that ship clips). Models with
+          neither get no extra chrome. */}
+      {showViewer && (hasRig || animationNames.length > 0) && (
+        <div className="absolute right-2.5 top-2.5 z-20 flex items-start gap-2">
+          {hasRig && (
+            <button
+              type="button"
+              title={skeletonVisible ? "Hide skeleton" : "Show skeleton"}
+              onClick={() => setSkeletonVisible((visible) => !visible)}
+              className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+                skeletonVisible
+                  ? "border-primary bg-primary/20 text-white"
+                  : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"
+              }`}
+            >
+              <FontAwesomeIcon icon={faBone} />
+            </button>
+          )}
+          {animationNames.length > 0 && (
+            <div className="w-44">
+              <Select
+                value={String(selectedClip)}
+                onChange={(value) => setSelectedClip(Number(value))}
+                options={[
+                  ...animationNames.map((name, index) => ({
+                    label: name,
+                    value: String(index),
+                  })),
+                  { label: "T-pose (none)", value: NO_ANIMATION_VALUE },
+                ]}
+              />
+            </div>
+          )}
         </div>
       )}
 

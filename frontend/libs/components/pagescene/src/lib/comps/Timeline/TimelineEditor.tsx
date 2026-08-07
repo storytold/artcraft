@@ -4,25 +4,26 @@ import {
   faPlay,
   faPause,
   faBackwardStep,
+  faCrosshairs,
   faForwardStep,
-  faChevronUp,
+  faChevronDown,
   faTrash,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
-  addClipToCharacter,
   cancelTimeline,
   deleteKeyframe,
   pauseTimeline,
   playTimeline,
+  removeClipLane,
   saveTimeline,
   seekTimeline,
 } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
 import {
-  ANIMATION_CLIP_MIME,
   formatTimecode,
   formatTimecodeFrames,
   fractionToTime,
@@ -54,17 +55,42 @@ export const TimelineEditor = () => {
   const selectedKeyframeId = usePageSceneStore(
     (s) => s.timelineSelectedKeyframeId,
   );
+  const selectedClipLaneId = usePageSceneStore(
+    (s) => s.timelineSelectedClipLaneId,
+  );
+  const revealObjectUuid = usePageSceneStore(
+    (s) => s.timelineRevealObjectUuid,
+  );
+  const selectedObject = usePageSceneStore((s) => s.selectedObject);
+  const focusSelected = usePageSceneStore((s) => s.timelineFocusSelected);
+  const setFocusSelected = usePageSceneStore(
+    (s) => s.setTimelineFocusSelected,
+  );
   const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
 
   // Every scene object gets a track row (empty lanes included), so the
   // editor never looks blank while the scene has content — no selection
-  // required to see where keyframes can go.
+  // required to see where keyframes can go. The focus toggle narrows the
+  // list to the selected object's row; with nothing selected (or the
+  // selection not an outliner row) it falls back to showing everything
+  // rather than an empty list.
   const trackByUuid = new Map(tracks.map((t) => [t.objectUuid, t]));
-  const rows = outlinerItems;
+  const focusedRows =
+    focusSelected && selectedObject
+      ? outlinerItems.filter((item) => item.id === selectedObject.id)
+      : [];
+  const rows = focusedRows.length > 0 ? focusedRows : outlinerItems;
 
-  // Only characters get skeletal-animation clip lanes. Clip drags are accepted
-  // on a character's block; other rows ignore them.
+  // Clip-row eligibility: characters and any skinned object (creatures,
+  // rigged uploads) accept animation drags — the bind check still gates the
+  // drop — and any object with baked clips gets a row for its picker even
+  // without a skeleton (baked transform animations play through the mixer
+  // too).
   const characterIds = new Set(characters.map((c) => c.id));
+  const acceptsClipDrops = (item: (typeof rows)[number]) =>
+    characterIds.has(item.id) || !!item.hasSkeleton;
+  const hasClipRow = (item: (typeof rows)[number]) =>
+    acceptsClipDrops(item) || (item.bakedClips?.length ?? 0) > 0;
   const clipLanesByChar = new Map<string, typeof clipLanes>();
   for (const lane of clipLanes) {
     const list = clipLanesByChar.get(lane.objectUuid) ?? [];
@@ -115,9 +141,22 @@ export const TimelineEditor = () => {
       ) {
         return;
       }
+      // The selection can be stale (Cancel / undo of a Save replace the
+      // timeline wholesale). Never swallow the key for a target that no
+      // longer exists — clear the selection and let the engine's own
+      // Delete handler (selected scene object) see the event.
+      const keyframeExists = editor?.timelineController
+        .getTimeline()
+        ?.tracks.some((t) =>
+          t.keyframes.some((k) => k.id === selectedKeyframeId),
+        );
+      if (!editor || !keyframeExists) {
+        usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
-      if (editor) deleteKeyframe(editor, selectedKeyframeId);
+      deleteKeyframe(editor, selectedKeyframeId);
       usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
     };
     const onPointerDown = (e: PointerEvent) => {
@@ -137,6 +176,78 @@ export const TimelineEditor = () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, [selectedKeyframeId, editor]);
+
+  // Selected clip strip: Del/Backspace removes it (undoable via
+  // RemoveClipLaneAction), and clicking anything that isn't a strip
+  // deselects. Mirrors the keyframe selection handlers above; both keydown
+  // listeners can coexist since strip-selection clears keyframe-selection
+  // (a strip isn't [data-keyframe]) and vice versa — the guard below is
+  // belt-and-braces for the impossible both-selected case.
+  useEffect(() => {
+    if (!selectedClipLaneId) return undefined;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+      if (usePageSceneStore.getState().timelineSelectedKeyframeId) return;
+      // Same staleness rule as the keyframe handler above: a dead id must
+      // not eat the key meant for the engine's scene-object Delete.
+      if (
+        !editor ||
+        !editor.timelineController.getClipLane(selectedClipLaneId)
+      ) {
+        usePageSceneStore.getState().setTimelineSelectedClipLane(null);
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      removeClipLane(editor, selectedClipLaneId);
+      usePageSceneStore.getState().setTimelineSelectedClipLane(null);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("[data-clip-strip]")) return;
+      usePageSceneStore.getState().setTimelineSelectedClipLane(null);
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [selectedClipLaneId, editor]);
+
+  // Scroll the row list to the object whose clip was just added
+  // (addClipToCharacter sets the uuid alongside timelineExpanded). A store
+  // field rather than a call because the editor is unmounted while
+  // collapsed: expanding mounts it, this effect runs post-mount with the
+  // uuid already set, scrolls, then clears.
+  useEffect(() => {
+    if (!revealObjectUuid) return;
+    const store = usePageSceneStore.getState();
+    // Focus mode can hide the revealed row (clip dropped onto a character
+    // that isn't the selected object): fall back to all tracks so the new
+    // clip is visible. The effect re-runs off the focusSelected dep once
+    // the row exists, then scrolls.
+    if (
+      store.timelineFocusSelected &&
+      store.selectedObject?.id !== revealObjectUuid
+    ) {
+      store.setTimelineFocusSelected(false);
+      return;
+    }
+    const row = document.querySelector(
+      `[data-timeline-row-uuid="${CSS.escape(revealObjectUuid)}"]`,
+    );
+    row?.scrollIntoView({ block: "nearest" });
+    store.setTimelineRevealObjectUuid(null);
+  }, [revealObjectUuid, focusSelected]);
 
   // Clicking anywhere outside the popover (canvas included) dismisses it;
   // the easing chips opt out so they can toggle it themselves.
@@ -184,35 +295,6 @@ export const TimelineEditor = () => {
     );
   };
 
-  // Drop an animation clip (dragged from the Animations drawer) onto a
-  // character at the pointer's time. Lane geometry matches the ruler, so the
-  // ruler rect converts pointer-x → time exactly as scrubbing does.
-  const dropClipOnCharacter = (characterId: string, e: React.DragEvent) => {
-    const ruler = rulerRef.current;
-    if (!ruler || !editor) return;
-    const raw = e.dataTransfer.getData(ANIMATION_CLIP_MIME);
-    if (!raw) return;
-    e.preventDefault();
-    let payload: { media_id?: string; name?: string };
-    try {
-      payload = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    if (!payload.media_id) return;
-    const rect = ruler.getBoundingClientRect();
-    const time = quantizeToFrame(
-      fractionToTime((e.clientX - rect.left) / rect.width, duration),
-      fps,
-    );
-    addClipToCharacter(
-      editor,
-      characterId,
-      { media_id: payload.media_id, name: payload.name },
-      time,
-    );
-  };
-
   return (
     <div
       id="timeline-editor"
@@ -251,13 +333,39 @@ export const TimelineEditor = () => {
         <span className="ml-2 tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
         </span>
+        {/* ml-auto lives on a wrapper: Tooltip's className styles the popup
+            panel, and its trigger div is hard-coded to "relative". */}
+        <div className="ml-auto">
+          <Tooltip
+            content={
+              focusSelected
+                ? "Show all tracks"
+                : "Show only the selected object's track"
+            }
+            position="top"
+            delay={300}
+            closeOnClick
+          >
+            <button
+              type="button"
+              onClick={() => setFocusSelected(!focusSelected)}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                focusSelected
+                  ? "bg-primary/20 text-white"
+                  : "text-base-fg/60 hover:bg-white/10"
+              }`}
+            >
+              <FontAwesomeIcon icon={faCrosshairs} className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        </div>
         <button
           type="button"
           title="Collapse timeline"
           onClick={() => setExpanded(false)}
-          className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faChevronUp} className="h-3 w-3" />
+          <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
         </button>
       </div>
 
@@ -267,6 +375,10 @@ export const TimelineEditor = () => {
           <div className="w-32 shrink-0" />
           <div
             ref={rulerRef}
+            // Tagged so DndAsset can convert an animation drop's pointer-x
+            // into a timeline time using this exact rect (lane geometry
+            // matches the ruler, same conversion scrubbing uses).
+            data-timeline-ruler=""
             className="relative h-5 flex-1 cursor-pointer touch-none text-[10px] text-base-fg/50"
             onPointerDown={(e) => {
               isScrubbing.current = true;
@@ -283,11 +395,41 @@ export const TimelineEditor = () => {
               isScrubbing.current = false;
             }}
           >
-            <span className="absolute left-0">{formatTimecode(0)}</span>
+            {/* labels are centered on their ticks (the edge ones spill a
+                little into the spacer columns, which is intentional) */}
+            <span className="absolute left-0 -translate-x-1/2">
+              {formatTimecode(0)}
+            </span>
             <span className="absolute left-1/2 -translate-x-1/2">
               {formatTimecode(duration / 2)}
             </span>
-            <DurationLabel className="absolute right-0" />
+            <DurationLabel className="absolute right-0 translate-x-1/2" />
+            {/* tick marks in three tiers: major every 5 s, second ticks,
+                and faint sub-ticks between them. Sub-tick density adapts
+                to the timeline length so long timelines don't turn the
+                ruler into a solid smear. */}
+            {(() => {
+              const subsPerSecond = duration <= 15 ? 4 : duration <= 30 ? 2 : 1;
+              const count = Math.floor(duration * subsPerSecond) + 1;
+              return Array.from({ length: count }, (_, i) => {
+                const t = i / subsPerSecond;
+                const isSecond = i % subsPerSecond === 0;
+                const isMajor = isSecond && t % 5 === 0;
+                return (
+                  <span
+                    key={i}
+                    className={`pointer-events-none absolute bottom-0 w-px ${
+                      isMajor
+                        ? "h-2 bg-white/30"
+                        : isSecond
+                          ? "h-1.5 bg-white/20"
+                          : "h-1 bg-white/10"
+                    }`}
+                    style={{ left: `${timeToFraction(t, duration) * 100}%` }}
+                  />
+                );
+              });
+            })()}
           </div>
           <div className="w-7 shrink-0" />
         </div>
@@ -304,34 +446,33 @@ export const TimelineEditor = () => {
              alignment with the ruler-driven playhead. */
           <div className="max-h-[154px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {rows.map((item) => {
-              const isCharacter = characterIds.has(item.id);
-              const lanes = isCharacter ? clipLanesByChar.get(item.id) : undefined;
+              const droppable = acceptsClipDrops(item);
+              const clipRow = hasClipRow(item);
+              const lanes = clipRow ? clipLanesByChar.get(item.id) : undefined;
               return (
+                /* Clip-eligible rows advertise themselves as drop targets;
+                   DndAsset hit-tests this attribute during animation drags
+                   (pointer-based — no HTML5 DnD). Other rows stay untagged.
+                   data-timeline-row-uuid tags EVERY row; it's the scroll
+                   target for the post-add reveal effect above. */
                 <div
                   key={item.id}
-                  onDragOver={
-                    isCharacter
-                      ? (e) => {
-                          // Allow the drop only when it carries an animation clip.
-                          if (e.dataTransfer.types.includes(ANIMATION_CLIP_MIME)) {
-                            e.preventDefault();
-                          }
-                        }
-                      : undefined
-                  }
-                  onDrop={
-                    isCharacter
-                      ? (e) => dropClipOnCharacter(item.id, e)
-                      : undefined
-                  }
+                  data-timeline-row-uuid={item.id}
+                  data-clip-drop-uuid={droppable ? item.id : undefined}
                 >
                   <TimelineTrackRow
                     item={item}
                     track={trackByUuid.get(item.id)}
                     duration={duration}
                   />
-                  {isCharacter && (
-                    <TimelineClipRow lanes={lanes ?? []} duration={duration} />
+                  {clipRow && (
+                    <TimelineClipRow
+                      objectUuid={item.id}
+                      lanes={lanes ?? []}
+                      duration={duration}
+                      bakedClips={item.bakedClips}
+                      droppable={droppable}
+                    />
                   )}
                 </div>
               );

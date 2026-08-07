@@ -54,7 +54,6 @@ import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
 import { EntranceDebugPanel } from "./comps/EntranceDebugPanel";
 import { Outliner } from "./comps/Outliner";
-import { AnimationsDrawer } from "./comps/AnimationsDrawer";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { ExitCameraView } from "./comps/ExitCameraView";
 import { RecordControls } from "./comps/RecordControls";
@@ -517,16 +516,6 @@ export const Stage3DBody = ({
               }`}
             >
               <Outliner />
-            </div>
-
-            {/* Animations drawer: right-docked, only when a character is
-                selected. Gated to build mode (hide via CSS, never unmount). */}
-            <div
-              className={`absolute right-4 top-1/2 -translate-y-1/2${
-                isRecord ? " hidden" : ""
-              }`}
-            >
-              <AnimationsDrawer />
             </div>
 
             <div

@@ -18,6 +18,12 @@
       "path": "../file-uploader"
     },
     {
+      "path": "../select"
+    },
+    {
+      "path": "../viewer-3d"
+    },
+    {
       "path": "../list-dropdown"
     },
     {

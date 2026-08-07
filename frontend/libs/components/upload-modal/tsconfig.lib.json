@@ -59,6 +59,12 @@
       "path": "../file-uploader/tsconfig.lib.json"
     },
     {
+      "path": "../select/tsconfig.lib.json"
+    },
+    {
+      "path": "../viewer-3d/tsconfig.lib.json"
+    },
+    {
       "path": "../list-dropdown/tsconfig.lib.json"
     },
     {

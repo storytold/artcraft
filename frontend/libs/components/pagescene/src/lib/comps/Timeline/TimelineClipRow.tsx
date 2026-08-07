@@ -1,12 +1,15 @@
-import { useContext, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFilm,
+  faPlus,
   faRepeat,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
+  addBakedClipToObject,
   moveClipLane,
   removeClipLane,
   resizeClipLane,
@@ -17,11 +20,19 @@ import {
   type ClipLane,
 } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
+import { ToastTypes } from "../../enums";
 import { fractionToTime, quantizeToFrame, timeToFraction } from "./timelineUtils";
 
 interface TimelineClipRowProps {
+  objectUuid: string;
   lanes: ClipLane[];
   duration: number;
+  // Display names of the clips baked into the object's own GLB; non-empty
+  // renders the "+" baked-clip picker in the label column.
+  bakedClips?: string[];
+  // Whether animation drags can land on this row (skinned objects). Rows for
+  // baked-only objects render without the drop hint.
+  droppable?: boolean;
 }
 
 // Drag intent for the current pointer gesture.
@@ -29,16 +40,61 @@ type Drag =
   | { laneId: string; kind: "move"; grabOffset: number } // seconds pointer→start
   | { laneId: string; kind: "resize" };
 
-// A character's skeletal-animation clips on ONE shared row (single row per
-// character; the overlap guard in TimelineController keeps them a
-// non-overlapping sequence). Each strip drags to move, its right edge trims
-// length, the loop chip toggles repeat, the × removes it. Dropping a clip from
-// the Animations drawer is handled by the character block wrapper in
-// TimelineEditor, so an empty row still accepts drops.
-export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
+// An object's animation clips on ONE shared row (the overlap guard in
+// TimelineController keeps them a non-overlapping sequence). Each strip drags
+// to move, its right edge trims length, the loop chip toggles repeat, the ×
+// removes it (for baked clips that only unschedules — the clip itself stays
+// on the model and in the picker). Library-clip drops are handled by the row
+// wrapper in TimelineEditor, so an empty row still accepts drops; baked clips
+// are added through the "+" picker.
+export const TimelineClipRow = ({
+  objectUuid,
+  lanes,
+  duration,
+  bakedClips,
+  droppable,
+}: TimelineClipRowProps) => {
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+  // Baked-clip picker anchor (button rect at open time; null = closed). The
+  // popup PORTALS to document.body: rendered in place it would be clipped by
+  // the row list's overflow-y-auto ancestor — the top row's upward popup was
+  // effectively invisible.
+  const [pickerAnchor, setPickerAnchor] = useState<DOMRect | null>(null);
+  const pickerMenuRef = useRef<HTMLDivElement>(null);
+  const selectedLaneId = usePageSceneStore(
+    (s) => s.timelineSelectedClipLaneId,
+  );
+
+  // A fixed-position popup can't follow its button, so any outside scroll
+  // or resize closes it (scrolling INSIDE the popup's own list is exempt).
+  useEffect(() => {
+    if (!pickerAnchor) return undefined;
+    const onScroll = (e: Event) => {
+      if (pickerMenuRef.current?.contains(e.target as Node)) return;
+      setPickerAnchor(null);
+    };
+    const onResize = () => setPickerAnchor(null);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [pickerAnchor]);
+
+  const addBaked = (clipIndex: number) => {
+    setPickerAnchor(null);
+    if (!editor) return;
+    const laneId = addBakedClipToObject(editor, objectUuid, clipIndex);
+    if (!laneId) {
+      editor.adapter.showToast(
+        ToastTypes.WARNING,
+        "No room left on this row for that clip.",
+      );
+    }
+  };
 
   const fps =
     editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
@@ -73,11 +129,68 @@ export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
       <div className="flex w-32 shrink-0 items-center gap-2 truncate ps-6 text-xs text-base-fg/50">
         <FontAwesomeIcon icon={faFilm} className="h-3 w-3 opacity-60" />
         <span className="truncate">Animation</span>
+        {bakedClips && bakedClips.length > 0 && (
+          <div className="shrink-0">
+            <button
+              type="button"
+              title="Add one of this object's baked animations"
+              className={`flex h-4 w-4 items-center justify-center rounded-[4px] transition-colors ${
+                pickerAnchor
+                  ? "bg-brand-primary text-white"
+                  : "bg-white/10 text-base-fg/70 hover:bg-white/20 hover:text-base-fg"
+              }`}
+              onClick={(e) =>
+                setPickerAnchor((open) =>
+                  open ? null : e.currentTarget.getBoundingClientRect(),
+                )
+              }
+            >
+              <FontAwesomeIcon icon={faPlus} className="h-2.5 w-2.5" />
+            </button>
+            {pickerAnchor &&
+              ReactDOM.createPortal(
+                <>
+                  {/* click-away backdrop */}
+                  <div
+                    className="fixed inset-0"
+                    style={{ zIndex: 9998 }}
+                    onClick={() => setPickerAnchor(null)}
+                  />
+                  {/* Opens upward from the button (the timeline docks to the
+                      screen bottom, so up always has room). */}
+                  <div
+                    ref={pickerMenuRef}
+                    className="fixed max-h-40 w-44 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls py-1 shadow-xl"
+                    style={{
+                      zIndex: 9999,
+                      left: pickerAnchor.left,
+                      bottom: window.innerHeight - pickerAnchor.top + 4,
+                    }}
+                  >
+                    {bakedClips.map((clipName, clipIndex) => (
+                      <button
+                        key={clipIndex}
+                        type="button"
+                        className="block w-full truncate px-2.5 py-1 text-left text-[11px] text-base-fg/90 hover:bg-white/10"
+                        onClick={() => addBaked(clipIndex)}
+                      >
+                        {clipName}
+                      </button>
+                    ))}
+                  </div>
+                </>,
+                document.body,
+              )}
+          </div>
+        )}
       </div>
 
       <div
         ref={laneRef}
-        className="relative h-6 flex-1 rounded-md bg-black/20"
+        /* overflow-hidden: strips are engine-clamped into the lane, but any
+           transient out-of-range placement must clip here rather than paint
+           over the add-button column. */
+        className="relative h-6 flex-1 overflow-hidden rounded-md bg-black/20"
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
@@ -85,23 +198,39 @@ export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
       >
         {lanes.length === 0 && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md border border-dashed border-white/15 text-[10px] text-base-fg/30">
-            Drag an animation here
+            {droppable
+              ? "Drag an animation here"
+              : "Add a baked animation with +"}
           </div>
         )}
 
         {lanes.map((lane) => {
           const strip = lane.strip;
+          const isSelected = selectedLaneId === lane.id;
           const leftPct = timeToFraction(strip.startTime, duration) * 100;
           const widthPct = Math.max(
             (strip.duration / Math.max(duration, 1e-6)) * 100,
             1.5, // stay visible while a fresh clip's real length is loading
           );
           return (
+            /* data-clip-strip: exempt from the click-away deselect in
+               TimelineEditor (pointerdown selects; the same gesture must
+               not immediately deselect). */
             <div
               key={lane.id}
-              className="absolute inset-y-0 flex items-center gap-1 rounded-md border border-brand-primary/60 bg-brand-primary/25 pe-1 ps-1.5 text-[10px] text-white"
+              data-clip-strip
+              /* pe-2.5 keeps the × (and name) clear of the absolute w-1.5
+                 trim handle on the right edge */
+              className={`absolute inset-y-0 flex items-center gap-1 rounded-md border pe-2.5 ps-1.5 text-[10px] text-white ${
+                isSelected
+                  ? "border-white/80 bg-brand-primary/45"
+                  : "border-brand-primary/60 bg-brand-primary/25"
+              }`}
               style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
               onPointerDown={(e) => {
+                usePageSceneStore
+                  .getState()
+                  .setTimelineSelectedClipLane(lane.id);
                 e.currentTarget.setPointerCapture(e.pointerId);
                 drag.current = {
                   laneId: lane.id,
@@ -132,15 +261,26 @@ export const TimelineClipRow = ({ lanes, duration }: TimelineClipRowProps) => {
 
               <span className="min-w-0 flex-1 truncate">{strip.name}</span>
 
-              <button
-                type="button"
-                title="Remove animation"
-                className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] text-white/70 hover:bg-white/20 hover:text-white"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => editor && removeClipLane(editor, lane.id)}
-              >
-                <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
-              </button>
+              {/* × only on the selected strip — an always-visible remove was
+                  far too easy to hit by accident. Del/Backspace also removes
+                  the selected strip, and removal is undoable. */}
+              {isSelected && (
+                <button
+                  type="button"
+                  title="Remove animation (Del)"
+                  className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] text-white/70 hover:bg-white/20 hover:text-white"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    if (!editor) return;
+                    removeClipLane(editor, lane.id);
+                    usePageSceneStore
+                      .getState()
+                      .setTimelineSelectedClipLane(null);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                </button>
+              )}
 
               {/* right-edge trim handle */}
               <div

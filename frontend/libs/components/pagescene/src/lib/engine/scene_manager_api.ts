@@ -24,6 +24,15 @@ export type SceneObject = {
   visible: boolean;
   locked: boolean;
   isCamera: boolean;
+  // True when the object contains a SkinnedMesh — it can accept skeletal
+  // animation clips (subject to the bone-name bind check).
+  hasSkeleton: boolean;
+  // Whether the persistent skeleton overlay is toggled on (userData flag).
+  skeletonVisible: boolean;
+  // Display names of the clips baked into the object's own GLB
+  // (object.animations), in index order. Empty for objects without baked
+  // animations.
+  bakedClips: string[];
 };
 
 export interface SceneManagerAPI {
@@ -223,6 +232,13 @@ export class SceneManager implements SceneManagerAPI {
     if (locked == undefined) {
       locked = false;
     }
+    let hasSkeleton = false;
+    object.traverse((child) => {
+      if ((child as THREE.SkinnedMesh).isSkinnedMesh) hasSkeleton = true;
+    });
+    const bakedClips = (object.animations ?? []).map(
+      (clip, index) => clip.name || `Clip ${index + 1}`,
+    );
     return {
       id: object.uuid,
       icon: faicon,
@@ -231,6 +247,9 @@ export class SceneManager implements SceneManagerAPI {
       visible: object.visible,
       locked: object.userData["locked"],
       isCamera: object.name == "::CAM::",
+      hasSkeleton,
+      bakedClips,
+      skeletonVisible: object.userData["skeletonVisible"] === true,
     };
   }
 

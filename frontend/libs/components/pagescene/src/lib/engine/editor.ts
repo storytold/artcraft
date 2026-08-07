@@ -22,6 +22,7 @@ import { CameraController } from "./editor/CameraController";
 import { HistoryManager } from "./editor/HistoryManager";
 import { TimelineController } from "./editor/TimelineController";
 import { CharacterAnimationManager } from "./animation/CharacterAnimationManager";
+import { SkeletonHelperController } from "./editor/SkeletonHelperController";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
 
@@ -38,6 +39,8 @@ import {
   GridVisibleChangedEvent,
   CameraViewToggleRequestedEvent,
   InspectorPanelChangedEvent,
+  OutlinerRefreshedEvent,
+  PoseModeChangedEvent,
   SceneLoadedEvent,
   SceneResetEvent,
   TransformSpaceChangedEvent,
@@ -110,6 +113,13 @@ class Editor {
   // mesh in/out of the THREE.js scene). Cleared on unmountEngine.
   private gridSubscription: () => void;
   private cameraViewSubscription: () => void;
+  private skeletonSyncSubscription: () => void;
+  private poseModeSubscription: () => void;
+
+  // Persistent per-object skeleton overlays (outliner bone icon).
+  readonly skeletonHelpers = new SkeletonHelperController(
+    () => this.activeScene.scene,
+  );
 
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
@@ -196,6 +206,31 @@ class Editor {
       () => this.cameraController.switchCameraView(),
     );
 
+    // Skeleton overlays and animation runtimes reconcile on every outliner
+    // refresh — add/delete/load/new-scene all funnel through one, so no
+    // bespoke lifecycle hooks. The runtime revalidation matters for objects
+    // recreated under the same uuid (delete→undo, in-session scene reloads),
+    // whose mixers would otherwise stay bound to the detached old instance.
+    this.skeletonSyncSubscription = this.bus.subscribe(
+      OutlinerRefreshedEvent,
+      () => {
+        this.skeletonHelpers.sync();
+        this.characterAnimationManager.revalidate();
+      },
+    );
+    // FK/pose mode draws its own rig overlay for the posed character —
+    // suppress our persistent helper for it so bones aren't double-drawn,
+    // and restore when pose mode exits.
+    this.poseModeSubscription = this.bus.subscribe(PoseModeChangedEvent, (e) => {
+      if (e.mode === "pose") {
+        this.skeletonHelpers.suppress(
+          this.mouse_controls?.selected?.[0]?.uuid ?? null,
+        );
+      } else {
+        this.skeletonHelpers.suppress(null);
+      }
+    });
+
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
@@ -261,6 +296,7 @@ class Editor {
         getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
           ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
           : undefined,
+        onGlbLoaded: () => this.selection.refreshOutliner(),
       },
     );
     this.activeScene.initialize();
@@ -311,6 +347,7 @@ class Editor {
       getTimeline: () => this.timelineController.getTimeline(),
       loadTimeline: (timeline) =>
         this.timelineController.loadTimeline(timeline),
+      resetTimeline: () => this.timelineController.reset(),
       getRenderCameraTransform: () => {
         const cam = this.cameraController.cam_obj;
         if (!cam) return null;
@@ -826,6 +863,9 @@ class Editor {
 
   public async newScene(sceneTitleInput: string) {
     this.activeScene.clear();
+    // A fresh scene starts with a fresh timeline — the previous scene's
+    // tracks and clip strips must not carry over.
+    this.timelineController.reset();
     this.cameraController.cam_obj = this.activeScene.get_object_by_name(
       this.cameraController.camera_name,
     );
@@ -1014,6 +1054,16 @@ class Editor {
     }
   }
 
+  // Liveness for late async callbacks that captured this instance (e.g. a
+  // queued animation drop resolving after its clip fetch): false once
+  // unmountEngine ran — including the EngineProvider teardown/recreate
+  // footgun, where this instance is abandoned for a fresh Editor. A
+  // same-instance remount flips it back, and completing against a
+  // remounted editor is correct.
+  get isLive(): boolean {
+    return this.isMounted;
+  }
+
   remountEngine() {
     const store = usePageSceneStore.getState();
     if (!store.is3DEditorInitialized) {
@@ -1054,6 +1104,9 @@ class Editor {
     this.bus.emit(new EngineInitializedEvent(false));
     this.gridSubscription();
     this.cameraViewSubscription();
+    this.skeletonSyncSubscription();
+    this.poseModeSubscription();
+    this.skeletonHelpers.clear();
     this.storeBridge.dispose();
     console.log("3D Editor Engine unmounted");
   }

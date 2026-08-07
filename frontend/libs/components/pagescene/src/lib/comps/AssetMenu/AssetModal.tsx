@@ -11,6 +11,7 @@ import {
   faMountainCity,
   faDog,
   faFaceGrinStars,
+  faPersonRunning,
   faUpFromLine,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -30,7 +31,11 @@ import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { ItemElements } from "./shared/ItemElements";
-import { useUserObjects, useFeaturedObjects } from "./hooks";
+import {
+  useAnimationLibrary,
+  useUserObjects,
+  useFeaturedObjects,
+} from "./hooks";
 import { isAnyStatusFetching } from "./utilities/misc";
 import { FilterEngineCategories, FilterMediaType } from "../../enums";
 import {
@@ -85,6 +90,7 @@ const AllTabSection = ({
 // Mapping from upload category to AssetTab id, so the modal can
 // auto-switch the user to the tab matching what they just uploaded.
 const categoryToTabIdMap: Partial<Record<FilterEngineCategories, string>> = {
+  [FilterEngineCategories.ANIMATION]: "animations",
   [FilterEngineCategories.CHARACTER]: "characters",
   [FilterEngineCategories.CREATURE]: "creatures",
   [FilterEngineCategories.IMAGE_PLANE]: "image-planes",
@@ -150,6 +156,10 @@ export const AssetModal = () => {
       // upload-reopen). It can't clobber an active drag: `assetModalVisible`
       // doesn't change mid-drag, so this effect doesn't re-run then.
       usePageSceneStore.getState().setAssetDraggingUnder(false);
+
+      // Pick up animations the user uploaded since the last open (silent
+      // for anonymous users — see the hook's suppressErrorToast).
+      fetchUserAnimations();
 
       const lastUploadedTab = sessionStorage.getItem("lastUploadedTab");
       if (lastUploadedTab) {
@@ -252,6 +262,15 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching featured image planes",
   });
 
+  // Animations data shared with the standalone AnimationsModal. Unlike the
+  // other user-asset hooks (dead "Mine" tab), fetchUserAnimations fires on
+  // every modal open — silently, since anonymous users legitimately 401.
+  const {
+    allAnimations,
+    fetchUserAnimations,
+    fetchStatuses: animationFetchStatuses,
+  } = useAnimationLibrary();
+
   const isFetching = isAnyStatusFetching([
     userCharactersFetchStatus,
     userObjectsFetchStatus,
@@ -263,6 +282,7 @@ export const AssetModal = () => {
     featuredSetsFetchStatus,
     featuredCreaturesFetchStatus,
     featuredImagePlanesFetchStatus,
+    ...animationFetchStatuses,
   ]);
 
   const assetTabs = useMemo<AssetTab[]>(() => {
@@ -346,6 +366,16 @@ export const AssetModal = () => {
             : (userCreatures ?? []),
       },
       {
+        id: "animations",
+        label: "Animations",
+        labelSingle: "Animation",
+        icon: faPersonRunning,
+        engineCategory: FilterEngineCategories.ANIMATION,
+        // Uploads-first ordering with the demo-clip fallback lives in
+        // useAnimationLibrary (shared with the standalone AnimationsModal).
+        items: activeLibraryTab === "library" ? allAnimations : [],
+      },
+      {
         id: "skybox",
         label: "Skybox",
         labelSingle: "Skybox",
@@ -357,6 +387,7 @@ export const AssetModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
+      allAnimations,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,
@@ -459,6 +490,7 @@ export const AssetModal = () => {
     fetchUserSets();
     fetchUserCreatures();
     fetchUserImagePlanes();
+    fetchUserAnimations();
   };
 
   const clearSearch = () => setSearchTerm("");

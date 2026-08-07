@@ -205,33 +205,119 @@ then one row per character is the right model.
   relies on the shared `mixorig:*` naming so a clip's tracks resolve against the character's bones
   directly (direct-bind first; `SkeletonUtils.retargetClip` is the documented fallback if a rig uses
   different bone names — **not yet wired**, pending the runtime spike).
-- **Trigger UI (done)**: `comps/AnimationsDrawer/` — right-docked, only when a character is
-  selected (build mode; hidden via CSS in record). Clips are **click-to-add** (drops at the playhead)
-  **and draggable** onto the timeline (`ANIMATION_CLIP_MIME` payload `{media_id, name}`).
+- **Trigger UI (done — moved)**: the old right-docked `comps/AnimationsDrawer/` is retired. The
+  clip source is now the **"Animations" tab in `comps/AssetMenu/AssetModal.tsx`**: server-curated
+  animations (`list_featured` with `engine_category=animation`, GLB/GLTF only) REPLACE the 37
+  `demoAnimationItems` when the API returns any; the demos are only the empty-API fallback.
+  Animation cards are **click-to-add** (earliest free slot on the selected character's row; toast
+  if no character is selected or the row is full) **and pointer-draggable** via the shared
+  `DndAsset` singleton (`ANIMATION` branch): drop on a character in the 3D scene (earliest free
+  slot) or on a character's timeline row (pointer-x → time via the `data-timeline-ruler` rect;
+  rows tag `data-clip-drop-uuid`). While dragging, the shared `DragGhost` shows a green/red
+  **compatibility badge** (`PageSceneStore.animationDropState`): DndAsset preloads the clip's
+  track node names (`loadRawGlb`, cached per media id) and checks them against the hovered
+  character's nodes — the same direct-bind rule `CharacterAnimationManager` plays by; no
+  retargeting. Incompatible or slot-less drops are rejected with a toast. A drop that beats the
+  clip's name-inspection fetch is **queued** and completes (fully validated) when the names
+  resolve — never punted back to the user (`completeAnimationDrop`; a re-drop of the SAME clip
+  supersedes its earlier queued drop via a per-clip token, while queued drops of other clips
+  complete independently). The old HTML5 DnD path (`ANIMATION_CLIP_MIME`) is removed. A full row
+  (`resolveFreeStart` → null) **rejects** the add instead of overlapping.
+- **Standalone AnimationsModal (done)**: `comps/AssetMenu/AnimationsModal.tsx` — an
+  animations-only sibling of `AssetModal` (same `@storyteller/ui-modal` floating-panel props,
+  same `ItemElements` grid, same drag-under semantics) with All / Presets / Uploaded tabs.
+  Opened by the **"Add Animation" button** next to "Enter Pose Mode" (`PoseModeSelector`,
+  visible when a character is selected and not posing) and by the **"Animations" entry in the
+  Controls3D "+" popover** (not auth-gated, like "presets"), both via
+  `actions/openAnimationsModal.ts`.
+  The two library modals are **mutually exclusive** (each open action closes the other), so
+  `DndAsset.endDrag` and `ItemElement`'s click-add close whichever is visible (reopen-off
+  path). Animations data (uploads-first + featured-else-demos fallback) lives in the shared
+  `comps/AssetMenu/hooks/useAnimationLibrary.tsx`, consumed by both modals.
+  **Upload from the modal**: an "Upload animation" button (sidebar bottom, above "Reopen
+  after adding") plus an empty-state CTA on the Uploaded tab open the host uploader through
+  the same `renderAssetUploader` adapter slot AssetModal uses. The slot (and `UploadModal3D`)
+  gained an optional `initialCategory?: "animation" | "character"` (literal strings — the
+  pagescene and upload-modal `FilterEngineCategories` enums aren't cross-assignable): it
+  pre-checks the matching "Upload as ..." toggle and suppresses the My-Library popup on
+  success (the panel shows the result itself). On success the modal refetches user
+  animations and jumps to the Uploaded tab (only if the category stayed Animation).
+  Anonymous users get `promptSignup("upload-3d")` instead, same as the Controls3D entries.
+- **Timeline reveal on add (done)**: a successful `addClipToCharacter` (click or drop, either
+  modal) sets `timelineExpanded` + `timelineRevealObjectUuid`; an effect in `TimelineEditor`
+  scrolls the row list to `[data-timeline-row-uuid]` (every row is tagged) then clears the
+  field. A store field because `TimelineEditor` is unmounted while collapsed — expand + scroll
+  can't happen in the caller's tick.
+- **Timeline focus toggle (done)**: crosshair button in the `TimelineEditor` transport bar
+  (`timelineFocusSelected`, store-held so it survives the collapse/expand remount) narrows the
+  row list to the selected object's track. Falls back to all rows when nothing is selected (or
+  the selection has no outliner row), and the reveal effect switches focus off when a clip
+  lands on a non-selected object so the new strip is never hidden.
 - **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders **one row per
   character** (rendered even when empty, as a drop hint) holding all that character's strips
   end-to-end under its keyframe row in `TimelineEditor`. Strip body drags to **move**
   (`moveClipLane`), the right edge drags to **trim** length (`resizeClipLane`), a loop chip toggles
-  repeat (`setClipLoop`), the × removes it (`removeClipLane`). Each character row is a **drop target**
-  for clip drags (`dropClipOnCharacter` → `addClipToCharacter(…, atTime)`, time from the ruler rect).
-  Non-character rows ignore clip drags. No per-op undo by design — clip edits ride the timeline
-  **Save/Cancel** session exactly like keyframes (`cancel()` restores + re-syncs).
+  repeat (`setClipLoop`), the × (selected strip only) removes it (`removeClipLane`, undoable — see
+  the selection bullet below). Clip-eligible rows are drop targets via `data-clip-drop-uuid` (see
+  the DnD bullet). Other clip edits (move/trim/loop) ride the timeline **Save/Cancel** session
+  exactly like keyframes (`cancel()` restores + re-syncs).
 - **Overlap guard (single row)**: `TimelineController.resolveFreeStart` snaps add/move to the nearest
   gap so a character's strips never overlap; `nextStartAfter` bounds trim (`resizeClipLane`) and
   auto-length (`resolveClipDuration`) against the following clip. `evaluateAt` then has at most one
   active clip at any playhead, so playback is an unambiguous sequence.
-- **Bind-pose in gaps**: a disabled three.js action leaves the skeleton frozen on its last frame, so
-  `evaluateAt` resets any character with no clip under the playhead to its **bind (T) pose** via
-  `resetToBindPose` → `Skeleton.pose()` (skeletons cached per character in `getMixer`). Gaps between
-  strips, before the first, and after the last therefore show the default T-pose, not a held frame.
-- **Drag preview**: dragging a clip drives the shared `DragGhost` (tilt card) by setting
-  `dragItem`/`dragPosition`/`assetDraggingUnder` on the store in the drawer's native-DnD handlers,
-  and suppresses the browser's default drag image — matching object/character pickup motion.
-- **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
-  `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
-  `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length
-  (and re-clamp start). A user trim clears `autoDuration` so the natural length never clobbers a
-  hand-set duration on reload.
+- **Runtime revalidation (loop-free)**: mixers/rest poses hold object-INSTANCE refs, but
+  delete→undo and in-session scene reloads recreate objects under the same uuids. Every lane
+  runtime lands in a TERMINAL state — bound, missing-object (`boundRoot: null`), or unbindable
+  (rig-less/clip-less target; one warn, no fetch) — and `CharacterAnimationManager.revalidate()`
+  (subscribed to `OutlinerRefreshedEvent` alongside the skeleton-helper sync) reassesses a lane
+  ONLY when the live top-level root instance for its uuid differs from `boundRoot` (object
+  appeared/vanished/replaced). One map lookup per lane per refresh; no traverses, timers, fetch
+  retries, or per-refresh re-adds. A uuid-resolvable root is always fully loaded (all load paths
+  stamp the uuid post-load), which is what makes rig-lessness a terminal verdict. Skeleton-helper `sync()` self-heals the same two cases: it purges and
+  recreates helpers that are orphaned (scene reloads strip children; the map survives) or whose
+  `helper.root` no longer matches the live object for that uuid.
+- **Rest-pose in gaps** (was bind-pose): a disabled three.js action leaves the skeleton frozen on
+  its last frame, so `evaluateAt` resets any character with no clip under the playhead to a **rest
+  pose captured at mixer creation** (`captureRestPose` — local transforms of every node BELOW the
+  root; the root is excluded so gizmo/keyframe placement never snaps back). `Skeleton.pose()` was
+  abandoned: it rebuilds bone locals from inverse bind matrices and mis-scales rigs whose armature
+  carries a baked scale (mixamo cm-rigs), which made characters visually VANISH when a strip moved
+  off the playhead. `pruneMixers` also restores the rest pose before dropping a character's mixer.
+- **Drag preview**: animation drags ride the same pointer-based `DndAsset` pipeline as every
+  other asset card, so the shared `DragGhost` (tilt card) works unchanged — plus the
+  compatibility badge described above.
+- **Clip-row eligibility (widened)**: rows are no longer characters-only. Any **skinned** object
+  (creatures, rigged uploads — `OutlinerItem.hasSkeleton`, computed in `convert_object`) accepts
+  animation drags (bind check still gates), and any object with **baked clips**
+  (`OutlinerItem.bakedClips`, from `object.animations`) gets a clip row even without a skeleton.
+- **Baked-in clips**: `ClipStrip.bakedClipIndex` marks a strip sourced from the object's own
+  `animations[]` (with `sourceMediaId: ""`); `CharacterAnimationManager.addLane` resolves it
+  synchronously from the model instead of `loadRawGlb`, and **CLONES the clip per lane** —
+  `mixer.clipAction` caches one action per (clip, root), so two strips of the same raw baked
+  clip would fight over a single action and `uncacheClip` on removal would kill the sibling's. Added via the **"+" picker** on the
+  object's clip row (`TimelineClipRow`, `addBakedClipToObject`, earliest free slot, real length
+  known up front so no `autoDuration`). INVARIANT: baked clips are **never removed from the THREE
+  model** — removing a baked strip only unschedules it (mixer uncache is mixer-state only); the
+  clip stays on `object.animations` and in the picker. Library-sourced strips remain fully
+  removable. ⚠️ Runtime-unverified: whether `object.animations` survives the save/load roundtrip
+  (the stash in `scene.ts` is gated on `auto_add`), and that the outliner refresh timing surfaces
+  `bakedClips` after async GLB loads.
+- **Strip width = play window (revised)**: fresh strips default to a compact
+  `DEFAULT_CLIP_DURATION` (1 s) instead of adopting the clip's natural length — long clips were
+  eating the whole row. The strip's on-timeline width is the **authoritative play window**
+  (`LaneRuntime.stripDuration` in `evaluateAt`); the clip's natural length only drives the loop
+  modulo / final-frame clamp inside it, so trimming a strip shorter genuinely cuts playback and a
+  non-loop strip trimmed longer than the clip freezes on the last frame. `resolveClipDuration` now
+  only SHRINKS an `autoDuration` strip when the clip is shorter than the default.
+- **Strip selection + delete UX**: strips are click-to-select
+  (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
+  click-away deselect). The **× renders only on the selected strip** (always-visible was too easy
+  to hit); **Del/Backspace** removes the selected strip. Removal (either path) is **individually
+  undoable** via `RemoveClipLaneAction` — the one exception to "clip edits ride Save/Cancel" —
+  and to keep that honest it is **mirrored into the `saved` snapshot** (removeClipLane strips the
+  lane from `saved` too, so Cancel can't resurrect a deleted strip and Save doesn't double-record
+  the removal); the action captures both the live lane and its saved-snapshot entry so undo
+  restores both worlds exactly (`restoreClipLane(lane, savedLane?)`).
 - **Rig-mismatch diagnostic**: `CharacterAnimationManager.clipBindsToCharacter` warns (console) when
   a clip's tracks resolve to **0** nodes on the character — the signal that `SkeletonUtils.retargetClip`
   is needed. Retarget itself is still **not wired** (direct-bind first).

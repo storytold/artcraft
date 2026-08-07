@@ -6,7 +6,7 @@ import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 import { CameraAspectRatio } from "../enums";
 import type Scene from "./scene";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import type { TimelineData } from "./timeline/types";
+import { cloneTimeline, type TimelineData } from "./timeline/types";
 import {
   CameraAspectRatioChangedEvent,
   CamerasReplacedEvent,
@@ -75,6 +75,9 @@ export type SaveManagerDeps = {
   // Animation timeline persistence (in-memory controller ↔ scene JSON).
   getTimeline: () => TimelineData | null;
   loadTimeline: (timeline: TimelineData) => void;
+  // Fresh empty timeline — used when the loaded scene carries no usable
+  // timeline, so the previous scene's animation data is never inherited.
+  resetTimeline: () => void;
 
   // Live render-camera (::CAM:: frustum) transform, read at save time so the
   // persisted render-camera position reflects the actual scene object rather
@@ -167,11 +170,29 @@ export class SaveManager {
       };
     });
 
+    // The in-memory timeline retains tracks/clip lanes for deleted objects
+    // (so undoing the delete restores its strips), but those orphans must
+    // not outlive the session: filter anything whose object has no live
+    // scene root, on a CLONE — saves stay clean and reloads can't resurrect
+    // orphans, while the live timeline (and delete-undo) is untouched.
+    const liveTimeline = this.deps.getTimeline();
+    let timeline: TimelineData | null = null;
+    if (liveTimeline) {
+      const liveUuids = new Set(scene.scene.children.map((c) => c.uuid));
+      timeline = cloneTimeline(liveTimeline);
+      timeline.tracks = timeline.tracks.filter((t) =>
+        liveUuids.has(t.objectUuid),
+      );
+      timeline.clipLanes = timeline.clipLanes.filter((l) =>
+        liveUuids.has(l.objectUuid),
+      );
+    }
+
     return {
       version,
       scene: scene_json,
       ...sceneGenerationMetadata,
-      timeline: this.deps.getTimeline() ?? null,
+      timeline,
       skybox: scene.skybox,
       camera_data: {
         position: camera?.position,
@@ -319,7 +340,9 @@ export class SaveManager {
     this.deps.refreshCamObj();
 
     // Restore the animation timeline. Guard legacy scenes where `timeline`
-    // was a `""` stub (or absent/null).
+    // was a `""` stub (or absent/null) — those RESET rather than fall
+    // through, so the previous scene's tracks/strips are never inherited
+    // by a scene that saved none.
     const timeline = scene_json["timeline"];
     if (
       timeline &&
@@ -327,6 +350,8 @@ export class SaveManager {
       Array.isArray(timeline.tracks)
     ) {
       this.deps.loadTimeline(timeline);
+    } else {
+      this.deps.resetTimeline();
     }
 
     return true;
