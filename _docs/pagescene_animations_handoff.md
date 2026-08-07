@@ -155,6 +155,39 @@ upload Mixamo FBX files (with or without mesh) end to end.
 - [ ] Previewer dropdown + bone toggle across lightbox, media page, lightbox-modal,
       ImageTo3DExperience, upload modal.
 
+## Debug pass + hardening round (post-review)
+
+A four-agent review of the combined branch produced 30 findings (5 high / 12 medium / 13 low);
+ALL have been fixed or explicitly closed, one commit per finding (range `72cb218e..b21732d1`).
+Highlights, roughly in commit order:
+
+- Highs: baked clips cloned per lane (shared-AnimationAction playback/removal corruption);
+  runtime revalidation for objects recreated under the same uuid (delete→undo, reloads) — later
+  hardened into LOOP-FREE terminal lane states (bound / missing / unbindable, reassessed only on
+  root-instance change; the pre-fetch rig gate is sound because every load path stamps the target
+  uuid only post-load); skeleton-helper sync self-heals across in-session reloads; upload modal
+  can no longer report success for empty/partial submissions; ref-guarded double-submit.
+- Mediums: strip removal mirrored into the Save/Cancel `saved` snapshot (Cancel can't resurrect,
+  no phantom undo); stale strip/keyframe selections pruned in the bridge + live-checked before
+  swallowing Del/Backspace; one winning lane per character at flush boundaries (blend-glitch
+  frame was being ENCODED into recordings); orphaned tracks/lanes filtered from scene JSON at
+  save; per-clip queued-drop tokens; animation raycasts gated to the canvas element + honest
+  front-most-surface occlusion; virtualized-grid thumbnail state keyed by item; one shared
+  lazily-fetched animation-library store (was double-fetch + double-toast + divergent lists);
+  previewer rest-pose snapshots replace `Skeleton.pose()` everywhere; all-node camera-framing
+  fallback for plain-node rigs; upload-preview races (superseded-load cancellation, snapshot
+  after helper creation, File-identity row statuses, retry re-entry).
+- Lows: duration-shrink re-fits strips; baked-clip picker portals out of the scrolling row list;
+  timeline resets on scene switch/new scene instead of leaking across; click-to-add accepts every
+  drag-eligible target; queued drops bail on a torn-down editor (`Editor.isLive`); top-level root
+  lookups unified; flick-click race killed via `wasDragGesture`; converting-overlay control reset;
+  conversion completions reload only the previewed entry; worker `onmessageerror` recovery +
+  corrupt-vs-clip-less error messages + explicit `initialCategory` wins over mesh-less
+  auto-detect; Uploaded tab pages past the 100-item cap.
+- Closed without code: the "compat cache stales on streaming characters" finding (invalidated —
+  uuid-resolvable roots are always fully loaded) and the Tauri `promptSignup` gap (desktop is
+  always signed in by adapter contract).
+
 ## Landed since the original handoff
 
 - **AnimationsModal** (was deferred — now built, `5f7ba7bbc5`/`79875d8c76`): standalone modal
