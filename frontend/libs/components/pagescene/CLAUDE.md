@@ -269,7 +269,9 @@ then one row per character is the right model.
   revalidate()` (subscribed to `OutlinerRefreshedEvent` alongside the skeleton-helper sync)
   purges runtimes whose mixer root no longer matches the live object and re-binds their lanes;
   `addLane` drops (rather than keeps) the runtime registration when the object is unresolvable
-  so the retry can happen.
+  so the retry can happen. Skeleton-helper `sync()` self-heals the same two cases: it purges and
+  recreates helpers that are orphaned (scene reloads strip children; the map survives) or whose
+  `helper.root` no longer matches the live object for that uuid.
 - **Rest-pose in gaps** (was bind-pose): a disabled three.js action leaves the skeleton frozen on
   its last frame, so `evaluateAt` resets any character with no clip under the playhead to a **rest
   pose captured at mixer creation** (`captureRestPose` — local transforms of every node BELOW the

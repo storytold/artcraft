@@ -42,6 +42,13 @@ export class SkeletonHelperController {
   // Reconcile helpers with the scene: create for flagged objects (once
   // their bones exist), drop helpers whose object vanished or was
   // unflagged. Idempotent and cheap.
+  //
+  // A helper is also considered dead when it is ORPHANED (in-session scene
+  // reloads — loadScene/loadCache/Reset — strip every scene child wholesale;
+  // the map survives, the helper doesn't) or bound to a REPLACED object
+  // instance (delete→undo recreates objects under their saved uuids). Both
+  // are purged and recreated fresh so the toggle keeps working across
+  // reloads instead of flipping visibility on a disposed detached helper.
   sync(): void {
     const scene = this.getScene();
     const wanted = new Map<string, THREE.Object3D>();
@@ -51,8 +58,11 @@ export class SkeletonHelperController {
       }
     }
     for (const [uuid, helper] of [...this.helpers]) {
-      if (!wanted.has(uuid)) {
-        scene.remove(helper);
+      const obj = wanted.get(uuid);
+      if (!obj || helper.parent !== scene || helper.root !== obj) {
+        // parent-based removal: after Scene.initialize() the helper may
+        // still hang off the PREVIOUS THREE.Scene instance.
+        helper.parent?.remove(helper);
         helper.dispose();
         this.helpers.delete(uuid);
       }
