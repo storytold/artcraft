@@ -1,6 +1,8 @@
 export interface RefImage {
   id: string;
   url: string;
+  /** Full-res URL for the deck preview modal; falls back to `url`. */
+  fullUrl?: string;
   file: File;
   mediaToken: string;
 }
@@ -21,8 +23,4 @@ export interface RefAudio {
   duration: number;
 }
 
-export interface MentionItem {
-  label: string;
-  type: "image" | "video" | "audio" | "character";
-  preview?: string;
-}
+export type { MentionItem } from "@storyteller/ui-promptbox";
