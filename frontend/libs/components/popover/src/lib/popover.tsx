@@ -373,19 +373,21 @@ function RichListRow({
             {item.description}
           </span>
         )}
-        {item.badges && Array.isArray(item.badges) && item.badges.length > 0 && (
-          <div className="mt-1 flex flex-row flex-wrap gap-1">
-            {item.badges.map((badge, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
-              >
-                {badge?.icon && <span>{badge.icon}</span>}
-                {badge?.label || ""}
-              </span>
-            ))}
-          </div>
-        )}
+        {item.badges &&
+          Array.isArray(item.badges) &&
+          item.badges.length > 0 && (
+            <div className="mt-1 flex flex-row flex-wrap gap-1">
+              {item.badges.map((badge, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+                >
+                  {badge?.icon && <span>{badge.icon}</span>}
+                  {badge?.label || ""}
+                </span>
+              ))}
+            </div>
+          )}
       </div>
       {item.trailing && (
         <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>
@@ -427,10 +429,21 @@ function SubmenuFlyout({
   const [isShowing, setIsShowingRaw] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [activeChildIdx, setActiveChildIdx] = useState<number | null>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const openTimerRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateScrollIndicators = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    setCanScrollUp(scrollTop > 1);
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1);
+  }, []);
 
   const setIsShowing = useCallback(
     (show: boolean) => {
@@ -450,7 +463,8 @@ function SubmenuFlyout({
     if (scrollParent) {
       const parentRect = scrollParent.getBoundingClientRect();
       const inView =
-        rect.top >= parentRect.top - 10 && rect.bottom <= parentRect.bottom + 10;
+        rect.top >= parentRect.top - 10 &&
+        rect.bottom <= parentRect.bottom + 10;
       if (!inView) return false;
     }
     setPosition({ top: rect.top + rect.height / 2, left: rect.right + 10 });
@@ -484,22 +498,37 @@ function SubmenuFlyout({
   // the current choice is visible without scrolling.
   useLayoutEffect(() => {
     if (!isShowing) return;
-    const container = panelRef.current?.querySelector(
-      "[data-scroll-container]",
-    ) as HTMLElement | null;
-    const selected = container?.querySelector(
+    const container = scrollRef.current;
+    if (!container) return;
+    const selected = container.querySelector(
       "[data-selected='true']",
     ) as HTMLElement | null;
-    if (!container || !selected) return;
-    const containerRect = container.getBoundingClientRect();
-    const elementRect = selected.getBoundingClientRect();
-    const relativeTop =
-      elementRect.top - containerRect.top + container.scrollTop;
-    container.scrollTop = Math.max(
-      0,
-      relativeTop - containerRect.height / 2 + elementRect.height / 2,
-    );
-  }, [isShowing]);
+    if (selected) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = selected.getBoundingClientRect();
+      const relativeTop =
+        elementRect.top - containerRect.top + container.scrollTop;
+      container.scrollTop = Math.max(
+        0,
+        relativeTop - containerRect.height / 2 + elementRect.height / 2,
+      );
+    }
+    updateScrollIndicators();
+  }, [isShowing, updateScrollIndicators]);
+
+  // Keep the scroll fades in sync while the flyout is open.
+  useEffect(() => {
+    if (!isShowing) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    container.addEventListener("scroll", updateScrollIndicators);
+    const resizeObserver = new ResizeObserver(updateScrollIndicators);
+    resizeObserver.observe(container);
+    return () => {
+      container.removeEventListener("scroll", updateScrollIndicators);
+      resizeObserver.disconnect();
+    };
+  }, [isShowing, updateScrollIndicators]);
 
   // The flyout is vertically centered on its row; clamp it into the viewport
   // when a long list would run off the top or bottom edge.
@@ -571,49 +600,78 @@ function SubmenuFlyout({
               transform: "translateY(-50%)",
               zIndex: 9999,
             }}
-            className="w-[300px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
+            className="w-[340px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
           >
             <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
               {item.label}
             </div>
-            <div
-              data-scroll-container
-              className="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto text-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-            >
-              {item.subItems?.map((child, childIdx) => {
-                const childRow = (
-                  <RichListRow
-                    item={child}
-                    onClick={() => onSelectChild(child)}
-                    active={activeChildIdx === childIdx}
-                  />
-                );
-                if (!child.hoverTooltip) {
-                  return <div key={childIdx}>{childRow}</div>;
-                }
-                const childTooltip =
-                  typeof child.hoverTooltip === "function"
-                    ? (child.hoverTooltip as (close: () => void) => ReactNode)(
-                        popoverClose,
-                      )
-                    : child.hoverTooltip;
-                return (
-                  <div key={childIdx}>
-                    <PortalTooltip
-                      content={childTooltip}
-                      delay={child.tooltipDelayMs ?? 300}
-                      className="min-w-48"
-                      onOpenChange={(open) =>
-                        setActiveChildIdx((prev) =>
-                          open ? childIdx : prev === childIdx ? null : prev,
-                        )
-                      }
-                    >
-                      {childRow}
-                    </PortalTooltip>
-                  </div>
-                );
-              })}
+            <div className="relative">
+              {/* Top fade — appears only when there's content above, with a
+                  slow bouncing arrow hinting to scroll up. */}
+              <div
+                className={twMerge(
+                  "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-10 items-start justify-center bg-gradient-to-b from-ui-panel to-transparent pt-1 transition-opacity duration-200",
+                  canScrollUp ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <FontAwesomeIcon
+                  icon={faChevronUp}
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
+                />
+              </div>
+              <div
+                ref={scrollRef}
+                data-scroll-container
+                className="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto text-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              >
+                {item.subItems?.map((child, childIdx) => {
+                  const childRow = (
+                    <RichListRow
+                      item={child}
+                      onClick={() => onSelectChild(child)}
+                      active={activeChildIdx === childIdx}
+                    />
+                  );
+                  if (!child.hoverTooltip) {
+                    return <div key={childIdx}>{childRow}</div>;
+                  }
+                  const childTooltip =
+                    typeof child.hoverTooltip === "function"
+                      ? (
+                          child.hoverTooltip as (close: () => void) => ReactNode
+                        )(popoverClose)
+                      : child.hoverTooltip;
+                  return (
+                    <div key={childIdx}>
+                      <PortalTooltip
+                        content={childTooltip}
+                        delay={child.tooltipDelayMs ?? 300}
+                        className="min-w-48"
+                        onOpenChange={(open) =>
+                          setActiveChildIdx((prev) =>
+                            open ? childIdx : prev === childIdx ? null : prev,
+                          )
+                        }
+                      >
+                        {childRow}
+                      </PortalTooltip>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Bottom fade — appears only when there's more below, with a
+                  slow bouncing arrow hinting to scroll down. */}
+              <div
+                className={twMerge(
+                  "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-10 items-end justify-center bg-gradient-to-t from-ui-panel to-transparent pb-1 transition-opacity duration-200",
+                  canScrollDown ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
+                />
+              </div>
             </div>
           </div>,
           document.body,
