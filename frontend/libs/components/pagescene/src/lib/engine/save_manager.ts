@@ -6,7 +6,7 @@ import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 import { CameraAspectRatio } from "../enums";
 import type Scene from "./scene";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import type { TimelineData } from "./timeline/types";
+import { cloneTimeline, type TimelineData } from "./timeline/types";
 import {
   CameraAspectRatioChangedEvent,
   CamerasReplacedEvent,
@@ -167,11 +167,29 @@ export class SaveManager {
       };
     });
 
+    // The in-memory timeline retains tracks/clip lanes for deleted objects
+    // (so undoing the delete restores its strips), but those orphans must
+    // not outlive the session: filter anything whose object has no live
+    // scene root, on a CLONE — saves stay clean and reloads can't resurrect
+    // orphans, while the live timeline (and delete-undo) is untouched.
+    const liveTimeline = this.deps.getTimeline();
+    let timeline: TimelineData | null = null;
+    if (liveTimeline) {
+      const liveUuids = new Set(scene.scene.children.map((c) => c.uuid));
+      timeline = cloneTimeline(liveTimeline);
+      timeline.tracks = timeline.tracks.filter((t) =>
+        liveUuids.has(t.objectUuid),
+      );
+      timeline.clipLanes = timeline.clipLanes.filter((l) =>
+        liveUuids.has(l.objectUuid),
+      );
+    }
+
     return {
       version,
       scene: scene_json,
       ...sceneGenerationMetadata,
-      timeline: this.deps.getTimeline() ?? null,
+      timeline,
       skybox: scene.skybox,
       camera_data: {
         position: camera?.position,
