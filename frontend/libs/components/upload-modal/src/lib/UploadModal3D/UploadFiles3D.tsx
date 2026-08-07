@@ -113,6 +113,12 @@ export const UploadFiles3D = ({
       status: isFbx(f) ? "converting" : "idle",
     })),
   );
+  // Fresh mirrors for async completions (conversion callbacks outlive
+  // renders): the live entry list, and the File the preview effect is
+  // currently showing (the converting ORIGINAL while an FBX converts).
+  const fileEntriesRef = useRef(fileEntries);
+  fileEntriesRef.current = fileEntries;
+  const currentPreviewFileRef = useRef<File | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
   // Incremented on every handleFilesChange so useEffect re-runs even when count stays the same
   const [filesVersion, setFilesVersion] = useState(0);
@@ -179,6 +185,9 @@ export const UploadFiles3D = ({
   const beginFbxConversion = (original: File) => {
     convertFbxToGlb(original)
       .then((converted) => {
+        // Discarded pick (re-picked/removed mid-conversion): nothing to
+        // swap, and no reason to reload anyone's preview.
+        if (!fileEntriesRef.current.some((e) => e.file === original)) return;
         setFileEntries((prev) =>
           prev.map((entry) =>
             entry.file === original
@@ -186,8 +195,12 @@ export const UploadFiles3D = ({
               : entry,
           ),
         );
-        // Re-run the preview effect so the swapped-in GLB renders.
-        setFilesVersion((v) => v + 1);
+        // Re-run the preview effect ONLY when the converted entry is the
+        // one being previewed — a blanket bump reloaded the current
+        // preview once per completed conversion in a multi-FBX pick.
+        if (currentPreviewFileRef.current === original) {
+          setFilesVersion((v) => v + 1);
+        }
       })
       .catch((error) => {
         setFileEntries((prev) =>
@@ -213,6 +226,7 @@ export const UploadFiles3D = ({
   useEffect(() => {
     const currentEntry = fileEntries[previewIndex];
     const currentFile = currentEntry?.file;
+    currentPreviewFileRef.current = currentFile ?? null;
     if (!canvasRef.current || !currentFile) return;
 
     // Every preview transition starts from a clean slate — including the
