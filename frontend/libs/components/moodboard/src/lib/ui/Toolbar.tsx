@@ -29,7 +29,9 @@ export const ToolbarDivider = () => (
   <span className="h-7 w-px shrink-0 bg-ui-divider" aria-hidden />
 );
 
-interface ToolbarIconButtonProps {
+// Exported: FloatingToolbarButton re-exports ToolbarIconButton, and
+// declaration emit (TS4023) needs this props type to be nameable there.
+export interface ToolbarIconButtonProps {
   icon: IconDefinition;
   label: string;
   active?: boolean;

@@ -1,5 +1,12 @@
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+// `?worker&inline` (see src/vite-env.d.ts): the worker is bundled as
+// self-contained inline code inside this library's output. The
+// `new Worker(new URL(...), import.meta.url)` form breaks CONSUMING builds —
+// the lib build rewrites it to a hashed asset path in dist/index.js, which
+// the consumer's vite (worker-import-meta-url plugin) then fails to resolve
+// as an entry module.
+import ConvertFbxToGlbWorker from "./convertFbxToGlb.worker?worker&inline";
 
 // Convert an FBX file (e.g. a Mixamo download) to a binary GLB, preserving
 // skeletal animation clips. Everything downstream of the picker — the
@@ -62,10 +69,7 @@ function getWorker(): Worker | null {
     return worker;
   }
   try {
-    worker = new Worker(
-      new URL("./convertFbxToGlb.worker.ts", import.meta.url),
-      { type: "module" },
-    );
+    worker = new ConvertFbxToGlbWorker();
     worker.onmessage = (event) => {
       const data = event.data as
         | { id: number; ok: true; glb: ArrayBuffer }
