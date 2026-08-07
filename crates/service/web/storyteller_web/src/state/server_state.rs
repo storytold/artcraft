@@ -113,7 +113,7 @@ pub struct ServerState {
   pub static_api_token_set: StaticApiTokenSet,
 
   /// Accepted internal API keys for our own worker fleets (GPU inference).
-  /// Loaded from `ACCEPTED_INTERNAL_API_KEYS` at startup; empty when unset.
+  /// Loaded from `INTERNAL_API_KEYS` at startup; empty when unset.
   pub internal_api_keys: HashSet<InternalApiKey>,
 
   pub caches: InMemoryCaches,

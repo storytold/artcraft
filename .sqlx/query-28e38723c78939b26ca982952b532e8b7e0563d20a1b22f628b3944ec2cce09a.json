@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE generic_inference_jobs\nSET\n  status = ?,\n  on_success_result_entity_type = ?,\n  on_success_result_entity_token = ?,\n  failure_reason = NULL,\n  internal_debugging_failure_reason = NULL,\n  success_execution_millis = ?,\n  success_inference_execution_millis = ?,\n  retry_at = NULL,\n  successfully_completed_at = NOW()\nWHERE token = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "28e38723c78939b26ca982952b532e8b7e0563d20a1b22f628b3944ec2cce09a"
+}

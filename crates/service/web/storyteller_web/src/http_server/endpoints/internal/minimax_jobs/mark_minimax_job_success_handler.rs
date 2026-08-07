@@ -66,6 +66,16 @@ pub struct MarkMinimaxJobSuccessForm {
   #[multipart(limit = "2 KiB")]
   #[schema(value_type = Option<u32>, format = Binary)]
   height: Option<Text<u32>>,
+
+  /// Optional: total wall-clock runtime of the job, in milliseconds.
+  #[multipart(limit = "2 KiB")]
+  #[schema(value_type = Option<u64>, format = Binary)]
+  execution_duration_millis: Option<Text<u64>>,
+
+  /// Optional: inference-only runtime of the job, in milliseconds.
+  #[multipart(limit = "2 KiB")]
+  #[schema(value_type = Option<u64>, format = Binary)]
+  inference_duration_millis: Option<Text<u64>>,
 }
 
 /// Internal (worker-facing): mark a first-party Minimax job as successful and
@@ -247,6 +257,8 @@ pub async fn mark_minimax_job_success_handler(
   mark_first_party_minimax_h3_job_succeeded(MarkFirstPartyMinimaxH3JobSucceededArgs {
     job_token: &job.job_token,
     media_file_token: &media_token,
+    maybe_execution_duration_millis: form.execution_duration_millis.map(|text| text.0),
+    maybe_inference_duration_millis: form.inference_duration_millis.map(|text| text.0),
     mysql_executor: &server_state.mysql_pool,
     phantom: Default::default(),
   }).await.map_err(|err| {
@@ -259,6 +271,9 @@ pub async fn mark_minimax_job_success_handler(
   Ok(Json(MarkMinimaxJobSuccessResponse {
     success: true,
     media_file_token: media_token,
+    maybe_duration_millis,
+    maybe_width: maybe_frame_width,
+    maybe_height: maybe_frame_height,
   }))
 }
 

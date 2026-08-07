@@ -11,10 +11,10 @@ use log::{info, warn};
 
 use crate::util::internal_api_key::InternalApiKey;
 
-const ACCEPTED_INTERNAL_API_KEYS_ENV_VAR: &str = "ACCEPTED_INTERNAL_API_KEYS";
+const INTERNAL_API_KEYS_ENV_VAR: &str = "INTERNAL_API_KEYS";
 
 pub fn setup_internal_api_keys() -> HashSet<InternalApiKey> {
-  let keys = match env::var(ACCEPTED_INTERNAL_API_KEYS_ENV_VAR) {
+  let keys = match env::var(INTERNAL_API_KEYS_ENV_VAR) {
     Ok(value) => InternalApiKey::parse_comma_separated_list(&value),
     Err(_) => HashSet::new(),
   };
@@ -22,7 +22,7 @@ pub fn setup_internal_api_keys() -> HashSet<InternalApiKey> {
   if keys.is_empty() {
     warn!(
       "{} is unset or empty; internal worker endpoints will reject all requests.",
-      ACCEPTED_INTERNAL_API_KEYS_ENV_VAR,
+      INTERNAL_API_KEYS_ENV_VAR,
     );
   } else {
     info!("Loaded {} accepted internal API key(s).", keys.len());

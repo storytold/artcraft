@@ -14,6 +14,12 @@ pub struct MarkMinimaxJobFailureRequest {
 
   /// Optional internal-only stack trace or error (512 characters max).
   pub maybe_internal_debugging_failure_reason: Option<String>,
+
+  /// Optional total wall-clock runtime of the failed attempt, in milliseconds.
+  pub execution_duration_millis: Option<u64>,
+
+  /// Optional inference-only runtime of the failed attempt, in milliseconds.
+  pub inference_duration_millis: Option<u64>,
 }
 
 /// Response body for `POST /v1/internal/minimax_jobs/job/{job_token}/failure`.

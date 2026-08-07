@@ -2,7 +2,7 @@
 //!
 //! Workers send an internal API key in the `Authorization` header. The key
 //! MUST exactly match one of the keys loaded from
-//! `ACCEPTED_INTERNAL_API_KEYS` at startup or the request is rejected with
+//! `INTERNAL_API_KEYS` at startup or the request is rejected with
 //! 401. This is entirely separate from consumer API key auth.
 
 use actix_web::HttpRequest;

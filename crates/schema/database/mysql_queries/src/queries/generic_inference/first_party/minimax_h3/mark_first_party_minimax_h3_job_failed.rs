@@ -1,6 +1,7 @@
 //! Permanently mark a first-party Minimax H3 job as failed.
 
 use sqlx::{Executor, MySql};
+use std::convert::TryFrom;
 use std::marker::PhantomData;
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
@@ -22,6 +23,16 @@ pub struct MarkFirstPartyMinimaxH3JobFailedArgs<'e, 'c, E>
 
   /// Internal-only stack trace or error. Clamped to 512 characters.
   pub maybe_internal_debugging_failure_reason: Option<&'e str>,
+
+  /// Total wall-clock runtime of the failed attempt, in milliseconds.
+  /// NB: Written to `success_execution_millis` — the column name is
+  /// unfortunate, but we want the runtime data for failures too.
+  pub maybe_execution_duration_millis: Option<u64>,
+
+  /// Inference-only runtime of the failed attempt, in milliseconds.
+  /// NB: Written to `success_inference_execution_millis` — the column name is
+  /// unfortunate, but we want the runtime data for failures too.
+  pub maybe_inference_duration_millis: Option<u64>,
 
   pub mysql_executor: E,
 
@@ -46,13 +57,17 @@ SET
   status = ?,
   frontend_failure_category = ?,
   failure_reason = ?,
-  internal_debugging_failure_reason = ?
+  internal_debugging_failure_reason = ?,
+  success_execution_millis = ?,
+  success_inference_execution_millis = ?
 WHERE token = ?
     "#,
     JobStatusPlus::CompleteFailure.to_str(),
     args.maybe_frontend_failure_category.map(|category| category.to_str()),
     maybe_failure_reason,
     maybe_internal_debugging_failure_reason,
+    args.maybe_execution_duration_millis.and_then(|millis| u32::try_from(millis).ok()),
+    args.maybe_inference_duration_millis.and_then(|millis| u32::try_from(millis).ok()),
     args.job_token.as_str(),
   )
     .execute(args.mysql_executor)

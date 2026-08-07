@@ -8,7 +8,7 @@ use crate::http_server::endpoints::internal::minimax_jobs::mark_minimax_job_succ
 use crate::http_server::endpoints::internal::minimax_jobs::obtain_minimax_job_handler::obtain_minimax_job_handler;
 
 /// Internal-facing routes for our own worker fleets (GPU inference).
-/// Every endpoint requires an internal API key (`ACCEPTED_INTERNAL_API_KEYS`).
+/// Every endpoint requires an internal API key (`INTERNAL_API_KEYS`).
 pub fn add_internal_routes<T, B>(app: App<T>) -> App<T>
 where
     B: MessageBody,

@@ -1,6 +1,6 @@
 //! Internal-facing API keys for our own worker fleets (GPU inference, etc.).
 //!
-//! These are configured as an env secret (`ACCEPTED_INTERNAL_API_KEYS`) at app
+//! These are configured as an env secret (`INTERNAL_API_KEYS`) at app
 //! startup and are completely distinct from consumer-facing
 //! `artcraft_api_keys` infrastructure — do not mix the two.
 
@@ -20,7 +20,7 @@ impl InternalApiKey {
     &self.0
   }
 
-  /// Parse a comma-separated key list (the `ACCEPTED_INTERNAL_API_KEYS` env
+  /// Parse a comma-separated key list (the `INTERNAL_API_KEYS` env
   /// var format). Entries are trimmed; blank entries are dropped.
   pub fn parse_comma_separated_list(value: &str) -> HashSet<InternalApiKey> {
     value

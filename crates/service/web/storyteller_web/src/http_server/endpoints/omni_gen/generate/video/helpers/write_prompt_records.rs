@@ -96,6 +96,14 @@ pub async fn write_prompt_records(args: WritePromptRecordsArgs<'_, '_>) -> Optio
         });
       }
     }
+    if let Some(ref_tokens) = &request.reference_audio_media_tokens {
+      for media_token in ref_tokens {
+        context_items.push(PromptContextItem {
+          media_token: media_token.clone(),
+          context_semantic_type: PromptContextSemanticType::Audioref,
+        });
+      }
+    }
 
     if !context_items.is_empty() {
       if let Err(err) = insert_batch_prompt_context_items(InsertBatchArgs {

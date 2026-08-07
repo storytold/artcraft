@@ -14,4 +14,16 @@ pub struct MarkMinimaxJobSuccessResponse {
 
   /// The media file created from the uploaded video.
   pub media_file_token: MediaFileToken,
+
+  /// Video duration stored on the media file record, in milliseconds
+  /// (worker-supplied, or probed from the file when not supplied).
+  pub maybe_duration_millis: Option<u64>,
+
+  /// Frame width stored on the media file record, in pixels
+  /// (worker-supplied, or probed from the file when not supplied).
+  pub maybe_width: Option<u32>,
+
+  /// Frame height stored on the media file record, in pixels
+  /// (worker-supplied, or probed from the file when not supplied).
+  pub maybe_height: Option<u32>,
 }

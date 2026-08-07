@@ -80,6 +80,8 @@ pub async fn mark_minimax_job_failure_handler(
     maybe_frontend_failure_category: request.maybe_frontend_failure_category,
     maybe_failure_reason: maybe_user_failure_reason.as_deref(),
     maybe_internal_debugging_failure_reason: request.maybe_internal_debugging_failure_reason.as_deref(),
+    maybe_execution_duration_millis: request.execution_duration_millis,
+    maybe_inference_duration_millis: request.inference_duration_millis,
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
   }).await.map_err(|err| {

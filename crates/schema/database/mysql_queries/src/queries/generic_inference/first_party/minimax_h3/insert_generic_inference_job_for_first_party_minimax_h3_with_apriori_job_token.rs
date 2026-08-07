@@ -11,8 +11,6 @@ use std::marker::PhantomData;
 
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
@@ -26,6 +24,7 @@ use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use crate::errors::database_query_error::DatabaseQueryError;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
 use crate::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
+use crate::queries::generic_inference::first_party::minimax_h3::first_party_minimax_h3_model::FirstPartyMinimaxH3Model;
 use crate::queries::generic_inference::common::insert_full_generic_inference_job_record::{
   insert_full_generic_inference_job_record,
   InsertFullGenericInferenceJobRecordArgs,
@@ -69,28 +68,13 @@ pub struct InsertGenericInferenceForFirstPartyMinimaxH3WithAprioriJobTokenArgs<'
   pub phantom: PhantomData<&'c E>,
 }
 
-/// The first-party Minimax H3 model tier being enqueued.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum FirstPartyMinimaxH3Model {
-  Turbo,
-  Ultra,
-}
-
 pub async fn insert_generic_inference_job_for_first_party_minimax_h3_with_apriori_job_token<'e, 'c : 'e, E>(
   args: InsertGenericInferenceForFirstPartyMinimaxH3WithAprioriJobTokenArgs<'e, 'c, E>
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let (job_type, model_type) = match args.minimax_model {
-    FirstPartyMinimaxH3Model::Turbo => (
-      InferenceJobType::ArtcraftMinimaxH3Turbo,
-      InferenceModelType::MinimaxH3Turbo,
-    ),
-    FirstPartyMinimaxH3Model::Ultra => (
-      InferenceJobType::ArtcraftMinimaxH3Ultra,
-      InferenceModelType::MinimaxH3Ultra,
-    ),
-  };
+  let job_type = args.minimax_model.inference_job_type();
+  let model_type = args.minimax_model.inference_model_type();
 
   let cost_estimates = JobCostEstimates {
     // First-party jobs have no external provider, so no provider-side costs.
