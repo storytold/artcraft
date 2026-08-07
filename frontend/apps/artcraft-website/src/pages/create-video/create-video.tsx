@@ -15,7 +15,6 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   PromptBox,
-  MediaReferenceRow,
   CharactersModal,
   useCharactersStore,
   type RefImage,
@@ -40,6 +39,14 @@ import {
   startVideoPolling,
 } from "./generate-video-api";
 import {
+  AUTO_RATIOS,
+  LABEL_TO_RES,
+  buildResolutionPopoverItems,
+  buildSizePopoverItems,
+  getDurationRange,
+  resolveDurationForModel,
+} from "./video-model-options";
+import {
   AspectRatioIcon,
   AutoIcon,
 } from "../create-image/components/AspectRatioIcon";
@@ -57,46 +64,6 @@ import { toast } from "../../components/toast/toast";
 const DEFAULT_MODEL_ID = "seedance_2p0";
 
 const VIDEO_FILTER = [FilterMediaClasses.VIDEO];
-
-const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_3k", "auto_4k"]);
-
-// ── Aspect ratio labels (shared with image page) ─────────────────────────
-
-const AR_LABELS: Record<string, string> = {
-  auto: "Auto",
-  square: "Square",
-  wide_five_by_four: "5:4 (Wide)",
-  wide_four_by_three: "4:3 (Wide)",
-  wide_three_by_two: "3:2 (Wide)",
-  wide_sixteen_by_nine: "16:9 (Wide)",
-  wide_twenty_one_by_nine: "21:9 (Wide)",
-  tall_four_by_five: "4:5 (Tall)",
-  tall_three_by_four: "3:4 (Tall)",
-  tall_two_by_three: "2:3 (Tall)",
-  tall_nine_by_sixteen: "9:16 (Tall)",
-  tall_nine_by_twenty_one: "9:21 (Tall)",
-  auto_2k: "Auto (2K)",
-  auto_3k: "Auto (3K)",
-  auto_4k: "Auto (4K)",
-  square_hd: "Square (HD)",
-  wide: "Wide",
-  tall: "Tall",
-};
-
-const RES_LABELS: Record<string, string> = {
-  half_k: "0.5K",
-  four_eighty_p: "480p",
-  seven_twenty_p: "720p",
-  one_k: "1K",
-  ten_eighty_p: "1080p",
-  two_k: "2K",
-  three_k: "3K",
-  four_k: "4K",
-};
-
-const LABEL_TO_RES: Record<string, string> = Object.fromEntries(
-  Object.entries(RES_LABELS).map(([k, v]) => [v, k]),
-);
 
 // ── Model lookup ─────────────────────────────────────────────────────────
 
@@ -119,46 +86,6 @@ function buildModelPopoverItems(
     ),
     action: model.model,
   }));
-}
-
-function buildSizePopoverItems(
-  aspectRatioOptions: string[],
-  selectedValue: string,
-): PopoverItem[] {
-  return aspectRatioOptions.map((ar) => ({
-    label: AR_LABELS[ar] ?? ar,
-    selected: ar === selectedValue,
-    icon: AUTO_RATIOS.has(ar) ? (
-      <AutoIcon />
-    ) : (
-      <AspectRatioIcon commonAspectRatio={ar} />
-    ),
-    action: ar,
-  }));
-}
-
-function resolveDurationForModel(
-  model: OmniGenVideoModelInfo,
-  current: number | null,
-): number | null {
-  if (current == null) return model.duration_seconds_default ?? null;
-  if (
-    model.duration_seconds_min != null &&
-    model.duration_seconds_max != null
-  ) {
-    if (
-      current >= model.duration_seconds_min &&
-      current <= model.duration_seconds_max
-    ) {
-      return current;
-    }
-    return model.duration_seconds_default ?? model.duration_seconds_min;
-  }
-  if (model.duration_seconds_options?.length) {
-    if (model.duration_seconds_options.includes(current)) return current;
-    return model.duration_seconds_default ?? model.duration_seconds_options[0]!;
-  }
-  return model.duration_seconds_default ?? null;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -428,29 +355,11 @@ export default function CreateVideo() {
       ),
     [selectedModel?.aspect_ratio_options, selectedSize],
   );
-  const durationRange = useMemo((): { min: number; max: number } | null => {
-    if (!selectedModel) return null;
-    if (
-      selectedModel.duration_seconds_min != null &&
-      selectedModel.duration_seconds_max != null &&
-      selectedModel.duration_seconds_max > selectedModel.duration_seconds_min
-    ) {
-      return {
-        min: selectedModel.duration_seconds_min,
-        max: selectedModel.duration_seconds_max,
-      };
-    }
-    if (
-      selectedModel.duration_seconds_options &&
-      selectedModel.duration_seconds_options.length > 1
-    ) {
-      const opts = [...selectedModel.duration_seconds_options].sort(
-        (a, b) => a - b,
-      );
-      return { min: opts[0]!, max: opts[opts.length - 1]! };
-    }
-    return null;
-  }, [selectedModel]);
+  const durationRange = useMemo(
+    (): { min: number; max: number } | null =>
+      selectedModel ? getDurationRange(selectedModel) : null,
+    [selectedModel],
+  );
   const effectiveDuration =
     duration ?? selectedModel?.duration_seconds_default ?? 5;
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
@@ -471,10 +380,10 @@ export default function CreateVideo() {
   const resolutionItems = useMemo(
     (): PopoverItem[] | null =>
       selectedModel?.resolution_options
-        ? selectedModel.resolution_options.map((r) => ({
-            label: RES_LABELS[r] ?? r,
-            selected: r === (resolution ?? selectedModel.resolution_default),
-          }))
+        ? buildResolutionPopoverItems(
+            selectedModel.resolution_options,
+            resolution ?? selectedModel.resolution_default ?? null,
+          )
         : null,
     [selectedModel, resolution],
   );
@@ -1061,25 +970,19 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
-            mediaReferenceRow={
-              isReferenceMode ? (
-                <MediaReferenceRow
-                  referenceVideos={referenceVideos}
-                  onReferenceVideosChange={setReferenceVideos}
-                  maxVideoCount={selectedModel?.video_references_max ?? 3}
-                  maxVideoRefDuration={
-                    selectedModel?.video_references_max_total_duration_seconds ??
-                    30
-                  }
-                  referenceAudios={referenceAudios}
-                  onReferenceAudiosChange={setReferenceAudios}
-                  maxAudioCount={selectedModel?.audio_references_max ?? 2}
-                  maxAudioRefDuration={
-                    selectedModel?.audio_references_max_total_duration_seconds ??
-                    30
-                  }
-                />
-              ) : undefined
+            videoRefsSupported={!!selectedModel?.video_references_supported}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={selectedModel?.video_references_max ?? 3}
+            maxVideoRefDuration={
+              selectedModel?.video_references_max_total_duration_seconds ?? 30
+            }
+            audioRefsSupported={!!selectedModel?.audio_references_supported}
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={setReferenceAudios}
+            maxAudioCount={selectedModel?.audio_references_max ?? 2}
+            maxAudioRefDuration={
+              selectedModel?.audio_references_max_total_duration_seconds ?? 30
             }
             rightToolbar={
               <GenerationCountPicker
