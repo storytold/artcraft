@@ -486,9 +486,13 @@ class DndAsset {
     if (cached !== undefined) return cached;
     const names = this.activeClipNames;
     if (!names || names.length === 0) return false;
-    const root = this.editor?.activeScene.scene.getObjectByProperty(
-      "uuid",
-      characterUuid,
+    // Top-level lookup, matching every other target resolution in the
+    // pipeline (completeAnimationDrop, the raycast ascent, the engine's
+    // findObject): clip targets are always outliner-level roots. A deep
+    // traverse here could validate a nested object the drop path can't
+    // resolve — green badge, silently lost drop.
+    const root = this.editor?.activeScene.scene.children.find(
+      (child) => child.uuid === characterUuid,
     );
     const accepts =
       !!root && names.some((name) => root.getObjectByName(name) !== undefined);
