@@ -177,12 +177,15 @@ const OVERVIEW_PARAGRAPHS: ReadonlyArray<string> = [
 
 const MINIMAX_BLOG_URL = "https://www.minimax.io/blog/minimax-h3";
 
-// Sample generations from MiniMax's H3 announcement post, re-hosted under
-// public/videos/minimax-h3/ and credited in the Examples section. The
-// stereo-sound demo ships at an ultra-wide 92:39, hence the `wide` flag.
-// `spanClass` tiles 1 wide + 5 standard cards with no empty slots at any
-// breakpoint: featured full-width, a row of three, then a row of two on lg;
-// full-width / 2x2 / full-width on sm.
+// Sample generations from MiniMax's H3 announcement post, streamed straight
+// from MiniMax's CDN (the mp4s are 4-19MB each, too heavy for the repo).
+// Only the small poster thumbnails are re-hosted under
+// public/videos/minimax-h3/posters/. If a CDN link ever breaks, re-extract
+// the current links from the blog post. The stereo-sound demo ships at an
+// ultra-wide 92:39, hence the `wide` flag. `spanClass` tiles 1 wide + 5
+// standard cards with no empty slots at any breakpoint: featured full-width,
+// a row of three, then a row of two on lg; full-width / 2x2 / full-width on
+// sm.
 interface ExampleVideo {
   label: string;
   src: string;
@@ -194,38 +197,38 @@ interface ExampleVideo {
 const EXAMPLE_VIDEOS: ReadonlyArray<ExampleVideo> = [
   {
     label: "Native stereo sound, generated with the picture",
-    src: "/videos/minimax-h3/stereo-sound.mp4",
+    src: "https://filecdn.minimax.chat/public/h3-en-v2-video-005-1785473681635.mp4",
     poster: "/videos/minimax-h3/posters/stereo-sound.jpg",
     wide: true,
     spanClass: "sm:col-span-2 lg:col-span-6",
   },
   {
     label: "2K performance",
-    src: "/videos/minimax-h3/2k-performance.mp4",
+    src: "https://filecdn.minimax.chat/public/h3-en-v2-video-004-1785473649727.mp4",
     poster: "/videos/minimax-h3/posters/2k-performance.jpg",
     spanClass: "lg:col-span-2",
   },
   {
     label: "Film opening titles",
-    src: "/videos/minimax-h3/film-opening-titles.mp4",
+    src: "https://filecdn.minimax.chat/public/h3-en-v2-video-006-1785473655612.mp4",
     poster: "/videos/minimax-h3/posters/film-opening-titles.jpg",
     spanClass: "lg:col-span-2",
   },
   {
     label: "Product website",
-    src: "/videos/minimax-h3/product-website.mp4",
+    src: "https://filecdn.minimax.chat/public/h3-en-v2-video-007-1785473658537.mp4",
     poster: "/videos/minimax-h3/posters/product-website.jpg",
     spanClass: "lg:col-span-2",
   },
   {
     label: "Animated poster",
-    src: "/videos/minimax-h3/animated-poster.mp4",
+    src: "https://filecdn.minimax.chat/public/h3-en-v2-video-008-1785473649742.mp4",
     poster: "/videos/minimax-h3/posters/animated-poster.jpg",
     spanClass: "lg:col-span-3",
   },
   {
     label: "Advertising and e-commerce",
-    src: "/videos/minimax-h3/advertising-ecommerce.mp4",
+    src: "https://filecdn.minimax.chat/public/h3-en-v2-video-009-1785473658745.mp4",
     poster: "/videos/minimax-h3/posters/advertising-ecommerce.jpg",
     spanClass: "sm:col-span-2 lg:col-span-3",
   },
