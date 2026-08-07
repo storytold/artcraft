@@ -218,14 +218,21 @@ const glbLoader = ({
 
       // Iterate a COPY: scene.add() re-parents the child, which mutates
       // data.scene.children mid-loop and would skip every other child.
+      const addedRoots: THREE.Object3D[] = [];
       [...data.scene.children].forEach((child) => {
         child.userData["color"] = "#FFFFFF";
         scene.add(child);
+        addedRoots.push(child);
       });
 
       // Fit the camera once, after ALL children are in. Mesh geometry
-      // drives the framing; mesh-less skeleton exports fall back to bone
-      // world positions so an empty box can never NaN the camera math.
+      // drives the framing; mesh-less skeleton exports fall back to node
+      // world positions so an empty box can never NaN the camera math —
+      // ALL nodes, not just Bones: converted mesh-less rigs re-import as
+      // plain Object3Ds (GLTF only round-trips bone-ness through a skin),
+      // so a bones-only fallback found nothing for exactly the models that
+      // need it. Only the re-parented GLB roots are sampled; the preview
+      // lights would wildly inflate the box.
       const box = new THREE.Box3();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -236,20 +243,22 @@ const glbLoader = ({
       if (box.isEmpty()) {
         scene.updateMatrixWorld(true);
         const point = new THREE.Vector3();
-        scene.traverse((node) => {
-          if ((node as THREE.Bone).isBone) {
+        for (const root of addedRoots) {
+          root.traverse((node) => {
             box.expandByPoint(node.getWorldPosition(point));
-          }
-        });
+          });
+        }
       }
-      if (!box.isEmpty()) {
-        const center = new THREE.Vector3();
-        const size = new THREE.Vector3();
-        box.getCenter(center);
-        box.getSize(size);
-
-        const radius = Math.max(size.x, size.y, size.z) * 0.5;
-
+      const center = new THREE.Vector3();
+      const size = new THREE.Vector3();
+      box.getCenter(center);
+      box.getSize(size);
+      const radius = Math.max(size.x, size.y, size.z) * 0.5;
+      // Skip the fit for empty or point-degenerate boxes (a lone-node
+      // fallback collapses to a point; distance 0 would park the camera
+      // inside the model with a zero near plane) — the default camera
+      // still shows something.
+      if (!box.isEmpty() && radius > 1e-4) {
         const fov = camera.fov * (Math.PI / 180);
         const distance = (radius * 1.2) / Math.tan(fov * 0.5);
 

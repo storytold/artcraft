@@ -17,20 +17,23 @@ const NO_ANIMATION_VALUE = "-1";
 
 // Bounding box for camera framing. Geometry-less models (skeleton/animation-
 // only exports) produce an EMPTY Box3 from setFromObject — which would NaN
-// the camera math — so fall back to the bone world positions, then to a
-// humanoid-ish default so framing always succeeds.
+// the camera math — so fall back to sampling EVERY node's world position:
+// the joints of converted mesh-less exports are plain Object3Ds, not Bones
+// (GLTF only round-trips bone-ness through a skin), so a bones-only fallback
+// found nothing for exactly the models that need it. A final humanoid-ish
+// default covers truly empty/degenerate models (a lone node collapses to a
+// point, which would blow up the 2/maxDim scale math).
 const computeModelBox = (target: THREE.Object3D): THREE.Box3 => {
   const box = new THREE.Box3().setFromObject(target);
   if (box.isEmpty()) {
     target.updateMatrixWorld(true);
     const point = new THREE.Vector3();
     target.traverse((node) => {
-      if ((node as THREE.Bone).isBone) {
-        box.expandByPoint(node.getWorldPosition(point));
-      }
+      box.expandByPoint(node.getWorldPosition(point));
     });
   }
-  if (box.isEmpty()) {
+  const size = box.getSize(new THREE.Vector3());
+  if (Math.max(size.x, size.y, size.z) < 1e-4) {
     box.set(new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 2, 1));
   }
   return box;
