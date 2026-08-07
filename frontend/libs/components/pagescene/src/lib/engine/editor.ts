@@ -1054,6 +1054,16 @@ class Editor {
     }
   }
 
+  // Liveness for late async callbacks that captured this instance (e.g. a
+  // queued animation drop resolving after its clip fetch): false once
+  // unmountEngine ran — including the EngineProvider teardown/recreate
+  // footgun, where this instance is abandoned for a fresh Editor. A
+  // same-instance remount flips it back, and completing against a
+  // remounted editor is correct.
+  get isLive(): boolean {
+    return this.isMounted;
+  }
+
   remountEngine() {
     const store = usePageSceneStore.getState();
     if (!store.is3DEditorInitialized) {

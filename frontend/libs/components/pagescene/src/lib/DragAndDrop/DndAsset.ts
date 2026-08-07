@@ -287,6 +287,11 @@ class DndAsset {
     target: AnimationDropTarget,
     names: string[] | null | undefined,
   ): void {
+    // A queued drop can resolve after the EngineProvider teardown/recreate
+    // footgun replaced the whole Editor: adding the lane to the dead
+    // controller would silently lose the clip while the store writes
+    // (timeline expand + reveal) fire on the NEW editor's UI.
+    if (!editor.isLive) return;
     const root = editor.activeScene.scene.children.find(
       (child) => child.uuid === target.characterUuid,
     );
