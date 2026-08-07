@@ -310,8 +310,11 @@ then one row per character is the right model.
   (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
   click-away deselect). The **× renders only on the selected strip** (always-visible was too easy
   to hit); **Del/Backspace** removes the selected strip. Removal (either path) is **individually
-  undoable** via `RemoveClipLaneAction` (deep-cloned lane; undo re-inserts verbatim through
-  `TimelineController.restoreClipLane`) — the one exception to "clip edits ride Save/Cancel".
+  undoable** via `RemoveClipLaneAction` — the one exception to "clip edits ride Save/Cancel" —
+  and to keep that honest it is **mirrored into the `saved` snapshot** (removeClipLane strips the
+  lane from `saved` too, so Cancel can't resurrect a deleted strip and Save doesn't double-record
+  the removal); the action captures both the live lane and its saved-snapshot entry so undo
+  restores both worlds exactly (`restoreClipLane(lane, savedLane?)`).
 - **Rig-mismatch diagnostic**: `CharacterAnimationManager.clipBindsToCharacter` warns (console) when
   a clip's tracks resolve to **0** nodes on the character — the signal that `SkeletonUtils.retargetClip`
   is needed. Retarget itself is still **not wired** (direct-bind first).
