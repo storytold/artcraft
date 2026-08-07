@@ -214,14 +214,11 @@ export const UploadFiles3D = ({
     const currentEntry = fileEntries[previewIndex];
     const currentFile = currentEntry?.file;
     if (!canvasRef.current || !currentFile) return;
-    // Nothing to preview until an FBX has been converted (the loader can't
-    // parse FBX; a failed conversion also stays un-previewed).
-    if (currentEntry.status === "converting" || isFbx(currentFile)) {
-      disposeRenderer();
-      setPreviewStatus({ type: "init" });
-      return;
-    }
 
+    // Every preview transition starts from a clean slate — including the
+    // early return below: leaving the previous model's clip dropdown and
+    // bone toggle rendered over the "Converting FBX…" overlay had them
+    // operating on the disposed previous scene.
     disposeRenderer();
     setPreviewStatus({ type: "init" });
     setPreviewAnimations([]);
@@ -230,6 +227,12 @@ export const UploadFiles3D = ({
     setPreviewSkeletonVisible(false);
     selectAnimationRef.current = null;
     setSkeletonVisibleRef.current = null;
+
+    // Nothing to preview until an FBX has been converted (the loader can't
+    // parse FBX; a failed conversion also stays un-previewed).
+    if (currentEntry.status === "converting" || isFbx(currentFile)) {
+      return;
+    }
 
     const { renderer, camera, selectAnimation, setSkeletonVisible, cancel } =
       loadPreviewOnCanvas({
