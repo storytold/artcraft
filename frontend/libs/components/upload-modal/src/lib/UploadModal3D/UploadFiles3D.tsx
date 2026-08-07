@@ -258,6 +258,11 @@ export const UploadFiles3D = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewIndex, filesVersion]);
 
+  // Deliberately keyed on previewStatus ONLY: each load produces its own
+  // init→OK transition, so this fires exactly once per successful load. A
+  // previewIndex dep would also fire it on a bare index switch while the
+  // PREVIOUS load's "OK" lingers — snapshotting file A's frame under file
+  // B's key.
   useEffect(() => {
     if (previewStatus.type === "OK" && canvasRef.current) {
       snapshotCanvasAsThumbnail({
@@ -270,7 +275,8 @@ export const UploadFiles3D = ({
         },
       });
     }
-  }, [previewStatus, previewIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewStatus]);
 
   useEffect(() => {
     if (!fileSubtypes || fileSubtypes.length === 0) {
