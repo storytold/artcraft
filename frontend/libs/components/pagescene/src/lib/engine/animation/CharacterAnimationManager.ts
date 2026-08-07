@@ -86,20 +86,43 @@ export class CharacterAnimationManager {
     // Characters that have a clip covering this playhead. Everyone else is
     // reset to their bind (T) pose below.
     const posed = new Set<string>();
+    // Pick ONE winning lane per character first. Strip intervals are closed
+    // at both ends so seek-to-end still holds a final pose, but strips are
+    // deliberately snapped flush (resolveFreeStart), so at a shared boundary
+    // — A ends exactly where B starts, and scrubs/records land on exact
+    // frame times — both would qualify. Enabling both blends A's last frame
+    // with B's first at half weight each, a garbage pose the deterministic
+    // recorder would encode into video. The LATER strip (smaller local time)
+    // wins the boundary.
+    const winners = new Map<string, LaneRuntime>();
     for (const rt of this.lanes.values()) {
       const action = rt.action;
       if (!action) continue;
+      const local = playhead - rt.startTime;
+      if (local < 0 || local > rt.stripDuration) {
+        action.enabled = false;
+        continue;
+      }
+      const incumbent = winners.get(rt.characterUuid);
+      if (!incumbent) {
+        winners.set(rt.characterUuid, rt);
+        continue;
+      }
+      if (local < playhead - incumbent.startTime) {
+        incumbent.action!.enabled = false;
+        winners.set(rt.characterUuid, rt);
+      } else {
+        action.enabled = false;
+      }
+    }
+    for (const rt of winners.values()) {
       let local = playhead - rt.startTime;
       // The strip's on-timeline width is the play window; the clip's natural
       // length only drives the loop modulo / final-frame clamp inside it.
       const dur = rt.clipDuration;
-      const active = local >= 0 && local <= rt.stripDuration;
-      if (!active) {
-        action.enabled = false;
-        continue;
-      }
       if (rt.loop && dur > 0) local = local % dur;
       else local = Math.min(local, dur);
+      const action = rt.action!;
       action.enabled = true;
       action.paused = true; // we drive time ourselves; don't auto-advance
       action.time = local;
