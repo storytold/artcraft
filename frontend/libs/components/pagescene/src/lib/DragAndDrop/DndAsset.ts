@@ -381,9 +381,18 @@ class DndAsset {
     return { characterUuid, time };
   }
 
-  // Raycast only against clip-eligible roots — characters plus any skinned
-  // object (creatures, rigged uploads); the gizmo and everything else are
-  // never candidates — then walk the hit back up to the root it belongs to.
+  // Find the clip-eligible object the pointer is REALLY on. Two honesty
+  // rules the old roots-only raycast violated:
+  // - Only raycast when the viewport canvas itself is the hit-tested element
+  //   under the pointer — over UI chrome (outliner, timeline, top bar) the
+  //   badge must not go green and a release must not land "through" the
+  //   panel. (The drag ghost and the dragged-from modal are
+  //   pointer-transparent during a drag, so they never mask the canvas.)
+  // - Raycast against all CONTENT objects (anything with a media id or the
+  //   shape marker — editor chrome like gizmos, skeleton helpers, grid and
+  //   ground never participate), then accept only when the FIRST hit's root
+  //   is clip-eligible: a character hidden behind a wall or prop is not a
+  //   target, matching the regular drop path's front-most-surface semantics.
   private characterUnderPointer(
     clientX: number,
     clientY: number,
@@ -393,6 +402,7 @@ class DndAsset {
     const camera = editor.cameraController.camera;
     const canvas = editor.renderer?.domElement;
     if (!camera || !canvas) return null;
+    if (document.elementFromPoint(clientX, clientY) !== canvas) return null;
     const store = usePageSceneStore.getState();
     const scene = editor.activeScene.scene;
     const candidateIds = new Set<string>();
@@ -400,12 +410,13 @@ class DndAsset {
     for (const item of store.outlinerItems) {
       if (item.hasSkeleton) candidateIds.add(item.id);
     }
-    const roots: THREE.Object3D[] = [];
-    for (const id of candidateIds) {
-      const root = scene.getObjectByProperty("uuid", id);
-      if (root) roots.push(root);
-    }
-    if (roots.length === 0) return null;
+    if (candidateIds.size === 0) return null;
+    const contentRoots = scene.children.filter(
+      (child) =>
+        child.userData?.["media_id"] !== undefined ||
+        child.userData?.["isShape"] === true,
+    );
+    if (contentRoots.length === 0) return null;
     const rect = canvas.getBoundingClientRect();
     const ndc = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
@@ -415,11 +426,15 @@ class DndAsset {
     raycaster.layers.enable(0);
     raycaster.layers.enable(1);
     raycaster.setFromCamera(ndc, camera);
-    const hits = raycaster.intersectObjects(roots, true);
+    const hits = raycaster.intersectObjects(contentRoots, true);
     if (hits.length === 0) return null;
+    // Ascend the first (closest) hit to its top-level root; eligibility of
+    // THAT root decides — anything else in front means "occluded".
     let node: THREE.Object3D | null = hits[0].object;
     while (node) {
-      if (roots.includes(node)) return node.uuid;
+      if (node.parent === scene) {
+        return candidateIds.has(node.uuid) ? node.uuid : null;
+      }
       node = node.parent;
     }
     return null;
