@@ -17,9 +17,9 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
+use mysql_queries::queries::generic_inference::first_party::minimax_h3::first_party_minimax_h3_model::FirstPartyMinimaxH3Model;
 use mysql_queries::queries::generic_inference::first_party::minimax_h3::insert_generic_inference_job_for_first_party_minimax_h3_with_apriori_job_token::{
   insert_generic_inference_job_for_first_party_minimax_h3_with_apriori_job_token,
-  FirstPartyMinimaxH3Model,
   InsertGenericInferenceForFirstPartyMinimaxH3WithAprioriJobTokenArgs,
 };
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;

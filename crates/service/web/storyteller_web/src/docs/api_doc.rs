@@ -111,6 +111,10 @@ use crate::http_server::endpoints::api_keys::list_api_keys_handler::*;
 use crate::http_server::endpoints::api_keys::get_api_key_handler::*;
 use crate::http_server::endpoints::api_keys::delete_api_key_handler::*;
 use crate::http_server::endpoints::api_keys::update_api_key_handler::*;
+use artcraft_api_defs::internal::minimax_jobs::mark_minimax_job_failure::*;
+use artcraft_api_defs::internal::minimax_jobs::mark_minimax_job_success::*;
+use artcraft_api_defs::internal::minimax_jobs::minimax_worker_model::*;
+use artcraft_api_defs::internal::minimax_jobs::obtain_minimax_job::*;
 use artcraft_api_defs::api_keys::common::*;
 use artcraft_api_defs::api_keys::create_api_key::*;
 use artcraft_api_defs::api_keys::list_api_keys::*;
@@ -641,6 +645,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::omni_upload_video_media_file_handler,
     crate::http_server::endpoints::omni_api::job_status::get_job_status_handler::omni_api_get_job_status_handler,
     crate::http_server::endpoints::omni_api::job_status::batch_get_job_status_handler::omni_api_batch_get_job_status_handler,
+    // Internal (worker fleets, internal API key authenticated)
+    crate::http_server::endpoints::internal::minimax_jobs::obtain_minimax_job_handler::obtain_minimax_job_handler,
+    crate::http_server::endpoints::internal::minimax_jobs::mark_minimax_job_failure_handler::mark_minimax_job_failure_handler,
+    crate::http_server::endpoints::internal::minimax_jobs::mark_minimax_job_success_handler::mark_minimax_job_success_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
     crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::moderator_list_databox_dashboards_handler,
@@ -756,6 +764,17 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     UserBookmarkToken,
     UserToken,
     ZsVoiceDatasetToken,
+
+    // Internal (worker fleets)
+    MarkMinimaxJobFailureRequest,
+    MarkMinimaxJobFailureResponse,
+    MarkMinimaxJobSuccessResponse,
+    MinimaxJobMediaReference,
+    MinimaxJobPromptDetails,
+    MinimaxWorkerModel,
+    ObtainMinimaxJobRequest,
+    ObtainMinimaxJobResponse,
+    ObtainedMinimaxJob,
 
     // Enums
     BetaKeyProduct,

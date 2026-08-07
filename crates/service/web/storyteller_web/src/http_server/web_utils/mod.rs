@@ -8,6 +8,7 @@ pub mod job_keepalives;
 pub mod open_zip_archive;
 pub mod read_multipart_field_bytes;
 pub mod redis_rate_limiter;
+pub mod require_internal_api_key;
 pub mod response_error_helpers;
 pub mod response_success_helpers;
 pub mod scoped_temp_dir_creator;

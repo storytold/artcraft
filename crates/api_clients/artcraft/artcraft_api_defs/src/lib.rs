@@ -5,6 +5,7 @@ pub mod common;
 pub mod credits;
 pub mod folders;
 pub mod generate;
+pub mod internal;
 pub mod jobs;
 pub mod media_file;
 pub mod moderation;

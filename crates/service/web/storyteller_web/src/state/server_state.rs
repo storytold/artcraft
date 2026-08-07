@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::configs::app_startup::username_set::UsernameSet;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::ModelTokensByCategoryToken;
@@ -12,6 +14,7 @@ use crate::state::flags::paging_flags::PagingFlags;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
+use crate::util::internal_api_key::InternalApiKey;
 use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
@@ -108,6 +111,10 @@ pub struct ServerState {
   pub troll_bans: TrollBans,
 
   pub static_api_token_set: StaticApiTokenSet,
+
+  /// Accepted internal API keys for our own worker fleets (GPU inference).
+  /// Loaded from `INTERNAL_API_KEYS` at startup; empty when unset.
+  pub internal_api_keys: HashSet<InternalApiKey>,
 
   pub caches: InMemoryCaches,
 

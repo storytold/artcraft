@@ -128,7 +128,7 @@ pub async fn insert_media_file_generic_from_job(
         media_type: args.media_type,
         origin_category: args.origin_category,
         origin_product_category: args.origin_product_category,
-        pool: &args.pool,
+        pool: args.pool,
         public_bucket_directory_hash: args.public_bucket_directory_hash,
     }).await
 }

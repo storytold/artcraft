@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE generic_inference_jobs\nSET\n  status = ?,\n  frontend_failure_category = ?,\n  failure_reason = ?,\n  internal_debugging_failure_reason = ?,\n  success_execution_millis = ?,\n  success_inference_execution_millis = ?\nWHERE token = ?\nAND status NOT IN ('complete_success', 'complete_failure')\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "96599b4854248d84188b092db84edb50dc5402bb7771fd8ea96a96ad43e732c0"
+}

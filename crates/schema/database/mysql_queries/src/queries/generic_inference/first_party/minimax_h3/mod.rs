@@ -1,1 +1,7 @@
+pub mod first_party_minimax_h3_model;
+pub mod get_first_party_minimax_h3_job_by_token;
 pub mod insert_generic_inference_job_for_first_party_minimax_h3_with_apriori_job_token;
+pub mod mark_first_party_minimax_h3_job_failed;
+pub mod mark_first_party_minimax_h3_job_started;
+pub mod mark_first_party_minimax_h3_job_succeeded;
+pub mod select_pending_first_party_minimax_h3_job_for_update;
