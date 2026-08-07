@@ -8,7 +8,8 @@ use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCat
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
-use sqlx::MySqlPool;
+use sqlx::pool::PoolConnection;
+use sqlx::{Acquire, MySql, MySqlPool};
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -293,20 +294,33 @@ impl MediaFileInsertBuilder {
     self
   }
 
-  // TODO(bt,2025-04-26): Other connector options.
   pub async fn insert_pool(self, mysql_pool: &MySqlPool) -> Result<MediaFileToken, MediaFileInsertBuilderError> {
+    self.insert_acquire(mysql_pool).await
+  }
+
+  /// Insert using an already-acquired connection, so callers holding one
+  /// don't pay for a second pool acquisition.
+  pub async fn insert_connection(self, mysql_connection: &mut PoolConnection<MySql>) -> Result<MediaFileToken, MediaFileInsertBuilderError> {
+    self.insert_acquire(mysql_connection).await
+  }
+
+  async fn insert_acquire<'a, A>(&'a self, connector: A) -> Result<MediaFileToken, MediaFileInsertBuilderError>
+  where
+    A: Acquire<'a, Database = MySql> + Send,
+    <A as Acquire<'a>>::Connection: Send,
+  {
     let media_file_type = self.media_file_type
         .ok_or_else(|| MediaFileInsertBuilderError::MissingRequiredField(
           "Media file type is required".to_string()))?;
 
-    let checksum_sha2 = self.checksum_sha2
+    let checksum_sha2 = self.checksum_sha2.as_ref()
         .ok_or_else(|| MediaFileInsertBuilderError::MissingRequiredField(
           "Checksum SHA2 is required".to_string()))?;
 
-    let bucket_path = self.public_bucket_directory_hash
+    let bucket_path = self.public_bucket_directory_hash.as_ref()
         .ok_or_else(|| MediaFileInsertBuilderError::MissingRequiredField(
           "Public bucket directory hash is required".to_string()))?;
-    
+
     let mut origin_category = self.origin_category
         .ok_or_else(|| MediaFileInsertBuilderError::MissingRequiredField(
           "Origin category is required".to_string()))?;
@@ -330,7 +344,7 @@ impl MediaFileInsertBuilder {
     }
 
     let result = insert_media_file_generic(InsertArgs {
-      pool: mysql_pool,
+      pool: connector,
       maybe_creator_user_token: self.maybe_creator_user_token.as_ref(),
       maybe_creator_anonymous_visitor_token: self.maybe_creator_anonymous_visitor_token.as_ref(),
       creator_ip_address: self.creator_ip_address.as_deref().unwrap_or("127.0.0.1"),
@@ -343,7 +357,7 @@ impl MediaFileInsertBuilder {
       origin_product_category: self.origin_product_category,
       maybe_origin_model_type: None, // TODO
       maybe_origin_model_token: None, // TODO
-      maybe_origin_filename: self.maybe_origin_filename,
+      maybe_origin_filename: self.maybe_origin_filename.clone(),
       maybe_mime_type: self.maybe_mime_type.as_deref(),
       file_size_bytes: self.file_size_bytes,
       maybe_duration_millis: self.maybe_duration_millis,
@@ -352,7 +366,7 @@ impl MediaFileInsertBuilder {
       maybe_frame_width: self.maybe_frame_width,
       maybe_frame_height: self.maybe_frame_height,
       maybe_engine_category: self.maybe_engine_category,
-      checksum_sha2: &checksum_sha2,
+      checksum_sha2: checksum_sha2.as_str(),
       maybe_title: self.maybe_title.as_deref(),
       maybe_text_transcript: None, // TODO
       maybe_scene_source_media_file_token: None, // TODO

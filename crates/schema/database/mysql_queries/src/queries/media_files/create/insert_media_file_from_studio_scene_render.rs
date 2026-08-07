@@ -50,7 +50,7 @@ pub async fn insert_media_file_from_studio_scene_render(
 ) -> AnyhowResult<MediaFileToken>
 {
   let (new_media_token, _id) = insert_media_file_generic(InsertArgs {
-    pool: &args.pool,
+    pool: args.pool,
 
     // Dynamic bits (user)
     maybe_creator_user_token: args.maybe_creator_user_token,

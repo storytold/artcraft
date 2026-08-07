@@ -1,4 +1,7 @@
 //! Permanently mark a first-party Minimax H3 job as failed.
+//!
+//! Never flips an already-terminal job: a late or duplicate failure report
+//! against a `complete_success` / `complete_failure` row is silently ignored.
 
 use sqlx::{Executor, MySql};
 use std::convert::TryFrom;
@@ -61,6 +64,7 @@ SET
   success_execution_millis = ?,
   success_inference_execution_millis = ?
 WHERE token = ?
+AND status NOT IN ('complete_success', 'complete_failure')
     "#,
     JobStatusPlus::CompleteFailure.to_str(),
     args.maybe_frontend_failure_category.map(|category| category.to_str()),

@@ -8,6 +8,8 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use serde_derive::Deserialize;
+use sqlx::pool::PoolConnection;
+use sqlx::MySql;
 use utoipa::ToSchema;
 
 use artcraft_api_defs::internal::minimax_jobs::mark_minimax_job_success::MarkMinimaxJobSuccessResponse;
@@ -16,6 +18,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::job_status_plus::JobStatusPlus;
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
@@ -134,7 +137,41 @@ pub async fn mark_minimax_job_success_handler(
     return Err(CommonWebError::NotFound);
   };
 
+  // ==================== IDEMPOTENCY: TERMINAL STATUS CHECK ==================== //
+
+  match job.status {
+    JobStatusPlus::CompleteSuccess => {
+      // A duplicate / retried success report. Don't re-upload or create a
+      // second media file — return the already-recorded result.
+      let Some(existing_media_token) = job.maybe_result_media_file_token else {
+        error!("Minimax job {} is complete_success but has no result media file token", job.job_token);
+        return Err(CommonWebError::server_error_with_message(
+          "job already complete but result media file is missing"));
+      };
+
+      info!("Minimax job {} is already complete_success; ignoring duplicate success report", job.job_token);
+
+      return Ok(Json(MarkMinimaxJobSuccessResponse {
+        success: true,
+        media_file_token: existing_media_token,
+        maybe_duration_millis: None,
+        maybe_width: None,
+        maybe_height: None,
+      }));
+    }
+    JobStatusPlus::CompleteFailure => {
+      warn!("Minimax job {} is already complete_failure; rejecting success report", job.job_token);
+      return Err(CommonWebError::BadInputWithSimpleMessage(
+        "job is already in a terminal state (complete_failure)".to_string()));
+    }
+    _ => {} // Not terminal; proceed.
+  }
+
   // ==================== READ + VALIDATE FILE ==================== //
+
+  // NB: No database connection is held anywhere in this section — the byte
+  // read, hashing, ffprobe, and bucket upload below are all slow, and
+  // holding a pool slot across them is what causes PoolTimedOut incidents.
 
   let mut file_bytes = Vec::new();
   form.file.file.read_to_end(&mut file_bytes)
@@ -221,20 +258,42 @@ pub async fn mark_minimax_job_success_handler(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  let media_token = insert_media_file_record(
-    &server_state,
-    &job,
-    &file_hash,
-    file_size_bytes,
-    maybe_duration_millis,
-    maybe_frame_width,
-    maybe_frame_height,
-    media_file_type,
-    &mime_type,
-    &public_upload_path,
-  ).await?;
+  // ==================== MEDIA FILE RECORD + MARK JOB DONE ==================== //
 
-  info!("Minimax video media file uploaded with token: {}", media_token);
+  // Tight critical section: one connection for both post-upload writes, no
+  // network calls in between.
+  let media_token = {
+    let mut mysql_connection = server_state.mysql_pool.acquire().await?;
+
+    let media_token = insert_media_file_record(
+      &mut mysql_connection,
+      &job,
+      &file_hash,
+      file_size_bytes,
+      maybe_duration_millis,
+      maybe_frame_width,
+      maybe_frame_height,
+      media_file_type,
+      &mime_type,
+      &public_upload_path,
+    ).await?;
+
+    info!("Minimax video media file uploaded with token: {}", media_token);
+
+    mark_first_party_minimax_h3_job_succeeded(MarkFirstPartyMinimaxH3JobSucceededArgs {
+      job_token: &job.job_token,
+      media_file_token: &media_token,
+      maybe_execution_duration_millis: form.execution_duration_millis.map(|text| text.0),
+      maybe_inference_duration_millis: form.inference_duration_millis.map(|text| text.0),
+      mysql_executor: &mut *mysql_connection,
+      phantom: Default::default(),
+    }).await.map_err(|err| {
+      error!("Error marking minimax job {} succeeded: {:?}", job_token, err);
+      CommonWebError::from_error(err)
+    })?;
+
+    media_token
+  };
 
   // ==================== THUMBNAILS ==================== //
 
@@ -252,20 +311,6 @@ pub async fn mark_minimax_job_success_handler(
     error!("Failed to create some/all thumbnail tasks: {:?}", err);
   }
 
-  // ==================== MARK JOB DONE ==================== //
-
-  mark_first_party_minimax_h3_job_succeeded(MarkFirstPartyMinimaxH3JobSucceededArgs {
-    job_token: &job.job_token,
-    media_file_token: &media_token,
-    maybe_execution_duration_millis: form.execution_duration_millis.map(|text| text.0),
-    maybe_inference_duration_millis: form.inference_duration_millis.map(|text| text.0),
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  }).await.map_err(|err| {
-    error!("Error marking minimax job {} succeeded: {:?}", job_token, err);
-    CommonWebError::from_error(err)
-  })?;
-
   info!("Minimax job {} marked as complete_success with media file {}", job.job_token, media_token);
 
   Ok(Json(MarkMinimaxJobSuccessResponse {
@@ -278,7 +323,7 @@ pub async fn mark_minimax_job_success_handler(
 }
 
 async fn insert_media_file_record(
-  server_state: &ServerState,
+  mysql_connection: &mut PoolConnection<MySql>,
   job: &FirstPartyMinimaxH3JobDetails,
   file_hash: &str,
   file_size_bytes: usize,
@@ -307,7 +352,7 @@ async fn insert_media_file_record(
       .media_file_type(media_file_type)
       .mime_type(mime_type)
       .public_bucket_directory_hash(public_upload_path)
-      .insert_pool(&server_state.mysql_pool)
+      .insert_connection(mysql_connection)
       .await
       .map_err(|err| {
         warn!("Failed to insert video media file record: {:?}", err);

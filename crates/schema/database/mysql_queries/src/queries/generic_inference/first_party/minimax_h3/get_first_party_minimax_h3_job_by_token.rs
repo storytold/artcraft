@@ -12,6 +12,7 @@ use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::platform_type::PlatformType;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
@@ -41,6 +42,9 @@ pub struct FirstPartyMinimaxH3JobDetails {
   pub maybe_debug_log_event_token: Option<DebugLogEventToken>,
 
   pub maybe_platform_type: Option<PlatformType>,
+
+  /// Set once the job has succeeded: the resulting media file.
+  pub maybe_result_media_file_token: Option<MediaFileToken>,
 }
 
 pub async fn get_first_party_minimax_h3_job_by_token<'e, 'c : 'e, E>(
@@ -59,7 +63,8 @@ SELECT
   creator_ip_address,
   maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
   maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,
-  platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`
+  platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`,
+  on_success_result_entity_token as `maybe_result_media_file_token: tokens::tokens::media_files::MediaFileToken`
 FROM generic_inference_jobs
 WHERE token = ?
 AND job_type IN ('artcraft_minimax_h3_turbo', 'artcraft_minimax_h3_ultra')
@@ -89,5 +94,6 @@ AND job_type IN ('artcraft_minimax_h3_turbo', 'artcraft_minimax_h3_ultra')
     maybe_prompt_token: row.maybe_prompt_token,
     maybe_debug_log_event_token: row.maybe_debug_log_event_token,
     maybe_platform_type: row.maybe_platform_type,
+    maybe_result_media_file_token: row.maybe_result_media_file_token,
   }))
 }

@@ -1,5 +1,8 @@
 //! Mark a first-party Minimax H3 job as successfully completed, pointing at
 //! the resulting media file. Mirrors the Fal webhook success write.
+//!
+//! Never flips an already-terminal job: a late or duplicate success report
+//! against a `complete_success` / `complete_failure` row is silently ignored.
 
 use sqlx::{Executor, MySql};
 use std::convert::TryFrom;
@@ -48,6 +51,7 @@ SET
   retry_at = NULL,
   successfully_completed_at = NOW()
 WHERE token = ?
+AND status NOT IN ('complete_success', 'complete_failure')
     "#,
     JobStatusPlus::CompleteSuccess.to_str(),
     InferenceResultType::MediaFile.to_str(),

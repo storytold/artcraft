@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use sqlx::MySqlPool;
+use sqlx::{Acquire, MySql};
 
 use enums::by_table::generic_synthetic_ids::id_category::IdCategory;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
@@ -24,8 +24,13 @@ use crate::payloads::media_file_extra_info::media_file_extra_info::MediaFileExtr
 use crate::queries::generic_synthetic_ids::transactional_increment_generic_synthetic_id::transactional_increment_generic_synthetic_id;
 use crate::queries::media_files::create::generic_insert::insert_media_file_generic_executor::{insert_media_file_generic_executor, InsertMediaFileGenericExecutorArgs};
 
-pub struct InsertArgs<'a> {
-    pub pool: &'a MySqlPool,
+pub struct InsertArgs<'a, A>
+where
+    A: Acquire<'a, Database = MySql>,
+{
+    /// Where to get the connection: a `&MySqlPool` (acquires one) or an
+    /// already-acquired `&mut PoolConnection` (reuses it).
+    pub pool: A,
 
     // Creator info
     pub maybe_creator_user_token: Option<&'a UserToken>,
@@ -111,9 +116,12 @@ pub struct InsertArgs<'a> {
 /// Insert a media file record, allocating the creator's synthetic IDs in the
 /// same transaction. Wraps [`insert_media_file_generic_executor`], which runs
 /// the actual INSERT.
-pub async fn insert_media_file_generic(
-    args: InsertArgs<'_>
+pub async fn insert_media_file_generic<'a, A>(
+    args: InsertArgs<'a, A>
 ) -> AnyhowResult<(MediaFileToken, u64)>
+where
+    A: Acquire<'a, Database = MySql> + Send,
+    <A as Acquire<'a>>::Connection: Send,
 {
     let extra_file_modification_info = args
         .maybe_extra_media_info.map(|extra| extra.to_json_string())

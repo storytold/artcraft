@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n  token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n  status as `status: enums::common::job_status_plus::JobStatusPlus`,\n  job_type as `job_type: enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType`,\n  maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n  creator_ip_address,\n  maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n  maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n  platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`\nFROM generic_inference_jobs\nWHERE token = ?\nAND job_type IN ('artcraft_minimax_h3_turbo', 'artcraft_minimax_h3_ultra')\n    ",
+  "query": "\nSELECT\n  token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n  status as `status: enums::common::job_status_plus::JobStatusPlus`,\n  job_type as `job_type: enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType`,\n  maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n  creator_ip_address,\n  maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n  maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n  platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`,\n  on_success_result_entity_token as `maybe_result_media_file_token: tokens::tokens::media_files::MediaFileToken`\nFROM generic_inference_jobs\nWHERE token = ?\nAND job_type IN ('artcraft_minimax_h3_turbo', 'artcraft_minimax_h3_ultra')\n    ",
   "describe": {
     "columns": [
       {
@@ -92,6 +92,16 @@
           "char_set": 224,
           "max_size": 64
         }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_result_media_file_token: tokens::tokens::media_files::MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
       }
     ],
     "parameters": {
@@ -106,8 +116,9 @@
       false,
       true,
       true,
+      true,
       true
     ]
   },
-  "hash": "b27e108f07885e2677ca79d0f5dc6a81a7fd760034878d2cad3e32cd1f6a76b5"
+  "hash": "f1d41ad17cb01f5aef0ce2eea042ccb3e5e649365a0befaf0f46492b75523442"
 }
