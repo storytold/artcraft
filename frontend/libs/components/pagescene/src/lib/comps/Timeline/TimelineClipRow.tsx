@@ -1,4 +1,5 @@
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFilm,
@@ -56,13 +57,35 @@ export const TimelineClipRow = ({
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // Baked-clip picker anchor (button rect at open time; null = closed). The
+  // popup PORTALS to document.body: rendered in place it would be clipped by
+  // the row list's overflow-y-auto ancestor — the top row's upward popup was
+  // effectively invisible.
+  const [pickerAnchor, setPickerAnchor] = useState<DOMRect | null>(null);
+  const pickerMenuRef = useRef<HTMLDivElement>(null);
   const selectedLaneId = usePageSceneStore(
     (s) => s.timelineSelectedClipLaneId,
   );
 
+  // A fixed-position popup can't follow its button, so any outside scroll
+  // or resize closes it (scrolling INSIDE the popup's own list is exempt).
+  useEffect(() => {
+    if (!pickerAnchor) return undefined;
+    const onScroll = (e: Event) => {
+      if (pickerMenuRef.current?.contains(e.target as Node)) return;
+      setPickerAnchor(null);
+    };
+    const onResize = () => setPickerAnchor(null);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [pickerAnchor]);
+
   const addBaked = (clipIndex: number) => {
-    setPickerOpen(false);
+    setPickerAnchor(null);
     if (!editor) return;
     const laneId = addBakedClipToObject(editor, objectUuid, clipIndex);
     if (!laneId) {
@@ -107,40 +130,57 @@ export const TimelineClipRow = ({
         <FontAwesomeIcon icon={faFilm} className="h-3 w-3 opacity-60" />
         <span className="truncate">Animation</span>
         {bakedClips && bakedClips.length > 0 && (
-          <div className="relative shrink-0">
+          <div className="shrink-0">
             <button
               type="button"
               title="Add one of this object's baked animations"
               className={`flex h-4 w-4 items-center justify-center rounded-[4px] transition-colors ${
-                pickerOpen
+                pickerAnchor
                   ? "bg-brand-primary text-white"
                   : "bg-white/10 text-base-fg/70 hover:bg-white/20 hover:text-base-fg"
               }`}
-              onClick={() => setPickerOpen((open) => !open)}
+              onClick={(e) =>
+                setPickerAnchor((open) =>
+                  open ? null : e.currentTarget.getBoundingClientRect(),
+                )
+              }
             >
               <FontAwesomeIcon icon={faPlus} className="h-2.5 w-2.5" />
             </button>
-            {pickerOpen && (
-              <>
-                {/* click-away backdrop */}
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setPickerOpen(false)}
-                />
-                <div className="absolute bottom-full left-0 z-50 mb-1 max-h-40 w-44 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls py-1 shadow-xl">
-                  {bakedClips.map((clipName, clipIndex) => (
-                    <button
-                      key={clipIndex}
-                      type="button"
-                      className="block w-full truncate px-2.5 py-1 text-left text-[11px] text-base-fg/90 hover:bg-white/10"
-                      onClick={() => addBaked(clipIndex)}
-                    >
-                      {clipName}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            {pickerAnchor &&
+              ReactDOM.createPortal(
+                <>
+                  {/* click-away backdrop */}
+                  <div
+                    className="fixed inset-0"
+                    style={{ zIndex: 9998 }}
+                    onClick={() => setPickerAnchor(null)}
+                  />
+                  {/* Opens upward from the button (the timeline docks to the
+                      screen bottom, so up always has room). */}
+                  <div
+                    ref={pickerMenuRef}
+                    className="fixed max-h-40 w-44 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls py-1 shadow-xl"
+                    style={{
+                      zIndex: 9999,
+                      left: pickerAnchor.left,
+                      bottom: window.innerHeight - pickerAnchor.top + 4,
+                    }}
+                  >
+                    {bakedClips.map((clipName, clipIndex) => (
+                      <button
+                        key={clipIndex}
+                        type="button"
+                        className="block w-full truncate px-2.5 py-1 text-left text-[11px] text-base-fg/90 hover:bg-white/10"
+                        onClick={() => addBaked(clipIndex)}
+                      >
+                        {clipName}
+                      </button>
+                    ))}
+                  </div>
+                </>,
+                document.body,
+              )}
           </div>
         )}
       </div>
