@@ -58,22 +58,29 @@ export const ItemElement = ({ item }: Props) => {
   const handleClick = () => {
     if (item.type !== AssetType.ANIMATION || !editor) return;
     const store = usePageSceneStore.getState();
-    const character = store.characters.find(
-      (c) => c.kind === "character" && c.id === store.selectedObject?.id,
-    );
-    if (!character) {
+    const selectedId = store.selectedObject?.id;
+    // Same eligibility as the drag path and the timeline rows: characters OR
+    // any skinned object (creatures, rigged uploads). Click-to-add rejecting
+    // what a drop accepts read as broken.
+    const target = selectedId
+      ? (store.characters.find((c) => c.id === selectedId) ??
+        store.outlinerItems.find(
+          (o) => o.id === selectedId && o.hasSkeleton,
+        ))
+      : undefined;
+    if (!target) {
       editor.adapter.showToast(
         ToastTypes.WARNING,
-        "Select a character in the scene, then click an animation to add it.",
+        "Select a character or rigged object in the scene, then click an animation to add it.",
       );
       return;
     }
     // atTime 0 → resolveFreeStart snaps to the earliest free slot on the row.
-    const laneId = addClipToCharacter(editor, character.id, item, 0);
+    const laneId = addClipToCharacter(editor, target.id, item, 0);
     if (!laneId) {
       editor.adapter.showToast(
         ToastTypes.WARNING,
-        `No room left on ${character.name}'s timeline for "${item.name}".`,
+        `No room left on ${target.name}'s timeline for "${item.name}".`,
       );
       return;
     }
