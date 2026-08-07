@@ -75,6 +75,9 @@ export type SaveManagerDeps = {
   // Animation timeline persistence (in-memory controller ↔ scene JSON).
   getTimeline: () => TimelineData | null;
   loadTimeline: (timeline: TimelineData) => void;
+  // Fresh empty timeline — used when the loaded scene carries no usable
+  // timeline, so the previous scene's animation data is never inherited.
+  resetTimeline: () => void;
 
   // Live render-camera (::CAM:: frustum) transform, read at save time so the
   // persisted render-camera position reflects the actual scene object rather
@@ -337,7 +340,9 @@ export class SaveManager {
     this.deps.refreshCamObj();
 
     // Restore the animation timeline. Guard legacy scenes where `timeline`
-    // was a `""` stub (or absent/null).
+    // was a `""` stub (or absent/null) — those RESET rather than fall
+    // through, so the previous scene's tracks/strips are never inherited
+    // by a scene that saved none.
     const timeline = scene_json["timeline"];
     if (
       timeline &&
@@ -345,6 +350,8 @@ export class SaveManager {
       Array.isArray(timeline.tracks)
     ) {
       this.deps.loadTimeline(timeline);
+    } else {
+      this.deps.resetTimeline();
     }
 
     return true;

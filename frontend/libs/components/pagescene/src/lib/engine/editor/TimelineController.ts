@@ -77,6 +77,26 @@ export class TimelineController {
     this.emitPlayhead();
   }
 
+  // Reset to a fresh empty timeline (scene switch / new scene). Unlike
+  // create() — a no-op when a timeline already exists — this REPLACES
+  // whatever is loaded, dropping tracks, strips and their runtimes, so a
+  // scene saved without a timeline (or a brand-new scene) never inherits
+  // the previous scene's animation data.
+  reset(): void {
+    this.timeline = {
+      duration: DEFAULT_TIMELINE_DURATION,
+      fps: DEFAULT_TIMELINE_FPS,
+      tracks: [],
+      clipLanes: [],
+    };
+    this.saved = cloneTimeline(this.timeline);
+    this.playhead = 0;
+    this.isPlaying = false;
+    this.syncClipLanes(); // disposes every lane runtime, prunes mixers
+    this.emitChanged();
+    this.emitPlayhead();
+  }
+
   // Replace the live timeline wholesale (used by undo/redo of a save).
   loadTimeline(data: TimelineData): void {
     this.timeline = cloneTimeline(data);

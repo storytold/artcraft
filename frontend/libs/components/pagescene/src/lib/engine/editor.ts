@@ -347,6 +347,7 @@ class Editor {
       getTimeline: () => this.timelineController.getTimeline(),
       loadTimeline: (timeline) =>
         this.timelineController.loadTimeline(timeline),
+      resetTimeline: () => this.timelineController.reset(),
       getRenderCameraTransform: () => {
         const cam = this.cameraController.cam_obj;
         if (!cam) return null;
@@ -862,6 +863,9 @@ class Editor {
 
   public async newScene(sceneTitleInput: string) {
     this.activeScene.clear();
+    // A fresh scene starts with a fresh timeline — the previous scene's
+    // tracks and clip strips must not carry over.
+    this.timelineController.reset();
     this.cameraController.cam_obj = this.activeScene.get_object_by_name(
       this.cameraController.camera_name,
     );
