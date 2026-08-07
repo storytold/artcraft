@@ -334,14 +334,21 @@ const LandingMinimaxH3 = () => {
   // Scroll to the newly enqueued generation. Runs as an effect (not inline in
   // the submit handler) so the new card exists in the DOM before we scroll to
   // it; new cards are prepended, so the first card is the one just enqueued.
-  // Centering the card keeps the promptbox partially in view above it.
+  // Scrolls the window explicitly instead of scrollIntoView: the latter also
+  // scrolls intermediate scrollable ancestors, which left the page unable to
+  // scroll back to its true top afterwards. Centering the card keeps the
+  // promptbox partially in view above it.
   useEffect(() => {
     if (generations.length > prevGenerationCountRef.current) {
-      const newestCard = resultsRef.current?.querySelector("[data-generation]");
-      (newestCard ?? resultsRef.current)?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      const newestCard =
+        resultsRef.current?.querySelector("[data-generation]") ??
+        resultsRef.current;
+      if (newestCard) {
+        const rect = newestCard.getBoundingClientRect();
+        const targetY =
+          window.scrollY + rect.top - (window.innerHeight - rect.height) / 2;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+      }
     }
     prevGenerationCountRef.current = generations.length;
   }, [generations.length]);
