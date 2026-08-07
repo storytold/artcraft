@@ -49,6 +49,12 @@ class DndAsset {
   public notDropText = "";
   public isDragging: boolean = false;
   public dragThreshold: number = 5;
+  // True once the CURRENT pointer gesture crossed the drag threshold, until
+  // the next pointer-down. Unlike isDragging (reset by endDrag before the
+  // browser synthesizes the trailing click), this survives long enough for
+  // click handlers to tell "click" from "aborted drag" without depending on
+  // React having committed the modal's pointer-transparency mid-gesture.
+  public wasDragGesture: boolean = false;
   private editor: Editor | null = null;
 
   // Animation-drag state. The node names a clip's tracks address are cached
@@ -78,6 +84,7 @@ class DndAsset {
       this.initX = event.pageX;
       this.initY = event.pageY;
       this.isDragging = false;
+      this.wasDragGesture = false;
       store.setCanDrop(false);
       store.setAnimationDropState("none");
       this.notDropText = "";
@@ -201,6 +208,7 @@ class DndAsset {
           Math.abs(deltaY) > this.dragThreshold)
       ) {
         this.isDragging = true;
+        this.wasDragGesture = true;
         // Let pointer events pass through the library the moment the drag begins.
         // The panel eases to translucent (reopen on) or all the way out (reopen
         // off) via AssetModal's contentDimmed/contentHidden — never abrupt.

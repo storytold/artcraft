@@ -57,6 +57,10 @@ export const ItemElement = ({ item }: Props) => {
   // click on them ends as a no-op in DndAsset.
   const handleClick = () => {
     if (item.type !== AssetType.ANIMATION || !editor) return;
+    // A very fast flick can release before React commits the modal's
+    // pointer-transparency, so the browser still synthesizes a click on the
+    // card — but that gesture was a DRAG (aborted or not), never a click.
+    if (dragAndDrop.wasDragGesture) return;
     const store = usePageSceneStore.getState();
     const selectedId = store.selectedObject?.id;
     // Same eligibility as the drag path and the timeline rows: characters OR
