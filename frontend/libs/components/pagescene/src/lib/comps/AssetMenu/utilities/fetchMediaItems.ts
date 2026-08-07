@@ -58,6 +58,9 @@ export const fetchUserMediaItems = async (
     return {
       mediaItems: newSetObjects,
       status: FetchStatus.SUCCESS,
+      // Page-based pagination (0-based `current` of `total_page_count`) —
+      // callers use it to drive load-more past the first page.
+      nextPage: response.pagination,
     };
   }
   if (!suppressErrorToast) {

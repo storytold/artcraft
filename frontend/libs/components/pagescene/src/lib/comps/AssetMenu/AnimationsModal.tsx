@@ -74,6 +74,8 @@ export const AnimationsModal = () => {
     defaultAnimations,
     allAnimations,
     fetchUserAnimations,
+    loadMoreUserAnimations,
+    hasMoreUserAnimations,
     fetchStatuses,
   } = useAnimationLibrary();
 
@@ -192,10 +194,17 @@ export const AnimationsModal = () => {
       );
     }
     return (
+      /* Uploaded tab pages through the user's library (the API caps a page
+         at 100); scroll near the bottom loads the next page. Presets stay a
+         single curated page. */
       <ItemElements
         items={displayedItems}
         busy={isFetching}
         debug={`animations-modal-${currentTab.id}`}
+        hasMore={currentTab.id === "uploaded" ? hasMoreUserAnimations : undefined}
+        onLoadMore={
+          currentTab.id === "uploaded" ? loadMoreUserAnimations : undefined
+        }
       />
     );
   };

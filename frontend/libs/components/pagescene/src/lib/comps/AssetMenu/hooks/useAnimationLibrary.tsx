@@ -13,6 +13,7 @@ import {
 } from "../utilities/fetchMediaItems";
 import { demoAnimationItems } from "../../../signals/demoAssets";
 import type { MediaItem } from "../../../models/assets";
+import type { Pagination } from "../../../models/pagination";
 
 // Skeletal animation clips for the library UIs (the AssetModal Animations
 // section and the standalone AnimationsModal). GLB/GLTF only — the timeline's
@@ -35,6 +36,9 @@ interface AnimationLibraryState {
   featuredFetchStatus: FetchStatus;
   userAnimations?: MediaItem[];
   userFetchStatus: FetchStatus;
+  // Page-based pagination of the LAST user fetch (0-based `current` of
+  // `total_page_count`) — drives load-more for libraries past page one.
+  userNextPage?: Pagination;
 }
 
 const useAnimationLibraryStore = create<AnimationLibraryState>(() => ({
@@ -42,7 +46,20 @@ const useAnimationLibraryStore = create<AnimationLibraryState>(() => ({
   featuredFetchStatus: FetchStatus.READY,
   userAnimations: undefined,
   userFetchStatus: FetchStatus.READY,
+  userNextPage: undefined,
 }));
+
+const hasMorePages = (page: Pagination | undefined): boolean =>
+  !!page && page.current + 1 < page.total_page_count;
+
+const dedupeById = (items: MediaItem[]): MediaItem[] => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.media_id)) return false;
+    seen.add(item.media_id);
+    return true;
+  });
+};
 
 const ANIMATION_FILTERS = {
   filterEngineCategories: [FilterEngineCategories.ANIMATION],
@@ -76,6 +93,7 @@ const fetchFeaturedAnimations = async (
 
 const fetchUserAnimationsShared = async (
   adapter: PageSceneAdapter,
+  pageIndex = 0,
 ): Promise<void> => {
   const store = useAnimationLibraryStore;
   if (store.getState().userFetchStatus === FetchStatus.IN_PROGRESS) return;
@@ -85,13 +103,34 @@ const fetchUserAnimationsShared = async (
       ...ANIMATION_FILTERS,
       defaultErrorMessage: "Error fetching your animations",
       suppressErrorToast: true,
+      nextPageIndex: pageIndex,
     },
     adapter,
   );
-  store.setState({
+  store.setState((prev) => ({
     userFetchStatus: result.status,
-    ...(result.mediaItems ? { userAnimations: result.mediaItems } : {}),
-  });
+    ...(result.mediaItems
+      ? {
+          // Page 0 = refresh (replace); later pages append, deduped by
+          // media id in case a refresh raced a load-more.
+          userAnimations:
+            pageIndex > 0
+              ? dedupeById([
+                  ...(prev.userAnimations ?? []),
+                  ...result.mediaItems,
+                ])
+              : result.mediaItems,
+          userNextPage: result.nextPage,
+        }
+      : {}),
+  }));
+};
+
+const loadMoreUserAnimationsShared = (adapter: PageSceneAdapter): void => {
+  const { userFetchStatus, userNextPage } = useAnimationLibraryStore.getState();
+  if (userFetchStatus === FetchStatus.IN_PROGRESS) return;
+  if (!hasMorePages(userNextPage)) return;
+  void fetchUserAnimationsShared(adapter, userNextPage!.current + 1);
 };
 
 export const useAnimationLibrary = (): {
@@ -99,6 +138,10 @@ export const useAnimationLibrary = (): {
   defaultAnimations: MediaItem[];
   allAnimations: MediaItem[];
   fetchUserAnimations: () => void;
+  // Scroll-driven pagination of the user's uploads (the featured list stays
+  // a single page; user libraries are the unbounded ones).
+  loadMoreUserAnimations: () => void;
+  hasMoreUserAnimations: boolean;
   fetchStatuses: FetchStatus[];
 } => {
   const editor = useContext(EngineContext);
@@ -107,6 +150,7 @@ export const useAnimationLibrary = (): {
     featuredFetchStatus,
     userAnimations,
     userFetchStatus,
+    userNextPage,
   } = useAnimationLibraryStore();
 
   const fetchUserAnimations = useCallback(() => {
@@ -114,6 +158,12 @@ export const useAnimationLibrary = (): {
     if (!adapter) return;
     void fetchFeaturedAnimations(adapter);
     void fetchUserAnimationsShared(adapter);
+  }, [editor]);
+
+  const loadMoreUserAnimations = useCallback(() => {
+    const adapter = editor?.adapter;
+    if (!adapter) return;
+    loadMoreUserAnimationsShared(adapter);
   }, [editor]);
 
   const defaultAnimations = useMemo(
@@ -132,6 +182,8 @@ export const useAnimationLibrary = (): {
     defaultAnimations,
     allAnimations,
     fetchUserAnimations,
+    loadMoreUserAnimations,
+    hasMoreUserAnimations: hasMorePages(userNextPage),
     fetchStatuses: [featuredFetchStatus, userFetchStatus],
   };
 };
