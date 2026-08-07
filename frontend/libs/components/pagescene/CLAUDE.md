@@ -265,12 +265,15 @@ then one row per character is the right model.
   gap so a character's strips never overlap; `nextStartAfter` bounds trim (`resizeClipLane`) and
   auto-length (`resolveClipDuration`) against the following clip. `evaluateAt` then has at most one
   active clip at any playhead, so playback is an unambiguous sequence.
-- **Runtime revalidation**: mixers/rest poses hold object-INSTANCE refs, but delete→undo and
-  in-session scene reloads recreate objects under the same uuids. `CharacterAnimationManager.
-  revalidate()` (subscribed to `OutlinerRefreshedEvent` alongside the skeleton-helper sync)
-  purges runtimes whose mixer root no longer matches the live object and re-binds their lanes;
-  `addLane` drops (rather than keeps) the runtime registration when the object is unresolvable
-  so the retry can happen. Skeleton-helper `sync()` self-heals the same two cases: it purges and
+- **Runtime revalidation (loop-free)**: mixers/rest poses hold object-INSTANCE refs, but
+  delete→undo and in-session scene reloads recreate objects under the same uuids. Every lane
+  runtime lands in a TERMINAL state — bound, missing-object (`boundRoot: null`), or unbindable
+  (rig-less/clip-less target; one warn, no fetch) — and `CharacterAnimationManager.revalidate()`
+  (subscribed to `OutlinerRefreshedEvent` alongside the skeleton-helper sync) reassesses a lane
+  ONLY when the live top-level root instance for its uuid differs from `boundRoot` (object
+  appeared/vanished/replaced). One map lookup per lane per refresh; no traverses, timers, fetch
+  retries, or per-refresh re-adds. A uuid-resolvable root is always fully loaded (all load paths
+  stamp the uuid post-load), which is what makes rig-lessness a terminal verdict. Skeleton-helper `sync()` self-heals the same two cases: it purges and
   recreates helpers that are orphaned (scene reloads strip children; the map survives) or whose
   `helper.root` no longer matches the live object for that uuid.
 - **Rest-pose in gaps** (was bind-pose): a disabled three.js action leaves the skeleton frozen on

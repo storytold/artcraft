@@ -17,7 +17,8 @@ import * as THREE from "three";
 import type Editor from "../editor";
 import type { ClipLane } from "../timeline/types";
 
-// Per-lane runtime state. `action` is null while the clip GLB is still loading.
+// Per-lane runtime state. `action` is null while the clip GLB is still
+// loading — or TERMINALLY, when the lane can't bind (see `boundRoot`).
 interface LaneRuntime {
   laneId: string;
   characterUuid: string;
@@ -31,6 +32,12 @@ interface LaneRuntime {
   // default to a compact width, so this is usually shorter than the clip;
   // a non-loop strip longer than the clip freezes on the last frame.
   stripDuration: number;
+  // The scene root this runtime was assessed against, or null when the
+  // object didn't exist at add time. Every lane state is TERMINAL:
+  // revalidate() reassesses a lane only when the live root INSTANCE for its
+  // uuid differs from boundRoot (object appeared, vanished, or was replaced
+  // under the same uuid) — never on a timer or per-refresh retry loop.
+  boundRoot: THREE.Object3D | null;
 }
 
 // Captured local transform of one node, for rest-pose restoration.
@@ -139,38 +146,43 @@ export class CharacterAnimationManager {
     for (const mixer of this.mixers.values()) mixer.update(0);
   }
 
-  // Re-bind characters whose scene object was REPLACED under the same uuid.
-  // Delete→undo restores and in-session scene reloads (loadScene/loadCache/
-  // Reset-to-original) recreate objects with their saved uuids, but mixers
-  // and rest poses hold OBJECT-INSTANCE references — without this, the
-  // runtime keeps animating the detached old root forever while the visible
-  // replacement never plays. Called on every outliner refresh (the funnel
-  // all object-lifecycle changes already pass through); cheap when nothing
-  // changed.
+  // Reassess lanes/mixers whose scene object CHANGED — appeared (undo
+  // restoring a deleted character), vanished, or was replaced under the
+  // same uuid (delete→undo, in-session scene reloads); mixers and rest
+  // poses hold object-instance references, so a replaced root would
+  // otherwise keep the runtime animating the detached old object forever.
+  //
+  // Called on every outliner refresh (the funnel all object-lifecycle
+  // changes pass through) but deliberately LOOP-FREE: lane states are
+  // terminal, and "changed" is one map lookup per lane/mixer against the
+  // top-level roots — no traverses, no fetches, and sync() runs only when
+  // something was actually purged. An idle refresh costs O(children+lanes).
   revalidate(): void {
     const timeline = this.editor.timelineController.getTimeline();
     if (!timeline) return;
-    const staleUuids = new Set<string>();
-    for (const [uuid, mixer] of this.mixers) {
-      const current = this.findObject(uuid);
-      if (!current || mixer.getRoot() !== current) staleUuids.add(uuid);
+    const roots = new Map<string, THREE.Object3D>();
+    for (const child of this.editor.activeScene.scene.children) {
+      roots.set(child.uuid, child);
     }
-    if (staleUuids.size > 0) {
-      for (const rt of [...this.lanes.values()]) {
-        if (staleUuids.has(rt.characterUuid)) this.disposeLane(rt.laneId);
-      }
-      for (const uuid of staleUuids) {
-        this.mixers.get(uuid)?.stopAllAction();
+    let changed = false;
+    for (const [uuid, mixer] of [...this.mixers]) {
+      if (roots.get(uuid) !== mixer.getRoot()) {
+        mixer.stopAllAction();
         this.mixers.delete(uuid);
         this.restPoses.delete(uuid);
+        changed = true;
       }
     }
-    // sync() recreates runtimes for the lanes purged above — and for lanes
-    // that never got one because their object didn't exist at add time
-    // (addLane drops the registration when the object is unresolvable).
-    // Re-posing happens in addLane's own tail evaluate, so nothing more to
-    // do here.
-    this.sync(timeline.clipLanes);
+    for (const rt of [...this.lanes.values()]) {
+      if ((roots.get(rt.characterUuid) ?? null) !== rt.boundRoot) {
+        this.disposeLane(rt.laneId);
+        changed = true;
+      }
+    }
+    // sync() re-registers the purged lanes against the new reality; each
+    // lands in a fresh terminal state (bound / missing / unbindable).
+    // Re-posing happens in addLane's own tail evaluate.
+    if (changed) this.sync(timeline.clipLanes);
   }
 
   clear(): void {
@@ -196,17 +208,19 @@ export class CharacterAnimationManager {
       action: null,
       clipDuration: lane.strip.duration,
       stripDuration: lane.strip.duration,
+      boundRoot: null,
     };
     this.lanes.set(lane.id, rt);
 
     const character = this.findObject(lane.objectUuid);
     if (!character) {
-      // Unresolvable object: drop the registration instead of keeping a dead
-      // runtime, so a later sync()/revalidate() retries once the object
+      // Terminal "missing object" state (boundRoot stays null). The
+      // registration is KEPT so sync() never re-attempts it; revalidate()
+      // revives the lane exactly once, when a root for this uuid
       // (re)appears — e.g. undo restoring a deleted character.
-      this.lanes.delete(lane.id);
       return;
     }
+    rt.boundRoot = character;
 
     let clip: THREE.AnimationClip | undefined;
     if (lane.strip.bakedClipIndex !== undefined) {
@@ -228,6 +242,28 @@ export class CharacterAnimationManager {
       }
       clip = source.clone();
     } else {
+      // Skeletal clips need a rig to bind to, and a uuid-resolvable root is
+      // always FULLY loaded (every load path stamps the target uuid only
+      // after its GLB arrives — verified across create, scene-load and
+      // undo-restore paths), so a rig-less subtree is a terminal verdict,
+      // not a loading state: the lane stays registered as unbindable — one
+      // warn, no fetch, no retry — until revalidate() sees the root
+      // instance change.
+      let hasRig = false;
+      character.traverse((node) => {
+        if (
+          (node as THREE.Bone).isBone ||
+          (node as THREE.SkinnedMesh).isSkinnedMesh
+        ) {
+          hasRig = true;
+        }
+      });
+      if (!hasRig) {
+        console.warn(
+          `Animation clip lane targets object ${lane.objectUuid}, which has no rig (no bones/skinned mesh) — strip will not play.`,
+        );
+        return;
+      }
       const glb = await this.editor.activeScene.loadRawGlb(
         lane.strip.sourceMediaId,
       );
@@ -364,7 +400,11 @@ export class CharacterAnimationManager {
     });
   }
 
+  // Lane targets are always top-level scene roots (drops, clicks and baked
+  // adds all attach to outliner-level objects) — no deep traverse needed.
   private findObject(uuid: string): THREE.Object3D | undefined {
-    return this.editor.activeScene.scene.getObjectByProperty("uuid", uuid);
+    return this.editor.activeScene.scene.children.find(
+      (child) => child.uuid === uuid,
+    );
   }
 }
