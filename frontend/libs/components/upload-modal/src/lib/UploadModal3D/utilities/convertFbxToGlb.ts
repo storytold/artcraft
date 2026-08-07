@@ -85,6 +85,21 @@ function getWorker(): Worker | null {
       worker = null;
       for (const job of jobs) job.reject(new WorkerUnavailableError());
     };
+    worker.onmessageerror = () => {
+      // A message failed structured-clone deserialization. Without this the
+      // affected job would hang forever — entry stuck on "converting",
+      // Upload stuck at "Converting...". We can't tell WHICH message died,
+      // so fail every pending job into a retryable error (a plain Error,
+      // not WorkerUnavailableError: the worker itself still works, so no
+      // main-thread fallback).
+      const jobs = [...pendingJobs.values()];
+      pendingJobs.clear();
+      for (const job of jobs) {
+        job.reject(
+          new Error("FBX conversion result failed to decode — please retry."),
+        );
+      }
+    };
   } catch {
     worker = null;
   }

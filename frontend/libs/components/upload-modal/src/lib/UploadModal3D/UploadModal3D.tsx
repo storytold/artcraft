@@ -144,6 +144,9 @@ export function UploadModal3D(props: Props) {
               onUploadProgress={updateUploaderState}
               onMeshlessDetected={() => {
                 if (userTouchedCategory.current) return;
+                // A scoped open's explicit category is the CALLER's intent —
+                // auto-detect only fills in when nobody chose anything.
+                if (initialCategory) return;
                 setIsAnimation(true);
                 setIsCharacter(false);
               }}

@@ -341,20 +341,24 @@ export const UploadFiles3D = ({
     const durations = new Map<File, number>();
     await Promise.all(
       files.map(async (file) => {
-        const millis = await readGlbAnimationDurationMillis(file).catch(
-          () => null,
-        );
+        // A parse REJECTION (corrupt file) and a clip-less null are
+        // different problems — conflating them sent users hunting for
+        // missing clips in files that simply couldn't be read.
+        let millis: number | null;
+        let unreadable = false;
+        try {
+          millis = await readGlbAnimationDurationMillis(file);
+        } catch {
+          millis = null;
+          unreadable = true;
+        }
         if (millis === null) {
-          setFileEntries((prev) =>
-            prev.map((entry) =>
-              entry.file === file
-                ? {
-                    ...entry,
-                    status: "error" as FileEntryStatus,
-                    errorMessage: "No animation clips found in this file.",
-                  }
-                : entry,
-            ),
+          updateFileStatusByFile(
+            file,
+            "error",
+            unreadable
+              ? "Couldn't read this file — it may be corrupt."
+              : "No animation clips found in this file.",
           );
         } else {
           durations.set(file, millis);
@@ -384,14 +388,21 @@ export const UploadFiles3D = ({
     updateFileStatusByFile(entry.file, "uploading");
     let durationMillis: number | undefined;
     if (isAnimationUpload) {
-      const millis = await readGlbAnimationDurationMillis(entry.file).catch(
-        () => null,
-      );
+      let millis: number | null;
+      let unreadable = false;
+      try {
+        millis = await readGlbAnimationDurationMillis(entry.file);
+      } catch {
+        millis = null;
+        unreadable = true;
+      }
       if (millis === null) {
         updateFileStatusByFile(
           entry.file,
           "error",
-          "No animation clips found in this file.",
+          unreadable
+            ? "Couldn't read this file — it may be corrupt."
+            : "No animation clips found in this file.",
         );
         return;
       }
