@@ -233,9 +233,12 @@ class DndAsset {
 
   // ─── animation-clip drags ─────────────────────────────────────────────
 
-  // Monotonic token so a queued drop (below) that gets superseded by a
-  // newer drop never lands twice.
-  private pendingDropToken = 0;
+  // Per-clip monotonic tokens: a re-drop of the SAME clip while its
+  // inspection is still loading supersedes the earlier queued drop (an
+  // impatient retry must not double-add), while queued drops of OTHER
+  // clips complete independently — a single global token silently
+  // cancelled unrelated pending drops.
+  private pendingDropTokens = new Map<string, number>();
 
   // Resolve + complete an animation drop. Silently cancels when nothing
   // droppable is under the cursor; toasts when the target is incompatible or
@@ -253,7 +256,10 @@ class DndAsset {
   ): void {
     const target = this.findAnimationDropTarget(event);
     if (!target) return;
-    const token = ++this.pendingDropToken;
+    // Bumped on every drop of this clip — including the synchronous path,
+    // so a resolved re-drop also invalidates any stale queued one.
+    const token = (this.pendingDropTokens.get(item.media_id) ?? 0) + 1;
+    this.pendingDropTokens.set(item.media_id, token);
     if (this.activeClipNames !== undefined) {
       this.completeAnimationDrop(editor, item, target, this.activeClipNames);
       return;
@@ -266,7 +272,8 @@ class DndAsset {
       return;
     }
     void inspection.then((names) => {
-      if (token !== this.pendingDropToken) return; // superseded by a newer drop
+      // Superseded by a newer drop of this same clip.
+      if (this.pendingDropTokens.get(item.media_id) !== token) return;
       this.completeAnimationDrop(editor, item, target, names);
     });
   }
