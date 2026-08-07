@@ -141,9 +141,22 @@ export const TimelineEditor = () => {
       ) {
         return;
       }
+      // The selection can be stale (Cancel / undo of a Save replace the
+      // timeline wholesale). Never swallow the key for a target that no
+      // longer exists — clear the selection and let the engine's own
+      // Delete handler (selected scene object) see the event.
+      const keyframeExists = editor?.timelineController
+        .getTimeline()
+        ?.tracks.some((t) =>
+          t.keyframes.some((k) => k.id === selectedKeyframeId),
+        );
+      if (!editor || !keyframeExists) {
+        usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
-      if (editor) deleteKeyframe(editor, selectedKeyframeId);
+      deleteKeyframe(editor, selectedKeyframeId);
       usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
     };
     const onPointerDown = (e: PointerEvent) => {
@@ -183,9 +196,18 @@ export const TimelineEditor = () => {
         return;
       }
       if (usePageSceneStore.getState().timelineSelectedKeyframeId) return;
+      // Same staleness rule as the keyframe handler above: a dead id must
+      // not eat the key meant for the engine's scene-object Delete.
+      if (
+        !editor ||
+        !editor.timelineController.getClipLane(selectedClipLaneId)
+      ) {
+        usePageSceneStore.getState().setTimelineSelectedClipLane(null);
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
-      if (editor) removeClipLane(editor, selectedClipLaneId);
+      removeClipLane(editor, selectedClipLaneId);
       usePageSceneStore.getState().setTimelineSelectedClipLane(null);
     };
     const onPointerDown = (e: PointerEvent) => {
