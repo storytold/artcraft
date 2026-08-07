@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
+import type { Board } from "../boards/boardTypes";
 import { useMoodboardStore } from "../canvas/MoodboardStore";
 import type {
   MoodboardAdapter,
