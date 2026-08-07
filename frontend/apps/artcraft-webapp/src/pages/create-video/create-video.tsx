@@ -10,7 +10,12 @@ import {
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { Button, ToggleButton } from "@storyteller/ui-button";
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -71,8 +76,11 @@ import {
 import {
   effectivePromptMaxLength,
   getCreatorIconPathForModelId,
+  getCreatorIconSourceForModelId,
   getModelDescription,
+  getModelFamilyName,
   getModelInfo,
+  modelCreatorFromBackend,
 } from "@storyteller/model-list";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -149,20 +157,33 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  return models.map((model) => ({
-    label: model.full_name || model.model,
-    selected: model.model === selectedId,
-    description: getModelDescription(model.model, model.extra_info_short),
-    info: getModelInfo(model.model, model.extra_info) || undefined,
-    icon: (
-      <img
-        src={getCreatorIconPathForModelId(model.model)}
-        alt={`${model.model} logo`}
-        className="h-4 w-4 icon-auto-contrast"
-      />
-    ),
-    action: model.model,
-  }));
+  return models.map((model) => {
+    const badges = [
+      ...(model.show_generate_with_sound_toggle
+        ? [{ label: "Audio Support" }]
+        : []),
+      ...(model.ending_keyframe_supported ? [{ label: "Start/End" }] : []),
+      ...(model.image_references_supported ? [{ label: "Reference" }] : []),
+    ];
+    const iconSource = getCreatorIconSourceForModelId(model.model);
+    return {
+      label: model.full_name || model.model,
+      selected: model.model === selectedId,
+      description: getModelDescription(model.model, model.extra_info_short),
+      info: getModelInfo(model.model, model.extra_info) || undefined,
+      badges: badges.length > 0 ? badges : undefined,
+      icon: (
+        <img
+          src={iconSource.src}
+          alt={`${model.model} logo`}
+          className={
+            iconSource.isColor ? "h-4 w-4" : "h-4 w-4 icon-auto-contrast"
+          }
+        />
+      ),
+      action: model.model,
+    };
+  });
 }
 
 function buildSizePopoverItems(
@@ -618,6 +639,25 @@ export default function CreateVideo() {
   const modelItems = useMemo(
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
     [apiModels, selectedModel?.model],
+  );
+  // Family-grouped variant for the desktop picker. The mobile bottom sheet
+  // keeps the flat `modelItems` (no flyouts on touch).
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const groupedModelItems = useMemo(
+    () =>
+      modelPickerStyle === "grouped"
+        ? groupModelItems(modelItems, (item) =>
+            getModelFamilyName(
+              item.action,
+              modelCreatorFromBackend(
+                item.action
+                  ? _modelLookup.get(item.action)?.model_creator
+                  : undefined,
+              ),
+            ),
+          )
+        : modelItems,
+    [modelItems, modelPickerStyle],
   );
   const sizeItems = useMemo(
     () =>
@@ -1149,17 +1189,13 @@ export default function CreateVideo() {
 
   const usedVideoTokens = useMemo(
     () =>
-      referenceVideos
-        .map((v) => v.mediaToken)
-        .filter((t): t is string => !!t),
+      referenceVideos.map((v) => v.mediaToken).filter((t): t is string => !!t),
     [referenceVideos],
   );
 
   const usedAudioTokens = useMemo(
     () =>
-      referenceAudios
-        .map((a) => a.mediaToken)
-        .filter((t): t is string => !!t),
+      referenceAudios.map((a) => a.mediaToken).filter((t): t is string => !!t),
     [referenceAudios],
   );
 
@@ -1732,11 +1768,11 @@ export default function CreateVideo() {
                 closeOnClick
               >
                 <PopoverMenu
-                  items={modelItems}
+                  items={groupedModelItems}
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-[360px]"
+                  panelClassName="w-[280px]"
                   richList
                   triggerIcon={
                     <img

@@ -1,6 +1,8 @@
 import { ModelCreator } from "./ModelCreator.js";
 import {
+  CreatorIconSource,
   getCreatorIconPath,
+  getCreatorIconSource,
   getServicesBasePath,
 } from "./ModelCreatorIcons.js";
 import { ALL_MODELS_LIST } from "../../lists/AllModels.js";
@@ -44,6 +46,13 @@ const MODEL_ID_PREFIX_ICON_FILES: Array<[string, string]> = [
   ["rodin", "hyper3d.svg"],
 ];
 
+// Full-color counterparts (services/color/) for the 3D brands above. Brands
+// missing here fall back to the mono file + auto-contrast filter.
+const MODEL_ID_PREFIX_COLOR_ICON_FILES: Array<[string, string]> = [
+  ["tripo", "tripo.svg"],
+  ["meshy", "meshy.svg"],
+];
+
 /**
  * Resolve a model id (canonical or tauri) to its creator's icon path.
  * Falls back to a prefix match, then to the generic icon.
@@ -61,4 +70,34 @@ export const getCreatorIconPathForModelId = (modelId: string): string => {
     if (modelId.startsWith(prefix)) return getCreatorIconPath(creator);
   }
   return `${base}/generic.svg`;
+};
+
+/**
+ * Color-first icon source for model picker LIST ROWS, resolved from a model
+ * id (canonical or tauri). Same resolution order as
+ * `getCreatorIconPathForModelId`, preferring the full-color variant at each
+ * step and reporting whether the auto-contrast filter is still needed.
+ */
+export const getCreatorIconSourceForModelId = (
+  modelId: string,
+): CreatorIconSource => {
+  const model = ALL_MODELS_LIST.find(
+    (m) => m.id === modelId || m.tauriId === modelId,
+  );
+  if (model) return getCreatorIconSource(model.creator);
+  const base = getServicesBasePath();
+  for (const [prefix, file] of MODEL_ID_PREFIX_COLOR_ICON_FILES) {
+    if (modelId.startsWith(prefix)) {
+      return { src: `${base}/color/${file}`, isColor: true };
+    }
+  }
+  for (const [prefix, file] of MODEL_ID_PREFIX_ICON_FILES) {
+    if (modelId.startsWith(prefix)) {
+      return { src: `${base}/${file}`, isColor: false };
+    }
+  }
+  for (const [prefix, creator] of MODEL_ID_PREFIX_CREATORS) {
+    if (modelId.startsWith(prefix)) return getCreatorIconSource(creator);
+  }
+  return { src: `${base}/generic.svg`, isColor: false };
 };

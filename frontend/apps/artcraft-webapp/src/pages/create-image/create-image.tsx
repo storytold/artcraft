@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -61,8 +66,11 @@ import {
 } from "@storyteller/omni-gen";
 import {
   getCreatorIconPathForModelId,
+  getCreatorIconSourceForModelId,
   getModelDescription,
+  getModelFamilyName,
   getModelInfo,
+  modelCreatorFromBackend,
 } from "@storyteller/model-list";
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
@@ -83,20 +91,25 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  return models.map((model) => ({
-    label: model.full_name || model.model,
-    selected: model.model === selectedId,
-    description: getModelDescription(model.model, model.extra_info_short),
-    info: getModelInfo(model.model, model.extra_info) || undefined,
-    icon: (
-      <img
-        src={getCreatorIconPathForModelId(model.model)}
-        alt={`${model.model} logo`}
-        className="h-4 w-4 icon-auto-contrast"
-      />
-    ),
-    action: model.model, // use action to carry the model id
-  }));
+  return models.map((model) => {
+    const iconSource = getCreatorIconSourceForModelId(model.model);
+    return {
+      label: model.full_name || model.model,
+      selected: model.model === selectedId,
+      description: getModelDescription(model.model, model.extra_info_short),
+      info: getModelInfo(model.model, model.extra_info) || undefined,
+      icon: (
+        <img
+          src={iconSource.src}
+          alt={`${model.model} logo`}
+          className={
+            iconSource.isColor ? "h-4 w-4" : "h-4 w-4 icon-auto-contrast"
+          }
+        />
+      ),
+      action: model.model, // use action to carry the model id
+    };
+  });
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -273,6 +286,25 @@ export default function CreateImage() {
   const modelItems = useMemo(
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
     [apiModels, selectedModel?.model],
+  );
+  // Family-grouped variant for the desktop picker. The mobile bottom sheet
+  // keeps the flat `modelItems` (no flyouts on touch).
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const groupedModelItems = useMemo(
+    () =>
+      modelPickerStyle === "grouped"
+        ? groupModelItems(modelItems, (item) =>
+            getModelFamilyName(
+              item.action,
+              modelCreatorFromBackend(
+                item.action
+                  ? _modelLookup.get(item.action)?.model_creator
+                  : undefined,
+              ),
+            ),
+          )
+        : modelItems,
+    [modelItems, modelPickerStyle],
   );
 
   const hasContent =
@@ -706,11 +738,11 @@ export default function CreateImage() {
                 closeOnClick
               >
                 <PopoverMenu
-                  items={modelItems}
+                  items={groupedModelItems}
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-[360px]"
+                  panelClassName="w-[280px]"
                   richList
                   triggerIcon={
                     <img

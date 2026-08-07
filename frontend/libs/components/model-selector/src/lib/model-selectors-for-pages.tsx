@@ -3,7 +3,7 @@ import type { PopoverItem } from "@storyteller/ui-popover";
 import { faCube, faFilm, faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  getCreatorIcon,
+  getCreatorListIcon,
   Model,
   ImageModel,
   VideoModel,
@@ -17,11 +17,24 @@ export type ModelList = Omit<PopoverItem, "selected">[];
 
 const withIcon = (creatorIcon: any, fallback: any) => creatorIcon || fallback;
 
+// Capability tag pills shown under video model rows.
+const videoCapabilityBadges = (model: Model) => {
+  if (model.kind !== "video_model") return undefined;
+  const video = model as VideoModel;
+  const badges = [
+    ...(video.generateWithSound ? [{ label: "Audio Support" }] : []),
+    ...(video.endFrame ? [{ label: "Start/End" }] : []),
+    ...(video.supportsReferenceMode ? [{ label: "Reference" }] : []),
+  ];
+  return badges.length > 0 ? badges : undefined;
+};
+
 const buildItems = (models: Model[], fallbackIcon: any) =>
   models.map((model: Model) => ({
     label: model.selectorName,
-    icon: withIcon(getCreatorIcon(model.creator), fallbackIcon),
+    icon: withIcon(getCreatorListIcon(model.creator), fallbackIcon),
     description: model.selectorDescription,
+    badges: videoCapabilityBadges(model),
     modelConfig: model.toLegacyModelConfig(), // Access to full object.
     model: model,
   }));

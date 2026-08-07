@@ -3,6 +3,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCog, faUser, faKey } from "@fortawesome/pro-solid-svg-icons";
 import { Switch } from "@storyteller/ui-switch";
+import { useModelPickerStyleStore } from "@storyteller/ui-popover";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
 import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
@@ -86,6 +87,8 @@ function GeneralPanel() {
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
   const lightboxSound = useLightboxSoundStore((s) => s.soundEnabled);
   const setLightboxSound = useLightboxSoundStore((s) => s.setSoundEnabled);
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const setModelPickerStyle = useModelPickerStyleStore((s) => s.setStyle);
 
   return (
     <div className="space-y-4 text-base-fg">
@@ -115,6 +118,21 @@ function GeneralPanel() {
         <Switch
           enabled={lightboxSound}
           setEnabled={setLightboxSound}
+          offClassName="bg-white/20"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Group models by family</p>
+          <p className="text-xs opacity-70">
+            When on (default), the model picker groups models into submenus by
+            family, like Seedance or Veo. When off, every model shows in one
+            flat list.
+          </p>
+        </div>
+        <Switch
+          enabled={modelPickerStyle === "grouped"}
+          setEnabled={(on) => setModelPickerStyle(on ? "grouped" : "flat")}
           offClassName="bg-white/20"
         />
       </div>

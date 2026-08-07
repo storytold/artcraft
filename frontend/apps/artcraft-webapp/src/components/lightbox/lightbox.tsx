@@ -390,7 +390,7 @@ export function Lightbox({
                 muted={!soundEnabled}
                 playsInline
                 disablePictureInPicture
-                controlsList="nodownload noplaybackrate nofullscreen"
+                controlsList="nodownload noplaybackrate"
                 className="h-full w-full object-contain"
                 onLoadedData={(e) => {
                   setMediaLoaded(true);

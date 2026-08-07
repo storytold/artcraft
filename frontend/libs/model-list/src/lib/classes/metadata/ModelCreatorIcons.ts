@@ -30,10 +30,43 @@ const CREATOR_ICON_FILES: Partial<Record<ModelCreator, string>> = {
   [ModelCreator.Suno]: "suno.svg",
 };
 
+// Full-color brand icons (LobeHub icon set, under services/color/) shown in
+// model picker LIST ROWS. Creators absent here fall back to the mono icon
+// rendered with the `icon-auto-contrast` invert filter. Trigger buttons keep
+// using the mono `getCreatorIcon` path.
+const CREATOR_COLOR_ICON_FILES: Partial<Record<ModelCreator, string>> = {
+  [ModelCreator.Bytedance]: "bytedance.svg",
+  [ModelCreator.Google]: "google.svg",
+  [ModelCreator.Kling]: "kling.svg",
+  [ModelCreator.Hailuo]: "minimax.svg",
+  [ModelCreator.Vidu]: "vidu.svg",
+  [ModelCreator.Alibaba]: "alibaba.svg",
+  [ModelCreator.Stability]: "stability.svg",
+  [ModelCreator.Tencent]: "tencent.svg",
+  [ModelCreator.Fal]: "fal.svg",
+};
+
+export interface CreatorIconSource {
+  src: string;
+  // Color icons render as-is; mono fallbacks need the `icon-auto-contrast`
+  // invert filter to stay visible on dark surfaces.
+  isColor: boolean;
+}
+
 export const getCreatorIconPath = (creator: ModelCreator): string => {
   const base = getServicesBasePath();
   const file = CREATOR_ICON_FILES[creator] ?? "generic.svg";
   return `${base}/${file}`;
+};
+
+export const getCreatorIconSource = (
+  creator: ModelCreator,
+): CreatorIconSource => {
+  const colorFile = CREATOR_COLOR_ICON_FILES[creator];
+  if (colorFile) {
+    return { src: `${getServicesBasePath()}/color/${colorFile}`, isColor: true };
+  }
+  return { src: getCreatorIconPath(creator), isColor: false };
 };
 
 export const getCreatorIcon = (
@@ -45,5 +78,15 @@ export const getCreatorIcon = (
     src: path,
     alt: `${creator} logo`,
     className,
+  });
+};
+
+// Row icon for model picker lists: full-color when available, mono otherwise.
+export const getCreatorListIcon = (creator: ModelCreator): ReactNode => {
+  const { src, isColor } = getCreatorIconSource(creator);
+  return React.createElement("img", {
+    src,
+    alt: `${creator} logo`,
+    className: isColor ? "h-4 w-4" : "h-4 w-4 icon-auto-contrast",
   });
 };

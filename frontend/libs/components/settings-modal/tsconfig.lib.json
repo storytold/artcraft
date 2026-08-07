@@ -50,6 +50,9 @@
       "path": "../../model-list/tsconfig.lib.json"
     },
     {
+      "path": "../popover/tsconfig.lib.json"
+    },
+    {
       "path": "../promptbox/tsconfig.lib.json"
     },
     {
