@@ -231,7 +231,7 @@ export const UploadFiles3D = ({
     selectAnimationRef.current = null;
     setSkeletonVisibleRef.current = null;
 
-    const { renderer, camera, selectAnimation, setSkeletonVisible } =
+    const { renderer, camera, selectAnimation, setSkeletonVisible, cancel } =
       loadPreviewOnCanvas({
         file: currentFile,
         canvas: canvasRef.current,
@@ -248,7 +248,13 @@ export const UploadFiles3D = ({
     selectAnimationRef.current = selectAnimation;
     setSkeletonVisibleRef.current = setSkeletonVisible;
 
-    return disposeRenderer;
+    return () => {
+      // Cancel BEFORE disposing: an in-flight load's callbacks must not
+      // render on the disposed renderer or write into the next preview's
+      // status/animation/rig state (or its thumbnail).
+      cancel();
+      disposeRenderer();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewIndex, filesVersion]);
 
@@ -276,14 +282,18 @@ export const UploadFiles3D = ({
     );
   }, [fileSubtypes]);
 
-  const updateFileStatus = (
-    index: number,
+  // Status updates are keyed by FILE IDENTITY, never by row index: async
+  // upload/parse callbacks outlive list mutations (removing a row, re-picks),
+  // and a positional index captured before an await would land the status on
+  // whatever row shifted into that slot.
+  const updateFileStatusByFile = (
+    file: File,
     status: FileEntryStatus,
     errorMessage?: string,
   ) => {
     setFileEntries((prev) =>
-      prev.map((entry, i) =>
-        i === index ? { ...entry, status, errorMessage } : entry,
+      prev.map((entry) =>
+        entry.file === file ? { ...entry, status, errorMessage } : entry,
       ),
     );
   };
@@ -341,22 +351,29 @@ export const UploadFiles3D = ({
     // A failed FBX conversion retries the conversion, not an upload — the
     // raw FBX must never reach the backend.
     if (isFbx(entry.file)) {
-      updateFileStatus(index, "converting");
+      updateFileStatusByFile(entry.file, "converting");
       beginFbxConversion(entry.file);
       return;
     }
+    // Mark uploading BEFORE the duration parse: leaving the row on "error"
+    // through that await kept the retry button live, so rapid clicks ran
+    // duplicate uploads.
+    updateFileStatusByFile(entry.file, "uploading");
     let durationMillis: number | undefined;
     if (isAnimationUpload) {
       const millis = await readGlbAnimationDurationMillis(entry.file).catch(
         () => null,
       );
       if (millis === null) {
-        updateFileStatus(index, "error", "No animation clips found in this file.");
+        updateFileStatusByFile(
+          entry.file,
+          "error",
+          "No animation clips found in this file.",
+        );
         return;
       }
       durationMillis = millis;
     }
-    updateFileStatus(index, "uploading");
     await upload3DObjects({
       title: entry.file.name.slice(0, entry.file.name.lastIndexOf(".")),
       assetFile: entry.file,
@@ -366,13 +383,13 @@ export const UploadFiles3D = ({
       thumbnailSnapshot: thumbnails.get(entry.file),
       progressCallback: (state) => {
         if (state.status === UploaderStates.success) {
-          updateFileStatus(index, "success");
+          updateFileStatusByFile(entry.file, "success");
         } else if (
           state.status === UploaderStates.assetError ||
           state.status === UploaderStates.coverCreateError ||
           state.status === UploaderStates.coverSetError
         ) {
-          updateFileStatus(index, "error", state.errorMessage);
+          updateFileStatusByFile(entry.file, "error", state.errorMessage);
         }
       },
     });
@@ -413,26 +430,21 @@ export const UploadFiles3D = ({
       return;
     }
 
-    const pendingEntries = fileEntries
-      .map((e, i) => ({ entry: e, originalIndex: i }))
-      .filter(
-        // Un-converted FBX entries (conversion failed) are excluded — the
-        // raw FBX must never be uploaded.
-        ({ entry }) =>
-          entry.status !== "success" &&
-          entry.file !== undefined &&
-          !isFbx(entry.file),
-      );
+    // Un-converted FBX entries (conversion failed) are excluded — the raw
+    // FBX must never be uploaded.
+    const pendingEntries = fileEntries.filter(
+      (entry) =>
+        entry.status !== "success" &&
+        entry.file !== undefined &&
+        !isFbx(entry.file),
+    );
     // Entries dropped from the submission (failed FBX conversions here,
     // clip-less animation files below) still count against the run's
     // outcome — a run that silently skips files must not report success.
     let excludedCount =
       fileEntries.filter((e) => e.status !== "success").length -
       pendingEntries.length;
-    let files = pendingEntries.map(({ entry }) => entry.file!);
-    let originalIndices = pendingEntries.map(
-      ({ originalIndex }) => originalIndex,
-    );
+    let files = pendingEntries.map((entry) => entry.file!);
 
     if (files.length === 0) {
       setSelectionError(
@@ -452,7 +464,6 @@ export const UploadFiles3D = ({
       const keep = files.map((file) => durations!.has(file));
       excludedCount += keep.filter((kept) => !kept).length;
       files = files.filter((_, i) => keep[i]);
-      originalIndices = originalIndices.filter((_, i) => keep[i]);
       if (files.length === 0) {
         setSelectionError("No animation clips found in the selected file(s).");
         releaseSubmitGuard();
@@ -495,7 +506,7 @@ export const UploadFiles3D = ({
       animationType: subtype,
       durationsMillis: durations,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
-        updateFileStatus(originalIndices[batchIndex], status, errorMessage),
+        updateFileStatusByFile(files[batchIndex], status, errorMessage),
       onOverallProgress: (completed, total) =>
         setOverallProgress({ current: completed, total }),
       onComplete: (allSucceeded, anySucceeded) => {
@@ -524,21 +535,15 @@ export const UploadFiles3D = ({
   const retryAllFailed = async () => {
     // FBX conversion failures are excluded (they retry per-row as a
     // re-conversion); this batch path only re-uploads real GLBs.
-    let failedIndices = fileEntries
-      .map((e, i) => (e.status === "error" && !isFbx(e.file) ? i : -1))
-      .filter((i) => i !== -1);
-    if (failedIndices.length === 0) return;
-
-    let failedFiles = failedIndices
-      .map((i) => fileEntries[i].file!)
-      .filter((file) => file !== undefined);
+    let failedFiles = fileEntries
+      .filter((e) => e.status === "error" && !isFbx(e.file))
+      .map((e) => e.file);
+    if (failedFiles.length === 0) return;
 
     let durations: Map<File, number> | undefined;
     if (isAnimationUpload) {
       durations = await resolveAnimationDurations(failedFiles);
-      const keep = failedFiles.map((file) => durations!.has(file));
-      failedFiles = failedFiles.filter((_, i) => keep[i]);
-      failedIndices = failedIndices.filter((_, i) => keep[i]);
+      failedFiles = failedFiles.filter((file) => durations!.has(file));
       if (failedFiles.length === 0) return;
     }
 
@@ -561,7 +566,7 @@ export const UploadFiles3D = ({
       animationType: subtype,
       durationsMillis: durations,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
-        updateFileStatus(failedIndices[batchIndex], status, errorMessage),
+        updateFileStatusByFile(failedFiles[batchIndex], status, errorMessage),
       onOverallProgress: (completed, total) =>
         setOverallProgress({ current: completed, total }),
       onComplete: (allSucceeded, anySucceeded) => {
