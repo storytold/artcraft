@@ -44,8 +44,12 @@ const patchExpressionObjectType = (mediaType: string) => {
 export const ItemElement = ({ item }: Props) => {
   const editor = useContext(EngineContext);
   // Broken thumbnail URL (404, CORS) → swap to the icon placeholder instead
-  // of the browser's broken-image glyph + alt text.
-  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  // of the browser's broken-image glyph + alt text. Keyed by media id, NOT a
+  // boolean: the virtualized grid reuses component instances with positional
+  // cell keys, so a plain flag would stick to the CELL and blank out
+  // whichever item scrolls/filters into it next.
+  const [failedMediaId, setFailedMediaId] = useState<string | null>(null);
+  const thumbnailFailed = failedMediaId === item.media_id;
 
   // Animation cards are click-to-add (clip onto the selected character's
   // timeline row, next free slot via the controller's overlap guard) — parity
@@ -111,7 +115,7 @@ export const ItemElement = ({ item }: Props) => {
             src={item.thumbnail}
             alt={item.name}
             className="h-full w-full object-cover object-center"
-            onError={() => setThumbnailFailed(true)}
+            onError={() => setFailedMediaId(item.media_id)}
           />
         ) : (
           /* Missing/broken thumbnail: type icon on a slightly lighter card
