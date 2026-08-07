@@ -83,6 +83,17 @@ export const loadPreviewOnCanvas = ({
   const clock = new THREE.Clock();
   let mixer: THREE.AnimationMixer | null = null;
   let clips: THREE.AnimationClip[] = [];
+  // Rest pose for "T-pose (none)": local transforms snapshotted before the
+  // first action plays. THREE.Skeleton.pose() is deliberately NOT used — it
+  // rebuilds bone locals from inverse bind matrices and mis-scales rigs
+  // whose armature bakes a scale (mixamo cm-rigs), and converted plain-node
+  // rigs have no Skeleton to pose at all.
+  let restPose: Array<{
+    node: THREE.Object3D;
+    position: THREE.Vector3;
+    quaternion: THREE.Quaternion;
+    scale: THREE.Vector3;
+  }> | null = null;
 
   const selectAnimation = (index: number) => {
     if (!mixer) return;
@@ -91,12 +102,13 @@ export const loadPreviewOnCanvas = ({
       const clip = clips[index];
       if (clip) mixer.clipAction(clip).reset().play();
     } else {
-      // "None": rest skinned models in their bind (T) pose — a stopped
-      // action would freeze the skeleton on its last evaluated frame.
-      scene.traverse((child) => {
-        const skinned = child as THREE.SkinnedMesh;
-        if (skinned.isSkinnedMesh && skinned.skeleton) skinned.skeleton.pose();
-      });
+      // "None": a stopped action would freeze the model on its last
+      // evaluated frame — put every node back to its load pose instead.
+      for (const { node, position, quaternion, scale } of restPose ?? []) {
+        node.position.copy(position);
+        node.quaternion.copy(quaternion);
+        node.scale.copy(scale);
+      }
     }
   };
 
@@ -130,6 +142,18 @@ export const loadPreviewOnCanvas = ({
       onAnimations: (loadedClips) => {
         clips = loadedClips;
         if (clips.length === 0) return;
+        // Snapshot the load pose before any action can evaluate (the first
+        // mixer.update runs on the next animation-loop frame). Lights get
+        // captured too — nothing animates them, so restoring is a no-op.
+        restPose = [];
+        scene.traverse((node) => {
+          restPose!.push({
+            node,
+            position: node.position.clone(),
+            quaternion: node.quaternion.clone(),
+            scale: node.scale.clone(),
+          });
+        });
         mixer = new THREE.AnimationMixer(scene);
         mixer.clipAction(clips[0]).play(); // autoplay the first clip
         onAnimationsAvailable?.(

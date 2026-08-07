@@ -102,13 +102,39 @@ export function Viewer3D({
     }
   };
 
-  // Rest pose for skinned models when "no animation" is chosen — a stopped
-  // action would otherwise freeze the skeleton on its last evaluated frame.
-  const restoreBindPose = (model: THREE.Object3D) => {
-    model.traverse((child) => {
-      const skinned = child as THREE.SkinnedMesh;
-      if (skinned.isSkinnedMesh && skinned.skeleton) skinned.skeleton.pose();
+  // Rest pose for "T-pose (none)": local transforms of every model node,
+  // captured at load before any clip plays. THREE.Skeleton.pose() is
+  // deliberately NOT used — it rebuilds bone locals from inverse bind
+  // matrices and mis-scales rigs whose armature bakes a scale (mixamo
+  // cm-rigs), the same mechanism as the timeline's "vanishing character"
+  // bug — and plain-node converted rigs have no Skeleton to pose at all.
+  const restPoseRef = useRef<Array<{
+    node: THREE.Object3D;
+    position: THREE.Vector3;
+    quaternion: THREE.Quaternion;
+    scale: THREE.Vector3;
+  }> | null>(null);
+
+  const captureRestPose = (model: THREE.Object3D) => {
+    const rest: NonNullable<typeof restPoseRef.current> = [];
+    model.traverse((node) => {
+      rest.push({
+        node,
+        position: node.position.clone(),
+        quaternion: node.quaternion.clone(),
+        scale: node.scale.clone(),
+      });
     });
+    restPoseRef.current = rest;
+  };
+
+  const restoreRestPose = () => {
+    for (const { node, position, quaternion, scale } of restPoseRef.current ??
+      []) {
+      node.position.copy(position);
+      node.quaternion.copy(quaternion);
+      node.scale.copy(scale);
+    }
   };
 
   useEffect(() => {
@@ -285,6 +311,7 @@ export function Viewer3D({
     }
     stopAnimations();
     removeSkeletonHelper();
+    restPoseRef.current = null;
     setAnimationNames([]);
     setSelectedClip(-1);
     setHasRig(false);
@@ -427,6 +454,9 @@ export function Viewer3D({
           console.log("[Viewer3D] Model loaded successfully");
           const model = gltf.scene;
           onModelLoaded(model);
+          // Snapshot the load pose before any action can evaluate (the
+          // first mixer.update runs on the next animation frame).
+          captureRestPose(model);
           // Wire up any clips the model ships with; autoplay the first one.
           const clips = gltf.animations ?? [];
           if (clips.length > 0) {
@@ -494,14 +524,13 @@ export function Viewer3D({
   // clip 0 directly, so this only needs to handle user switches.
   useEffect(() => {
     const mixer = mixerRef.current;
-    const model = loadedModelRef.current;
     if (!mixer) return;
     mixer.stopAllAction();
     if (selectedClip >= 0) {
       const clip = clipsRef.current[selectedClip];
       if (clip) mixer.clipAction(clip).reset().play();
-    } else if (model) {
-      restoreBindPose(model);
+    } else {
+      restoreRestPose();
     }
   }, [selectedClip]);
 
