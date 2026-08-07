@@ -306,9 +306,11 @@ then one row per character is the right model.
   `DEFAULT_CLIP_DURATION` (1 s) instead of adopting the clip's natural length — long clips were
   eating the whole row. The strip's on-timeline width is the **authoritative play window**
   (`LaneRuntime.stripDuration` in `evaluateAt`); the clip's natural length only drives the loop
-  modulo / final-frame clamp inside it, so trimming a strip shorter genuinely cuts playback and a
-  non-loop strip trimmed longer than the clip freezes on the last frame. `resolveClipDuration` now
-  only SHRINKS an `autoDuration` strip when the clip is shorter than the default.
+  modulo / final-frame clamp inside it, so trimming a strip shorter genuinely cuts playback.
+  Strips default to **loop: true** — dragging a strip wider than the clip keeps the motion
+  cycling (a walk keeps walking, per tester expectation/old-studio behavior); the loop chip opts
+  a strip into play-once/hold-last-frame instead. `resolveClipDuration` only SHRINKS an
+  `autoDuration` strip when the clip is shorter than the default.
 - **Strip selection + delete UX**: strips are click-to-select
   (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
   click-away deselect). The **× renders only on the selected strip** (always-visible was too easy

@@ -76,6 +76,10 @@ export function setKeyframeEasing(
 // row has no free slot. Strips start at the compact DEFAULT_CLIP_DURATION
 // width (the play window — trim wider to reveal more of the clip); once the
 // GLB loads the strip shrinks if the clip is shorter (autoDuration).
+// Strips default to LOOPING: dragging a strip wider than the clip's natural
+// length keeps the motion cycling (a walk keeps walking), matching the old
+// studio's behavior — the strip's loop chip opts into play-once/hold-last-
+// frame instead.
 // A successful add expands the timeline and scrolls its row list to the
 // character (timelineRevealObjectUuid, consumed by TimelineEditor) so the
 // new strip is immediately visible.
@@ -92,7 +96,7 @@ export function addClipToCharacter(
     name: item.name ?? "Animation",
     startTime,
     duration: DEFAULT_CLIP_DURATION,
-    loop: false,
+    loop: true,
     autoDuration: true,
   });
   if (laneId) {
@@ -125,7 +129,8 @@ export function addBakedClipToObject(
     name: clip.name || `Clip ${clipIndex + 1}`,
     startTime: atTime,
     duration: Math.min(clip.duration || DEFAULT_CLIP_DURATION, DEFAULT_CLIP_DURATION),
-    loop: false,
+    // Loop by default, same as library strips (see addClipToCharacter).
+    loop: true,
   });
 }
 
