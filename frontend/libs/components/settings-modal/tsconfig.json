@@ -9,6 +9,9 @@
       "path": "../../model-list"
     },
     {
+      "path": "../popover"
+    },
+    {
       "path": "../promptbox"
     },
     {

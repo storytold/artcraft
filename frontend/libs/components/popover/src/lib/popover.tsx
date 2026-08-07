@@ -20,6 +20,7 @@ import {
   faCheck,
   faChevronUp,
   faChevronDown,
+  faChevronRight,
   faCircleCheck,
   faCircleInfo,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -307,6 +308,318 @@ export interface PopoverItem {
   tooltipDelayMs?: number;
   // Optional custom right-side node shown when item is selected
   selectedRight?: ReactNode;
+  // Renders this row as a group (e.g. a model family) whose children open in
+  // a right-side flyout submenu. Group rows never select themselves; clicking
+  // a child selects it and closes the whole popover. Only used in `richList`
+  // mode. Build model groups with `groupModelItems`.
+  subItems?: PopoverItem[];
+}
+
+interface RichListRowProps {
+  item: PopoverItem;
+  onClick?: () => void;
+  // Highlight the row while its flyout/tooltip is open.
+  active?: boolean;
+  // Overrides the default right-side selection check (e.g. a submenu chevron).
+  rightNode?: ReactNode;
+}
+
+// One rich-list row (icon tile, name, description, badges). Shared between the
+// main richList panel and the submenu flyout so group children render
+// identically to top-level rows.
+function RichListRow({
+  item,
+  onClick,
+  active = false,
+  rightNode,
+}: RichListRowProps) {
+  return (
+    <div
+      data-selected={item.selected ? "true" : undefined}
+      onClick={() => {
+        if (!item.disabled) onClick?.();
+      }}
+      className={twMerge(
+        "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
+        item.selected ? "bg-ui-controls/70" : "hover:bg-ui-controls/50",
+        !item.selected && active ? "bg-ui-controls/50" : "",
+        item.disabled ? "!cursor-not-allowed opacity-50" : "",
+      )}
+    >
+      <span
+        className={twMerge(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
+          item.selected
+            ? "border-primary bg-primary/20"
+            : "border-ui-controls-border bg-ui-controls/60",
+        )}
+      >
+        {item.icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 items-center gap-1">
+          <span
+            className={twMerge(
+              "truncate font-semibold",
+              item.selected ? "text-base-fg" : "text-base-fg/90",
+            )}
+          >
+            {item.label}
+          </span>
+          {item.info ? <InfoHint content={item.info} /> : null}
+        </div>
+        {item.description && (
+          <span className="truncate text-xs text-base-fg/55">
+            {item.description}
+          </span>
+        )}
+        {item.badges && Array.isArray(item.badges) && item.badges.length > 0 && (
+          <div className="mt-1 flex flex-row flex-wrap gap-1">
+            {item.badges.map((badge, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+              >
+                {badge?.icon && <span>{badge.icon}</span>}
+                {badge?.label || ""}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {item.trailing && (
+        <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>
+      )}
+      {rightNode ??
+        (item.selected &&
+          (item.selectedRight ?? (
+            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
+              <FontAwesomeIcon
+                icon={faCheck}
+                className="text-[11px] font-bold text-white"
+              />
+            </span>
+          )))}
+    </div>
+  );
+}
+
+interface SubmenuFlyoutProps {
+  children: React.ReactElement;
+  item: PopoverItem;
+  onSelectChild: (child: PopoverItem) => void;
+  // The enclosing popover's close, threaded into children's hoverTooltip
+  // render functions (e.g. the provider selector) so they can close everything.
+  popoverClose: () => void;
+  onOpenChange?: (open: boolean) => void;
+}
+
+// Right-side flyout submenu for grouped model rows. Portal-rendered so it
+// escapes the panel bounds, opens on hover or click (the click path doubles as
+// the touch fallback), and hides when its row scrolls out of the list.
+function SubmenuFlyout({
+  children,
+  item,
+  onSelectChild,
+  popoverClose,
+  onOpenChange,
+}: SubmenuFlyoutProps) {
+  const [isShowing, setIsShowingRaw] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [activeChildIdx, setActiveChildIdx] = useState<number | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const openTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const setIsShowing = useCallback(
+    (show: boolean) => {
+      setIsShowingRaw(show);
+      onOpenChange?.(show);
+    },
+    [onOpenChange],
+  );
+
+  // Position the flyout beside the trigger row. Returns false (without
+  // positioning) when the row is scrolled out of its list.
+  const updatePosition = useCallback((): boolean => {
+    const trigger = triggerRef.current;
+    if (!trigger) return false;
+    const rect = trigger.getBoundingClientRect();
+    const scrollParent = trigger.closest("[data-scroll-container]");
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect();
+      const inView =
+        rect.top >= parentRect.top - 10 && rect.bottom <= parentRect.bottom + 10;
+      if (!inView) return false;
+    }
+    setPosition({ top: rect.top + rect.height / 2, left: rect.right + 10 });
+    return true;
+  }, []);
+
+  const cancelTimers = () => {
+    if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  const scheduleOpen = () => {
+    cancelTimers();
+    openTimerRef.current = setTimeout(() => {
+      if (updatePosition()) setIsShowing(true);
+    }, 100);
+  };
+
+  const scheduleClose = () => {
+    cancelTimers();
+    closeTimerRef.current = setTimeout(() => setIsShowing(false), 150);
+  };
+
+  const cancelClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  useEffect(() => cancelTimers, []);
+
+  // Open with the selected model centered in the flyout's own scroll list so
+  // the current choice is visible without scrolling.
+  useLayoutEffect(() => {
+    if (!isShowing) return;
+    const container = panelRef.current?.querySelector(
+      "[data-scroll-container]",
+    ) as HTMLElement | null;
+    const selected = container?.querySelector(
+      "[data-selected='true']",
+    ) as HTMLElement | null;
+    if (!container || !selected) return;
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = selected.getBoundingClientRect();
+    const relativeTop =
+      elementRect.top - containerRect.top + container.scrollTop;
+    container.scrollTop = Math.max(
+      0,
+      relativeTop - containerRect.height / 2 + elementRect.height / 2,
+    );
+  }, [isShowing]);
+
+  // The flyout is vertically centered on its row; clamp it into the viewport
+  // when a long list would run off the top or bottom edge.
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    if (!isShowing || !el) return;
+    el.style.transform = "translateY(-50%)";
+    const rect = el.getBoundingClientRect();
+    const margin = 8;
+    let dy = 0;
+    if (rect.bottom > window.innerHeight - margin) {
+      dy = window.innerHeight - margin - rect.bottom;
+    }
+    if (rect.top + dy < margin) dy = margin - rect.top;
+    if (dy !== 0) el.style.transform = `translateY(calc(-50% + ${dy}px))`;
+  }, [isShowing, position]);
+
+  // Track the row while scrolling; hide once it leaves the list viewport.
+  useEffect(() => {
+    if (!isShowing) return;
+    const handleScroll = () => {
+      if (!updatePosition()) setIsShowing(false);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isShowing, updatePosition, setIsShowing]);
+
+  // Dismiss on outside press — needed for the click/touch open path, where
+  // there is no hover-out to close the flyout.
+  useEffect(() => {
+    if (!isShowing) return;
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setIsShowing(false);
+    };
+    window.addEventListener("mousedown", onPointerDown, true);
+    return () => window.removeEventListener("mousedown", onPointerDown, true);
+  }, [isShowing, setIsShowing]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
+        onClick={() => {
+          cancelTimers();
+          if (isShowing) {
+            setIsShowing(false);
+          } else if (updatePosition()) {
+            setIsShowing(true);
+          }
+        }}
+      >
+        {children}
+      </div>
+      {isShowing &&
+        createPortal(
+          <div
+            ref={panelRef}
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              transform: "translateY(-50%)",
+              zIndex: 9999,
+            }}
+            className="w-[300px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
+          >
+            <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
+              {item.label}
+            </div>
+            <div
+              data-scroll-container
+              className="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto text-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
+              {item.subItems?.map((child, childIdx) => {
+                const childRow = (
+                  <RichListRow
+                    item={child}
+                    onClick={() => onSelectChild(child)}
+                    active={activeChildIdx === childIdx}
+                  />
+                );
+                if (!child.hoverTooltip) {
+                  return <div key={childIdx}>{childRow}</div>;
+                }
+                const childTooltip =
+                  typeof child.hoverTooltip === "function"
+                    ? (child.hoverTooltip as (close: () => void) => ReactNode)(
+                        popoverClose,
+                      )
+                    : child.hoverTooltip;
+                return (
+                  <div key={childIdx}>
+                    <PortalTooltip
+                      content={childTooltip}
+                      delay={child.tooltipDelayMs ?? 300}
+                      className="min-w-48"
+                      onOpenChange={(open) =>
+                        setActiveChildIdx((prev) =>
+                          open ? childIdx : prev === childIdx ? null : prev,
+                        )
+                      }
+                    >
+                      {childRow}
+                    </PortalTooltip>
+                  </div>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
 }
 
 const ViewportClamp = ({
@@ -403,7 +716,11 @@ export const PopoverMenu = ({
   maxListHeight,
   richList = false,
 }: PopoverMenuProps) => {
-  const selectedItem = items.find((item) => item.selected);
+  // Search leaves so a grouped list resolves to the selected model, not its
+  // (also-selected) family group row.
+  const selectedItem = items
+    .flatMap((item) => item.subItems ?? [item])
+    .find((item) => item.selected);
   const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -742,6 +1059,43 @@ export const PopoverMenu = ({
                           style={{ maxHeight: maxListHeight ?? "60vh" }}
                         >
                           {items.map((item, index) => {
+                            if (item.subItems && item.subItems.length > 0) {
+                              return (
+                                <div key={index}>
+                                  <SubmenuFlyout
+                                    item={item}
+                                    popoverClose={close}
+                                    onSelectChild={(child) =>
+                                      handleItemClick(child, close)
+                                    }
+                                    onOpenChange={(open) =>
+                                      setOpenTooltipIdx((prev) =>
+                                        open
+                                          ? index
+                                          : prev === index
+                                            ? null
+                                            : prev,
+                                      )
+                                    }
+                                  >
+                                    <RichListRow
+                                      item={item}
+                                      active={openTooltipIdx === index}
+                                      rightNode={
+                                        <FontAwesomeIcon
+                                          icon={faChevronRight}
+                                          className="ml-1 shrink-0 text-xs text-base-fg/50"
+                                        />
+                                      }
+                                    />
+                                  </SubmenuFlyout>
+                                  {item.divider && (
+                                    <div className="my-1 border-t border-white/10" />
+                                  )}
+                                </div>
+                              );
+                            }
+
                             const tooltipContent =
                               typeof item.hoverTooltip === "function"
                                 ? (
@@ -752,91 +1106,11 @@ export const PopoverMenu = ({
                                 : item.hoverTooltip;
 
                             const itemRow = (
-                              <div
-                                data-selected={
-                                  item.selected ? "true" : undefined
-                                }
-                                onClick={() => {
-                                  if (!item.disabled)
-                                    handleItemClick(item, close);
-                                }}
-                                className={twMerge(
-                                  "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
-                                  item.selected
-                                    ? "bg-ui-controls/70"
-                                    : "hover:bg-ui-controls/50",
-                                  !item.selected && openTooltipIdx === index
-                                    ? "bg-ui-controls/50"
-                                    : "",
-                                  item.disabled
-                                    ? "!cursor-not-allowed opacity-50"
-                                    : "",
-                                )}
-                              >
-                                <span
-                                  className={twMerge(
-                                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
-                                    item.selected
-                                      ? "border-primary bg-primary/20"
-                                      : "border-ui-controls-border bg-ui-controls/60",
-                                  )}
-                                >
-                                  {item.icon}
-                                </span>
-                                <div className="flex min-w-0 flex-1 flex-col">
-                                  <div className="flex min-w-0 items-center gap-1">
-                                    <span
-                                      className={twMerge(
-                                        "truncate font-semibold",
-                                        item.selected
-                                          ? "text-base-fg"
-                                          : "text-base-fg/90",
-                                      )}
-                                    >
-                                      {item.label}
-                                    </span>
-                                    {item.info ? (
-                                      <InfoHint content={item.info} />
-                                    ) : null}
-                                  </div>
-                                  {item.description && (
-                                    <span className="truncate text-xs text-base-fg/55">
-                                      {item.description}
-                                    </span>
-                                  )}
-                                  {item.badges &&
-                                    Array.isArray(item.badges) &&
-                                    item.badges.length > 0 && (
-                                      <div className="mt-1 flex flex-row flex-wrap gap-1">
-                                        {item.badges.map((badge, i) => (
-                                          <span
-                                            key={i}
-                                            className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
-                                          >
-                                            {badge?.icon && (
-                                              <span>{badge.icon}</span>
-                                            )}
-                                            {badge?.label || ""}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                </div>
-                                {item.trailing && (
-                                  <div className="ml-1 flex shrink-0 items-center">
-                                    {item.trailing}
-                                  </div>
-                                )}
-                                {item.selected &&
-                                  (item.selectedRight ?? (
-                                    <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
-                                      <FontAwesomeIcon
-                                        icon={faCheck}
-                                        className="text-[11px] font-bold text-white"
-                                      />
-                                    </span>
-                                  ))}
-                              </div>
+                              <RichListRow
+                                item={item}
+                                onClick={() => handleItemClick(item, close)}
+                                active={openTooltipIdx === index}
+                              />
                             );
 
                             return (

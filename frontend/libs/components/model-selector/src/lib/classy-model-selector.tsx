@@ -1,4 +1,9 @@
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import {
   useClassyModelSelectorStore,
   useSelectedProviderForModel,
@@ -7,7 +12,11 @@ import { useEffect, useMemo } from "react";
 import { ModelPage } from "./model-pages";
 import { Provider } from "@storyteller/tauri-api";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
-import { Model } from "@storyteller/model-list";
+import {
+  Model,
+  getCreatorIcon,
+  getModelFamilyName,
+} from "@storyteller/model-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -49,7 +58,9 @@ interface ClassyModelSelectorProps {
 const isSameModel = (a: Model | undefined, b: Model | undefined): boolean =>
   a !== undefined && b !== undefined && a.tauriId === b.tauriId;
 
-const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
+const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [
+  GenerationProvider.Artcraft,
+];
 
 function ProviderTooltipContent({
   page,
@@ -132,9 +143,10 @@ export function ClassyModelSelector({
   const { selectedModels, setSelectedModel, setSelectedProvider } =
     useClassyModelSelectorStore();
   const itemModels: Model[] = items
-    .map(item => item.model)
-    .filter(model => model !== undefined);
-  const selectedModel = selectedModels[page] || defaultModelForPage(itemModels, page);
+    .map((item) => item.model)
+    .filter((model) => model !== undefined);
+  const selectedModel =
+    selectedModels[page] || defaultModelForPage(itemModels, page);
   const selectedProvider = useSelectedProviderForModel(page, selectedModel?.id);
   const selectedProvidersByModel = useClassyModelSelectorStore(
     (s) => s.selectedProviders[page] ?? {},
@@ -185,7 +197,8 @@ export function ClassyModelSelector({
     () =>
       items.map((item) => {
         const modelId = item.model?.id;
-        const allowedProviders = item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
+        const allowedProviders =
+          item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
 
         // When provider selection is hidden, treat every model as
         // single-provider so the submenu and provider chips never render.
@@ -209,7 +222,8 @@ export function ClassyModelSelector({
             : undefined,
           tooltipDelayMs: providerTooltipDelayMs,
           trailing:
-            !isSameModel(item.model as Model | undefined, selectedModel) && hasMultipleProviders
+            !isSameModel(item.model as Model | undefined, selectedModel) &&
+            hasMultipleProviders
               ? (() => {
                   const prov = modelId
                     ? selectedProvidersByModel[modelId]
@@ -248,17 +262,35 @@ export function ClassyModelSelector({
     ],
   );
 
+  // Fold the (decorated) flat list into family submenus when the user prefers
+  // the grouped picker. Only the embedded richList variant renders groups; the
+  // floating hoverSelect list stays flat.
+  const pickerStyle = useModelPickerStyleStore((s) => s.style);
+  const embeddedList = useMemo(
+    () =>
+      pickerStyle === "grouped"
+        ? groupModelItems(modelList, (i) =>
+            getModelFamilyName(i.model?.id, i.model?.creator),
+          )
+        : modelList,
+    [modelList, pickerStyle],
+  );
+
   if (variant === "embedded") {
-    const selectedIcon = modelList.find((i) => i.selected)?.icon;
+    // The trigger pill keeps the mono icon; the color variants are only for
+    // list rows.
+    const selectedIcon = selectedModel
+      ? getCreatorIcon(selectedModel.creator)
+      : modelList.find((i) => i.selected)?.icon;
     return (
       <Tooltip content="Model" position="top" className="z-50" closeOnClick>
         <PopoverMenu
-          items={modelList}
+          items={embeddedList}
           onSelect={handleModelSelect}
           mode="toggle"
           richList
           panelTitle="Select Model"
-          panelClassName="w-[360px]"
+          panelClassName="w-[280px]"
           maxListHeight={maxListHeight}
           buttonClassName="max-w-48"
           triggerIcon={
@@ -284,7 +316,8 @@ export function ClassyModelSelector({
         {...popoverProps}
         buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {
-          const modelTitle = selectedItem?.label ?? selectedModel?.selectorName ?? "";
+          const modelTitle =
+            selectedItem?.label ?? selectedModel?.selectorName ?? "";
           const providerIcon = selectedProvider
             ? getProviderIcon(selectedProvider)
             : null;
