@@ -147,7 +147,10 @@ export const TimelineClipRow = ({
 
       <div
         ref={laneRef}
-        className="relative h-6 flex-1 rounded-md bg-black/20"
+        /* overflow-hidden: strips are engine-clamped into the lane, but any
+           transient out-of-range placement must clip here rather than paint
+           over the add-button column. */
+        className="relative h-6 flex-1 overflow-hidden rounded-md bg-black/20"
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}

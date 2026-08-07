@@ -120,13 +120,44 @@ export class TimelineController {
   }
 
   // Set the max timeline duration (seconds). Clamped to [1, 60] — covers the
-  // required 5–30s range with headroom. Keeps the playhead in range.
+  // required 5–30s range with headroom. Keeps the playhead in range, and
+  // re-fits clip strips into the new range: a shrink used to strand strips
+  // beyond the end — rendered outside the lane, unreachable by playback, and
+  // trimming one computed a NEGATIVE max duration (clamping it to a frame).
   setDuration(seconds: number): void {
     if (!this.timeline || !Number.isFinite(seconds)) return;
-    this.timeline.duration = Math.max(1, Math.min(60, seconds));
-    if (this.playhead > this.timeline.duration) {
-      this.playhead = this.timeline.duration;
+    const duration = Math.max(1, Math.min(60, seconds));
+    this.timeline.duration = duration;
+    if (this.playhead > duration) {
+      this.playhead = duration;
     }
+    // Ascending order so earlier strips claim room first; a strip longer
+    // than the whole timeline shrinks to fit, and resolveFreeStart re-snaps
+    // anything now out of range into the nearest free slot.
+    const lanes = [...this.timeline.clipLanes].sort(
+      (a, b) => a.strip.startTime - b.strip.startTime,
+    );
+    let lanesChanged = false;
+    for (const lane of lanes) {
+      const strip = lane.strip;
+      if (strip.startTime + strip.duration <= duration) continue;
+      lanesChanged = true;
+      if (strip.duration > duration) {
+        strip.duration = duration;
+        strip.autoDuration = false;
+      }
+      const freeStart = this.resolveFreeStart(
+        lane.objectUuid,
+        lane.id,
+        strip.startTime,
+        strip.duration,
+      );
+      // No free slot in the shrunken timeline: park the strip flush with the
+      // end; overlaps (if any) resolve on the next add/move like restore's.
+      strip.startTime = freeStart ?? Math.max(0, duration - strip.duration);
+    }
+    if (lanesChanged) this.syncClipLanes();
+    this.evaluate();
     this.emitChanged();
     this.emitPlayhead();
   }
