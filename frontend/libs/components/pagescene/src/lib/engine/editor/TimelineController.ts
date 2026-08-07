@@ -333,11 +333,21 @@ export class TimelineController {
     this.emitChanged();
   }
 
+  // Removal is SESSION-INDEPENDENT (it carries its own undo step via
+  // RemoveClipLaneAction), so it is mirrored into the `saved` snapshot too:
+  // otherwise Cancel would resurrect the deleted strip and the next Save
+  // would double-record the removal (its before-state still holding the
+  // strip costs the user a phantom undo step).
   removeClipLane(laneId: string): void {
     if (!this.timeline) return;
     this.timeline.clipLanes = this.timeline.clipLanes.filter(
       (l) => l.id !== laneId,
     );
+    if (this.saved) {
+      this.saved.clipLanes = this.saved.clipLanes.filter(
+        (l) => l.id !== laneId,
+      );
+    }
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
@@ -347,14 +357,33 @@ export class TimelineController {
     return this.timeline?.clipLanes.find((l) => l.id === laneId) ?? null;
   }
 
+  // The lane's entry in the `saved` snapshot (which may hold an older
+  // placement than the live one, or none if the strip was added after the
+  // last save). RemoveClipLaneAction captures it so undo can restore BOTH
+  // worlds exactly.
+  getSavedClipLane(laneId: string): ClipLane | null {
+    const lane = this.saved?.clipLanes.find((l) => l.id === laneId);
+    return lane ? JSON.parse(JSON.stringify(lane)) : null;
+  }
+
   // Re-insert a previously removed lane verbatim (undo of a removal). The
   // strip returns to its exact prior slot; in the rare case another clip was
   // moved onto that slot after the delete, the strips can momentarily
   // overlap — the overlap guard re-applies on the next add/move.
-  restoreClipLane(lane: ClipLane): void {
+  // `savedLane` (when the strip existed in the last-saved snapshot) undoes
+  // the removal's `saved` mirroring at its saved-time placement, so a later
+  // Cancel restores exactly the pre-removal saved state.
+  restoreClipLane(lane: ClipLane, savedLane?: ClipLane): void {
     if (!this.timeline) return;
     if (this.timeline.clipLanes.some((l) => l.id === lane.id)) return;
     this.timeline.clipLanes.push(JSON.parse(JSON.stringify(lane)));
+    if (
+      savedLane &&
+      this.saved &&
+      !this.saved.clipLanes.some((l) => l.id === savedLane.id)
+    ) {
+      this.saved.clipLanes.push(JSON.parse(JSON.stringify(savedLane)));
+    }
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
