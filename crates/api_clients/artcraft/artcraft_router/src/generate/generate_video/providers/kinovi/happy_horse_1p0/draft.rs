@@ -37,7 +37,8 @@ impl KinoviHappyHorse1p0DraftState {
 
     if let Some(remaining) = self.unhandled_request_state.take() {
       let map = draft_context.media_file_to_artcraft_url_map;
-      start_frame_url = resolve_and_upload_single(session, remaining.start_frame, map).await?;
+      let predownloaded = draft_context.predownloaded_media_paths;
+      start_frame_url = resolve_and_upload_single(session, remaining.start_frame, map, predownloaded).await?;
     }
 
     let request = GenerateHappyHorse1p0Request {

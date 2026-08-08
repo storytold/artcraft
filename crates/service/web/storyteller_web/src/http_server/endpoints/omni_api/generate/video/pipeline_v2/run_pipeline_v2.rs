@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use log::{error, info, warn};
 use artcraft_router::api::router_video_model::RouterVideoModel;
@@ -35,6 +36,11 @@ pub struct RunPipelineV2Args<'a> {
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
   pub kinovi_account: KinoviAccount,
   pub debug_log_context: &'a GenerationDebugLogContext<'a>,
+
+  /// Source URL → local file path for reference videos the handler already
+  /// downloaded (for input-seconds billing). The Kinovi upload reads these
+  /// instead of downloading the same bytes again.
+  pub predownloaded_media_paths: Option<&'a HashMap<String, PathBuf>>,
   /// The handler's open connection. The pipeline uses it for its remaining
   /// pre-request DB writes (billing, outbound-request debug log) and releases
   /// it BEFORE the external provider call.
@@ -54,6 +60,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     kinovi_character_id_map,
     kinovi_account,
     debug_log_context,
+    predownloaded_media_paths,
     mut mysql_connection,
   } = args;
 
@@ -81,6 +88,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p5Preview => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p5 => RouterProvider::KinoviWeb,
     //RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
     //RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
     RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,
@@ -181,6 +189,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     media_file_to_url_map.as_ref(),
     kinovi_character_id_map.as_ref(),
     kinovi_account,
+    predownloaded_media_paths,
   ).await;
 
   // 5. On failure, refund wallet for Kinovi requests.
@@ -219,6 +228,7 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
   kinovi_account: KinoviAccount,
+  predownloaded_media_paths: Option<&HashMap<String, PathBuf>>,
 ) -> Result<GenerateVideoResponse, CommonWebError> {
 
   let provider = draft_or_request.get_provider();
@@ -231,6 +241,7 @@ async fn upload_and_generate(
         client: Some(&client),
         media_file_to_artcraft_url_map: media_file_urls_by_token,
         character_token_to_kinovi_id_map: kinovi_character_ids,
+        predownloaded_media_paths,
       };
 
       draft.finalize(draft_context)

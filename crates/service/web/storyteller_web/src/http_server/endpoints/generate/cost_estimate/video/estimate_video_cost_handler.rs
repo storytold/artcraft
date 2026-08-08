@@ -55,6 +55,7 @@ pub async fn estimate_video_cost_handler(
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
+    total_reference_video_input_seconds: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     idempotency_token: None,
   };
@@ -156,6 +157,7 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Seedance2p0BytePlusMini => RouterVideoModel::Seedance2p0BytePlusMini,
     CommonVideoModel::Seedance2p0BytePlusUltraMini => RouterVideoModel::Seedance2p0BytePlusUltraMini,
     CommonVideoModel::Seedance2p5Preview => RouterVideoModel::Seedance2p5Preview,
+    CommonVideoModel::Seedance2p5 => RouterVideoModel::Seedance2p5,
     CommonVideoModel::HappyHorse1p0 => RouterVideoModel::HappyHorse1p0,
     CommonVideoModel::MinimaxH3 => RouterVideoModel::MinimaxH3,
     CommonVideoModel::MinimaxH3Turbo => RouterVideoModel::MinimaxH3Turbo,

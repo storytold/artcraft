@@ -1,11 +1,21 @@
-use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::omni_gen::shared_utils::map_router_cost_error::map_router_cost_error;
-use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
-use actix_web::web::Json;
+use std::sync::Arc;
+
+use actix_web::web::{self, Json};
 use actix_web::HttpRequest;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::OmniGenVideoCostResponse;
 use artcraft_router::api::router_provider::RouterProvider;
+use enums::common::generation::common_video_model::CommonVideoModel;
+use log::warn;
+use tokens::tokens::media_files::MediaFileToken;
+
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::probed_reference_videos::{
+  download_and_probe_reference_videos, fetch_reference_video_sources,
+};
+use crate::http_server::endpoints::omni_gen::shared_utils::map_router_cost_error::map_router_cost_error;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
+use crate::state::server_state::ServerState;
 
 /// Estimate the cost of a video generation.
 #[utoipa::path(
@@ -20,8 +30,9 @@ use artcraft_router::api::router_provider::RouterProvider;
   ),
 )]
 pub async fn omni_gen_video_cost_handler(
-  _http_request: HttpRequest,
+  http_request: HttpRequest,
   request: Json<OmniGenVideoCostAndGenerateRequest>,
+  maybe_server_state: Option<web::Data<Arc<ServerState>>>,
 ) -> Result<Json<OmniGenVideoCostResponse>, CommonWebError> {
   // NB: Deliberately no input validation here. The UI polls this endpoint
   // while the user is still composing the request (no prompt typed, nothing
@@ -30,6 +41,21 @@ pub async fn omni_gen_video_cost_handler(
   let mut builder = hydrate_to_router_request(&request)?;
 
   builder.provider = RouterProvider::Artcraft; // NB: User is paying for ArtCraft credits / generation
+
+  // Seedance 2.5 bills reference-video input seconds on top of the output
+  // duration; probe the combined runtime so the quote matches what
+  // generation will bill. Best-effort: the UI polls mid-composition (tokens
+  // may not resolve yet), so a probe failure quotes without input seconds
+  // rather than failing — the generate endpoint bills the accurate total.
+  if matches!(request.model, Some(CommonVideoModel::Seedance2p5)) {
+    if let (Some(server_state), Some(video_tokens)) = (
+      maybe_server_state.as_ref(),
+      request.reference_video_media_tokens.as_deref().filter(|tokens| !tokens.is_empty()),
+    ) {
+      builder.total_reference_video_input_seconds =
+        probe_input_seconds_best_effort(&http_request, server_state, video_tokens).await;
+    }
+  }
 
   let estimate = builder.build2()
     .map_err(map_router_cost_error)?
@@ -46,6 +72,47 @@ pub async fn omni_gen_video_cost_handler(
     has_watermark: estimate.has_watermark,
     failures_are_refunded: estimate.failures_are_refunded,
   }))
+}
+
+/// Probe the combined reference-video runtime for the quote, failing open.
+/// The downloaded files are dropped after probing — only the generate
+/// endpoint keeps them for the provider upload.
+async fn probe_input_seconds_best_effort(
+  http_request: &HttpRequest,
+  server_state: &ServerState,
+  video_tokens: &[MediaFileToken],
+) -> Option<u16> {
+  let video_sources = {
+    // Scoped so the pool slot is released before the (slow) download+probe.
+    let mut mysql_connection = match server_state.mysql_pool.acquire().await {
+      Ok(connection) => connection,
+      Err(err) => {
+        warn!("Cost quote: failed to acquire connection for reference video probe: {:?}", err);
+        return None;
+      }
+    };
+
+    match fetch_reference_video_sources(
+      video_tokens,
+      http_request,
+      server_state.server_environment,
+      &mut mysql_connection,
+    ).await {
+      Ok(sources) => sources,
+      Err(err) => {
+        warn!("Cost quote: failed to fetch reference video sources: {:?}", err);
+        return None;
+      }
+    }
+  };
+
+  match download_and_probe_reference_videos(&video_sources).await {
+    Ok(probed) => Some(probed.total_input_seconds),
+    Err(err) => {
+      warn!("Cost quote: failed to probe reference video durations: {:?}", err);
+      None
+    }
+  }
 }
 
 #[cfg(test)]
@@ -156,7 +223,9 @@ mod tests {
     let http_request = TestRequest::post()
       .uri("/v1/omni_gen/cost/video")
       .to_http_request();
-    omni_gen_video_cost_handler(http_request, Json(body))
+    // No ServerState in unit tests: the reference-video probe is skipped and
+    // quotes come from the router alone.
+    omni_gen_video_cost_handler(http_request, Json(body), None)
       .await
       .map(Json::into_inner)
   }

@@ -141,6 +141,46 @@ pub fn seedance_2p5_preview_usd_cents(
   (cents_per_second * duration_seconds as f64).ceil() as u64
 }
 
+/// Seedance 2.5 — 480p price, USD cents per second.
+const SEEDANCE_2P5_CENTS_PER_SECOND_480P: f64 = 11.76954733;
+/// Seedance 2.5 — 720p price, USD cents per second.
+const SEEDANCE_2P5_CENTS_PER_SECOND_720P: f64 = 26.70781893;
+/// Seedance 2.5 — 480p price with video references, USD cents per second.
+const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_480P: f64 = 7.24279835;
+/// Seedance 2.5 — 720p price with video references, USD cents per second.
+const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 15.84362140;
+
+/// ArtCraft's price (USD cents) for Seedance 2.5.
+///
+/// Only 480p and 720p are offered; any other resolution prices at 720p.
+/// Without video references, billed seconds = output duration. With video
+/// references, the per-second rate drops but the billed seconds are the
+/// output duration PLUS the total seconds of reference video input. The
+/// fractional total is rounded UP to a whole cent. No batching.
+pub fn seedance_2p5_usd_cents(
+  resolution: CommonResolution,
+  duration_seconds: u16,
+  has_video_references: bool,
+  total_input_seconds: u16,
+) -> u64 {
+  let (cents_per_second, billed_seconds) = if has_video_references {
+    let rate = match resolution {
+      CommonResolution::FourEightyP => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_480P,
+      // Everything else (including 720p and unsupported resolutions) prices at 720p.
+      _ => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
+    };
+    (rate, u64::from(duration_seconds) + u64::from(total_input_seconds))
+  } else {
+    let rate = match resolution {
+      CommonResolution::FourEightyP => SEEDANCE_2P5_CENTS_PER_SECOND_480P,
+      _ => SEEDANCE_2P5_CENTS_PER_SECOND_720P,
+    };
+    (rate, u64::from(duration_seconds))
+  };
+
+  (cents_per_second * billed_seconds as f64).ceil() as u64
+}
+
 #[allow(clippy::too_many_arguments)]
 fn mini_usd_cents(
   resolution: CommonResolution,

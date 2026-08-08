@@ -66,6 +66,9 @@ pub fn hydrate_to_router_request(
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
+    // Set by the handler after probing reference video durations (only
+    // models that bill input seconds use it).
+    total_reference_video_input_seconds: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: request.idempotency_token.clone(),
   })

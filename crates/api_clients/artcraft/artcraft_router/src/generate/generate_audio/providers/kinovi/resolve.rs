@@ -71,7 +71,7 @@ pub(crate) async fn resolve_and_upload_audio_ref(
       })?
     }
   };
-  upload_to_kinovi_web(session, &source_url).await
+  upload_to_kinovi_web(session, &source_url, None).await
 }
 
 #[cfg(test)]

@@ -2,4 +2,5 @@ pub mod generate_happy_horse_1p0;
 pub mod generate_seedance_2p0;
 pub mod generate_seedance_2p0_fast;
 pub mod generate_seedance_2p0_mini;
+pub mod generate_seedance_2p5;
 pub mod generate_seedance_2p5_preview;
