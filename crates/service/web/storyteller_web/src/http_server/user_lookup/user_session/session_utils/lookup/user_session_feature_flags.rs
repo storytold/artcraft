@@ -101,6 +101,14 @@ impl UserSessionFeatureFlags {
   pub fn can_use_referrals_program(&self) -> bool {
     self.feature_flags.contains(&UserFeatureFlag::ReferralsProgram)
   }
+
+  pub fn can_use_minimax(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::Minimax)
+  }
+
+  pub fn can_use_minimax_priority(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::MinimaxPriority)
+  }
 }
 
 #[cfg(test)]

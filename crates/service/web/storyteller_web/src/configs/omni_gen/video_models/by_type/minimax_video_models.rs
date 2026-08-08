@@ -10,8 +10,31 @@ pub fn minimax_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::MinimaxH3,
-    model_creator: Some(ModelCreator::Hailuo),
     full_name: Some("MiniMax H3".to_string()),
+    ..minimax_h3_shared_details()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::MinimaxH3Turbo,
+    full_name: Some("MiniMax H3 Turbo".to_string()),
+    ..minimax_h3_shared_details()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::MinimaxH3Ultra,
+    full_name: Some("MiniMax H3 Ultra".to_string()),
+    ..minimax_h3_shared_details()
+  });
+
+  models
+}
+
+/// Capabilities shared by the MiniMax H3 family (Turbo and Ultra are the same
+/// underlying model at different priority tiers).
+fn minimax_h3_shared_details() -> OmniGenVideoModelDetails {
+  OmniGenVideoModelDetails {
+    model: CommonVideoModel::MinimaxH3,
+    model_creator: Some(ModelCreator::Hailuo),
     text_prompt_supported: Some(true),
     text_prompt_max_length: Some(7000),
     starting_keyframe_supported: Some(true),
@@ -44,7 +67,5 @@ pub fn minimax_video_models() -> Vec<OmniGenVideoModelDetails> {
     duration_seconds_max: Some(15),
     duration_seconds_default: Some(5),
     ..Default::default()
-  });
-
-  models
+  }
 }
