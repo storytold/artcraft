@@ -108,6 +108,14 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
         overrides: None,
       },
       OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::MinimaxH3Turbo,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::MinimaxH3Ultra,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::Flux3,
         overrides: None,
       },

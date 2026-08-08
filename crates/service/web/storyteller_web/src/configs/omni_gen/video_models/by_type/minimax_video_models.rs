@@ -46,5 +46,81 @@ pub fn minimax_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::MinimaxH3Turbo,
+    model_creator: Some(ModelCreator::Hailuo),
+    full_name: Some("MiniMax H3 Turbo".to_string()),
+    text_prompt_supported: Some(true),
+    text_prompt_max_length: Some(7000),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    image_references_supported: Some(true),
+    image_references_max: Some(9),
+    video_references_supported: Some(true),
+    video_references_max: Some(3),
+    video_references_max_total_duration_seconds: Some(15),
+    audio_references_supported: Some(true),
+    audio_references_max: Some(3),
+    audio_references_max_total_duration_seconds: Some(15),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    // The model renders 768P or 2K; 720p and below land on 768P, 1080p and
+    // above land on 2K.
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TwoK,
+    ]),
+    resolution_default: Some(CommonResolution::TwoK),
+    duration_seconds_min: Some(5),
+    duration_seconds_max: Some(15),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::MinimaxH3Ultra,
+    model_creator: Some(ModelCreator::Hailuo),
+    full_name: Some("MiniMax H3 Ultra".to_string()),
+    text_prompt_supported: Some(true),
+    text_prompt_max_length: Some(7000),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    image_references_supported: Some(true),
+    image_references_max: Some(9),
+    video_references_supported: Some(true),
+    video_references_max: Some(3),
+    video_references_max_total_duration_seconds: Some(15),
+    audio_references_supported: Some(true),
+    audio_references_max: Some(3),
+    audio_references_max_total_duration_seconds: Some(15),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    // The model renders 768P or 2K; 720p and below land on 768P, 1080p and
+    // above land on 2K.
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TwoK,
+    ]),
+    resolution_default: Some(CommonResolution::TwoK),
+    duration_seconds_min: Some(5),
+    duration_seconds_max: Some(15),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
   models
 }
