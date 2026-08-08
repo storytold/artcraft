@@ -168,6 +168,16 @@ export function setClipTransitionEasing(
   editor.timelineController.setClipTransitionEasing(laneId, easing);
 }
 
+// Open a gap after `laneId`'s strip for a transition to play in, when its
+// boundary with the next strip is flush/too tight. Returns false when the
+// row is too packed to make room (callers toast).
+export function ensureClipTransitionGap(
+  editor: Editor,
+  laneId: string,
+): boolean {
+  return editor.timelineController.ensureTransitionGap(laneId);
+}
+
 // Individually undoable (RemoveClipLaneAction) — both the strip's × button
 // and Del/Backspace route through here.
 export function removeClipLane(editor: Editor, laneId: string): void {

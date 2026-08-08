@@ -318,8 +318,12 @@ then one row per character is the right model.
   `cubicBezierYForX` — weights sum to 1 so the mixer computes a proper lerp; this is the one
   deliberate exception to the one-winner rule, and it's continuous at both gap edges (w=0 at the
   leading strip's end, w=1 at the next strip's start). Gaps without a transition keep the rest
-  pose; leading/trailing row gaps never blend. UI: a `data-transition-chip` button midway in the
-  gap (ghost = off, click enables with `DEFAULT_EASING`; solid = on) opens the generalized
+  pose; leading/trailing row gaps never blend. UI: a `data-transition-chip` button at EVERY
+  consecutive-strip boundary (ghost = off, solid = on) — auto-placement packs strips flush, so
+  enabling on a flush/too-tight boundary first calls `ensureTransitionGap`
+  (`DEFAULT_TRANSITION_GAP` = 0.3s: shift the next strip right, bounded by its follower/timeline
+  end, then trim the leading strip if shifting isn't enough; a too-packed row rejects with a
+  toast and mutates nothing). Click enables with `DEFAULT_EASING` and opens the generalized
   `MotionPopover` (`easing`/`onChange`/`footer` props — keyframes use the same component) with a
   "Remove transition" footer; popover selection rides `timelineEasingClipLaneId` (bridge-pruned
   like the other selection ids), and the keyframe popover takes render priority so the two never

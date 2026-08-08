@@ -11,6 +11,7 @@ import {
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
   addBakedClipToObject,
+  ensureClipTransitionGap,
   moveClipLane,
   removeClipLane,
   resizeClipLane,
@@ -89,10 +90,13 @@ export const TimelineClipRow = ({
     };
   }, [pickerAnchor]);
 
-  // Opt-in gap transition: first click on an empty-gap chip enables the
-  // blend (default curve) and opens the Motion popover; on an active chip it
-  // toggles the popover. Keyframe-easing selection is cleared so the two
-  // popovers never contend.
+  // Opt-in gap transition: first click on a boundary chip enables the blend
+  // (default curve) and opens the Motion popover; on an active chip it
+  // toggles the popover. Flush/too-tight boundaries (the default — auto-
+  // placement packs strips back-to-back) first get a small gap opened for
+  // the blend to play in; a row too packed to make room rejects with a
+  // toast. Keyframe-easing selection is cleared so the two popovers never
+  // contend.
   const toggleTransition = (lane: ClipLane) => {
     if (!editor) return;
     const store = usePageSceneStore.getState();
@@ -101,6 +105,13 @@ export const TimelineClipRow = ({
       return;
     }
     if (!lane.strip.transitionEasing) {
+      if (!ensureClipTransitionGap(editor, lane.id)) {
+        editor.adapter.showToast(
+          ToastTypes.WARNING,
+          "No room on this row to open a gap for the transition.",
+        );
+        return;
+      }
       setClipTransitionEasing(editor, lane.id, DEFAULT_EASING);
     }
     store.setTimelineEasingKeyframe(null);
@@ -319,10 +330,13 @@ export const TimelineClipRow = ({
           );
         })}
 
-        {/* Opt-in gap transitions: a chip midway between consecutive strips
-            enables/edits the pose blend across the gap (transitionEasing on
-            the LEADING strip). data-transition-chip exempts it from the
-            popover's click-away. */}
+        {/* Opt-in gap transitions: a chip at every consecutive-strip
+            boundary enables/edits the pose blend across the gap
+            (transitionEasing on the LEADING strip). Auto-placement packs
+            strips flush, so the chip renders even at a zero gap — enabling
+            there first opens a small gap (toggleTransition) for the blend
+            to play in. data-transition-chip exempts it from the popover's
+            click-away. */}
         {[...lanes]
           .sort((a, b) => a.strip.startTime - b.strip.startTime)
           .map((lane, i, sorted) => {
@@ -330,7 +344,6 @@ export const TimelineClipRow = ({
             if (!next) return null;
             const gapStart = lane.strip.startTime + lane.strip.duration;
             const gapEnd = next.strip.startTime;
-            if (gapEnd - gapStart < 0.05) return null; // no visible gap
             const active = !!lane.strip.transitionEasing;
             const midPct =
               timeToFraction((gapStart + gapEnd) / 2, duration) * 100;

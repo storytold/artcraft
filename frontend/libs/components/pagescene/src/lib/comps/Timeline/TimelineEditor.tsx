@@ -139,12 +139,14 @@ export const TimelineEditor = () => {
     const lead = clipLanes.find((l) => l.id === easingClipLaneId);
     if (!lead) return null;
     const leadEnd = lead.strip.startTime + lead.strip.duration;
+    // Epsilon matches TimelineController.ensureTransitionGap: a strip
+    // trimmed flush can put leadEnd a float hair past the neighbour's start.
     const next = clipLanes
       .filter(
         (l) =>
           l.objectUuid === lead.objectUuid &&
           l.id !== lead.id &&
-          l.strip.startTime >= leadEnd,
+          l.strip.startTime >= leadEnd - 1e-6,
       )
       .sort((a, b) => a.strip.startTime - b.strip.startTime)[0];
     if (!next) return null;

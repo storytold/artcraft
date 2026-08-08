@@ -87,6 +87,9 @@ export const EASING_PRESETS: Record<EasingPresetName, EasingSpec> = {
 };
 
 export const DEFAULT_EASING: EasingSpec = EASING_PRESETS.easeInOut;
+// Gap (seconds) auto-opened between two flush strips when the user enables a
+// transition at their boundary — the blend needs room on the timeline to play.
+export const DEFAULT_TRANSITION_GAP = 0.3;
 export const DEFAULT_TIMELINE_DURATION = 10; // seconds
 export const DEFAULT_TIMELINE_FPS = 30;
 
