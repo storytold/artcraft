@@ -25,6 +25,10 @@ import {
   FOLDER_DROP_EVENT,
   type GalleryItem,
 } from "@storyteller/ui-gallery-modal";
+import {
+  TagChipInput,
+  type TagSuggestion,
+} from "@storyteller/ui-lightbox-modal";
 import { PLACEHOLDER_IMAGES, is3DModelUrl } from "@storyteller/common";
 import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import {
@@ -2077,6 +2081,11 @@ const SEND_TO_TARGETS: {
   { destination: "video", label: "Create video", icon: faVideo },
 ];
 
+// Shared styling for the bar's action pills. `whitespace-nowrap` keeps labels
+// on a single line — the bar grows instead of squishing buttons into two rows.
+const BAR_BUTTON_CLASS =
+  "flex items-center gap-2 whitespace-nowrap rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors";
+
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
   folders: UiFolder[];
@@ -2100,6 +2109,9 @@ function BulkSelectionBar({
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [sendToOpen, setSendToOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [tagChips, setTagChips] = useState<string[]>([]);
+  const [addingTags, setAddingTags] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<{
     done: number;
     total: number;
@@ -2113,10 +2125,21 @@ function BulkSelectionBar({
     [folders],
   );
 
-  // Close the popover when navigating so it doesn't dangle over the new view.
+  // Close the popovers when navigating so they don't dangle over the new view.
   useEffect(() => {
     setPopoverOpen(false);
+    setTagsOpen(false);
   }, [activeFolderId]);
+
+  // Autocomplete for the Add-tags popover: the user's tags, most-used first.
+  const storeTags = useLibraryTagsStore((s) => s.tags);
+  const tagSuggestions = useMemo(
+    (): TagSuggestion[] =>
+      [...storeTags]
+        .sort(compareTagsByUseCount)
+        .map((t) => ({ value: t.value, useCount: t.useCount })),
+    [storeTags],
+  );
 
   // Resolve selected items from everything loaded (root library + folder/tag
   // caches) — the selection survives navigation, so selected items may not be
@@ -2173,6 +2196,20 @@ function BulkSelectionBar({
     }
   };
 
+  const handleAddTags = async () => {
+    if (addingTags || tagChips.length === 0) return;
+    setAddingTags(true);
+    const ok = await useLibraryTagsStore
+      .getState()
+      .bulkAddTags(Array.from(ids), tagChips);
+    setAddingTags(false);
+    if (ok) {
+      setTagsOpen(false);
+      setTagChips([]);
+      clear();
+    }
+  };
+
   return (
     <div
       data-no-marquee
@@ -2194,7 +2231,7 @@ function BulkSelectionBar({
           </div>
         )}
       </div>
-      <span className="px-1 text-sm font-medium text-white/80">
+      <span className="whitespace-nowrap px-1 text-sm font-medium text-white/80">
         {ids.size} selected
       </span>
 
@@ -2206,7 +2243,7 @@ function BulkSelectionBar({
             type="button"
             title="Send to prompt"
             onClick={() => setSendToOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+            className={BAR_BUTTON_CLASS}
           >
             <FontAwesomeIcon
               icon={hasPromptImages ? faImage : faVideo}
@@ -2259,7 +2296,7 @@ function BulkSelectionBar({
               clear();
               navigate(`/frame-extractor?media=${token}`);
             }}
-            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+            className={BAR_BUTTON_CLASS}
           >
             <FontAwesomeIcon icon={faPhotoFilm} className="text-xs" />
             <span className="hidden sm:inline">Extract frames</span>
@@ -2270,11 +2307,13 @@ function BulkSelectionBar({
       <div className="relative">
         <button
           type="button"
+          title="Add to folder"
           onClick={() => setPopoverOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+          className={BAR_BUTTON_CLASS}
         >
           <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
-          Add to folder
+          {/* Icon-only on phones — five labeled buttons overflow the bar. */}
+          <span className="hidden sm:inline">Add to folder</span>
         </button>
         {popoverOpen && (
           <>
@@ -2334,11 +2373,61 @@ function BulkSelectionBar({
         )}
       </div>
 
+      {/* Add tags */}
+      <div className="relative">
+        <button
+          type="button"
+          title="Add tags"
+          onClick={() => {
+            setTagsOpen((v) => !v);
+            // Lazy-load the user's tags for autocomplete on first open.
+            if (!useLibraryTagsStore.getState().tagsLoaded) {
+              void useLibraryTagsStore.getState().loadTags();
+            }
+          }}
+          className={BAR_BUTTON_CLASS}
+        >
+          <FontAwesomeIcon icon={faTags} className="text-xs" />
+          <span className="hidden sm:inline">Add tags</span>
+        </button>
+        {tagsOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-[59]"
+              onClick={() => setTagsOpen(false)}
+            />
+            <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
+              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                Add tags
+              </div>
+              <TagChipInput
+                chips={tagChips}
+                suggestions={tagSuggestions}
+                dropUp
+                onAdd={(values) => setTagChips((prev) => [...prev, ...values])}
+                onRemove={(value) =>
+                  setTagChips((prev) => prev.filter((c) => c !== value))
+                }
+              />
+              <Button
+                variant="primary"
+                disabled={tagChips.length === 0}
+                loading={addingTags}
+                onClick={handleAddTags}
+                className="mt-2 w-full justify-center rounded-md text-sm py-1.5"
+              >
+                Tag {ids.size} {ids.size === 1 ? "item" : "items"}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+
       <button
         type="button"
         onClick={handleDownloadSelected}
         disabled={isDownloading}
-        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors disabled:opacity-60"
+        className={`${BAR_BUTTON_CLASS} disabled:opacity-60`}
       >
         <FontAwesomeIcon
           icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
@@ -2352,7 +2441,7 @@ function BulkSelectionBar({
       <button
         type="button"
         onClick={onDeleteSelected}
-        className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
+        className="flex items-center gap-2 whitespace-nowrap rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
       >
         <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
         Delete

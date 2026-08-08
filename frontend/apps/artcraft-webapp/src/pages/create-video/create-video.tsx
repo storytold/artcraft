@@ -88,7 +88,7 @@ import { toast } from "../../components/toast/toast";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
-const DEFAULT_MODEL_ID = "seedance_2p0";
+const DEFAULT_MODEL_ID = "seedance_2p5";
 
 // Models where character @-mentions are intentionally held back in the UI for now,
 // even though the API reports character_references_supported. Remove an entry to enable.
@@ -637,10 +637,10 @@ export default function CreateVideo() {
     activeCharacters,
   ]);
 
-  // Seedance 2.0 models support @-mention references in the prompt — once at
+  // Seedance 2.x models support @-mention references in the prompt — once at
   // least one ref is attached, surface that in the placeholder.
   const isSeedance2Model = (selectedModel?.model ?? "").startsWith(
-    "seedance_2p0",
+    "seedance_2",
   );
   const hasUploadedRefs =
     referenceImages.length > 0 ||

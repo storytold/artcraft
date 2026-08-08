@@ -14,6 +14,9 @@ interface TagChipInputProps {
   suggestions: TagSuggestion[];
   /** Read-only mode: chips render without remove affordance or input. */
   disabled?: boolean;
+  /** Open the suggestion dropdown above the input instead of below — for
+   *  hosts anchored to the bottom of the viewport (e.g. the bulk action bar). */
+  dropUp?: boolean;
   onAdd: (values: string[]) => void;
   onRemove: (value: string) => void;
 }
@@ -30,6 +33,7 @@ export function TagChipInput({
   chips,
   suggestions,
   disabled,
+  dropUp,
   onAdd,
   onRemove,
 }: TagChipInputProps) {
@@ -187,7 +191,11 @@ export function TagChipInput({
       </div>
 
       {dropdownOpen && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
+        <div
+          className={`absolute left-0 right-0 z-30 max-h-48 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl ${
+            dropUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+        >
           {filtered.map((suggestion, index) => (
             <button
               key={suggestion.value.toLowerCase()}
