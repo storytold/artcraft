@@ -158,8 +158,11 @@ mod tests {
     }
 
     #[test]
-    fn missing_input_seconds_bill_output_duration_only() {
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 10, true, None), 160);
+    fn missing_input_seconds_bill_the_worst_case_maximum() {
+      // Unknown input duration with video references attached: the kinovi
+      // estimator assumes the 30-second maximum so the provider-cost
+      // estimate never undershoots the actual charge.
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 10, true, None), 16 * 40);
     }
 
     #[test]

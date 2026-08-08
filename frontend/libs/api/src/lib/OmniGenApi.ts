@@ -38,6 +38,15 @@ export interface OmniGenImageGenerateResponse {
 
 // ── Video request / response types ───────────────────────────────────────
 
+// Frontend-supplied hints for cost estimation only. IGNORED by generation —
+// the backend measures inputs itself (e.g. ffprobing reference videos) when
+// it bills. Seedance 2.5 bills reference-video input seconds, so its cost
+// quote needs the combined input duration.
+export interface OmniGenEstimateFields {
+  total_input_video_duration_millis?: number | null;
+  total_input_audio_duration_millis?: number | null;
+}
+
 export interface OmniGenVideoRequest {
   model: string;
   prompt?: string | null;
@@ -56,6 +65,7 @@ export interface OmniGenVideoRequest {
   reference_audio_media_tokens?: string[] | null;
   reference_character_tokens?: string[] | null;
   negative_prompt?: string | null;
+  estimate_only?: OmniGenEstimateFields | null;
 }
 
 export interface OmniGenVideoCostResponse {

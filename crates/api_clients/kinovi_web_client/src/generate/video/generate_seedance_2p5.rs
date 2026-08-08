@@ -393,9 +393,11 @@ mod tests {
       }
 
       #[test]
-      fn missing_total_input_seconds_bills_output_duration_only() {
-        assert_eq!(video_ref_480(10, None).calculate_costs().kinovi_credits, 160.0);
-        assert_eq!(video_ref_720(10, None).calculate_costs().kinovi_credits, 350.0);
+      fn missing_total_input_seconds_bills_the_worst_case_maximum() {
+        // Unknown input duration with video references attached: assume the
+        // 30-second maximum so the estimate never undershoots the charge.
+        assert_eq!(video_ref_480(10, None).calculate_costs().kinovi_credits, (16 * 40) as f64);
+        assert_eq!(video_ref_720(10, None).calculate_costs().kinovi_credits, (35 * 40) as f64);
       }
 
       #[test]
@@ -464,10 +466,12 @@ mod tests {
       #[test]
       fn video_reference_rate_is_cheaper_per_second() {
         // 16 < 26 and 35 < 59: the with-references rate is lower per billed
-        // second (the input seconds are where the money goes).
-        assert!(video_ref_480(10, None).calculate_costs().kinovi_credits
+        // second (the input seconds are where the money goes). Compare at
+        // zero input seconds — the unknown-duration default assumes the
+        // 30-second maximum, which would swamp the rate comparison.
+        assert!(video_ref_480(10, Some(0)).calculate_costs().kinovi_credits
           < t2v_480(10).calculate_costs().kinovi_credits);
-        assert!(video_ref_720(10, None).calculate_costs().kinovi_credits
+        assert!(video_ref_720(10, Some(0)).calculate_costs().kinovi_credits
           < t2v_720(10).calculate_costs().kinovi_credits);
       }
 

@@ -562,7 +562,19 @@ export default function CreateVideo() {
 
   const lightbox = useLightboxNav(flatItems);
 
-  // Cost estimate
+  // Cost estimate. The input durations are estimate-only hints: models like
+  // Seedance 2.5 bill reference-video input seconds, and sending the
+  // durations lets the quote match what generation will bill (generation
+  // itself measures the real files server-side).
+  const totalInputVideoDurationMillis =
+    isReferenceMode && referenceVideos.length > 0
+      ? referenceVideos.reduce((sum, vid) => sum + vid.duration, 0) * 1000
+      : undefined;
+  const totalInputAudioDurationMillis =
+    isReferenceMode && referenceAudios.length > 0
+      ? referenceAudios.reduce((sum, aud) => sum + aud.duration, 0) * 1000
+      : undefined;
+
   const estimatedCredits = useVideoCostEstimate({
     model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
@@ -574,7 +586,10 @@ export default function CreateVideo() {
     hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
     isReferenceMode,
     referenceImageCount: isReferenceMode ? referenceImages.length : 0,
+    referenceVideoCount: isReferenceMode ? referenceVideos.length : 0,
     generateAudio: hasSound ? generateWithSound : undefined,
+    totalInputVideoDurationMillis,
+    totalInputAudioDurationMillis,
   });
 
   // Character @-mentions are driven by the model's capability flag (set by the

@@ -82,6 +82,7 @@ pub fn build_artcraft_omni_video_request(
     negative_prompt: None,
     generate_audio: None,
     quality: None,
+    estimate_only: None,
   })
 }
 

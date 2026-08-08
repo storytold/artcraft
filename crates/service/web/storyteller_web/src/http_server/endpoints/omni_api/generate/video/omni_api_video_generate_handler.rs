@@ -203,9 +203,10 @@ pub async fn omni_api_video_generate_handler(
       ).await?;
 
       // Downloads + ffprobe are slow — release the pool slot across them,
-      // then re-acquire for billing.
+      // then re-acquire for billing. Probing never fails the generation:
+      // unmeasurable files bill at the 30-second worst case.
       drop(mysql_connection);
-      let probed = download_and_probe_reference_videos(&video_sources).await?;
+      let probed = download_and_probe_reference_videos(&video_sources).await;
       mysql_connection = server_state.mysql_pool.acquire().await?;
 
       maybe_probed_reference_videos = Some(probed);
