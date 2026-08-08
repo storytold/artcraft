@@ -21,8 +21,15 @@ if (import.meta.env.DEV) {
     StorytellerApiHostStore.getInstance().setApiSchemeAndHost(
       window.location.origin,
     );
-    // NB: This is for Brandon to test with storyteller-web locally:
-    StorytellerApiHostStore.getInstance().setDevelopment();
+    // Backend devs: launch with USE_LOCAL_API=1 (see
+    // script/website/unix_frontend_website_dev.sh) to point API calls at a
+    // local storyteller-web (http://localhost:12345). When unset — the
+    // frontend-dev default — this branch never runs and API calls hit
+    // production. Do not comment this in or out; set the env var instead.
+    const useLocalApi = import.meta.env.VITE_USE_LOCAL_API;
+    if (useLocalApi === "1" || useLocalApi === "true") {
+      StorytellerApiHostStore.getInstance().setDevelopment();
+    }
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }
