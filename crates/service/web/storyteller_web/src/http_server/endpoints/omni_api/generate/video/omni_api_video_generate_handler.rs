@@ -34,6 +34,9 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::endpoints::generate::common::reference_video_input_seconds::{
+  fetch_reference_video_files, sum_reference_video_input_seconds,
+};
 use crate::http_server::endpoints::omni_api::generate::video::check_request::check_request;
 use crate::http_server::endpoints::omni_api::generate::video::ingest_url_inputs::ingest_url_inputs;
 use crate::http_server::endpoints::omni_api::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
@@ -181,9 +184,35 @@ pub async fn omni_api_video_generate_handler(
       &mut mysql_connection,
     ).await?;
 
+  // ==================== REFERENCE VIDEO INPUT SECONDS ==================== //
+
+  // Seedance 2.5 bills reference-video input seconds on top of the output
+  // duration, so probe the combined runtime before cost estimation.
+  let mut maybe_total_reference_video_input_seconds: Option<u16> = None;
+
+  if matches!(request.model, Some(CommonVideoModel::Seedance2p5)) {
+    if let Some(video_tokens) = request.reference_video_media_tokens.as_deref().filter(|tokens| !tokens.is_empty()) {
+      let video_files = fetch_reference_video_files(
+        video_tokens,
+        &http_request,
+        server_state.server_environment,
+        &mut mysql_connection,
+      ).await?;
+
+      // Files with no stored duration are downloaded and ffprobed — release
+      // the pool slot across that slow work, then re-acquire for billing.
+      drop(mysql_connection);
+      let total_input_seconds = sum_reference_video_input_seconds(&video_files).await?;
+      mysql_connection = server_state.mysql_pool.acquire().await?;
+
+      maybe_total_reference_video_input_seconds = Some(total_input_seconds);
+    }
+  }
+
   // ==================== HYDRATE ROUTER REQUEST ==================== //
 
-  let router_builder = hydrate_to_router_request(&request)?;
+  let mut router_builder = hydrate_to_router_request(&request)?;
+  router_builder.total_reference_video_input_seconds = maybe_total_reference_video_input_seconds;
 
   // ==================== PIPELINE DISPATCH ==================== //
 

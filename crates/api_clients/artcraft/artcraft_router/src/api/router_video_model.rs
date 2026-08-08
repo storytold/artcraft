@@ -92,6 +92,9 @@ pub enum RouterVideoModel {
   #[serde(rename = "seedance_2p5_preview")]
   Seedance2p5Preview,
 
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
@@ -154,6 +157,13 @@ mod tests {
   #[test]
   fn seedance_2p5_preview_serializes() {
     assert_serde_round_trip(RouterVideoModel::Seedance2p5Preview, "seedance_2p5_preview");
+  }
+
+  #[test]
+  fn seedance_2p5_serializes() {
+    // NB: This string must match `CommonVideoModel` — the two enums convert
+    // via serde string round-trip in the omni handlers.
+    assert_serde_round_trip(RouterVideoModel::Seedance2p5, "seedance_2p5");
   }
 
   #[test]
