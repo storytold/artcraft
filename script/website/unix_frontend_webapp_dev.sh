@@ -24,17 +24,18 @@ frontend_npm_install
 
 export VITE_ENVIRONMENT_TYPE="production"
 
-# Backend devs: launch with USE_LOCAL_API=1 (or `export USE_LOCAL_API=1` once
-# in your shell profile) to point the frontend at a local storyteller-web on
-# http://localhost:12345. Unset/0 — the frontend-dev default — hits
-# production. This replaces the comment/uncomment dance around
-# StorytellerApiHostStore.setDevelopment() in src/main.tsx.
-export VITE_USE_LOCAL_API="${USE_LOCAL_API:-0}"
-if [[ "${VITE_USE_LOCAL_API}" == "1" ]]; then
-  echo "USE_LOCAL_API=1 — API calls will target http://localhost:12345"
-else
-  echo "API calls will target production (set USE_LOCAL_API=1 for a local backend)"
-fi
+# # Backend devs: launch with USE_LOCAL_API=1 (or `export USE_LOCAL_API=1` once
+# # in your shell profile) to point the frontend at a local storyteller-web on
+# # http://localhost:12345. Unset/0 — the frontend-dev default — hits
+# # production. This replaces the comment/uncomment dance around
+# # StorytellerApiHostStore.setDevelopment() in src/main.tsx.
+# export VITE_USE_LOCAL_API="${USE_LOCAL_API:-0}"
+# if [[ "${VITE_USE_LOCAL_API}" == "1" ]]; then
+#   echo "USE_LOCAL_API=1 — API calls will target http://localhost:12345"
+# else
+#   echo "API calls will target production (set USE_LOCAL_API=1 for a local backend)"
+# fi
+export VITE_USE_LOCAL_API="true"
 
 nx dev artcraft-webapp
 
