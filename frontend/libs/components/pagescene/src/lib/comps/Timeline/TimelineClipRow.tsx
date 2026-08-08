@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faBezierCurve,
   faFilm,
   faPlus,
   faRepeat,
@@ -10,16 +11,21 @@ import {
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
   addBakedClipToObject,
+  ensureClipTransitionGap,
   moveClipLane,
   removeClipLane,
   resizeClipLane,
   setClipLoop,
+  setClipTransitionEasing,
 } from "../../actions";
 import {
   usePageSceneStore,
   type ClipLane,
 } from "../../PageSceneStore";
-import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
+import {
+  DEFAULT_EASING,
+  DEFAULT_TIMELINE_FPS,
+} from "../../engine/timeline/types";
 import { ToastTypes } from "../../enums";
 import { fractionToTime, quantizeToFrame, timeToFraction } from "./timelineUtils";
 
@@ -83,6 +89,34 @@ export const TimelineClipRow = ({
       window.removeEventListener("resize", onResize);
     };
   }, [pickerAnchor]);
+
+  // Opt-in gap transition: first click on a boundary chip enables the blend
+  // (default curve) and opens the Motion popover; on an active chip it
+  // toggles the popover. Flush/too-tight boundaries (the default — auto-
+  // placement packs strips back-to-back) first get a small gap opened for
+  // the blend to play in; a row too packed to make room rejects with a
+  // toast. Keyframe-easing selection is cleared so the two popovers never
+  // contend.
+  const toggleTransition = (lane: ClipLane) => {
+    if (!editor) return;
+    const store = usePageSceneStore.getState();
+    if (store.timelineEasingClipLaneId === lane.id) {
+      store.setTimelineEasingClipLane(null);
+      return;
+    }
+    if (!lane.strip.transitionEasing) {
+      if (!ensureClipTransitionGap(editor, lane.id)) {
+        editor.adapter.showToast(
+          ToastTypes.WARNING,
+          "No room on this row to open a gap for the transition.",
+        );
+        return;
+      }
+      setClipTransitionEasing(editor, lane.id, DEFAULT_EASING);
+    }
+    store.setTimelineEasingKeyframe(null);
+    store.setTimelineEasingClipLane(lane.id);
+  };
 
   const addBaked = (clipIndex: number) => {
     setPickerAnchor(null);
@@ -295,6 +329,47 @@ export const TimelineClipRow = ({
             </div>
           );
         })}
+
+        {/* Opt-in gap transitions: a chip at every consecutive-strip
+            boundary enables/edits the pose blend across the gap
+            (transitionEasing on the LEADING strip). Auto-placement packs
+            strips flush, so the chip renders even at a zero gap — enabling
+            there first opens a small gap (toggleTransition) for the blend
+            to play in. data-transition-chip exempts it from the popover's
+            click-away. */}
+        {[...lanes]
+          .sort((a, b) => a.strip.startTime - b.strip.startTime)
+          .map((lane, i, sorted) => {
+            const next = sorted[i + 1];
+            if (!next) return null;
+            const gapStart = lane.strip.startTime + lane.strip.duration;
+            const gapEnd = next.strip.startTime;
+            const active = !!lane.strip.transitionEasing;
+            const midPct =
+              timeToFraction((gapStart + gapEnd) / 2, duration) * 100;
+            return (
+              <button
+                key={`transition-${lane.id}`}
+                type="button"
+                data-transition-chip
+                title={
+                  active
+                    ? "Edit transition into the next clip"
+                    : "Blend into the next clip"
+                }
+                className={`absolute top-1/2 z-10 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-colors ${
+                  active
+                    ? "border-brand-primary bg-brand-primary text-white"
+                    : "border-dashed border-white/30 bg-black/30 text-white/40 hover:border-white/60 hover:text-white/80"
+                }`}
+                style={{ left: `${midPct}%` }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => toggleTransition(lane)}
+              >
+                <FontAwesomeIcon icon={faBezierCurve} className="h-2 w-2" />
+              </button>
+            );
+          })}
       </div>
 
       {/* spacer to match the keyframe row's add-button column (keeps lane

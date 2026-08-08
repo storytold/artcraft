@@ -170,6 +170,21 @@ export class EngineStoreBridge {
         ) {
           store.setTimelineSelectedClipLane(null);
         }
+        // The transition popover must close not only when its lane vanishes
+        // but also when the lane LOSES its transition while surviving —
+        // Cancel and undo-of-a-Save revert transitionEasing wholesale with
+        // lane ids intact, and a popover left open would silently re-create
+        // the reverted transition on the next curve drag. (The enable flow
+        // is safe: toggleTransition sets the easing BEFORE selecting the
+        // lane, so this prune never races it.)
+        if (store.timelineEasingClipLaneId) {
+          const easingLane = e.clipLanes.find(
+            (l) => l.id === store.timelineEasingClipLaneId,
+          );
+          if (!easingLane || !easingLane.strip.transitionEasing) {
+            store.setTimelineEasingClipLane(null);
+          }
+        }
       }),
       bus.subscribe(TimelinePlayheadEvent, (e) => {
         const store = usePageSceneStore.getState();

@@ -15,7 +15,8 @@
 
 import * as THREE from "three";
 import type Editor from "../editor";
-import type { ClipLane } from "../timeline/types";
+import type { ClipLane, EasingSpec } from "../timeline/types";
+import { cubicBezierYForX } from "../timeline/interpolation";
 
 // Per-lane runtime state. `action` is null while the clip GLB is still
 // loading — or TERMINALLY, when the lane can't bind (see `boundRoot`).
@@ -38,6 +39,8 @@ interface LaneRuntime {
   // uuid differs from boundRoot (object appeared, vanished, or was replaced
   // under the same uuid) — never on a timer or per-refresh retry loop.
   boundRoot: THREE.Object3D | null;
+  // Opt-in transition curve into the NEXT strip on the row (see ClipStrip).
+  transitionEasing?: EasingSpec;
 }
 
 // Captured local transform of one node, for rest-pose restoration.
@@ -78,10 +81,11 @@ export class CharacterAnimationManager {
       if (!rt) {
         void this.addLane(lane);
       } else {
-        // Placement and trim can change without a reload.
+        // Placement, trim and transition can change without a reload.
         rt.startTime = lane.strip.startTime;
         rt.loop = lane.strip.loop;
         rt.stripDuration = lane.strip.duration;
+        rt.transitionEasing = lane.strip.transitionEasing;
       }
     }
     this.pruneMixers();
@@ -93,48 +97,93 @@ export class CharacterAnimationManager {
     // Characters that have a clip covering this playhead. Everyone else is
     // reset to their bind (T) pose below.
     const posed = new Set<string>();
-    // Pick ONE winning lane per character first. Strip intervals are closed
-    // at both ends so seek-to-end still holds a final pose, but strips are
-    // deliberately snapped flush (resolveFreeStart), so at a shared boundary
-    // — A ends exactly where B starts, and scrubs/records land on exact
-    // frame times — both would qualify. Enabling both blends A's last frame
-    // with B's first at half weight each, a garbage pose the deterministic
-    // recorder would encode into video. The LATER strip (smaller local time)
-    // wins the boundary.
-    const winners = new Map<string, LaneRuntime>();
+    // Process per character. Inside a strip, exactly ONE lane wins: strip
+    // intervals are closed at both ends (seek-to-end holds a final pose) and
+    // strips snap flush, so at a shared boundary the LATER strip (smaller
+    // local time) wins — enabling both would blend A's last frame with B's
+    // first at half weight each, a garbage pose the deterministic recorder
+    // would encode into video. In a GAP, the OPT-IN transition on the
+    // leading strip (transitionEasing) cross-fades its exit pose into the
+    // next strip's entry pose — the one deliberate two-action case; weights
+    // sum to 1, so the mixer computes a proper lerp.
+    const byCharacter = new Map<string, LaneRuntime[]>();
     for (const rt of this.lanes.values()) {
-      const action = rt.action;
-      if (!action) continue;
-      const local = playhead - rt.startTime;
-      if (local < 0 || local > rt.stripDuration) {
-        action.enabled = false;
-        continue;
-      }
-      const incumbent = winners.get(rt.characterUuid);
-      if (!incumbent) {
-        winners.set(rt.characterUuid, rt);
-        continue;
-      }
-      if (local < playhead - incumbent.startTime) {
-        incumbent.action!.enabled = false;
-        winners.set(rt.characterUuid, rt);
-      } else {
-        action.enabled = false;
-      }
+      if (!rt.action) continue;
+      const list = byCharacter.get(rt.characterUuid);
+      if (list) list.push(rt);
+      else byCharacter.set(rt.characterUuid, [rt]);
     }
-    for (const rt of winners.values()) {
-      let local = playhead - rt.startTime;
-      // The strip's on-timeline width is the play window; the clip's natural
-      // length only drives the loop modulo / final-frame clamp inside it.
-      const dur = rt.clipDuration;
-      if (rt.loop && dur > 0) local = local % dur;
-      else local = Math.min(local, dur);
-      const action = rt.action!;
-      action.enabled = true;
-      action.paused = true; // we drive time ourselves; don't auto-advance
-      action.time = local;
-      action.setEffectiveWeight(1);
-      posed.add(rt.characterUuid);
+    for (const [uuid, lanes] of byCharacter) {
+      lanes.sort((a, b) => a.startTime - b.startTime);
+
+      let winner: LaneRuntime | null = null;
+      for (const rt of lanes) {
+        const local = playhead - rt.startTime;
+        if (local < 0 || local > rt.stripDuration) continue;
+        if (!winner || local < playhead - winner.startTime) winner = rt;
+      }
+
+      // Gap: find the bracketing strips; blend only when the leading one
+      // opted in and the gap has real width.
+      let blendPrev: LaneRuntime | null = null;
+      let blendNext: LaneRuntime | null = null;
+      let blendWeight = 0;
+      if (!winner) {
+        let prev: LaneRuntime | null = null;
+        let next: LaneRuntime | null = null;
+        for (const rt of lanes) {
+          if (rt.startTime + rt.stripDuration <= playhead) prev = rt;
+          if (next === null && rt.startTime >= playhead) next = rt;
+        }
+        if (prev?.transitionEasing && next) {
+          const prevEnd = prev.startTime + prev.stripDuration;
+          const span = next.startTime - prevEnd;
+          if (span > 1e-6) {
+            const progress = (playhead - prevEnd) / span;
+            blendWeight = Math.max(
+              0,
+              Math.min(1, cubicBezierYForX(prev.transitionEasing, progress)),
+            );
+            blendPrev = prev;
+            blendNext = next;
+          }
+        }
+      }
+
+      for (const rt of lanes) {
+        const action = rt.action!;
+        if (rt === winner) {
+          let local = playhead - rt.startTime;
+          // The strip's on-timeline width is the play window; the clip's
+          // natural length only drives the loop modulo / final-frame clamp.
+          const dur = rt.clipDuration;
+          if (rt.loop && dur > 0) local = local % dur;
+          else local = Math.min(local, dur);
+          action.enabled = true;
+          action.paused = true; // we drive time ourselves; don't auto-advance
+          action.time = local;
+          action.setEffectiveWeight(1);
+          posed.add(uuid);
+        } else if (rt === blendPrev || rt === blendNext) {
+          // Pinned poses: the leading strip holds its EXIT frame (loop-wrap
+          // included, matching what its own end displays), the next strip
+          // its ENTRY frame.
+          const dur = rt.clipDuration;
+          const exit =
+            rt.loop && dur > 0
+              ? rt.stripDuration % dur
+              : Math.min(rt.stripDuration, dur);
+          action.enabled = true;
+          action.paused = true;
+          action.time = rt === blendPrev ? exit : 0;
+          action.setEffectiveWeight(
+            rt === blendPrev ? 1 - blendWeight : blendWeight,
+          );
+          posed.add(uuid);
+        } else {
+          action.enabled = false;
+        }
+      }
     }
     // Gaps between strips (and before the first / after the last) have no active
     // clip. A disabled action leaves the skeleton frozen on its last evaluated
@@ -209,6 +258,7 @@ export class CharacterAnimationManager {
       clipDuration: lane.strip.duration,
       stripDuration: lane.strip.duration,
       boundRoot: null,
+      transitionEasing: lane.strip.transitionEasing,
     };
     this.lanes.set(lane.id, rt);
 

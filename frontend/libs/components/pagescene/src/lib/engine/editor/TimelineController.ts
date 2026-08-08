@@ -16,6 +16,7 @@ import {
   DEFAULT_EASING,
   DEFAULT_TIMELINE_DURATION,
   DEFAULT_TIMELINE_FPS,
+  DEFAULT_TRANSITION_GAP,
   type ClipLane,
   type ClipStrip,
   type EasingSpec,
@@ -354,6 +355,73 @@ export class TimelineController {
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
+  }
+
+  // Set (or clear, with null) the opt-in pose transition from `laneId`'s
+  // strip into the NEXT strip on its row. Rides the Save/Cancel session
+  // like every other clip edit.
+  setClipTransitionEasing(laneId: string, easing: EasingSpec | null): void {
+    if (!this.timeline) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane) return;
+    if (easing) lane.strip.transitionEasing = { ...easing };
+    else delete lane.strip.transitionEasing;
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  // Guarantee at least `gap` seconds of daylight between `laneId`'s strip and
+  // the NEXT strip on its row, so an enabled transition has room to play.
+  // Auto-placement packs strips flush (resolveFreeStart), so this is what
+  // makes the boundary chip usable without hand-dragging a gap open first.
+  // Makes room by shifting the next strip right (bounded by the strip after
+  // it / the timeline end), then by trimming the leading strip when shifting
+  // alone isn't enough. Returns false — mutating nothing — when there is no
+  // next strip or the row is too packed to make room (callers surface that).
+  // Rides the Save/Cancel session like every other clip edit.
+  ensureTransitionGap(laneId: string, gap = DEFAULT_TRANSITION_GAP): boolean {
+    if (!this.timeline) return false;
+    const lead = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lead) return false;
+    const leadEnd = lead.strip.startTime + lead.strip.duration;
+    // Epsilon: a strip trimmed flush against its neighbour can put leadEnd a
+    // float-rounding hair PAST the neighbour's start; `>= leadEnd` alone
+    // would then miss it and misreport "no next strip".
+    const next = this.timeline.clipLanes
+      .filter(
+        (l) =>
+          l.objectUuid === lead.objectUuid &&
+          l.id !== lead.id &&
+          l.strip.startTime >= leadEnd - 1e-6,
+      )
+      .sort((a, b) => a.strip.startTime - b.strip.startTime)[0];
+    if (!next) return false;
+    const needed = gap - (next.strip.startTime - leadEnd);
+    if (needed <= 0) return true;
+    const followBound = this.nextStartAfter(
+      lead.objectUuid,
+      next.id,
+      next.strip.startTime,
+    );
+    const shiftAvail = Math.max(
+      0,
+      followBound - (next.strip.startTime + next.strip.duration),
+    );
+    const minDur = 1 / (this.timeline.fps || DEFAULT_TIMELINE_FPS);
+    const trimAvail = Math.max(0, lead.strip.duration - minDur);
+    if (shiftAvail + trimAvail < needed) return false;
+    const shift = Math.min(needed, shiftAvail);
+    next.strip.startTime += shift;
+    const trim = needed - shift;
+    if (trim > 0) {
+      lead.strip.duration -= trim;
+      lead.strip.autoDuration = false;
+    }
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+    return true;
   }
 
   // Toggle whether a clip loops for the remainder of its strip.

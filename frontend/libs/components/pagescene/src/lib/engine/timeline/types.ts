@@ -51,6 +51,13 @@ export interface ClipStrip {
   // A user trim clears this so a hand-set duration survives reloads. Baked
   // strips know their length up front and never set this.
   autoDuration?: boolean;
+  // OPT-IN transition into the FOLLOWING strip on the same row: when set,
+  // the gap between this strip's end and the next strip's start blends this
+  // strip's exit pose into the next strip's entry pose along this curve
+  // (same cubic-bezier semantics as keyframe easing). Absent = the gap
+  // shows the rest pose, as always. Lives on the LEADING strip, mirroring
+  // how keyframes store the easing "into the next".
+  transitionEasing?: EasingSpec;
 }
 
 // One animation lane under an object; each lane holds a single clip strip.
@@ -80,6 +87,9 @@ export const EASING_PRESETS: Record<EasingPresetName, EasingSpec> = {
 };
 
 export const DEFAULT_EASING: EasingSpec = EASING_PRESETS.easeInOut;
+// Gap (seconds) auto-opened between two flush strips when the user enables a
+// transition at their boundary — the blend needs room on the timeline to play.
+export const DEFAULT_TRANSITION_GAP = 0.3;
 export const DEFAULT_TIMELINE_DURATION = 10; // seconds
 export const DEFAULT_TIMELINE_FPS = 30;
 

@@ -206,6 +206,9 @@ interface PageSceneState {
   // Motion popover (opened from the curve chip BETWEEN two keyframes).
   // Distinct from timelineSelectedKeyframeId, which drives selection/delete.
   timelineEasingKeyframeId: string | null;
+  // Leading clip lane whose gap-transition curve is being edited in the
+  // Motion popover (opened from the chip in the gap between two strips).
+  timelineEasingClipLaneId: string | null;
   // Object whose timeline row should be scrolled into view. Set (with
   // timelineExpanded) after a clip is added; consumed and cleared by an
   // effect in TimelineEditor. A store field because TimelineEditor is
@@ -332,6 +335,7 @@ interface PageSceneState {
   setTimelineSelectedKeyframe: (id: string | null) => void;
   setTimelineSelectedClipLane: (id: string | null) => void;
   setTimelineEasingKeyframe: (id: string | null) => void;
+  setTimelineEasingClipLane: (id: string | null) => void;
   setTimelineRevealObjectUuid: (uuid: string | null) => void;
   setTimelineFocusSelected: (focus: boolean) => void;
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
@@ -433,6 +437,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineSelectedKeyframeId: null,
   timelineSelectedClipLaneId: null,
   timelineEasingKeyframeId: null,
+  timelineEasingClipLaneId: null,
   timelineRevealObjectUuid: null,
   timelineFocusSelected: false,
   producedArtifact: null,
@@ -546,6 +551,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineSelectedClipLane: (id) =>
     set({ timelineSelectedClipLaneId: id }),
   setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
+  setTimelineEasingClipLane: (id) => set({ timelineEasingClipLaneId: id }),
   setTimelineRevealObjectUuid: (uuid) =>
     set({ timelineRevealObjectUuid: uuid }),
   setTimelineFocusSelected: (focus) => set({ timelineFocusSelected: focus }),

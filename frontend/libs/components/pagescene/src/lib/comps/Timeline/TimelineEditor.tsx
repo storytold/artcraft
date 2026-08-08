@@ -20,9 +20,14 @@ import {
   removeClipLane,
   saveTimeline,
   seekTimeline,
+  setClipTransitionEasing,
+  setKeyframeEasing,
 } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
-import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
+import {
+  DEFAULT_EASING,
+  DEFAULT_TIMELINE_FPS,
+} from "../../engine/timeline/types";
 import {
   formatTimecode,
   formatTimecodeFrames,
@@ -124,6 +129,34 @@ export const TimelineEditor = () => {
       break;
     }
   }
+
+  // Clip gap-transition popover: anchored at the midpoint of the gap between
+  // the leading strip (which stores transitionEasing) and the next strip on
+  // its row. Same lane-area coordinate system as the keyframe popover.
+  const easingClipLaneId = usePageSceneStore((s) => s.timelineEasingClipLaneId);
+  const clipTransitionAnchor = (() => {
+    if (!easingClipLaneId) return null;
+    const lead = clipLanes.find((l) => l.id === easingClipLaneId);
+    if (!lead) return null;
+    const leadEnd = lead.strip.startTime + lead.strip.duration;
+    // Epsilon matches TimelineController.ensureTransitionGap: a strip
+    // trimmed flush can put leadEnd a float hair past the neighbour's start.
+    const next = clipLanes
+      .filter(
+        (l) =>
+          l.objectUuid === lead.objectUuid &&
+          l.id !== lead.id &&
+          l.strip.startTime >= leadEnd - 1e-6,
+      )
+      .sort((a, b) => a.strip.startTime - b.strip.startTime)[0];
+    if (!next) return null;
+    return {
+      laneId: lead.id,
+      easing: lead.strip.transitionEasing ?? DEFAULT_EASING,
+      leftPercent:
+        timeToFraction((leadEnd + next.strip.startTime) / 2, duration) * 100,
+    };
+  })();
 
   // Selected keyframe: Delete/Backspace removes it (capture phase, so the
   // engine's document-level Delete — which deletes the selected scene
@@ -267,6 +300,25 @@ export const TimelineEditor = () => {
     return () =>
       document.removeEventListener("pointerdown", onPointerDown, true);
   }, [easingKeyframeId]);
+
+  // Same dismissal for the clip gap-transition popover (its chips carry
+  // data-transition-chip).
+  useEffect(() => {
+    if (!easingClipLaneId) return undefined;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest("#motion-popover") ||
+        target?.closest("[data-transition-chip]")
+      ) {
+        return;
+      }
+      usePageSceneStore.getState().setTimelineEasingClipLane(null);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [easingClipLaneId]);
 
   const playheadFraction = timeToFraction(playhead, duration);
 
@@ -496,18 +548,61 @@ export const TimelineEditor = () => {
         </div>
 
         {/* Anchor the popover in the lane area (same geometry as the
-            playhead overlay) so its left % lines up with the easing chip. */}
-        {easingAnchor && (
+            playhead overlay) so its left % lines up with the easing chip.
+            Keyframe easing takes priority over a clip transition so the two
+            popovers (which share #motion-popover) never render together. */}
+        {easingAnchor ? (
           <div
             className="pointer-events-none absolute inset-y-0"
             style={{ left: LANE_LEFT, right: LANE_RIGHT }}
           >
             <MotionPopover
-              keyframe={easingAnchor.keyframe}
+              easing={easingAnchor.keyframe.easing}
+              onChange={(next) =>
+                editor &&
+                setKeyframeEasing(editor, easingAnchor.keyframe.id, next)
+              }
               leftPercent={easingAnchor.leftPercent}
             />
           </div>
-        )}
+        ) : clipTransitionAnchor ? (
+          <div
+            className="pointer-events-none absolute inset-y-0"
+            style={{ left: LANE_LEFT, right: LANE_RIGHT }}
+          >
+            <MotionPopover
+              title="Transition"
+              easing={clipTransitionAnchor.easing}
+              onChange={(next) =>
+                editor &&
+                setClipTransitionEasing(
+                  editor,
+                  clipTransitionAnchor.laneId,
+                  next,
+                )
+              }
+              leftPercent={clipTransitionAnchor.leftPercent}
+              footer={
+                <button
+                  type="button"
+                  className="mt-2 w-full rounded-md border border-ui-controls-border/60 px-2 py-1.5 text-[11px] text-base-fg/80 transition-colors hover:bg-ui-controls/40"
+                  onClick={() => {
+                    if (editor) {
+                      setClipTransitionEasing(
+                        editor,
+                        clipTransitionAnchor.laneId,
+                        null,
+                      );
+                    }
+                    usePageSceneStore.getState().setTimelineEasingClipLane(null);
+                  }}
+                >
+                  Remove transition
+                </button>
+              }
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* footer */}

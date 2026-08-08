@@ -306,9 +306,32 @@ then one row per character is the right model.
   `DEFAULT_CLIP_DURATION` (1 s) instead of adopting the clip's natural length — long clips were
   eating the whole row. The strip's on-timeline width is the **authoritative play window**
   (`LaneRuntime.stripDuration` in `evaluateAt`); the clip's natural length only drives the loop
-  modulo / final-frame clamp inside it, so trimming a strip shorter genuinely cuts playback and a
-  non-loop strip trimmed longer than the clip freezes on the last frame. `resolveClipDuration` now
-  only SHRINKS an `autoDuration` strip when the clip is shorter than the default.
+  modulo / final-frame clamp inside it, so trimming a strip shorter genuinely cuts playback.
+  Strips default to **loop: true** — dragging a strip wider than the clip keeps the motion
+  cycling (a walk keeps walking, per tester expectation/old-studio behavior); the loop chip opts
+  a strip into play-once/hold-last-frame instead. `resolveClipDuration` only SHRINKS an
+  `autoDuration` strip when the clip is shorter than the default.
+- **Gap transitions (opt-in blending)**: `ClipStrip.transitionEasing` on the LEADING strip
+  (presence = enabled; mirrors keyframes storing easing "into the next") cross-fades the strip's
+  exit pose into the next strip's entry pose across the gap between them. `evaluateAt` enables
+  BOTH actions pinned at their exit/entry frames with weights `(1−w, w)` from
+  `cubicBezierYForX` — weights sum to 1 so the mixer computes a proper lerp; this is the one
+  deliberate exception to the one-winner rule, and it's continuous at both gap edges (w=0 at the
+  leading strip's end, w=1 at the next strip's start). Gaps without a transition keep the rest
+  pose; leading/trailing row gaps never blend. UI: a `data-transition-chip` button at EVERY
+  consecutive-strip boundary (ghost = off, solid = on) — auto-placement packs strips flush, so
+  enabling on a flush/too-tight boundary first calls `ensureTransitionGap`
+  (`DEFAULT_TRANSITION_GAP` = 0.3s: shift the next strip right, bounded by its follower/timeline
+  end, then trim the leading strip if shifting isn't enough; a too-packed row rejects with a
+  toast and mutates nothing). Click enables with `DEFAULT_EASING` and opens the generalized
+  `MotionPopover` (`easing`/`onChange`/`footer` props — keyframes use the same component) with a
+  "Remove transition" footer; popover selection rides `timelineEasingClipLaneId` — bridge-pruned
+  both when the lane vanishes AND when it loses its transition with the id intact (Cancel /
+  undo-of-Save revert the easing wholesale; an open popover would otherwise re-create it on the
+  next curve drag) — and the keyframe popover takes render priority so the two never coexist.
+  Edits ride the Save/Cancel session; serialization needs no special casing (`transitionEasing`
+  rides `TimelineData` through every wholesale-clone path: scene JSON save/load, Save/Cancel
+  snapshots, SaveTimelineAction, RemoveClipLaneAction restore).
 - **Strip selection + delete UX**: strips are click-to-select
   (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
   click-away deselect). The **× renders only on the selected strip** (always-visible was too easy
