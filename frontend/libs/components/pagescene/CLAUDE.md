@@ -325,9 +325,13 @@ then one row per character is the right model.
   end, then trim the leading strip if shifting isn't enough; a too-packed row rejects with a
   toast and mutates nothing). Click enables with `DEFAULT_EASING` and opens the generalized
   `MotionPopover` (`easing`/`onChange`/`footer` props — keyframes use the same component) with a
-  "Remove transition" footer; popover selection rides `timelineEasingClipLaneId` (bridge-pruned
-  like the other selection ids), and the keyframe popover takes render priority so the two never
-  coexist. Edits ride the Save/Cancel session.
+  "Remove transition" footer; popover selection rides `timelineEasingClipLaneId` — bridge-pruned
+  both when the lane vanishes AND when it loses its transition with the id intact (Cancel /
+  undo-of-Save revert the easing wholesale; an open popover would otherwise re-create it on the
+  next curve drag) — and the keyframe popover takes render priority so the two never coexist.
+  Edits ride the Save/Cancel session; serialization needs no special casing (`transitionEasing`
+  rides `TimelineData` through every wholesale-clone path: scene JSON save/load, Save/Cancel
+  snapshots, SaveTimelineAction, RemoveClipLaneAction restore).
 - **Strip selection + delete UX**: strips are click-to-select
   (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
   click-away deselect). The **× renders only on the selected strip** (always-visible was too easy
