@@ -170,6 +170,12 @@ export class EngineStoreBridge {
         ) {
           store.setTimelineSelectedClipLane(null);
         }
+        if (
+          store.timelineEasingClipLaneId &&
+          !e.clipLanes.some((l) => l.id === store.timelineEasingClipLaneId)
+        ) {
+          store.setTimelineEasingClipLane(null);
+        }
       }),
       bus.subscribe(TimelinePlayheadEvent, (e) => {
         const store = usePageSceneStore.getState();

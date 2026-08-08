@@ -1,16 +1,15 @@
-import { useContext, useRef, useState } from "react";
-import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { setKeyframeEasing } from "../../actions";
+import { ReactNode, useRef, useState } from "react";
 import {
   EASING_PRESETS,
   type EasingPresetName,
   type EasingSpec,
-  type Keyframe,
 } from "../../engine/timeline/types";
 
-// The Motion popover edits a keyframe's easing curve (the interpolation
-// INTO the next keyframe). Presets across the top, an editable cubic-bezier
-// curve below with two draggable handles and a dotted linear reference.
+// The Motion popover edits a cubic-bezier easing curve. Presets across the
+// top, an editable curve below with two draggable handles and a dotted
+// linear reference. Presentational: callers own the wiring — keyframe
+// easing (TimelineEditor) and clip gap-transitions (TimelineEditor via the
+// gap chips in TimelineClipRow) both reuse it through `easing`/`onChange`.
 
 const BOX = 150; // svg drawing box (px), domain [0,1]×[0,1]
 const PAD = 14; // padding so handles/labels aren't clipped
@@ -28,21 +27,26 @@ const PRESETS: { name: EasingPresetName; label: string }[] = [
 ];
 
 interface MotionPopoverProps {
-  keyframe: Keyframe;
+  easing: EasingSpec;
+  onChange: (next: EasingSpec) => void;
   // Horizontal anchor as a percentage across the editor (playhead/keyframe pos).
   leftPercent: number;
+  title?: string;
+  // Optional extra row under the curve (e.g. "Remove transition").
+  footer?: ReactNode;
 }
 
-export const MotionPopover = ({ keyframe, leftPercent }: MotionPopoverProps) => {
-  const editor = useContext(EngineContext);
+export const MotionPopover = ({
+  easing,
+  onChange,
+  leftPercent,
+  title = "Motion",
+  footer,
+}: MotionPopoverProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState<null | "p1" | "p2">(null);
 
-  const easing = keyframe.easing;
-
-  const commit = (next: EasingSpec) => {
-    if (editor) setKeyframeEasing(editor, keyframe.id, next);
-  };
+  const commit = onChange;
 
   const pointerToNorm = (e: React.PointerEvent) => {
     const svg = svgRef.current;
@@ -76,7 +80,7 @@ export const MotionPopover = ({ keyframe, leftPercent }: MotionPopoverProps) => 
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="mb-2 text-xs font-semibold text-base-fg/80">Motion</div>
+      <div className="mb-2 text-xs font-semibold text-base-fg/80">{title}</div>
       <div className="mb-3 grid grid-cols-4 gap-1">
         {PRESETS.map((p) => {
           const preset = EASING_PRESETS[p.name];
@@ -182,6 +186,7 @@ export const MotionPopover = ({ keyframe, leftPercent }: MotionPopoverProps) => 
           }}
         />
       </svg>
+      {footer}
     </div>
   );
 };

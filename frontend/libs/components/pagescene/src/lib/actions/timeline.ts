@@ -158,6 +158,16 @@ export function setClipLoop(
   editor.timelineController.setClipLoop(laneId, loop);
 }
 
+// Set (or clear, with null) the opt-in pose transition from `laneId`'s strip
+// into the next strip on its row.
+export function setClipTransitionEasing(
+  editor: Editor,
+  laneId: string,
+  easing: EasingSpec | null,
+): void {
+  editor.timelineController.setClipTransitionEasing(laneId, easing);
+}
+
 // Individually undoable (RemoveClipLaneAction) — both the strip's × button
 // and Del/Backspace route through here.
 export function removeClipLane(editor: Editor, laneId: string): void {

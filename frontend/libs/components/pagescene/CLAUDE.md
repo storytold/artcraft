@@ -311,6 +311,19 @@ then one row per character is the right model.
   cycling (a walk keeps walking, per tester expectation/old-studio behavior); the loop chip opts
   a strip into play-once/hold-last-frame instead. `resolveClipDuration` only SHRINKS an
   `autoDuration` strip when the clip is shorter than the default.
+- **Gap transitions (opt-in blending)**: `ClipStrip.transitionEasing` on the LEADING strip
+  (presence = enabled; mirrors keyframes storing easing "into the next") cross-fades the strip's
+  exit pose into the next strip's entry pose across the gap between them. `evaluateAt` enables
+  BOTH actions pinned at their exit/entry frames with weights `(1−w, w)` from
+  `cubicBezierYForX` — weights sum to 1 so the mixer computes a proper lerp; this is the one
+  deliberate exception to the one-winner rule, and it's continuous at both gap edges (w=0 at the
+  leading strip's end, w=1 at the next strip's start). Gaps without a transition keep the rest
+  pose; leading/trailing row gaps never blend. UI: a `data-transition-chip` button midway in the
+  gap (ghost = off, click enables with `DEFAULT_EASING`; solid = on) opens the generalized
+  `MotionPopover` (`easing`/`onChange`/`footer` props — keyframes use the same component) with a
+  "Remove transition" footer; popover selection rides `timelineEasingClipLaneId` (bridge-pruned
+  like the other selection ids), and the keyframe popover takes render priority so the two never
+  coexist. Edits ride the Save/Cancel session.
 - **Strip selection + delete UX**: strips are click-to-select
   (`timelineSelectedClipLaneId` store field, `data-clip-strip` exempts the pointerdown from the
   click-away deselect). The **× renders only on the selected strip** (always-visible was too easy

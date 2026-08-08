@@ -356,6 +356,20 @@ export class TimelineController {
     this.emitChanged();
   }
 
+  // Set (or clear, with null) the opt-in pose transition from `laneId`'s
+  // strip into the NEXT strip on its row. Rides the Save/Cancel session
+  // like every other clip edit.
+  setClipTransitionEasing(laneId: string, easing: EasingSpec | null): void {
+    if (!this.timeline) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane) return;
+    if (easing) lane.strip.transitionEasing = { ...easing };
+    else delete lane.strip.transitionEasing;
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+  }
+
   // Toggle whether a clip loops for the remainder of its strip.
   setClipLoop(laneId: string, loop: boolean): void {
     if (!this.timeline) return;
