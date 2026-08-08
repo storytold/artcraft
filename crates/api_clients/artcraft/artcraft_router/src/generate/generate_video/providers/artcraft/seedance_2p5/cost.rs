@@ -1,4 +1,5 @@
 use enums::common::generation::common_resolution::CommonResolution;
+use kinovi_web_client::generate::video::generate_seedance_2p5::MAX_BILLED_INPUT_SECONDS;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p5_usd_cents;
@@ -7,7 +8,9 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p5::request:
 /// Seedance 2.5 pricing depends on the resolution, the output duration, and
 /// — when reference videos are attached — the total seconds of reference
 /// video input, which are billed on top of the output duration (at a lower
-/// per-second rate). No batching.
+/// per-second rate). Input seconds are clamped to
+/// [`MAX_BILLED_INPUT_SECONDS`] — the model accepts at most 30 seconds of
+/// video. No batching.
 pub struct ArtcraftSeedance2p5CostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
@@ -34,11 +37,14 @@ impl ArtcraftSeedance2p5CostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
+    let total_input_seconds = self.total_input_seconds
+      .min(u16::from(MAX_BILLED_INPUT_SECONDS));
+
     let usd_cents = seedance_2p5_usd_cents(
       self.resolution,
       self.duration_seconds,
       self.has_video_references,
-      self.total_input_seconds,
+      total_input_seconds,
     );
 
     // ArtCraft credits: 100 credits = $1.00, so credits = cents.
@@ -113,6 +119,16 @@ mod tests {
     fn missing_input_seconds_bill_output_duration_only() {
       // 7.24279835 ¢/s × 10 = 72.43 → 73¢.
       assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, None), 73);
+    }
+
+    #[test]
+    fn input_seconds_clamp_to_max_billed_input_seconds() {
+      // 200 input seconds clamp to 30: 7.24279835 ¢/s × (30+30) = 434.57 → 435¢.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 30, Some(200)), 435);
+      assert_eq!(
+        cents_with_video_refs(Some(RouterResolution::FourEightyP), 30, Some(200)),
+        cents_with_video_refs(Some(RouterResolution::FourEightyP), 30, Some(30)),
+      );
     }
   }
 

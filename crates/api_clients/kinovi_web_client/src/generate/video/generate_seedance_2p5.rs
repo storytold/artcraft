@@ -7,6 +7,12 @@ use crate::requests::workflow_run_task::workflow_run_task::{
   KinoviOutputResolutionRaw, WorkflowRunTaskArgs, WorkflowRunTaskRequest,
 };
 
+// ── Constants ──
+
+/// Seedance 2.5 supports at most 30 seconds of video: reference-video input
+/// seconds beyond this are clamped for billing.
+pub const MAX_BILLED_INPUT_SECONDS: u8 = 30;
+
 // ── Args ──
 
 pub struct GenerateSeedance2p5Args<'a> {
@@ -111,9 +117,10 @@ pub enum KinoviSeedance2p5OutputResolution {
 //
 // With video references, the rate drops but the billed seconds are the
 // output duration PLUS the total seconds of reference video input
-// (`total_input_seconds`, summed across all reference videos). E.g. a 30s
-// output with a 10s video reference bills as 40 seconds; a 30s output with
-// two 7s references (14s total input) bills as 44 seconds.
+// (`total_input_seconds`, summed across all reference videos and clamped to
+// [`MAX_BILLED_INPUT_SECONDS`]). E.g. a 30s output with a 10s video
+// reference bills as 40 seconds; a 30s output with two 7s references (14s
+// total input) bills as 44 seconds.
 //
 // Default resolution (None) is 720p.
 // Credit package: 525,000 credits for $2,159.0909 (~243 credits/$1).
@@ -132,8 +139,10 @@ impl GenerateSeedance2p5Request {
         Some(KinoviSeedance2p5OutputResolution::FourEightyP) => 16u64,
         Some(KinoviSeedance2p5OutputResolution::SevenTwentyP) | None => 35u64,
       };
-      let seconds = u64::from(self.duration_seconds)
-        + u64::from(self.total_input_seconds.unwrap_or(0));
+      let input_seconds = self.total_input_seconds
+        .unwrap_or(MAX_BILLED_INPUT_SECONDS)
+        .min(MAX_BILLED_INPUT_SECONDS);
+      let seconds = u64::from(self.duration_seconds) + u64::from(input_seconds);
       (rate, seconds)
     } else {
       let rate = match self.output_resolution {
@@ -387,6 +396,16 @@ mod tests {
       fn missing_total_input_seconds_bills_output_duration_only() {
         assert_eq!(video_ref_480(10, None).calculate_costs().kinovi_credits, 160.0);
         assert_eq!(video_ref_720(10, None).calculate_costs().kinovi_credits, 350.0);
+      }
+
+      #[test]
+      fn input_seconds_clamp_to_max_billed_input_seconds() {
+        // 200 input seconds clamp to 30: 30s output + 30 = 60 billed seconds.
+        assert_eq!(video_ref_480(30, Some(200)).calculate_costs().kinovi_credits, (16 * 60) as f64);
+        assert_eq!(
+          video_ref_480(30, Some(200)).calculate_costs(),
+          video_ref_480(30, Some(MAX_BILLED_INPUT_SECONDS)).calculate_costs(),
+        );
       }
 
       #[test]

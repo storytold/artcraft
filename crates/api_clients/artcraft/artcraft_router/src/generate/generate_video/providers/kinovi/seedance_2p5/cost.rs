@@ -1,5 +1,6 @@
 use kinovi_web_client::generate::video::generate_seedance_2p5::{
   GenerateSeedance2p5Request, KinoviSeedance2p5Modality, KinoviSeedance2p5OutputResolution,
+  MAX_BILLED_INPUT_SECONDS,
 };
 
 use crate::api::video_list_ref::VideoListRef;
@@ -10,7 +11,9 @@ use crate::generate::generate_video::providers::kinovi::seedance_2p5::request::K
 /// Seedance 2.5 pricing depends on the resolution, the output duration, and
 /// — when reference videos are attached — the total seconds of reference
 /// video input, which are billed on top of the output duration (at a lower
-/// per-second rate).
+/// per-second rate). Input seconds are clamped to
+/// [`MAX_BILLED_INPUT_SECONDS`] — the model accepts at most 30 seconds of
+/// video.
 pub struct KinoviSeedance2p5CostState {
   pub resolution: Option<KinoviSeedance2p5OutputResolution>,
   pub duration_seconds: u8,
@@ -70,12 +73,17 @@ impl KinoviSeedance2p5CostState {
       }
     };
 
+    // NB: The kinovi calculator clamps too; clamping here as well keeps this
+    // state's math correct even if it's read directly.
+    let total_input_seconds = self.total_input_seconds
+      .map(|seconds| seconds.min(MAX_BILLED_INPUT_SECONDS));
+
     let pricing_request = GenerateSeedance2p5Request {
       prompt: String::new(),
       modality,
       output_resolution: self.resolution,
       duration_seconds: self.duration_seconds,
-      total_input_seconds: self.total_input_seconds,
+      total_input_seconds,
       use_face_blur_hack: None,
     };
 
@@ -152,6 +160,16 @@ mod tests {
     #[test]
     fn missing_input_seconds_bill_output_duration_only() {
       assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 10, true, None), 160);
+    }
+
+    #[test]
+    fn input_seconds_clamp_to_max_billed_input_seconds() {
+      // 200 input seconds clamp to 30: 30s output + 30 = 60 billed seconds.
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 30, true, Some(200)), 16 * 60);
+      assert_eq!(
+        credits(Some(KinoviOutputResolution::FourEightyP), 30, true, Some(200)),
+        credits(Some(KinoviOutputResolution::FourEightyP), 30, true, Some(30)),
+      );
     }
   }
 
