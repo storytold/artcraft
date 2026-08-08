@@ -187,10 +187,11 @@ export const useCreateVideoStore = create<CreateVideoState>()(
     }),
     {
       name: "artcraft-video-batches",
-      // Bumped to 1 when reference became the default input mode: the
-      // migration runs once for pre-existing persisted state and resets the
-      // stored mode so everyone lands on the new default.
-      version: 1,
+      // Bumped to 1 when reference became the default input mode, and to 2
+      // when Seedance 2.5 replaced 2.0 as the default model: each migration
+      // runs once for pre-existing persisted state so everyone lands on the
+      // new defaults.
+      version: 2,
       migrate: (persisted, version) => {
         const p = (persisted ?? {}) as {
           batches?: VideoBatch[];
@@ -198,6 +199,16 @@ export const useCreateVideoStore = create<CreateVideoState>()(
         };
         const ui = { ...DEFAULT_UI, ...(p.ui ?? {}) };
         if (version < 1) {
+          ui.inputMode = "reference";
+        }
+        if (version < 2) {
+          // Seedance 2.5 replaced 2.0 as the default: users still on the old
+          // default follow it (null resolves to DEFAULT_MODEL_ID at read
+          // time); explicit picks of other models are left alone. Everyone
+          // lands back on Omni Reference as the default input mode.
+          if (ui.selectedModelId === "seedance_2p0") {
+            ui.selectedModelId = null;
+          }
           ui.inputMode = "reference";
         }
         return { batches: p.batches ?? [], ui };

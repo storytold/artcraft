@@ -36,6 +36,10 @@ interface LibraryTagsState {
   loadTagMedia: (tagToken: string, reset?: boolean) => Promise<void>;
   renameTag: (tagToken: string, newValue: string) => Promise<void>;
   deleteTag: (tagToken: string) => Promise<void>;
+  /** Add tags to many media files at once (bulk selection bar). */
+  bulkAddTags: (mediaFileTokens: string[], tags: string[]) => Promise<boolean>;
+  /** Drop cached media for tags whose contents changed; the open tag reloads. */
+  invalidateTagMedia: (tagTokens: string[]) => void;
   /** Merge canonical tags returned by add/set calls (fresh use counts). */
   upsertTags: (tags: TagDetails[]) => void;
   setRenameTarget: (tagToken: string | null) => void;
@@ -191,6 +195,40 @@ export const useLibraryTagsStore = create<LibraryTagsState>((set, get) => ({
       toast.error(`Failed to delete tag: ${errMsg(err)}`);
       get().loadTags();
     }
+  },
+
+  bulkAddTags: async (mediaFileTokens, tags) => {
+    try {
+      const res = await tagsApi.BulkAddTags({ mediaFileTokens, tags });
+      if (!res.success || !res.data) {
+        toast.error(res.errorMessage || "Failed to add tags.");
+        return false;
+      }
+      // Fresh use counts for the sidebar; tagged listings must refetch.
+      get().upsertTags(res.data.tags);
+      get().invalidateTagMedia(res.data.tags.map((t) => t.tag_token));
+      const count = res.data.accepted_media_file_tokens.length;
+      toast.success(`Tagged ${count} ${count === 1 ? "item" : "items"}`);
+      return true;
+    } catch (err) {
+      toast.error(`Failed to add tags: ${errMsg(err)}`);
+      return false;
+    }
+  },
+
+  invalidateTagMedia: (tagTokens) => {
+    if (tagTokens.length === 0) return;
+    set((s) => {
+      const nextMedia = { ...s.tagMediaItems };
+      const nextHasMore = { ...s.tagHasMore };
+      for (const token of tagTokens) {
+        delete nextMedia[token];
+        delete nextHasMore[token];
+      }
+      return { tagMediaItems: nextMedia, tagHasMore: nextHasMore };
+    });
+    const active = get().activeTagToken;
+    if (active && tagTokens.includes(active)) get().loadTagMedia(active, true);
   },
 
   upsertTags: (incoming) => {

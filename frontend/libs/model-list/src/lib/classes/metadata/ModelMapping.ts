@@ -95,6 +95,7 @@ export const getModelDisplayName = (
     seedance_2p0_bpu: "Seedance 2.0 Plus Ultra",
     seedance_2p0_bpu_fast: "Seedance 2.0 Plus Ultra Fast",
     seedance_2p0_bpu_mini: "Seedance 2.0 Plus Ultra Mini",
+    seedance_2p5: "Seedance 2.5",
     seedance_2p5_preview: "Seedance 2.5 Preview",
     // Seedance — dot-normalized aliases
     seedance_1_0_lite: "Seedance 1.0 Lite",
