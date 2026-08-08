@@ -10,8 +10,8 @@ use log::warn;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::generate::common::reference_video_input_seconds::{
-  fetch_reference_video_files, sum_reference_video_input_seconds,
+use crate::http_server::endpoints::generate::common::probed_reference_videos::{
+  download_and_probe_reference_videos, fetch_reference_video_sources,
 };
 use crate::http_server::endpoints::omni_gen::shared_utils::map_router_cost_error::map_router_cost_error;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
@@ -75,13 +75,15 @@ pub async fn omni_gen_video_cost_handler(
 }
 
 /// Probe the combined reference-video runtime for the quote, failing open.
+/// The downloaded files are dropped after probing — only the generate
+/// endpoint keeps them for the provider upload.
 async fn probe_input_seconds_best_effort(
   http_request: &HttpRequest,
   server_state: &ServerState,
   video_tokens: &[MediaFileToken],
 ) -> Option<u16> {
-  let video_files = {
-    // Scoped so the pool slot is released before the (possibly slow) probe.
+  let video_sources = {
+    // Scoped so the pool slot is released before the (slow) download+probe.
     let mut mysql_connection = match server_state.mysql_pool.acquire().await {
       Ok(connection) => connection,
       Err(err) => {
@@ -90,24 +92,24 @@ async fn probe_input_seconds_best_effort(
       }
     };
 
-    match fetch_reference_video_files(
+    match fetch_reference_video_sources(
       video_tokens,
       http_request,
       server_state.server_environment,
       &mut mysql_connection,
     ).await {
-      Ok(files) => files,
+      Ok(sources) => sources,
       Err(err) => {
-        warn!("Cost quote: failed to fetch reference video files: {:?}", err);
+        warn!("Cost quote: failed to fetch reference video sources: {:?}", err);
         return None;
       }
     }
   };
 
-  match sum_reference_video_input_seconds(&video_files).await {
-    Ok(total) => Some(total),
+  match download_and_probe_reference_videos(&video_sources).await {
+    Ok(probed) => Some(probed.total_input_seconds),
     Err(err) => {
-      warn!("Cost quote: failed to sum reference video input seconds: {:?}", err);
+      warn!("Cost quote: failed to probe reference video durations: {:?}", err);
       None
     }
   }

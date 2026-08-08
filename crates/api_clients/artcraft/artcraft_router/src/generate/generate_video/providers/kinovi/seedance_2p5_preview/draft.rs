@@ -47,17 +47,18 @@ impl KinoviSeedance2p5PreviewDraftState {
 
     if let Some(remaining) = self.unhandled_request_state.take() {
       let map = draft_context.media_file_to_artcraft_url_map;
+      let predownloaded = draft_context.predownloaded_media_paths;
 
       reference_image_urls = resolve_and_upload_list(
-        session, remaining.reference_images.map(image_list_ref_into_urls_or_tokens), map,
+        session, remaining.reference_images.map(image_list_ref_into_urls_or_tokens), map, predownloaded,
       ).await?;
 
       reference_video_urls = resolve_and_upload_list(
-        session, remaining.reference_videos.map(video_list_ref_into_urls_or_tokens), map,
+        session, remaining.reference_videos.map(video_list_ref_into_urls_or_tokens), map, predownloaded,
       ).await?;
 
       reference_audio_urls = resolve_and_upload_list(
-        session, remaining.reference_audio.map(audio_list_ref_into_urls_or_tokens), map,
+        session, remaining.reference_audio.map(audio_list_ref_into_urls_or_tokens), map, predownloaded,
       ).await?;
     }
 

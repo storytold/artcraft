@@ -34,8 +34,8 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
-use crate::http_server::endpoints::generate::common::reference_video_input_seconds::{
-  fetch_reference_video_files, sum_reference_video_input_seconds,
+use crate::http_server::endpoints::generate::common::probed_reference_videos::{
+  download_and_probe_reference_videos, fetch_reference_video_sources, ProbedReferenceVideos,
 };
 use crate::http_server::endpoints::omni_api::generate::video::check_request::check_request;
 use crate::http_server::endpoints::omni_api::generate::video::ingest_url_inputs::ingest_url_inputs;
@@ -187,32 +187,36 @@ pub async fn omni_api_video_generate_handler(
   // ==================== REFERENCE VIDEO INPUT SECONDS ==================== //
 
   // Seedance 2.5 bills reference-video input seconds on top of the output
-  // duration, so probe the combined runtime before cost estimation.
-  let mut maybe_total_reference_video_input_seconds: Option<u16> = None;
+  // duration. Stored durations can't be trusted for billing, so every
+  // reference video is downloaded and ffprobed; the downloaded files are
+  // kept and handed to the pipeline so the Kinovi upload reuses them
+  // instead of downloading the same bytes twice.
+  let mut maybe_probed_reference_videos: Option<ProbedReferenceVideos> = None;
 
   if matches!(request.model, Some(CommonVideoModel::Seedance2p5)) {
     if let Some(video_tokens) = request.reference_video_media_tokens.as_deref().filter(|tokens| !tokens.is_empty()) {
-      let video_files = fetch_reference_video_files(
+      let video_sources = fetch_reference_video_sources(
         video_tokens,
         &http_request,
         server_state.server_environment,
         &mut mysql_connection,
       ).await?;
 
-      // Files with no stored duration are downloaded and ffprobed — release
-      // the pool slot across that slow work, then re-acquire for billing.
+      // Downloads + ffprobe are slow — release the pool slot across them,
+      // then re-acquire for billing.
       drop(mysql_connection);
-      let total_input_seconds = sum_reference_video_input_seconds(&video_files).await?;
+      let probed = download_and_probe_reference_videos(&video_sources).await?;
       mysql_connection = server_state.mysql_pool.acquire().await?;
 
-      maybe_total_reference_video_input_seconds = Some(total_input_seconds);
+      maybe_probed_reference_videos = Some(probed);
     }
   }
 
   // ==================== HYDRATE ROUTER REQUEST ==================== //
 
   let mut router_builder = hydrate_to_router_request(&request)?;
-  router_builder.total_reference_video_input_seconds = maybe_total_reference_video_input_seconds;
+  router_builder.total_reference_video_input_seconds =
+    maybe_probed_reference_videos.as_ref().map(|probed| probed.total_input_seconds);
 
   // ==================== PIPELINE DISPATCH ==================== //
 
@@ -267,6 +271,7 @@ pub async fn omni_api_video_generate_handler(
     kinovi_character_id_map: &kinovi_character_id_map,
     kinovi_account,
     debug_log_context: &debug_log_context,
+    predownloaded_media_paths: maybe_probed_reference_videos.as_ref().map(|probed| probed.local_paths_by_url()),
     mysql_connection,
   }).await;
 

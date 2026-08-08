@@ -4,6 +4,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::path::PathBuf;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -19,6 +20,12 @@ pub struct VideoGenerationDraftContext<'a> {
   /// Optional context: a map of Character Tokens to their respective Kinovi IDs
   /// Only necessary if using Kinovi characters
   pub character_token_to_kinovi_id_map: Option<&'a HashMap<CharacterToken, String>>,
+
+  /// Optional context: source URL → local file path for media the caller has
+  /// already downloaded (e.g. reference videos probed for billing). Uploads
+  /// read these files instead of downloading the same bytes again. The
+  /// caller must keep the files alive until the upload completes.
+  pub predownloaded_media_paths: Option<&'a HashMap<String, PathBuf>>,
 }
 
 impl <'a> VideoGenerationDraftContext<'a> {
@@ -45,6 +52,7 @@ impl Debug for VideoGenerationDraftContext<'_> {
       .field("client", &self.client.is_some())
       .field("media_file_to_artcraft_url_map", &self.media_file_to_artcraft_url_map)
       .field("character_token_to_kinovi_id_map", &self.character_token_to_kinovi_id_map)
+      .field("predownloaded_media_paths", &self.predownloaded_media_paths)
       .finish()
   }
 }
