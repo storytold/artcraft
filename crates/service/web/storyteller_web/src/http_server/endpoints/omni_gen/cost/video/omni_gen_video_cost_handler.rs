@@ -121,13 +121,8 @@ async fn probe_input_seconds_best_effort(
     }
   };
 
-  match download_and_probe_reference_videos(&video_sources).await {
-    Ok(probed) => Some(probed.total_input_seconds),
-    Err(err) => {
-      warn!("Cost quote: failed to probe reference video durations: {:?}", err);
-      None
-    }
-  }
+  // Infallible: unmeasurable files bill at the 30-second worst case.
+  Some(download_and_probe_reference_videos(&video_sources).await.total_input_seconds)
 }
 
 #[cfg(test)]

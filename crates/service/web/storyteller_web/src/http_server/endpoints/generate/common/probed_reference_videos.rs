@@ -22,6 +22,10 @@
 //!
 //! Billing math: each file's duration is rounded UP to a whole second, and
 //! counted once per reference (the same file referenced twice bills twice).
+//!
+//! Probing NEVER fails a generation: a file whose download or ffprobe fails
+//! is billed at the worst-case [`MAX_BILLED_INPUT_SECONDS`] instead (and is
+//! not kept on disk — the provider upload re-downloads it itself).
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -30,6 +34,7 @@ use std::path::PathBuf;
 use actix_web::HttpRequest;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
+use kinovi_web_client::generate::video::generate_seedance_2p5::MAX_BILLED_INPUT_SECONDS;
 use log::{error, info, warn};
 use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::batch_get_media_files_by_tokens_with_connection;
 use server_environment::ServerEnvironment;
@@ -146,9 +151,14 @@ pub async fn fetch_reference_video_sources(
 /// Phase 2 (no DB): download each unique file once, ffprobe it, and sum the
 /// billed input seconds. Callers must not hold a pooled DB connection across
 /// this call.
+///
+/// Infallible by design: a file that can't be downloaded or probed is billed
+/// at the worst-case [`MAX_BILLED_INPUT_SECONDS`] rather than failing the
+/// generation, and its temp file isn't kept (the provider upload re-downloads
+/// files that aren't in the predownloaded map).
 pub async fn download_and_probe_reference_videos(
   sources: &[ReferenceVideoSource],
-) -> Result<ProbedReferenceVideos, CommonWebError> {
+) -> ProbedReferenceVideos {
   let mut temp_files: Vec<NamedTempFile> = Vec::new();
   let mut local_paths_by_url: HashMap<String, PathBuf> = HashMap::new();
   let mut seconds_by_url: HashMap<String, u64> = HashMap::new();
@@ -158,23 +168,32 @@ pub async fn download_and_probe_reference_videos(
       continue; // Already downloaded and probed this file.
     }
 
-    let temp_file = download_reference_video(source).await?;
-    let duration_millis = probe_video_duration_millis(source, &temp_file)?;
+    let billed_seconds = match download_and_probe_one(source).await {
+      Ok((temp_file, duration_millis)) => {
+        info!("Probed reference video {} at {}ms", source.media_token, duration_millis);
+        local_paths_by_url.insert(source.cdn_url.clone(), temp_file.path().to_path_buf());
+        temp_files.push(temp_file);
+        duration_millis.div_ceil(1_000)
+      }
+      Err(err) => {
+        warn!(
+          "Failed to download/probe reference video {}; billing the {}s worst case: {:?}",
+          source.media_token, MAX_BILLED_INPUT_SECONDS, err,
+        );
+        u64::from(MAX_BILLED_INPUT_SECONDS)
+      }
+    };
 
-    info!("Probed reference video {} at {}ms", source.media_token, duration_millis);
-
-    seconds_by_url.insert(source.cdn_url.clone(), duration_millis.div_ceil(1_000));
-    local_paths_by_url.insert(source.cdn_url.clone(), temp_file.path().to_path_buf());
-    temp_files.push(temp_file);
+    seconds_by_url.insert(source.cdn_url.clone(), billed_seconds);
   }
 
   let total_input_seconds = total_billed_seconds(sources, &seconds_by_url);
 
-  Ok(ProbedReferenceVideos {
+  ProbedReferenceVideos {
     total_input_seconds,
     local_paths_by_url,
     _temp_files: temp_files,
-  })
+  }
 }
 
 /// Sum per-reference (so duplicates bill per reference), saturating at
@@ -188,6 +207,14 @@ fn total_billed_seconds(
     .filter_map(|source| seconds_by_url.get(&source.cdn_url))
     .sum();
   u16::try_from(total).unwrap_or(u16::MAX)
+}
+
+async fn download_and_probe_one(
+  source: &ReferenceVideoSource,
+) -> Result<(NamedTempFile, u64), CommonWebError> {
+  let temp_file = download_reference_video(source).await?;
+  let duration_millis = probe_video_duration_millis(source, &temp_file)?;
+  Ok((temp_file, duration_millis))
 }
 
 async fn download_reference_video(source: &ReferenceVideoSource) -> Result<NamedTempFile, CommonWebError> {
