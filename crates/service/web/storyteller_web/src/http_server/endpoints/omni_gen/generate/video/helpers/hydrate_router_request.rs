@@ -171,6 +171,7 @@ mod tests {
       duration_seconds: None,
       video_batch_count: None,
       generate_audio: None,
+      estimate_only: None,
     }
   }
 }

@@ -90,6 +90,7 @@ mod tests {
       duration_seconds,
       video_batch_count: None,
       generate_audio: None,
+      estimate_only: None,
     };
     estimate_minimax_h3_ultra_cost_usd_cents(&request)
   }

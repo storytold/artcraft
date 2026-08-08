@@ -63,6 +63,7 @@ mod tests {
         duration_seconds: Some(5),
         video_batch_count: Some(1),
         generate_audio: None,
+        estimate_only: None,
       },
     };
 

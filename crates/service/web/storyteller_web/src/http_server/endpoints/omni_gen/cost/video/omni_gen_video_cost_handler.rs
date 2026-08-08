@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::sync::Arc;
 
 use actix_web::web::{self, Json};
@@ -43,12 +44,20 @@ pub async fn omni_gen_video_cost_handler(
   builder.provider = RouterProvider::Artcraft; // NB: User is paying for ArtCraft credits / generation
 
   // Seedance 2.5 bills reference-video input seconds on top of the output
-  // duration; probe the combined runtime so the quote matches what
-  // generation will bill. Best-effort: the UI polls mid-composition (tokens
-  // may not resolve yet), so a probe failure quotes without input seconds
-  // rather than failing — the generate endpoint bills the accurate total.
+  // duration, so the quote needs the combined input duration. Prefer the
+  // frontend-supplied `estimate_only` hint (cheap — the UI polls this
+  // endpoint while composing); fall back to a best-effort server-side
+  // download + ffprobe when it's absent. Either way this only shapes the
+  // QUOTE: the generate endpoint always measures the inputs itself and
+  // bills from its own measurement.
   if matches!(request.model, Some(CommonVideoModel::Seedance2p5)) {
-    if let (Some(server_state), Some(video_tokens)) = (
+    let frontend_input_seconds = request.estimate_only
+      .and_then(|estimate| estimate.total_input_video_duration_millis)
+      .map(millis_to_whole_seconds);
+
+    if let Some(input_seconds) = frontend_input_seconds {
+      builder.total_reference_video_input_seconds = Some(input_seconds);
+    } else if let (Some(server_state), Some(video_tokens)) = (
       maybe_server_state.as_ref(),
       request.reference_video_media_tokens.as_deref().filter(|tokens| !tokens.is_empty()),
     ) {
@@ -72,6 +81,12 @@ pub async fn omni_gen_video_cost_handler(
     has_watermark: estimate.has_watermark,
     failures_are_refunded: estimate.failures_are_refunded,
   }))
+}
+
+/// Round a frontend-supplied millisecond duration UP to whole seconds,
+/// saturating to `u16` (the router clamps to the model's max regardless).
+fn millis_to_whole_seconds(millis: u32) -> u16 {
+  u16::try_from(u64::from(millis).div_ceil(1_000)).unwrap_or(u16::MAX)
 }
 
 /// Probe the combined reference-video runtime for the quote, failing open.
@@ -249,6 +264,7 @@ mod tests {
       duration_seconds: None,
       video_batch_count: None,
       generate_audio: None,
+      estimate_only: None,
     }
   }
 }
