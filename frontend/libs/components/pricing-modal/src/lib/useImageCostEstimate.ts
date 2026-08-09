@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { Model } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -12,7 +12,7 @@ import {
   EstimateImageCost,
   isEstimateImageCostSuccess,
 } from "@storyteller/tauri-api";
-import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
+import { useCostEstimateLifecycle } from "./useCostEstimateLifecycle";
 import {
   imageModelToCommonImageModel,
   imageAspectRatioToCommonAspectRatio,
@@ -33,10 +33,8 @@ export function useImageCostEstimate(
   selectedModel: Model | null | undefined,
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
-  const [isLoading, setIsLoading] = useState(false);
-  const setEstimatedCreditsForPage = useCostBreakdownModalStore(
-    (s) => s.setEstimatedCreditsForPage,
-  );
+  const { isLoading, begin, clear } = useCostEstimateLifecycle();
+  const lastEstimatePage = useRef<ModelPage | null>(null);
 
   // TextToImage store
   const imageAspectRatio = usePromptImageStore((s) => s.commonAspectRatio);
@@ -63,13 +61,30 @@ export function useImageCostEstimate(
   const editReferenceImages = usePromptEditStore((s) => s.referenceImages);
 
   useEffect(() => {
-    if (!IMAGE_PAGES.has(activePage) || !selectedModel) {
+    if (!IMAGE_PAGES.has(activePage)) {
+      for (const page of IMAGE_PAGES) {
+        clear(page);
+      }
+      lastEstimatePage.current = null;
       return;
     }
 
+    const previousPage = lastEstimatePage.current;
+    if (previousPage !== null && previousPage !== activePage) {
+      clear(previousPage);
+    }
+
+    if (!selectedModel) {
+      clear(activePage);
+      lastEstimatePage.current = activePage;
+      return;
+    }
+
+    lastEstimatePage.current = activePage;
+
     const commonModel = imageModelToCommonImageModel(selectedModel.tauriId);
     if (!commonModel) {
-      setEstimatedCreditsForPage(activePage, null);
+      clear(activePage);
       return;
     }
 
@@ -128,37 +143,34 @@ export function useImageCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
-    setIsLoading(true);
+    const request = begin(activePage);
+    void (async () => {
+      try {
+        const result = await EstimateImageCost({
+          model: commonModel,
+          provider,
+          generation_mode: generationMode,
+          aspect_ratio: commonAspectRatio ?? undefined,
+          resolution: commonResolution ?? undefined,
+          quality: commonQuality ?? undefined,
+        });
+        const creditsPerGeneration = isEstimateImageCostSuccess(result)
+          ? (result.payload.cost_in_credits ?? null)
+          : null;
+        request.settle(
+          creditsPerGeneration != null
+            ? creditsPerGeneration * generationCount
+            : null,
+        );
+      } catch {
+        request.settle(null);
+      }
+    })();
 
-    EstimateImageCost({
-      model: commonModel,
-      provider,
-      generation_mode: generationMode,
-      aspect_ratio: commonAspectRatio ?? undefined,
-      resolution: commonResolution ?? undefined,
-      quality: commonQuality ?? undefined,
-    })
-      .then((result) => {
-        if (isEstimateImageCostSuccess(result)) {
-          const creditsPerGeneration = result.payload.cost_in_credits ?? null;
-          const totalCredits =
-            creditsPerGeneration != null
-              ? creditsPerGeneration * generationCount
-              : null;
-          setEstimatedCreditsForPage(activePage, totalCredits);
-        } else {
-          setEstimatedCreditsForPage(activePage, null);
-        }
-      })
-      .catch(() => {
-        setEstimatedCreditsForPage(activePage, null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    return request.cancel;
   }, [
     activePage,
-    selectedModel?.id,
+    selectedModel,
     selectedProvider,
     imageAspectRatio,
     imageLegacyAspectRatio,
@@ -176,6 +188,8 @@ export function useImageCostEstimate(
     editAspectRatio,
     editResolution,
     editReferenceImages.length,
+    begin,
+    clear,
   ]);
 
   return { isLoading };
