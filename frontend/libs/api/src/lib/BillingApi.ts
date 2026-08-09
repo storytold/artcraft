@@ -31,65 +31,6 @@ export class BillingApi extends ApiManager {
       });
   }
 
-  public async UserSignupSubscriptionCheckout({
-    plan,
-    cadence,
-    maybeReferralUrl,
-    maybeLandingUrl,
-    maybeReferralUsername,
-    maybeReferralCode,
-  }: {
-    plan: string;
-    cadence: "yearly" | "monthly";
-    maybeReferralUrl?: string;
-    maybeLandingUrl?: string;
-    maybeReferralUsername?: string;
-    maybeReferralCode?: string;
-  }): Promise<ApiResponse<{ stripeCheckoutRedirectUrl: string }>> {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/stripe_artcraft/user_signup_subscription_checkout`;
-
-    return await this.post<
-      {
-        plan: string;
-        cadence: string;
-        maybe_referral_url?: string;
-        maybe_landing_url?: string;
-        maybe_referral_username?: string;
-        maybe_referral_code?: string;
-      },
-      {
-        success: boolean;
-        stripe_checkout_redirect_url?: string;
-        error_message?: string;
-      }
-    >({
-      endpoint: endpoint,
-      body: {
-        plan,
-        cadence,
-        ...(maybeReferralUrl && { maybe_referral_url: maybeReferralUrl }),
-        ...(maybeLandingUrl && { maybe_landing_url: maybeLandingUrl }),
-        ...(maybeReferralUsername && {
-          maybe_referral_username: maybeReferralUsername,
-        }),
-        ...(maybeReferralCode && { maybe_referral_code: maybeReferralCode }),
-      },
-    })
-      .then((response) => ({
-        success: response.success,
-        data: response.stripe_checkout_redirect_url
-          ? { stripeCheckoutRedirectUrl: response.stripe_checkout_redirect_url }
-          : undefined,
-        errorMessage: response.error_message,
-      }))
-      .catch((err) => {
-        return {
-          success: false,
-          errorMessage: err.message,
-        };
-      });
-  }
-
   public async SubscriptionCheckout({
     plan,
     cadence,

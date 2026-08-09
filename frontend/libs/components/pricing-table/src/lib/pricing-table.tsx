@@ -15,13 +15,8 @@ import { twMerge } from "tailwind-merge";
 import { useState, useEffect, useRef } from "react";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { UsersApi, BillingApi, UserInfo } from "@storyteller/api";
-import {
-  getLandingUrl,
-  getReferralCode,
-  getReferralUsername,
-  getReferrer,
-} from "@storyteller/common";
 import { useNavigate } from "react-router-dom";
+import { signupUrlForCheckoutIntent } from "./checkout-intent";
 import { PROMO_PCT, planPricing } from "./promo-discounts";
 
 const DISCOUNT_PILL_CLASS =
@@ -211,38 +206,20 @@ const PricingTable = ({
       return;
     }
 
+    const cadence = isYearly ? "yearly" : "monthly";
+    const apiPlanSlug = PLAN_SLUG_MAP[planSlug] || planSlug;
+
+    // Not logged in - send them to signup carrying the plan they clicked so
+    // checkout resumes right after account creation.
+    if (!user) {
+      navigate(signupUrlForCheckoutIntent({ plan: apiPlanSlug, cadence }));
+      return;
+    }
+
     // Set loading state for this plan
     setProcessingPlan(planSlug);
 
     try {
-      const cadence = isYearly ? "yearly" : "monthly";
-      const apiPlanSlug = PLAN_SLUG_MAP[planSlug] || planSlug;
-
-      // Not logged in - use user_signup_subscription_checkout
-      if (!user) {
-        const billingApi = new BillingApi();
-        const response = await billingApi.UserSignupSubscriptionCheckout({
-          plan: apiPlanSlug,
-          cadence: cadence,
-          maybeReferralUrl: getReferrer(),
-          maybeLandingUrl: getLandingUrl(),
-          maybeReferralUsername: getReferralUsername(),
-          maybeReferralCode: getReferralCode(),
-        });
-
-        if (!response.success || !response.data) {
-          throw new Error(
-            response.errorMessage || "Failed to initiate checkout",
-          );
-        }
-
-        // Redirect to Stripe
-        window.location.href = response.data.stripeCheckoutRedirectUrl;
-        return;
-      }
-
-      // Logged in - user already has an account
-      // We use the normal subscription APIs here, not the signup one
       const hasActiveSub = activePlanSlug && activePlanSlug !== "free";
       const billingApi = new BillingApi();
 
