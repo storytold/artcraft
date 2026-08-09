@@ -10,7 +10,7 @@
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 
-use super::support::{base_generate_request, TestHarness};
+use super::support::{base_generate_request, Batch, ExpectedCredits, Seconds, TestHarness};
 
 const STARTING_CREDITS: u64 = 100_000;
 
@@ -22,31 +22,29 @@ async fn seedance_2p0_charges_by_resolution_duration_and_batch() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
-  // (resolution, duration seconds, batch count, expected charged credits)
-  //
   // Volcengine rates: 480p 7.772 ¢/s, 720p 16 ¢/s, 1080p 46.632 ¢/s,
   // rounded once after duration × batch. Credits = cents.
-  let cases: &[(Option<CommonResolution>, u16, u16, u64)] = &[
-    (Some(CommonResolution::FourEightyP), 5, 1, 39),
-    (Some(CommonResolution::FourEightyP), 10, 1, 78),
-    (Some(CommonResolution::SevenTwentyP), 5, 1, 80),
-    (Some(CommonResolution::SevenTwentyP), 10, 1, 160),
-    (Some(CommonResolution::SevenTwentyP), 15, 1, 240),
-    (Some(CommonResolution::SevenTwentyP), 5, 2, 160),
-    (Some(CommonResolution::TenEightyP), 5, 1, 233),
-    (Some(CommonResolution::TenEightyP), 10, 1, 466),
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(39)),
+    (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(78)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(80)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(160)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(240)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(160)),
+    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(233)),
+    (Some(CommonResolution::TenEightyP), Seconds(10), Batch(1), ExpectedCredits(466)),
     // Default resolution is 720p.
-    (None, 5, 1, 80),
+    (None, Seconds(5), Batch(1), ExpectedCredits(80)),
   ];
 
-  for (resolution, duration_seconds, batch_count, expected_credits) in cases {
+  for (resolution, seconds, batch, expected) in cases {
     assert_successful_generation_charges(
       &harness,
       CommonVideoModel::Seedance2p0,
       *resolution,
-      *duration_seconds,
-      *batch_count,
-      *expected_credits,
+      *seconds,
+      *batch,
+      *expected,
     )
     .await;
   }
@@ -59,21 +57,21 @@ async fn seedance_2p0_fast_charges_by_resolution_and_duration() {
   let harness = TestHarness::create().await;
 
   // Fast rates: 480p 5.181 ¢/s, 720p 12.727 ¢/s.
-  let cases: &[(Option<CommonResolution>, u16, u16, u64)] = &[
-    (Some(CommonResolution::FourEightyP), 5, 1, 26),
-    (Some(CommonResolution::SevenTwentyP), 5, 1, 64),
-    (Some(CommonResolution::SevenTwentyP), 10, 1, 127),
-    (Some(CommonResolution::SevenTwentyP), 5, 2, 127),
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(26)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(64)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(127)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(127)),
   ];
 
-  for (resolution, duration_seconds, batch_count, expected_credits) in cases {
+  for (resolution, seconds, batch, expected) in cases {
     assert_successful_generation_charges(
       &harness,
       CommonVideoModel::Seedance2p0Fast,
       *resolution,
-      *duration_seconds,
-      *batch_count,
-      *expected_credits,
+      *seconds,
+      *batch,
+      *expected,
     )
     .await;
   }
@@ -92,31 +90,30 @@ async fn byteplus_and_preview_variants_charge_their_own_rates_not_the_base_rate(
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
-  // (model, resolution, duration, expected charged credits)
-  let cases: &[(CommonVideoModel, Option<CommonResolution>, u16, u64)] = &[
+  let cases: &[(CommonVideoModel, Option<CommonResolution>, Seconds, ExpectedCredits)] = &[
     // 720p 5s — the canonical bug shape. 125, NOT 80.
-    (CommonVideoModel::Seedance2p0BytePlus, Some(CommonResolution::SevenTwentyP), 5, 125),
-    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::SevenTwentyP), 5, 125),
-    (CommonVideoModel::PreviewModel, Some(CommonResolution::SevenTwentyP), 5, 125),
+    (CommonVideoModel::Seedance2p0BytePlus, Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(125)),
+    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(125)),
+    (CommonVideoModel::PreviewModel, Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(125)),
     // Fast 720p 5s: 100, NOT 64.
-    (CommonVideoModel::Seedance2p0BytePlusFast, Some(CommonResolution::SevenTwentyP), 5, 100),
-    (CommonVideoModel::Seedance2p0BytePlusUltraFast, Some(CommonResolution::SevenTwentyP), 5, 100),
-    (CommonVideoModel::PreviewModelFast, Some(CommonResolution::SevenTwentyP), 5, 100),
+    (CommonVideoModel::Seedance2p0BytePlusFast, Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(100)),
+    (CommonVideoModel::Seedance2p0BytePlusUltraFast, Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(100)),
+    (CommonVideoModel::PreviewModelFast, Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(100)),
     // Other resolutions and durations hold too.
-    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::FourEightyP), 5, 50),
-    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::TenEightyP), 5, 250),
-    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::SevenTwentyP), 10, 250),
-    (CommonVideoModel::Seedance2p0BytePlusUltraFast, Some(CommonResolution::FourEightyP), 10, 90),
+    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::FourEightyP), Seconds(5), ExpectedCredits(50)),
+    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::TenEightyP), Seconds(5), ExpectedCredits(250)),
+    (CommonVideoModel::Seedance2p0BytePlusUltra, Some(CommonResolution::SevenTwentyP), Seconds(10), ExpectedCredits(250)),
+    (CommonVideoModel::Seedance2p0BytePlusUltraFast, Some(CommonResolution::FourEightyP), Seconds(10), ExpectedCredits(90)),
   ];
 
-  for (model, resolution, duration_seconds, expected_credits) in cases {
+  for (model, resolution, seconds, expected) in cases {
     assert_successful_generation_charges(
       &harness,
       *model,
       *resolution,
-      *duration_seconds,
-      1,
-      *expected_credits,
+      *seconds,
+      Batch(1),
+      *expected,
     )
     .await;
   }
@@ -150,15 +147,15 @@ async fn insufficient_balance_is_a_402_and_charges_nothing() {
 // ── Shared assertion ──
 
 /// Fund a fresh user, run one generation to completion via the stub Kinovi
-/// server, and assert the wallet was debited exactly `expected_credits`
+/// server, and assert the wallet was debited exactly the expected credits
 /// (balance delta AND ledger entry).
 async fn assert_successful_generation_charges(
   harness: &TestHarness,
   model: CommonVideoModel,
   resolution: Option<CommonResolution>,
-  duration_seconds: u16,
-  batch_count: u16,
-  expected_credits: u64,
+  Seconds(duration_seconds): Seconds,
+  Batch(batch_count): Batch,
+  ExpectedCredits(expected_credits): ExpectedCredits,
 ) {
   let user = harness.create_funded_user(STARTING_CREDITS).await;
 

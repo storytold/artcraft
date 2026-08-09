@@ -170,6 +170,17 @@ impl TestHarness {
   }
 }
 
+/// Newtype wrappers so pricing-table test cases read unambiguously:
+/// `(Some(FourEightyP), Seconds(5), Batch(1), ExpectedCredits(39))`.
+#[derive(Clone, Copy, Debug)]
+pub struct Seconds(pub u16);
+
+#[derive(Clone, Copy, Debug)]
+pub struct Batch(pub u16);
+
+#[derive(Clone, Copy, Debug)]
+pub struct ExpectedCredits(pub u64);
+
 /// A generate request with only the model set; tests fill in the rest.
 /// Idempotency tokens must be unique per call.
 pub fn base_generate_request(model: CommonVideoModel) -> OmniGenVideoCostAndGenerateRequest {
