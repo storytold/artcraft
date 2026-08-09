@@ -35,6 +35,7 @@ import {
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useTabStore } from "~/pages/Stores/TabState";
+import { resolveRecreateVideoResolution } from "./resolveRecreateVideoResolution.js";
 
 // Media item actions shared by the TopBar gallery modal / lightbox wiring and
 // the create pages' generation feed (rows + cards). All of them operate on
@@ -279,17 +280,15 @@ export function applyRecreateFromPromptData(data: {
         }
       }
 
-      // Map API resolution (like "one_k") → video store format (like "1080p")
+      // Hydrated models expose canonical values while legacy overlays expose
+      // display labels. Preserve the exact semantic resolution either way.
       if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
-        const resolutionMap: Record<string, string> = {
-          one_k: "1080p",
-          two_k: "2k",
-          three_k: "3k",
-          four_k: "4k",
-        };
-        const mapped = resolutionMap[promptData.maybe_resolution];
-        if (mapped && videoModel.resolutionOptions.includes(mapped)) {
-          videoStore.setResolution(mapped);
+        const resolvedResolution = resolveRecreateVideoResolution(
+          promptData.maybe_resolution,
+          videoModel.resolutionOptions,
+        );
+        if (resolvedResolution) {
+          videoStore.setResolution(resolvedResolution);
         }
       }
 
