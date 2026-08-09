@@ -112,6 +112,7 @@ async fn seedance_2p5_bills_reference_video_input_seconds_at_worst_case_when_unp
       *model,
       *resolution,
       *seconds,
+      Batch(1),
       *expected,
     )
     .await;

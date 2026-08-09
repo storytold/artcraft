@@ -34,13 +34,18 @@ async fn seedance_2p0_charges_by_resolution_duration_and_batch() {
   let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
     (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(39)),
     (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(78)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(1), ExpectedCredits(64)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(4), ExpectedCredits(256)),
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(80)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(160)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(240)),
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(160)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(320)),
     // Non-Mini models cap batches at the platform max of 4 (execution and
     // billing both downgrade), so batch 8 prices as batch 4.
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(320)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(160)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(4), ExpectedCredits(640)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(240)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(4), ExpectedCredits(960)),
     (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(233)),
     (Some(CommonResolution::TenEightyP), Seconds(10), Batch(1), ExpectedCredits(466)),
     // Default resolution is 720p.
@@ -64,16 +69,22 @@ async fn seedance_2p0_charges_the_video_reference_rate() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
-  let cases: &[(Option<CommonResolution>, Seconds, ExpectedCredits)] = &[
-    (Some(CommonResolution::FourEightyP), Seconds(5), ExpectedCredits(45)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(5), ExpectedCredits(111)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(10), ExpectedCredits(221)),
-    (Some(CommonResolution::TenEightyP), Seconds(5), ExpectedCredits(256)),
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(45)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(1), ExpectedCredits(89)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(4), ExpectedCredits(353)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(111)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(441)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(221)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(4), ExpectedCredits(882)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(331)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(4), ExpectedCredits(1323)),
+    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(256)),
   ];
 
-  for (resolution, seconds, expected) in cases {
+  for (resolution, seconds, batch, expected) in cases {
     assert_reference_video_charge_then_refund(
-      &harness, CommonVideoModel::Seedance2p0, *resolution, *seconds, *expected,
+      &harness, CommonVideoModel::Seedance2p0, *resolution, *seconds, *batch, *expected,
     ).await;
   }
 }
@@ -91,12 +102,18 @@ async fn seedance_2p0_byteplus_charges_its_own_rates_not_the_base_rate() {
   let harness = TestHarness::create().await;
 
   let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(50)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(1), ExpectedCredits(100)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(4), ExpectedCredits(400)),
     // 720p 5s — the canonical bug shape. 125, NOT 80.
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(125)),
-    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(50)),
-    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(250)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(250)),
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(250)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(500)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(250)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(4), ExpectedCredits(1000)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(375)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(4), ExpectedCredits(1500)),
+    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(250)),
   ];
 
   for (resolution, seconds, batch, expected) in cases {
@@ -113,15 +130,20 @@ async fn seedance_2p0_byteplus_ultra_charges_its_own_rates_not_the_base_rate() {
   let harness = TestHarness::create().await;
 
   let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
-    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(125)),
     (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(50)),
     (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(100)),
-    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(250)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(250)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(375)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(1), ExpectedCredits(100)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(4), ExpectedCredits(400)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(125)),
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(250)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(500)),
     // Batch caps at the platform max of 4: batch 8 prices as batch 4.
     (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(500)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(250)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(4), ExpectedCredits(1000)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(375)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(4), ExpectedCredits(1500)),
+    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(250)),
     // Default resolution is 720p.
     (None, Seconds(5), Batch(1), ExpectedCredits(125)),
   ];
@@ -133,22 +155,52 @@ async fn seedance_2p0_byteplus_ultra_charges_its_own_rates_not_the_base_rate() {
   }
 }
 
-/// The BytePlus Ultra rate card is flat below 4K: attaching reference videos
-/// does NOT change the price (unlike the base Volcengine model). Pinned so a
-/// rate-card restructure shows up here.
+/// The BytePlus rate cards are flat below 4K: attaching reference videos
+/// does NOT change the price (unlike the base Volcengine model). Every
+/// expectation equals the same duration x batch without references. Pinned
+/// so a rate-card restructure shows up here.
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_video_references_do_not_change_the_price() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(4), ExpectedCredits(400)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(125)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(500)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(4), ExpectedCredits(1000)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(4), ExpectedCredits(1500)),
+  ];
+
+  for (resolution, seconds, batch, expected) in cases {
+    assert_reference_video_charge_then_refund(
+      &harness, CommonVideoModel::Seedance2p0BytePlus, *resolution, *seconds, *batch, *expected,
+    ).await;
+  }
+}
+
+/// See [`seedance_2p0_byteplus_video_references_do_not_change_the_price`];
+/// the BytePlus Ultra card is flat below 4K too.
 #[tokio::test]
 #[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p0_byteplus_ultra_video_references_do_not_change_the_price() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
-  assert_reference_video_charge_then_refund(
-    &harness,
-    CommonVideoModel::Seedance2p0BytePlusUltra,
-    Some(CommonResolution::SevenTwentyP),
-    Seconds(5),
-    ExpectedCredits(125), // same as without references
-  ).await;
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(4), ExpectedCredits(400)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(125)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(500)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(4), ExpectedCredits(1000)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(4), ExpectedCredits(1500)),
+  ];
+
+  for (resolution, seconds, batch, expected) in cases {
+    assert_reference_video_charge_then_refund(
+      &harness, CommonVideoModel::Seedance2p0BytePlusUltra, *resolution, *seconds, *batch, *expected,
+    ).await;
+  }
 }
 
 /// PreviewModel is the temporary-rollout alias of the BytePlus tier and was

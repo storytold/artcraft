@@ -63,7 +63,7 @@ async fn seedance_2p0_fast_charges_the_video_reference_rate() {
 
   for (resolution, seconds, expected) in cases {
     assert_reference_video_charge_then_refund(
-      &harness, CommonVideoModel::Seedance2p0Fast, *resolution, *seconds, *expected,
+      &harness, CommonVideoModel::Seedance2p0Fast, *resolution, *seconds, Batch(1), *expected,
     ).await;
   }
 }

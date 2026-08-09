@@ -96,7 +96,7 @@ async fn seedance_2p0_mini_charges_the_video_reference_rate() {
 
   for (resolution, seconds, expected) in cases {
     assert_reference_video_charge_then_refund(
-      &harness, CommonVideoModel::Seedance2p0Mini, *resolution, *seconds, *expected,
+      &harness, CommonVideoModel::Seedance2p0Mini, *resolution, *seconds, Batch(1), *expected,
     ).await;
   }
 }
@@ -229,7 +229,7 @@ async fn seedance_2p0_byteplus_mini_charges_the_video_reference_rate() {
 
   for (resolution, seconds, expected) in cases {
     assert_reference_video_charge_then_refund(
-      &harness, CommonVideoModel::Seedance2p0BytePlusMini, *resolution, *seconds, *expected,
+      &harness, CommonVideoModel::Seedance2p0BytePlusMini, *resolution, *seconds, Batch(1), *expected,
     ).await;
   }
 }
@@ -301,7 +301,7 @@ async fn seedance_2p0_byteplus_ultra_mini_charges_the_video_reference_rate() {
 
   for (resolution, seconds, expected) in cases {
     assert_reference_video_charge_then_refund(
-      &harness, CommonVideoModel::Seedance2p0BytePlusUltraMini, *resolution, *seconds, *expected,
+      &harness, CommonVideoModel::Seedance2p0BytePlusUltraMini, *resolution, *seconds, Batch(1), *expected,
     ).await;
   }
 }

@@ -512,6 +512,7 @@ pub async fn assert_reference_video_charge_then_refund(
   model: CommonVideoModel,
   resolution: Option<enums::common::generation::common_resolution::CommonResolution>,
   Seconds(duration_seconds): Seconds,
+  Batch(batch_count): Batch,
   ExpectedCredits(expected_credits): ExpectedCredits,
 ) {
   let user = harness.create_funded_user(STARTING_CREDITS).await;
@@ -527,6 +528,7 @@ pub async fn assert_reference_video_charge_then_refund(
   let mut request = base_generate_request(model);
   request.resolution = resolution;
   request.duration_seconds = Some(duration_seconds);
+  request.video_batch_count = Some(batch_count);
   request.reference_video_media_tokens = Some(vec![video_token]);
 
   // The upload of the (unreachable) reference video fails after billing, so
