@@ -20,6 +20,9 @@ pub fn tauri_video_model_to_generation_model(model: TauriVideoModel) -> Generati
     TauriVideoModel::Seedance1p5Pro => GenerationModel::Seedance1p5Pro,
     TauriVideoModel::Seedance2p0 => GenerationModel::Seedance2p0,
     TauriVideoModel::Seedance2p0Fast => GenerationModel::Seedance2p0Fast,
+    TauriVideoModel::Seedance2p5Preview => GenerationModel::Seedance2p5Preview,
+    TauriVideoModel::Seedance2p5 => GenerationModel::Seedance2p5,
+    TauriVideoModel::Seedance2p5Ultra => GenerationModel::Seedance2p5Ultra,
     TauriVideoModel::Sora2 => GenerationModel::Sora2,
     TauriVideoModel::Sora2Pro => GenerationModel::Sora2Pro,
     TauriVideoModel::Veo2 => GenerationModel::Veo2,
@@ -27,5 +30,22 @@ pub fn tauri_video_model_to_generation_model(model: TauriVideoModel) -> Generati
     TauriVideoModel::Veo3Fast => GenerationModel::Veo3Fast,
     TauriVideoModel::Veo3p1 => GenerationModel::Veo3p1,
     TauriVideoModel::Veo3p1Fast => GenerationModel::Veo3p1Fast,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn seedance_2p5_models_map_to_generation_event_identifiers() {
+    for (model, expected) in [
+      (TauriVideoModel::Seedance2p5Preview, r#""seedance_2p5_preview""#),
+      (TauriVideoModel::Seedance2p5, r#""seedance_2p5""#),
+      (TauriVideoModel::Seedance2p5Ultra, r#""seedance_2p5_u""#),
+    ] {
+      let generation_model = tauri_video_model_to_generation_model(model);
+      assert_eq!(serde_json::to_string(&generation_model).unwrap(), expected);
+    }
   }
 }

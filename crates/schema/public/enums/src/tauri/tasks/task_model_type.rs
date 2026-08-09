@@ -95,6 +95,12 @@ pub enum TaskModelType {
   Seedance2p0,
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -175,6 +181,9 @@ impl TaskModelType {
       Self::Seedance1p5Pro => "seedance_1p5_pro",
       Self::Seedance2p0 => "seedance_2p0",
       Self::Seedance2p0Fast => "seedance_2p0_fast",
+      Self::Seedance2p5Preview => "seedance_2p5_preview",
+      Self::Seedance2p5 => "seedance_2p5",
+      Self::Seedance2p5Ultra => "seedance_2p5_u",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -235,6 +244,9 @@ impl TaskModelType {
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
       "seedance_2p0" => Ok(Self::Seedance2p0),
       "seedance_2p0_fast" => Ok(Self::Seedance2p0Fast),
+      "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
+      "seedance_2p5" => Ok(Self::Seedance2p5),
+      "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -298,6 +310,9 @@ impl TaskModelType {
       Self::Seedance1p5Pro,
       Self::Seedance2p0,
       Self::Seedance2p0Fast,
+      Self::Seedance2p5Preview,
+      Self::Seedance2p5,
+      Self::Seedance2p5Ultra,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -368,6 +383,9 @@ mod tests {
       assert_serialization(TaskModelType::Seedance1p5Pro, "seedance_1p5_pro");
       assert_serialization(TaskModelType::Seedance2p0, "seedance_2p0");
       assert_serialization(TaskModelType::Seedance2p0Fast, "seedance_2p0_fast");
+      assert_serialization(TaskModelType::Seedance2p5Preview, "seedance_2p5_preview");
+      assert_serialization(TaskModelType::Seedance2p5, "seedance_2p5");
+      assert_serialization(TaskModelType::Seedance2p5Ultra, "seedance_2p5_u");
       assert_serialization(TaskModelType::Sora2, "sora_2");
       assert_serialization(TaskModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(TaskModelType::Veo2, "veo_2");
@@ -424,6 +442,9 @@ mod tests {
       assert_eq!(TaskModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
       assert_eq!(TaskModelType::Seedance2p0.to_str(), "seedance_2p0");
       assert_eq!(TaskModelType::Seedance2p0Fast.to_str(), "seedance_2p0_fast");
+      assert_eq!(TaskModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
+      assert_eq!(TaskModelType::Seedance2p5.to_str(), "seedance_2p5");
+      assert_eq!(TaskModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
       assert_eq!(TaskModelType::Sora2.to_str(), "sora_2");
       assert_eq!(TaskModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(TaskModelType::Veo2.to_str(), "veo_2");
@@ -480,6 +501,9 @@ mod tests {
       assert_eq!(TaskModelType::from_str("seedance_1p5_pro").unwrap(), TaskModelType::Seedance1p5Pro);
       assert_eq!(TaskModelType::from_str("seedance_2p0").unwrap(), TaskModelType::Seedance2p0);
       assert_eq!(TaskModelType::from_str("seedance_2p0_fast").unwrap(), TaskModelType::Seedance2p0Fast);
+      assert_eq!(TaskModelType::from_str("seedance_2p5_preview").unwrap(), TaskModelType::Seedance2p5Preview);
+      assert_eq!(TaskModelType::from_str("seedance_2p5").unwrap(), TaskModelType::Seedance2p5);
+      assert_eq!(TaskModelType::from_str("seedance_2p5_u").unwrap(), TaskModelType::Seedance2p5Ultra);
       assert_eq!(TaskModelType::from_str("sora_2").unwrap(), TaskModelType::Sora2);
       assert_eq!(TaskModelType::from_str("sora_2_pro").unwrap(), TaskModelType::Sora2Pro);
       assert_eq!(TaskModelType::from_str("veo_2").unwrap(), TaskModelType::Veo2);
@@ -510,7 +534,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 52);
+      assert_eq!(variants.len(), 55);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -552,6 +576,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance1p5Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p0));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p0Fast));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p5Preview));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p5));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p5Ultra));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Veo2));
