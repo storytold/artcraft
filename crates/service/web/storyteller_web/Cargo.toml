@@ -200,8 +200,18 @@ zip = "0.6.6"
 # NB: Only using diesel for migrations support
 diesel = { version = "2.2.4", features = ["mysql"] }
 
+[features]
+# Compiles the database fixture tests (guarded MySQL test database +
+# in-process stub providers). Excluded from normal test runs; run with:
+#   SQLX_OFFLINE=true cargo test -p storyteller-web --features database_tests
+database_tests = []
+
 [dev-dependencies]
 # Testing/Dev Deps: Internal
+mysql_testing = { path = "../../../schema/database/mysql_testing" }
+# The test dependency graph enables both rustls crypto backends, so tests
+# must install one explicitly before anything builds a TLS config.
+rustls = { version = "0.23", features = ["aws-lc-rs"] }
 test_utils = { path = "../../../testing/test_utils" }
 
 # Testing/Dev Deps: External

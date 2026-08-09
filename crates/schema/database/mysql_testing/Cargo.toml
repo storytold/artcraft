@@ -1,0 +1,26 @@
+[package]
+name = "mysql_testing"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Test-only database harness: guarded connections to a MySQL TEST database,
+# schema setup, and shared fixtures (accounts, sessions, wallets).
+#
+# This crate must only ever be used as a dev-dependency.
+
+[dependencies]
+anyhow = "1.0"
+bcrypt = "0.15"
+bucket_paths = { path = "../../buckets/bucket_paths" }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono", "bigdecimal" ] }
+tokio = { version = "1.50.0", features = ["macros"] }
+
+enums = { path = "../../public/enums" }
+mysql_queries = { path = "../mysql_queries" }
+tokens = { path = "../../public/tokens" }
+
+[dev-dependencies]
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread"] }

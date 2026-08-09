@@ -46,9 +46,30 @@ impl KinoviHost {
   }
 }
 
+/// Env var pair for a process-wide custom host (both must be set and
+/// non-empty to take effect). Intended for tests and local development
+/// against a stub server; leave unset in production.
+pub const ENV_KINOVI_CUSTOM_API_HOST: &str = "KINOVI_CUSTOM_API_HOST";
+pub const ENV_KINOVI_CUSTOM_CDN_HOST: &str = "KINOVI_CUSTOM_CDN_HOST";
+
 /// Resolves an optional host override to the effective host.
-pub fn resolve_host(host_override: Option<&KinoviHost>) -> &KinoviHost {
-  // Use a static default to avoid needing to return owned data
-  static DEFAULT: KinoviHost = KinoviHost::Kinovi;
-  host_override.unwrap_or(&DEFAULT)
+///
+/// Precedence: explicit `host_override` argument, then the
+/// [`ENV_KINOVI_CUSTOM_API_HOST`] / [`ENV_KINOVI_CUSTOM_CDN_HOST`] env var
+/// pair, then the default host.
+pub fn resolve_host(host_override: Option<&KinoviHost>) -> KinoviHost {
+  if let Some(host) = host_override {
+    return host.clone();
+  }
+
+  if let (Ok(api_host), Ok(cdn_host)) = (
+    std::env::var(ENV_KINOVI_CUSTOM_API_HOST),
+    std::env::var(ENV_KINOVI_CUSTOM_CDN_HOST),
+  ) {
+    if !api_host.is_empty() && !cdn_host.is_empty() {
+      return KinoviHost::CustomHost { api_host, cdn_host };
+    }
+  }
+
+  KinoviHost::default()
 }
