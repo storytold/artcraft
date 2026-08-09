@@ -4,6 +4,10 @@ import { ModelCategory } from "../legacy/ModelConfig.js";
 import { ModelTag } from "./metadata/ModelTag.js";
 import { SizeOption } from "./metadata/SizeOption.js";
 import { GenerationProvider } from "@storyteller/api-enums";
+import {
+  isValidVideoDuration,
+  normalizeVideoDurationOptions,
+} from "./properties/VideoDuration.js";
 
 export class VideoModel extends Model {
   // Typescript type discriminator property
@@ -31,8 +35,15 @@ export class VideoModel extends Model {
   // Whether this model supports toggling generation with sound
   readonly generateWithSound?: boolean;
 
-  // Available duration options in seconds (e.g. [4, 5, 6, 7, 8, 9])
+  // Discrete duration options in seconds (e.g. [5, 10])
   readonly durationOptions?: number[];
+
+  // Inclusive continuous duration range in seconds
+  readonly minDuration?: number;
+  readonly maxDuration?: number;
+
+  // Maximum duration when a starting/reference/ending image is attached
+  readonly maxDurationWithImageReferences?: number;
 
   // Default duration in seconds
   readonly defaultDuration?: number;
@@ -89,6 +100,9 @@ export class VideoModel extends Model {
     generateWithSound?: boolean;
     providers?: GenerationProvider[];
     durationOptions?: number[];
+    minDuration?: number;
+    maxDuration?: number;
+    maxDurationWithImageReferences?: number;
     defaultDuration?: number;
     supportsReferenceMode?: boolean;
     maxReferenceImages?: number;
@@ -109,8 +123,35 @@ export class VideoModel extends Model {
     this.textToVideoSupported = args.textToVideoSupported ?? true;
     this.sizeOptions = args.sizeOptions ?? [];
     this.generateWithSound = args.generateWithSound || false;
-    this.durationOptions = args.durationOptions;
-    this.defaultDuration = args.defaultDuration;
+    this.durationOptions = normalizeVideoDurationOptions(args.durationOptions);
+    const minDuration = isValidVideoDuration(args.minDuration)
+      ? args.minDuration
+      : undefined;
+    const maxDuration = isValidVideoDuration(args.maxDuration)
+      ? args.maxDuration
+      : undefined;
+    const maxDurationWithImageReferences = isValidVideoDuration(
+      args.maxDurationWithImageReferences,
+    )
+      ? args.maxDurationWithImageReferences
+      : undefined;
+    this.minDuration = minDuration;
+    // Preserve individually valid incomplete bounds, but do not expose an
+    // upper bound that contradicts an advertised minimum. The resolver can
+    // then fall back to discrete options without carrying invalid metadata.
+    this.maxDuration =
+      maxDuration !== undefined &&
+      (minDuration === undefined || maxDuration >= minDuration)
+        ? maxDuration
+        : undefined;
+    // Preserve a valid image-specific cap even when the listing's scalar
+    // relationships conflict. The resolver can then fail closed when the cap
+    // falls below the general minimum, rather than silently dropping the cap
+    // and sending a duration the backend explicitly disallowed.
+    this.maxDurationWithImageReferences = maxDurationWithImageReferences;
+    this.defaultDuration = isValidVideoDuration(args.defaultDuration)
+      ? args.defaultDuration
+      : undefined;
     this.supportsReferenceMode = args.supportsReferenceMode;
     this.maxReferenceImages = args.maxReferenceImages;
     this.maxReferenceVideos = args.maxReferenceVideos;

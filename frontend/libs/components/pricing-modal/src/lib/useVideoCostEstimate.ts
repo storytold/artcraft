@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model, VideoModel } from "@storyteller/model-list";
+import {
+  hasVideoDurationConfiguration,
+  Model,
+  projectVideoDuration,
+  VideoModel,
+} from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { usePromptVideoStore } from "@storyteller/ui-promptbox";
 import {
@@ -32,19 +37,48 @@ export function useVideoCostEstimate(
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
   const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
+  const videoModel =
+    selectedModel?.kind === "video_model"
+      ? (selectedModel as VideoModel)
+      : null;
+  const effectiveReferenceMode =
+    inputMode === "reference" && !!videoModel?.supportsReferenceMode;
+  const resolvedDuration = videoModel
+    ? projectVideoDuration(videoModel, {
+        storedDuration: duration,
+        effectiveReferenceMode,
+        imageCount: referenceImages.length,
+        hasEndFrameImage: !!endFrameImage,
+      }).estimateDuration
+    : null;
 
   useEffect(() => {
-    if (activePage !== ModelPage.ImageToVideo || !selectedModel) {
+    if (activePage !== ModelPage.ImageToVideo) {
+      setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
+      setIsLoading(false);
+      return;
+    }
+    if (!videoModel) {
+      setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
+      setIsLoading(false);
+      return;
+    }
+    if (
+      resolvedDuration === null &&
+      hasVideoDurationConfiguration(videoModel)
+    ) {
+      setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
+      setIsLoading(false);
       return;
     }
 
-    const commonModel = videoModelToCommonVideoModel(selectedModel.tauriId);
+    const commonModel = videoModelToCommonVideoModel(videoModel.tauriId);
     if (!commonModel) {
       setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
+      setIsLoading(false);
       return;
     }
 
-    const videoModel = selectedModel as VideoModel;
     const commonAspectRatio = videoAspectRatioToCommonAspectRatio(
       aspectRatio,
       videoModel.sizeOptions,
@@ -56,47 +90,62 @@ export function useVideoCostEstimate(
       endFrameImage,
       videoModel.supportsReferenceMode,
     );
-
     const provider =
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
+    // The prompt store is authoritative immediately. Debounce only the remote
+    // estimate call so the UI never displays the previous quote beside a newly
+    // selected duration while still avoiding a request for every drag event.
+    setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
     setIsLoading(true);
-
-    EstimateVideoCost({
-      model: commonModel,
-      provider,
-      generation_mode: generationMode,
-      aspect_ratio: commonAspectRatio ?? undefined,
-      resolution: commonResolution ?? undefined,
-      duration_seconds: duration ?? undefined,
-      generate_audio: generateWithSound,
-    })
-      .then((result) => {
-        if (isEstimateVideoCostSuccess(result)) {
-          const credits = result.payload.cost_in_credits ?? null;
-          setEstimatedCreditsForPage(ModelPage.ImageToVideo, credits);
-        } else {
+    let cancelled = false;
+    const estimateTimer = setTimeout(() => {
+      EstimateVideoCost({
+        model: commonModel,
+        provider,
+        generation_mode: generationMode,
+        aspect_ratio: commonAspectRatio ?? undefined,
+        resolution: commonResolution ?? undefined,
+        duration_seconds: resolvedDuration ?? undefined,
+        generate_audio: generateWithSound,
+      })
+        .then((result) => {
+          if (cancelled) return;
+          if (isEstimateVideoCostSuccess(result)) {
+            const credits = result.payload.cost_in_credits ?? null;
+            setEstimatedCreditsForPage(ModelPage.ImageToVideo, credits);
+          } else {
+            setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
           setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
-        }
-      })
-      .catch(() => {
-        setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+        })
+        .finally(() => {
+          if (cancelled) return;
+          setIsLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(estimateTimer);
+    };
   }, [
     activePage,
-    selectedModel?.id,
+    videoModel,
     selectedProvider,
-    duration,
+    resolvedDuration,
     aspectRatio,
     resolution,
     inputMode,
+    effectiveReferenceMode,
     referenceImages.length,
     !!endFrameImage,
     generateWithSound,
+    setEstimatedCreditsForPage,
   ]);
 
   return { isLoading };

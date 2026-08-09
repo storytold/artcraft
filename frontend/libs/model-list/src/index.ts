@@ -4,6 +4,17 @@ export * from "./lib/classes/VideoModel.js";
 export * from "./lib/classes/properties/CommonAspectRatio.js";
 export * from "./lib/classes/properties/CommonResolution.js";
 export * from "./lib/classes/properties/CommonQuality.js";
+export {
+  getVideoDurationConstraint,
+  hasVideoDurationConfiguration,
+  projectVideoDuration,
+  resolveVideoDuration,
+  type VideoDurationCapabilities,
+  type VideoDurationConstraint,
+  type VideoDurationMediaInputs,
+  type VideoDurationProjection,
+  type VideoDurationProjectionInputs,
+} from "./lib/classes/properties/VideoDuration.js";
 export * from "./lib/classes/metadata/ModelCreator.js";
 export * from "./lib/classes/metadata/ModelCreatorIcons.js";
 export * from "./lib/classes/metadata/ModelCreatorIconForId.js";

@@ -12,10 +12,17 @@ import { arrayMove } from "@dnd-kit/sortable";
 import {
   CommonResolution,
   effectivePromptMaxLength,
+  getVideoDurationConstraint,
+  hasVideoDurationConfiguration,
+  projectVideoDuration,
   SizeIconOption,
   SizeOption,
   VideoModel,
 } from "@storyteller/model-list";
+import {
+  commitVideoDurationForRequest,
+  resolveVideoDurationSliderSelection,
+} from "./videoDurationControl";
 import {
   usePromptVideoStore,
   RefImage,
@@ -360,22 +367,50 @@ export const PromptBoxVideo = ({
     );
   };
 
-  // Sync duration with model default when switching models.
-  // Read duration from the store directly to avoid stale closure issues
-  // when the model and duration are updated together (e.g. during recreate).
+  const isReferenceMode =
+    inputMode === "reference" && !!selectedModel?.supportsReferenceMode;
+
+  const committedDurationProjection = selectedModel
+    ? projectVideoDuration(selectedModel, {
+        storedDuration: duration,
+        effectiveReferenceMode: isReferenceMode,
+        imageCount: referenceImages.length,
+        hasEndFrameImage: !!endFrameImage,
+        videoCount: referenceVideos.length,
+        audioCount: referenceAudios.length,
+      })
+    : null;
+  const durationMediaInputs = committedDurationProjection?.mediaInputs ?? {};
+
+  // Normalize committed store state when the model or concrete request media
+  // changes. Reading the store here also handles a model and duration being
+  // restored together (for example, Recreate) without relying on a stale
+  // render closure. Pending slider state is projected separately below.
   useEffect(() => {
     const currentDuration = usePromptVideoStore.getState().duration;
-    if (selectedModel?.durationOptions && selectedModel.defaultDuration) {
-      if (
-        currentDuration === null ||
-        !selectedModel.durationOptions.includes(currentDuration)
-      ) {
-        setDuration(selectedModel.defaultDuration);
-      }
-    } else if (currentDuration !== null) {
-      setDuration(null);
+    const resolvedDuration = selectedModel
+      ? projectVideoDuration(selectedModel, {
+          storedDuration: currentDuration,
+          effectiveReferenceMode: isReferenceMode,
+          imageCount: referenceImages.length,
+          hasEndFrameImage: !!endFrameImage,
+          videoCount: referenceVideos.length,
+          audioCount: referenceAudios.length,
+        }).estimateDuration
+      : null;
+    if (!Object.is(currentDuration, resolvedDuration)) {
+      setDuration(resolvedDuration);
     }
-  }, [selectedModel]);
+  }, [
+    selectedModel,
+    duration,
+    isReferenceMode,
+    referenceImages.length,
+    !!endFrameImage,
+    referenceVideos.length,
+    referenceAudios.length,
+    setDuration,
+  ]);
 
   // Sync resolution with model default when switching models.
   // Read from store directly to avoid stale closure (same as duration above).
@@ -414,26 +449,66 @@ export const PromptBoxVideo = ({
     }
   }, [selectedModel]);
 
-  const durationRange = selectedModel?.durationOptions?.length
-    ? {
-        min: selectedModel.durationOptions[0]!,
-        max: selectedModel.durationOptions[
-          selectedModel.durationOptions.length - 1
-        ]!,
-      }
+  const durationConstraint = selectedModel
+    ? getVideoDurationConstraint(selectedModel, durationMediaInputs)
     : null;
-  const effectiveDuration = duration ?? selectedModel?.defaultDuration ?? 5;
+  const effectiveDuration = selectedModel
+    ? (committedDurationProjection?.estimateDuration ?? null)
+    : null;
+  const durationConstraintKey =
+    durationConstraint?.kind === "range"
+      ? `range:${durationConstraint.min}:${durationConstraint.max}`
+      : durationConstraint?.kind === "options"
+        ? `options:${durationConstraint.options.join(",")}`
+        : "none";
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
-  const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
-    clearTimeout(durationTimerRef.current);
     setLocalDuration(effectiveDuration);
-    return () => clearTimeout(durationTimerRef.current);
-  }, [effectiveDuration]);
-  const handleDurationSlide = (v: number) => {
-    setLocalDuration(v);
-    clearTimeout(durationTimerRef.current);
-    durationTimerRef.current = setTimeout(() => setDuration(v), 300);
+  }, [effectiveDuration, selectedModel, durationConstraintKey]);
+  const displayedDuration = selectedModel
+    ? projectVideoDuration(selectedModel, {
+        storedDuration: duration,
+        pendingDuration: localDuration,
+        effectiveReferenceMode: isReferenceMode,
+        imageCount: referenceImages.length,
+        hasEndFrameImage: !!endFrameImage,
+        videoCount: referenceVideos.length,
+        audioCount: referenceAudios.length,
+      }).requestDuration
+    : null;
+  const durationControl =
+    durationConstraint?.kind === "range"
+      ? durationConstraint.max > durationConstraint.min
+        ? durationConstraint
+        : null
+      : durationConstraint && durationConstraint.options.length > 1
+        ? durationConstraint
+        : null;
+  const durationSliderValue =
+    durationControl?.kind === "options"
+      ? Math.max(0, durationControl.options.indexOf(displayedDuration!))
+      : (displayedDuration ?? 0);
+  const durationMinimum =
+    durationControl?.kind === "range"
+      ? durationControl.min
+      : durationControl?.options[0];
+  const durationMaximum =
+    durationControl?.kind === "range"
+      ? durationControl.max
+      : durationControl?.options[durationControl.options.length - 1];
+  const handleDurationSlide = (sliderValue: number) => {
+    if (!selectedModel || !durationControl) return;
+    const resolvedDuration = resolveVideoDurationSliderSelection(
+      selectedModel,
+      durationControl,
+      sliderValue,
+      durationMediaInputs,
+    );
+    setLocalDuration(resolvedDuration);
+    // Keep the visible control, request state, and estimator input identical.
+    // The pricing hook debounces its network call instead of delaying this
+    // authoritative store update.
+    setDuration(resolvedDuration);
   };
 
   const resolutionPickerOptions: PopoverItem[] | null =
@@ -477,8 +552,6 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const isReferenceMode =
-    inputMode === "reference" && !!selectedModel?.supportsReferenceMode;
   const maxImageCount = isReferenceMode
     ? (selectedModel?.maxReferenceImages ?? 3)
     : 1;
@@ -1051,6 +1124,30 @@ export const PromptBoxVideo = ({
       return;
     }
 
+    const requestDuration = commitVideoDurationForRequest(
+      selectedModel,
+      {
+        storedDuration: duration,
+        pendingDuration: localDuration,
+        effectiveReferenceMode: isReferenceMode,
+        imageCount: referenceImages.length,
+        hasEndFrameImage: !!endFrameImage,
+        videoCount: referenceVideos.length,
+        audioCount: referenceAudios.length,
+      },
+      setDuration,
+    );
+    setLocalDuration(requestDuration);
+    if (
+      requestDuration === null &&
+      hasVideoDurationConfiguration(selectedModel)
+    ) {
+      toast.error(
+        "This model has no valid duration for the attached reference media",
+      );
+      return;
+    }
+
     setIsEnqueueing(true);
 
     gtagEvent("enqueue_video");
@@ -1058,12 +1155,9 @@ export const PromptBoxVideo = ({
     const isSeedance2 = selectedModel.id === "seedance_2p0";
     const count = isSeedance2 ? generationCount : 1;
 
-    const isRefMode =
-      inputMode === "reference" && !!selectedModel.supportsReferenceMode;
-
     let imageMediaToken = undefined;
 
-    if (!isRefMode && referenceImages.length > 0) {
+    if (!isReferenceMode && referenceImages.length > 0) {
       imageMediaToken = referenceImages[0].mediaToken;
     }
 
@@ -1079,7 +1173,7 @@ export const PromptBoxVideo = ({
         model: selectedModel,
         start_frame_image_media_token: imageMediaToken,
         prompt: prompt,
-        end_frame_image_media_token: isRefMode
+        end_frame_image_media_token: isReferenceMode
           ? undefined
           : endFrameImage?.mediaToken,
         frontend_caller: "image_to_video",
@@ -1095,21 +1189,21 @@ export const PromptBoxVideo = ({
       }
 
       // Pass reference image tokens in reference mode
-      if (isRefMode && referenceImages.length > 0) {
+      if (isReferenceMode && referenceImages.length > 0) {
         request.reference_image_media_tokens = referenceImages.map(
           (img) => img.mediaToken,
         );
       }
 
       // Pass reference video tokens in reference mode
-      if (isRefMode && referenceVideos.length > 0) {
+      if (isReferenceMode && referenceVideos.length > 0) {
         request.reference_video_media_tokens = referenceVideos.map(
           (v) => v.mediaToken,
         );
       }
 
       // Pass reference audio tokens in reference mode
-      if (isRefMode && referenceAudios.length > 0) {
+      if (isReferenceMode && referenceAudios.length > 0) {
         request.reference_audio_media_tokens = referenceAudios.map(
           (a) => a.mediaToken,
         );
@@ -1144,9 +1238,10 @@ export const PromptBoxVideo = ({
         request.reference_character_tokens = mentionedTokens;
       }
 
-      // Pass duration if model supports it
-      if (selectedModel.durationOptions && duration !== null) {
-        request.duration_seconds = duration;
+      // Resolve again at request construction time rather than trusting that
+      // the model/image synchronization effect has already updated the store.
+      if (requestDuration !== null) {
+        request.duration_seconds = requestDuration;
       }
 
       // Pass the chosen resolution when the model exposes a resolution picker.
@@ -1451,7 +1546,7 @@ export const PromptBoxVideo = ({
                 </Tooltip>
               )}
 
-              {durationRange && (
+              {durationControl && displayedDuration !== null && (
                 <Tooltip content="Duration" position="top" className="z-50">
                   <PopoverMenu
                     mode="default"
@@ -1459,28 +1554,35 @@ export const PromptBoxVideo = ({
                     triggerIcon={
                       <ClockIcon  className="h-3.5 w-3.5" />
                     }
-                    triggerLabel={`${effectiveDuration}s`}
+                    triggerLabel={`${displayedDuration}s`}
                   >
                     <div className="w-48 pb-0.5">
                       <div className="flex items-center gap-2.5">
                         <div className="flex-1">
                           <SliderV2
-                            min={durationRange.min}
-                            max={durationRange.max}
-                            value={localDuration}
+                            min={
+                              durationControl.kind === "range"
+                                ? durationControl.min
+                                : 0
+                            }
+                            max={
+                              durationControl.kind === "range"
+                                ? durationControl.max
+                                : durationControl.options.length - 1
+                            }
+                            value={durationSliderValue}
                             onChange={handleDurationSlide}
                             step={1}
-                            suffix="s"
                             variant="filled"
                           />
                         </div>
                         <span className="min-w-6 shrink-0 text-sm font-medium tabular-nums text-base-fg">
-                          {localDuration}s
+                          {displayedDuration}s
                         </span>
                       </div>
                       <div className="mt-1.5 flex justify-between px-0.5 text-[11px] text-base-fg/40">
-                        <span>{durationRange.min}s</span>
-                        <span>{durationRange.max}s</span>
+                        <span>{durationMinimum}s</span>
+                        <span>{durationMaximum}s</span>
                       </div>
                     </div>
                   </PopoverMenu>
