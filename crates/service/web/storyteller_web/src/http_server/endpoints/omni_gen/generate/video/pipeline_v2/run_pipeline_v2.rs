@@ -94,13 +94,16 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
 
-  // These variants are FULFILLED by the base model's Kinovi request — the
-  // variant distinction is billing (each has its own Artcraft cost twin) and
-  // Kinovi account routing, both handled elsewhere. The collapse is
-  // EXEC-ONLY: the cost estimate below keeps the original model so the
-  // wallet bills each variant's own rate. (Collapsing before the cost
-  // estimate is what silently billed all of these at the base Seedance 2.0
-  // rate while the cost endpoint quoted their real prices.)
+  // These variants are FULFILLED by the base model (they build the same
+  // execution request), but they are PRICED as themselves — each has its own
+  // cost entry under the Artcraft provider.
+  //
+  // IMPORTANT: the model rewrite must apply to the EXECUTION builder only.
+  // The cost estimate below must see the ORIGINAL model. Rewriting before
+  // the cost estimate makes every variant price as its base model — a
+  // pricing bug we actually shipped, where these variants charged the base
+  // rate while the cost endpoint quoted their real prices. Do not "hoist"
+  // or "deduplicate" this match to the top of the function.
   match exec_builder.model {
     RouterVideoModel::PreviewModel |
     RouterVideoModel::Seedance2p0BytePlus |

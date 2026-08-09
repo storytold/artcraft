@@ -190,11 +190,9 @@ const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_480P: f64 = 8.55967078
 /// Seedance 2.5 Ultra — 720p price with video references, USD cents per second.
 const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 18.72427984;
 
-/// ArtCraft's price (USD cents) for Seedance 2.5 Ultra (the BytePlus Ultra
-/// kinovi account routing of Seedance 2.5).
+/// ArtCraft's price (USD cents) for Seedance 2.5 Ultra.
 ///
-/// Same billing structure as [`seedance_2p5_usd_cents`], at higher rates:
-/// only 480p and 720p are offered; any other resolution prices at 720p.
+/// Only 480p and 720p are offered; any other resolution prices at 720p.
 /// Without video references, billed seconds = output duration. With video
 /// references, the per-second rate drops but the billed seconds are the
 /// output duration PLUS the total seconds of reference video input. The

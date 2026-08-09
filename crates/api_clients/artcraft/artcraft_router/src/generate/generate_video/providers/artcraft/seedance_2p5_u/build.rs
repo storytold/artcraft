@@ -11,8 +11,6 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p5_u::reques
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
-/// Seedance 2.5 Ultra: the same model surface as Seedance 2.5, billed at its
-/// own (higher) rate and fulfilled via the BytePlus Ultra kinovi account.
 pub fn build_artcraft_seedance_2p5_u(mut builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 

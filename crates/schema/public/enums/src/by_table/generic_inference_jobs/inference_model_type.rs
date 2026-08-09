@@ -222,7 +222,6 @@ pub enum InferenceModelType {
   Seedance2p5Preview,
   #[serde(rename = "seedance_2p5")]
   Seedance2p5,
-  /// Seedance 2.5 as routed via the BytePlus Ultra kinovi account
   #[serde(rename = "seedance_2p5_u")]
   Seedance2p5Ultra,
   #[serde(rename = "sora_2")]

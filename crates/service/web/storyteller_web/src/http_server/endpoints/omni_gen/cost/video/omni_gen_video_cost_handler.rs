@@ -191,8 +191,7 @@ mod tests {
       assert_eq!(low_res_quote.cost_in_credits, Some(92));
     }
 
-    /// Seedance 2.5 Ultra is fulfilled by Seedance 2.5 but billed at its own
-    /// higher rate (and routed to a different kinovi account).
+    /// Seedance 2.5 Ultra has its own (higher) price than Seedance 2.5.
     #[tokio::test]
     async fn seedance_2p5_ultra_quotes_above_regular_seedance_2p5() {
       let regular = post_cost_request(base_request(CommonVideoModel::Seedance2p5))
