@@ -64,26 +64,18 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     mut mysql_connection,
   } = args;
 
-  let mut router_builder = router_builder.clone();
-
-  match router_builder.model {
-    RouterVideoModel::PreviewModel |
-    RouterVideoModel::Seedance2p0BytePlus |
-    RouterVideoModel::Seedance2p0BytePlusUltra => {
-      router_builder.model = RouterVideoModel::Seedance2p0;
-    },
-    RouterVideoModel::PreviewModelFast |
-    RouterVideoModel::Seedance2p0BytePlusFast | 
-    RouterVideoModel::Seedance2p0BytePlusUltraFast => {
-      router_builder.model = RouterVideoModel::Seedance2p0Fast;
-    },
-    _ => {}, // Fall-through
-  }
+  let router_builder = router_builder.clone();
 
   let provider = match router_builder.model {
     RouterVideoModel::HappyHorse1p0 => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0 => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0Fast => RouterProvider::KinoviWeb,
+    RouterVideoModel::PreviewModel => RouterProvider::KinoviWeb,
+    RouterVideoModel::PreviewModelFast => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlus => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusFast => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusUltra => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusUltraFast => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0Mini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::KinoviWeb,
@@ -101,13 +93,28 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
 
-  // Seedance 2.5 Ultra is FULFILLED by Seedance 2.5 — the Ultra distinction
-  // is billing (its own, higher-priced Artcraft cost twin) and Kinovi account
-  // routing (BytePlusUltra), both handled elsewhere. Unlike the 2.0 collapse
-  // above, this collapse is EXEC-ONLY so the cost estimate below keeps the
-  // Ultra model and bills the Ultra rate.
-  if matches!(exec_builder.model, RouterVideoModel::Seedance2p5Ultra) {
-    exec_builder.model = RouterVideoModel::Seedance2p5;
+  // These variants are FULFILLED by the base model's Kinovi request — the
+  // variant distinction is billing (each has its own Artcraft cost twin) and
+  // Kinovi account routing, both handled elsewhere. The collapse is
+  // EXEC-ONLY: the cost estimate below keeps the original model so the
+  // wallet bills each variant's own rate. (Collapsing before the cost
+  // estimate is what silently billed all of these at the base Seedance 2.0
+  // rate while the cost endpoint quoted their real prices.)
+  match exec_builder.model {
+    RouterVideoModel::PreviewModel |
+    RouterVideoModel::Seedance2p0BytePlus |
+    RouterVideoModel::Seedance2p0BytePlusUltra => {
+      exec_builder.model = RouterVideoModel::Seedance2p0;
+    },
+    RouterVideoModel::PreviewModelFast |
+    RouterVideoModel::Seedance2p0BytePlusFast |
+    RouterVideoModel::Seedance2p0BytePlusUltraFast => {
+      exec_builder.model = RouterVideoModel::Seedance2p0Fast;
+    },
+    RouterVideoModel::Seedance2p5Ultra => {
+      exec_builder.model = RouterVideoModel::Seedance2p5;
+    },
+    _ => {}, // Fall-through
   }
 
   // Fal, GmiCloud, and Grok (xAI) take image URLs directly, not media file tokens.
