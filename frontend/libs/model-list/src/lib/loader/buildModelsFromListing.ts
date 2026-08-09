@@ -283,6 +283,10 @@ const mergedVideoModel = (
         : o?.sizeOptions,
     supportsCommonAspectRatio:
       aspectRatios.length > 0 || (o?.supportsCommonAspectRatio ?? false),
+    defaultAspectRatio:
+      (knownValue(m.aspect_ratio_default, COMMON_ASPECT_RATIO_VALUES) as
+        | CommonAspectRatio
+        | undefined) ?? o?.defaultAspectRatio,
   });
 };
 

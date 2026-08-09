@@ -4,6 +4,7 @@ import { ModelCategory } from "../legacy/ModelConfig.js";
 import { ModelTag } from "./metadata/ModelTag.js";
 import { SizeOption } from "./metadata/SizeOption.js";
 import { GenerationProvider } from "@storyteller/api-enums";
+import { CommonAspectRatio } from "./properties/CommonAspectRatio.js";
 
 export class VideoModel extends Model {
   // Typescript type discriminator property
@@ -64,6 +65,9 @@ export class VideoModel extends Model {
   // NB: Soon all the models will support this.
   readonly supportsCommonAspectRatio: boolean;
 
+  // Canonical default declared by the model catalog
+  readonly defaultAspectRatio?: CommonAspectRatio;
+
   // Default resolution
   readonly defaultResolution?: string;
 
@@ -100,6 +104,7 @@ export class VideoModel extends Model {
     defaultResolution?: string;
     supportsSystemPrompt?: boolean;
     supportsCommonAspectRatio?: boolean;
+    defaultAspectRatio?: CommonAspectRatio;
     maxPromptLength?: number;
   }) {
     super(args);
@@ -121,5 +126,6 @@ export class VideoModel extends Model {
     this.defaultResolution = args.defaultResolution;
     this.supportsSystemPrompt = args.supportsSystemPrompt ?? true;
     this.supportsCommonAspectRatio = args.supportsCommonAspectRatio ?? false;
+    this.defaultAspectRatio = args.defaultAspectRatio;
   }
 }
