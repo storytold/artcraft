@@ -184,6 +184,10 @@ pub struct Batch(pub u16);
 #[derive(Clone, Copy, Debug)]
 pub struct ExpectedCredits(pub u64);
 
+/// How many credits MORE the variant charges than its base model.
+#[derive(Clone, Copy, Debug)]
+pub struct CreditsDelta(pub u64);
+
 /// A generate request with only the model set; tests fill in the rest.
 /// Idempotency tokens must be unique per call.
 pub fn base_generate_request(model: CommonVideoModel) -> OmniGenVideoCostAndGenerateRequest {
@@ -575,4 +579,34 @@ pub async fn assert_generation_fails_and_charges_nothing(
     STARTING_CREDITS,
     "{:?}: rejected generation must not charge", model,
   );
+}
+
+/// Assert the variant model charges a premium over the base model: runs one
+/// generation on EACH model, asserts both exact charges, and that
+/// `variant == base + delta`. (A delta of 0 is allowed where ceil-rounding
+/// collapses a sub-cent premium.)
+pub async fn assert_variant_charges_premium(
+  harness: &TestHarness,
+  base_model: CommonVideoModel,
+  variant_model: CommonVideoModel,
+  resolution: Option<enums::common::generation::common_resolution::CommonResolution>,
+  seconds: Seconds,
+  batch: Batch,
+  base: ExpectedCredits,
+  variant: ExpectedCredits,
+  CreditsDelta(delta): CreditsDelta,
+) {
+  let ExpectedCredits(base_credits) = base;
+  let ExpectedCredits(variant_credits) = variant;
+
+  // The table itself must be internally consistent.
+  assert_eq!(
+    base_credits + delta,
+    variant_credits,
+    "test table bug: {:?} {} + delta {} != {:?} {}",
+    base_model, base_credits, delta, variant_model, variant_credits,
+  );
+
+  assert_successful_generation_charges(harness, base_model, resolution, seconds, batch, base).await;
+  assert_successful_generation_charges(harness, variant_model, resolution, seconds, batch, variant).await;
 }

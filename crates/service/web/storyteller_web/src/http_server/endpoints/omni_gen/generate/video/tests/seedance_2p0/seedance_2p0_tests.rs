@@ -3,8 +3,9 @@
 //! credits debited from the wallet.
 //!
 //! Models covered: Seedance2p0, Seedance2p0BytePlus, Seedance2p0Ultra,
-//! Seedance2p0BytePlusUltra, Seedance2p0BytePlusUltraFast (plus the
-//! PreviewModel alias of BytePlus, kept for the collapse-bug pin).
+//! Seedance2p0BytePlusUltra (plus the PreviewModel alias of BytePlus, kept
+//! for the collapse-bug pin). Fast-tier variants live in
+//! `seedance_2p0_fast_tests`.
 //!
 //! These exist because of a shipped pricing bug where the BytePlus / Preview
 //! variants billed the base Volcengine rate while quoting their own higher
@@ -16,8 +17,8 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 
 use crate::http_server::endpoints::omni_gen::generate::video::tests::support::{
   assert_generation_fails_and_charges_nothing, assert_reference_video_charge_then_refund,
-  assert_successful_generation_charges, base_generate_request, Batch, ExpectedCredits, Seconds,
-  TestHarness,
+  assert_successful_generation_charges, assert_variant_charges_premium, base_generate_request,
+  Batch, CreditsDelta, ExpectedCredits, Seconds, TestHarness,
 };
 
 // ── Seedance 2.0 (Volcengine) ──
@@ -150,31 +151,6 @@ async fn seedance_2p0_byteplus_ultra_video_references_do_not_change_the_price() 
   ).await;
 }
 
-/// BytePlus Ultra Fast (grouped with the base tier per the module split):
-/// 480p 9 ¢/s, 720p 20 ¢/s. 720p 5s: 100, NOT the base-Fast 64.
-#[tokio::test]
-#[cfg_attr(feature = "skip_database_tests", ignore)]
-async fn seedance_2p0_byteplus_ultra_fast_charges_its_own_rates_not_the_base_rate() {
-  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
-  let harness = TestHarness::create().await;
-
-  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
-    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(100)),
-    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(45)),
-    (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(90)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(200)),
-    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(200)),
-    // Batch caps at the platform max of 4: batch 8 prices as batch 4.
-    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(400)),
-  ];
-
-  for (resolution, seconds, batch, expected) in cases {
-    assert_successful_generation_charges(
-      &harness, CommonVideoModel::Seedance2p0BytePlusUltraFast, *resolution, *seconds, *batch, *expected,
-    ).await;
-  }
-}
-
 /// PreviewModel is the temporary-rollout alias of the BytePlus tier and was
 /// part of the collapse bug; it must charge the BytePlus rates.
 #[tokio::test]
@@ -191,6 +167,74 @@ async fn preview_model_charges_the_byteplus_rates() {
     Batch(1),
     ExpectedCredits(125),
   ).await;
+}
+
+// ── Variant premiums over the base model ──
+// Both prices and the delta are encoded so a change to EITHER rate card
+// shows up here, not just a flipped ordering.
+
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_charges_a_premium_over_the_base_model() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(39), ExpectedCredits(50), CreditsDelta(11)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(80), ExpectedCredits(125), CreditsDelta(45)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(160), ExpectedCredits(250), CreditsDelta(90)),
+    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(233), ExpectedCredits(250), CreditsDelta(17)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(240), ExpectedCredits(375), CreditsDelta(135)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(320), ExpectedCredits(500), CreditsDelta(180)),
+    // Batch 8 is accepted but downgrades to the platform max of 4 on both
+    // execution and billing, so it prices identically to batch 4.
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(320), ExpectedCredits(500), CreditsDelta(180)),
+    // 4K carries NO premium: base and BytePlus tiers share one 4K rate card
+    // (86.6 cents/s), so the delta is zero — including at scale.
+    (Some(CommonResolution::FourK), Seconds(5), Batch(1), ExpectedCredits(433), ExpectedCredits(433), CreditsDelta(0)),
+    (Some(CommonResolution::FourK), Seconds(15), Batch(4), ExpectedCredits(5196), ExpectedCredits(5196), CreditsDelta(0)),
+  ];
+
+  for (resolution, seconds, batch, base, variant, delta) in cases {
+    assert_variant_charges_premium(
+      &harness,
+      CommonVideoModel::Seedance2p0,
+      CommonVideoModel::Seedance2p0BytePlus,
+      *resolution, *seconds, *batch, *base, *variant, *delta,
+    ).await;
+  }
+}
+
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_ultra_charges_a_premium_over_the_base_model() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(39), ExpectedCredits(50), CreditsDelta(11)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(80), ExpectedCredits(125), CreditsDelta(45)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(160), ExpectedCredits(250), CreditsDelta(90)),
+    (Some(CommonResolution::TenEightyP), Seconds(5), Batch(1), ExpectedCredits(233), ExpectedCredits(250), CreditsDelta(17)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(240), ExpectedCredits(375), CreditsDelta(135)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(4), ExpectedCredits(320), ExpectedCredits(500), CreditsDelta(180)),
+    // Batch 8 is accepted but downgrades to the platform max of 4 on both
+    // execution and billing, so it prices identically to batch 4.
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(320), ExpectedCredits(500), CreditsDelta(180)),
+    // 4K carries NO premium: base and BytePlus tiers share one 4K rate card
+    // (86.6 cents/s), so the delta is zero — including at scale.
+    (Some(CommonResolution::FourK), Seconds(5), Batch(1), ExpectedCredits(433), ExpectedCredits(433), CreditsDelta(0)),
+    (Some(CommonResolution::FourK), Seconds(15), Batch(4), ExpectedCredits(5196), ExpectedCredits(5196), CreditsDelta(0)),
+  ];
+
+  for (resolution, seconds, batch, base, variant, delta) in cases {
+    assert_variant_charges_premium(
+      &harness,
+      CommonVideoModel::Seedance2p0,
+      CommonVideoModel::Seedance2p0BytePlusUltra,
+      *resolution, *seconds, *batch, *base, *variant, *delta,
+    ).await;
+  }
 }
 
 // ── Seedance 2.0 Ultra (GmiCloud) ──

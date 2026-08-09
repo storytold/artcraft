@@ -14,8 +14,8 @@ use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 
 use crate::http_server::endpoints::omni_gen::generate::video::tests::support::{
-  assert_reference_video_charge_then_refund, assert_successful_generation_charges, Batch,
-  ExpectedCredits, Seconds, TestHarness,
+  assert_reference_video_charge_then_refund, assert_successful_generation_charges,
+  assert_variant_charges_premium, Batch, CreditsDelta, ExpectedCredits, Seconds, TestHarness,
 };
 
 // ── Seedance 2.0 Mini (Volcengine) ──
@@ -97,6 +97,62 @@ async fn seedance_2p0_mini_charges_the_video_reference_rate() {
   for (resolution, seconds, expected) in cases {
     assert_reference_video_charge_then_refund(
       &harness, CommonVideoModel::Seedance2p0Mini, *resolution, *seconds, *expected,
+    ).await;
+  }
+}
+
+// ── Variant premiums over the base Mini model ──
+// Both prices and the delta are encoded so a change to EITHER rate card
+// shows up here. The BytePlus premium is sub-cent per second, so short
+// durations round to a delta of ZERO; longer durations and batches make it
+// materialize.
+
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_mini_charges_a_premium_over_mini() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[
+    // Ceil-rounding parity: the premium vanishes at 5s.
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(44), ExpectedCredits(44), CreditsDelta(0)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(87), ExpectedCredits(88), CreditsDelta(1)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(130), ExpectedCredits(131), CreditsDelta(1)),
+    (Some(CommonResolution::FourEightyP), Seconds(15), Batch(1), ExpectedCredits(49), ExpectedCredits(50), CreditsDelta(1)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(346), ExpectedCredits(349), CreditsDelta(3)),
+  ];
+
+  for (resolution, seconds, batch, base, variant, delta) in cases {
+    assert_variant_charges_premium(
+      &harness,
+      CommonVideoModel::Seedance2p0Mini,
+      CommonVideoModel::Seedance2p0BytePlusMini,
+      *resolution, *seconds, *batch, *base, *variant, *delta,
+    ).await;
+  }
+}
+
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_ultra_mini_charges_a_premium_over_mini() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[
+    // Ceil-rounding parity: the premium vanishes at 5s.
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(44), ExpectedCredits(44), CreditsDelta(0)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(87), ExpectedCredits(88), CreditsDelta(1)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(15), Batch(1), ExpectedCredits(130), ExpectedCredits(131), CreditsDelta(1)),
+    (Some(CommonResolution::FourEightyP), Seconds(15), Batch(1), ExpectedCredits(49), ExpectedCredits(50), CreditsDelta(1)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(346), ExpectedCredits(349), CreditsDelta(3)),
+  ];
+
+  for (resolution, seconds, batch, base, variant, delta) in cases {
+    assert_variant_charges_premium(
+      &harness,
+      CommonVideoModel::Seedance2p0Mini,
+      CommonVideoModel::Seedance2p0BytePlusUltraMini,
+      *resolution, *seconds, *batch, *base, *variant, *delta,
     ).await;
   }
 }

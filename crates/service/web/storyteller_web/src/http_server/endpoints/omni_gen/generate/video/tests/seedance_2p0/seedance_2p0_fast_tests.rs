@@ -2,15 +2,16 @@
 //! database, exact wallet-debit assertions.
 //!
 //! Models covered: Seedance2p0Fast, Seedance2p0UltraFast,
-//! Seedance2p0BytePlusFast (plus the PreviewModelFast alias, kept for the
-//! collapse-bug pin).
+//! Seedance2p0BytePlusFast, Seedance2p0BytePlusUltraFast (plus the
+//! PreviewModelFast alias, kept for the collapse-bug pin).
 
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 
 use crate::http_server::endpoints::omni_gen::generate::video::tests::support::{
   assert_generation_fails_and_charges_nothing, assert_reference_video_charge_then_refund,
-  assert_successful_generation_charges, Batch, ExpectedCredits, Seconds, TestHarness,
+  assert_successful_generation_charges, assert_variant_charges_premium, Batch, CreditsDelta,
+  ExpectedCredits, Seconds, TestHarness,
 };
 
 // ── Seedance 2.0 Fast (Volcengine) ──
@@ -92,6 +93,95 @@ async fn seedance_2p0_byteplus_fast_charges_its_own_rates_not_the_base_rate() {
     assert_successful_generation_charges(
       &harness, CommonVideoModel::Seedance2p0BytePlusFast, *resolution, *seconds, *batch, *expected,
     ).await;
+  }
+}
+
+/// BytePlus Ultra Fast: 480p 9 ¢/s, 720p 20 ¢/s (the BytePlus Fast card,
+/// routed to the BytePlus Ultra account). 720p 5s: 100, NOT the base-Fast 64.
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_ultra_fast_charges_its_own_rates_not_the_base_rate() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(100)),
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(45)),
+    (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(90)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(200)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(200)),
+    // Batch caps at the platform max of 4: batch 8 prices as batch 4.
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(8), ExpectedCredits(400)),
+  ];
+
+  for (resolution, seconds, batch, expected) in cases {
+    assert_successful_generation_charges(
+      &harness, CommonVideoModel::Seedance2p0BytePlusUltraFast, *resolution, *seconds, *batch, *expected,
+    ).await;
+  }
+}
+
+// ── Variant premiums over the base Fast model ──
+// Both prices and the delta are encoded so a change to EITHER rate card
+// shows up here, not just a flipped ordering.
+
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_byteplus_fast_charges_a_premium_over_fast() {
+  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
+  let harness = TestHarness::create().await;
+
+  let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[
+    (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(26), ExpectedCredits(45), CreditsDelta(19)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(64), ExpectedCredits(100), CreditsDelta(36)),
+    (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(127), ExpectedCredits(200), CreditsDelta(73)),
+  ];
+
+  for (resolution, seconds, batch, base, variant, delta) in cases {
+    assert_variant_charges_premium(
+      &harness,
+      CommonVideoModel::Seedance2p0Fast,
+      CommonVideoModel::Seedance2p0BytePlusFast,
+      *resolution, *seconds, *batch, *base, *variant, *delta,
+    ).await;
+  }
+}
+
+/// Seedance2p0UltraFast is NOT priced higher than Fast: its legacy (GmiCloud)
+/// rate card quotes BELOW the Fast card (720p 5s: 45 vs 64), it has no active
+/// execution route, and production has zero jobs for it, ever. Pinned via the
+/// cost endpoint (it cannot generate); if this fails, someone revived or
+/// repriced the Ultra tier and real pricing tests are required.
+#[tokio::test]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
+async fn seedance_2p0_ultra_fast_quotes_below_fast_on_its_legacy_rate_card() {
+  use actix_web::web::Json;
+
+  let fast_quote = quote_credits(CommonVideoModel::Seedance2p0Fast).await;
+  let ultra_fast_quote = quote_credits(CommonVideoModel::Seedance2p0UltraFast).await;
+
+  // 720p 5s: Fast 12.727 ¢/s → 64; UltraFast (legacy) 8.9089 ¢/s → 45.
+  assert_eq!(fast_quote, 64);
+  assert_eq!(ultra_fast_quote, 45);
+  assert_eq!(fast_quote - ultra_fast_quote, 19);
+
+  async fn quote_credits(model: CommonVideoModel) -> u64 {
+    let mut request = crate::http_server::endpoints::omni_gen::generate::video::tests::support::base_generate_request(model);
+    request.resolution = Some(CommonResolution::SevenTwentyP);
+    request.duration_seconds = Some(5);
+
+    let http_request = actix_web::test::TestRequest::post()
+      .uri("/v1/omni_gen/cost/video")
+      .to_http_request();
+    // No ServerState: quotes come from the router alone (no DB, no network).
+    crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler(
+      http_request, Json(request), None,
+    )
+    .await
+    .expect("cost quote should succeed")
+    .into_inner()
+    .cost_in_credits
+    .expect("quote should carry credits")
   }
 }
 
