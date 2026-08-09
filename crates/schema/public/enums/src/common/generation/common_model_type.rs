@@ -193,6 +193,9 @@ pub enum CommonModelType {
   Seedance2p5Preview,
   #[serde(rename = "seedance_2p5")]
   Seedance2p5,
+  /// Seedance 2.5 as routed via the BytePlus Ultra kinovi account
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -354,6 +357,7 @@ impl CommonModelType {
       Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
       Self::Seedance2p5Preview => "seedance_2p5_preview",
       Self::Seedance2p5 => "seedance_2p5",
+      Self::Seedance2p5Ultra => "seedance_2p5_u",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -474,6 +478,7 @@ impl CommonModelType {
       "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
       "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
       "seedance_2p5" => Ok(Self::Seedance2p5),
+      "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -598,6 +603,7 @@ impl CommonModelType {
       Self::Seedance2p0BytePlusUltraMini,
       Self::Seedance2p5Preview,
       Self::Seedance2p5,
+      Self::Seedance2p5Ultra,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -719,6 +725,7 @@ impl CommonModelType {
       Self::Seedance2p0BytePlusUltraMini => CommonModelClass::Video,
       Self::Seedance2p5Preview => CommonModelClass::Video,
       Self::Seedance2p5 => CommonModelClass::Video,
+      Self::Seedance2p5Ultra => CommonModelClass::Video,
       Self::Sora2 => CommonModelClass::Video,
       Self::Sora2Pro => CommonModelClass::Video,
       Self::Veo2 => CommonModelClass::Video,
@@ -849,6 +856,7 @@ mod tests {
       assert_serialization(CommonModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
       assert_serialization(CommonModelType::Seedance2p5Preview, "seedance_2p5_preview");
       assert_serialization(CommonModelType::Seedance2p5, "seedance_2p5");
+      assert_serialization(CommonModelType::Seedance2p5Ultra, "seedance_2p5_u");
       assert_serialization(CommonModelType::Sora2, "sora_2");
       assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(CommonModelType::Veo2, "veo_2");
@@ -964,6 +972,7 @@ mod tests {
       assert_eq!(CommonModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
       assert_eq!(CommonModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
       assert_eq!(CommonModelType::Seedance2p5.to_str(), "seedance_2p5");
+      assert_eq!(CommonModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
       assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
       assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
@@ -1081,6 +1090,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedance_2p0_bpu_mini").unwrap(), CommonModelType::Seedance2p0BytePlusUltraMini);
       assert_eq!(CommonModelType::from_str("seedance_2p5_preview").unwrap(), CommonModelType::Seedance2p5Preview);
       assert_eq!(CommonModelType::from_str("seedance_2p5").unwrap(), CommonModelType::Seedance2p5);
+      assert_eq!(CommonModelType::from_str("seedance_2p5_u").unwrap(), CommonModelType::Seedance2p5Ultra);
       assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
       assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
       assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
@@ -1125,7 +1135,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 105);
+      assert_eq!(variants.len(), 106);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1198,6 +1208,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltraMini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Preview));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Ultra));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));
