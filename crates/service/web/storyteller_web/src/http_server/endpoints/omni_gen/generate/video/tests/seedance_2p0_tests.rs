@@ -17,7 +17,7 @@ const STARTING_CREDITS: u64 = 100_000;
 // ── Text-to-video pricing (successful generation via the stub provider) ──
 
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p0_charges_by_resolution_duration_and_batch() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
@@ -53,7 +53,7 @@ async fn seedance_2p0_charges_by_resolution_duration_and_batch() {
 }
 
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p0_fast_charges_by_resolution_and_duration() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
@@ -87,7 +87,7 @@ async fn seedance_2p0_fast_charges_by_resolution_and_duration() {
 // billed all of these at the base rate (720p 5s: 80 instead of 125).
 
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn byteplus_and_preview_variants_charge_their_own_rates_not_the_base_rate() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
@@ -125,7 +125,7 @@ async fn byteplus_and_preview_variants_charge_their_own_rates_not_the_base_rate(
 // ── Insufficient funds ──
 
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn insufficient_balance_is_a_402_and_charges_nothing() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;

@@ -33,12 +33,13 @@ rerun.
 
 ## Writing a database test
 
-Database tests must be feature-gated so they're excluded from normal runs,
-and must take the serial lock first — they share one schema:
+Database tests run by default; mark them with the `skip_database_tests`
+off switch so database-less machines/CI can exclude them, and take the
+serial lock first — they share one schema:
 
 ```rust
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn my_database_test() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let pool = mysql_testing::pool::create_test_pool().await;
@@ -51,10 +52,10 @@ async fn my_database_test() {
 }
 ```
 
-Run them with:
+Skip them (machines/CI without MySQL) with:
 
 ```bash
-SQLX_OFFLINE=true cargo test -p storyteller-web --features database_tests
+SQLX_OFFLINE=true cargo test -p storyteller-web --features skip_database_tests
 ```
 
 The first end-to-end consumers are the omni_gen video pricing tests in

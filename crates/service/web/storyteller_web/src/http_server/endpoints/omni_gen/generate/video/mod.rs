@@ -4,6 +4,8 @@ pub mod helpers;
 pub mod pipeline_v2;
 pub mod insert_db_job;
 
-// Database fixture tests (excluded from normal runs; see tests/mod.rs).
-#[cfg(all(test, feature = "database_tests"))]
+// Database fixture tests. Always compiled with `cfg(test)` so IDEs discover
+// them and they can't bit-rot, but each test is `ignore`d unless the
+// `database_tests` feature is enabled (see tests/mod.rs).
+#[cfg(test)]
 mod tests;

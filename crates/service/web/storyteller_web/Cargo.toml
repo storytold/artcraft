@@ -201,10 +201,11 @@ zip = "0.6.6"
 diesel = { version = "2.2.4", features = ["mysql"] }
 
 [features]
-# Compiles the database fixture tests (guarded MySQL test database +
-# in-process stub providers). Excluded from normal test runs; run with:
-#   SQLX_OFFLINE=true cargo test -p storyteller-web --features database_tests
-database_tests = []
+# Database fixture tests (guarded MySQL test database + in-process stub
+# providers) RUN BY DEFAULT with `cargo test`. On machines/CI without a local
+# MySQL, skip them with:
+#   SQLX_OFFLINE=true cargo test -p storyteller-web --features skip_database_tests
+skip_database_tests = []
 
 [dev-dependencies]
 # Testing/Dev Deps: Internal

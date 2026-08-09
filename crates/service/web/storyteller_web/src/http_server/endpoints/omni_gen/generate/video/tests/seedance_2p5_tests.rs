@@ -19,7 +19,7 @@ const STARTING_CREDITS: u64 = 100_000;
 // ── Text-to-video pricing (successful generation via the stub provider) ──
 
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p5_charges_by_resolution_and_duration() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
@@ -54,7 +54,7 @@ async fn seedance_2p5_charges_by_resolution_and_duration() {
 /// price. Same shape as the 2.0 collapse-bug pins: if the pipeline ever
 /// collapses Ultra before billing, these fail with the regular 2.5 numbers.
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p5_ultra_charges_its_own_higher_rates() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
@@ -91,7 +91,7 @@ async fn seedance_2p5_ultra_charges_its_own_higher_rates() {
 //   Ultra: 720p with refs = 18.72427984 ¢/s → 60 × rate = 1124
 
 #[tokio::test]
-#[cfg_attr(not(feature = "database_tests"), ignore)]
+#[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p5_bills_reference_video_input_seconds_at_worst_case_when_unprobeable() {
   let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;

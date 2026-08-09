@@ -2,12 +2,13 @@
 
 ## Database Fixture Tests
 
-- Live in-crate behind the `database_tests` cargo feature (e.g.
-  `storyteller-web`'s omni_gen video pricing tests) and use the
-  `mysql_testing` crate (`crates/schema/database/mysql_testing`) for guarded
-  pools, schema setup, and account/session/wallet fixtures
-- Excluded from normal runs. Run with:
-  `SQLX_OFFLINE=true cargo test -p storyteller-web --features database_tests`
+- Live in-crate (e.g. `storyteller-web`'s omni_gen video pricing tests) and
+  use the `mysql_testing` crate (`crates/schema/database/mysql_testing`) for
+  guarded pools, schema setup, and account/session/wallet fixtures
+- They RUN BY DEFAULT with `cargo test -p storyteller-web` and from the IDE
+  (requires a local MySQL with an `artcraft_test` database). Machines/CI
+  without MySQL skip them via the off switch:
+  `SQLX_OFFLINE=true cargo test -p storyteller-web --features skip_database_tests`
 - They connect ONLY via `ARTCRAFT_TEST_DATABASE_URL` (default
   `mysql://root:@localhost:3306/artcraft_test`); the guard panics on any
   database whose name lacks "test", on `storyteller`/`artcraft`, and on

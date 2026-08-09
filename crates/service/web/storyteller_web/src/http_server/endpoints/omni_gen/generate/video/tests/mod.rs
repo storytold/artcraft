@@ -4,10 +4,11 @@
 //! (see the `mysql_testing` crate — never production, never the local dev
 //! database) and drive the real handler with dummy Actix HTTP requests.
 //!
-//! They are excluded from normal test runs. Run them with:
+//! They RUN BY DEFAULT under `cargo test` and from the IDE. On machines or
+//! CI without a local MySQL, skip them with:
 //!
 //! ```bash
-//! SQLX_OFFLINE=true cargo test -p storyteller-web --features database_tests
+//! SQLX_OFFLINE=true cargo test -p storyteller-web --features skip_database_tests
 //! ```
 //!
 //! Requirements: a local MySQL with an `artcraft_test` database reachable via

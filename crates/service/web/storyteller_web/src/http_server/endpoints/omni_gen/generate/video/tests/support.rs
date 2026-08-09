@@ -212,10 +212,19 @@ fn uuid_v4_like() -> String {
 /// serves connections until the test process exits.
 async fn spawn_stub_kinovi_server() -> String {
   use std::sync::atomic::{AtomicU64, Ordering};
+  use std::sync::OnceLock;
 
   // Order/task ids must be unique: generic_inference_jobs has a UNIQUE key
-  // on the external third-party id.
+  // on the external third-party id — and the test database PERSISTS across
+  // runs, so ids must be unique across processes, not just within one.
   static ORDER_COUNTER: AtomicU64 = AtomicU64::new(1);
+  static PROCESS_PREFIX: OnceLock<u64> = OnceLock::new();
+  let process_prefix = *PROCESS_PREFIX.get_or_init(|| {
+    std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .expect("clock")
+      .as_nanos() as u64
+  });
 
   let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind stub kinovi");
   let port = listener.local_addr().expect("local addr").port();
@@ -228,7 +237,8 @@ async fn spawn_stub_kinovi_server() -> String {
       tokio::spawn(async move {
         let order_number = ORDER_COUNTER.fetch_add(1, Ordering::Relaxed);
         let response_json = format!(
-          r#"[{{"result":{{"data":{{"json":{{"taskId":"task_test_{order_number:08}","orderId":"ord_test_{order_number:08}","violationWarning":false}}}}}}}}]"#,
+          r#"[{{"result":{{"data":{{"json":{{"taskId":"task_test_{:016x}_{:04}","orderId":"ord_test_{:016x}_{:04}","violationWarning":false}}}}}}}}]"#,
+          process_prefix, order_number, process_prefix, order_number,
         );
         // Read the request until the connection settles; we answer every
         // request identically, so parsing is unnecessary.
