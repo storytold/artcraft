@@ -3,10 +3,20 @@ import { ModelPage } from "./model-pages";
 import { ImageModel, Model, VideoModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 
+type ModelSelectionSource = "automatic" | "explicit";
+
 interface ClassyModelSelectorState {
   selectedModels: { [page in ModelPage]?: Model };
+  modelSelectionSources: {
+    [page in ModelPage]?: ModelSelectionSource;
+  };
   selectedProviders: { [page in ModelPage]?: { [modelId: string]: GenerationProvider } };
   setSelectedModel: (page: ModelPage, model: Model) => void;
+  reconcileSelectedModelFromCatalog: (
+    page: ModelPage,
+    models: Model[],
+    defaultModel: Model | undefined
+  ) => void;
   setSelectedProvider: (
     page: ModelPage,
     modelId: string,
@@ -17,6 +27,7 @@ interface ClassyModelSelectorState {
 export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
   (set) => ({
     selectedModels: {},
+    modelSelectionSources: {},
     selectedProviders: {},
     setSelectedModel: (page, model) =>
       set((state) => ({
@@ -24,7 +35,45 @@ export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
           ...state.selectedModels,
           [page]: model,
         },
+        modelSelectionSources: {
+          ...state.modelSelectionSources,
+          [page]: "explicit",
+        },
       })),
+    reconcileSelectedModelFromCatalog: (page, models, defaultModel) =>
+      set((state) => {
+        if (models.length === 0) return state;
+
+        const selected = state.selectedModels[page];
+        const refreshed = selected
+          ? models.find((model) => model.tauriId === selected.tauriId)
+          : undefined;
+        const availableDefault = defaultModel
+          ? (models.find((model) => model.tauriId === defaultModel.tauriId) ??
+            models[0])
+          : models[0];
+        const automatic = state.modelSelectionSources[page] === "automatic";
+        const nextSelected = selected
+          ? automatic
+            ? (availableDefault ?? refreshed ?? selected)
+            : (refreshed ?? selected)
+          : availableDefault;
+
+        if (!nextSelected || nextSelected === selected) return state;
+
+        return {
+          selectedModels: {
+            ...state.selectedModels,
+            [page]: nextSelected,
+          },
+          modelSelectionSources: selected
+            ? state.modelSelectionSources
+            : {
+                ...state.modelSelectionSources,
+                [page]: "automatic",
+              },
+        };
+      }),
     setSelectedProvider: (page, modelId, provider) =>
       set((state) => ({
         selectedProviders: {
