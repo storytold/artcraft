@@ -1,16 +1,16 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPause, faPlay } from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { PauseIcon, PlayIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useGalleryViewStore } from "./gallery-view-store";
 
 const OPTIONS: {
   autoplay: boolean;
-  icon: IconDefinition;
+  icon: LucideIcon;
   label: string;
 }[] = [
-  { autoplay: true, icon: faPlay, label: "Play video previews" },
-  { autoplay: false, icon: faPause, label: "Still thumbnails" },
+  { autoplay: true, icon: PlayIcon, label: "Play video previews" },
+  { autoplay: false, icon: PauseIcon, label: "Still thumbnails" },
 ];
 
 // Segmented playing/still switch for video preview thumbnails. Sits next to
@@ -41,7 +41,7 @@ export function GalleryAutoplayToggle() {
                   : "text-white/45 hover:text-white/80"
               }`}
             >
-              <FontAwesomeIcon icon={icon} />
+              <DynamicIcon icon={icon} />
             </button>
           </Tooltip>
         );

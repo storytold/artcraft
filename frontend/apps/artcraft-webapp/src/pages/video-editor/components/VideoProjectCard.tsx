@@ -1,12 +1,5 @@
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClapperboardPlay,
-  faEllipsis,
-  faPen,
-  faPlus,
-  faTrashCan,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ClapperboardIcon, EllipsisIcon, PenIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import type { ProjectMeta } from "@storyteller/ui-video-editor";
@@ -84,10 +77,9 @@ export function VideoProjectCard({
               gradientForProject(project.id),
             )}
           >
-            <FontAwesomeIcon
-              icon={faClapperboardPlay}
-              className="text-3xl text-white/25 transition-colors group-hover:text-white/40"
-            />
+            <ClapperboardIcon
+              
+              className="text-3xl text-white/25 transition-colors group-hover:text-white/40" />
           </div>
         )}
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -115,7 +107,7 @@ export function VideoProjectCard({
           align="end"
           mode="default"
           triggerIcon={
-            <FontAwesomeIcon icon={faEllipsis} className="text-base-fg" />
+            <EllipsisIcon  className="text-base-fg" />
           }
           buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
           panelClassName="w-max min-w-44 p-1"
@@ -132,7 +124,7 @@ export function VideoProjectCard({
                   onRename();
                 }}
               >
-                <FontAwesomeIcon icon={faPen} className="w-3.5" />
+                <PenIcon  className="w-3.5" />
                 Rename
               </button>
               <button
@@ -144,7 +136,7 @@ export function VideoProjectCard({
                   onDelete();
                 }}
               >
-                <FontAwesomeIcon icon={faTrashCan} className="w-3.5" />
+                <Trash2Icon  className="w-3.5" />
                 Delete
               </button>
             </div>
@@ -175,7 +167,7 @@ export function NewProjectTile({ onClick }: { onClick: () => void }) {
       className="group flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] py-10 transition-colors hover:border-white/40 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/55 transition-colors group-hover:bg-primary/15 group-hover:text-primary">
-        <FontAwesomeIcon icon={faPlus} />
+        <PlusIcon />
       </span>
       <span className="text-sm font-medium text-white/70">New project</span>
     </button>

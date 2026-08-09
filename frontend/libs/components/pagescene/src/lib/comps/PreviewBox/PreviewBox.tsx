@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { XIcon } from "lucide-react";
 
 // Small fixed-position card shown next to the camera when a visitor is
 // looking at someone else's scene. Renders the author's generation
@@ -27,7 +26,7 @@ export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
         className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
         aria-label="Hide preview"
       >
-        <FontAwesomeIcon icon={faXmark} className="text-xs" />
+        <XIcon  className="text-xs" />
       </button>
       <img
         src={imageUrl}

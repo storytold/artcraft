@@ -1,6 +1,5 @@
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck } from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon } from "lucide-react";
 import { type PopoverItem } from "@storyteller/ui-popover";
 
 interface DrawerOptionListProps {
@@ -42,10 +41,9 @@ export function DrawerOptionList({ items, onSelect }: DrawerOptionListProps) {
           </span>
           {item.trailing}
           {item.selected && (
-            <FontAwesomeIcon
-              icon={faCheck}
-              className="h-3.5 w-3.5 shrink-0 text-primary"
-            />
+            <CheckIcon
+              
+              className="h-3.5 w-3.5 shrink-0 text-primary" />
           )}
         </button>
       ))}

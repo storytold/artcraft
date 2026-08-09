@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCamera,
-  faChevronDown,
-  faLayerGroup,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CameraIcon, ChevronDownIcon, LayersIcon, XIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { EASE_EMPHASIS } from "../../lib/motion";
 import { formatTime, formatTimePrecise } from "./lib/frame-actions";
@@ -59,7 +53,7 @@ export const ExtractionPanel = ({
         </div>
         <Button
           variant="primary"
-          icon={faCamera}
+          icon={CameraIcon}
           onClick={onCaptureCurrent}
           disabled={disabled || isExtracting}
           className="w-full py-2 text-sm font-medium"
@@ -78,16 +72,14 @@ export const ExtractionPanel = ({
           className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-base-fg/75 transition-colors hover:text-base-fg disabled:cursor-default disabled:opacity-40"
         >
           <span className="flex items-center gap-2">
-            <FontAwesomeIcon
-              icon={faLayerGroup}
-              className="text-xs text-base-fg/40"
-            />
+            <LayersIcon
+              
+              className="text-xs text-base-fg/40" />
             Burst capture
           </span>
-          <FontAwesomeIcon
-            icon={faChevronDown}
-            className={`text-xs text-base-fg/40 transition-transform ${burstOpen ? "rotate-180" : ""}`}
-          />
+          <ChevronDownIcon
+            
+            className={`text-xs text-base-fg/40 transition-transform ${burstOpen ? "rotate-180" : ""}`} />
         </button>
         <AnimatePresence initial={false}>
           {burstOpen && !disabled && burstAvailable && (
@@ -159,7 +151,7 @@ export const ExtractionPanel = ({
                       className="flex h-6 w-6 items-center justify-center rounded-md text-base-fg/50 transition-colors hover:bg-white/10 hover:text-base-fg"
                       aria-label="Cancel extraction"
                     >
-                      <FontAwesomeIcon icon={faXmark} className="text-xs" />
+                      <XIcon  className="text-xs" />
                     </button>
                   </div>
                 ) : (

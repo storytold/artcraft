@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLink } from "@fortawesome/pro-regular-svg-icons";
+import { LinkIcon } from "lucide-react";
 import { faviconOf } from "../boards/linkMeta";
 
 interface Props {
@@ -18,7 +17,7 @@ export const Favicon = ({ url, className = "h-4 w-4" }: Props) => {
 
   if (!src || failed) {
     return (
-      <FontAwesomeIcon icon={faLink} className={`${className} text-base-fg/45`} />
+      <LinkIcon  className={`${className} text-base-fg/45`} />
     );
   }
   return (

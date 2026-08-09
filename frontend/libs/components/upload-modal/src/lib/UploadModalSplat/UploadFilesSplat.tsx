@@ -3,17 +3,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCube,
-  faXmark,
-  faCheck,
-  faCircleExclamation,
-  faChevronLeft,
-  faChevronRight,
-  faRotateRight,
-  faSpinner,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, LoaderIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { WebGLRenderer, PerspectiveCamera } from "three";
 import { loadPreviewOnCanvas, snapshotCanvasAsThumbnail } from "../UploadModal3D/utilities";
 import { upload3DObjects } from "../UploadModal3D/utilities/upload3DObjects";
@@ -331,7 +321,7 @@ export const UploadFilesSplat = ({
         files={fileEntries.map((e) => e.file)}
         handleChange={handleFilesChange}
         multiple={true}
-        fileIcon={faCube}
+        fileIcon={BoxIcon}
       />
 
       {selectionError && (
@@ -363,24 +353,22 @@ export const UploadFilesSplat = ({
                       }}
                       title="Remove"
                     >
-                      <FontAwesomeIcon icon={faXmark} />
+                      <XIcon />
                     </button>
                   )}
                   {entry.status === "uploading" && (
-                    <FontAwesomeIcon
-                      icon={faSpinner}
-                      className="animate-spin opacity-60"
-                    />
+                    <LoaderIcon
+                      
+                      className="animate-spin opacity-60" />
                   )}
                   {entry.status === "success" && (
-                    <FontAwesomeIcon icon={faCheck} className="text-green-400" />
+                    <CheckIcon  className="text-green-400" />
                   )}
                   {entry.status === "error" && (
                     <span className="flex items-center gap-1">
-                      <FontAwesomeIcon
-                        icon={faCircleExclamation}
-                        className="text-red-400"
-                      />
+                      <CircleAlertIcon
+                        
+                        className="text-red-400" />
                       <button
                         className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
                         onClick={(e) => {
@@ -389,7 +377,7 @@ export const UploadFilesSplat = ({
                         }}
                         title="Retry"
                       >
-                        <FontAwesomeIcon icon={faRotateRight} />
+                        <RotateCwIcon />
                       </button>
                     </span>
                   )}
@@ -415,7 +403,7 @@ export const UploadFilesSplat = ({
               />
               {!currentFile && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
-                  <FontAwesomeIcon icon={faCube} />
+                  <BoxIcon />
                   Your model preview will appear here
                 </h6>
               )}
@@ -433,7 +421,7 @@ export const UploadFilesSplat = ({
                 onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
                 disabled={previewIndex === 0}
               >
-                <FontAwesomeIcon icon={faChevronLeft} />
+                <ChevronLeftIcon />
               </Button>
               <span className="text-sm opacity-60">
                 {previewIndex + 1} / {fileEntries.length}
@@ -447,7 +435,7 @@ export const UploadFilesSplat = ({
                 }
                 disabled={previewIndex === fileEntries.length - 1}
               >
-                <FontAwesomeIcon icon={faChevronRight} />
+                <ChevronRightIcon />
               </Button>
             </div>
           </div>
@@ -461,7 +449,7 @@ export const UploadFilesSplat = ({
           />
           {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
-              <FontAwesomeIcon icon={faCube} />
+              <BoxIcon />
               Your model preview will appear here
             </h6>
           )}

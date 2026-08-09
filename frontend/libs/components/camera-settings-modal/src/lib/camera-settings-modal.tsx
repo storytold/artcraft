@@ -1,6 +1,5 @@
 import { Modal } from "@storyteller/ui-modal";
-import { faPlus, faTrashAlt } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import { PopoverItem } from "@storyteller/ui-popover";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
@@ -124,7 +123,7 @@ export const CameraSettingsModal = ({
                 className="h-6 w-6 rounded-full text-white/70 transition-colors hover:text-white/100"
                 onClick={onAddCamera}
               >
-                <FontAwesomeIcon icon={faPlus} className="text-xl" />
+                <PlusIcon  className="text-xl" />
               </button>
             </Tooltip>
           </div>
@@ -177,7 +176,7 @@ export const CameraSettingsModal = ({
                     }
                     disabled={selectedCamera?.id === "main"}
                   >
-                    <FontAwesomeIcon icon={faTrashAlt} className="text-lg" />
+                    <Trash2Icon  className="text-lg" />
                   </button>
                 </Tooltip>
               </div>

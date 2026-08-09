@@ -1,21 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faHouse,
-  faImage,
-  faVideo,
-  faGrid2,
-} from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { HouseIcon, ImageIcon, LayoutGridIcon, VideoIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 
-type NavItem = { label: string; href: string; icon: IconDefinition };
+type NavItem = { label: string; href: string; icon: LucideIcon };
 
 const ITEMS: NavItem[] = [
-  { label: "Home", href: "/", icon: faHouse },
-  { label: "Image", href: "/create-image", icon: faImage },
-  { label: "Video", href: "/create-video", icon: faVideo },
-  { label: "Library", href: "/library", icon: faGrid2 },
+  { label: "Home", href: "/", icon: HouseIcon },
+  { label: "Image", href: "/create-image", icon: ImageIcon },
+  { label: "Video", href: "/create-video", icon: VideoIcon },
+  { label: "Library", href: "/library", icon: LayoutGridIcon },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -43,7 +38,7 @@ export function MobileBottomNav() {
                 : "text-base-fg/55 hover:text-base-fg/80",
             )}
           >
-            <FontAwesomeIcon icon={item.icon} className="h-5 w-5" />
+            <DynamicIcon icon={item.icon} className="h-5 w-5" />
             <span>{item.label}</span>
           </Link>
         );

@@ -41,5 +41,6 @@
     "src/**/*.jsx",
     "src/**/*.ts",
     "src/**/*.tsx"
-  ]
+  ],
+  "references": []
 }

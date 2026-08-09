@@ -132,6 +132,9 @@
     },
     {
       "path": "../../libs/api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/icons/tsconfig.lib.json"
     }
   ]
 }

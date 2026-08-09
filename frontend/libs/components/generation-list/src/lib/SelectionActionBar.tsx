@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { XIcon } from "lucide-react";
 import { useGallerySelectionStore } from "./gallery-selection-store";
 
 export interface SelectionActionBarProps {
@@ -46,7 +45,7 @@ export function SelectionActionBar({
           onClick={() => setActive(false)}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <FontAwesomeIcon icon={faXmark} />
+          <XIcon />
         </button>
       </div>
     </div>

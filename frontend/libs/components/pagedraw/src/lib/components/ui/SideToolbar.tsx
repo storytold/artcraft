@@ -1,24 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMousePointer,
-  faEyeDropper,
-  faImage,
-  faUndo,
-  faRedo,
-  faPaintBrush,
-  faXmark,
-  faTrashXmark,
-  faEraser,
-  faSendBack,
-} from "@fortawesome/pro-solid-svg-icons";
-import {
-  faShapes,
-  faCircle,
-  faSquare,
-  faTriangle,
-  faDroplet,
-} from "@fortawesome/pro-regular-svg-icons";
+import { CircleIcon, DropletIcon, EraserIcon, ImageIcon, MousePointerIcon, PaintbrushIcon, PipetteIcon, Redo2Icon, RotateCcwIcon, SendToBackIcon, ShapesIcon, SquareIcon, Trash2Icon, TriangleIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
 import { hsvaToHex } from "@uiw/color-convert";
@@ -170,7 +152,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   ) => (
     <div className={`glass relative w-fit rounded-2xl p-4 shadow-lg`}>
       <button className="bg-ui-controls/60 text-base-fg hover:bg-ui-controls/80 absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full">
-        <FontAwesomeIcon icon={faEyeDropper} size="sm" />
+        <PipetteIcon size="0.875em" />
       </button>
 
       <HsvaColorPicker
@@ -216,7 +198,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       id: "select",
       label: "Select & Move",
       icon: (
-        <FontAwesomeIcon icon={faMousePointer} className="pl-0.5 text-lg" />
+        <MousePointerIcon  className="pl-0.5 text-lg" />
       ),
       onClick: () => {
         onSelect();
@@ -226,7 +208,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "add-shape",
       label: "Add Shape",
-      icon: <FontAwesomeIcon icon={faShapes} className="h-5 w-5" />,
+      icon: <ShapesIcon  className="h-5 w-5" />,
       onClick: () => {
         store.selectNode(null);
         if (!store.currentShape) {
@@ -236,7 +218,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       },
       popout: (
         <div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5 shadow-lg">
-          {[faSquare, faCircle, faTriangle].map((faIcon, i) => (
+          {[SquareIcon, CircleIcon, TriangleIcon].map((ShapeIcon, i) => (
             <button
               key={i}
               className={shapeIconBtn}
@@ -246,7 +228,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                 setOpen(null);
               }}
             >
-              <FontAwesomeIcon icon={faIcon} className="h-5 w-5 text-white" />
+              <ShapeIcon className="h-5 w-5 text-white" />
             </button>
           ))}
         </div>
@@ -255,7 +237,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "upload",
       label: "Upload Image",
-      icon: <FontAwesomeIcon icon={faImage} className="h-5 w-5" />,
+      icon: <ImageIcon  className="h-5 w-5" />,
       onClick: () => {
         onUploadImage();
       },
@@ -274,7 +256,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "inpaint",
       label: "Mask",
-      icon: <FontAwesomeIcon icon={faSendBack} className="h-5 w-5" />,
+      icon: <SendToBackIcon  className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("inpaint");
       },
@@ -282,7 +264,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "erase",
       label: "Eraser",
-      icon: <FontAwesomeIcon icon={faEraser} className="h-5 w-5" />,
+      icon: <EraserIcon  className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("eraser");
       },
@@ -297,13 +279,12 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             className="absolute h-5 w-5 rounded-full border-2 border-white"
             style={{ backgroundColor: hsvaToHex(bgHsva) }}
           />
-          <FontAwesomeIcon
-            icon={faDroplet}
+          <DropletIcon
+            
             className="relative h-2 w-2 text-white drop-shadow-sm"
             style={{
               filter: "drop-shadow(0 0 1px rgba(0,0,0,0.8))",
-            }}
-          />
+            }} />
         </div>
       ),
       popout: BgPopout,
@@ -311,7 +292,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "undo",
       label: "Undo",
-      icon: <FontAwesomeIcon icon={faUndo} className="h-5 w-5" />,
+      icon: <RotateCcwIcon  className="h-5 w-5" />,
       onClick: () => {
         store.undo();
       },
@@ -319,7 +300,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "redo",
       label: "Redo",
-      icon: <FontAwesomeIcon icon={faRedo} className="h-5 w-5" />,
+      icon: <Redo2Icon  className="h-5 w-5" />,
       onClick: () => {
         store.redo();
       },
@@ -334,7 +315,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     showActionReminder({
       reminderType: "default",
       title: "Reset Canvas",
-      primaryActionIcon: faTrashXmark,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName: "bg-red hover:bg-red/80",
       message: (
         <p className="text-sm text-white/70">
@@ -410,18 +391,18 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
               style={{ backgroundColor: hsvaToHex(brushHsva) }}
             />
           ) : (
-            <FontAwesomeIcon icon={faPaintBrush} className="h-5 w-5" />
+            <PaintbrushIcon  className="h-5 w-5" />
           );
         }
 
         if (id === "add-shape" && activeToolId === "shape" && currentShape) {
           const shapeIcons = {
-            rectangle: faSquare,
-            circle: faCircle,
-            triangle: faTriangle,
+            rectangle: SquareIcon,
+            circle: CircleIcon,
+            triangle: TriangleIcon,
           } as const;
           displayIcon = (
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={shapeIcons[currentShape]}
               className="h-5 w-5"
             />
@@ -569,7 +550,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
               className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent text-white transition-colors hover:bg-red/50"
               onClick={handleResetCanvas}
             >
-              <FontAwesomeIcon icon={faXmark} className="h-5 w-5 text-xl" />
+              <XIcon  className="h-5 w-5 text-xl" />
             </button>
           </Tooltip>
         </div>

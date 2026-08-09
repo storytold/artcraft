@@ -1,10 +1,4 @@
-import {
-  faTimes,
-  faEnvelope,
-  faArrowLeft,
-  faArrowRight,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowLeftIcon, ArrowRightIcon, MailIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@storyteller/ui-button";
@@ -71,7 +65,7 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
         >
-          <FontAwesomeIcon icon={faTimes} />
+          <XIcon />
         </button>
 
         {!USE_WEBAPP_FOR_APP_FEATURES && view === "signup" && (
@@ -79,7 +73,7 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
             onClick={() => setView("menu")}
             className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
         )}
 
@@ -117,9 +111,9 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
               href={webappUrl("/signup")}
               className="rounded-full w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
             >
-              <FontAwesomeIcon icon={faEnvelope} className="text-lg" />
+              <MailIcon  className="text-lg" />
               Sign up
-              <FontAwesomeIcon icon={faArrowRight} className="text-xs" />
+              <ArrowRightIcon  className="text-xs" />
             </Button>
           </div>
         ) : view === "menu" ? (
@@ -128,7 +122,7 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
               className="rounded-full w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
               onClick={() => setView("signup")}
             >
-              <FontAwesomeIcon icon={faEnvelope} className="text-lg" />
+              <MailIcon  className="text-lg" />
               Sign up with Email
             </Button>
           </div>

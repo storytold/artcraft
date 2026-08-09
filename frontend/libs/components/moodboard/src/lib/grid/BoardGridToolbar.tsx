@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  faArrowUpFromBracket,
-  faImages,
-  faNoteSticky,
-  faTableCells,
-  faTableCellsLarge,
-  faGrip,
-  faLayerGroup,
-} from "@fortawesome/pro-regular-svg-icons";
-import { faStar } from "@fortawesome/pro-solid-svg-icons";
+import { Grid2x2Icon, Grid3x3Icon, GripHorizontalIcon, ImagesIcon, LayersIcon, StarIcon, StickyNoteIcon, UploadIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { GridDensity } from "../boards/boardTypes";
 import { DENSITY_ORDER } from "./gridLayout";
 import { SmartSearchBar } from "./SmartSearchBar";
@@ -38,10 +29,10 @@ interface Props {
   onNewSection: () => void;
 }
 
-const DENSITY_ICON: Record<GridDensity, IconDefinition> = {
-  compact: faGrip,
-  cozy: faTableCells,
-  comfortable: faTableCellsLarge,
+const DENSITY_ICON: Record<GridDensity, LucideIcon> = {
+  compact: GripHorizontalIcon,
+  cozy: Grid3x3Icon,
+  comfortable: Grid2x2Icon,
 };
 
 const DENSITY_LABEL: Record<GridDensity, string> = {
@@ -87,25 +78,25 @@ export const BoardGridToolbar = ({
         {/* Add cluster */}
         <div className="flex items-center gap-1">
           <ToolbarIconButton
-            icon={faArrowUpFromBracket}
+            icon={UploadIcon}
             label="Upload"
             onClick={onUpload}
           />
           {canPickLibrary && (
             <ToolbarIconButton
-              icon={faImages}
+              icon={ImagesIcon}
               label="From library"
               onClick={onLibrary}
             />
           )}
           <ToolbarIconButton
-            icon={faNoteSticky}
+            icon={StickyNoteIcon}
             label="Add note"
             onClick={onAddNote}
           />
           <ColorPickerPopover onAdd={onAddColor} />
           <ToolbarIconButton
-            icon={faLayerGroup}
+            icon={LayersIcon}
             label="New section"
             onClick={onNewSection}
           />
@@ -132,7 +123,7 @@ export const BoardGridToolbar = ({
                     : "text-base-fg/50 hover:text-base-fg",
                 ].join(" ")}
               >
-                <FontAwesomeIcon
+                <DynamicIcon
                   icon={DENSITY_ICON[d]}
                   className="h-3.5 w-3.5"
                 />
@@ -161,7 +152,7 @@ export const BoardGridToolbar = ({
               : "text-base-fg/55 hover:bg-base-fg/10 hover:text-base-fg",
           ].join(" ")}
         >
-          <FontAwesomeIcon icon={faStar} className="h-3.5 w-3.5" />
+          <StarIcon  className="h-3.5 w-3.5" />
           <span className="text-xs font-semibold tabular-nums">
             {ratingFilter > 0 ? `${ratingFilter}+` : "All"}
           </span>

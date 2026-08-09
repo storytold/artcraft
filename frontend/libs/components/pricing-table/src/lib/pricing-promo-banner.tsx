@@ -1,5 +1,4 @@
-import { faTag } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { TagIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { PROMO_PCT } from "./promo-discounts";
 
@@ -22,7 +21,7 @@ export const PricingPromoBanner = ({ className }: PricingPromoBannerProps) => (
 
     <div className="relative flex flex-col gap-3">
       <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-white">
-        <FontAwesomeIcon icon={faTag} className="text-[10px]" />
+        <TagIcon  className="text-[10px]" />
         Limited-time offer
       </span>
 

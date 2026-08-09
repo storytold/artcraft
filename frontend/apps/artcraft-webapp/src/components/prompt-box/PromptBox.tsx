@@ -8,14 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronDown,
-  faChevronUp,
-  faMusic,
-  faUserGroup,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, ChevronUpIcon, MusicIcon, UsersIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { GenerateIconButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -891,14 +885,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                                   className="h-full w-full object-cover"
                                 />
                               ) : item.type === "character" ? (
-                                <FontAwesomeIcon
-                                  icon={faUserGroup}
-                                  className="h-3.5 w-3.5 text-white/60"
-                                />
+                                <UsersIcon
+                                  
+                                  className="h-3.5 w-3.5 text-white/60" />
                               ) : (
-                                <FontAwesomeIcon
+                                <DynamicIcon
                                   icon={
-                                    item.type === "video" ? faVideo : faMusic
+                                    item.type === "video" ? VideoIcon : MusicIcon
                                   }
                                   className="h-3.5 w-3.5 text-white/60"
                                 />
@@ -978,8 +971,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                   onClick={toggleExpand}
                   className="px-3 py-0.5 text-white/30 transition-colors hover:text-white/90"
                 >
-                  <FontAwesomeIcon
-                    icon={isExpanded ? faChevronUp : faChevronDown}
+                  <DynamicIcon
+                    icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                     className="text-xs"
                   />
                 </button>

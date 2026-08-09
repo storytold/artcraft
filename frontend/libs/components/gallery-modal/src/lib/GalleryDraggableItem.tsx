@@ -5,13 +5,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faEllipsis,
-  faMusic,
-  faUpload,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, EllipsisIcon, MusicIcon, UploadIcon } from "lucide-react";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
@@ -279,10 +273,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           <div className="flex h-full w-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02]">
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
-                <FontAwesomeIcon
-                  icon={faMusic}
-                  className="text-lg text-white/70"
-                />
+                <MusicIcon
+                  
+                  className="text-lg text-white/70" />
               </div>
             </div>
             <p className="line-clamp-2 shrink-0 px-2.5 pb-2.5 text-left text-xs leading-snug text-white/75">
@@ -324,7 +317,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         )}
         {selected && (
           <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-            <FontAwesomeIcon icon={faCheck} className="text-sm" />
+            <CheckIcon  className="text-sm" />
           </div>
         )}
         {disabled && (
@@ -364,7 +357,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             align="end"
             mode="default"
             triggerIcon={
-              <FontAwesomeIcon icon={faEllipsis} className="text-base-fg" />
+              <EllipsisIcon  className="text-base-fg" />
             }
             buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
             panelClassName="w-max min-w-44 p-1"
@@ -440,10 +433,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           }}
         >
           {bulkSelected && (
-            <FontAwesomeIcon
-              icon={faCheck}
-              className="text-[10px] text-white"
-            />
+            <CheckIcon
+              
+              className="text-[10px] text-white" />
           )}
         </div>
       )}
@@ -460,7 +452,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* Upload badge — bottom-right (always visible, even in select mode) */}
       {item.isUpload && (
         <div className="pointer-events-none absolute right-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
-          <FontAwesomeIcon icon={faUpload} className="text-[10px]" />
+          <UploadIcon  className="text-[10px]" />
         </div>
       )}
       {/* Conditionally wrap with Tooltip — hidden when selecting or in bulk mode */}

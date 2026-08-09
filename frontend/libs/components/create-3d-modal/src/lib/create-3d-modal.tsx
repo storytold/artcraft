@@ -5,7 +5,7 @@ import { useCreate3dModalStore } from "./create-3d-modal-store";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 import { ImageInput, ImageFile } from "@storyteller/ui-image-input";
-import { faCube } from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon } from "lucide-react";
 import { MediaUploadApi } from "@storyteller/api";
 import {
   EnqueueImageTo3dObject,
@@ -262,7 +262,7 @@ export const Create3dModal = ({ onModelComplete }: Create3dModalProps = {}) => {
             disabled={!selectedImage}
             onClick={handleCreate3DModel}
             className="w-full"
-            icon={faCube}
+            icon={BoxIcon}
           >
             Create 3D Model
           </Button>

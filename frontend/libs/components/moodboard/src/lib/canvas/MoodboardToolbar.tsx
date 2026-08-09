@@ -1,23 +1,6 @@
-import {
-  faMousePointer,
-  faDrawPolygon,
-  faObjectGroup,
-  faObjectUngroup,
-  faGripVertical,
-  faTableCells,
-  faDiagramProject,
-  faRotateLeft,
-  faRotateRight,
-  faTrash,
-  faPlus,
-  faImages,
-  faArrowUpFromBracket,
-  faText,
-  faMagnet,
-} from "@fortawesome/pro-solid-svg-icons";
+import { Grid3x3Icon, GripVerticalIcon, GroupIcon, ImagesIcon, MagnetIcon, MousePointerIcon, PenToolIcon, PlusIcon, RotateCcwIcon, RotateCwIcon, TrashIcon, TypeIcon, UngroupIcon, UploadIcon, WorkflowIcon } from "lucide-react";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   FloatingToolbar,
@@ -34,12 +17,12 @@ import { clusterByProximity } from "./layout/clusterProximity";
 
 const MODES: Array<{
   value: Tool;
-  icon: typeof faMousePointer;
+  icon: typeof MousePointerIcon;
   tooltip: string;
 }> = [
-  { value: "select", icon: faMousePointer, tooltip: "Select (V)" },
-  { value: "lasso", icon: faDrawPolygon, tooltip: "Lasso (L)" },
-  { value: "text", icon: faText, tooltip: "Text (T)" },
+  { value: "select", icon: MousePointerIcon, tooltip: "Select (V)" },
+  { value: "lasso", icon: PenToolIcon, tooltip: "Lasso (L)" },
+  { value: "text", icon: TypeIcon, tooltip: "Text (T)" },
 ];
 
 interface Props {
@@ -116,24 +99,23 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
               label: "Upload Image",
               selected: false,
               icon: (
-                <FontAwesomeIcon
-                  icon={faArrowUpFromBracket}
-                  className="h-4 w-4"
-                />
+                <UploadIcon
+                  
+                  className="h-4 w-4" />
               ),
               action: "upload",
             },
             {
               label: "Pick from Library",
               selected: false,
-              icon: <FontAwesomeIcon icon={faImages} className="h-4 w-4" />,
+              icon: <ImagesIcon  className="h-4 w-4" />,
               action: "library",
             },
           ]}
           onPanelAction={handleAddAction}
           showIconsInList
           buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-primary/90 text-lg text-white hover:bg-primary/70"
-          triggerIcon={<FontAwesomeIcon icon={faPlus} className="text-xl" />}
+          triggerIcon={<PlusIcon  className="text-xl" />}
         />
       </Tooltip>
 
@@ -148,14 +130,14 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
       <FloatingToolbarDivider />
 
       <FloatingToolbarButton
-        icon={faObjectGroup}
+        icon={GroupIcon}
         label={`Group (${fmtShortcut([MOD, "G"])})`}
         onClick={() => group()}
         disabled={selectedIds.size < 2}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
-        icon={faObjectUngroup}
+        icon={UngroupIcon}
         label={`Ungroup (${fmtShortcut([MOD, "Shift", "G"])})`}
         onClick={() => ungroup()}
         disabled={selectedIds.size === 0}
@@ -165,26 +147,26 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
       <FloatingToolbarDivider />
 
       <FloatingToolbarButton
-        icon={faTableCells}
+        icon={Grid3x3Icon}
         label="Fit to grid"
         onClick={handleFitToGrid}
         disabled={selectedIds.size === 0}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
-        icon={faGripVertical}
+        icon={GripVerticalIcon}
         label="Pack collage"
         onClick={handlePackCollage}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
-        icon={faDiagramProject}
+        icon={WorkflowIcon}
         label="Auto-group by proximity"
         onClick={handleAutoGroup}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
-        icon={faMagnet}
+        icon={MagnetIcon}
         label={snapEnabled ? "Snapping on" : "Snapping off"}
         active={snapEnabled}
         onClick={toggleSnap}
@@ -194,19 +176,19 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
       <FloatingToolbarDivider />
 
       <FloatingToolbarButton
-        icon={faRotateLeft}
+        icon={RotateCcwIcon}
         label={`Undo (${fmtShortcut([MOD, "Z"])})`}
         onClick={undo}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
-        icon={faRotateRight}
+        icon={RotateCwIcon}
         label={`Redo (${fmtShortcut([MOD, "Shift", "Z"])})`}
         onClick={redo}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
-        icon={faTrash}
+        icon={TrashIcon}
         label="Delete (Del)"
         onClick={deleteSelected}
         disabled={selectedIds.size === 0}

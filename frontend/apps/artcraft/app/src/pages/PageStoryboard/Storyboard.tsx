@@ -1,22 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faTrash,
-  faUpload,
-  faPhotoFilm,
-  faPlay,
-  faPause,
-  faBackwardStep,
-  faForwardStep,
-  faBackwardFast,
-  faForwardFast,
-  faPencil,
-  faEraser,
-  faRotateLeft,
-  faXmark,
-  faCheck,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, EraserIcon, FastForwardIcon, ImagesIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon, RewindIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
 import { useStoryboardStore, type Board } from "./StoryboardStore";
@@ -57,13 +41,13 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
   <div className="flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-background">
     <div className="flex flex-col items-center gap-4 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5">
-        <FontAwesomeIcon icon={faPhotoFilm} className="text-4xl text-base-fg/40" />
+        <ImagesIcon  className="text-4xl text-base-fg/40" />
       </div>
       <div>
         <p className="text-lg font-semibold text-base-fg">No shots yet</p>
         <p className="mt-1 text-sm text-base-fg/50">Add your first shot to get started</p>
       </div>
-      <Button variant="primary" icon={faPlus} onClick={onAdd}>
+      <Button variant="primary" icon={PlusIcon} onClick={onAdd}>
         Add your first shot
       </Button>
     </div>
@@ -147,15 +131,15 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
     </div>
 
     <div className="flex flex-col gap-2 border-t border-ui-panel-border p-4">
-      <Button variant="action" icon={faPencil} onClick={onSketch} className="w-full justify-center">
+      <Button variant="action" icon={PencilIcon} onClick={onSketch} className="w-full justify-center">
         Sketch
       </Button>
-      <Button variant="action" icon={faUpload} onClick={onUpload} className="w-full justify-center">
+      <Button variant="action" icon={UploadIcon} onClick={onUpload} className="w-full justify-center">
         Upload Image
       </Button>
       <Button
         variant="action"
-        icon={faTrash}
+        icon={TrashIcon}
         onClick={onDelete}
         className="w-full justify-center text-red-400 hover:text-red-300"
       >
@@ -196,7 +180,7 @@ const MainPreview = ({
         onClick={onUploadClick}
         className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-ui-panel-border p-12 text-base-fg/40 transition-colors hover:border-primary/50 hover:text-base-fg/70"
       >
-        <FontAwesomeIcon icon={faUpload} className="text-3xl" />
+        <UploadIcon  className="text-3xl" />
         <span className="text-sm">Click to upload an image</span>
       </button>
     )}
@@ -343,7 +327,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
     if (dataUrl) onSave(dataUrl);
   };
 
-  const toolBtn = (t: SketchTool, icon: typeof faPencil, label: string) => (
+  const toolBtn = (t: SketchTool, icon: typeof PencilIcon, label: string) => (
     <button
       onClick={() => setTool(t)}
       title={label}
@@ -354,7 +338,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           : "text-base-fg/60 hover:bg-white/10 hover:text-base-fg",
       )}
     >
-      <FontAwesomeIcon icon={icon} className="text-sm" />
+      <DynamicIcon icon={icon} className="text-sm" />
     </button>
   );
 
@@ -362,8 +346,8 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center gap-2 border-b border-ui-panel-border bg-ui-panel px-3 py-1.5">
-        {toolBtn("pencil", faPencil, "Pencil")}
-        {toolBtn("eraser", faEraser, "Eraser")}
+        {toolBtn("pencil", PencilIcon, "Pencil")}
+        {toolBtn("eraser", EraserIcon, "Eraser")}
 
         <div className="mx-1 h-5 w-px bg-ui-panel-border" />
 
@@ -403,7 +387,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           title="Undo"
           className="flex h-8 w-8 items-center justify-center rounded-md text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-30"
         >
-          <FontAwesomeIcon icon={faRotateLeft} className="text-sm" />
+          <RotateCcwIcon  className="text-sm" />
         </button>
 
         <button
@@ -411,7 +395,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           title="Clear canvas"
           className="flex h-8 w-8 items-center justify-center rounded-md text-base-fg/60 transition-colors hover:bg-white/10 hover:text-red-400"
         >
-          <FontAwesomeIcon icon={faXmark} className="text-sm" />
+          <XIcon  className="text-sm" />
         </button>
 
         <button
@@ -419,7 +403,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           title="Done sketching"
           className="ml-auto flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-white transition-colors hover:bg-primary-400"
         >
-          <FontAwesomeIcon icon={faCheck} className="text-xs" />
+          <CheckIcon  className="text-xs" />
           Done
         </button>
       </div>
@@ -494,7 +478,7 @@ const ThumbnailItem = ({
       <img src={board.imageDataUrl} alt="" className="h-full w-full object-cover" />
     ) : (
       <div className="flex h-full w-full items-center justify-center bg-white/5">
-        <FontAwesomeIcon icon={faPhotoFilm} className="text-lg text-base-fg/20" />
+        <ImagesIcon  className="text-lg text-base-fg/20" />
       </div>
     )}
     <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
@@ -534,7 +518,7 @@ const Filmstrip = ({
       className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-md border-2 border-dashed border-ui-panel-border bg-transparent text-base-fg/40 transition-colors hover:border-primary/50 hover:text-primary"
       title="Add shot"
     >
-      <FontAwesomeIcon icon={faPlus} />
+      <PlusIcon />
     </button>
 
     {boards.map((board, index) => (
@@ -880,14 +864,14 @@ const PlaybackControls = ({
           onClick={onPrevScene}
           title="Go to start (Ctrl+←)"
         >
-          <FontAwesomeIcon icon={faBackwardFast} />
+          <RewindIcon />
         </button>
         <button
           className={transportBtnClass}
           onClick={onPrevBoard}
           title="Previous shot (←)"
         >
-          <FontAwesomeIcon icon={faBackwardStep} />
+          <SkipBackIcon />
         </button>
 
         {/* Play / Pause */}
@@ -896,7 +880,7 @@ const PlaybackControls = ({
           onClick={isPlaying ? onPause : onPlay}
           title={isPlaying ? "Pause" : "Play"}
         >
-          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="text-sm" />
+          <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="text-sm" />
         </button>
 
         <button
@@ -904,14 +888,14 @@ const PlaybackControls = ({
           onClick={onNextBoard}
           title="Next shot (→)"
         >
-          <FontAwesomeIcon icon={faForwardStep} />
+          <SkipForwardIcon />
         </button>
         <button
           className={transportBtnClass}
           onClick={onNextScene}
           title="Go to end (Ctrl+→)"
         >
-          <FontAwesomeIcon icon={faForwardFast} />
+          <FastForwardIcon />
         </button>
       </div>
 

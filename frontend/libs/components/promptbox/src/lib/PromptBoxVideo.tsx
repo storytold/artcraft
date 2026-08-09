@@ -6,14 +6,8 @@ import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest } from "@storyteller/tauri-api";
-import {
-  faWaveformLines,
-  faClock,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   CommonResolution,
@@ -1354,10 +1348,9 @@ export const PromptBoxVideo = ({
           />
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
-              <FontAwesomeIcon
-                icon={faCircleInfo}
-                className="h-3 w-3 shrink-0"
-              />
+              <InfoIcon
+                
+                className="h-3 w-3 shrink-0" />
               <span>
                 This model can&apos;t generate from text alone - add a starting
                 frame to animate your prompt.
@@ -1464,7 +1457,7 @@ export const PromptBoxVideo = ({
                     mode="default"
                     panelTitle="Duration"
                     triggerIcon={
-                      <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                      <ClockIcon  className="h-3.5 w-3.5" />
                     }
                     triggerLabel={`${effectiveDuration}s`}
                   >
@@ -1503,8 +1496,8 @@ export const PromptBoxVideo = ({
                 >
                   <ToggleButton
                     isActive={generateWithSound}
-                    icon={faWaveformLines}
-                    activeIcon={faWaveformLines}
+                    icon={AudioLinesIcon}
+                    activeIcon={AudioLinesIcon}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
                   />
                 </Tooltip>
@@ -1517,7 +1510,7 @@ export const PromptBoxVideo = ({
             <div className="flex items-center gap-2">
               {modelNeedsAnImageButNoneAreSelected && (
                 <span className="flex items-center gap-1.5 text-xs text-red-500 font-medium animate-pulse">
-                  <FontAwesomeIcon icon={faCircleInfo} />
+                  <InfoIcon />
                   Starting frame required
                 </span>
               )}
@@ -1564,8 +1557,8 @@ export const PromptBoxVideo = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -1574,10 +1567,7 @@ export const PromptBoxVideo = ({
         </div>
         {/* {selectedModel?.id === "seedance_2p0" && (
           <div className="flex items-start gap-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3.5 py-2.5 text-xs text-yellow-200">
-            <FontAwesomeIcon
-              icon={faTriangleExclamation}
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400"
-            />
+            <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
             <span>
               Seedance 2.0 is in Early Alpha. Generations may be slow, and may
               experience outages. Seedance may reject safe inputs unexpectedly.

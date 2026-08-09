@@ -18,6 +18,9 @@
       "path": "../button-icon-select"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

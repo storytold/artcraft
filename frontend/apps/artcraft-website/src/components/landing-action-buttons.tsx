@@ -1,8 +1,7 @@
 import { Button } from "@storyteller/ui-button";
 import { isMobile, isMacOs } from "react-device-detect";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
-import { faRocket } from "@fortawesome/pro-solid-svg-icons";
+import { RocketIcon } from "lucide-react";
+import { DynamicIcon, AppleIcon, WindowsIcon } from "@storyteller/icons";
 import {
   DOWNLOAD_LINKS,
   DOWNLOADS_ENABLED,
@@ -40,7 +39,7 @@ export const LandingActionButtons = ({
             as="link"
             href="/pricing"
           >
-            <FontAwesomeIcon icon={faRocket} />
+            <RocketIcon />
             {creditsButtonText}
           </Button>
           {DOWNLOADS_ENABLED && (
@@ -51,7 +50,7 @@ export const LandingActionButtons = ({
                 href={downloadUrl}
                 onClick={onDownloadClick}
               >
-                <FontAwesomeIcon icon={isMacOs ? faApple : faWindows} />
+                <DynamicIcon icon={isMacOs ? AppleIcon : WindowsIcon} />
                 Download for {isMacOs ? "Mac" : "Windows"}
               </Button>
               <a

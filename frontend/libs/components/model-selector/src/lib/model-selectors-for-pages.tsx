@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import type { PopoverItem } from "@storyteller/ui-popover";
-import { faCube, faFilm, faImage } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { BoxIcon, FilmIcon, ImageIcon } from "lucide-react";
 import {
   getCreatorListIcon,
   Model,
@@ -46,9 +45,9 @@ const sortedBySelectorName = <T extends Model>(models: T[]): T[] => {
   return list;
 };
 
-const imageIcon = <FontAwesomeIcon icon={faImage} className="h-4 w-4" />;
-const filmIcon = <FontAwesomeIcon icon={faFilm} className="h-4 w-4" />;
-const cubeIcon = <FontAwesomeIcon icon={faCube} className="h-4 w-4" />;
+const imageIcon = <ImageIcon  className="h-4 w-4" />;
+const filmIcon = <FilmIcon  className="h-4 w-4" />;
+const cubeIcon = <BoxIcon  className="h-4 w-4" />;
 
 /**
  * Per-page model subsetting. These pages show a slice of the full model set

@@ -1,6 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { CircleAlertIcon, XIcon } from "lucide-react";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 export interface FailedCardProps {
@@ -43,10 +42,9 @@ export const FailedCard = memo(function FailedCard({
         />
       )}
       <div className="relative flex h-full flex-col items-center justify-center gap-2 px-4 sm:px-6">
-        <FontAwesomeIcon
-          icon={faCircleExclamation}
-          className="text-2xl text-red-400"
-        />
+        <CircleAlertIcon
+          
+          className="text-2xl text-red-400" />
         <span className="text-center text-xs font-medium text-red-400">
           {failureReason || "Generation failed"}
         </span>
@@ -62,7 +60,7 @@ export const FailedCard = memo(function FailedCard({
             onClick={() => onDismiss(id)}
             className="flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
           >
-            <FontAwesomeIcon icon={faXmark} />
+            <XIcon />
             Dismiss
           </button>
         </div>

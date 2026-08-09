@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleInfo,
-  faClock,
-  faSparkles,
-  faWaveformLines,
-} from "@fortawesome/pro-solid-svg-icons";
+import { AudioLinesIcon, ClockIcon, InfoIcon, SparklesIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { Button, ToggleButton } from "@storyteller/ui-button";
@@ -1489,10 +1484,9 @@ export default function CreateVideo() {
       banner={
         requiresImageInput ? (
           <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100">
-            <FontAwesomeIcon
-              icon={faCircleInfo}
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400"
-            />
+            <InfoIcon
+              
+              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
             <span>
               This model can&apos;t generate from text alone — add a starting
               frame to animate your prompt.
@@ -1570,13 +1564,13 @@ export default function CreateVideo() {
           {hasSound && (
             <div className="flex items-center justify-between rounded-xl border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
               <span className="flex items-center gap-2 text-sm font-medium text-base-fg/70">
-                <FontAwesomeIcon icon={faWaveformLines} className="h-4 w-4" />
+                <AudioLinesIcon  className="h-4 w-4" />
                 Audio
               </span>
               <ToggleButton
                 isActive={generateWithSound}
-                icon={faWaveformLines}
-                activeIcon={faWaveformLines}
+                icon={AudioLinesIcon}
+                activeIcon={AudioLinesIcon}
                 label={generateWithSound ? "On" : "Off"}
                 onClick={() => setUi({ generateWithSound: !generateWithSound })}
               />
@@ -1586,7 +1580,7 @@ export default function CreateVideo() {
             <>
               <MobileFieldButton
                 label="Output"
-                icon={<FontAwesomeIcon icon={faClock} className="h-4 w-4" />}
+                icon={<ClockIcon  className="h-4 w-4" />}
                 value={outputSummary}
                 onClick={() => setIsOutputDrawerOpen(true)}
               />
@@ -1689,7 +1683,7 @@ export default function CreateVideo() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -1729,7 +1723,7 @@ export default function CreateVideo() {
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
+              <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
                 Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
                 Seedance may reject safe inputs unexpectedly. Try several short generations before longer ones.
@@ -1738,10 +1732,9 @@ export default function CreateVideo() {
           )} */}
           {requiresImageInput && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100 shadow-lg backdrop-blur-sm">
-              <FontAwesomeIcon
-                icon={faCircleInfo}
-                className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400"
-              />
+              <InfoIcon
+                
+                className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
               <span>
                 This model can&apos;t generate from text alone — add a starting
                 frame to animate your prompt.
@@ -1904,10 +1897,9 @@ export default function CreateVideo() {
                       mode="default"
                       panelTitle="Duration"
                       triggerIcon={
-                        <FontAwesomeIcon
-                          icon={faClock}
-                          className="h-3.5 w-3.5"
-                        />
+                        <ClockIcon
+                          
+                          className="h-3.5 w-3.5" />
                       }
                       triggerLabel={`${effectiveDuration}s`}
                     >
@@ -1945,8 +1937,8 @@ export default function CreateVideo() {
                   >
                     <ToggleButton
                       isActive={generateWithSound}
-                      icon={faWaveformLines}
-                      activeIcon={faWaveformLines}
+                      icon={AudioLinesIcon}
+                      activeIcon={AudioLinesIcon}
                       onClick={() =>
                         setUi({ generateWithSound: !generateWithSound })
                       }

@@ -1,8 +1,8 @@
 import { Button } from "@storyteller/ui-button";
 import { Transition, TransitionChild } from "@headlessui/react";
 import { useState, useEffect } from "react";
-import { faArrowRight } from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { ArrowRightIcon } from "lucide-react";
+import { DiscordIcon } from "@storyteller/icons";
 import { ArtCraftSignUp } from "./artcraft-signup";
 import { UsersApi } from "@storyteller/api";
 import { useLoginModalStore } from "./useLoginModalStore";
@@ -158,7 +158,7 @@ export function LoginModal({
           <Button
             variant="primary"
             onClick={handleClose}
-            icon={faArrowRight}
+            icon={ArrowRightIcon}
             iconFlip={true}
             className="text-md"
           >
@@ -191,7 +191,7 @@ export function LoginModal({
           <Button
             variant="primary"
             onClick={handleDiscordJoin}
-            icon={faDiscord}
+            icon={DiscordIcon}
             className="text-md bg-[#5865F2] hover:bg-[#6a76ff]"
           >
             Join Discord

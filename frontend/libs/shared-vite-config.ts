@@ -45,7 +45,7 @@ export function isExternal(id: string): boolean {
     id === 'three' ||
     id === 'zustand' ||
     id === 'wavesurfer.js' ||
-    id.startsWith('@fortawesome/')
+    id === 'lucide-react'
   ) {
     return true;
   }

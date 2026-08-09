@@ -3,22 +3,25 @@
   "include": [],
   "references": [
     {
-      "path": "../tooltip"
+      "path": "../../api"
     },
     {
       "path": "../loading-spinner"
     },
     {
-      "path": "../audio-player"
-    },
-    {
       "path": "../../common"
     },
     {
-      "path": "../../api"
+      "path": "../audio-player"
     },
     {
       "path": "../../model-list"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../../icons"
     },
     {
       "path": "./tsconfig.lib.json"

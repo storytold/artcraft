@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { Outlet, useNavigate, Navigate } from "react-router-dom";
-import { faArrowLeft, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowLeftIcon, LoaderCircleIcon } from "lucide-react";
 import { TruchetPattern } from "@storyteller/ui-vfx";
 import { AuthShowcase } from "./auth-showcase";
 import { useMediaQuery } from "../ui/use-media-query";
@@ -69,7 +68,7 @@ export const AuthLayout = () => {
             aria-label="Go back"
             className="absolute left-5 top-5 z-20 flex h-9 w-9 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
 
           <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-10">
@@ -78,10 +77,9 @@ export const AuthLayout = () => {
                 <Outlet />
               ) : (
                 <div className="flex justify-center py-12">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="animate-spin text-2xl text-white/40"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="animate-spin text-2xl text-white/40" />
                 </div>
               )}
             </div>

@@ -7,8 +7,7 @@ import {
   useLocation,
   useNavigationType,
 } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import Home from "../pages/home";
 import Media from "../pages/media";
 import { ToastContainer } from "../components/toast/toast";
@@ -63,10 +62,9 @@ function ScrollToTop() {
 function AuthCheckSpinner() {
   return (
     <div className="flex h-screen items-center justify-center bg-[#101014]">
-      <FontAwesomeIcon
-        icon={faSpinnerThird}
-        className="animate-spin text-4xl text-primary/80"
-      />
+      <LoaderCircleIcon
+        
+        className="animate-spin text-4xl text-primary/80" />
     </div>
   );
 }

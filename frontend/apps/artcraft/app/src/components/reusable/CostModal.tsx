@@ -1,7 +1,6 @@
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCoins, faTimes } from "@fortawesome/pro-solid-svg-icons";
+import { CoinsIcon, XIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
 import { useCurrency } from "@storyteller/ui-pricing-modal";
 
@@ -42,14 +41,14 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
       >
         <div className="bg-ui-panel-header flex cursor-move select-none items-center justify-between border-b border-ui-panel-border px-4 py-3">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-fg">
-            <FontAwesomeIcon icon={faCoins} className="text-yellow-400" />
+            <CoinsIcon  className="text-yellow-400" />
             Cost Breakdown
           </div>
           <button
             onClick={onClose}
             className="text-base-fg/50 transition-colors hover:text-base-fg"
           >
-            <FontAwesomeIcon icon={faTimes} />
+            <XIcon />
           </button>
         </div>
 

@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import {
-  faEye,
-  faEyeSlash,
-  faExclamationTriangle,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { EyeIcon, EyeOffIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 
 interface ArtCraftSignUpProps {
   onSubmit: (
@@ -85,7 +80,7 @@ export const ArtCraftSignUp = ({
     >
       {localError && (
         <div className="flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
-          <FontAwesomeIcon icon={faExclamationTriangle} />
+          <TriangleAlertIcon />
           {localError}
         </div>
       )}
@@ -144,7 +139,7 @@ export const ArtCraftSignUp = ({
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
             tabIndex={-1}
           >
-            <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+            <DynamicIcon icon={showPassword ? EyeOffIcon : EyeIcon} />
           </button>
         </div>
       </div>
@@ -167,7 +162,7 @@ export const ArtCraftSignUp = ({
               className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
               tabIndex={-1}
             >
-              <FontAwesomeIcon icon={showConfirm ? faEyeSlash : faEye} />
+              <DynamicIcon icon={showConfirm ? EyeOffIcon : EyeIcon} />
             </button>
           </div>
         </div>
@@ -180,7 +175,7 @@ export const ArtCraftSignUp = ({
           className="h-10 w-full justify-center rounded-full border-none bg-primary font-bold text-white hover:bg-primary-600"
         >
           {isLoading ? (
-            <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+            <LoaderCircleIcon  className="animate-spin" />
           ) : isSignUp ? (
             "Sign up"
           ) : (

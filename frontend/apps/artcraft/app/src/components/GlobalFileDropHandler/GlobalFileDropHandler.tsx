@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
-import { faCube, faImages, faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { BoxIcon, ImagesIcon, Maximize2Icon } from "lucide-react";
 import {
   UploadModal3D,
   UploadModalImage,
@@ -194,7 +193,7 @@ export function GlobalFileDropHandler() {
       {isDragging && modalType === null && (
         <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
           <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-white/60 bg-black/30 px-16 py-12 text-white backdrop-blur-sm">
-            <FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} className="text-4xl opacity-80" />
+            <Maximize2Icon  className="text-4xl opacity-80" />
             <div className="text-xl font-semibold">Drop to Upload</div>
             <div className="text-sm opacity-60">GLB, PNG, JPG, JPEG, SPZ</div>
           </div>
@@ -206,7 +205,7 @@ export function GlobalFileDropHandler() {
         onClose={closeModal}
         onSuccess={(_category: FilterEngineCategories) => closeModal()}
         title="Upload a 3D Model"
-        titleIcon={faCube}
+        titleIcon={BoxIcon}
       />
       <UploadModalImage
         isOpen={modalType === "image"}
@@ -214,7 +213,7 @@ export function GlobalFileDropHandler() {
         onClose={closeModal}
         onSuccess={() => closeModal()}
         title="Upload an Image"
-        titleIcon={faImages}
+        titleIcon={ImagesIcon}
       />
       <UploadModalSplat
         isOpen={modalType === "splat"}
@@ -222,7 +221,7 @@ export function GlobalFileDropHandler() {
         onClose={closeModal}
         onSuccess={() => {}}
         title="Upload a Splat"
-        titleIcon={faCube}
+        titleIcon={BoxIcon}
       />
     </>
   );

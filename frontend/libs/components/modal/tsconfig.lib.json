@@ -48,6 +48,9 @@
     },
     {
       "path": "../close-button/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

@@ -1,20 +1,7 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  faSearch,
-  faChevronLeft,
-  faLayerGroup,
-  faUser,
-  faSun,
-  faCube,
-  faChevronRight,
-  faMountainCity,
-  faDog,
-  faFaceGrinStars,
-  faPersonRunning,
-  faUpFromLine,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowUpFromLineIcon, BoxIcon, ChevronLeftIcon, ChevronRightIcon, DogIcon, FootprintsIcon, LaughIcon, LayersIcon, MountainIcon, SearchIcon, SunIcon, UserIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { Input } from "@storyteller/ui-input";
@@ -51,7 +38,7 @@ type AssetTab = {
   id: string;
   label: string;
   labelSingle?: string;
-  icon: typeof faLayerGroup;
+  icon: typeof LayersIcon;
   engineCategory?: FilterEngineCategories;
   items: MediaItem[];
 };
@@ -74,7 +61,7 @@ const AllTabSection = ({
         onClick={onViewAll}
       >
         View all
-        <FontAwesomeIcon icon={faChevronRight} className="text-xs opacity-70" />
+        <ChevronRightIcon  className="text-xs opacity-70" />
       </Button>
     </div>
     <div className="h-[170px]">
@@ -312,12 +299,12 @@ export const AssetModal = () => {
     const orderedCharacters = [...priorityCharacters, ...remainingCharacters];
 
     return [
-      { id: "all", label: "All", icon: faLayerGroup, items: [] },
+      { id: "all", label: "All", icon: LayersIcon, items: [] },
       {
         id: "character",
         label: "Characters",
         labelSingle: "Character",
-        icon: faUser,
+        icon: UserIcon,
         engineCategory: FilterEngineCategories.CHARACTER,
         items: orderedCharacters,
       },
@@ -325,7 +312,7 @@ export const AssetModal = () => {
         id: "objects",
         label: "Objects",
         labelSingle: "Object",
-        icon: faCube,
+        icon: BoxIcon,
         engineCategory: FilterEngineCategories.OBJECT,
         items:
           activeLibraryTab === "library"
@@ -336,7 +323,7 @@ export const AssetModal = () => {
         id: "memes",
         label: "Memes",
         labelSingle: "Meme",
-        icon: faFaceGrinStars,
+        icon: LaughIcon,
         engineCategory: FilterEngineCategories.CHARACTER,
         items:
           activeLibraryTab === "library"
@@ -347,7 +334,7 @@ export const AssetModal = () => {
         id: "sets",
         label: "Sets",
         labelSingle: "Set",
-        icon: faMountainCity,
+        icon: MountainIcon,
         engineCategory: FilterEngineCategories.LOCATION,
         items:
           activeLibraryTab === "library"
@@ -358,7 +345,7 @@ export const AssetModal = () => {
         id: "creatures",
         label: "Creatures",
         labelSingle: "Creature",
-        icon: faDog,
+        icon: DogIcon,
         engineCategory: FilterEngineCategories.CREATURE,
         items:
           activeLibraryTab === "library"
@@ -369,7 +356,7 @@ export const AssetModal = () => {
         id: "animations",
         label: "Animations",
         labelSingle: "Animation",
-        icon: faPersonRunning,
+        icon: FootprintsIcon,
         engineCategory: FilterEngineCategories.ANIMATION,
         // Uploads-first ordering with the demo-clip fallback lives in
         // useAnimationLibrary (shared with the standalone AnimationsModal).
@@ -379,7 +366,7 @@ export const AssetModal = () => {
         id: "skybox",
         label: "Skybox",
         labelSingle: "Skybox",
-        icon: faSun,
+        icon: SunIcon,
         items: activeLibraryTab === "library" ? demoSkyboxItems : [],
       },
     ];
@@ -538,7 +525,7 @@ export const AssetModal = () => {
                   )}
                   onClick={() => setActiveAssetTab(tab.id)}
                 >
-                  <FontAwesomeIcon
+                  <DynamicIcon
                     icon={tab.icon}
                     className="mr-2 opacity-70"
                   />
@@ -565,7 +552,7 @@ export const AssetModal = () => {
                       placeholder="Search"
                       className="relative z-[51] grow"
                       inputClassName="pr-2.5"
-                      icon={faSearch}
+                      icon={SearchIcon}
                       value={searchTerm}
                       onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         setSearchTerm(e.target.value)
@@ -598,10 +585,9 @@ export const AssetModal = () => {
                           className="flex items-center gap-2 border-none bg-transparent px-3 py-1.5 text-sm text-white/70 hover:bg-transparent hover:text-white/100"
                           onClick={() => setActiveAssetTab("all")}
                         >
-                          <FontAwesomeIcon
-                            icon={faChevronLeft}
-                            className="text-sm font-semibold opacity-70"
-                          />
+                          <ChevronLeftIcon
+                            
+                            className="text-sm font-semibold opacity-70" />
                         </Button>
                         {currentTab.label}
                       </div>
@@ -621,7 +607,7 @@ export const AssetModal = () => {
           onClose: () => setIsUploadModalOpen(false),
           onSuccess: handleUploadSuccess,
           title: "Upload 3D Asset",
-          titleIcon: faUpFromLine,
+          titleIcon: ArrowUpFromLineIcon,
         })}
     </>
   );

@@ -1,20 +1,8 @@
 import { DiscordButton } from "../../components/discord-button";
 import { Button } from "@storyteller/ui-button";
 import { isMobile } from "react-device-detect";
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import {
-  faFilm,
-  faPaintBrush,
-  faCamera,
-  faMapMarkerAlt,
-  faCube,
-  faLayerGroup,
-  faUser,
-  faTools,
-  faShapes,
-  faEraser,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { BoxIcon, CameraIcon, EraserIcon, FilmIcon, LayersIcon, MapPinIcon, PaintbrushIcon, ShapesIcon, UserIcon, WrenchIcon } from "lucide-react";
+import { DynamicIcon, GithubIcon } from "@storyteller/icons";
 import Footer from "../../components/footer";
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import gsap from "gsap";
@@ -74,49 +62,49 @@ const LandingSD2 = () => {
 
   const features = [
     {
-      icon: faMapMarkerAlt,
+      icon: MapPinIcon,
       title: "Image to Location",
       description:
         "Placing virtual actors into physical environments establishes single-location consistency. You can film multiple shots within a room without having things disappear.",
       src: "/videos/features/WorldLabs_Demo_2.webm",
     },
     {
-      icon: faCube,
+      icon: BoxIcon,
       title: "3D Image Compositing",
       description:
         "Use images (backdrops, foreground elements, props, etc.) in scenes with depth and blend them naturally together. Just a couple of images usually leads to great compositions.",
       src: "/videos/features/Panel.webm",
     },
     {
-      icon: faLayerGroup,
+      icon: LayersIcon,
       title: "2D Image Compositing",
       description:
         "Use images, background removal, layers, and simple drawing tools to precisely compose a scene.",
       src: "/videos/features/Editor.webm",
     },
     {
-      icon: faShapes,
+      icon: ShapesIcon,
       title: "Image to 3D Mesh",
       description:
         "It's almost impossible to lay out complicated objects or block complicated scenes; turning images into 3D helps position elements exactingly and intentionally.",
       src: "/videos/features/Make_3D.webm",
     },
     {
-      icon: faTools,
+      icon: WrenchIcon,
       title: "Mixed Asset Crafting",
       description:
         "You can use image cutouts, worlds, and simple 3D meshes all together to precisely and intentionally lay out your scenes.",
       src: "/videos/features/Mixed.webm",
     },
     {
-      icon: faUser,
+      icon: UserIcon,
       title: "Character Posing",
       description:
         'You can dynamically pose your characters to achieve the precise character, scene, and camera blocking before calling "action".',
       src: "/videos/features/Pose_Second_Version.webm",
     },
     {
-      icon: faEraser,
+      icon: EraserIcon,
       title: "Background Removal",
       description:
         "Instantly remove backgrounds from images to create assets for your scenes. Clean, precise, and ready for compositing.",
@@ -426,7 +414,7 @@ const LandingSD2 = () => {
                             : "bg-white/10 text-white/50"
                         }`}
                       >
-                        <FontAwesomeIcon icon={feature.icon} />
+                        <DynamicIcon icon={feature.icon} />
                       </div>
                       <h3
                         className={`text-3xl xl:text-4xl font-medium mb-6 transition-all duration-500 ${
@@ -665,24 +653,21 @@ const LandingSD2 = () => {
                 </div>
                 <div className="flex justify-center items-center h-24 lg:h-28">
                   <div className="w-16 h-16 lg:w-20 lg:h-20 bg-pink-900 rounded-full flex items-center justify-center border-2 border-pink-600 shadow-lg z-10">
-                    <FontAwesomeIcon
-                      icon={faFilm}
-                      className="text-white text-xl lg:text-2xl"
-                    />
+                    <FilmIcon
+                      
+                      className="text-white text-xl lg:text-2xl" />
                   </div>
 
                   <div className="w-20 h-20 lg:w-24 lg:h-24 bg-emerald-600 rounded-full flex items-center justify-center border-2 border-emerald-400 shadow-lg -ml-2 z-30">
-                    <FontAwesomeIcon
-                      icon={faPaintBrush}
-                      className="text-white text-2xl lg:text-3xl"
-                    />
+                    <PaintbrushIcon
+                      
+                      className="text-white text-2xl lg:text-3xl" />
                   </div>
 
                   <div className="w-16 h-16 lg:w-20 lg:h-20 bg-purple-900 rounded-full flex items-center justify-center border-2 border-purple-600 shadow-lg -ml-2 z-20">
-                    <FontAwesomeIcon
-                      icon={faCamera}
-                      className="text-white text-xl lg:text-2xl"
-                    />
+                    <CameraIcon
+                      
+                      className="text-white text-xl lg:text-2xl" />
                   </div>
                 </div>
               </div>
@@ -739,10 +724,9 @@ const LandingSD2 = () => {
                         />
                       </div>
                       <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-300 z-10">
-                        <FontAwesomeIcon
-                          icon={faFilm}
-                          className="text-white text-2xl"
-                        />
+                        <FilmIcon
+                          
+                          className="text-white text-2xl" />
                       </div>
                     </div>
                   )}
@@ -792,7 +776,7 @@ const LandingSD2 = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FontAwesomeIcon icon={faGithub} className="text-xl" />
+              <GithubIcon  className="text-xl" />
               Star on GitHub
             </Button>
           </div>

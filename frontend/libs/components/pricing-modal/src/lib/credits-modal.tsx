@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  faCoins,
-  faSpinnerThird,
-  faArrowRight,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowRightIcon, CoinsIcon, LoaderCircleIcon } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 
 interface CreditPack {
@@ -120,10 +115,9 @@ export function CreditsModal({
 
                   <div className="flex items-center gap-3">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15">
-                      <FontAwesomeIcon
-                        icon={faCoins}
-                        className="text-primary text-lg"
-                      />
+                      <CoinsIcon
+                        
+                        className="text-primary text-lg" />
                     </span>
                     <div className="min-w-0">
                       <div className="text-4xl font-bold leading-none tracking-tight text-white">
@@ -150,17 +144,15 @@ export function CreditsModal({
                     </span>
                     <span className="flex items-center gap-1.5 text-base font-semibold text-primary-400">
                       {isLoading ? (
-                        <FontAwesomeIcon
-                          icon={faSpinnerThird}
-                          className="animate-spin"
-                        />
+                        <LoaderCircleIcon
+                          
+                          className="animate-spin" />
                       ) : (
                         <>
                           Buy
-                          <FontAwesomeIcon
-                            icon={faArrowRight}
-                            className="text-xs transition-transform group-hover:translate-x-0.5"
-                          />
+                          <ArrowRightIcon
+                            
+                            className="text-xs transition-transform group-hover:translate-x-0.5" />
                         </>
                       )}
                     </span>

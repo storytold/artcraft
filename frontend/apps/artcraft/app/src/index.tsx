@@ -7,16 +7,12 @@ import { createRoot } from "react-dom/client";
 import "./styles/normalize.css";
 import "./styles/tailwind.css";
 import "./styles/base.css";
-import "@fortawesome/fontawesome-svg-core/styles.css";
-import { config } from "@fortawesome/fontawesome-svg-core";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { pageHeight, pageWidth, persistLogin } from "~/signals";
 import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
-
-config.autoAddCss = false; /* eslint-disable import/first */
 
 // TODO(bt,2025-04-19): Make these configurable
 const ENV = {

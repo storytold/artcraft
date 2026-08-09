@@ -2,11 +2,7 @@ import React from "react";
 import { useShallow } from "zustand/shallow";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
-import {
-  faCheck,
-  faFilm,
-  faPersonRunning,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, FilmIcon, FootprintsIcon } from "lucide-react";
 import { usePageSceneStore } from "../PageSceneStore";
 import { getActiveEditor } from "../contexts/EngineContext/EngineContext";
 import { openAnimationsModal } from "../actions";
@@ -46,7 +42,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
         <>
           {poseMode === "select" ? (
             <Button
-              icon={faPersonRunning}
+              icon={FootprintsIcon}
               onClick={handleModeChange}
               className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
             >
@@ -54,7 +50,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
             </Button>
           ) : (
             <Button
-              icon={faCheck}
+              icon={CheckIcon}
               onClick={handleModeChange}
               className="rounded-xl outline-none  focus-visible:outline-none"
             >
@@ -73,7 +69,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
           closeOnClick={true}
         >
           <Button
-            icon={faFilm}
+            icon={FilmIcon}
             onClick={() => openAnimationsModal()}
             className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
           >

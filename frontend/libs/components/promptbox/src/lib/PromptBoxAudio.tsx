@@ -7,14 +7,8 @@ import {
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateButton, ToggleButton } from "@storyteller/ui-button";
-import {
-  faChevronDown,
-  faChevronUp,
-  faMicrophoneLines,
-  faMicrophoneSlash,
-  faRepeat,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDownIcon, ChevronUpIcon, MicIcon, MicOffIcon, RepeatIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import type { OmniGenAudioModelDetails, UploadMediaFn } from "@storyteller/api";
 import {
   enqueueAudioGeneration,
@@ -452,8 +446,8 @@ export const PromptBoxAudio = ({
         >
           <ToggleButton
             isActive={isInstrumental}
-            icon={faMicrophoneSlash}
-            activeIcon={faMicrophoneSlash}
+            icon={MicOffIcon}
+            activeIcon={MicOffIcon}
             label="Instrumental"
             onClick={() => setIsInstrumental(!isInstrumental)}
           />
@@ -468,8 +462,8 @@ export const PromptBoxAudio = ({
         >
           <ToggleButton
             isActive={keepLyrics}
-            icon={faMicrophoneLines}
-            activeIcon={faMicrophoneLines}
+            icon={MicIcon}
+            activeIcon={MicIcon}
             label="Keep lyrics"
             onClick={() => setKeepLyrics(!keepLyrics)}
           />
@@ -484,8 +478,8 @@ export const PromptBoxAudio = ({
         >
           <ToggleButton
             isActive={isLoopable}
-            icon={faRepeat}
-            activeIcon={faRepeat}
+            icon={RepeatIcon}
+            activeIcon={RepeatIcon}
             label="Loop"
             onClick={() => setIsLoopable(!isLoopable)}
           />
@@ -628,8 +622,8 @@ export const PromptBoxAudio = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>

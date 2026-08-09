@@ -6,14 +6,7 @@ import {
   type CSSProperties,
   type SyntheticEvent,
 } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faImages,
-  faPlus,
-  faSpinnerThird,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faImage } from "@fortawesome/pro-regular-svg-icons";
+import { ImageIcon, ImagesIcon, LoaderCircleIcon, PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Modal } from "@storyteller/ui-modal";
@@ -252,7 +245,7 @@ export const ImagePromptRow = ({
         <div className="flex min-w-0 flex-1 gap-2 px-3 py-2">
           <div className="flex grow flex-col gap-1 min-w-32">
             <div className="flex items-center gap-2 text-white/90">
-              <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+              <ImageIcon  className="h-3.5 w-3.5" />
               <span className="flex items-center gap-1.5 text-sm font-medium">
                 {sectionLabel}
                 {showCount && (
@@ -329,7 +322,7 @@ export const ImagePromptRow = ({
               <div className="hidden sm:block w-[1px] bg-white/10" />
               <div className="flex grow flex-col gap-1 sm:p-2">
                 <div className="flex items-center gap-2 text-white/90">
-                  <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                  <ImageIcon  className="h-3.5 w-3.5" />
                   <span className="flex items-center gap-1.5 text-sm font-medium">
                     End Frame{" "}
                     <span className="text-xs text-white/60">(optional)</span>
@@ -358,16 +351,15 @@ export const ImagePromptRow = ({
                     }}
                     className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
                   >
-                    <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                    <XIcon  className="h-2.5 w-2.5" />
                   </button>
                 </div>
               ) : uploadingEndFrame ? (
                 <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
+                  <LoaderCircleIcon
+                    
                     spin
-                    className="h-5 w-5 text-white"
-                  />
+                    className="h-5 w-5 text-white" />
                 </div>
               ) : (
                 <AddButton
@@ -423,7 +415,7 @@ export const AddButton = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const plus = (
-    <FontAwesomeIcon icon={faPlus} className="text-2xl text-white/80" />
+    <PlusIcon  className="text-2xl text-white/80" />
   );
 
   if (!onPickFromLibrary) {
@@ -456,7 +448,7 @@ export const AddButton = ({
           <div className="flex flex-col gap-2 pb-2">
             <Button
               variant="primary"
-              icon={faPlus}
+              icon={PlusIcon}
               className="w-full"
               onClick={() => {
                 onUpload();
@@ -467,7 +459,7 @@ export const AddButton = ({
             </Button>
             <Button
               variant="action"
-              icon={faImages}
+              icon={ImagesIcon}
               className="w-full bg-white/15 hover:bg-white/20"
               onClick={() => {
                 setDrawerOpen(false);
@@ -494,7 +486,7 @@ export const AddButton = ({
           <Button
             variant="primary"
             onClick={onUpload}
-            icon={faPlus}
+            icon={PlusIcon}
             className="w-full"
           >
             Upload
@@ -502,7 +494,7 @@ export const AddButton = ({
           <Button
             variant="action"
             onClick={onPickFromLibrary}
-            icon={faImages}
+            icon={ImagesIcon}
             className="w-full bg-white/15 hover:bg-white/20"
           >
             Pick from library
@@ -542,7 +534,7 @@ const ImageThumbnail = ({
       }}
       className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
     >
-      <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+      <XIcon  className="h-2.5 w-2.5" />
     </button>
   </div>
 );
@@ -601,7 +593,7 @@ const SortableImage = ({
         onPointerDown={(e) => e.stopPropagation()}
         className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
       >
-        <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+        <XIcon  className="h-2.5 w-2.5" />
       </button>
     </div>
   );
@@ -620,11 +612,10 @@ const UploadingThumbnail = ({ file }: { file: File }) => {
         />
       </div>
       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
+        <LoaderCircleIcon
+          
           spin
-          className="h-6 w-6 text-white"
-        />
+          className="h-6 w-6 text-white" />
       </div>
     </div>
   );

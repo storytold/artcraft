@@ -1,6 +1,5 @@
 import { useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRightFromBracket } from "@fortawesome/pro-solid-svg-icons";
+import { LogOutIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { EngineContext } from "../../contexts/EngineContext";
 import { toggleCameraView } from "../../actions";
@@ -30,7 +29,7 @@ export const ExitCameraView = ({ className }: { className?: string }) => {
         className,
       )}
     >
-      <FontAwesomeIcon icon={faArrowRightFromBracket} className="h-3.5 w-3.5" />
+      <LogOutIcon  className="h-3.5 w-3.5" />
       Exit
     </button>
   );

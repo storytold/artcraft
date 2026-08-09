@@ -1,11 +1,5 @@
-import { faApple, faWindows } from "@fortawesome/free-brands-svg-icons";
-import {
-  faArrowDownToLine,
-  faDesktop,
-  faFiles,
-  faMemory,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowDownToLineIcon, FilesIcon, MemoryStickIcon, MonitorIcon } from "lucide-react";
+import { DynamicIcon, AppleIcon, WindowsIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import {
   DOWNLOAD_LINKS,
@@ -23,22 +17,22 @@ import { PagePatternBackdrop } from "../../components/truchet-pattern";
 const SYSTEMS = [
   {
     os: "Windows",
-    icon: faWindows,
+    icon: WindowsIcon,
     link: DOWNLOAD_LINKS.WINDOWS,
     requirements: [
-      { icon: faDesktop, text: "Windows 10 (64-bit) or newer" },
-      { icon: faMemory, text: "8 GB RAM recommended" },
-      { icon: faFiles, text: "2 GB available storage" },
+      { icon: MonitorIcon, text: "Windows 10 (64-bit) or newer" },
+      { icon: MemoryStickIcon, text: "8 GB RAM recommended" },
+      { icon: FilesIcon, text: "2 GB available storage" },
     ],
   },
   {
     os: "macOS",
-    icon: faApple,
+    icon: AppleIcon,
     link: DOWNLOAD_LINKS.MACOS,
     requirements: [
-      { icon: faDesktop, text: "macOS 12.0 or newer" },
-      { icon: faMemory, text: "8 GB RAM recommended" },
-      { icon: faFiles, text: "2 GB available storage" },
+      { icon: MonitorIcon, text: "macOS 12.0 or newer" },
+      { icon: MemoryStickIcon, text: "8 GB RAM recommended" },
+      { icon: FilesIcon, text: "2 GB available storage" },
     ],
   },
 ] as const;
@@ -130,7 +124,7 @@ const Download = () => {
                 href={detectedLink}
                 onClick={onDownloadClick}
               >
-                <FontAwesomeIcon icon={isMacOs ? faApple : faWindows} />
+                <DynamicIcon icon={isMacOs ? AppleIcon : WindowsIcon} />
                 Download for {isMacOs ? "Mac" : "Windows"}
               </Button>
             ) : (
@@ -184,7 +178,7 @@ const Download = () => {
                   )}
 
                   <div className="flex items-center gap-3 mb-6">
-                    <FontAwesomeIcon
+                    <DynamicIcon
                       icon={system.icon}
                       className="text-2xl text-white/80"
                     />
@@ -197,7 +191,7 @@ const Download = () => {
                         key={idx}
                         className="flex items-center gap-3 text-white/60 text-sm"
                       >
-                        <FontAwesomeIcon
+                        <DynamicIcon
                           icon={req.icon}
                           className="text-white/30 w-4 text-center"
                         />
@@ -218,7 +212,7 @@ const Download = () => {
                       className="rounded-full w-full justify-center font-semibold gap-2"
                       as="link"
                       href={system.link}
-                      icon={faArrowDownToLine}
+                      icon={ArrowDownToLineIcon}
                       onClick={onDownloadClick}
                     >
                       Download

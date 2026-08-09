@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClock,
-  faFilm,
-  faWaveformLines,
-} from "@fortawesome/pro-solid-svg-icons";
+import { AudioLinesIcon, ClockIcon, FilmIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { ToggleButton } from "@storyteller/ui-button";
@@ -870,7 +866,7 @@ export default function CreateVideo() {
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
       isLoggedIn={!!user}
-      heroIcon={faFilm}
+      heroIcon={FilmIcon}
       heroTitle="Create Video"
       heroSubtitle="Sign in to generate stunning AI videos with multiple models"
       hasContent={hasContent}
@@ -903,7 +899,7 @@ export default function CreateVideo() {
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
+              <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
                 Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
                 Seedance may reject safe inputs unexpectedly. Try several short generations before longer ones.
@@ -1039,10 +1035,9 @@ export default function CreateVideo() {
                       mode="default"
                       panelTitle="Duration"
                       triggerIcon={
-                        <FontAwesomeIcon
-                          icon={faClock}
-                          className="h-3.5 w-3.5"
-                        />
+                        <ClockIcon
+                          
+                          className="h-3.5 w-3.5" />
                       }
                       triggerLabel={`${effectiveDuration}s`}
                     >
@@ -1080,8 +1075,8 @@ export default function CreateVideo() {
                   >
                     <ToggleButton
                       isActive={generateWithSound}
-                      icon={faWaveformLines}
-                      activeIcon={faWaveformLines}
+                      icon={AudioLinesIcon}
+                      activeIcon={AudioLinesIcon}
                       onClick={() =>
                         setUi({ generateWithSound: !generateWithSound })
                       }

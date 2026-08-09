@@ -4,18 +4,7 @@ import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Select } from "@storyteller/ui-select";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBone,
-  faCube,
-  faXmark,
-  faCheck,
-  faCircleExclamation,
-  faChevronLeft,
-  faChevronRight,
-  faRotateRight,
-  faSpinner,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoneIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, LoaderIcon, RotateCwIcon, XIcon } from "lucide-react";
 import * as THREE from "three";
 import {
   convertFbxToGlb,
@@ -636,7 +625,7 @@ export const UploadFiles3D = ({
               : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"
           }`}
         >
-          <FontAwesomeIcon icon={faBone} />
+          <BoneIcon />
         </button>
       )}
       {previewAnimations.length > 0 && (
@@ -678,7 +667,7 @@ export const UploadFiles3D = ({
   const currentEntry = fileEntries[previewIndex];
   const convertingOverlay = isConvertingCurrent ? (
     <h6 className="pointer-events-none absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-60">
-      <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+      <LoaderIcon  className="animate-spin" />
       Converting FBX to GLB...
     </h6>
   ) : currentEntry?.status === "error" && isFbx(currentEntry.file) ? (
@@ -701,7 +690,7 @@ export const UploadFiles3D = ({
         files={fileEntries.map((e) => e.file)}
         handleChange={handleFilesChange}
         multiple={true}
-        fileIcon={faCube}
+        fileIcon={BoxIcon}
       />
 
       {selectionError && <h6 className="z-10 text-red">{selectionError}</h6>}
@@ -731,28 +720,25 @@ export const UploadFiles3D = ({
                       }}
                       title="Remove"
                     >
-                      <FontAwesomeIcon icon={faXmark} />
+                      <XIcon />
                     </button>
                   )}
                   {(entry.status === "uploading" ||
                     entry.status === "converting") && (
-                    <FontAwesomeIcon
-                      icon={faSpinner}
-                      className="animate-spin opacity-60"
-                    />
+                    <LoaderIcon
+                      
+                      className="animate-spin opacity-60" />
                   )}
                   {entry.status === "success" && (
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      className="text-green-400"
-                    />
+                    <CheckIcon
+                      
+                      className="text-green-400" />
                   )}
                   {entry.status === "error" && (
                     <span className="flex items-center gap-1">
-                      <FontAwesomeIcon
-                        icon={faCircleExclamation}
-                        className="text-red-400"
-                      />
+                      <CircleAlertIcon
+                        
+                        className="text-red-400" />
                       <button
                         className="hidden items-center text-xs text-white/60 transition-colors hover:text-white group-hover:inline-flex"
                         onClick={(e) => {
@@ -761,7 +747,7 @@ export const UploadFiles3D = ({
                         }}
                         title="Retry"
                       >
-                        <FontAwesomeIcon icon={faRotateRight} />
+                        <RotateCwIcon />
                       </button>
                     </span>
                   )}
@@ -789,7 +775,7 @@ export const UploadFiles3D = ({
               {convertingOverlay}
               {!currentFile && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
-                  <FontAwesomeIcon icon={faCube} />
+                  <BoxIcon />
                   Your model preview will appear here
                 </h6>
               )}
@@ -807,7 +793,7 @@ export const UploadFiles3D = ({
                 onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
                 disabled={previewIndex === 0}
               >
-                <FontAwesomeIcon icon={faChevronLeft} />
+                <ChevronLeftIcon />
               </Button>
               <span className="text-sm opacity-60">
                 {previewIndex + 1} / {fileEntries.length}
@@ -821,7 +807,7 @@ export const UploadFiles3D = ({
                 }
                 disabled={previewIndex === fileEntries.length - 1}
               >
-                <FontAwesomeIcon icon={faChevronRight} />
+                <ChevronRightIcon />
               </Button>
             </div>
           </div>
@@ -837,7 +823,7 @@ export const UploadFiles3D = ({
           {convertingOverlay}
           {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
-              <FontAwesomeIcon icon={faCube} />
+              <BoxIcon />
               Your model preview will appear here
             </h6>
           )}

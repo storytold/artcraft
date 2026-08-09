@@ -15,15 +15,7 @@ import {
 } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@storyteller/ui-button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faChevronUp,
-  faChevronDown,
-  faChevronRight,
-  faCircleCheck,
-  faCircleInfo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CircleCheckIcon, InfoIcon } from "lucide-react";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -231,7 +223,7 @@ function InfoHint({ content }: { content: ReactNode }) {
           if (!pinnedRef.current) setOpen(false);
         }}
       >
-        <FontAwesomeIcon icon={faCircleInfo} className="h-3.5 w-3.5" />
+        <InfoIcon  className="h-3.5 w-3.5" />
       </button>
       {open &&
         createPortal(
@@ -396,10 +388,9 @@ function RichListRow({
         (item.selected &&
           (item.selectedRight ?? (
             <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
-              <FontAwesomeIcon
-                icon={faCheck}
-                className="text-[11px] font-bold text-white"
-              />
+              <CheckIcon
+                
+                className="text-[11px] font-bold text-white" />
             </span>
           )))}
     </div>
@@ -614,10 +605,9 @@ function SubmenuFlyout({
                   canScrollUp ? "opacity-100" : "opacity-0",
                 )}
               >
-                <FontAwesomeIcon
-                  icon={faChevronUp}
-                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
-                />
+                <ChevronUpIcon
+                  
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
               </div>
               <div
                 ref={scrollRef}
@@ -667,10 +657,9 @@ function SubmenuFlyout({
                   canScrollDown ? "opacity-100" : "opacity-0",
                 )}
               >
-                <FontAwesomeIcon
-                  icon={faChevronDown}
-                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
-                />
+                <ChevronDownIcon
+                  
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
               </div>
             </div>
           </div>,
@@ -1025,10 +1014,9 @@ export const PopoverMenu = ({
                         <span className="opacity-70">{triggerLabel}</span>
                         <div className="flex items-center gap-2">
                           <span className="truncate">{selectedItem.label}</span>
-                          <FontAwesomeIcon
-                            icon={faChevronUp}
-                            className="text-sm"
-                          />
+                          <ChevronUpIcon
+                            
+                            className="text-sm" />
                         </div>
                       </div>
                     ) : null}
@@ -1105,10 +1093,9 @@ export const PopoverMenu = ({
                             canScrollUp ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faChevronUp}
-                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
-                          />
+                          <ChevronUpIcon
+                            
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
                         </div>
                         <div
                           ref={scrollContainerRef}
@@ -1140,10 +1127,9 @@ export const PopoverMenu = ({
                                       item={item}
                                       active={openTooltipIdx === index}
                                       rightNode={
-                                        <FontAwesomeIcon
-                                          icon={faChevronRight}
-                                          className="ml-1 shrink-0 text-xs text-base-fg/50"
-                                        />
+                                        <ChevronRightIcon
+                                          
+                                          className="ml-1 shrink-0 text-xs text-base-fg/50" />
                                       }
                                     />
                                   </SubmenuFlyout>
@@ -1208,20 +1194,18 @@ export const PopoverMenu = ({
                             canScrollDown ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faChevronDown}
-                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
-                          />
+                          <ChevronDownIcon
+                            
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
                         </div>
                       </div>
                     ) : mode === "hoverSelect" ? (
                       <div className="relative flex flex-col text-sm text-base-fg overflow-visible">
                         {maxListHeight && canScrollUp && (
                           <div className="absolute top-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-b from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
-                            <FontAwesomeIcon
-                              icon={faChevronUp}
-                              className="text-base-fg/60 text-xs animate-bounce"
-                            />
+                            <ChevronUpIcon
+                              
+                              className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
                         <div
@@ -1321,7 +1305,7 @@ export const PopoverMenu = ({
                                   {item.selected &&
                                     (item.selectedRight ?? (
                                       <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
-                                        <FontAwesomeIcon icon={faCircleCheck} />
+                                        <CircleCheckIcon />
                                       </span>
                                     ))}
                                 </div>
@@ -1380,10 +1364,9 @@ export const PopoverMenu = ({
                         </div>
                         {maxListHeight && canScrollDown && (
                           <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-t from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
-                            <FontAwesomeIcon
-                              icon={faChevronDown}
-                              className="text-base-fg/60 text-xs animate-bounce"
-                            />
+                            <ChevronDownIcon
+                              
+                              className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
                         {showAddButton && onAdd && (
@@ -1491,10 +1474,9 @@ export const PopoverMenu = ({
                                       )}
                                     >
                                       {item.selected && (
-                                        <FontAwesomeIcon
-                                          icon={faCheck}
-                                          className="text-base-fg text-xs font-bold"
-                                        />
+                                        <CheckIcon
+                                          
+                                          className="text-base-fg text-xs font-bold" />
                                       )}
                                     </span>
                                   )}
@@ -1555,10 +1537,9 @@ export const PopoverMenu = ({
                                     )}
                                   >
                                     {item.selected && (
-                                      <FontAwesomeIcon
-                                        icon={faCheck}
-                                        className="text-base-fg text-xs font-bold"
-                                      />
+                                      <CheckIcon
+                                        
+                                        className="text-base-fg text-xs font-bold" />
                                     )}
                                   </span>
                                 )}

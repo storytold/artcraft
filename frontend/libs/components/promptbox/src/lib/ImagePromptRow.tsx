@@ -10,17 +10,8 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faImages,
-  faPlay,
-  faPlus,
-  faSpinnerThird,
-  faStop,
-  faTrashAlt,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faImage, faVideo, faMusic } from "@fortawesome/pro-regular-svg-icons";
+import { ImageIcon, ImagesIcon, LoaderCircleIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { RefImage, RefVideo, RefAudio } from "./promptStore";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
@@ -129,8 +120,8 @@ const AudioRefTile = ({
         onClick={handleTogglePlay}
         className="flex items-center justify-center w-full h-full"
       >
-        <FontAwesomeIcon
-          icon={isPlaying ? faStop : faPlay}
+        <DynamicIcon
+          icon={isPlaying ? SquareIcon : PlayIcon}
           className={twMerge(
             "h-5 w-5 transition-colors",
             isPlaying
@@ -153,7 +144,7 @@ const AudioRefTile = ({
         }}
         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
       >
-        <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+        <XIcon  className="h-2.5 w-2.5" />
       </button>
     </div>
   );
@@ -295,7 +286,7 @@ export const ImagePromptRow = ({
           }}
           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
         >
-          <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+          <XIcon  className="h-2.5 w-2.5" />
         </button>
       </div>
     );
@@ -872,7 +863,7 @@ export const ImagePromptRow = ({
             <div className="flex gap-2 py-2 px-3">
               <div className="flex flex-col grow gap-1">
                 <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                  <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                  <ImageIcon  className="h-3.5 w-3.5" />
                   <span className="text-sm font-medium flex items-center gap-1.5">
                     {isVideo
                       ? isReferenceMode
@@ -945,10 +936,9 @@ export const ImagePromptRow = ({
                           }}
                           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                         >
-                          <FontAwesomeIcon
-                            icon={faXmark}
-                            className="h-2.5 w-2.5"
-                          />
+                          <XIcon
+                            
+                            className="h-2.5 w-2.5" />
                         </button>
                       </div>
                     ))
@@ -973,10 +963,9 @@ export const ImagePromptRow = ({
                           />
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <FontAwesomeIcon
-                            icon={faSpinnerThird}
-                            className="h-6 w-6 animate-spin text-white"
-                          />
+                          <LoaderCircleIcon
+                            
+                            className="h-6 w-6 animate-spin text-white" />
                         </div>
                       </div>
                     );
@@ -995,7 +984,7 @@ export const ImagePromptRow = ({
                           <Button
                             variant="primary"
                             onClick={handleUploadClickStart}
-                            icon={faPlus}
+                            icon={PlusIcon}
                             className="w-full"
                           >
                             Upload
@@ -1007,7 +996,7 @@ export const ImagePromptRow = ({
                             setGalleryTarget("start");
                             setIsGalleryModalOpen(true);
                           }}
-                          icon={faImages}
+                          icon={ImagesIcon}
                           className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                         >
                           Pick from library
@@ -1026,10 +1015,9 @@ export const ImagePromptRow = ({
                         }
                       }}
                     >
-                      <FontAwesomeIcon
-                        icon={faPlus}
-                        className="text-2xl opacity-80 text-base-fg"
-                      />
+                      <PlusIcon
+                        
+                        className="text-2xl opacity-80 text-base-fg" />
                     </Button>
                   </Tooltip>
                 )}
@@ -1041,7 +1029,7 @@ export const ImagePromptRow = ({
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                      <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                      <ImageIcon  className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         End Frame{" "}
                         <span className="text-base-fg/60 text-xs">
@@ -1072,10 +1060,9 @@ export const ImagePromptRow = ({
                         }}
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <FontAwesomeIcon
-                          icon={faXmark}
-                          className="h-2.5 w-2.5"
-                        />
+                        <XIcon
+                          
+                          className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ) : uploadingEnd ? (
@@ -1088,10 +1075,9 @@ export const ImagePromptRow = ({
                         />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <FontAwesomeIcon
-                          icon={faSpinnerThird}
-                          className="h-6 w-6 animate-spin text-white"
-                        />
+                        <LoaderCircleIcon
+                          
+                          className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   ) : (
@@ -1107,7 +1093,7 @@ export const ImagePromptRow = ({
                             <Button
                               variant="primary"
                               onClick={handleUploadClickEnd}
-                              icon={faPlus}
+                              icon={PlusIcon}
                               className="w-full"
                             >
                               Upload
@@ -1119,7 +1105,7 @@ export const ImagePromptRow = ({
                               setGalleryTarget("end");
                               setIsGalleryModalOpen(true);
                             }}
-                            icon={faImages}
+                            icon={ImagesIcon}
                             className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                           >
                             Pick from library
@@ -1138,10 +1124,9 @@ export const ImagePromptRow = ({
                           }
                         }}
                       >
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="text-2xl opacity-80 text-base-fg"
-                        />
+                        <PlusIcon
+                          
+                          className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     </Tooltip>
                   )}
@@ -1155,7 +1140,7 @@ export const ImagePromptRow = ({
               <div className="flex gap-2 py-2 px-3">
                 <div className="flex flex-col grow gap-1">
                   <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                    <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
+                    <VideoIcon  className="h-3.5 w-3.5" />
                     <span className="text-sm font-medium flex items-center gap-1.5">
                       Video Ref{" "}
                       <span className="text-base-fg/60 font-semibold">
@@ -1189,10 +1174,9 @@ export const ImagePromptRow = ({
                         }}
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <FontAwesomeIcon
-                          icon={faXmark}
-                          className="h-2.5 w-2.5"
-                        />
+                        <XIcon
+                          
+                          className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ))}
@@ -1207,10 +1191,9 @@ export const ImagePromptRow = ({
                         />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <FontAwesomeIcon
-                          icon={faSpinnerThird}
-                          className="h-6 w-6 animate-spin text-white"
-                        />
+                        <LoaderCircleIcon
+                          
+                          className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   )}
@@ -1227,7 +1210,7 @@ export const ImagePromptRow = ({
                             <Button
                               variant="primary"
                               onClick={handleUploadClickVideo}
-                              icon={faPlus}
+                              icon={PlusIcon}
                               className="w-full"
                             >
                               Upload
@@ -1238,7 +1221,7 @@ export const ImagePromptRow = ({
                                 setGalleryTarget("video");
                                 setIsGalleryModalOpen(true);
                               }}
-                              icon={faImages}
+                              icon={ImagesIcon}
                               className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                             >
                               Pick from library
@@ -1251,10 +1234,9 @@ export const ImagePromptRow = ({
                           className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                           onClick={handleUploadClickVideo}
                         >
-                          <FontAwesomeIcon
-                            icon={faPlus}
-                            className="text-2xl opacity-80 text-base-fg"
-                          />
+                          <PlusIcon
+                            
+                            className="text-2xl opacity-80 text-base-fg" />
                         </Button>
                       </Tooltip>
                     )}
@@ -1266,7 +1248,7 @@ export const ImagePromptRow = ({
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                      <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />
+                      <MusicIcon  className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         Audio Ref{" "}
                         <span className="text-base-fg/60 font-semibold">
@@ -1290,10 +1272,9 @@ export const ImagePromptRow = ({
                   ))}
                   {uploadingAudio && (
                     <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 flex items-center justify-center">
-                      <FontAwesomeIcon
-                        icon={faSpinnerThird}
-                        className="h-6 w-6 animate-spin text-white"
-                      />
+                      <LoaderCircleIcon
+                        
+                        className="h-6 w-6 animate-spin text-white" />
                     </div>
                   )}
                   {referenceAudios.length < maxAudioCount &&
@@ -1303,10 +1284,9 @@ export const ImagePromptRow = ({
                         className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                         onClick={handleUploadClickAudio}
                       >
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="text-2xl opacity-80 text-base-fg"
-                        />
+                        <PlusIcon
+                          
+                          className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     )}
                 </div>
@@ -1320,7 +1300,7 @@ export const ImagePromptRow = ({
           <div className="p-2">
             <Button
               variant="action"
-              icon={faTrashAlt}
+              icon={Trash2Icon}
               className="h-8 w-3"
               onClick={() => {
                 setReferenceImages([]);

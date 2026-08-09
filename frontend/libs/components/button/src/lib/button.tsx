@@ -1,8 +1,8 @@
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 
 type AnchorProps = Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
@@ -10,7 +10,7 @@ type AnchorProps = Omit<
 >;
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  icon?: IconDefinition;
+  icon?: LucideIcon;
   iconClassName?: string;
   iconFlip?: boolean;
   htmlFor?: string;
@@ -58,35 +58,35 @@ export const Button = ({
   }
 
   const disabledClass = twMerge(
-    disabled || loading ? "opacity-50 pointer-events-none" : ""
+    disabled || loading ? "opacity-50 pointer-events-none" : "",
   );
 
   const className = twMerge(
     "w-fit text-sm font-medium rounded-lg px-3 py-1.5 border border-transparent shadow-sm focus-visible:outline focus-visible:outline-0 focus-visible:outline-offset-0 transition-all duration-150 flex gap-2 items-center justify-center active:scale-95 transform",
     getVariantClassNames(propsVariant),
     propsClassName,
-    disabledClass
+    disabledClass,
   );
 
   if (htmlFor) {
     return (
       <label className={className} htmlFor={htmlFor} style={rest.style}>
         {loading && !iconFlip ? (
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon className="animate-spin" />
         ) : (
           <>
             {icon && !iconFlip ? (
-              <FontAwesomeIcon icon={icon} className={iconClassName} />
+              <DynamicIcon icon={icon} className={iconClassName} />
             ) : null}
           </>
         )}
         {children}
         {loading && iconFlip ? (
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon className="animate-spin" />
         ) : (
           <>
             {icon && iconFlip ? (
-              <FontAwesomeIcon icon={icon} className={iconClassName} />
+              <DynamicIcon icon={icon} className={iconClassName} />
             ) : null}
           </>
         )}
@@ -104,21 +104,21 @@ export const Button = ({
         target={target}
       >
         {loading && !iconFlip ? (
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon className="animate-spin" />
         ) : (
           <>
             {icon && !iconFlip ? (
-              <FontAwesomeIcon icon={icon} className={iconClassName} />
+              <DynamicIcon icon={icon} className={iconClassName} />
             ) : null}
           </>
         )}
         {children}
         {loading && iconFlip ? (
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon className="animate-spin" />
         ) : (
           <>
             {icon && iconFlip ? (
-              <FontAwesomeIcon icon={icon} className={iconClassName} />
+              <DynamicIcon icon={icon} className={iconClassName} />
             ) : null}
           </>
         )}
@@ -133,21 +133,21 @@ export const Button = ({
       {...{ ...rest, htmlFor }}
     >
       {loading && !iconFlip ? (
-        <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+        <LoaderCircleIcon className="animate-spin" />
       ) : (
         <>
           {icon && !iconFlip ? (
-            <FontAwesomeIcon icon={icon} className={iconClassName} />
+            <DynamicIcon icon={icon} className={iconClassName} />
           ) : null}
         </>
       )}
       {children}
       {loading && iconFlip ? (
-        <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+        <LoaderCircleIcon className="animate-spin" />
       ) : (
         <>
           {icon && iconFlip ? (
-            <FontAwesomeIcon icon={icon} className={iconClassName} />
+            <DynamicIcon icon={icon} className={iconClassName} />
           ) : null}
         </>
       )}

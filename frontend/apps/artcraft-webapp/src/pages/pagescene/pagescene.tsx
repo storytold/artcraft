@@ -5,8 +5,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
+import { HouseIcon, MonitorIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { MediaFilesApi } from "@storyteller/api";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
@@ -388,7 +387,7 @@ function MobileGate() {
     <div className="flex h-full w-full items-center justify-center p-6">
       <div className="flex max-w-sm flex-col items-center gap-4 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/25 text-amber-300">
-          <FontAwesomeIcon icon={faDesktop} className="text-xl" />
+          <MonitorIcon  className="text-xl" />
         </div>
         <h1 className="text-xl font-semibold text-white">
           Edit 3D is desktop-only
@@ -399,7 +398,7 @@ function MobileGate() {
           laptop to start editing.
         </p>
         <Link to="/" className="mt-2">
-          <Button variant="primary" icon={faHouse}>
+          <Button variant="primary" icon={HouseIcon}>
             Back to home
           </Button>
         </Link>

@@ -1,17 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faArrowLeft,
-  faUpload,
-  faUserGroup,
-  faSpinnerThird,
-  faXmark,
-  faPen,
-  faTrashAlt,
-  faEye,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowLeftIcon, EyeIcon, LoaderCircleIcon, PenIcon, PlusIcon, Trash2Icon, UploadIcon, UsersIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import {
   CharactersApi,
@@ -370,7 +359,7 @@ const CharacterListView = ({
             className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/10 bg-white/[0.05] text-white/60 transition-colors hover:border-white/25 hover:text-white/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-              <FontAwesomeIcon icon={faPlus} className="text-lg" />
+              <PlusIcon  className="text-lg" />
               <span className="text-sm font-medium">Create New</span>
             </div>
           </button>
@@ -390,14 +379,13 @@ const CharacterListView = ({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-white/20">
-                    <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                    <UsersIcon  className="text-2xl" />
                   </div>
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="text-lg text-white/80 animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="text-lg text-white/80 animate-spin" />
                   <span className="text-xs font-medium text-white/80">
                     Creating...
                   </span>
@@ -433,10 +421,9 @@ const CharacterListView = ({
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-white/20">
-                        <FontAwesomeIcon
-                          icon={faUserGroup}
-                          className="text-2xl"
-                        />
+                        <UsersIcon
+                          
+                          className="text-2xl" />
                       </div>
                     )}
                   </div>
@@ -460,7 +447,7 @@ const CharacterListView = ({
                         title="View full size"
                         className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                       >
-                        <FontAwesomeIcon icon={faEye} className="text-[10px]" />
+                        <EyeIcon  className="text-[10px]" />
                       </button>
                     )}
                     {isUserCreated && (
@@ -472,10 +459,9 @@ const CharacterListView = ({
                           }}
                           className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                         >
-                          <FontAwesomeIcon
-                            icon={faPen}
-                            className="text-[10px]"
-                          />
+                          <PenIcon
+                            
+                            className="text-[10px]" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -484,10 +470,9 @@ const CharacterListView = ({
                           }}
                           className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                         >
-                          <FontAwesomeIcon
-                            icon={faTrashAlt}
-                            className="text-[10px]"
-                          />
+                          <Trash2Icon
+                            
+                            className="text-[10px]" />
                         </button>
                       </>
                     )}
@@ -616,7 +601,7 @@ const EditCharacterView = ({
             onClick={onBack}
             className="flex items-center justify-center text-white/60 transition-colors hover:text-white"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
           <h2 className="text-xl font-bold text-white">Edit Character</h2>
         </div>
@@ -865,7 +850,7 @@ const NewCharacterView = ({
             onClick={onBack}
             className="flex items-center justify-center text-white/60 transition-colors hover:text-white"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
           <h2 className="text-xl font-bold text-white">New Character</h2>
         </div>
@@ -895,10 +880,9 @@ const NewCharacterView = ({
               />
               {!images[0]!.mediaToken && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="text-white animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="text-white animate-spin" />
                 </div>
               )}
               <button
@@ -908,15 +892,14 @@ const NewCharacterView = ({
                 }}
                 className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
-                <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                <XIcon  className="text-sm" />
               </button>
             </div>
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
-              <FontAwesomeIcon
-                icon={faUpload}
-                className="mb-2 text-xl text-white/40"
-              />
+              <UploadIcon
+                
+                className="mb-2 text-xl text-white/40" />
               <p className="text-sm">Upload reference image</p>
               <p className="mb-3 text-xs text-white/40">
                 Click or drag an image here

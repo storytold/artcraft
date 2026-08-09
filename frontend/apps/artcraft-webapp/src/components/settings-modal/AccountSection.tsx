@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import { UsersApi, type UserInfo } from "@storyteller/api";
 import { refreshSession, updateSessionUser } from "../../lib/session";
 import { toast } from "../toast/toast";
@@ -516,7 +515,7 @@ function FormActions({
         disabled={submitting || disabled}
       >
         {submitting ? (
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon  className="animate-spin" />
         ) : (
           "Save"
         )}

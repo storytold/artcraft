@@ -1,10 +1,5 @@
 import { Button } from "@storyteller/ui-button";
-import {
-  faClockRotateLeft,
-  faTrashAlt,
-  faTrashXmark,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { HistoryIcon, Trash2Icon, XIcon } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { BaseSelectorImage, ImageBundle } from "./types";
@@ -13,7 +8,6 @@ import {
   isActionReminderOpen,
   showActionReminder,
 } from "@storyteller/ui-action-reminder-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export type { ImageBundle };
 
@@ -83,7 +77,7 @@ export const HistoryStack = ({
     showActionReminder({
       reminderType: "default",
       title: "Remove pending generation",
-      primaryActionIcon: faTrashXmark,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName: "bg-red hover:bg-red/80",
       message: (
         <>
@@ -168,10 +162,9 @@ export const HistoryStack = ({
     <div className="h-auto w-20 rounded-lg">
       <div className="glass rounded-lg p-1.5">
         <div className="mb-2 flex w-full items-center justify-center">
-          <FontAwesomeIcon
-            icon={faClockRotateLeft}
-            className="p-1 text-base-fg/50"
-          />
+          <HistoryIcon
+            
+            className="p-1 text-base-fg/50" />
         </div>
         <div
           ref={scrollRef}
@@ -266,10 +259,9 @@ export const HistoryStack = ({
                       className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <div className="flex items-center justify-center gap-1 rounded-lg bg-red/80 px-3 py-2 shadow-lg">
-                        <FontAwesomeIcon
-                          icon={faTrashAlt}
-                          className="text-base-fg text-base"
-                        />
+                        <Trash2Icon
+                          
+                          className="text-base-fg text-base" />
                         {tileCount > 1 && (
                           <span className="text-base-fg text-xs font-semibold">
                             ×{tileCount}
@@ -322,7 +314,7 @@ export const HistoryStack = ({
                         showActionReminder({
                           reminderType: "default",
                           title: "Remove Image",
-                          primaryActionIcon: faTrashXmark,
+                          primaryActionIcon: Trash2Icon,
                           primaryActionBtnClassName: "bg-red hover:bg-red/80",
                           message: (
                             <>
@@ -343,10 +335,9 @@ export const HistoryStack = ({
                         });
                       }}
                     >
-                      <FontAwesomeIcon
-                        icon={faTrashAlt}
-                        className="text-base-fg h-full w-full text-[13px]"
-                      />
+                      <Trash2Icon
+                        
+                        className="text-base-fg h-full w-full text-[13px]" />
                     </div>
                   </Button>
                 ))}
@@ -377,7 +368,7 @@ export const HistoryStack = ({
                   showActionReminder({
                     reminderType: "default",
                     title: "Reset All",
-                    primaryActionIcon: faTrashXmark,
+                    primaryActionIcon: Trash2Icon,
                     primaryActionBtnClassName: "bg-red hover:bg-red/80",
                     message: (
                       <p className="text-base-fg text-sm opacity-70">
@@ -393,7 +384,7 @@ export const HistoryStack = ({
                   })
                 }
               >
-                <FontAwesomeIcon icon={faXmark} className="h-5 w-5 text-xl" />
+                <XIcon  className="h-5 w-5 text-xl" />
               </button>
             </Tooltip>
           </div>

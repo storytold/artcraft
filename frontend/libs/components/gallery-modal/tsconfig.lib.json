@@ -84,6 +84,9 @@
     },
     {
       "path": "../modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

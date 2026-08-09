@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faTrashCan } from "@fortawesome/pro-regular-svg-icons";
+import { ChevronDownIcon, Trash2Icon } from "lucide-react";
 
 interface Props {
   name: string;
@@ -57,13 +56,12 @@ export const SectionHeader = ({
           onClick={onToggleCollapse}
           className="flex h-6 w-6 items-center justify-center rounded-md text-base-fg/45 transition-colors duration-150 hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <FontAwesomeIcon
-            icon={faChevronDown}
+          <ChevronDownIcon
+            
             className={[
               "h-3 w-3 transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
               collapsed ? "-rotate-90" : "rotate-0",
-            ].join(" ")}
-          />
+            ].join(" ")} />
         </button>
       ) : (
         <span className="h-6 w-1" />
@@ -111,7 +109,7 @@ export const SectionHeader = ({
           onClick={onDelete}
           className="flex h-7 w-7 items-center justify-center rounded-md text-base-fg/40 opacity-0 transition-all duration-150 hover:bg-danger/10 hover:text-danger focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-danger group-hover/section:opacity-100"
         >
-          <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
+          <Trash2Icon  className="h-3 w-3" />
         </button>
       )}
     </div>

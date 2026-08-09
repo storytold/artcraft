@@ -1,13 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBezierCurve,
-  faFilm,
-  faPlus,
-  faRepeat,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { FilmIcon, PlusIcon, RepeatIcon, SplineIcon, XIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
   addBakedClipToObject,
@@ -161,7 +154,7 @@ export const TimelineClipRow = ({
   return (
     <div className="flex items-center gap-3 py-0.5">
       <div className="flex w-32 shrink-0 items-center gap-2 truncate ps-6 text-xs text-base-fg/50">
-        <FontAwesomeIcon icon={faFilm} className="h-3 w-3 opacity-60" />
+        <FilmIcon  className="h-3 w-3 opacity-60" />
         <span className="truncate">Animation</span>
         {bakedClips && bakedClips.length > 0 && (
           <div className="shrink-0">
@@ -179,7 +172,7 @@ export const TimelineClipRow = ({
                 )
               }
             >
-              <FontAwesomeIcon icon={faPlus} className="h-2.5 w-2.5" />
+              <PlusIcon  className="h-2.5 w-2.5" />
             </button>
             {pickerAnchor &&
               ReactDOM.createPortal(
@@ -290,7 +283,7 @@ export const TimelineClipRow = ({
                   editor && setClipLoop(editor, lane.id, !strip.loop)
                 }
               >
-                <FontAwesomeIcon icon={faRepeat} className="h-2.5 w-2.5" />
+                <RepeatIcon  className="h-2.5 w-2.5" />
               </button>
 
               <span className="min-w-0 flex-1 truncate">{strip.name}</span>
@@ -312,7 +305,7 @@ export const TimelineClipRow = ({
                       .setTimelineSelectedClipLane(null);
                   }}
                 >
-                  <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                  <XIcon  className="h-2.5 w-2.5" />
                 </button>
               )}
 
@@ -366,7 +359,7 @@ export const TimelineClipRow = ({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => toggleTransition(lane)}
               >
-                <FontAwesomeIcon icon={faBezierCurve} className="h-2 w-2" />
+                <SplineIcon  className="h-2 w-2" />
               </button>
             );
           })}

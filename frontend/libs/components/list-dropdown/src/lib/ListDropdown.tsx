@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
-import { faCheck, faChevronDown } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 interface ListDropdownProps {
   list: { [key: string]: string }[];
@@ -20,7 +19,7 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
         <Listbox.Button className="relative h-10 w-full cursor-pointer rounded-md bg-brand-secondary py-2 pl-3 pr-10 text-left outline-none outline-offset-0 transition-all duration-150 ease-in-out focus:outline-brand-primary sm:text-sm">
           <span className="block truncate">{Object.keys(selected)[0]}</span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-            <FontAwesomeIcon icon={faChevronDown} aria-hidden="true" />
+            <ChevronDownIcon  aria-hidden="true" />
           </span>
         </Listbox.Button>
         <Transition
@@ -49,7 +48,7 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
                     </span>
                     {selected ? (
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
+                        <CheckIcon  aria-hidden="true" />
                       </span>
                     ) : null}
                   </>

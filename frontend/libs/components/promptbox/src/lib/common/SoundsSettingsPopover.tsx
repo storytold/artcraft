@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDrum } from "@fortawesome/pro-solid-svg-icons";
+import { DrumIcon } from "lucide-react";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 
@@ -62,7 +61,7 @@ export function SoundsSettingsPopover({
     <PopoverMenu
       mode="default"
       panelTitle="Beat & Key"
-      triggerIcon={<FontAwesomeIcon icon={faDrum} className="h-3.5 w-3.5" />}
+      triggerIcon={<DrumIcon  className="h-3.5 w-3.5" />}
       triggerLabel={triggerLabel || "Beat"}
     >
       <div className="w-60 space-y-3.5 pb-0.5">

@@ -17,8 +17,7 @@ import {
   getCreatorIcon,
   getModelFamilyName,
 } from "@storyteller/model-list";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleCheck, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
+import { ChevronUpIcon, CircleCheckIcon } from "lucide-react";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { defaultModelForPage } from "./defaultModelForPage";
@@ -120,7 +119,7 @@ function ProviderTooltipContent({
             </span>
             {selectedProvider === p && (
               <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center">
-                <FontAwesomeIcon icon={faCircleCheck} />
+                <CircleCheckIcon />
               </span>
             )}
           </button>
@@ -341,10 +340,9 @@ export function ClassyModelSelector({
                   </span>
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faChevronUp}
-                className="text-base text-base-fg/70 self-center"
-              />
+              <ChevronUpIcon
+                
+                className="text-base text-base-fg/70 self-center" />
             </div>
           );
         }}

@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlay,
-  faPause,
-  faVolumeHigh,
-  faVolumeMute,
-  faBackwardStep,
-  faForwardStep,
-  faChevronLeft,
-  faChevronRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { formatTime, formatTimePrecise } from "./lib/frame-actions";
 
@@ -227,13 +218,13 @@ export const VideoScrubber = ({
   const stepButtons: {
     label: string;
     tooltip: string;
-    icon: typeof faChevronLeft;
+    icon: typeof ChevronLeftIcon;
     delta: number;
   }[] = [
-    { label: "-1s", tooltip: "Back 1s (Shift+←)", icon: faBackwardStep, delta: -1 },
-    { label: "-1f", tooltip: "Back 1 frame (←)", icon: faChevronLeft, delta: -FRAME_STEP_SEC },
-    { label: "+1f", tooltip: "Forward 1 frame (→)", icon: faChevronRight, delta: FRAME_STEP_SEC },
-    { label: "+1s", tooltip: "Forward 1s (Shift+→)", icon: faForwardStep, delta: 1 },
+    { label: "-1s", tooltip: "Back 1s (Shift+←)", icon: SkipBackIcon, delta: -1 },
+    { label: "-1f", tooltip: "Back 1 frame (←)", icon: ChevronLeftIcon, delta: -FRAME_STEP_SEC },
+    { label: "+1f", tooltip: "Forward 1 frame (→)", icon: ChevronRightIcon, delta: FRAME_STEP_SEC },
+    { label: "+1s", tooltip: "Forward 1s (Shift+→)", icon: SkipForwardIcon, delta: 1 },
   ];
 
   return (
@@ -255,7 +246,7 @@ export const VideoScrubber = ({
             className="absolute inset-0 m-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover/scrubber:opacity-100"
             aria-label="Play"
           >
-            <FontAwesomeIcon icon={faPlay} className="ml-0.5" />
+            <PlayIcon  className="ml-0.5" />
           </button>
         )}
       </div>
@@ -301,7 +292,7 @@ export const VideoScrubber = ({
                   className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label={step.tooltip}
                 >
-                  <FontAwesomeIcon icon={step.icon} className="text-xs" />
+                  <DynamicIcon icon={step.icon} className="text-xs" />
                 </button>
               </Tooltip>
             ))}
@@ -311,7 +302,7 @@ export const VideoScrubber = ({
                 className="mx-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
                 aria-label="Play or pause"
               >
-                <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+                <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} />
               </button>
             </Tooltip>
             {stepButtons.slice(2).map((step) => (
@@ -321,7 +312,7 @@ export const VideoScrubber = ({
                   className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label={step.tooltip}
                 >
-                  <FontAwesomeIcon icon={step.icon} className="text-xs" />
+                  <DynamicIcon icon={step.icon} className="text-xs" />
                 </button>
               </Tooltip>
             ))}
@@ -334,8 +325,8 @@ export const VideoScrubber = ({
                 className="flex h-7 w-7 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label={isMuted ? "Unmute" : "Mute"}
               >
-                <FontAwesomeIcon
-                  icon={isMuted ? faVolumeMute : faVolumeHigh}
+                <DynamicIcon
+                  icon={isMuted ? VolumeXIcon : Volume2Icon}
                   className="text-xs"
                 />
               </button>

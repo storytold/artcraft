@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, LoaderCircleIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import {
   SelectionActionBar,
   useGallerySelectionStore,
@@ -88,8 +85,8 @@ export function GallerySelectionDownloadBar({
         disabled={isDownloading || selectedItems.length === 0}
         className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
       >
-        <FontAwesomeIcon
-          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+        <DynamicIcon
+          icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
           className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
         />
         {isDownloading && progress

@@ -1,11 +1,5 @@
-import {
-  faArrowLeft,
-  faEye,
-  faEyeSlash,
-  faSpinnerThird,
-  faCheckCircle,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowLeftIcon, CircleCheckIcon, EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
@@ -185,8 +179,8 @@ const VerifyReset = () => {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                     >
-                      <FontAwesomeIcon
-                        icon={showNewPassword ? faEyeSlash : faEye}
+                      <DynamicIcon
+                        icon={showNewPassword ? EyeOffIcon : EyeIcon}
                       />
                     </button>
                   </div>
@@ -219,8 +213,8 @@ const VerifyReset = () => {
                       }
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                     >
-                      <FontAwesomeIcon
-                        icon={showConfirmPassword ? faEyeSlash : faEye}
+                      <DynamicIcon
+                        icon={showConfirmPassword ? EyeOffIcon : EyeIcon}
                       />
                     </button>
                   </div>
@@ -239,10 +233,9 @@ const VerifyReset = () => {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <FontAwesomeIcon
-                        icon={faSpinnerThird}
-                        className="animate-spin"
-                      />
+                      <LoaderCircleIcon
+                        
+                        className="animate-spin" />
                     ) : (
                       "Change Password"
                     )}
@@ -255,7 +248,7 @@ const VerifyReset = () => {
                   to="/forgot-password"
                   className="text-white/40 hover:text-white transition-colors flex items-center justify-center gap-2"
                 >
-                  <FontAwesomeIcon icon={faArrowLeft} /> Request a new code
+                  <ArrowLeftIcon /> Request a new code
                 </Link>
               </div>
             </>
@@ -263,7 +256,7 @@ const VerifyReset = () => {
             <>
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
-                  <FontAwesomeIcon icon={faCheckCircle} className="text-2xl" />
+                  <CircleCheckIcon  className="text-2xl" />
                 </div>
                 <h3 className="text-xl font-medium mb-2">
                   Password Reset Successfully

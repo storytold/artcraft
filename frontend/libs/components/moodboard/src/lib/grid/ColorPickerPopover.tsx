@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { HexColorPicker, HexColorInput } from "react-colorful";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPalette } from "@fortawesome/pro-regular-svg-icons";
+import { PaletteIcon } from "lucide-react";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -24,11 +23,10 @@ export const ColorPickerPopover = ({ onAdd }: Props) => (
       panelTitle="Add a color"
       panelClassName="w-60"
       triggerIcon={
-        <FontAwesomeIcon
-          icon={faPalette}
+        <PaletteIcon
+          
           className="h-4 w-4"
-          aria-label="Add color"
-        />
+          aria-label="Add color" />
       }
       buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-transparent p-0 text-base-fg/80 shadow-none hover:bg-base-fg/10 hover:text-base-fg"
     >

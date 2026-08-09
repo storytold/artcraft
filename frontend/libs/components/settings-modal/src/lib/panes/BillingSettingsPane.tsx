@@ -1,12 +1,7 @@
 import { useEffect } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Label } from "@storyteller/ui-label";
-import {
-  faCoins,
-  faInfoCircle,
-  faStar,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CoinsIcon, InfoIcon, StarIcon } from "lucide-react";
 import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsState, CreditsState } from "@storyteller/credits";
@@ -68,10 +63,9 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
           <Label>Current ArtCraft Plan</Label>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xl font-semibold ">
-              <FontAwesomeIcon
-                icon={faStar}
-                className="text-[#C03FFF] text-lg"
-              />
+              <StarIcon
+                
+                className="text-[#C03FFF] text-lg" />
               {currentPlanDetails.name}
             </div>
             <div className="flex gap-2">
@@ -90,7 +84,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
         {/* TODO(bt): expose this information via API
         <div className="flex items-center gap-2 text-white/50">
-          <FontAwesomeIcon icon={faInfoCircle} />
+          <InfoIcon />
           Next {billingInfo.nextPayment.amount} payment due{" "}
           {billingInfo.nextPayment.date}
         </div>
@@ -98,14 +92,14 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
         {subscriptionEndAt && (
           <div className="flex items-center gap-2 text-white/50">
-            <FontAwesomeIcon icon={faInfoCircle} />
+            <InfoIcon />
             Subscription ends on {subscriptionEndAt}
           </div>
         )}
 
         {nextBillAt && (
           <div className="flex items-center gap-2 text-white/50">
-            <FontAwesomeIcon icon={faInfoCircle} />
+            <InfoIcon />
             Next payment on {nextBillAt}
           </div>
         )}
@@ -118,10 +112,9 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
           </Label>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                icon={faCoins}
-                className="text-primary text-lg"
-              />
+              <CoinsIcon
+                
+                className="text-primary text-lg" />
               <span className="text-2xl font-bold">{sumTotalCredits}</span>
             </div>
             <div className="flex gap-2">

@@ -8,13 +8,8 @@
 //   - start from a blank canvas   → BlankCanvasModal (from the lib)
 
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faExpand,
-  faImages,
-  faPencil,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ImagesIcon, LoaderCircleIcon, MaximizeIcon, PencilIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { UploaderStates } from "@storyteller/common";
 import { MediaFilesApi } from "@storyteller/api";
 import {
@@ -160,8 +155,8 @@ export function BaseImageSelector({
           disabled={busy}
         />
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary-400/30 bg-primary/30 text-primary-300">
-          <FontAwesomeIcon
-            icon={busy ? faSpinnerThird : faPencil}
+          <DynamicIcon
+            icon={busy ? LoaderCircleIcon : PencilIcon}
             className={`text-xl ${busy ? "animate-spin" : ""}`}
           />
         </div>
@@ -181,7 +176,7 @@ export function BaseImageSelector({
             disabled={busy}
             className="flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-2 text-sm font-medium text-base-fg transition-colors hover:bg-ui-controls/80"
           >
-            <FontAwesomeIcon icon={faImages} />
+            <ImagesIcon />
             Pick from Library
           </button>
           <button
@@ -193,7 +188,7 @@ export function BaseImageSelector({
             disabled={busy}
             className="flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-2 text-sm font-medium text-base-fg transition-colors hover:bg-ui-controls/80"
           >
-            <FontAwesomeIcon icon={faExpand} />
+            <MaximizeIcon />
             Blank Canvas
           </button>
         </div>

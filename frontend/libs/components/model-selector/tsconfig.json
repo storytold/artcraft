@@ -6,13 +6,13 @@
       "path": "../../tauri-utils"
     },
     {
-      "path": "../popover"
-    },
-    {
       "path": "../tooltip"
     },
     {
       "path": "../../tauri-api"
+    },
+    {
+      "path": "../popover"
     },
     {
       "path": "../../api-enums"

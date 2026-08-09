@@ -10,19 +10,8 @@ import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRight,
-  faCamera,
-  faClock,
-  faFilm,
-  faLayerGroup,
-  faPaintBrush,
-  faPlay,
-  faSpinnerThird,
-  faWaveformLines,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowRightIcon, AudioLinesIcon, CameraIcon, ClockIcon, FilmIcon, LayersIcon, LoaderCircleIcon, PaintbrushIcon, PlayIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { useOmniGenVideoModels } from "@storyteller/omni-gen";
 import {
@@ -130,37 +119,37 @@ const SAMPLE_PROMPTS: ReadonlyArray<string> = [
 ];
 
 const HIGHLIGHTS: ReadonlyArray<{
-  icon: typeof faCamera;
+  icon: typeof CameraIcon;
   title: string;
   body: string;
 }> = [
   {
-    icon: faCamera,
+    icon: CameraIcon,
     title: "Native 2K",
     body: "Sharp 2K output by default, with a faster 768p mode when you want quick drafts.",
   },
   {
-    icon: faClock,
+    icon: ClockIcon,
     title: "Up to 15 seconds",
     body: "Enough room for an actual beat: setup, action, payoff, instead of a four-second loop.",
   },
   {
-    icon: faWaveformLines,
+    icon: AudioLinesIcon,
     title: "Stereo sound built in",
     body: "Audio is generated together with the picture, so ambience and effects land in sync.",
   },
   {
-    icon: faLayerGroup,
+    icon: LayersIcon,
     title: "Truly multimodal",
     body: "One model that understands text, images, video, and audio as unified input.",
   },
   {
-    icon: faPaintBrush,
+    icon: PaintbrushIcon,
     title: "Text that reads",
     body: "Unusually accurate text and logo rendering for signs, packaging, and title cards.",
   },
   {
-    icon: faFilm,
+    icon: FilmIcon,
     title: "Multi-shot scenes",
     body: "Holds characters and style across cuts for short sequences, not just single shots.",
   },
@@ -709,10 +698,9 @@ const LandingMinimaxH3 = () => {
                         mode="default"
                         panelTitle="Duration"
                         triggerIcon={
-                          <FontAwesomeIcon
-                            icon={faClock}
-                            className="h-3.5 w-3.5"
-                          />
+                          <ClockIcon
+                            
+                            className="h-3.5 w-3.5" />
                         }
                         triggerLabel={`${effectiveDuration}s`}
                       >
@@ -750,8 +738,8 @@ const LandingMinimaxH3 = () => {
                     >
                       <ToggleButton
                         isActive={generateWithSound}
-                        icon={faWaveformLines}
-                        activeIcon={faWaveformLines}
+                        icon={AudioLinesIcon}
+                        activeIcon={AudioLinesIcon}
                         onClick={() => setGenerateWithSound((v) => !v)}
                         className={
                           generateWithSound
@@ -852,7 +840,7 @@ const LandingMinimaxH3 = () => {
                 className="rounded-2xl border border-white/[0.08] bg-[#080808] p-6 sm:rounded-[24px]"
               >
                 <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/15 text-primary">
-                  <FontAwesomeIcon icon={item.icon} className="text-[15px]" />
+                  <DynamicIcon icon={item.icon} className="text-[15px]" />
                 </span>
                 <h3 className="mb-2 text-lg font-medium tracking-[-0.01em] text-white">
                   {item.title}
@@ -960,10 +948,9 @@ const LandingMinimaxH3 = () => {
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left text-base font-medium text-white sm:text-lg [&::-webkit-details-marker]:hidden">
                   {item.question}
-                  <FontAwesomeIcon
-                    icon={faPlay}
-                    className="shrink-0 rotate-90 text-[12px] text-white/40 transition-transform duration-300 group-open:rotate-[270deg]"
-                  />
+                  <PlayIcon
+                    
+                    className="shrink-0 rotate-90 text-[12px] text-white/40 transition-transform duration-300 group-open:rotate-[270deg]" />
                 </summary>
                 <div className="-mt-1 px-6 pb-5 text-[15px] leading-relaxed text-white/55 sm:text-base">
                   {item.answer}
@@ -994,7 +981,7 @@ const LandingMinimaxH3 = () => {
               className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[14px] font-semibold text-white shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] transition-all hover:-translate-y-px hover:bg-primary-600 hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)]"
             >
               Try more models
-              <FontAwesomeIcon icon={faArrowRight} className="text-[12px]" />
+              <ArrowRightIcon  className="text-[12px]" />
             </a>
             <Link
               to="/"
@@ -1067,7 +1054,7 @@ const HeroGenerationCard = ({
           className="shrink-0 text-white/40 transition-colors hover:text-white"
           aria-label="Dismiss"
         >
-          <FontAwesomeIcon icon={faXmark} />
+          <XIcon />
         </button>
       </div>
     );
@@ -1075,10 +1062,9 @@ const HeroGenerationCard = ({
 
   return (
     <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.08] bg-[#080808] px-6 text-center">
-      <FontAwesomeIcon
-        icon={faSpinnerThird}
-        className="animate-spin text-xl text-primary"
-      />
+      <LoaderCircleIcon
+        
+        className="animate-spin text-xl text-primary" />
       <p
         className="max-w-md truncate text-sm text-white/60"
         title={generation.prompt}
@@ -1100,7 +1086,7 @@ const HeroGenerationCard = ({
         className="mt-1 inline-flex h-9 items-center gap-2 rounded-full border border-white/15 px-4 text-[13px] font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white"
       >
         Keep creating in the app while you wait
-        <FontAwesomeIcon icon={faArrowRight} className="text-[11px]" />
+        <ArrowRightIcon  className="text-[11px]" />
       </a>
       <p className="text-[11px] text-white/25">
         Opens in a new tab, so your generation keeps going here.
@@ -1152,10 +1138,9 @@ const ExampleVideoCard = ({ example }: { example: ExampleVideo }) => {
               className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/15"
             />
             <span className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/40 backdrop-blur-sm transition-all group-hover:scale-105 group-hover:bg-black/55">
-              <FontAwesomeIcon
-                icon={faPlay}
-                className="ml-0.5 text-base text-white"
-              />
+              <PlayIcon
+                
+                className="ml-0.5 text-base text-white" />
             </span>
           </button>
         )}

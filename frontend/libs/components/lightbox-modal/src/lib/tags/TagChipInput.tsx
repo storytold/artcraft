@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTag, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { TagIcon, XIcon } from "lucide-react";
 
 export interface TagSuggestion {
   value: string;
@@ -150,7 +149,7 @@ export function TagChipInput({
         {chips.map((value) =>
           disabled ? (
             <span key={value.toLowerCase()} className={chipClass(value)}>
-              <FontAwesomeIcon icon={faTag} className="h-2.5 w-2.5 text-base-fg/40" />
+              <TagIcon  className="h-2.5 w-2.5 text-base-fg/40" />
               {value}
             </span>
           ) : (
@@ -165,7 +164,7 @@ export function TagChipInput({
               className={`group/tag ${chipClass(value)} hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red`}
             >
               {value}
-              <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+              <XIcon  className="h-2.5 w-2.5" />
             </button>
           ),
         )}
@@ -208,7 +207,7 @@ export function TagChipInput({
                 highlight === index ? "bg-ui-controls/60" : "hover:bg-ui-controls/40"
               }`}
             >
-              <FontAwesomeIcon icon={faTag} className="text-[10px] text-base-fg/40" />
+              <TagIcon  className="text-[10px] text-base-fg/40" />
               <span className="truncate">{suggestion.value}</span>
               <span className="ml-auto text-[11px] text-base-fg/40">
                 {suggestion.useCount}

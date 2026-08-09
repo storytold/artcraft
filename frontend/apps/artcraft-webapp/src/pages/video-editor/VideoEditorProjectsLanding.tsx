@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSparkles,
-  faTriangleExclamation,
-} from "@fortawesome/pro-solid-svg-icons";
+import { SparklesIcon, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { FolderNameDialog } from "@storyteller/ui-gallery-modal";
 import {
@@ -195,7 +191,7 @@ export function VideoEditorProjectsLanding({
             </p>
             <Button
               variant="primary"
-              icon={faSparkles}
+              icon={SparklesIcon}
               onClick={onNewProject}
               className="mt-8 h-12 rounded-full px-6 text-base font-semibold"
             >
@@ -206,10 +202,9 @@ export function VideoEditorProjectsLanding({
 
         {status === "error" && (
           <div className="flex flex-col items-center justify-center gap-4 py-28 text-center">
-            <FontAwesomeIcon
-              icon={faTriangleExclamation}
-              className="text-3xl text-white/30"
-            />
+            <TriangleAlertIcon
+              
+              className="text-3xl text-white/30" />
             <div>
               <div className="text-lg font-medium">
                 Couldn't load your projects

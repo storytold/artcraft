@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { faImage } from "@fortawesome/pro-solid-svg-icons";
+import { ImageIcon } from "lucide-react";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
@@ -414,7 +414,7 @@ export default function CreateImage() {
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
       isLoggedIn={!!user}
-      heroIcon={faImage}
+      heroIcon={ImageIcon}
       heroTitle="Create Image"
       heroSubtitle="Sign in to generate stunning AI images with multiple models"
       hasContent={hasContent}

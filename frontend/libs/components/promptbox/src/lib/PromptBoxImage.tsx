@@ -6,12 +6,8 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateImage, GenerateImageRequest } from "@storyteller/tauri-api";
-import {
-  faExpand,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { ImageModel } from "@storyteller/model-list";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { UploadMediaFn } from "@storyteller/api";
@@ -245,17 +241,17 @@ export const PromptBoxImage = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -546,7 +542,7 @@ export const PromptBoxImage = ({
                       panelTitle="Resolution"
                       showIconsInList
                       triggerIcon={
-                        <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                        <MaximizeIcon  className="h-4 w-4" />
                       }
                     />
                   </Tooltip>
@@ -591,8 +587,8 @@ export const PromptBoxImage = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>

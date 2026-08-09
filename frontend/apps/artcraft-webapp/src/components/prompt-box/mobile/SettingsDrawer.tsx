@@ -1,6 +1,5 @@
 import { useRef, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { XIcon } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -73,7 +72,7 @@ export function SettingsDrawer({
           onClick={() => onOpenChange(false)}
           className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
         >
-          <FontAwesomeIcon icon={faXmark} className="text-sm" />
+          <XIcon  className="text-sm" />
         </button>
         {/* Drag zone: the handle pill + header pull the sheet down; past the
             threshold, releasing dismisses. `touch-none` keeps the browser

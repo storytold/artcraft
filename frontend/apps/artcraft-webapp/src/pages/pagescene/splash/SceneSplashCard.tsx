@@ -7,8 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/pro-solid-svg-icons";
+import { PlusIcon } from "lucide-react";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 
 interface BlankCardProps {
@@ -55,7 +54,7 @@ function CardThumbnail(props: SceneSplashCardProps) {
     return (
       <div className="flex aspect-video items-center justify-center bg-white/[0.02]">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/55 transition-colors group-hover:bg-primary/15 group-hover:text-primary">
-          <FontAwesomeIcon icon={faPlus} className="text-sm" />
+          <PlusIcon  className="text-sm" />
         </div>
       </div>
     );

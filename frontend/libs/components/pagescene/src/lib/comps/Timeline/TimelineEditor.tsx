@@ -1,14 +1,6 @@
 import { useContext, useEffect, useRef } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlay,
-  faPause,
-  faBackwardStep,
-  faCrosshairs,
-  faForwardStep,
-  faChevronDown,
-  faTrash,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, CrosshairIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, TrashIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
@@ -362,15 +354,15 @@ export const TimelineEditor = () => {
           onClick={() => editor && seekTimeline(editor, 0)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faBackwardStep} className="h-3.5 w-3.5" />
+          <SkipBackIcon  className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={togglePlay}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/90 hover:bg-white/10"
         >
-          <FontAwesomeIcon
-            icon={isPlaying ? faPause : faPlay}
+          <DynamicIcon
+            icon={isPlaying ? PauseIcon : PlayIcon}
             className="h-3.5 w-3.5"
           />
         </button>
@@ -380,7 +372,7 @@ export const TimelineEditor = () => {
           onClick={() => editor && seekTimeline(editor, duration)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faForwardStep} className="h-3.5 w-3.5" />
+          <SkipForwardIcon  className="h-3.5 w-3.5" />
         </button>
         <span className="ml-2 tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
@@ -407,7 +399,7 @@ export const TimelineEditor = () => {
                   : "text-base-fg/60 hover:bg-white/10"
               }`}
             >
-              <FontAwesomeIcon icon={faCrosshairs} className="h-3.5 w-3.5" />
+              <CrosshairIcon  className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
         </div>
@@ -417,7 +409,7 @@ export const TimelineEditor = () => {
           onClick={() => setExpanded(false)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+          <ChevronDownIcon  className="h-3 w-3" />
         </button>
       </div>
 
@@ -619,7 +611,7 @@ export const TimelineEditor = () => {
             <div data-keyframe-delete>
               <Button
                 variant="secondary"
-                icon={faTrash}
+                icon={TrashIcon}
                 className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg hover:bg-ui-controls/90"
                 onClick={() =>
                   editor && deleteKeyframe(editor, selectedKeyframe.id)

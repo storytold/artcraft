@@ -17,8 +17,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencil, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon, PencilIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { MediaFilesApi } from "@storyteller/api";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
@@ -125,10 +124,9 @@ export function ActiveSceneTitle() {
               className="flex min-w-0 max-w-[280px] items-center rounded-lg border border-transparent px-3 py-1.5 text-sm font-semibold text-white transition-all hover:cursor-text hover:bg-white/[0.08]"
             >
               <span className="truncate">{title}</span>
-              <FontAwesomeIcon
-                icon={faPencil}
-                className="ml-2 shrink-0 text-sm opacity-50"
-              />
+              <PencilIcon
+                
+                className="ml-2 shrink-0 text-sm opacity-50" />
             </button>
           ) : (
             <div className="max-w-[280px] truncate rounded-lg border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
@@ -167,11 +165,10 @@ export function ActiveSceneTitle() {
       )}
 
       {isSubmitting && (
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
+        <LoaderCircleIcon
+          
           spin
-          className="shrink-0 text-sm opacity-70"
-        />
+          className="shrink-0 text-sm opacity-70" />
       )}
     </div>
   );

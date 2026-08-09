@@ -1,13 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTiktok,
-  faDiscord,
-  faYoutube,
-  faGithubAlt,
-  faLinkedinIn,
-  faInstagram,
-  faRedditAlien,
-} from "@fortawesome/free-brands-svg-icons";
+import { DiscordIcon, GithubAltIcon, InstagramIcon, LinkedinInIcon, RedditAlienIcon, TiktokIcon, YoutubeIcon } from "@storyteller/icons";
 import {
   SOCIAL_LINKS,
   USE_WEBAPP_FOR_APP_FEATURES,
@@ -28,37 +19,37 @@ const navigation = {
     {
       name: "Discord",
       href: SOCIAL_LINKS.DISCORD,
-      icon: (props: any) => <FontAwesomeIcon icon={faDiscord} {...props} />,
+      icon: (props: any) => <DiscordIcon  {...props} />,
     },
     {
       name: "YouTube",
       href: SOCIAL_LINKS.YOUTUBE,
-      icon: (props: any) => <FontAwesomeIcon icon={faYoutube} {...props} />,
+      icon: (props: any) => <YoutubeIcon  {...props} />,
     },
     {
       name: "TikTok",
       href: SOCIAL_LINKS.TIKTOK,
-      icon: (props: any) => <FontAwesomeIcon icon={faTiktok} {...props} />,
+      icon: (props: any) => <TiktokIcon  {...props} />,
     },
     {
       name: "GitHub",
       href: SOCIAL_LINKS.GITHUB,
-      icon: (props: any) => <FontAwesomeIcon icon={faGithubAlt} {...props} />,
+      icon: (props: any) => <GithubAltIcon  {...props} />,
     },
     {
       name: "Instagram",
       href: SOCIAL_LINKS.INSTAGRAM,
-      icon: (props: any) => <FontAwesomeIcon icon={faInstagram} {...props} />,
+      icon: (props: any) => <InstagramIcon  {...props} />,
     },
     {
       name: "LinkedIn",
       href: SOCIAL_LINKS.LINKEDIN,
-      icon: (props: any) => <FontAwesomeIcon icon={faLinkedinIn} {...props} />,
+      icon: (props: any) => <LinkedinInIcon  {...props} />,
     },
     {
       name: "Reddit",
       href: SOCIAL_LINKS.REDDIT,
-      icon: (props: any) => <FontAwesomeIcon icon={faRedditAlien} {...props} />,
+      icon: (props: any) => <RedditAlienIcon  {...props} />,
     },
   ],
 };
@@ -68,7 +59,7 @@ export default function Example() {
     <footer className="bg-transparent z-20">
       <div className="mx-auto max-w-7xl overflow-hidden px-4 sm:px-6 py-16 sm:py-16 lg:px-8 flex flex-col gap-12 items-center">
         {/* <Button
-          icon={faArrowDownToLine}
+          icon={ArrowDownToLineIcon}
           className="w-fit"
           onClick={() => window.open("/download", "_self")}
         >

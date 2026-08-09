@@ -1,6 +1,5 @@
 import { useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRightToBracket } from "@fortawesome/pro-solid-svg-icons";
+import { LogInIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { usePageSceneStore } from "../../PageSceneStore";
 
@@ -24,7 +23,7 @@ export const AnonHintChip = () => {
       onClick={handleClick}
       className="glass flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/80 shadow-md transition-colors hover:bg-ui-controls/100 hover:text-white"
     >
-      <FontAwesomeIcon icon={faArrowRightToBracket} className="opacity-70" />
+      <LogInIcon  className="opacity-70" />
       Sign up to save
     </button>
   );

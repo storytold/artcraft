@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { faArrowRotateRight } from "@fortawesome/pro-solid-svg-icons";
+import { RotateCwIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { MediaFilesApi } from "@storyteller/api";
@@ -450,7 +450,7 @@ export default function FrameExtractor() {
             {source && (
               <Button
                 variant="action"
-                icon={faArrowRotateRight}
+                icon={RotateCwIcon}
                 onClick={clearSource}
                 className="px-3 py-1.5 text-sm"
               >

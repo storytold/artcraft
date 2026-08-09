@@ -9,6 +9,9 @@
       "path": "../close-button"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

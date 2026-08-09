@@ -1,12 +1,7 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  faSearch,
-  faLayerGroup,
-  faPersonRunning,
-  faUpFromLine,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowUpFromLineIcon, FootprintsIcon, LayersIcon, SearchIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { Input } from "@storyteller/ui-input";
@@ -34,7 +29,7 @@ type AnimationsTabId = "all" | "presets" | "uploaded";
 type AnimationsTab = {
   id: AnimationsTabId;
   label: string;
-  icon: typeof faLayerGroup;
+  icon: typeof LayersIcon;
   items: MediaItem[];
 };
 
@@ -134,17 +129,17 @@ export const AnimationsModal = () => {
 
   const tabs = useMemo<AnimationsTab[]>(
     () => [
-      { id: "all", label: "All", icon: faLayerGroup, items: allAnimations },
+      { id: "all", label: "All", icon: LayersIcon, items: allAnimations },
       {
         id: "presets",
         label: "Presets",
-        icon: faPersonRunning,
+        icon: FootprintsIcon,
         items: defaultAnimations,
       },
       {
         id: "uploaded",
         label: "Uploaded",
-        icon: faUpFromLine,
+        icon: ArrowUpFromLineIcon,
         items: userAnimations,
       },
     ],
@@ -184,7 +179,7 @@ export const AnimationsModal = () => {
           </p>
           <Button
             variant="primary"
-            icon={faUpFromLine}
+            icon={ArrowUpFromLineIcon}
             className="mt-3"
             onClick={handleOpenUpload}
           >
@@ -251,7 +246,7 @@ export const AnimationsModal = () => {
                   )}
                   onClick={() => setActiveTab(tab.id)}
                 >
-                  <FontAwesomeIcon
+                  <DynamicIcon
                     icon={tab.icon}
                     className="mr-2 opacity-70"
                   />
@@ -262,7 +257,7 @@ export const AnimationsModal = () => {
             <div className="mt-auto flex flex-col gap-3 pt-3">
               <Button
                 variant="secondary"
-                icon={faUpFromLine}
+                icon={ArrowUpFromLineIcon}
                 iconClassName="opacity-70"
                 className="w-full justify-center rounded-xl border border-white/10 bg-white/[6%] px-3.5 py-2.5 hover:bg-white/15"
                 onClick={handleOpenUpload}
@@ -287,7 +282,7 @@ export const AnimationsModal = () => {
                       placeholder="Search animations"
                       className="relative z-[51] grow"
                       inputClassName="pr-2.5"
-                      icon={faSearch}
+                      icon={SearchIcon}
                       value={searchTerm}
                       onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         setSearchTerm(e.target.value)
@@ -323,7 +318,7 @@ export const AnimationsModal = () => {
           onClose: () => setIsUploadModalOpen(false),
           onSuccess: handleUploadSuccess,
           title: "Upload Animation",
-          titleIcon: faUpFromLine,
+          titleIcon: ArrowUpFromLineIcon,
           initialCategory: "animation",
         })}
     </>

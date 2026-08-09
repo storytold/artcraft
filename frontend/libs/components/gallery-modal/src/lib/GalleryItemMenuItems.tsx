@@ -1,15 +1,5 @@
 import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEye,
-  faPencil,
-  faTrashCan,
-  faFolderPlus,
-  faFolderMinus,
-  faChevronRight,
-  faFolder,
-  faPlus,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronRightIcon, EyeIcon, FolderIcon, FolderMinusIcon, FolderPlusIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { GalleryItem } from "./gallery-modal";
 import { GalleryFolder } from "./GalleryDraggableItem";
@@ -70,7 +60,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             onOpen();
           }}
         >
-          <FontAwesomeIcon icon={faEye} className="text-base-fg w-4" />
+          <EyeIcon  className="text-base-fg w-4" />
           <span>
             {item.mediaClass === "video"
               ? "View video"
@@ -95,7 +85,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             close();
           }}
         >
-          <FontAwesomeIcon icon={faPencil} className="text-base-fg w-4" />
+          <PencilIcon  className="text-base-fg w-4" />
           <span>Edit image</span>
         </button>
       )}
@@ -120,16 +110,15 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             }}
           >
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faFolderPlus} className="text-base-fg w-4" />
+              <FolderPlusIcon  className="text-base-fg w-4" />
               <span>Add to Folder</span>
             </div>
-            <FontAwesomeIcon
-              icon={faChevronRight}
+            <ChevronRightIcon
+              
               className={twMerge(
                 "text-[10px] text-base-fg/50 transition-transform",
                 COARSE_POINTER && folderSubmenuOpen && "rotate-90",
-              )}
-            />
+              )} />
           </button>
           {folderSubmenuOpen &&
             (COARSE_POINTER ? (
@@ -176,7 +165,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             close();
           }}
         >
-          <FontAwesomeIcon icon={faFolderMinus} className="text-base-fg w-4" />
+          <FolderMinusIcon  className="text-base-fg w-4" />
           <span>Remove from folder</span>
         </button>
       )}
@@ -191,7 +180,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             onDelete();
           }}
         >
-          <FontAwesomeIcon icon={faTrashCan} className="text-red w-4" />
+          <Trash2Icon  className="text-red w-4" />
           <span className="text-red">Delete</span>
         </button>
       )}
@@ -227,11 +216,10 @@ const FolderList = ({
           closeAll();
         }}
       >
-        <FontAwesomeIcon
-          icon={faFolder}
+        <FolderIcon
+          
           className={folder.colorCode ? "text-xs" : "text-primary text-xs"}
-          style={folder.colorCode ? { color: folder.colorCode } : undefined}
-        />
+          style={folder.colorCode ? { color: folder.colorCode } : undefined} />
         <span className="truncate">{folder.name}</span>
       </button>
     ))}
@@ -247,7 +235,7 @@ const FolderList = ({
         onCreateFolderFromMenu?.();
       }}
     >
-      <FontAwesomeIcon icon={faPlus} className="text-xs w-4" />
+      <PlusIcon  className="text-xs w-4" />
       <span>New Folder</span>
     </button>
   </>

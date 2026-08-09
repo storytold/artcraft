@@ -1,17 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlay,
-  faPause,
-  faVolumeHigh,
-  faVolumeMute,
-  faImages,
-  faStepBackward,
-  faStepForward,
-  faArrowRotateRight,
-  faDroplet,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { DropletIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SkipBackIcon, SkipForwardIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
@@ -227,7 +216,7 @@ export const VideoWatermarkRemover = () => {
               <div className="w-full max-w-5xl">
                 <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <UploadEntryCard
-                    icon={faDroplet}
+                    icon={DropletIcon}
                     title="Remove Video Watermark"
                     description="Clean up your videos by removing unwanted watermarks. Upload your video and let AI do the magic."
                     accentBackgroundClass="bg-cyan-500/40"
@@ -236,7 +225,7 @@ export const VideoWatermarkRemover = () => {
                     onFilesSelected={handleLocalVideoSelect}
                     primaryLabel="Select Video"
                     secondaryLabel="Pick from Library"
-                    secondaryIcon={faImages}
+                    secondaryIcon={ImagesIcon}
                     onSecondaryClick={() => setIsGalleryModalOpen(true)}
                   />
                 </div>
@@ -246,7 +235,7 @@ export const VideoWatermarkRemover = () => {
                 <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <div className="relative aspect-video w-full bg-black">
                     <Button
-                      icon={faArrowRotateRight}
+                      icon={RotateCwIcon}
                       variant="action"
                       onClick={() => {
                         setVideoUrl("");
@@ -284,17 +273,16 @@ export const VideoWatermarkRemover = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                             title="First Frame"
                           >
-                            <FontAwesomeIcon
-                              icon={faStepBackward}
-                              className="text-sm text-white"
-                            />
+                            <SkipBackIcon
+                              
+                              className="text-sm text-white" />
                           </button>
                           <button
                             onClick={togglePlayPause}
                             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
                           >
-                            <FontAwesomeIcon
-                              icon={isPlaying ? faPause : faPlay}
+                            <DynamicIcon
+                              icon={isPlaying ? PauseIcon : PlayIcon}
                               className="text-white"
                             />
                           </button>
@@ -303,18 +291,17 @@ export const VideoWatermarkRemover = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                             title="Last Frame"
                           >
-                            <FontAwesomeIcon
-                              icon={faStepForward}
-                              className="text-sm text-white"
-                            />
+                            <SkipForwardIcon
+                              
+                              className="text-sm text-white" />
                           </button>
                           <div className="mx-1 h-6 w-px bg-white/20" />
                           <button
                             onClick={toggleMute}
                             className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                           >
-                            <FontAwesomeIcon
-                              icon={isMuted ? faVolumeMute : faVolumeHigh}
+                            <DynamicIcon
+                              icon={isMuted ? VolumeXIcon : Volume2Icon}
                               className="text-sm text-white"
                             />
                           </button>
@@ -341,7 +328,7 @@ export const VideoWatermarkRemover = () => {
                 <div className="flex justify-center">
                   <Button
                     variant="primary"
-                    icon={isProcessing ? undefined : faDroplet}
+                    icon={isProcessing ? undefined : DropletIcon}
                     loading={isProcessing}
                     onClick={handleRemoveWatermark}
                     className="px-12 py-3 text-lg font-semibold"
@@ -354,10 +341,9 @@ export const VideoWatermarkRemover = () => {
                 <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
                   <div>
                     <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
-                      <FontAwesomeIcon
-                        icon={faVideo}
-                        className="text-primary"
-                      />
+                      <VideoIcon
+                        
+                        className="text-primary" />
                       Video Information
                     </div>
                     <div className="space-y-3 text-sm">
