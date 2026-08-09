@@ -5,11 +5,10 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p5_ultra_usd_cents;
 use crate::generate::generate_video::providers::artcraft::seedance_2p5_u::request::ArtcraftSeedance2p5UltraRequestState;
 
-/// Seedance 2.5 Ultra pricing has the same structure as Seedance 2.5 (at
-/// higher rates): it depends on the resolution, the output duration, and —
-/// when reference videos are attached — the total seconds of reference video
-/// input, which are billed on top of the output duration (at a lower
-/// per-second rate). Input seconds are clamped to
+/// Seedance 2.5 Ultra pricing depends on the resolution, the output
+/// duration, and — when reference videos are attached — the total seconds of
+/// reference video input, which are billed on top of the output duration (at
+/// a lower per-second rate). Input seconds are clamped to
 /// [`MAX_BILLED_INPUT_SECONDS`] — the model accepts at most 30 seconds of
 /// video. No batching.
 pub struct ArtcraftSeedance2p5UltraCostState {

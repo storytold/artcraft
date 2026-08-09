@@ -95,8 +95,6 @@ pub enum RouterVideoModel {
   #[serde(rename = "seedance_2p5")]
   Seedance2p5,
 
-  /// Seedance 2.5 as routed via the BytePlus Ultra kinovi account.
-  /// Fulfilled by Seedance 2.5; billed at its own (higher) rate.
   #[serde(rename = "seedance_2p5_u")]
   Seedance2p5Ultra,
 
