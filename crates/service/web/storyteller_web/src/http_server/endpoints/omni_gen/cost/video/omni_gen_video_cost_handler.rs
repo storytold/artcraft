@@ -50,7 +50,7 @@ pub async fn omni_gen_video_cost_handler(
   // download + ffprobe when it's absent. Either way this only shapes the
   // QUOTE: the generate endpoint always measures the inputs itself and
   // bills from its own measurement.
-  if matches!(request.model, Some(CommonVideoModel::Seedance2p5)) {
+  if matches!(request.model, Some(CommonVideoModel::Seedance2p5 | CommonVideoModel::Seedance2p5Ultra)) {
     let frontend_input_seconds = request.estimate_only
       .and_then(|estimate| estimate.total_input_video_duration_millis)
       .map(millis_to_whole_seconds);
@@ -189,6 +189,22 @@ mod tests {
         .await
         .expect("minimax h3 768P-tier cost estimate should succeed");
       assert_eq!(low_res_quote.cost_in_credits, Some(92));
+    }
+
+    /// Seedance 2.5 Ultra is fulfilled by Seedance 2.5 but billed at its own
+    /// higher rate (and routed to a different kinovi account).
+    #[tokio::test]
+    async fn seedance_2p5_ultra_quotes_above_regular_seedance_2p5() {
+      let regular = post_cost_request(base_request(CommonVideoModel::Seedance2p5))
+        .await
+        .expect("seedance 2.5 cost estimate should succeed");
+      let ultra = post_cost_request(base_request(CommonVideoModel::Seedance2p5Ultra))
+        .await
+        .expect("seedance 2.5 ultra cost estimate should succeed");
+
+      // Defaults (5s, 720p): regular 134 credits, ultra 158.
+      assert_eq!(regular.cost_in_credits, Some(134));
+      assert_eq!(ultra.cost_in_credits, Some(158));
     }
 
     #[tokio::test]

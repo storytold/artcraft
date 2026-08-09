@@ -57,6 +57,8 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::cos
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::request::ArtcraftSeedance2p0MiniRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p5::cost::ArtcraftSeedance2p5CostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p5::request::ArtcraftSeedance2p5RequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_u::cost::ArtcraftSeedance2p5UltraCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_u::request::ArtcraftSeedance2p5UltraRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::cost::ArtcraftSeedance2p5PreviewCostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::request::ArtcraftSeedance2p5PreviewRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_mini::cost::ArtcraftSeedance2p0BytePlusMiniCostState;
@@ -178,6 +180,7 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0Mini(ArtcraftSeedance2p0MiniRequestState),
   ArtcraftSeedance2p5Preview(ArtcraftSeedance2p5PreviewRequestState),
   ArtcraftSeedance2p5(ArtcraftSeedance2p5RequestState),
+  ArtcraftSeedance2p5Ultra(ArtcraftSeedance2p5UltraRequestState),
   ArtcraftSeedance2p0BytePlusMini(ArtcraftSeedance2p0BytePlusMiniRequestState),
   ArtcraftSeedance2p0BytePlusUltraMini(ArtcraftSeedance2p0BytePlusUltraMiniRequestState),
   ArtcraftSora2(ArtcraftSora2RequestState),
@@ -256,6 +259,7 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0Mini(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p5Preview(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p5(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p5Ultra(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusMini(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusUltraMini(_) => RouterProvider::Artcraft,
       Self::ArtcraftSora2(_) => RouterProvider::Artcraft,
@@ -334,6 +338,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0Mini(request) => Ok(ArtcraftSeedance2p0MiniCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p5Preview(request) => Ok(ArtcraftSeedance2p5PreviewCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p5(request) => Ok(ArtcraftSeedance2p5CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p5Ultra(request) => Ok(ArtcraftSeedance2p5UltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusMini(request) => Ok(ArtcraftSeedance2p0BytePlusMiniCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraMini(request) => Ok(ArtcraftSeedance2p0BytePlusUltraMiniCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSora2(request) => Ok(ArtcraftSora2CostState::from_request(request).estimate_cost()),
@@ -494,6 +499,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftSeedance2p5(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p5Ultra(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },

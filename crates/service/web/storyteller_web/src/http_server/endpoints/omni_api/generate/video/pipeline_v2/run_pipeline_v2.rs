@@ -89,6 +89,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p5Preview => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p5 => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p5Ultra => RouterProvider::KinoviWeb,
     //RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
     //RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
     RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,
@@ -99,6 +100,15 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   // 1. Build execution request
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
+
+  // Seedance 2.5 Ultra is FULFILLED by Seedance 2.5 — the Ultra distinction
+  // is billing (its own, higher-priced Artcraft cost twin) and Kinovi account
+  // routing (BytePlusUltra), both handled elsewhere. Unlike the 2.0 collapse
+  // above, this collapse is EXEC-ONLY so the cost estimate below keeps the
+  // Ultra model and bills the Ultra rate.
+  if matches!(exec_builder.model, RouterVideoModel::Seedance2p5Ultra) {
+    exec_builder.model = RouterVideoModel::Seedance2p5;
+  }
 
   // Fal, GmiCloud, and Grok (xAI) take image URLs directly, not media file tokens.
   // Resolve tokens to URLs before building.

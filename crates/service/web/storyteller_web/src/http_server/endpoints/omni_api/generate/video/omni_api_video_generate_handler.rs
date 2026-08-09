@@ -193,7 +193,7 @@ pub async fn omni_api_video_generate_handler(
   // instead of downloading the same bytes twice.
   let mut maybe_probed_reference_videos: Option<ProbedReferenceVideos> = None;
 
-  if matches!(request.model, Some(CommonVideoModel::Seedance2p5)) {
+  if matches!(request.model, Some(CommonVideoModel::Seedance2p5 | CommonVideoModel::Seedance2p5Ultra)) {
     if let Some(video_tokens) = request.reference_video_media_tokens.as_deref().filter(|tokens| !tokens.is_empty()) {
       let video_sources = fetch_reference_video_sources(
         video_tokens,
@@ -226,6 +226,7 @@ pub async fn omni_api_video_generate_handler(
     Some(CommonVideoModel::Seedance2p0BytePlusUltra) => KinoviAccount::BytePlusUltra,
     Some(CommonVideoModel::Seedance2p0BytePlusUltraFast) => KinoviAccount::BytePlusUltra,
     Some(CommonVideoModel::Seedance2p0BytePlusUltraMini) => KinoviAccount::BytePlusUltra,
+    Some(CommonVideoModel::Seedance2p5Ultra) => KinoviAccount::BytePlusUltra,
     // BytePlus
     Some(CommonVideoModel::Seedance2p0BytePlus) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::Seedance2p0BytePlusFast) => KinoviAccount::BytePlus,

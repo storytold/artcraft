@@ -95,6 +95,11 @@ pub enum RouterVideoModel {
   #[serde(rename = "seedance_2p5")]
   Seedance2p5,
 
+  /// Seedance 2.5 as routed via the BytePlus Ultra kinovi account.
+  /// Fulfilled by Seedance 2.5; billed at its own (higher) rate.
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
+
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
@@ -164,6 +169,13 @@ mod tests {
     // NB: This string must match `CommonVideoModel` — the two enums convert
     // via serde string round-trip in the omni handlers.
     assert_serde_round_trip(RouterVideoModel::Seedance2p5, "seedance_2p5");
+  }
+
+  #[test]
+  fn seedance_2p5_ultra_serializes() {
+    // NB: This string must match `CommonVideoModel` — the two enums convert
+    // via serde string round-trip in the omni handlers.
+    assert_serde_round_trip(RouterVideoModel::Seedance2p5Ultra, "seedance_2p5_u");
   }
 
   #[test]
