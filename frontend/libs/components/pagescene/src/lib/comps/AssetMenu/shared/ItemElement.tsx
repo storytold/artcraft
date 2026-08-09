@@ -1,11 +1,7 @@
 import { useContext, useState } from "react";
 import { Badge } from "@storyteller/ui-badge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCube,
-  faPersonRunning,
-  faUpDownLeftRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, FootprintsIcon, MoveIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
 import dragAndDrop from "../../../DragAndDrop/DndAsset";
 import { addClipToCharacter } from "../../../actions";
@@ -132,9 +128,9 @@ export const ItemElement = ({ item }: Props) => {
           /* Missing/broken thumbnail: type icon on a slightly lighter card
              so it reads as a deliberate placeholder, not a load failure. */
           <div className="flex h-full w-full items-center justify-center bg-brand-secondary-500/60">
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={
-                item.type === AssetType.ANIMATION ? faPersonRunning : faCube
+                item.type === AssetType.ANIMATION ? FootprintsIcon : BoxIcon
               }
               className="text-2xl text-white/30"
             />
@@ -144,12 +140,12 @@ export const ItemElement = ({ item }: Props) => {
         <div className="text-shadow-md absolute inset-0 flex items-center justify-center bg-brand-primary-950/50 text-[13px] font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           {item.type === AssetType.ANIMATION ? (
             <>
-              <FontAwesomeIcon icon={faPersonRunning} className="mr-1.5" />
+              <FootprintsIcon  className="mr-1.5" />
               Add to Character
             </>
           ) : (
             <>
-              <FontAwesomeIcon icon={faUpDownLeftRight} className="mr-1.5" />
+              <MoveIcon  className="mr-1.5" />
               Drag to Scene
             </>
           )}

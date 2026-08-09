@@ -1,11 +1,5 @@
 import { useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faSpinnerThird,
-  faXmark,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon, PlusIcon, VideoIcon, XIcon } from "lucide-react";
 import { UploaderStates } from "@storyteller/common";
 import {
   uploadVideo,
@@ -71,7 +65,7 @@ export function ReferenceVideoSlot({
     <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2">
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
-          <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
+          <VideoIcon  className="h-3.5 w-3.5" />
           <span className="text-sm font-medium">Reference video</span>
         </div>
         <span className="text-[13px] text-white/60">Guide the world (optional)</span>
@@ -95,16 +89,16 @@ export function ReferenceVideoSlot({
             onClick={handleRemove}
             className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
           >
-            <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+            <XIcon  className="h-2.5 w-2.5" />
           </button>
         </div>
       ) : uploading ? (
         <div className={SLOT_CLASS}>
-          <FontAwesomeIcon icon={faSpinnerThird} spin className="h-5 w-5 text-white" />
+          <LoaderCircleIcon className="h-5 w-5 animate-spin text-white" />
         </div>
       ) : (
         <button onClick={() => inputRef.current?.click()} className={SLOT_CLASS}>
-          <FontAwesomeIcon icon={faPlus} className="text-xl text-white/80" />
+          <PlusIcon  className="text-xl text-white/80" />
         </button>
       )}
     </div>

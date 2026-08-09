@@ -1,12 +1,5 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faLink,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   GenerationListView,
@@ -114,8 +107,8 @@ function RowRecreateButton({
             : "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
         }
       >
-        <FontAwesomeIcon
-          icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+        <DynamicIcon
+          icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
           className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
         />
       </button>
@@ -172,8 +165,8 @@ function GalleryRowActions({
             aria-label="Recreate"
             className={buttonClass}
           >
-            <FontAwesomeIcon
-              icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+            <DynamicIcon
+              icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
               className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
             />
           </button>
@@ -187,7 +180,7 @@ function GalleryRowActions({
             aria-label="Make Video"
             className={buttonClass}
           >
-            <FontAwesomeIcon icon={faVideo} className="text-sm" />
+            <VideoIcon  className="text-sm" />
           </button>
         </Tooltip>
       )}
@@ -198,8 +191,8 @@ function GalleryRowActions({
           aria-label="Share"
           className={buttonClass}
         >
-          <FontAwesomeIcon
-            icon={shareCopied ? faCheck : faLink}
+          <DynamicIcon
+            icon={shareCopied ? CheckIcon : LinkIcon}
             className="text-sm"
           />
         </button>
@@ -213,8 +206,8 @@ function GalleryRowActions({
             aria-label="Download"
             className={buttonClass}
           >
-            <FontAwesomeIcon
-              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+            <DynamicIcon
+              icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
               className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
             />
           </button>

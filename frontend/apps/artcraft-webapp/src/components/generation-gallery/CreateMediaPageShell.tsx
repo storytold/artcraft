@@ -1,6 +1,5 @@
 import { type ReactNode, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import { isMobile } from "react-device-detect";
 import { type PopoverItem } from "@storyteller/ui-popover";
 import { TabSelector } from "@storyteller/ui-tab-selector";
@@ -82,10 +81,9 @@ export function CreateMediaPageShell({
   if (!authChecked) {
     return (
       <div className="flex h-full items-center justify-center bg-[#101014]">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
-          className="animate-spin text-4xl text-primary/80"
-        />
+        <LoaderCircleIcon
+          
+          className="animate-spin text-4xl text-primary/80" />
       </div>
     );
   }

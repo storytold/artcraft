@@ -11,7 +11,7 @@ import {
   UploaderStates,
   initialUploaderState,
 } from "../Types";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { LucideIcon } from "lucide-react";
 import {
   galleryModalVisibleViewMode,
   galleryModalVisibleDuringDrag,
@@ -22,7 +22,7 @@ interface Props {
   onSuccess: (category: FilterEngineCategories) => void;
   isOpen: boolean;
   title: string;
-  titleIcon: IconDefinition;
+  titleIcon: LucideIcon;
   initialFiles?: File[];
   options?: {
     fileSubtypes?: { [key: string]: string }[];

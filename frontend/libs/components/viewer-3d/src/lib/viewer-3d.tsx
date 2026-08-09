@@ -3,8 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SplatMesh } from "@sparkjsdev/spark";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBone } from "@fortawesome/pro-solid-svg-icons";
+import { BoneIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
 import {
   NodeHierarchyHelper,
@@ -584,7 +583,7 @@ export function Viewer3D({
                   : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"
               }`}
             >
-              <FontAwesomeIcon icon={faBone} />
+              <BoneIcon />
             </button>
           )}
           {animationNames.length > 0 && (

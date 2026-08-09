@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowsRotate,
-  faChevronLeft,
-  faEye,
-  faTrashCan,
-  faUser,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, EyeIcon, RefreshCwIcon, Trash2Icon, UserIcon } from "lucide-react";
 import type { MentionItem } from "./MentionTextarea";
 
 const VIEWPORT_MARGIN = 8;
@@ -202,7 +195,7 @@ export function MentionChipMenu({
             >
               <ChipAvatar preview={currentPreview} name={currentName} />
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/avatar:opacity-100">
-                <FontAwesomeIcon icon={faEye} className="h-3 w-3 text-white" />
+                <EyeIcon  className="h-3 w-3 text-white" />
               </span>
             </button>
             <div className="min-w-0">
@@ -214,12 +207,12 @@ export function MentionChipMenu({
           </div>
           <div className="my-1 border-t border-ui-panel-border" />
           <button type="button" className={MENU_ROW} onClick={() => setView("replace")}>
-            <FontAwesomeIcon icon={faArrowsRotate} className="h-3.5 w-3.5 opacity-60" />
+            <RefreshCwIcon  className="h-3.5 w-3.5 opacity-60" />
             <span className="flex-1 text-left">Replace</span>
             <span className="text-xs text-base-fg/40">{replaceItems.length}</span>
           </button>
           <button type="button" className={MENU_ROW} onClick={onPreview}>
-            <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 opacity-60" />
+            <EyeIcon  className="h-3.5 w-3.5 opacity-60" />
             <span className="flex-1 text-left">Preview</span>
           </button>
           <div className="my-1 border-t border-ui-panel-border" />
@@ -228,7 +221,7 @@ export function MentionChipMenu({
             className={twMerge(MENU_ROW, "text-red-500 hover:bg-red-500/10")}
             onClick={onRemove}
           >
-            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 opacity-60" />
+            <Trash2Icon  className="h-3.5 w-3.5 opacity-60" />
             <span className="flex-1 text-left">Remove</span>
           </button>
         </>
@@ -241,7 +234,7 @@ export function MentionChipMenu({
               onClick={() => setView("menu")}
               aria-label="Back"
             >
-              <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
+              <ChevronLeftIcon  className="h-3 w-3" />
             </button>
             <div className="min-w-0">
               <div className="text-sm font-medium text-base-fg">Replace</div>
@@ -285,7 +278,7 @@ function ChipAvatar({ preview, name }: { preview?: string; name: string }) {
       {preview ? (
         <img src={preview} alt={name} className="h-full w-full object-cover" />
       ) : (
-        <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5 text-base-fg/60" />
+        <UserIcon  className="h-3.5 w-3.5 text-base-fg/60" />
       )}
     </div>
   );

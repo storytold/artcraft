@@ -2,8 +2,7 @@ import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { MidjourneyGetCredentialInfo, MidjourneyGetCredentialInfoSuccess } from "@storyteller/tauri-api";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
 
@@ -74,10 +73,9 @@ export const MidjourneyAccountBlock = () => {
         disabled={isCheckingMidjourneySession}
       >
         {isCheckingMidjourneySession ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-sm"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-sm" />
         ) : midjourneySession?.payload?.can_clear_state ? (
           "Disconnect"
         ) : (

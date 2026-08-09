@@ -1,5 +1,5 @@
 import { useContext, useRef } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { DynamicIcon } from "@storyteller/icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { addKeyframe, moveKeyframe, seekTimeline } from "../../actions";
 import {
@@ -66,7 +66,7 @@ export const TimelineTrackRow = ({
           assume it. Indent with padding, never margin (margin widens the
           column and shifts the lanes out of alignment). */}
       <div className="flex w-32 shrink-0 items-center gap-2 truncate ps-2 text-sm text-base-fg/90">
-        <FontAwesomeIcon icon={item.icon} className="h-3.5 w-3.5 opacity-70" />
+        <DynamicIcon icon={item.icon} className="h-3.5 w-3.5 opacity-70" />
         <span className="truncate">{item.name}</span>
       </div>
 

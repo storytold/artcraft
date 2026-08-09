@@ -1,13 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronRight,
-  faEllipsis,
-  faTag,
-  faTags,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronRightIcon, EllipsisIcon, TagIcon, TagsIcon } from "lucide-react";
 import { SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
 import {
   compareTagsByUseCount,
@@ -60,7 +54,7 @@ export function LibraryTagsNav({
           tooltip="Tags"
         >
           <Link to="/library/tags" onClick={onNavClick}>
-            <FontAwesomeIcon icon={faTags} />
+            <TagsIcon />
             <span>Tags</span>
           </Link>
         </SidebarMenuButton>
@@ -71,10 +65,9 @@ export function LibraryTagsNav({
             aria-label={expanded ? "Collapse tags" : "Expand tags"}
             className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
           >
-            <FontAwesomeIcon
-              icon={faChevronRight}
-              className={`text-[10px] transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
-            />
+            <ChevronRightIcon
+              
+              className={`text-[10px] transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} />
           </button>
         )}
       </SidebarMenuItem>
@@ -109,10 +102,9 @@ export function LibraryTagsNav({
                     }}
                     className="pl-5"
                   >
-                    <FontAwesomeIcon
-                      icon={faTag}
-                      className="text-violet-400"
-                    />
+                    <TagIcon
+                      
+                      className="text-violet-400" />
                     <span className="truncate">{tag.value}</span>
                     <span className="ml-auto text-[10px] text-sidebar-foreground/40 transition-opacity group-hover/menu-item:opacity-0">
                       {tag.useCount}
@@ -133,7 +125,7 @@ export function LibraryTagsNav({
                     aria-label={`Options for tag "${tag.value}"`}
                     className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   >
-                    <FontAwesomeIcon icon={faEllipsis} className="text-xs" />
+                    <EllipsisIcon  className="text-xs" />
                   </button>
                 </SidebarMenuItem>
               ))}
@@ -145,7 +137,7 @@ export function LibraryTagsNav({
                       onClick={onNavClick}
                       className="pl-5 text-sidebar-foreground/60"
                     >
-                      <FontAwesomeIcon icon={faEllipsis} />
+                      <EllipsisIcon />
                       <span>See all tags</span>
                       <span className="ml-auto text-[10px] text-sidebar-foreground/40">
                         {tags.length}

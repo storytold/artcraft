@@ -47,13 +47,13 @@
       "path": "../../tauri-utils/tsconfig.lib.json"
     },
     {
-      "path": "../popover/tsconfig.lib.json"
-    },
-    {
       "path": "../tooltip/tsconfig.lib.json"
     },
     {
       "path": "../../tauri-api/tsconfig.lib.json"
+    },
+    {
+      "path": "../popover/tsconfig.lib.json"
     },
     {
       "path": "../../api-enums/tsconfig.lib.json"

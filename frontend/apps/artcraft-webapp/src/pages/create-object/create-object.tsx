@@ -4,7 +4,7 @@ import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import { faSparkles, faGem, faImage } from "@fortawesome/pro-solid-svg-icons";
+import { GemIcon, ImageIcon, SparklesIcon } from "lucide-react";
 import {
   PromptBox,
   ImagePromptRow,
@@ -555,8 +555,8 @@ export default function CreateObject() {
         <Tooltip content="PBR materials" position="top" closeOnClick>
           <ToggleButton
             isActive={enablePbr}
-            icon={faGem}
-            activeIcon={faGem}
+            icon={GemIcon}
+            activeIcon={GemIcon}
             label={enablePbr ? "PBR" : "PBR off"}
             onClick={() => setUi({ enablePbr: !enablePbr })}
           />
@@ -566,8 +566,8 @@ export default function CreateObject() {
         <Tooltip content="Generate textures" position="top" closeOnClick>
           <ToggleButton
             isActive={enableTexture}
-            icon={faImage}
-            activeIcon={faImage}
+            icon={ImageIcon}
+            activeIcon={ImageIcon}
             label={enableTexture ? "Texture" : "No texture"}
             onClick={() => setUi({ enableTexture: !enableTexture })}
           />
@@ -624,7 +624,7 @@ export default function CreateObject() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create

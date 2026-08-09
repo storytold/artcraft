@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { LucideIcon } from "lucide-react";
 import { Camera, FocalLengthDragging } from "@storyteller/common";
 import {
   AssetType,
@@ -72,7 +72,7 @@ export interface SceneObject {
 // engine maintains its own object model.
 export interface OutlinerItem {
   id: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   name: string;
   type: string;
   visible: boolean;

@@ -1,11 +1,6 @@
 import { useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinnerThird,
-  faXmark,
-  faCube,
-  faImage,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, ImageIcon, LoaderCircleIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { AddButton, type RefImage } from "../../../components/prompt-box";
 import { MESH_FILE_ACCEPT, uploadMeshFile, uploadViewImage } from "./mesh-upload";
 
@@ -53,7 +48,7 @@ export function MeshInputsRow({
   const subtitle = showMultiView
     ? "Reference angles (optional)"
     : "Mesh file to process";
-  const titleIcon = showMultiView ? faImage : faCube;
+  const titleIcon = showMultiView ? ImageIcon : BoxIcon;
 
   return (
     // Title on the left, upload slots right-aligned + top-aligned (matches
@@ -61,7 +56,7 @@ export function MeshInputsRow({
     <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2">
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
-          <FontAwesomeIcon icon={titleIcon} className="h-3.5 w-3.5" />
+          <DynamicIcon icon={titleIcon} className="h-3.5 w-3.5" />
           <span className="text-sm font-medium">{title}</span>
         </div>
         <span className="text-[13px] text-white/60">{subtitle}</span>
@@ -186,16 +181,15 @@ function ImageSlot({
             onClick={() => onChange(undefined)}
             className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
           >
-            <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+            <XIcon  className="h-2.5 w-2.5" />
           </button>
         </div>
       ) : uploading ? (
         <div className={SLOT_CLASS}>
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
+          <LoaderCircleIcon
+            
             spin
-            className="h-5 w-5 text-white"
-          />
+            className="h-5 w-5 text-white" />
         </div>
       ) : (
         <AddButton
@@ -238,28 +232,27 @@ function MeshFileSlot({
       />
       {mesh ? (
         <div className="group relative flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/10">
-          <FontAwesomeIcon icon={faCube} className="h-5 w-5 text-white/80" />
+          <BoxIcon  className="h-5 w-5 text-white/80" />
           <button
             onClick={() => onChange(undefined)}
             className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
           >
-            <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+            <XIcon  className="h-2.5 w-2.5" />
           </button>
         </div>
       ) : uploading ? (
         <div className={SLOT_CLASS}>
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
+          <LoaderCircleIcon
+            
             spin
-            className="h-5 w-5 text-white"
-          />
+            className="h-5 w-5 text-white" />
         </div>
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
           className={SLOT_CLASS}
         >
-          <FontAwesomeIcon icon={faCube} className="text-xl text-white/80" />
+          <BoxIcon  className="text-xl text-white/80" />
         </button>
       )}
     </SlotShell>

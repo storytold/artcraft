@@ -33,7 +33,7 @@ export default defineConfig(() => ({
     },
     rollupOptions: {
       // External packages that should not be bundled into your library.
-      // Uses shared config plus react-router-dom and @fortawesome
+      // Uses shared config plus react-router-dom
       external: isExternal
     },
   },

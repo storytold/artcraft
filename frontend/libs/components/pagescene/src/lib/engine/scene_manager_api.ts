@@ -1,10 +1,6 @@
 import * as THREE from "three";
-import {
-  IconDefinition,
-  faCamera,
-  faCube,
-  faPerson,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CameraIcon, PersonStandingIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Scene from "./scene";
 import { MouseControls } from "./keybinds_controls";
 import { ClipGroup, AssetType } from "../enums";
@@ -18,7 +14,7 @@ import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
   id: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   name: string;
   type: string;
   visible: boolean;
@@ -216,16 +212,16 @@ export class SceneManager implements SceneManagerAPI {
     object: THREE.Object3D,
     timeline_characters: { [key: string]: ClipGroup },
   ) {
-    let faicon = faCube;
+    let faicon = BoxIcon;
     let name = object.name;
     // Human-readable kind shown as the outliner row's subtitle.
     let kind = "3D Object";
     if (object.name == "::CAM::") {
-      faicon = faCamera;
+      faicon = CameraIcon;
       name = "Camera";
       kind = "Camera";
     } else if (object.uuid in timeline_characters) {
-      faicon = faPerson;
+      faicon = PersonStandingIcon;
       kind = "Character";
     }
     let locked = object.userData["locked"];

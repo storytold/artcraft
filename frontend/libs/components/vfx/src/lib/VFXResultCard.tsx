@@ -1,13 +1,6 @@
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinnerThird,
-  faCircleExclamation,
-  faXmark,
-  faWandMagicSparkles,
-  faCopy,
-  faCheck,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, CircleAlertIcon, CopyIcon, LoaderCircleIcon, WandSparklesIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 
 export interface VFXResultCardData {
@@ -61,15 +54,14 @@ export const VFXResultCard = ({
           />
         ) : data.status === "pending" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-white/70">
-            <FontAwesomeIcon
-              icon={faSpinnerThird}
-              className="h-8 w-8 animate-spin"
-            />
+            <LoaderCircleIcon
+              
+              className="h-8 w-8 animate-spin" />
             <span className="text-sm">Generating background change...</span>
           </div>
         ) : data.status === "failed" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-4 text-center text-red-300">
-            <FontAwesomeIcon icon={faCircleExclamation} className="h-8 w-8" />
+            <CircleAlertIcon  className="h-8 w-8" />
             <span className="text-sm">
               {data.failureReason || "Generation failed"}
             </span>
@@ -78,7 +70,7 @@ export const VFXResultCard = ({
                 onClick={onDismiss}
                 className="mt-1 flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white/80"
               >
-                <FontAwesomeIcon icon={faXmark} />
+                <XIcon />
                 Dismiss
               </button>
             )}
@@ -127,7 +119,7 @@ export const VFXResultCard = ({
               tryButtonClassName,
             )}
           >
-            <FontAwesomeIcon icon={faWandMagicSparkles} className="h-3 w-3" />
+            <WandSparklesIcon  className="h-3 w-3" />
             Try this
           </button>
         )}
@@ -159,8 +151,8 @@ const CopyPromptButton = ({ text }: CopyPromptButtonProps) => {
       onClick={handleCopy}
       className="flex items-center gap-1 text-[10px] font-medium normal-case tracking-normal text-white/60 transition-colors hover:text-white"
     >
-      <FontAwesomeIcon
-        icon={copied ? faCheck : faCopy}
+      <DynamicIcon
+        icon={copied ? CheckIcon : CopyIcon}
         className="h-2.5 w-2.5"
       />
       <span>{copied ? "Copied!" : "Copy"}</span>

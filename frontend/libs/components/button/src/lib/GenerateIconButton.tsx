@@ -1,9 +1,5 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowUp,
-  faCoins,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowUpIcon, CoinsIcon, LoaderCircleIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { ButtonHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -44,7 +40,7 @@ export const GenerateIconButton = ({
               isDisabled && "opacity-50",
             )}
           >
-            <FontAwesomeIcon icon={faCoins} className="text-xs" />
+            <CoinsIcon  className="text-xs" />
             {credits}
           </span>
         </Tooltip>
@@ -56,8 +52,8 @@ export const GenerateIconButton = ({
         disabled={isDisabled}
         {...rest}
       >
-        <FontAwesomeIcon
-          icon={loading ? faSpinnerThird : faArrowUp}
+        <DynamicIcon
+          icon={loading ? LoaderCircleIcon : ArrowUpIcon}
           className={loading ? "animate-spin" : undefined}
         />
       </button>

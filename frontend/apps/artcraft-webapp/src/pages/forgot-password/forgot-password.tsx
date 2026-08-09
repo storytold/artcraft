@@ -1,9 +1,4 @@
-import {
-  faArrowLeft,
-  faEnvelope,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowLeftIcon, LoaderCircleIcon, MailIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
@@ -112,10 +107,9 @@ const ForgotPassword = () => {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <FontAwesomeIcon
-                        icon={faSpinnerThird}
-                        className="animate-spin"
-                      />
+                      <LoaderCircleIcon
+                        
+                        className="animate-spin" />
                     ) : (
                       "Send Reset Code"
                     )}
@@ -126,7 +120,7 @@ const ForgotPassword = () => {
           ) : (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
-                <FontAwesomeIcon icon={faEnvelope} className="text-2xl" />
+                <MailIcon  className="text-2xl" />
               </div>
               <h3 className="text-xl font-medium mb-2">Check your email</h3>
               <p className="text-white/60 text-sm mb-6">
@@ -152,7 +146,7 @@ const ForgotPassword = () => {
               to="/login"
               className="text-white/40 hover:text-white transition-colors flex items-center justify-center gap-2"
             >
-              <FontAwesomeIcon icon={faArrowLeft} /> Back to Log in
+              <ArrowLeftIcon /> Back to Log in
             </Link>
           </div>
         </div>

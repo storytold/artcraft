@@ -2,7 +2,7 @@
 import { signal } from "@preact/signals-react";
 import { ReactNode } from "react";
 import { ReminderType } from "@storyteller/ui-action-reminder-modal";
-import { IconDefinition } from "@fortawesome/pro-solid-svg-icons";
+import type { LucideIcon } from "lucide-react";
 
 export interface ShowActionReminderOptions {
   reminderType: ReminderType;
@@ -14,7 +14,7 @@ export interface ShowActionReminderOptions {
   onSecondaryAction?: () => void;
   isLoading?: boolean;
   openAiLogo?: string;
-  primaryActionIcon?: IconDefinition;
+  primaryActionIcon?: LucideIcon;
   primaryActionBtnClassName?: string;
 }
 

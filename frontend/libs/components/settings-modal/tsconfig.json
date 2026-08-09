@@ -45,6 +45,9 @@
       "path": "../../api"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "../../analytics/google-analytics"
     },
     {

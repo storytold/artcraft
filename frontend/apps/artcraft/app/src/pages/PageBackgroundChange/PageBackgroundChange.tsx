@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
+import { SparklesIcon } from "lucide-react";
 import { toast } from "@storyteller/ui-toaster";
 import { UploadImageMedia, UploadVideoMedia } from "@storyteller/api";
 import {
@@ -193,7 +192,7 @@ interface EmptyStateProps {
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-base-fg/5 ring-1 ring-base-fg/10">
-      <FontAwesomeIcon icon={faSparkles} className="text-2xl" />
+      <SparklesIcon  className="text-2xl" />
     </div>
     <h3 className="text-2xl font-bold text-base-fg">{title}</h3>
     <p className="max-w-xs text-sm text-base-fg/60">{subtitle}</p>

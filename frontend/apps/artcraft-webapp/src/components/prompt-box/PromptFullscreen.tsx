@@ -2,8 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
+import { Maximize2Icon } from "lucide-react";
 
 // Webapp "focus mode" for the prompt editor. Mirrors the desktop lib's
 // (@storyteller/ui-promptbox) fullscreen feature but lives here because the
@@ -35,10 +34,9 @@ export const PromptFullscreenButton = ({
           onClick={onClick}
           className="flex h-6 w-6 items-center justify-center rounded-full bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
         >
-          <FontAwesomeIcon
-            icon={faUpRightAndDownLeftFromCenter}
-            className="h-3 w-3"
-          />
+          <Maximize2Icon
+            
+            className="h-3 w-3" />
         </button>
       </Tooltip>
     </div>

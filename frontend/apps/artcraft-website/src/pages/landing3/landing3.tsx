@@ -10,26 +10,8 @@ import {
   setupKnightCinemaTimeline,
   type KnightCinemaHandle,
 } from "../../components/knight-cinema";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGithub, faDiscord } from "@fortawesome/free-brands-svg-icons";
-import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
-import {
-  faPlay,
-  faMapMarkerAlt,
-  faCube,
-  faLayerGroup,
-  faUser,
-  faTools,
-  faShapes,
-  faEraser,
-  faCheck,
-  faXmark,
-  faFilm,
-  faPaintBrush,
-  faCamera,
-  faGlobe,
-  faVolumeXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CameraIcon, CheckIcon, EraserIcon, FilmIcon, GlobeIcon, LayersIcon, MapPinIcon, PaintbrushIcon, PlayIcon, ShapesIcon, UserIcon, VolumeXIcon, WrenchIcon, XIcon } from "lucide-react";
+import { DynamicIcon, AppleIcon, DiscordIcon, GithubIcon, WindowsIcon } from "@storyteller/icons";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { DownloadModal } from "../../components/download-modal";
@@ -53,7 +35,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const FEATURES = [
   {
-    icon: faMapMarkerAlt,
+    icon: MapPinIcon,
     label: "Worlds",
     title: "Image to Location",
     description:
@@ -61,7 +43,7 @@ const FEATURES = [
     src: "/videos/features/WorldLabs_Demo_2.webm",
   },
   {
-    icon: faCube,
+    icon: BoxIcon,
     label: "3D Compositing",
     title: "Build scenes with depth",
     description:
@@ -69,7 +51,7 @@ const FEATURES = [
     src: "/videos/features/Panel.webm",
   },
   {
-    icon: faLayerGroup,
+    icon: LayersIcon,
     label: "2D Compositing",
     title: "Precise layered control",
     description:
@@ -77,7 +59,7 @@ const FEATURES = [
     src: "/videos/features/Editor.webm",
   },
   {
-    icon: faShapes,
+    icon: ShapesIcon,
     label: "3D Mesh",
     title: "Image to 3D Mesh",
     description:
@@ -85,7 +67,7 @@ const FEATURES = [
     src: "/videos/features/Make_3D.webm",
   },
   {
-    icon: faTools,
+    icon: WrenchIcon,
     label: "Mixed Assets",
     title: "Mix every kind of asset",
     description:
@@ -93,7 +75,7 @@ const FEATURES = [
     src: "/videos/features/Mixed.webm",
   },
   {
-    icon: faUser,
+    icon: UserIcon,
     label: "Posing",
     title: "Character Posing",
     description:
@@ -101,7 +83,7 @@ const FEATURES = [
     src: "/videos/features/Character-Pose.webm",
   },
   {
-    icon: faEraser,
+    icon: EraserIcon,
     label: "Cutouts",
     title: "Background Removal",
     description:
@@ -267,7 +249,7 @@ const UseOnWebButton = ({
     "group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px";
   const inner = (
     <>
-      <FontAwesomeIcon icon={faGlobe} className="text-[13px]" />
+      <GlobeIcon  className="text-[13px]" />
       Use on Web
     </>
   );
@@ -713,8 +695,8 @@ const Landing3 = () => {
                     onClick={onDownloadClick}
                     className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
                   >
-                    <FontAwesomeIcon
-                      icon={isMacOs ? faApple : faWindows}
+                    <DynamicIcon
+                      icon={isMacOs ? AppleIcon : WindowsIcon}
                       className="text-[13px]"
                     />
                     Download for {isMacOs ? "Mac" : "Windows"}
@@ -760,10 +742,9 @@ const Landing3 = () => {
                   }}
                   className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-black/65 hover:bg-black/80 backdrop-blur-md text-white text-[12px] font-semibold border border-white/15 transition-colors"
                 >
-                  <FontAwesomeIcon
-                    icon={faVolumeXmark}
-                    className="text-[12px]"
-                  />
+                  <VolumeXIcon
+                    
+                    className="text-[12px]" />
                   Tap to unmute
                 </button>
               )}
@@ -907,7 +888,7 @@ const Landing3 = () => {
                 >
                   <div className="flex items-center gap-2 mb-5">
                     <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
-                      <FontAwesomeIcon
+                      <DynamicIcon
                         icon={feature.icon}
                         className="text-[10px]"
                       />
@@ -973,10 +954,9 @@ const Landing3 = () => {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-8">
                   <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-red-300/70">
-                    <FontAwesomeIcon
-                      icon={faXmark}
-                      className="text-red-400 text-[11px]"
-                    />
+                    <XIcon
+                      
+                      className="text-red-400 text-[11px]" />
                     Other tools
                   </span>
                 </div>
@@ -994,10 +974,9 @@ const Landing3 = () => {
                       key={tag}
                       className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
                     >
-                      <FontAwesomeIcon
-                        icon={faXmark}
-                        className="text-red-400 text-[10px]"
-                      />
+                      <XIcon
+                        
+                        className="text-red-400 text-[10px]" />
                       {tag}
                     </span>
                   ))}
@@ -1038,10 +1017,9 @@ const Landing3 = () => {
                         key={tag}
                         className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-lg px-2.5 py-1.5"
                       >
-                        <FontAwesomeIcon
-                          icon={faCheck}
-                          className="text-primary text-[10px]"
-                        />
+                        <CheckIcon
+                          
+                          className="text-primary text-[10px]" />
                         {tag}
                       </span>
                     ),
@@ -1178,10 +1156,9 @@ const Landing3 = () => {
                   Join us and contribute!
                 </p>
                 <div className="flex justify-center items-center h-full p-4 lg:p-6 select-none">
-                  <FontAwesomeIcon
-                    icon={faGithub}
-                    className="text-[80px] md:text-[110px] lg:text-[130px] text-white/85 group-hover:text-white group-hover:scale-105 transition-all"
-                  />
+                  <GithubIcon
+                    
+                    className="text-[80px] md:text-[110px] lg:text-[130px] text-white/85 group-hover:text-white group-hover:scale-105 transition-all" />
                 </div>
               </div>
             </div>
@@ -1223,22 +1200,19 @@ const Landing3 = () => {
                 </div>
                 <div className="flex justify-center items-center h-24 lg:h-28">
                   <div className="w-16 h-16 lg:w-20 lg:h-20 bg-pink-900 rounded-full flex items-center justify-center border-2 border-pink-600 shadow-lg z-10">
-                    <FontAwesomeIcon
-                      icon={faFilm}
-                      className="text-white text-xl lg:text-2xl"
-                    />
+                    <FilmIcon
+                      
+                      className="text-white text-xl lg:text-2xl" />
                   </div>
                   <div className="w-20 h-20 lg:w-24 lg:h-24 bg-emerald-600 rounded-full flex items-center justify-center border-2 border-emerald-400 shadow-lg -ml-2 z-30">
-                    <FontAwesomeIcon
-                      icon={faPaintBrush}
-                      className="text-white text-2xl lg:text-3xl"
-                    />
+                    <PaintbrushIcon
+                      
+                      className="text-white text-2xl lg:text-3xl" />
                   </div>
                   <div className="w-16 h-16 lg:w-20 lg:h-20 bg-purple-900 rounded-full flex items-center justify-center border-2 border-purple-600 shadow-lg -ml-2 z-20">
-                    <FontAwesomeIcon
-                      icon={faCamera}
-                      className="text-white text-xl lg:text-2xl"
-                    />
+                    <CameraIcon
+                      
+                      className="text-white text-xl lg:text-2xl" />
                   </div>
                 </div>
               </div>
@@ -1298,10 +1272,9 @@ const Landing3 = () => {
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="h-14 w-14 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                            <FontAwesomeIcon
-                              icon={faPlay}
-                              className="text-black text-base translate-x-0.5"
-                            />
+                            <PlayIcon
+                              
+                              className="text-black text-base translate-x-0.5" />
                           </div>
                         </div>
                       </>
@@ -1319,7 +1292,7 @@ const Landing3 = () => {
           <div className="relative overflow-hidden flex flex-col gap-7 md:flex-row md:items-center md:justify-between rounded-2xl sm:rounded-[28px] bg-[#080808] border border-white/[0.1] px-7 py-8 sm:px-10 sm:py-10">
             <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
               {/* <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/15 border border-primary/25 text-primary">
-                <FontAwesomeIcon icon={faDiscord} className="text-2xl" />
+                <DiscordIcon  className="text-2xl" />
               </span> */}
               <div>
                 <h2 className="text-2xl sm:text-3xl tracking-[-0.02em] font-medium leading-tight text-white">
@@ -1338,7 +1311,7 @@ const Landing3 = () => {
                 rel="noopener noreferrer"
                 className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
               >
-                <FontAwesomeIcon icon={faDiscord} className="text-[13px]" />
+                <DiscordIcon  className="text-[13px]" />
                 Join Discord
               </a>
               <a
@@ -1347,7 +1320,7 @@ const Landing3 = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
               >
-                <FontAwesomeIcon icon={faGithub} className="text-[13px]" />
+                <GithubIcon  className="text-[13px]" />
                 Star on GitHub
               </a>
             </div>
@@ -1410,8 +1383,8 @@ const Landing3 = () => {
                         onClick={onDownloadClick}
                         className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
                       >
-                        <FontAwesomeIcon
-                          icon={isMacOs ? faApple : faWindows}
+                        <DynamicIcon
+                          icon={isMacOs ? AppleIcon : WindowsIcon}
                           className="text-[13px]"
                         />
                         Download for {isMacOs ? "Mac" : "Windows"}

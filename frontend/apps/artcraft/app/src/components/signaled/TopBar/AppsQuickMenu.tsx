@@ -1,4 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import {
   useGenerateApps,
@@ -33,7 +33,7 @@ export const AppsQuickMenu = () => {
                   app.color || "bg-ui-panel",
                 )}
               >
-                <FontAwesomeIcon icon={app.icon} className="text-sm" />
+                <DynamicIcon icon={app.icon} className="text-sm" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -81,7 +81,7 @@ export const AppsQuickMenu = () => {
                   app.color || "bg-ui-panel",
                 )}
               >
-                <FontAwesomeIcon icon={app.icon} className="text-sm" />
+                <DynamicIcon icon={app.icon} className="text-sm" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">

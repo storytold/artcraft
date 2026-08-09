@@ -1,13 +1,5 @@
 import { memo, useCallback, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faCube,
-  faImage,
-  faMusic,
-  faPlay,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CheckIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -53,12 +45,12 @@ export const GalleryRow = memo(function GalleryRow({
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   const mediaIcon = isVideo
-    ? faVideo
+    ? VideoIcon
     : is3D
-      ? faCube
+      ? BoxIcon
       : isAudio
-        ? faMusic
-        : faImage;
+        ? MusicIcon
+        : ImageIcon;
   const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
@@ -106,7 +98,7 @@ export const GalleryRow = memo(function GalleryRow({
               : "border-white/60 bg-black/40 text-transparent"
           } ${item.fullImage ? "" : "invisible"}`}
         >
-          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+          <CheckIcon  className="text-[10px]" />
         </div>
       )}
 
@@ -124,10 +116,9 @@ export const GalleryRow = memo(function GalleryRow({
         {isVideo && item.thumbnail && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-              <FontAwesomeIcon
-                icon={faPlay}
-                className="ml-0.5 text-[9px] text-white/90"
-              />
+              <PlayIcon
+                
+                className="ml-0.5 text-[9px] text-white/90" />
             </span>
           </div>
         )}

@@ -1,12 +1,6 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faCube,
-  faImage,
-  faMusic,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CheckIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -99,12 +93,12 @@ export const GalleryCard = memo(function GalleryCard({
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   const mediaIcon = isVideo
-    ? faVideo
+    ? VideoIcon
     : is3D
-      ? faCube
+      ? BoxIcon
       : isAudio
-        ? faMusic
-        : faImage;
+        ? MusicIcon
+        : ImageIcon;
   const mediaLabel = isVideo
     ? "Video"
     : is3D
@@ -190,10 +184,9 @@ export const GalleryCard = memo(function GalleryCard({
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
-                <FontAwesomeIcon
-                  icon={faMusic}
-                  className="text-xl text-white/70"
-                />
+                <MusicIcon
+                  
+                  className="text-xl text-white/70" />
               </div>
             </div>
             {item.fullImage && (
@@ -226,7 +219,7 @@ export const GalleryCard = memo(function GalleryCard({
               : "border-white/60 bg-black/40 text-transparent"
           }`}
         >
-          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+          <CheckIcon  className="text-[10px]" />
         </div>
       )}
 
@@ -234,7 +227,7 @@ export const GalleryCard = memo(function GalleryCard({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-lg from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
           <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
-            <FontAwesomeIcon icon={mediaIcon} className="text-[10px]" />
+            <DynamicIcon icon={mediaIcon} className="text-[10px]" />
             {mediaLabel}
           </div>
           {modelDisplayName && modelIconPath && (

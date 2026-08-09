@@ -9,6 +9,9 @@
       "path": "../../common"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

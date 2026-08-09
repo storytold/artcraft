@@ -1,8 +1,7 @@
 import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { WorldLabsGetCredentialInfo, WorldLabsGetCredentialInfoSuccess } from "@storyteller/tauri-api";
@@ -76,10 +75,9 @@ export const WorldLabsAccountBlock = () => {
         disabled={isCheckingWorldlabsSession}
       >
         {isCheckingWorldlabsSession ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-sm"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-sm" />
         ) : worldlabsSession?.payload?.can_clear_state ? (
           "Disconnect"
         ) : (

@@ -1,6 +1,5 @@
 import { useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCamera, faCircle } from "@fortawesome/pro-solid-svg-icons";
+import { CameraIcon, CircleIcon } from "lucide-react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext";
 import { usePageSceneStore } from "../../PageSceneStore";
@@ -85,7 +84,7 @@ export const RecordControls = () => {
           disabled={busy}
           className="glass glass-no-hover flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-base-fg shadow-xl hover:bg-white/10 disabled:opacity-50"
         >
-          <FontAwesomeIcon icon={faCamera} className="h-3.5 w-3.5" />
+          <CameraIcon  className="h-3.5 w-3.5" />
           Capture
         </button>
         <Tooltip
@@ -103,7 +102,7 @@ export const RecordControls = () => {
             disabled={busy || !timelineExists}
             className="flex items-center gap-2 rounded-full bg-red px-5 py-2.5 text-sm font-semibold text-white shadow-xl transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100"
           >
-            <FontAwesomeIcon icon={faCircle} className="h-3 w-3" />
+            <CircleIcon  className="h-3 w-3" />
             Record
           </button>
         </Tooltip>

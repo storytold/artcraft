@@ -65,12 +65,7 @@ import {
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
-import {
-  faMicrophoneLines,
-  faMicrophoneSlash,
-  faRepeat,
-  faSparkles,
-} from "@fortawesome/pro-solid-svg-icons";
+import { MicIcon, MicOffIcon, RepeatIcon, SparklesIcon } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -492,8 +487,8 @@ export default function CreateAudio() {
         >
           <ToggleButton
             isActive={ui.isInstrumental}
-            icon={faMicrophoneSlash}
-            activeIcon={faMicrophoneSlash}
+            icon={MicOffIcon}
+            activeIcon={MicOffIcon}
             label="Instrumental"
             onClick={() => setUi({ isInstrumental: !ui.isInstrumental })}
           />
@@ -508,8 +503,8 @@ export default function CreateAudio() {
         >
           <ToggleButton
             isActive={ui.keepLyrics}
-            icon={faMicrophoneLines}
-            activeIcon={faMicrophoneLines}
+            icon={MicIcon}
+            activeIcon={MicIcon}
             label="Keep lyrics"
             onClick={() => setUi({ keepLyrics: !ui.keepLyrics })}
           />
@@ -524,8 +519,8 @@ export default function CreateAudio() {
         >
           <ToggleButton
             isActive={ui.isLoopable}
-            icon={faRepeat}
-            activeIcon={faRepeat}
+            icon={RepeatIcon}
+            activeIcon={RepeatIcon}
             label="Loop"
             onClick={() => setUi({ isLoopable: !ui.isLoopable })}
           />
@@ -778,7 +773,7 @@ export default function CreateAudio() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create

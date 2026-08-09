@@ -1,4 +1,4 @@
-import { faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
+import { TriangleAlertIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 
 import { Modal } from "@storyteller/ui-modal";
@@ -19,7 +19,7 @@ export function ErrorDialog() {
   return (
     <Modal
       title={errorDialogTitle}
-      titleIcon={faTriangleExclamation}
+      titleIcon={TriangleAlertIcon}
       titleIconClassName="text-brand-primary"
       isOpen={showErrorDialog}
       onClose={() => setShowErrorDialog(false)}

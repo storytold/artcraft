@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { create } from "zustand";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck } from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon } from "lucide-react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { BillingApi } from "@storyteller/api";
@@ -163,10 +162,9 @@ export function InsufficientCreditsModal() {
                   className="flex items-start gap-3 text-[14px] text-white/75"
                 >
                   <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15">
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      className="text-[9px] text-primary"
-                    />
+                    <CheckIcon
+                      
+                      className="text-[9px] text-primary" />
                   </span>
                   <span>{perk}</span>
                 </li>

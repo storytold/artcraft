@@ -1,13 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMusic,
-  faPlay,
-  faSpinnerThird,
-  faStop,
-  faVideo,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon, MusicIcon, PlayIcon, SquareIcon, VideoIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
 import {
@@ -234,7 +227,7 @@ export const MediaReferenceRow = ({
           <div className="flex grow gap-2 px-3 py-2">
             <div className="flex grow flex-col gap-1">
               <div className="flex items-center gap-2 text-white/90">
-                <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
+                <VideoIcon  className="h-3.5 w-3.5" />
                 <span className="flex items-center gap-1.5 text-sm font-medium">
                   Video Ref
                   <span className="font-semibold text-white/60">
@@ -256,11 +249,10 @@ export const MediaReferenceRow = ({
               ))}
               {uploadingVideo && (
                 <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
+                  <LoaderCircleIcon
+                    
                     spin
-                    className="h-5 w-5 text-white/60"
-                  />
+                    className="h-5 w-5 text-white/60" />
                 </div>
               )}
               {canAddVideo && (
@@ -283,7 +275,7 @@ export const MediaReferenceRow = ({
           <div className="flex grow gap-2 px-3 py-2">
             <div className="flex grow flex-col gap-1">
               <div className="flex items-center gap-2 text-white/90">
-                <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />
+                <MusicIcon  className="h-3.5 w-3.5" />
                 <span className="flex items-center gap-1.5 text-sm font-medium">
                   Audio Ref
                   <span className="font-semibold text-white/60">
@@ -306,11 +298,10 @@ export const MediaReferenceRow = ({
               ))}
               {uploadingAudio && (
                 <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
+                  <LoaderCircleIcon
+                    
                     spin
-                    className="h-5 w-5 text-white/60"
-                  />
+                    className="h-5 w-5 text-white/60" />
                 </div>
               )}
               {canAddAudio && (
@@ -354,7 +345,7 @@ const VideoRefTile = ({
       }}
       className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
     >
-      <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+      <XIcon  className="h-2.5 w-2.5" />
     </button>
   </div>
 );
@@ -396,8 +387,8 @@ const AudioRefTile = ({
         onClick={handleTogglePlay}
         className="flex h-full w-full items-center justify-center"
       >
-        <FontAwesomeIcon
-          icon={isPlaying ? faStop : faPlay}
+        <DynamicIcon
+          icon={isPlaying ? SquareIcon : PlayIcon}
           className={twMerge(
             "h-5 w-5 transition-colors",
             isPlaying ? "text-red-400" : "text-white/60 group-hover:text-white",
@@ -414,7 +405,7 @@ const AudioRefTile = ({
         }}
         className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
       >
-        <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+        <XIcon  className="h-2.5 w-2.5" />
       </button>
     </div>
   );

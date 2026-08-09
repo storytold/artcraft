@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { Modal } from "@storyteller/ui-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinnerThird,
-  faCopy,
-  faCheck,
-  faKey,
-  faTrash,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, CopyIcon, KeyIcon, LoaderCircleIcon, TrashIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import {
   UserApiKeysApi,
   type ApiKeyInfo,
@@ -137,7 +131,7 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
 
       {loading ? (
         <div className="py-6 text-center text-xs opacity-60">
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon  className="animate-spin" />
         </div>
       ) : keys.length === 0 ? (
         <div className="py-6 text-center text-xs opacity-60">
@@ -175,7 +169,7 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
             onClick={() => load(false)}
           >
             {loadingMore ? (
-              <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+              <LoaderCircleIcon  className="animate-spin" />
             ) : (
               "Load more"
             )}
@@ -287,7 +281,7 @@ function NewKeyReveal({
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <FontAwesomeIcon icon={faKey} className="opacity-80" />
+        <KeyIcon  className="opacity-80" />
         <span>API key created</span>
       </div>
       <p className="text-xs opacity-80">
@@ -303,8 +297,8 @@ function NewKeyReveal({
           className="h-8 px-3 shrink-0"
           onClick={handleCopy}
         >
-          <FontAwesomeIcon
-            icon={copied ? faCheck : faCopy}
+          <DynamicIcon
+            icon={copied ? CheckIcon : CopyIcon}
             className="mr-1.5"
           />
           {copied ? "Copied" : "Copy"}
@@ -377,7 +371,7 @@ function ApiKeyRow({
               className="h-8 px-2.5 text-red-400"
               onClick={onRequestDelete}
             >
-              <FontAwesomeIcon icon={faTrash} />
+              <TrashIcon />
             </Button>
           </div>
         )}
@@ -509,7 +503,7 @@ function DeleteConfirmModal({
             disabled={deleting}
           >
             {deleting ? (
-              <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+              <LoaderCircleIcon  className="animate-spin" />
             ) : (
               "Delete"
             )}
@@ -549,7 +543,7 @@ function FormActions({
         disabled={submitting || disabled}
       >
         {submitting ? (
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon  className="animate-spin" />
         ) : (
           submitLabel
         )}

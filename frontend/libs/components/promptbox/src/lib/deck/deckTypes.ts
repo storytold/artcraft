@@ -1,4 +1,4 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { LucideIcon } from "lucide-react";
 
 export type DeckItemKind = "image" | "video" | "audio" | "mesh";
 
@@ -29,7 +29,7 @@ export interface DeckItem {
 export interface DeckAddAction {
   key: string;
   label: string;
-  icon?: IconDefinition;
+  icon?: LucideIcon;
   onSelect: () => void;
   disabled?: boolean;
   /** Menu section ("image" | "video" | "audio"); shown as a header when the

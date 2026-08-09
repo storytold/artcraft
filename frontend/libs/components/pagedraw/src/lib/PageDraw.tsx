@@ -49,12 +49,7 @@ import {
   Model3DOverlay,
   type Model3DOverlayHandle,
 } from "./components/Model3DOverlay";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUpRightAndDownLeftFromCenter,
-  faArrowsRotate,
-  faCamera,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
@@ -238,17 +233,17 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
       style={{ left: cx, top: cy }}
     >
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} />}
+        icon={<Maximize2Icon />}
         title="Scale — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
       />
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faArrowsRotate} />}
+        icon={<RefreshCwIcon />}
         title="Rotate — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
       />
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faCamera} />}
+        icon={<CameraIcon />}
         title="Field of view — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
       />

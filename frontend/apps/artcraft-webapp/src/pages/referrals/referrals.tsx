@@ -6,13 +6,8 @@ import {
   type ReferralCodeEntry,
 } from "@storyteller/api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faCopy,
-  faPlus,
-  faTrashAlt,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, CopyIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { useSession } from "../../lib/session";
 import { toast } from "../../components/toast/toast";
 import Seo from "../../components/seo";
@@ -252,7 +247,7 @@ export default function Referrals() {
                   disabled={submitDisabled}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary-600 px-6 text-[14px] font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <FontAwesomeIcon icon={faPlus} className="text-[12px]" />
+                  <PlusIcon  className="text-[12px]" />
                   {creating ? "Creating…" : "Create"}
                 </button>
               </div>
@@ -357,7 +352,7 @@ function ReferralCodeRow({
             className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition-colors"
             title="Delete referral code"
           >
-            <FontAwesomeIcon icon={faTrashAlt} className="text-[13px]" />
+            <Trash2Icon  className="text-[13px]" />
           </button>
         )}
       </div>
@@ -393,8 +388,8 @@ function CopyableLink({ value }: { value: string }) {
         onClick={handleCopy}
         className="inline-flex h-11 items-center gap-2 rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 text-xs font-semibold text-white/85 transition-all"
       >
-        <FontAwesomeIcon
-          icon={copied ? faCheck : faCopy}
+        <DynamicIcon
+          icon={copied ? CheckIcon : CopyIcon}
           className="text-[12px]"
         />
         {copied ? "Copied" : "Copy"}

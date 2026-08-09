@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronRight } from "@fortawesome/pro-solid-svg-icons";
+import { ChevronRightIcon } from "lucide-react";
 
 interface MobileFieldButtonProps {
   label: string;
@@ -44,10 +43,9 @@ export function MobileFieldButton({
         <span className="truncate text-sm font-semibold text-base-fg">
           {value}
         </span>
-        <FontAwesomeIcon
-          icon={faChevronRight}
-          className="h-3 w-3 shrink-0 text-base-fg/40"
-        />
+        <ChevronRightIcon
+          
+          className="h-3 w-3 shrink-0 text-base-fg/40" />
       </span>
     </button>
   );

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEraser } from "@fortawesome/pro-solid-svg-icons";
+import { EraserIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 // Toolbar "clear everything" icon button shared by all promptbox variants:
@@ -61,7 +60,7 @@ export const PromptClearAllButton = ({
             className,
           )}
         >
-          <FontAwesomeIcon icon={faEraser} className="h-4 w-4" />
+          <EraserIcon  className="h-4 w-4" />
         </button>
       </Tooltip>
       {/* Separates the destructive clear control from the generate side of

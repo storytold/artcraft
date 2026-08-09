@@ -4,12 +4,7 @@ import { toast } from "../toast/toast";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronLeft,
-  faChevronRight,
-  faTrashCan,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon, Trash2Icon } from "lucide-react";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
@@ -475,7 +470,7 @@ export function Lightbox({
                 className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Previous item"
               >
-                <FontAwesomeIcon icon={faChevronLeft} className="text-lg" />
+                <ChevronLeftIcon  className="text-lg" />
               </button>
             )}
             {onNavigateNext && (
@@ -487,7 +482,7 @@ export function Lightbox({
                 className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Next item"
               >
-                <FontAwesomeIcon icon={faChevronRight} className="text-lg" />
+                <ChevronRightIcon  className="text-lg" />
               </button>
             )}
           </div>
@@ -529,7 +524,7 @@ export function Lightbox({
         onPrimaryAction={handleDelete}
         primaryActionText="Delete"
         secondaryActionText="Cancel"
-        primaryActionIcon={faTrashCan}
+        primaryActionIcon={Trash2Icon}
         primaryActionBtnClassName="bg-red-500/10 hover:bg-red-500/20 text-red-500"
       />
     </>

@@ -1,15 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faCheck,
-  faImage,
-  faSave,
-  faSpinnerThird,
-  faVideo,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { ArrowDownToLineIcon, CheckIcon, ImageIcon, LoaderCircleIcon, SaveIcon, VideoIcon, XIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { EASE_EMPHASIS } from "../../lib/motion";
 import type { ExtractedFrame } from "./lib/extract-frames";
@@ -66,8 +58,8 @@ export const FramesGrid = ({
               disabled={isSavingAll}
               className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-base-fg/70 transition-colors hover:bg-white/5 hover:text-base-fg disabled:opacity-50"
             >
-              <FontAwesomeIcon
-                icon={isSavingAll ? faSpinnerThird : faSave}
+              <DynamicIcon
+                icon={isSavingAll ? LoaderCircleIcon : SaveIcon}
                 className={isSavingAll ? "animate-spin" : ""}
               />
               {isSavingAll ? "Saving…" : "Save all"}
@@ -107,7 +99,7 @@ export const FramesGrid = ({
                     className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md bg-black/60 text-white/60 opacity-0 backdrop-blur-sm transition-all hover:text-white group-hover/frame:opacity-100"
                     aria-label="Remove frame"
                   >
-                    <FontAwesomeIcon icon={faXmark} className="text-xs" />
+                    <XIcon  className="text-xs" />
                   </button>
                   <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white/85 backdrop-blur-sm">
                     {formatTimePrecise(frame.timestamp)}
@@ -115,19 +107,19 @@ export const FramesGrid = ({
                 </div>
                 <div className="flex items-center justify-around border-t border-ui-panel-border/60 p-1">
                   <FrameAction
-                    icon={faImage}
+                    icon={ImageIcon}
                     tooltip="Use as image reference"
                     onClick={() => onUseAsImageRef(frame)}
                     loading={state.sending}
                   />
                   <FrameAction
-                    icon={faVideo}
+                    icon={VideoIcon}
                     tooltip="Animate into a video"
                     onClick={() => onUseForVideo(frame)}
                     loading={state.sending}
                   />
                   <FrameAction
-                    icon={state.saved ? faCheck : faSave}
+                    icon={state.saved ? CheckIcon : SaveIcon}
                     tooltip={state.saved ? "Saved to library" : "Save to library"}
                     onClick={() => onSave(frame)}
                     loading={state.saving}
@@ -135,7 +127,7 @@ export const FramesGrid = ({
                     success={state.saved}
                   />
                   <FrameAction
-                    icon={faArrowDownToLine}
+                    icon={ArrowDownToLineIcon}
                     tooltip="Download PNG"
                     onClick={() => onDownload(frame)}
                   />
@@ -150,7 +142,7 @@ export const FramesGrid = ({
 };
 
 interface FrameActionProps {
-  icon: IconDefinition;
+  icon: LucideIcon;
   tooltip: string;
   onClick: () => void;
   loading?: boolean;
@@ -179,8 +171,8 @@ const FrameAction = ({
           : "text-base-fg/60 hover:bg-white/5 hover:text-base-fg"
       }`}
     >
-      <FontAwesomeIcon
-        icon={loading ? faSpinnerThird : icon}
+      <DynamicIcon
+        icon={loading ? LoaderCircleIcon : icon}
         className={loading ? "animate-spin" : ""}
       />
     </button>

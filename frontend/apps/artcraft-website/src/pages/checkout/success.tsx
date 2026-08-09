@@ -1,11 +1,5 @@
-import {
-  faCheckCircle,
-  faDownload,
-  faDesktop,
-  faRocket,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CircleCheckIcon, DownloadIcon, MonitorIcon, RocketIcon } from "lucide-react";
+import { DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
 import { isMobile, isMacOs } from "react-device-detect";
@@ -96,10 +90,9 @@ const CheckoutSuccess = () => {
             {/* Success Icon */}
             <div className="mb-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-5xl text-green-400"
-                />
+                <CircleCheckIcon
+                  
+                  className="text-5xl text-green-400" />
               </div>
             </div>
 
@@ -117,10 +110,9 @@ const CheckoutSuccess = () => {
             <div className="bg-[#252529] rounded-2xl p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <FontAwesomeIcon
-                    icon={faRocket}
-                    className="text-primary text-sm"
-                  />
+                  <RocketIcon
+                    
+                    className="text-primary text-sm" />
                 </div>
                 <h2 className="text-lg font-medium text-white">Next Steps</h2>
               </div>
@@ -151,7 +143,7 @@ const CheckoutSuccess = () => {
                     href={downloadUrl}
                     className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
                   >
-                    <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                    <DownloadIcon  className="mr-2" />
                     Download ArtCraft
                   </Button>
                 )}
@@ -159,7 +151,7 @@ const CheckoutSuccess = () => {
             ) : (
               <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
-                  <FontAwesomeIcon icon={faDesktop} className="text-2xl" />
+                  <MonitorIcon  className="text-2xl" />
                 </div>
                 ArtCraft is a desktop application. <br />
                 Please head to your computer to download and start creating.
@@ -199,7 +191,7 @@ const CheckoutSuccess = () => {
                 target="_blank"
                 className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
-                <FontAwesomeIcon icon={faDiscord} />
+                <DiscordIcon />
                 Join Discord
               </Button>
             </div>

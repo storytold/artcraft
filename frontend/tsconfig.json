@@ -218,6 +218,9 @@
     },
     {
       "path": "./libs/components/audio-player"
+    },
+    {
+      "path": "./libs/icons"
     }
   ]
 }

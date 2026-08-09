@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@storyteller/ui-button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import {
   SoraGetCredentialInfo,
   LogoutSoraSession,
@@ -78,10 +77,9 @@ export const SoraAccountBlock = () => {
         disabled={isCheckingSoraSession}
       >
         {isCheckingSoraSession ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-sm"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-sm" />
         ) : soraSession?.payload?.can_clear_state ? (
           "Disconnect"
         ) : (

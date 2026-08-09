@@ -1,16 +1,13 @@
 import { ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconDefinition } from "@fortawesome/pro-solid-svg-icons";
+import { Maximize2Icon, Minimize2Icon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { useRef, useState, useEffect, useContext, createContext } from "react";
 import { cloneElement, isValidElement } from "react";
 import { useTransition, useSpring, to, animated } from "@react-spring/web";
-import {
-  faUpRightAndDownLeftFromCenter,
-  faDownLeftAndUpRightToCenter,
-} from "@fortawesome/pro-solid-svg-icons";
 import { DomLevels } from "@storyteller/common";
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
@@ -157,11 +154,11 @@ const ExpandButton = ({ className, size = "md" }: ExpandButtonProps) => {
         className,
       )}
     >
-      <FontAwesomeIcon
+      <DynamicIcon
         icon={
           expanded
-            ? faDownLeftAndUpRightToCenter
-            : faUpRightAndDownLeftFromCenter
+            ? Minimize2Icon
+            : Maximize2Icon
         }
       />
     </button>
@@ -200,7 +197,7 @@ export const Modal = ({
 }: {
   isOpen: boolean;
   title?: ReactNode;
-  titleIcon?: IconDefinition;
+  titleIcon?: LucideIcon;
   onTitleIconClick?: () => void;
   titleIconClassName?: string;
   onClose: () => void;
@@ -1100,7 +1097,7 @@ export const Modal = ({
                                   onClick={onTitleIconClick}
                                 >
                                   {titleIcon && (
-                                    <FontAwesomeIcon
+                                    <DynamicIcon
                                       icon={titleIcon}
                                       className={titleIconClassName}
                                     />
@@ -1110,7 +1107,7 @@ export const Modal = ({
                               ) : (
                                 <div className="flex items-center gap-3">
                                   {titleIcon && (
-                                    <FontAwesomeIcon
+                                    <DynamicIcon
                                       icon={titleIcon}
                                       className={titleIconClassName}
                                     />

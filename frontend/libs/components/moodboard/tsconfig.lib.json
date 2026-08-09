@@ -39,6 +39,9 @@
     },
     {
       "path": "../button-icon-select/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

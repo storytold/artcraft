@@ -1,6 +1,5 @@
 import { Button, ButtonProps } from "./button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCoins } from "@fortawesome/pro-solid-svg-icons";
+import { CoinsIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -38,7 +37,7 @@ export const GenerateButton = ({
               disabled && "opacity-50",
             )}
           >
-            <FontAwesomeIcon icon={faCoins} className="text-xs text-white" />
+            <CoinsIcon  className="text-xs text-white" />
             <span className="text-[13px] font-bold text-white/90">
               {credits}
             </span>

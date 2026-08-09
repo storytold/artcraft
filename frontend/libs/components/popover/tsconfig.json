@@ -6,10 +6,10 @@
       "path": "../tooltip"
     },
     {
-      "path": "../../model-list"
+      "path": "../button"
     },
     {
-      "path": "../button"
+      "path": "../../model-list"
     },
     {
       "path": "./tsconfig.lib.json"

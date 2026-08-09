@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faUser } from "@fortawesome/pro-solid-svg-icons";
+import { SettingsIcon, UserIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Switch } from "@storyteller/ui-switch";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
@@ -15,9 +15,9 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const TABS: { id: Tab; label: string; icon: typeof faCog }[] = [
-  { id: "general", label: "General", icon: faCog },
-  { id: "account", label: "Account", icon: faUser },
+const TABS: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
+  { id: "general", label: "General", icon: SettingsIcon },
+  { id: "account", label: "Account", icon: UserIcon },
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -49,7 +49,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   )}
                 >
                   <div className="flex items-center gap-2.5 text-sm">
-                    <FontAwesomeIcon icon={t.icon} />
+                    <DynamicIcon icon={t.icon} />
                     {t.label}
                   </div>
                 </button>

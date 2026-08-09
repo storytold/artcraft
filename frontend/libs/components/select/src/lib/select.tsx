@@ -5,8 +5,7 @@ import {
   ListboxOption,
   Transition,
 } from "@headlessui/react";
-import { faCheck, faChevronDown } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 export type SelectValue = string | number;
 export type SelectOption = { label: string; value: SelectValue };
@@ -47,7 +46,7 @@ export const Select = ({
                 {selectedOption.label}
               </span>
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
-                <FontAwesomeIcon icon={faChevronDown} aria-hidden="true" />
+                <ChevronDownIcon  aria-hidden="true" />
               </span>
             </ListboxButton>
 
@@ -83,11 +82,10 @@ export const Select = ({
                         </span>
                         {selected ? (
                           <span className="absolute inset-y-0 left-0 flex items-center pl-2.5">
-                            <FontAwesomeIcon
-                              icon={faCheck}
+                            <CheckIcon
+                              
                               aria-hidden="true"
-                              className="text-xs"
-                            />
+                              className="text-xs" />
                           </span>
                         ) : null}
                       </>

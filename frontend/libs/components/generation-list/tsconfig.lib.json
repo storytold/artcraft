@@ -44,22 +44,25 @@
   ],
   "references": [
     {
-      "path": "../tooltip/tsconfig.lib.json"
+      "path": "../../api/tsconfig.lib.json"
     },
     {
       "path": "../loading-spinner/tsconfig.lib.json"
     },
     {
-      "path": "../audio-player/tsconfig.lib.json"
-    },
-    {
       "path": "../../common/tsconfig.lib.json"
     },
     {
-      "path": "../../api/tsconfig.lib.json"
+      "path": "../audio-player/tsconfig.lib.json"
     },
     {
       "path": "../../model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../tooltip/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

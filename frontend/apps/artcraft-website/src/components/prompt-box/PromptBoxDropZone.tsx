@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faImages, faMusic, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import { ImagesIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { toast } from "../toast/toast";
 
 // ── Types ───────────────────────────────────────────────────────────────
@@ -235,10 +235,10 @@ export function PromptBoxDropOverlay({
 
   const kinds = [
     ...(acceptsImages
-      ? [{ icon: faImages, label: keyframeMode ? "Frames" : "Images" }]
+      ? [{ icon: ImagesIcon, label: keyframeMode ? "Frames" : "Images" }]
       : []),
-    ...(acceptsVideos ? [{ icon: faVideo, label: "Video" }] : []),
-    ...(acceptsAudio ? [{ icon: faMusic, label: "Audio" }] : []),
+    ...(acceptsVideos ? [{ icon: VideoIcon, label: "Video" }] : []),
+    ...(acceptsAudio ? [{ icon: MusicIcon, label: "Audio" }] : []),
   ];
   const rejected = dragState === "reject";
 
@@ -256,7 +256,7 @@ export function PromptBoxDropOverlay({
             className="promptbox-drop-chip flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-base-fg/90"
             style={{ animationDelay: `${i * 50}ms` }}
           >
-            <FontAwesomeIcon icon={kind.icon} className="text-sm" />
+            <DynamicIcon icon={kind.icon} className="text-sm" />
           </div>
         ))}
       </div>

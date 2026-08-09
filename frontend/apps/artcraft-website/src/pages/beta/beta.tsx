@@ -1,8 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, LoaderCircleIcon } from "lucide-react";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { getReferrer } from "@storyteller/common";
@@ -189,10 +188,9 @@ const Beta = () => {
               {BETA_PERKS.map((perk) => (
                 <li key={perk.title} className="flex gap-4">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/30">
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      className="text-primary text-[11px]"
-                    />
+                    <CheckIcon
+                      
+                      className="text-primary text-[11px]" />
                   </span>
                   <div>
                     <p className="font-semibold text-[15px]">{perk.title}</p>
@@ -207,10 +205,9 @@ const Beta = () => {
             {isSubmitted ? (
               <div className="text-center py-8" role="status" aria-live="polite">
                 <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 border border-primary/30">
-                  <FontAwesomeIcon
-                    icon={faCheck}
-                    className="text-primary text-xl"
-                  />
+                  <CheckIcon
+                    
+                    className="text-primary text-xl" />
                 </div>
                 <h2 className="text-2xl font-semibold mb-3">
                   You're on the list
@@ -385,10 +382,9 @@ const Beta = () => {
                       className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-11"
                     >
                       {isLoading ? (
-                        <FontAwesomeIcon
-                          icon={faSpinnerThird}
-                          className="animate-spin"
-                        />
+                        <LoaderCircleIcon
+                          
+                          className="animate-spin" />
                       ) : (
                         "Request access"
                       )}

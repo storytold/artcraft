@@ -75,7 +75,7 @@ import {
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
-import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
+import { SparklesIcon } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -679,7 +679,7 @@ export default function CreateImage() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create

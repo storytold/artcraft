@@ -6,6 +6,9 @@
       "path": "../tooltip"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "../../common"
     },
     {

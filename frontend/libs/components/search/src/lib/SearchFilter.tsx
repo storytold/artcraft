@@ -1,14 +1,9 @@
-import {
-  faCircleXmark,
-  faFilterList,
-  faSearch,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CircleXIcon, ListFilterIcon, SearchIcon } from "lucide-react";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import debounce from "lodash/debounce";
 import { useRef, useState, useEffect, useCallback } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface SearchFilterProps {
   onSearchChange: (value: string) => void;
@@ -58,7 +53,7 @@ export const SearchFilter = ({
       <div className="relative grow">
         <Input
           ref={inputRef}
-          icon={faSearch}
+          icon={SearchIcon}
           iconClassName="opacity-50 pt-[11px] text-sm"
           inputClassName="h-9 rounded-lg text-sm pr-8 pl-9"
           placeholder={placeholder}
@@ -67,18 +62,17 @@ export const SearchFilter = ({
           onChange={handleInputChange}
         />
         {hasText && (
-          <FontAwesomeIcon
-            icon={faCircleXmark}
+          <CircleXIcon
+            
             className="absolute right-2.5 top-1/2 -translate-y-1/2 transform cursor-pointer opacity-50 transition-all duration-100 hover:opacity-100"
-            onClick={clearSearch}
-          />
+            onClick={clearSearch} />
         )}
       </div>
 
       {showFilters && (
         <Tooltip position="top" content="Filters">
           <Button
-            icon={faFilterList}
+            icon={ListFilterIcon}
             variant="secondary"
             className="h-9 w-9"
             iconClassName="text-[16px]"

@@ -1,6 +1,5 @@
-import { faXmarkCircle } from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CircleXIcon } from "lucide-react";
+import { DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
 import { SOCIAL_LINKS } from "../../config/links";
@@ -82,10 +81,9 @@ const CheckoutCancel = () => {
             {/* Cancel Icon */}
             <div className="mb-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-white/10 flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faXmarkCircle}
-                  className="text-5xl text-white/50"
-                />
+                <CircleXIcon
+                  
+                  className="text-5xl text-white/50" />
               </div>
             </div>
 
@@ -133,7 +131,7 @@ const CheckoutCancel = () => {
                 target="_blank"
                 className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
-                <FontAwesomeIcon icon={faDiscord} />
+                <DiscordIcon />
                 Join Discord
               </Button>
             </div>

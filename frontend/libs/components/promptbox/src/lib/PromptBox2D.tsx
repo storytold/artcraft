@@ -4,19 +4,9 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  faFrame,
-  faExpand,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import {
-  faRectangleVertical,
-  faSquare,
-  faRectangle,
-} from "@fortawesome/pro-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
+import { ChevronDownIcon, ChevronUpIcon, FrameIcon, MaximizeIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SquareIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 
 import {
   Prompt2DStore,
@@ -119,17 +109,17 @@ export const PromptBox2D = ({
     {
       label: "Wide",
       selected: aspectRatio === "wide",
-      icon: <FontAwesomeIcon icon={faRectangle} className="h-4 w-4" />,
+      icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
       label: "Tall",
       selected: aspectRatio === "tall",
-      icon: <FontAwesomeIcon icon={faRectangleVertical} className="h-4 w-4" />,
+      icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
       label: "Square",
       selected: aspectRatio === "square",
-      icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
+      icon: <SquareIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -137,17 +127,17 @@ export const PromptBox2D = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -318,8 +308,8 @@ export const PromptBox2D = ({
 
   const getCurrentAspectRatioIcon = () => {
     const selected = aspectRatioList.find((item) => item.selected);
-    if (!selected || !selected.icon) return faRectangle;
-    const iconElement = selected.icon as React.ReactElement<{ icon: IconProp }>;
+    if (!selected || !selected.icon) return RectangleHorizontalIcon;
+    const iconElement = selected.icon as React.ReactElement<{ icon: LucideIcon }>;
     return iconElement.props.icon;
   };
 
@@ -477,7 +467,7 @@ export const PromptBox2D = ({
                     panelTitle="Aspect Ratio"
                     showIconsInList
                     triggerIcon={
-                      <FontAwesomeIcon
+                      <DynamicIcon
                         icon={getCurrentAspectRatioIcon()}
                         className="h-4 w-4"
                       />
@@ -499,7 +489,7 @@ export const PromptBox2D = ({
                     panelTitle="Resolution"
                     showIconsInList
                     triggerIcon={
-                      <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                      <MaximizeIcon  className="h-4 w-4" />
                     }
                   />
                 </Tooltip>
@@ -523,7 +513,7 @@ export const PromptBox2D = ({
                     className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                     onClick={onFitPressed}
                   >
-                    <FontAwesomeIcon icon={faFrame} className="h-4 w-4" />
+                    <FrameIcon  className="h-4 w-4" />
                     Fit
                   </Button>
                 </Tooltip>
@@ -557,8 +547,8 @@ export const PromptBox2D = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>

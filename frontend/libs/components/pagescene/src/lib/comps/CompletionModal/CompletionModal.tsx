@@ -1,12 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTrash,
-  faCloudArrowUp,
-  faSpinnerThird,
-  faTriangleExclamation,
-  faRotateRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CloudUploadIcon, LoaderCircleIcon, RotateCwIcon, TrashIcon, TriangleAlertIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext";
 import { usePageSceneStore } from "../../PageSceneStore";
 
@@ -91,19 +84,17 @@ export const CompletionModal = () => {
         {/* upload status */}
         {busy && (
           <div className="flex items-center gap-2 text-sm text-base-fg/70">
-            <FontAwesomeIcon
-              icon={faSpinnerThird}
-              className="h-4 w-4 animate-spin"
-            />
+            <LoaderCircleIcon
+              
+              className="h-4 w-4 animate-spin" />
             Uploading to gallery…
           </div>
         )}
         {status === "error" && (
           <div className="flex items-center gap-2 text-sm text-red">
-            <FontAwesomeIcon
-              icon={faTriangleExclamation}
-              className="h-4 w-4"
-            />
+            <TriangleAlertIcon
+              
+              className="h-4 w-4" />
             Upload failed — check your connection and retry.
           </div>
         )}
@@ -116,7 +107,7 @@ export const CompletionModal = () => {
             disabled={busy}
             className="flex h-9 items-center gap-2 rounded-full px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-50"
           >
-            <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+            <TrashIcon  className="h-3.5 w-3.5" />
             Discard
           </button>
 
@@ -126,7 +117,7 @@ export const CompletionModal = () => {
               onClick={() => void upload()}
               className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
             >
-              <FontAwesomeIcon icon={faRotateRight} className="h-3.5 w-3.5" />
+              <RotateCwIcon  className="h-3.5 w-3.5" />
               Retry
             </button>
           ) : isVideo && status === "idle" ? (
@@ -135,7 +126,7 @@ export const CompletionModal = () => {
               onClick={() => void upload()}
               className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
             >
-              <FontAwesomeIcon icon={faCloudArrowUp} className="h-3.5 w-3.5" />
+              <CloudUploadIcon  className="h-3.5 w-3.5" />
               Upload &amp; continue
             </button>
           ) : null}

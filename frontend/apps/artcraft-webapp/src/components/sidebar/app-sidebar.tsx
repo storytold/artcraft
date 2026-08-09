@@ -1,26 +1,9 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faHouse,
-  faVideo,
-  faImage,
-  faMusic,
-  faCube,
-  faGlobe,
-  faFilm,
-  faObjectGroup,
-  faWandMagicSparkles,
-  faGraduationCap,
-  faNewspaper,
-  faCircleQuestion,
-  faDownload,
-  faGift,
-  faPencil,
-  faPhotoFilm,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { BoxIcon, CircleHelpIcon, DownloadIcon, FilmIcon, GiftIcon, GlobeIcon, GraduationCapIcon, GroupIcon, HouseIcon, ImageIcon, ImagesIcon, MusicIcon, NewspaperIcon, PencilIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { USER_FEATURE_FLAGS } from "@storyteller/api";
 import { useSession } from "../../lib/session";
@@ -38,7 +21,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "../ui/sidebar";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { MARKETING_SITE, SOCIAL_LINKS } from "../../config/links";
 import { useSceneCacheStore } from "../../pages/pagescene/scene-cache-store";
 import { LibraryFoldersNav } from "./library-folders-nav";
@@ -46,43 +28,43 @@ import { LibraryFoldersNav } from "./library-folders-nav";
 type NavItem = {
   label: string;
   href: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   external?: boolean;
   badge?: string;
 };
 
-const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
+const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: HouseIcon }];
 
 // Generation entries — make something from a prompt.
 const CREATE_ITEMS_STATIC: NavItem[] = [
-  { label: "Image", href: "/create-image", icon: faImage },
-  { label: "Video", href: "/create-video", icon: faVideo },
-  { label: "Audio", href: "/create-audio", icon: faMusic },
-  { label: "3D Object", href: "/create-object", icon: faCube },
-  { label: "3D World", href: "/create-world", icon: faGlobe },
+  { label: "Image", href: "/create-image", icon: ImageIcon },
+  { label: "Video", href: "/create-video", icon: VideoIcon },
+  { label: "Audio", href: "/create-audio", icon: MusicIcon },
+  { label: "3D Object", href: "/create-object", icon: BoxIcon },
+  { label: "3D World", href: "/create-world", icon: GlobeIcon },
 ];
 
 // "Studio" entries — edit, compose, and refine existing content. "Edit 3D"'s
 // href is computed at render time from the scene-cache store (see useStudioItems).
 const STUDIO_ITEMS_STATIC: NavItem[] = [
-  { label: "Edit Image", href: "/edit-image", icon: faPencil },
-  { label: "Edit 3D", href: "/edit-3d", icon: faCube },
-  { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
+  { label: "Edit Image", href: "/edit-image", icon: PencilIcon },
+  { label: "Edit 3D", href: "/edit-3d", icon: BoxIcon },
+  { label: "Edit Video", href: "/video-editor", icon: FilmIcon, badge: "BETA" },
   {
     label: "BG Change",
     href: "/background-change",
-    icon: faWandMagicSparkles,
+    icon: WandSparklesIcon,
   },
   {
     label: "Moodboard",
     href: "/moodboard",
-    icon: faObjectGroup,
+    icon: GroupIcon,
     badge: "BETA",
   },
   {
     label: "Frame Extract",
     href: "/frame-extractor",
-    icon: faPhotoFilm,
+    icon: ImagesIcon,
     badge: "NEW",
   },
 ];
@@ -107,26 +89,26 @@ function useStudioItems(): NavItem[] {
 const REFERRALS_ITEM: NavItem = {
   label: "Referrals",
   href: "/referrals",
-  icon: faGift,
+  icon: GiftIcon,
 };
 
 const RESOURCES_ITEMS: NavItem[] = [
   {
     label: "Tutorials",
     href: `${MARKETING_SITE}/tutorials`,
-    icon: faGraduationCap,
+    icon: GraduationCapIcon,
     external: true,
   },
   {
     label: "News",
     href: `${MARKETING_SITE}/news`,
-    icon: faNewspaper,
+    icon: NewspaperIcon,
     external: true,
   },
   {
     label: "FAQ",
     href: `${MARKETING_SITE}/faq`,
-    icon: faCircleQuestion,
+    icon: CircleHelpIcon,
     external: true,
   },
 ];
@@ -135,7 +117,7 @@ const SUPPORT_ITEMS: NavItem[] = [
   {
     label: "Join Discord",
     href: SOCIAL_LINKS.DISCORD,
-    icon: faDiscord,
+    icon: DiscordIcon,
     external: true,
   },
 ];
@@ -166,7 +148,7 @@ function NavMenuItem({
     <>
       {/* Icon nudges up in scale on hover — a small tactile cue that the row is
           interactive, kept subtle to stay within the "restrained chrome" lane. */}
-      <FontAwesomeIcon
+      <DynamicIcon
         icon={item.icon}
         className="transition-transform duration-200 ease-out group-hover/menu-item:scale-110"
       />
@@ -332,7 +314,7 @@ export function AppSidebar() {
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
         <Button
           variant="primary"
-          icon={faDownload}
+          icon={DownloadIcon}
           onClick={() =>
             window.open(DOWNLOAD_URL, "_blank", "noopener,noreferrer")
           }

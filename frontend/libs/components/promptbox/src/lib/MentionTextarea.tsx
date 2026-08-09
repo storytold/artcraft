@@ -10,9 +10,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser } from "@fortawesome/pro-solid-svg-icons";
-import { faVideo, faMusic } from "@fortawesome/pro-regular-svg-icons";
+import { MusicIcon, UserIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { useEnterToGenerateStore } from "./promptStore";
 import { MentionChipMenu } from "./MentionChipMenu";
 import { DeckPreviewModal } from "./deck/DeckCard";
@@ -570,10 +569,9 @@ function MentionDropdown({
                   className="h-full w-full object-cover"
                 />
               ) : item.type === "character" ? (
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="h-3.5 w-3.5 text-base-fg/60"
-                />
+                <UserIcon
+                  
+                  className="h-3.5 w-3.5 text-base-fg/60" />
               ) : item.type === "image" && item.preview ? (
                 <img
                   src={item.preview}
@@ -588,8 +586,8 @@ function MentionDropdown({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <FontAwesomeIcon
-                  icon={item.type === "video" ? faVideo : faMusic}
+                <DynamicIcon
+                  icon={item.type === "video" ? VideoIcon : MusicIcon}
                   className="h-3.5 w-3.5 text-base-fg/60"
                 />
               )}

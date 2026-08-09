@@ -1,10 +1,6 @@
 import { Modal } from "@storyteller/ui-modal";
 import { invoke } from "@tauri-apps/api/core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRight,
-  faMagicWandSparkles,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowRightIcon, WandSparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
 import { useShowProviderLoginModalEvent } from "@storyteller/tauri-events";
@@ -80,10 +76,9 @@ export function ProviderSetupModal({
           <br />
 
           <h1 className="text-3xl font-bold">
-            <FontAwesomeIcon
-              icon={faMagicWandSparkles}
-              className="mr-3 text-[24px]"
-            />
+            <WandSparklesIcon
+              
+              className="mr-3 text-[24px]" />
             {modalTitle}
           </h1>
           <div className="text-center">
@@ -103,7 +98,7 @@ export function ProviderSetupModal({
         </div>*/}
         <Button
           className="font-semibold"
-          icon={faArrowRight}
+          icon={ArrowRightIcon}
           iconFlip={true}
           onClick={() => {
             buttonOnClick();

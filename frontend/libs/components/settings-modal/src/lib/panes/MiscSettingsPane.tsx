@@ -11,12 +11,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Label } from "@storyteller/ui-label";
 import { Switch } from "@storyteller/ui-switch";
 import { DownloadDirectoryReveal } from "@storyteller/tauri-api";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faFolder,
-  faMagnifyingGlass,
-  faRotateLeft,
-} from "@fortawesome/pro-solid-svg-icons";
+import { FolderIcon, RotateCcwIcon, SearchIcon } from "lucide-react";
 import { useEnterToGenerateStore } from "@storyteller/ui-promptbox";
 import { useModelPickerStyleStore } from "@storyteller/ui-popover";
 import {
@@ -117,15 +112,15 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
       </div>
       <div className="flex gap-2">
         <Button variant="primary" onClick={openDirectoryPicker}>
-          <FontAwesomeIcon icon={faFolder} />
+          <FolderIcon />
           Choose Directory
         </Button>
         <Button variant="destructive" onClick={clearDirectory}>
-          <FontAwesomeIcon icon={faRotateLeft} />
+          <RotateCcwIcon />
           Use Default
         </Button>
         <Button variant="secondary" onClick={showDirectory}>
-          <FontAwesomeIcon icon={faMagnifyingGlass} />
+          <SearchIcon />
           Show Directory
         </Button>
       </div>

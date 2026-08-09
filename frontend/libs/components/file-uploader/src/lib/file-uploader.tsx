@@ -1,7 +1,7 @@
 import { FileUploader as DragDropFileUploader } from "react-drag-drop-files";
 // Usage refer to https://github.com/KarimMokhtar/react-drag-drop-files
 
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { LucideIcon } from "lucide-react";
 import { DragAndDropZone } from "./drag-and-drop-zone";
 
 export const FileUploader = ({
@@ -15,7 +15,7 @@ export const FileUploader = ({
   handleChange: (files: File[]) => void;
   fileTypes: string[];
   multiple?: boolean;
-  fileIcon?: IconDefinition;
+  fileIcon?: LucideIcon;
 }) => (
   <DragDropFileUploader
     handleChange={(result: File | File[]) => {

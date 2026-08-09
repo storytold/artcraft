@@ -2,12 +2,8 @@ import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
 import { useState } from "react";
-import {
-  faCheck,
-  faStar,
-  faGem,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CheckIcon, GemIcon, StarIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { usePricingModalStore } from "./pricing-modal-store";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { invoke } from "@tauri-apps/api/core";
@@ -288,8 +284,8 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
                   frame?.tab,
                 )}
               >
-                <FontAwesomeIcon
-                  icon={highlight === "popular" ? faStar : faGem}
+                <DynamicIcon
+                  icon={highlight === "popular" ? StarIcon : GemIcon}
                   className="pb-0.5 text-xs"
                 />
                 {highlight === "popular" ? "Most Popular" : "Best Value"}
@@ -409,7 +405,7 @@ const Feature = ({
           : "border border-white/20 text-transparent",
       )}
     >
-      {included && <FontAwesomeIcon icon={faCheck} className="text-xs" />}
+      {included && <CheckIcon  className="text-xs" />}
     </div>
     <span
       className={twMerge(

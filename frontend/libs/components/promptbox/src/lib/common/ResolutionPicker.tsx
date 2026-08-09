@@ -1,12 +1,9 @@
-import { faSquare, IconDefinition } from "@fortawesome/pro-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { SquareIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon, HighDefinitionIcon, StandardDefinitionIcon } from "@storyteller/icons";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { CommonResolution, ImageModel } from "@storyteller/model-list";
-import {
-  faHighDefinition,
-  faStandardDefinition,
-} from "@fortawesome/pro-solid-svg-icons";
 
 interface ResolutionPickerProps {
   model: ImageModel;
@@ -37,9 +34,9 @@ export const ResolutionPicker = ({
   console.log("resolution - currentResolution:", currentResolution);
   console.log("resolution - useResolution:", useResolution);
 
-  const getCurrentResolutionIcon = (): IconDefinition => {
+  const getCurrentResolutionIcon = (): LucideIcon => {
     if (!useResolution) {
-      return faSquare;
+      return SquareIcon;
     }
     return getResolutionIcon(useResolution);
   };
@@ -57,7 +54,7 @@ export const ResolutionPicker = ({
       selected: useResolution === resolution,
       description: `foo ${resolution}`,
       icon: (
-        <FontAwesomeIcon
+        <DynamicIcon
           icon={getResolutionIcon(resolution)}
           className="h-4 w-4"
         />
@@ -80,7 +77,7 @@ export const ResolutionPicker = ({
           panelTitle="Resolution"
           showIconsInList
           triggerIcon={
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={getCurrentResolutionIcon()}
               className="h-4 w-4"
             />
@@ -91,21 +88,21 @@ export const ResolutionPicker = ({
   );
 };
 
-const getResolutionIcon = (resolution: CommonResolution): IconDefinition => {
+const getResolutionIcon = (resolution: CommonResolution): LucideIcon => {
   switch (resolution) {
     case CommonResolution.HalfK:
     case CommonResolution.FourEightyP:
     case CommonResolution.SevenTwentyP:
     case CommonResolution.OneK:
     case CommonResolution.TenEightyP:
-      return faStandardDefinition;
+      return StandardDefinitionIcon;
     case CommonResolution.TwoK:
     case CommonResolution.ThreeK:
     case CommonResolution.FourK:
-      return faHighDefinition;
+      return HighDefinitionIcon;
     default:
       console.error("Unknown resolution in icon mapping:", resolution);
-      return faStandardDefinition; // Fail open-ish
+      return StandardDefinitionIcon; // Fail open-ish
   }
 };
 

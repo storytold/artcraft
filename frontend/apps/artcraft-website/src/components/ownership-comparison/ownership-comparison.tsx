@@ -1,9 +1,8 @@
-import { faServer, faBan, faUnlock, faKey, faGlobe, faCloud, faImage, faCreditCard, faTimes } from "@fortawesome/pro-solid-svg-icons";
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { BanIcon, CloudIcon, CreditCardIcon, GlobeIcon, ImageIcon, KeyIcon, LockOpenIcon, ServerIcon, XIcon } from "lucide-react";
+import { DynamicIcon, GithubIcon } from "@storyteller/icons";
 
 export const OwnershipComparison = () => {
-  const websiteIcons = [faCloud, faGlobe, faImage, faServer];
+  const websiteIcons = [CloudIcon, GlobeIcon, ImageIcon, ServerIcon];
 
   return (
     <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-12 md:py-32 overflow-visible">
@@ -47,10 +46,10 @@ export const OwnershipComparison = () => {
                            zIndex: 10 + i,
                         }}
                       >
-                         <FontAwesomeIcon icon={icon} className="text-xl" />
+                         <DynamicIcon icon={icon} className="text-xl" />
                          
                          <div className="absolute -top-3 -right-3 w-7 h-7 bg-[#ef4444] rounded-full flex items-center justify-center border-4 border-[#121214] text-white text-xs shadow-md">
-                           <FontAwesomeIcon icon={faTimes} className="font-bold" />
+                           <XIcon  className="font-bold" />
                          </div>
                       </div>
                     );
@@ -67,10 +66,10 @@ export const OwnershipComparison = () => {
 
                <div className="flex flex-wrap justify-center gap-3 text-xs sm:text-sm font-bold tracking-wide uppercase">
                   <div className="flex items-center gap-2 text-[#ffc9c9] bg-[#ef4444]/10 px-4 py-2.5 rounded-xl border border-[#ef4444]/20 shadow-lg shadow-red-900/10">
-                     <FontAwesomeIcon icon={faBan} className="text-[#ef4444]" /> NO OWNERSHIP
+                     <BanIcon  className="text-[#ef4444]" /> NO OWNERSHIP
                   </div>
                   <div className="flex items-center gap-2 text-[#ffc9c9] bg-[#ef4444]/10 px-4 py-2.5 rounded-xl border border-[#ef4444]/20 shadow-lg shadow-red-900/10">
-                     <FontAwesomeIcon icon={faCreditCard} className="text-[#ef4444]" /> MONTHLY FEES
+                     <CreditCardIcon  className="text-[#ef4444]" /> MONTHLY FEES
                   </div>
                </div>
             </div>
@@ -89,7 +88,7 @@ export const OwnershipComparison = () => {
                       <img src="/images/services/artcraft.svg" alt="ArtCraft" className="w-[55%] h-[55%] object-contain drop-shadow-md brightness-0 invert" />
                    </div>
                    <div className="absolute -right-6 -bottom-4 w-16 h-16 bg-[#24292e] rounded-2xl flex items-center justify-center text-white text-3xl border-4 border-[#1C1C20] z-20 shadow-xl translate-x-2 translate-y-2">
-                      <FontAwesomeIcon icon={faGithub} />
+                      <GithubIcon />
                    </div>
                 </div>
 
@@ -105,10 +104,10 @@ export const OwnershipComparison = () => {
 
                  <div className="flex flex-wrap justify-center gap-3 text-xs sm:text-sm font-bold tracking-wide uppercase">
                     <div className="flex items-center gap-2 text-white bg-primary/20 px-4 py-2.5 rounded-xl border border-primary/30 shadow-lg shadow-primary/10">
-                       <FontAwesomeIcon icon={faUnlock} className="text-primary" /> YOURS FOREVER
+                       <LockOpenIcon  className="text-primary" /> YOURS FOREVER
                     </div>
                     <div className="flex items-center gap-2 text-white bg-primary/20 px-4 py-2.5 rounded-xl border border-primary/30 shadow-lg shadow-primary/10">
-                       <FontAwesomeIcon icon={faKey}className="text-primary" /> BYO KEYS
+                       <KeyIcon className="text-primary" /> BYO KEYS
                     </div>
                 </div>
 

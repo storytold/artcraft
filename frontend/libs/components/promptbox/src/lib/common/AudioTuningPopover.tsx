@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSliders } from "@fortawesome/pro-solid-svg-icons";
+import { SlidersHorizontalIcon } from "lucide-react";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 
@@ -50,7 +49,7 @@ export function AudioTuningPopover({
     <PopoverMenu
       mode="default"
       panelTitle="Tuning"
-      triggerIcon={<FontAwesomeIcon icon={faSliders} className="h-3.5 w-3.5" />}
+      triggerIcon={<SlidersHorizontalIcon  className="h-3.5 w-3.5" />}
       triggerLabel="Tuning"
     >
       <div className="w-60 space-y-3.5 pb-0.5">

@@ -1,5 +1,5 @@
-import { faArrowRight } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowRightIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import {
   useGenerateApps,
@@ -84,7 +84,7 @@ function AppCard({ app }: { app: FullAppItem }) {
             palette.iconColor,
           )}
         >
-          <FontAwesomeIcon icon={app.icon} className="text-base" />
+          <DynamicIcon icon={app.icon} className="text-base" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
@@ -104,10 +104,9 @@ function AppCard({ app }: { app: FullAppItem }) {
               )}
             </div>
             {enabled && (
-              <FontAwesomeIcon
-                icon={faArrowRight}
-                className="text-sm text-base-fg/40 transition-all group-hover:translate-x-0.5 group-hover:text-base-fg/70"
-              />
+              <ArrowRightIcon
+                
+                className="text-sm text-base-fg/40 transition-all group-hover:translate-x-0.5 group-hover:text-base-fg/70" />
             )}
           </div>
           <p className="mt-1 text-sm leading-snug text-base-fg/55">

@@ -1,11 +1,5 @@
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBlinds,
-  faBlindsRaised,
-  faCameraViewfinder,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BlindsIcon, FocusIcon, LoaderCircleIcon, PanelTopOpenIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { useViewportSize } from "../../hooks/useViewportSize";
@@ -104,7 +98,7 @@ export const PreviewEngineCamera = () => {
                 "-ms-1 justify-center",
             )}
           >
-            <FontAwesomeIcon icon={faCameraViewfinder} className="text-sm" />
+            <FocusIcon  className="text-sm" />
             <p className="mt-[2px] text-sm font-medium">Camera View</p>
           </div>
 
@@ -112,7 +106,7 @@ export const PreviewEngineCamera = () => {
             {editorState === EditorStates.CAMERA_VIEW && (
               <Tooltip content="Toggle Letterbox" position={"top"}>
                 <ButtonIcon
-                  icon={editorLetterBox ? faBlinds : faBlindsRaised}
+                  icon={editorLetterBox ? BlindsIcon : PanelTopOpenIcon}
                   onClick={() => toggleEditorLetterBox()}
                   className="h-7 w-7"
                 />
@@ -141,7 +135,7 @@ export const PreviewEngineCamera = () => {
           )}
         >
           <div className="flex h-full w-full items-center justify-center bg-ui-panel">
-            <FontAwesomeIcon icon={faSpinnerThird} size={"3x"} spin />
+            <LoaderCircleIcon size="3em" className="animate-spin" />
           </div>
           <div className="absolute left-0 top-0 h-full w-full overflow-hidden">
             <CameraViewCanvas className="!h-full !w-full" />

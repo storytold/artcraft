@@ -1,17 +1,12 @@
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleQuestion,
-  faEnvelope,
-  faChevronRight,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { ChevronRightIcon, CircleHelpIcon, MailIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import Seo from "../../components/seo";
 import { SOCIAL_LINKS, SUPPORT_EMAIL } from "../../config/links";
 
 type SupportRow = {
-  icon: IconDefinition;
+  icon: LucideIcon;
   title: string;
   desc: string;
   to?: string;
@@ -22,7 +17,7 @@ type SupportRow = {
 
 const ROWS: SupportRow[] = [
   {
-    icon: faDiscord,
+    icon: DiscordIcon,
     title: "Join our Discord",
     desc: "The fastest way to reach us. Quick replies from the team and credit refunds if something goes wrong.",
     href: SOCIAL_LINKS.DISCORD,
@@ -30,13 +25,13 @@ const ROWS: SupportRow[] = [
     iconColorClass: "text-white",
   },
   {
-    icon: faEnvelope,
+    icon: MailIcon,
     title: "Email us",
     desc: SUPPORT_EMAIL,
     href: `mailto:${SUPPORT_EMAIL}`,
   },
   {
-    icon: faCircleQuestion,
+    icon: CircleHelpIcon,
     title: "Browse the FAQ",
     desc: "Answers to common questions about ArtCraft.",
     to: "/faq",
@@ -86,16 +81,15 @@ const SupportLink = ({ row }: { row: SupportRow }) => {
           row.iconBgClass ?? "bg-white/[0.04] border-white/[0.06]"
         } ${row.iconColorClass ?? "text-white/70 group-hover:text-white"}`}
       >
-        <FontAwesomeIcon icon={row.icon} />
+        <DynamicIcon icon={row.icon} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[15px] font-medium text-white">{row.title}</div>
         <div className="text-sm text-white/60">{row.desc}</div>
       </div>
-      <FontAwesomeIcon
-        icon={faChevronRight}
-        className="text-xs text-white/30 group-hover:text-white/60 transition-colors"
-      />
+      <ChevronRightIcon
+        
+        className="text-xs text-white/30 group-hover:text-white/60 transition-colors" />
     </>
   );
 

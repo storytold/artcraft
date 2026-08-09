@@ -24,16 +24,19 @@
       "path": "../../analytics/google-analytics"
     },
     {
+      "path": "../audio-player"
+    },
+    {
       "path": "../viewer-3d"
     },
     {
       "path": "../loading-spinner"
     },
     {
-      "path": "../audio-player"
+      "path": "../../tauri-api"
     },
     {
-      "path": "../../tauri-api"
+      "path": "../../icons"
     },
     {
       "path": "../button"

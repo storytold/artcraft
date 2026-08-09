@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faExclamation,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, CircleAlertIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -99,8 +95,8 @@ export const ToastContainer = () => {
               toast.type === "success" ? "bg-green-500" : "bg-red-500"
             }`}
           >
-            <FontAwesomeIcon
-              icon={toast.type === "success" ? faCheck : faExclamation}
+            <DynamicIcon
+              icon={toast.type === "success" ? CheckIcon : CircleAlertIcon}
               className="h-3 w-3 text-white"
             />
           </div>
@@ -111,7 +107,7 @@ export const ToastContainer = () => {
             onClick={() => dismiss(toast.id)}
             className="ml-1 text-white/40 transition-colors hover:text-white/80"
           >
-            <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
+            <XIcon  className="h-3 w-3" />
           </button>
         </div>
       ))}

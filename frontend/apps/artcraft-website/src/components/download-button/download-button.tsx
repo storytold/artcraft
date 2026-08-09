@@ -1,9 +1,5 @@
 import { Button } from "@storyteller/ui-button";
-import {
-  faApple,
-  faWindows,
-  faLinux,
-} from "@fortawesome/free-brands-svg-icons";
+import { AppleIcon, LinuxIcon, WindowsIcon } from "@storyteller/icons";
 import { isMobile, isWindows, isMacOs } from "react-device-detect";
 import {
   DOWNLOAD_LINKS,
@@ -32,9 +28,9 @@ export const DownloadButton = ({ className = "" }: DownloadButtonProps) => {
 
   const getIcon = () => {
     if (isMobile) return undefined;
-    if (isWindows) return faWindows;
-    if (isMacOs) return faApple;
-    if (isLinux) return faLinux;
+    if (isWindows) return WindowsIcon;
+    if (isMacOs) return AppleIcon;
+    if (isLinux) return LinuxIcon;
     return undefined;
   };
 

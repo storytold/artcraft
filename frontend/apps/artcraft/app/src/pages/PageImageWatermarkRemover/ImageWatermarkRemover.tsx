@@ -1,10 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faImages,
-  faDroplet,
-  faArrowRotateRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { DropletIcon, ImagesIcon, RotateCwIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
@@ -122,7 +117,7 @@ export const ImageWatermarkRemover = () => {
               <div className="w-full max-w-5xl">
                 <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <UploadEntryCard
-                    icon={faDroplet}
+                    icon={DropletIcon}
                     title="Remove Image Watermark"
                     description="Erase watermarks from your images seamlessly. Upload your image and get a clean, watermark-free result."
                     accentBackgroundClass="bg-indigo-500/40"
@@ -131,7 +126,7 @@ export const ImageWatermarkRemover = () => {
                     onFilesSelected={handleLocalImageSelect}
                     primaryLabel="Select Image"
                     secondaryLabel="Pick from Library"
-                    secondaryIcon={faImages}
+                    secondaryIcon={ImagesIcon}
                     onSecondaryClick={() => setIsGalleryModalOpen(true)}
                   />
                 </div>
@@ -141,7 +136,7 @@ export const ImageWatermarkRemover = () => {
                 <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <div className="relative w-full bg-black">
                     <Button
-                      icon={faArrowRotateRight}
+                      icon={RotateCwIcon}
                       variant="action"
                       onClick={() => {
                         setImageUrl("");
@@ -172,7 +167,7 @@ export const ImageWatermarkRemover = () => {
                 <div className="flex justify-center">
                   <Button
                     variant="primary"
-                    icon={isProcessing ? undefined : faDroplet}
+                    icon={isProcessing ? undefined : DropletIcon}
                     loading={isProcessing}
                     onClick={handleRemoveWatermark}
                     className="px-12 py-3 text-lg font-semibold"
@@ -185,10 +180,9 @@ export const ImageWatermarkRemover = () => {
                 <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
                   <div>
                     <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
-                      <FontAwesomeIcon
-                        icon={faImages}
-                        className="text-primary"
-                      />
+                      <ImagesIcon
+                        
+                        className="text-primary" />
                       Image Information
                     </div>
                     {imageDimensions ? (

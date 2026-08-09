@@ -7,13 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPause,
-  faPlay,
-  faVolume,
-  faVolumeSlash,
-} from "@fortawesome/pro-solid-svg-icons";
+import { PauseIcon, PlayIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import WaveSurfer from "wavesurfer.js";
 import { addCorsParam } from "@storyteller/common";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
@@ -266,8 +261,8 @@ export function WaveformAudioPlayer({
         onClick={togglePlay}
         className={`flex shrink-0 items-center justify-center rounded-full bg-white text-black transition-transform hover:scale-105 active:scale-95 ${compact ? "h-8 w-8" : "h-10 w-10"}`}
       >
-        <FontAwesomeIcon
-          icon={isPlaying ? faPause : faPlay}
+        <DynamicIcon
+          icon={isPlaying ? PauseIcon : PlayIcon}
           className={`${compact ? "h-3 w-3" : "h-3.5 w-3.5"} ${isPlaying ? "" : "ml-0.5"}`}
         />
       </button>
@@ -314,8 +309,8 @@ export function WaveformAudioPlayer({
           onClick={() => setShowVolume((visible) => !visible)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
         >
-          <FontAwesomeIcon
-            icon={volume === 0 ? faVolumeSlash : faVolume}
+          <DynamicIcon
+            icon={volume === 0 ? VolumeXIcon : Volume2Icon}
             className="h-3.5 w-3.5"
           />
         </button>

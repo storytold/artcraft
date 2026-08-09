@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { faCoins } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CoinsIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { BillingApi, UsersApi } from "@storyteller/api";
 import Seo from "../../components/seo";
@@ -77,7 +76,7 @@ const BuyMoreCreditsCta = ({ onClick }: { onClick: () => void }) => (
       className="mt-3 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
       onClick={onClick}
     >
-      <FontAwesomeIcon icon={faCoins} className="text-primary text-[13px]" />
+      <CoinsIcon  className="text-primary text-[13px]" />
       Buy more credits
     </Button>
   </div>
@@ -191,10 +190,9 @@ const Pricing = () => {
             className="mt-4 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
             onClick={() => setCreditsModalOpen(true)}
           >
-            <FontAwesomeIcon
-              icon={faCoins}
-              className="text-primary text-[13px]"
-            />
+            <CoinsIcon
+              
+              className="text-primary text-[13px]" />
             Buy Credits
           </Button>
         </div>

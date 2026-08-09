@@ -1,8 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { getNewsPostBySlug } from "../data/content";
 import { markdownToHtml } from "../utils/markdown";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft } from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon } from "lucide-react";
 import { useMemo } from "react";
 
 interface NewsPostProps {
@@ -46,7 +45,7 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
             to={basePath}
             className="rounded-lg px-4 py-2 text-sm border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2 transition-colors"
           >
-            <FontAwesomeIcon icon={faChevronLeft} />
+            <ChevronLeftIcon />
             Back to News
           </Link>
           {post.date && (

@@ -1,13 +1,8 @@
 import { useCallback, useState } from "react";
 import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import { useNavigate } from "react-router-dom";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  faCube,
-  faImage,
-  faMusic,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
@@ -30,7 +25,7 @@ export interface GalleryItemActions {
   isVideo: boolean;
   is3D: boolean;
   isAudio: boolean;
-  mediaIcon: IconDefinition;
+  mediaIcon: LucideIcon;
   mediaLabel: string;
   modelDisplayName: string | null;
   modelIconPath: string | null;
@@ -74,12 +69,12 @@ export function useGalleryItemActions(
   const canMakeVideo = enableMakeVideo && !isVideo && !is3D && !isAudio;
 
   const mediaIcon = isVideo
-    ? faVideo
+    ? VideoIcon
     : is3D
-      ? faCube
+      ? BoxIcon
       : isAudio
-        ? faMusic
-        : faImage;
+        ? MusicIcon
+        : ImageIcon;
   const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;

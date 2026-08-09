@@ -1,4 +1,4 @@
-import { faExpand, faImages, faPencil } from "@fortawesome/pro-solid-svg-icons";
+import { ImagesIcon, MaximizeIcon, PencilIcon } from "lucide-react";
 import { downloadFileFromUrl } from "libs/api/src/lib/LocalApi";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useState } from "react";
@@ -133,7 +133,7 @@ export const BaseImageSelector = ({
       <div className="flex h-full w-full items-center justify-center overflow-hidden bg-ui-panel text-base-fg">
         <div className="aspect-video w-full max-w-5xl bg-ui-background">
           <UploadEntryCard
-            icon={faPencil}
+            icon={PencilIcon}
             title="Edit Image"
             description="Click to upload or drag and drop an image here to edit"
             accentBackgroundClass="bg-blue-500/40"
@@ -143,10 +143,10 @@ export const BaseImageSelector = ({
             onFilesSelected={handleFileUpload}
             primaryLabel="Select Image"
             secondaryLabel="Pick from Library"
-            secondaryIcon={faImages}
+            secondaryIcon={ImagesIcon}
             onSecondaryClick={handleGalleryClick}
             tertiaryLabel="Blank Canvas"
-            tertiaryIcon={faExpand}
+            tertiaryIcon={MaximizeIcon}
             onTertiaryClick={() => setIsBlankCanvasModalOpen(true)}
             disabled={isLoading || showLoading}
           />

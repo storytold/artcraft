@@ -1,14 +1,14 @@
 import React from "react";
 import { twMerge } from "tailwind-merge";
-import { IconDefinition } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Label } from "@storyteller/ui-label";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   inputClassName?: string;
   iconClassName?: string;
   label?: string;
-  icon?: IconDefinition;
+  icon?: LucideIcon;
   isError?: boolean;
   errorMessage?: string;
 }
@@ -36,7 +36,7 @@ export const Input = React.forwardRef(
 
         <div className="relative w-full">
           {icon && (
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={icon}
               className={twMerge("text-md absolute pl-3 pt-3", iconClassName)}
             />
