@@ -12,9 +12,10 @@
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 
-use super::support::{base_generate_request, ExpectedCredits, Seconds, TestHarness};
-
-const STARTING_CREDITS: u64 = 100_000;
+use super::support::{
+  assert_reference_video_charge_then_refund, assert_successful_generation_charges, Batch,
+  ExpectedCredits, Seconds, TestHarness,
+};
 
 // ── Text-to-video pricing (successful generation via the stub provider) ──
 
@@ -44,6 +45,7 @@ async fn seedance_2p5_charges_by_resolution_and_duration() {
       CommonVideoModel::Seedance2p5,
       *resolution,
       *seconds,
+      Batch(1),
       *expected,
     )
     .await;
@@ -74,6 +76,7 @@ async fn seedance_2p5_ultra_charges_its_own_higher_rates() {
       CommonVideoModel::Seedance2p5Ultra,
       *resolution,
       *seconds,
+      Batch(1),
       *expected,
     )
     .await;
@@ -113,93 +116,4 @@ async fn seedance_2p5_bills_reference_video_input_seconds_at_worst_case_when_unp
     )
     .await;
   }
-}
-
-// ── Shared assertions ──
-
-/// Fund a fresh user, run one t2v generation via the stub Kinovi server, and
-/// assert the exact wallet debit (balance delta AND ledger entry).
-async fn assert_successful_generation_charges(
-  harness: &TestHarness,
-  model: CommonVideoModel,
-  resolution: Option<CommonResolution>,
-  Seconds(duration_seconds): Seconds,
-  ExpectedCredits(expected_credits): ExpectedCredits,
-) {
-  let user = harness.create_funded_user(STARTING_CREDITS).await;
-
-  let mut request = base_generate_request(model);
-  request.resolution = resolution;
-  request.duration_seconds = Some(duration_seconds);
-
-  let response = harness
-    .post_generate(&user, request)
-    .await
-    .unwrap_or_else(|err| {
-      panic!("{:?} {:?} {}s: generation failed: {:?}", model, resolution, duration_seconds, err)
-    });
-  assert!(response.success);
-
-  let balance = harness.wallet_balance(&user).await;
-  assert_eq!(
-    STARTING_CREDITS - balance,
-    expected_credits,
-    "{:?} {:?} {}s: wrong wallet debit", model, resolution, duration_seconds,
-  );
-}
-
-/// Reference-video request: the charge lands (pinning the with-references
-/// price), then the unreachable media makes the provider upload fail and the
-/// charge is refunded. Asserts the exact debit amount on the refunded ledger
-/// entry and that the balance is made whole.
-async fn assert_reference_video_charge_then_refund(
-  harness: &TestHarness,
-  model: CommonVideoModel,
-  resolution: Option<CommonResolution>,
-  Seconds(duration_seconds): Seconds,
-  ExpectedCredits(expected_credits): ExpectedCredits,
-) {
-  let user = harness.create_funded_user(STARTING_CREDITS).await;
-
-  let video_token = mysql_testing::fixtures::media_files::create_test_video_media_file(
-    &harness.pool,
-    &user.user_token,
-    Some(6_000),
-  )
-  .await
-  .expect("create video media file fixture");
-
-  let mut request = base_generate_request(model);
-  request.resolution = resolution;
-  request.duration_seconds = Some(duration_seconds);
-  request.reference_video_media_tokens = Some(vec![video_token]);
-
-  // The upload of the (unreachable) reference video fails after billing, so
-  // the endpoint errors and the charge is refunded.
-  let result = harness.post_generate(&user, request).await;
-  assert!(
-    result.is_err(),
-    "{:?}: generation with unreachable reference media should fail", model,
-  );
-
-  let entries = harness.ledger_entries(&user).await;
-  let debit = entries
-    .iter()
-    .find(|entry| entry.credits_delta < 0)
-    .unwrap_or_else(|| panic!("{:?}: no debit ledger entry found", model));
-  assert_eq!(
-    -debit.credits_delta,
-    expected_credits as i64,
-    "{:?} {:?} {}s + refs: wrong charged amount", model, resolution, duration_seconds,
-  );
-  assert!(
-    debit.is_refunded,
-    "{:?}: failed generation must refund the charge", model,
-  );
-
-  assert_eq!(
-    harness.wallet_balance(&user).await,
-    STARTING_CREDITS,
-    "{:?}: refund must make the wallet whole", model,
-  );
 }

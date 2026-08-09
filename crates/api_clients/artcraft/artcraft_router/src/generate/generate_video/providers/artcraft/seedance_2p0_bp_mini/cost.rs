@@ -105,6 +105,49 @@ mod tests {
     }
   }
 
+  mod batch_pricing {
+    use super::*;
+
+    /// Mini bills batches of 1-8 in full (the platform's 1/2/4 cap does not
+    /// apply). Once, batch 8 executed in full but billed as batch 4.
+    #[test]
+    fn every_batch_size_720p_5s() {
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, false), 44);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 2, false), 88);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 3, false), 131);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 4, false), 175);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 5, false), 219);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 6, false), 262);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 7, false), 306);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 8, false), 349);
+    }
+
+    #[test]
+    fn every_batch_size_480p_5s() {
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, false), 17);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 2, false), 33);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 3, false), 50);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 4, false), 66);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 5, false), 82);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 6, false), 99);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 7, false), 115);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 8, false), 131);
+    }
+
+    #[test]
+    fn batch_eight_with_video_reference() {
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 8, true), 419);
+    }
+
+    #[test]
+    fn batch_above_eight_clamps_to_eight() {
+      assert_eq!(
+        cents(RouterResolution::SevenTwentyP, 5, 9, false),
+        cents(RouterResolution::SevenTwentyP, 5, 8, false),
+      );
+    }
+  }
+
   mod credits_tests {
     use super::*;
 

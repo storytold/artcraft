@@ -18,5 +18,5 @@
 
 pub mod support;
 
-mod seedance_2p0_tests;
+mod seedance_2p0;
 mod seedance_2p5_tests;

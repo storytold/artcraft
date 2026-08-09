@@ -170,6 +170,9 @@ impl TestHarness {
   }
 }
 
+/// Every pricing test funds a fresh user with this many credits.
+pub const STARTING_CREDITS: u64 = 100_000;
+
 /// Newtype wrappers so pricing-table test cases read unambiguously:
 /// `(Some(FourEightyP), Seconds(5), Batch(1), ExpectedCredits(39))`.
 #[derive(Clone, Copy, Debug)]
@@ -448,4 +451,128 @@ fn build_test_server_state(pool: MySqlPool) -> ServerState {
       },
     },
   }
+}
+
+/// Fund a fresh user, run one generation to completion via the stub Kinovi
+/// server, and assert the wallet was debited exactly the expected credits
+/// (balance delta AND ledger entry).
+pub async fn assert_successful_generation_charges(
+  harness: &TestHarness,
+  model: CommonVideoModel,
+  resolution: Option<enums::common::generation::common_resolution::CommonResolution>,
+  Seconds(duration_seconds): Seconds,
+  Batch(batch_count): Batch,
+  ExpectedCredits(expected_credits): ExpectedCredits,
+) {
+  let user = harness.create_funded_user(STARTING_CREDITS).await;
+
+  let mut request = base_generate_request(model);
+  request.resolution = resolution;
+  request.duration_seconds = Some(duration_seconds);
+  request.video_batch_count = Some(batch_count);
+
+  let response = harness
+    .post_generate(&user, request)
+    .await
+    .unwrap_or_else(|err| {
+      panic!("{:?} {:?} {}s x{}: generation failed: {:?}", model, resolution, duration_seconds, batch_count, err)
+    });
+  assert!(response.success);
+
+  let balance = harness.wallet_balance(&user).await;
+  assert_eq!(
+    STARTING_CREDITS - balance,
+    expected_credits,
+    "{:?} {:?} {}s x{}: wrong wallet debit", model, resolution, duration_seconds, batch_count,
+  );
+
+  let entries = harness.ledger_entries(&user).await;
+  let debit = entries
+    .iter()
+    .find(|entry| entry.credits_delta < 0)
+    .unwrap_or_else(|| panic!("{:?}: no debit ledger entry found", model));
+  assert_eq!(
+    -debit.credits_delta,
+    expected_credits as i64,
+    "{:?} {:?} {}s x{}: wrong ledger debit", model, resolution, duration_seconds, batch_count,
+  );
+  assert!(!debit.is_refunded, "{:?}: successful generation must not be refunded", model);
+}
+
+/// Reference-video request: the charge lands (pinning the with-references
+/// price), then the unreachable fixture media makes the provider upload fail
+/// and the charge is refunded. Asserts the exact debit amount on the
+/// refunded ledger entry and that the balance is made whole.
+pub async fn assert_reference_video_charge_then_refund(
+  harness: &TestHarness,
+  model: CommonVideoModel,
+  resolution: Option<enums::common::generation::common_resolution::CommonResolution>,
+  Seconds(duration_seconds): Seconds,
+  ExpectedCredits(expected_credits): ExpectedCredits,
+) {
+  let user = harness.create_funded_user(STARTING_CREDITS).await;
+
+  let video_token = mysql_testing::fixtures::media_files::create_test_video_media_file(
+    &harness.pool,
+    &user.user_token,
+    Some(6_000),
+  )
+  .await
+  .expect("create video media file fixture");
+
+  let mut request = base_generate_request(model);
+  request.resolution = resolution;
+  request.duration_seconds = Some(duration_seconds);
+  request.reference_video_media_tokens = Some(vec![video_token]);
+
+  // The upload of the (unreachable) reference video fails after billing, so
+  // the endpoint errors and the charge is refunded.
+  let result = harness.post_generate(&user, request).await;
+  assert!(
+    result.is_err(),
+    "{:?}: generation with unreachable reference media should fail", model,
+  );
+
+  let entries = harness.ledger_entries(&user).await;
+  let debit = entries
+    .iter()
+    .find(|entry| entry.credits_delta < 0)
+    .unwrap_or_else(|| panic!("{:?}: no debit ledger entry found", model));
+  assert_eq!(
+    -debit.credits_delta,
+    expected_credits as i64,
+    "{:?} {:?} {}s + refs: wrong charged amount", model, resolution, duration_seconds,
+  );
+  assert!(
+    debit.is_refunded,
+    "{:?}: failed generation must refund the charge", model,
+  );
+
+  assert_eq!(
+    harness.wallet_balance(&user).await,
+    STARTING_CREDITS,
+    "{:?}: refund must make the wallet whole", model,
+  );
+}
+
+/// For models that currently have no execution route: the request must fail
+/// cleanly BEFORE any billing happens.
+pub async fn assert_generation_fails_and_charges_nothing(
+  harness: &TestHarness,
+  model: CommonVideoModel,
+  Seconds(duration_seconds): Seconds,
+) {
+  let user = harness.create_funded_user(STARTING_CREDITS).await;
+
+  let mut request = base_generate_request(model);
+  request.duration_seconds = Some(duration_seconds);
+
+  let result = harness.post_generate(&user, request).await;
+  assert!(result.is_err(), "{:?}: unroutable model must be rejected", model);
+
+  assert_eq!(
+    harness.wallet_balance(&user).await,
+    STARTING_CREDITS,
+    "{:?}: rejected generation must not charge", model,
+  );
 }

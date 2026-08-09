@@ -255,6 +255,30 @@ pub fn plan_batch_count(
   }
 }
 
+/// Batch counts for the Seedance 2.0 Mini family: 1-8 are all valid
+/// (wider than the shared 1/2/4 planning); higher counts clamp to 8 per the
+/// mitigation strategy.
+pub fn plan_mini_batch_count(
+  video_batch_count: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<u16, ArtcraftRouterError> {
+  let count = video_batch_count.unwrap_or(1);
+  match count {
+    0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
+    1..=8 => Ok(count),
+    _ => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "video_batch_count",
+          value: format!("{}", count),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade
+      | RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(8),
+    },
+  }
+}
+
 /// Translate the router-facing bitrate into the API `CommonBitrate`.
 ///
 /// Bitrate does not affect cost. An unset value leaves the field `None` (the
