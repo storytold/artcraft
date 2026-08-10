@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { twMerge } from "tailwind-merge";
-import { ChevronLeftIcon, EyeIcon, RefreshCwIcon, Trash2Icon, UserIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  EyeIcon,
+  ImageIcon,
+  RefreshCwIcon,
+  Trash2Icon,
+  UserIcon,
+} from "lucide-react";
 import type { MentionItem } from "./MentionTextarea";
 
 const VIEWPORT_MARGIN = 8;
@@ -15,6 +22,15 @@ const OPEN_GRACE_MS = 700;
 const MENU_ROW =
   "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base-fg transition-colors hover:bg-ui-controls/60 cursor-pointer";
 
+// Header subtitle and empty-replace-list copy per chip type.
+const TYPE_COPY: Record<MentionItem["type"], { title: string; empty: string }> =
+  {
+    character: { title: "Character", empty: "No other characters" },
+    image: { title: "Image reference", empty: "No other images" },
+    video: { title: "Video reference", empty: "No other videos" },
+    audio: { title: "Audio reference", empty: "No other audio" },
+  };
+
 export interface MentionChipMenuProps {
   /** Viewport-space rect of the clicked chip. */
   anchorRect: DOMRect;
@@ -26,9 +42,11 @@ export interface MentionChipMenuProps {
   anchorNode?: HTMLElement;
   /** Canonical mention label including the "@", e.g. "@robot cartoon". */
   currentLabel: string;
-  /** Avatar of the currently attached character, shown in the menu header. */
+  /** Chip type — drives the header subtitle and fallback avatar icon. */
+  currentType?: MentionItem["type"];
+  /** Thumbnail of the current mention, shown in the menu header. */
   currentPreview?: string;
-  /** Characters offered as replacements (current one excluded by the caller). */
+  /** Same-type mentions offered as replacements (current one excluded by the caller). */
   replaceItems: MentionItem[];
   onReplace: (item: MentionItem) => void;
   onPreview: () => void;
@@ -37,9 +55,9 @@ export interface MentionChipMenuProps {
 }
 
 /**
- * Floating menu for an inline character-mention chip: Replace / Preview /
- * Remove, with the Replace action swapping to a second "Back" panel listing
- * the other available characters.
+ * Floating menu for an inline mention chip (character or image ref):
+ * Replace / Preview / Remove, with the Replace action swapping to a second
+ * "Back" panel listing the other same-type mentions.
  *
  * Portaled to document.body with fixed positioning — the promptbox `.glass`
  * container (backdrop-blur) is a containing block that would trap
@@ -49,6 +67,7 @@ export function MentionChipMenu({
   anchorRect,
   anchorNode,
   currentLabel,
+  currentType = "character",
   currentPreview,
   replaceItems,
   onReplace,
@@ -193,7 +212,11 @@ export function MentionChipMenu({
               aria-label={`View ${currentName}`}
               className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-md"
             >
-              <ChipAvatar preview={currentPreview} name={currentName} />
+              <ChipAvatar
+                preview={currentPreview}
+                name={currentName}
+                type={currentType}
+              />
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/avatar:opacity-100">
                 <EyeIcon  className="h-3 w-3 text-white" />
               </span>
@@ -202,7 +225,9 @@ export function MentionChipMenu({
               <div className="truncate text-sm font-medium text-base-fg">
                 {currentName}
               </div>
-              <div className="text-[11px] text-base-fg/50">Character</div>
+              <div className="text-[11px] text-base-fg/50">
+                {TYPE_COPY[currentType].title}
+              </div>
             </div>
           </div>
           <div className="my-1 border-t border-ui-panel-border" />
@@ -247,7 +272,7 @@ export function MentionChipMenu({
           <div className="max-h-64 overflow-y-auto">
             {replaceItems.length === 0 && (
               <div className="px-2 py-3 text-center text-xs text-base-fg/50">
-                No other characters
+                {TYPE_COPY[currentType].empty}
               </div>
             )}
             {replaceItems.map((item, i) => (
@@ -258,7 +283,11 @@ export function MentionChipMenu({
                 onPointerDown={handleRowKeyActivate}
                 onClick={() => onReplace(item)}
               >
-                <ChipAvatar preview={item.preview} name={item.label} />
+                <ChipAvatar
+                  preview={item.preview}
+                  name={item.label}
+                  type={item.type}
+                />
                 <span className="min-w-0 flex-1 truncate text-left">
                   {item.label.replace(/^@/, "")}
                 </span>
@@ -272,13 +301,22 @@ export function MentionChipMenu({
   );
 }
 
-function ChipAvatar({ preview, name }: { preview?: string; name: string }) {
+function ChipAvatar({
+  preview,
+  name,
+  type = "character",
+}: {
+  preview?: string;
+  name: string;
+  type?: MentionItem["type"];
+}) {
+  const FallbackIcon = type === "character" ? UserIcon : ImageIcon;
   return (
     <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/20">
       {preview ? (
         <img src={preview} alt={name} className="h-full w-full object-cover" />
       ) : (
-        <UserIcon  className="h-3.5 w-3.5 text-base-fg/60" />
+        <FallbackIcon  className="h-3.5 w-3.5 text-base-fg/60" />
       )}
     </div>
   );
