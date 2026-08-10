@@ -3,6 +3,9 @@
 //! ArtCraft credits equal USD cents (100 credits = $1.00).
 
 use enums::common::generation::common_resolution::CommonResolution;
+use kinovi_web_client::generate::video::generate_seedance_2p5::{
+  MAX_BILLED_INPUT_SECONDS, MIN_BILLED_INPUT_SECONDS,
+};
 
 // 4K is priced uniformly across the non-Fast Seedance 2.0 models. Rates are held
 // in hundredths of a USD cent per second so the math is exact integer arithmetic
@@ -155,8 +158,9 @@ const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 15.84362140;
 /// Only 480p and 720p are offered; any other resolution prices at 720p.
 /// Without video references, billed seconds = output duration. With video
 /// references, the per-second rate drops but the billed seconds are the
-/// output duration PLUS the total seconds of reference video input. The
-/// fractional total is rounded UP to a whole cent. No batching.
+/// output duration PLUS the total seconds of reference video input (clamped
+/// to the 4..=30 second billing range). The fractional total is rounded UP
+/// to a whole cent. No batching.
 pub fn seedance_2p5_usd_cents(
   resolution: CommonResolution,
   duration_seconds: u16,
@@ -169,7 +173,11 @@ pub fn seedance_2p5_usd_cents(
       // Everything else (including 720p and unsupported resolutions) prices at 720p.
       _ => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
     };
-    (rate, u64::from(duration_seconds) + u64::from(total_input_seconds))
+    // The TOTAL input duration clamps to the 4..=30 second billing range
+    // (three 1s videos sum to 3 and bill 4; three 3s videos bill 9).
+    let billed_input_seconds = total_input_seconds
+      .clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS));
+    (rate, u64::from(duration_seconds) + u64::from(billed_input_seconds))
   } else {
     let rate = match resolution {
       CommonResolution::FourEightyP => SEEDANCE_2P5_CENTS_PER_SECOND_480P,
@@ -209,7 +217,11 @@ pub fn seedance_2p5_ultra_usd_cents(
       // Everything else (including 720p and unsupported resolutions) prices at 720p.
       _ => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
     };
-    (rate, u64::from(duration_seconds) + u64::from(total_input_seconds))
+    // The TOTAL input duration clamps to the 4..=30 second billing range
+    // (three 1s videos sum to 3 and bill 4; three 3s videos bill 9).
+    let billed_input_seconds = total_input_seconds
+      .clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS));
+    (rate, u64::from(duration_seconds) + u64::from(billed_input_seconds))
   } else {
     let rate = match resolution {
       CommonResolution::FourEightyP => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_480P,

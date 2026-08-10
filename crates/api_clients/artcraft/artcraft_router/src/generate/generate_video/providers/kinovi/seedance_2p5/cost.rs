@@ -1,6 +1,6 @@
 use kinovi_web_client::generate::video::generate_seedance_2p5::{
   GenerateSeedance2p5Request, KinoviSeedance2p5Modality, KinoviSeedance2p5OutputResolution,
-  MAX_BILLED_INPUT_SECONDS,
+  MAX_BILLED_INPUT_SECONDS, MIN_BILLED_INPUT_SECONDS,
 };
 
 use crate::api::video_list_ref::VideoListRef;
@@ -76,7 +76,7 @@ impl KinoviSeedance2p5CostState {
     // NB: The kinovi calculator clamps too; clamping here as well keeps this
     // state's math correct even if it's read directly.
     let total_input_seconds = self.total_input_seconds
-      .map(|seconds| seconds.min(MAX_BILLED_INPUT_SECONDS));
+      .map(|seconds| seconds.clamp(MIN_BILLED_INPUT_SECONDS, MAX_BILLED_INPUT_SECONDS));
 
     let pricing_request = GenerateSeedance2p5Request {
       prompt: String::new(),

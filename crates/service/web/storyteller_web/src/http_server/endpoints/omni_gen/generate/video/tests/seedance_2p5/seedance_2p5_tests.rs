@@ -934,9 +934,10 @@ mod seedance_2p5_u {
 // ── Input-video DURATION billing (real probed durations) ──
 // The stub media CDN serves REAL generated videos with exact durations, so
 // these run the full pipeline: download → ffprobe → billing → upload →
-// generate. Billed input seconds per video = ceil(duration) clamped to a
-// minimum of 4 (input durations run 1-30s; under 4s bills as 4s); the TOTAL
-// across videos is capped at 30. Billed seconds = output + total input.
+// generate. Each video's duration is ceil-rounded to whole seconds; the
+// TOTAL across videos then clamps to the 4..=30 second billing range (three
+// 1s videos sum to 3 and bill 4; three 3s videos bill 9). Billed seconds =
+// output + billed input.
 mod input_video_duration_billing {
   use super::*;
 
@@ -999,21 +1000,24 @@ mod input_video_duration_billing {
     }
   }
 
-  /// Mixed input videos sum their PER-VIDEO clamped durations (each at least
-  /// 4 seconds), up to the 30-second total cap.
+  /// Mixed input videos sum their RAW ceil-rounded durations; only the
+  /// TOTAL clamps to the 4..=30 billing range. Three 1-second videos sum to
+  /// 3 and clamp to 4; three 3-second videos sum to 9 and bill 9.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
-  async fn mixed_input_videos_sum_their_clamped_durations() {
+  async fn mixed_input_videos_sum_their_raw_durations_and_clamp_the_total() {
     let harness = TestHarness::create().await;
 
-    // (input millis list, billed input seconds, expected credits) at 480p
-    // 30s output: (30 + input) × 7.24279835 ¢/s, ceil-rounded.
+    // (input millis list, expected credits) at 480p 30s output:
+    // (30 + clamp(total, 4, 30)) × 7.24279835 ¢/s, ceil-rounded.
     let cases: &[(&[u64], ExpectedCredits)] = &[
-      (&[1_000, 2_000, 3_000], ExpectedCredits(305)),   // 4+4+4 = 12 → 42 billed
-      (&[5_000, 10_000], ExpectedCredits(326)),         // 5+10 = 15 → 45 billed
-      (&[4_000, 5_000, 6_000], ExpectedCredits(326)),   // 4+5+6 = 15 → 45 billed
-      (&[2_000, 3_000, 20_000], ExpectedCredits(421)),  // 4+4+20 = 28 → 58 billed
-      (&[1_000, 25_000], ExpectedCredits(428)),         // 4+25 = 29 → 59 billed
+      (&[1_000, 1_000, 1_000], ExpectedCredits(247)),    // 1+1+1 = 3 → clamps to 4 → 34 billed
+      (&[3_000, 3_000, 3_000], ExpectedCredits(283)),    // 3+3+3 = 9 → 39 billed
+      (&[1_000, 2_000, 3_000], ExpectedCredits(261)),    // 1+2+3 = 6 → 36 billed
+      (&[5_000, 10_000], ExpectedCredits(326)),          // 5+10 = 15 → 45 billed
+      (&[4_000, 5_000, 6_000], ExpectedCredits(326)),    // 4+5+6 = 15 → 45 billed
+      (&[2_000, 3_000, 20_000], ExpectedCredits(399)),   // 2+3+20 = 25 → 55 billed
+      (&[1_000, 25_000], ExpectedCredits(406)),          // 1+25 = 26 → 56 billed
       (&[10_000, 10_000, 10_000], ExpectedCredits(435)), // 10+10+10 = 30 → 60 billed
     ];
     for (input_millis, expected) in cases {
@@ -1024,7 +1028,8 @@ mod input_video_duration_billing {
     }
   }
 
-  /// 1.5s and 3.9s inputs both bill the 4-second minimum: identical price.
+  /// 1.5s and 3.9s input TOTALS both clamp to the 4-second minimum:
+  /// identical price.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn input_videos_under_four_seconds_clamp_to_four_seconds() {
@@ -1070,18 +1075,18 @@ mod input_video_duration_billing {
     ).await;
   }
 
-  /// The 4-second minimum applies PER VIDEO, before summing: a 2.5s + 6.5s
-  /// pair bills 4 + 7 = 11 input seconds — the same as a single 10.5s video,
-  /// and one more than a total-duration clamp (9s → 10) would produce.
+  /// The 4-second minimum applies to the TOTAL, not per video: a 2.5s +
+  /// 6.5s pair bills ceil(2.5) + ceil(6.5) = 3 + 7 = 10 input seconds (a
+  /// per-video minimum would bill 11).
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
-  async fn the_per_video_minimum_applies_before_summing() {
+  async fn short_videos_in_a_mix_keep_their_raw_durations() {
     let harness = TestHarness::create().await;
 
-    // 30s output + 11 input = 41 billed × 7.24279835 = 296.95 → 297.
+    // 30s output + 10 input = 40 billed × 7.24279835 = 289.71 → 290.
     assert_real_input_videos_charge(
       &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
-      Seconds(30), &[2_500, 6_500], ExpectedCredits(297),
+      Seconds(30), &[2_500, 6_500], ExpectedCredits(290),
     ).await;
   }
 
@@ -1110,9 +1115,9 @@ mod input_video_duration_billing {
     let harness = TestHarness::create().await;
 
     // 30s output, ultra with-refs 480p 8.55967078 ¢/s / 720p 18.72427984 ¢/s:
-    //   2.5s → 4 (clamp) → 34 billed → 291.03 → 292
-    //  10.5s → 11        → 41 billed → 350.95 → 351
-    //  2.5s + 6.5s → 11  → 41 billed → 351 (per-video clamp, same as 10.5s)
+    //   2.5s → total 3 → clamps to 4 → 34 billed → 291.03 → 292
+    //  10.5s → 11           → 41 billed → 350.95 → 351
+    //  2.5s + 6.5s → 3+7=10 → 40 billed → 342.39 → 343 (total-based, no per-video clamp)
     //   6.5s → 7 → 37 billed × 18.72427984 = 692.80 → 693 (720p)
     assert_real_input_videos_charge(
       &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::FourEightyP),
@@ -1124,7 +1129,7 @@ mod input_video_duration_billing {
     ).await;
     assert_real_input_videos_charge(
       &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::FourEightyP),
-      Seconds(30), &[2_500, 6_500], ExpectedCredits(351),
+      Seconds(30), &[2_500, 6_500], ExpectedCredits(343),
     ).await;
     assert_real_input_videos_charge(
       &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::SevenTwentyP),
