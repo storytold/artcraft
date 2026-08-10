@@ -119,6 +119,13 @@ mod tests {
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Two), 494);
     }
 
+        #[test]
+    fn cost_720p_batch_3() {
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Three), 198);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Three), 247);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Three), 741);
+    }
+
     #[test]
     fn cost_720p_batch_4() {
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Four), 264);
@@ -145,6 +152,11 @@ mod tests {
       assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::Two), 62);
     }
 
+        #[test]
+    fn cost_480p_batch_3() {
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::Three), 93);
+    }
+
     #[test]
     fn cost_480p_batch_4() {
       assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::Four), 124);
@@ -167,6 +179,11 @@ mod tests {
     #[test]
     fn cost_1080p_batch_2() {
       assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::Two), 371);
+    }
+
+        #[test]
+    fn cost_1080p_batch_3() {
+      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::Three), 556);
     }
 
     #[test]
@@ -194,6 +211,11 @@ mod tests {
     #[test]
     fn cost_4k_batch_2() {
       assert_eq!(usd_cents(KinoviOutputResolution::FourK, 5, KinoviBatchCount::Two), 824);
+    }
+
+        #[test]
+    fn cost_4k_batch_3() {
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 5, KinoviBatchCount::Three), 1235);
     }
 
     #[test]

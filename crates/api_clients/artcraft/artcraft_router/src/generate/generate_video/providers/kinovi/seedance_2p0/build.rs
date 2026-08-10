@@ -149,7 +149,7 @@ fn plan_output_resolution(
   }
 }
 
-// Seedance2p0 supports batch counts of 1, 2, and 4 only.
+// Seedance2p0 supports batch counts of 1 through 4.
 fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -159,7 +159,9 @@ fn plan_batch_count(
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
     1 => Ok(KinoviBatchCount::One),
     2 => Ok(KinoviBatchCount::Two),
+    3 => Ok(KinoviBatchCount::Three),
     4 => Ok(KinoviBatchCount::Four),
+    // 5 and above:
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -167,12 +169,8 @@ fn plan_batch_count(
           value: format!("{}", count),
         }))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        Ok(if count < 4 { KinoviBatchCount::Four } else { KinoviBatchCount::Four })
-      }
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { KinoviBatchCount::Two } else { KinoviBatchCount::Four })
-      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(KinoviBatchCount::Four),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(KinoviBatchCount::Four),
     },
   }
 }
@@ -289,6 +287,13 @@ mod tests {
       let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..kinovi_web_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
       assert!(matches!(draft.batch_count, KinoviBatchCount::Two));
+    }
+
+    #[test]
+    fn batch_count_three() {
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(3), ..kinovi_web_builder() };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(matches!(draft.batch_count, KinoviBatchCount::Three));
     }
 
     #[test]

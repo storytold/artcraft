@@ -231,7 +231,7 @@ fn plan_output_resolution(
   }
 }
 
-/// Batch counts: 1, 2, 4.
+/// Batch counts: 1 through 4.
 pub fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -239,7 +239,8 @@ pub fn plan_batch_count(
   let count = video_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1 | 2 | 4 => Ok(count),
+    1..=4 => Ok(count),
+    // 5 and above:
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -248,9 +249,7 @@ pub fn plan_batch_count(
         }))
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(4),
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { 2 } else { 4 })
-      }
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(4),
     },
   }
 }
