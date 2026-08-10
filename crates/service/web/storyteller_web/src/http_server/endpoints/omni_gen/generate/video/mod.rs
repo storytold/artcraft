@@ -1,4 +1,5 @@
 pub mod omni_gen_video_generate_handler;
+pub mod shared_video_generation;
 pub mod first_party_minimax_h3;
 pub mod helpers;
 pub mod pipeline_v2;

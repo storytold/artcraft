@@ -4,6 +4,7 @@
 //! with dummy Actix HTTP requests as a fixture user.
 
 use std::collections::HashSet;
+use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -18,7 +19,9 @@ use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::Av
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_helpers::middleware::banned_cidr_filter::banned_cidr_set::BannedCidrSet;
 use actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBanList;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::OmniApiVideoGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_api_keys::ArtcraftApiKey;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 use billing_artcraft_component::utils::artcraft_stripe_config::ArtcraftStripeConfig;
 use billing_component::stripe::stripe_config::{
@@ -34,6 +37,7 @@ use kinovi_web_client::requests::kinovi_host::{
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
+use mysql_queries::queries::api_keys::insert_api_key::{insert_api_key, InsertApiKeyArgs};
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_testing::fixtures::users::TestUser;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -43,6 +47,7 @@ use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 use crate::configs::app_startup::redis_rate_limiters::configure_redis_rate_limiters;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::omni_api::generate::video::omni_api_video_generate_handler::omni_api_video_generate_handler;
 use crate::http_server::endpoints::omni_gen::generate::video::omni_gen_video_generate_handler::omni_gen_video_generate_handler;
 use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
@@ -141,6 +146,84 @@ impl TestHarness {
     omni_gen_video_generate_handler(
       http_request,
       Json(request),
+      Data::new(self.server_state.clone()),
+    )
+    .await
+    .map(Json::into_inner)
+  }
+
+  /// Mint and insert an API key owned by `user`.
+  pub async fn create_api_key(&self, user: &TestUser) -> ArtcraftApiKey {
+    // Derive the key value from the (unique) user token so parallel tests
+    // never collide on the api_key column.
+    let entropy = user.user_token.as_str().trim_start_matches("user_").to_string();
+    let api_key = ArtcraftApiKey::new_from_str(&format!("artcraft_api_test{entropy}"));
+    let mut connection = self.pool.acquire().await.expect("acquire for api key");
+    insert_api_key(InsertApiKeyArgs {
+      owner_user_token: &user.user_token,
+      ip_address: "127.0.0.1",
+      name: "test key",
+      maybe_description: None,
+      api_key: &api_key,
+      mysql_executor: &mut *connection,
+      phantom: PhantomData,
+    })
+    .await
+    .expect("insert api key");
+    api_key
+  }
+
+  /// POST the request through the omni_api (API-key only) generate handler,
+  /// authenticating with `api_key` in the Authorization header. Token-based
+  /// fields are mapped onto the omni_api request shape; URL fields stay None.
+  pub async fn post_generate_via_api_key(
+    &self,
+    api_key: &ArtcraftApiKey,
+    request: OmniGenVideoCostAndGenerateRequest,
+  ) -> Result<OmniGenVideoGenerateResponse, CommonWebError> {
+    let http_request = TestRequest::post()
+      .uri("/v1/omni_api/generate/video")
+      .insert_header(("Authorization", format!("Bearer {}", api_key.as_str_be_careful())))
+      .peer_addr("127.0.0.1:9999".parse().expect("peer addr"))
+      .to_http_request();
+
+    let api_request = to_omni_api_request(request);
+
+    omni_api_video_generate_handler(
+      http_request,
+      Json(api_request),
+      Data::new(self.server_state.clone()),
+    )
+    .await
+    .map(Json::into_inner)
+  }
+
+  /// POST through the omni_api handler with a SESSION COOKIE and no API key.
+  /// The endpoint is API-key only, so this must fail — the test asserting
+  /// that lives in `omni_api_parity_tests`.
+  pub async fn post_generate_via_session_cookie_on_omni_api(
+    &self,
+    user: &TestUser,
+    request: OmniGenVideoCostAndGenerateRequest,
+  ) -> Result<OmniGenVideoGenerateResponse, CommonWebError> {
+    let cookie = self
+      .server_state
+      .session_cookie_manager
+      .create_cookie(&user.session_token, &user.user_token)
+      .expect("create session cookie");
+    let cookie = Cookie::new("session", cookie.value().to_string());
+
+    let http_request = TestRequest::post()
+      .uri("/v1/omni_api/generate/video")
+      .cookie(cookie)
+      .peer_addr("127.0.0.1:9999".parse().expect("peer addr"))
+      .to_http_request();
+
+    let api_request = to_omni_api_request(request);
+
+    omni_api_video_generate_handler(
+      http_request,
+      Json(api_request),
       Data::new(self.server_state.clone()),
     )
     .await
@@ -413,7 +496,7 @@ fn build_test_server_state(pool: MySqlPool, media_cdn_override_url: String) -> S
   }
   use std::sync::OnceLock;
   static DUMMIES: OnceLock<ExpensiveDummies> = OnceLock::new();
-  let dummies = DUMMIES.get_or_init(|| {
+  let dummies = DUMMIES.get_or_init(|| retry_keychain_flake(|| {
     let dummy_bucket = || {
       LegacyBucketClient::create(
         "test-access-key",
@@ -463,7 +546,7 @@ fn build_test_server_state(pool: MySqlPool, media_cdn_override_url: String) -> S
       auto_gc_bucket_client: dummy_bucket(),
       redis_rate_limiters: configure_redis_rate_limiters().expect("rate limiters"),
     }
-  });
+  }));
 
   ServerState {
     env_config: EnvConfig {
@@ -774,4 +857,48 @@ pub async fn assert_real_input_videos_charge(
     .find(|entry| entry.credits_delta < 0)
     .unwrap_or_else(|| panic!("{:?}: no debit ledger entry found", model));
   assert!(!debit.is_refunded, "{:?}: successful generation must not be refunded", model);
+}
+
+/// Map an omni_gen request onto the omni_api request shape (token fields
+/// only; the URL fields stay None — URL ingestion is not exercised here).
+fn to_omni_api_request(request: OmniGenVideoCostAndGenerateRequest) -> OmniApiVideoGenerateRequest {
+  OmniApiVideoGenerateRequest {
+    idempotency_token: request.idempotency_token,
+    model: request.model,
+    prompt: request.prompt,
+    negative_prompt: request.negative_prompt,
+    start_frame_image_media_token: request.start_frame_image_media_token,
+    start_frame_image_url: None,
+    end_frame_image_media_token: request.end_frame_image_media_token,
+    end_frame_image_url: None,
+    reference_image_media_tokens: request.reference_image_media_tokens,
+    reference_image_urls: None,
+    reference_video_media_tokens: request.reference_video_media_tokens,
+    reference_video_urls: None,
+    reference_audio_media_tokens: request.reference_audio_media_tokens,
+    reference_audio_urls: None,
+    reference_character_tokens: request.reference_character_tokens,
+    resolution: request.resolution,
+    aspect_ratio: request.aspect_ratio,
+    bitrate: request.bitrate,
+    quality: request.quality,
+    duration_seconds: request.duration_seconds,
+    video_batch_count: request.video_batch_count,
+    generate_audio: request.generate_audio,
+  }
+}
+
+/// Construct a value whose builder loads the macOS keychain (async-stripe's
+/// TLS connector does), retrying on the intermittent keychain I/O failure
+/// (error -36) that occurs while dozens of parallel tests hit it at once.
+/// The builders panic internally on that failure, so retry via catch_unwind;
+/// the final attempt runs unguarded so a real error still fails the test.
+fn retry_keychain_flake<T>(build: impl Fn() -> T) -> T {
+  for _ in 0..20 {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(&build)) {
+      Ok(value) => return value,
+      Err(_) => std::thread::sleep(Duration::from_millis(50)),
+    }
+  }
+  build()
 }

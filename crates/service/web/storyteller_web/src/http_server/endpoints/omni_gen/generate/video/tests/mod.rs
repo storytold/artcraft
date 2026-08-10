@@ -25,5 +25,6 @@
 
 pub mod support;
 
+mod omni_api_parity_tests;
 mod seedance_2p0;
 mod seedance_2p5;
