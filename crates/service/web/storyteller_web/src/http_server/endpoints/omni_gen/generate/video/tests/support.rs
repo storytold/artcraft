@@ -181,13 +181,21 @@ impl TestHarness {
     api_key: &ArtcraftApiKey,
     request: OmniGenVideoCostAndGenerateRequest,
   ) -> Result<OmniGenVideoGenerateResponse, CommonWebError> {
+    self.post_omni_api_request(api_key, to_omni_api_request(request)).await
+  }
+
+  /// POST a raw omni_api request — URL input fields allowed — with API-key
+  /// authentication. Use this to exercise the URL-ingestion path.
+  pub async fn post_omni_api_request(
+    &self,
+    api_key: &ArtcraftApiKey,
+    api_request: OmniApiVideoGenerateRequest,
+  ) -> Result<OmniGenVideoGenerateResponse, CommonWebError> {
     let http_request = TestRequest::post()
       .uri("/v1/omni_api/generate/video")
       .insert_header(("Authorization", format!("Bearer {}", api_key.as_str_be_careful())))
       .peer_addr("127.0.0.1:9999".parse().expect("peer addr"))
       .to_http_request();
-
-    let api_request = to_omni_api_request(request);
 
     omni_api_video_generate_handler(
       http_request,
@@ -325,8 +333,12 @@ fn process_stub_kinovi_base_url() -> &'static String {
 /// - `GET` paths containing `dur{millis}ms` serve a REAL generated video of
 ///   that duration (ffmpeg, cached per duration) — the reference-video
 ///   billing probe downloads and ffprobes these.
+/// - `GET` paths under the `video_` bucket prefix (URL-ingested uploads)
+///   serve a default 5s fixture video; other GETs are 404 so the
+///   unreachable-token fixtures keep failing as intended.
 /// - `POST …uploads.signedUploadUrl` answers with an upload URL back at this
-///   stub; the subsequent `PUT` is accepted with 200.
+///   stub; any `PUT` (that upload, or an S3 PutObject from the test bucket
+///   client) is accepted with 200.
 /// - Any other `POST` answers as a successful workflow.runTask with
 ///   process-unique order ids.
 fn spawn_stub_server() -> String {
@@ -374,6 +386,13 @@ fn spawn_stub_server() -> String {
           if request_line.starts_with("GET") {
             match extract_fixture_duration_millis(&request_line) {
               Some(millis) => ("200 OK", "video/mp4", fixture_video_bytes(millis)),
+              // URL-ingested uploads land under the `video_` bucket prefix
+              // (see MediaUploadKind::bucket_prefix); serve those a default
+              // 5s fixture. Token-fixture paths without a prefix stay 404 —
+              // the charge-then-refund tests depend on that.
+              None if request_line.contains("/video_") => {
+                ("200 OK", "video/mp4", fixture_video_bytes(5_000))
+              }
               None => ("404 Not Found", "text/plain", b"not found".to_vec()),
             }
           } else if request_line.starts_with("PUT") {
@@ -497,13 +516,16 @@ fn build_test_server_state(pool: MySqlPool, media_cdn_override_url: String) -> S
   use std::sync::OnceLock;
   static DUMMIES: OnceLock<ExpensiveDummies> = OnceLock::new();
   let dummies = DUMMIES.get_or_init(|| retry_keychain_flake(|| {
+    // Bucket uploads (e.g. URL-input ingestion) PUT to the stub, which
+    // accepts anything; downloads then come back through the media CDN
+    // override, also the stub.
     let dummy_bucket = || {
       LegacyBucketClient::create(
         "test-access-key",
         "test-secret-key",
         "auto",
         "test-bucket",
-        "http://127.0.0.1:1",
+        &media_cdn_override_url,
         None,
         Some(Duration::from_secs(5)),
       )
@@ -860,8 +882,9 @@ pub async fn assert_real_input_videos_charge(
 }
 
 /// Map an omni_gen request onto the omni_api request shape (token fields
-/// only; the URL fields stay None — URL ingestion is not exercised here).
-fn to_omni_api_request(request: OmniGenVideoCostAndGenerateRequest) -> OmniApiVideoGenerateRequest {
+/// only; the URL fields start None — tests exercising URL ingestion set
+/// them afterwards).
+pub fn to_omni_api_request(request: OmniGenVideoCostAndGenerateRequest) -> OmniApiVideoGenerateRequest {
   OmniApiVideoGenerateRequest {
     idempotency_token: request.idempotency_token,
     model: request.model,
