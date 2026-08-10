@@ -1068,6 +1068,7 @@ mod seedance_2p0_u {
   /// written for it.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
+  #[allow(deprecated)]
   async fn seedance_2p0_ultra_is_unroutable_and_charges_nothing() {
     let harness = TestHarness::create().await;
 

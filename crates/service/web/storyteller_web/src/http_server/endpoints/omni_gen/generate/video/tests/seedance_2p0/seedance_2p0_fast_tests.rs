@@ -1045,6 +1045,7 @@ mod seedance_2p0_u_fast {
   /// must be written for it.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
+  #[allow(deprecated)]
   async fn seedance_2p0_ultra_fast_is_unroutable_and_charges_nothing() {
     let harness = TestHarness::create().await;
 
@@ -1088,6 +1089,7 @@ mod premium {
   /// real pricing tests are required.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
+  #[allow(deprecated)]
   async fn seedance_2p0_ultra_fast_is_deprecated_and_cannot_be_quoted() {
     use actix_web::web::Json;
 

@@ -1,3 +1,7 @@
+// The deprecated Seedance 2.0 Ultra variants must stay referenced by this
+// enum's own coders, variant lists, and tests; suppress the lint file-wide.
+#![allow(deprecated)]
+
 use utoipa::ToSchema;
 
 /// Video models available for generation.
@@ -74,9 +78,11 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
 
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u")]
   Seedance2p0Ultra,
 
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
 

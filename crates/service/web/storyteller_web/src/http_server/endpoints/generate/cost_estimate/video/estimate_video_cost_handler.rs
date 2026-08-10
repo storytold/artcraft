@@ -148,6 +148,7 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Seedance2p0 => RouterVideoModel::Seedance2p0,
     CommonVideoModel::Seedance2p0Fast => RouterVideoModel::Seedance2p0Fast,
     // Deprecated: these never launched and have no execution route.
+    #[allow(deprecated)]
     CommonVideoModel::Seedance2p0Ultra
     | CommonVideoModel::Seedance2p0UltraFast => {
       return Err(HandlerError::InvalidInput(format!("Model is not supported: {:?}", model)));

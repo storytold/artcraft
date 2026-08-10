@@ -1,3 +1,8 @@
+// Deprecated model variants (e.g. the Seedance 2.0 Ultra tier) must keep
+// their classification arms here so historical rows still map; suppress the
+// deprecation lint file-wide.
+#![allow(deprecated)]
+
 use std::collections::BTreeSet;
 
 use serde::Deserialize;
