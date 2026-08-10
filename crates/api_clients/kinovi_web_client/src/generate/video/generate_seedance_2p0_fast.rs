@@ -59,6 +59,7 @@ pub enum KinoviSeedance2p0FastOutputResolution {
 pub enum KinoviSeedance2p0FastBatchCount {
   One,
   Two,
+  Three,
   Four,
 }
 
@@ -114,6 +115,7 @@ impl GenerateSeedance2p0FastRequest {
     let batch_multiplier: u64 = match self.batch_count {
       None | Some(KinoviSeedance2p0FastBatchCount::One) => 1,
       Some(KinoviSeedance2p0FastBatchCount::Two) => 2,
+      Some(KinoviSeedance2p0FastBatchCount::Three) => 3,
       Some(KinoviSeedance2p0FastBatchCount::Four) => 4,
     };
 
@@ -223,6 +225,7 @@ fn map_batch_count(bc: Option<KinoviSeedance2p0FastBatchCount>) -> KinoviBatchCo
   match bc {
     Some(KinoviSeedance2p0FastBatchCount::One) | None => KinoviBatchCountRaw::One,
     Some(KinoviSeedance2p0FastBatchCount::Two) => KinoviBatchCountRaw::Two,
+    Some(KinoviSeedance2p0FastBatchCount::Three) => KinoviBatchCountRaw::Three,
     Some(KinoviSeedance2p0FastBatchCount::Four) => KinoviBatchCountRaw::Four,
   }
 }
@@ -463,6 +466,13 @@ mod tests {
         let base = r720(5).calculate_costs().total_cost.kinovi_credits;
         let batch2 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).calculate_costs().total_cost.kinovi_credits;
         assert_eq!(batch2, base * 2);
+      }
+
+      #[test]
+      fn batch_3_triples() {
+        let base = r720(5).calculate_costs().total_cost.kinovi_credits;
+        let batch3 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Three)).calculate_costs().total_cost.kinovi_credits;
+        assert_eq!(batch3, base * 3);
       }
 
       #[test]

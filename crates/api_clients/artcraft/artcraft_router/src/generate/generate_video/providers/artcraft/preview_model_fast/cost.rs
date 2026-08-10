@@ -76,6 +76,12 @@ mod tests {
       assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 2), 600);
     }
 
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 3), 300);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 3), 900);
+    }
+
     #[test]
     fn batch_4() {
       assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4), 400);
@@ -104,6 +110,11 @@ mod tests {
     #[test]
     fn batch_2() {
       assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 90);
+    }
+
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 135);
     }
 
     #[test]
