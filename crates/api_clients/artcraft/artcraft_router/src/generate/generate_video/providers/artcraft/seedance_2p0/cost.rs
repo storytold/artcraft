@@ -65,7 +65,6 @@ impl ArtcraftSeedance2p0CostState {
       let usd_cents = seedance_2p0_four_k_usd_cents(
         self.duration_seconds,
         self.batch_count,
-        self.has_video_reference,
       );
       return VideoGenerationCostEstimate {
         cost_in_credits: Some(usd_cents),
@@ -481,4 +480,74 @@ mod tests {
       .cost_in_usd_cents
       .unwrap()
   }
+
+  // ── Video reference deltas ──
+  //
+  // References price on the with-reference rate card; the delta must be positive at every resolution and duration.
+
+  mod video_reference_deltas {
+    use enums::common::generation::common_resolution::CommonResolution;
+
+    use super::super::ArtcraftSeedance2p0CostState;
+
+    #[test]
+    fn refs_cost_more_at_480p() {
+      assert_ref_delta(CommonResolution::FourEightyP, 5, 39, 45, 6);
+      assert_ref_delta(CommonResolution::FourEightyP, 10, 78, 89, 11);
+      assert_ref_delta(CommonResolution::FourEightyP, 15, 117, 133, 16);
+    }
+
+    #[test]
+    fn refs_cost_more_at_720p() {
+      assert_ref_delta(CommonResolution::SevenTwentyP, 5, 80, 111, 31);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 10, 160, 221, 61);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 15, 240, 331, 91);
+    }
+
+    #[test]
+    fn refs_cost_more_at_1080p() {
+      assert_ref_delta(CommonResolution::TenEightyP, 5, 233, 256, 23);
+      assert_ref_delta(CommonResolution::TenEightyP, 10, 466, 511, 45);
+      assert_ref_delta(CommonResolution::TenEightyP, 15, 699, 767, 68);
+    }
+
+    #[test]
+    fn refs_cost_more_at_4k() {
+      assert_ref_delta(CommonResolution::FourK, 5, 433, 569, 136);
+      assert_ref_delta(CommonResolution::FourK, 10, 866, 1138, 272);
+      assert_ref_delta(CommonResolution::FourK, 15, 1299, 1707, 408);
+    }
+
+    /// Price the same generation with and without a reference video; pin
+    /// both prices and the delta, in USD cents AND credits (credits equal
+    /// cents, and both must show references costing more).
+    fn assert_ref_delta(
+      resolution: CommonResolution,
+      duration_seconds: u16,
+      expected_no_ref: u64,
+      expected_with_ref: u64,
+      expected_delta: u64,
+    ) {
+      let no_ref = ArtcraftSeedance2p0CostState {
+        resolution, duration_seconds, batch_count: 1, has_video_reference: false,
+      }.estimate_cost();
+      let with_ref = ArtcraftSeedance2p0CostState {
+        resolution, duration_seconds, batch_count: 1, has_video_reference: true,
+      }.estimate_cost();
+
+      let no_ref_cents = no_ref.cost_in_usd_cents.unwrap();
+      let with_ref_cents = with_ref.cost_in_usd_cents.unwrap();
+      assert_eq!(no_ref_cents, expected_no_ref);
+      assert_eq!(with_ref_cents, expected_with_ref);
+      assert_eq!(with_ref_cents - no_ref_cents, expected_delta);
+      assert!(with_ref_cents > no_ref_cents, "references must cost more");
+
+      let no_ref_credits = no_ref.cost_in_credits.unwrap();
+      let with_ref_credits = with_ref.cost_in_credits.unwrap();
+      assert_eq!(no_ref_credits, expected_no_ref);
+      assert_eq!(with_ref_credits, expected_with_ref);
+      assert_eq!(with_ref_credits - no_ref_credits, expected_delta);
+    }
+  }
+
 }
