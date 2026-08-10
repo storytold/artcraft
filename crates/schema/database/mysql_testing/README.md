@@ -34,14 +34,16 @@ rerun.
 ## Writing a database test
 
 Database tests run by default; mark them with the `skip_database_tests`
-off switch so database-less machines/CI can exclude them, and take the
-serial lock first — they share one schema:
+off switch so database-less machines/CI can exclude them. Tests run in
+PARALLEL — create your own users/wallets/rows and never touch another
+test's data (schema setup single-flights via a MySQL named lock). Only a
+test that must mutate shared/global state takes
+`mysql_testing::serial::acquire_serial_test_lock()`.
 
 ```rust
 #[tokio::test]
 #[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn my_database_test() {
-  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let pool = mysql_testing::pool::create_test_pool().await;
 
   let user = mysql_testing::fixtures::users::create_test_user(&pool).await.unwrap();

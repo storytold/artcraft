@@ -22,7 +22,6 @@ use super::support::{
 #[tokio::test]
 #[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p5_charges_by_resolution_and_duration() {
-  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
   // 2.5 rates: 480p 11.76954733 ¢/s, 720p 26.70781893 ¢/s, ceil-rounded.
@@ -58,7 +57,6 @@ async fn seedance_2p5_charges_by_resolution_and_duration() {
 #[tokio::test]
 #[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p5_ultra_charges_its_own_higher_rates() {
-  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
   // Ultra rates: 480p 13.90946502 ¢/s, 720p 31.56378601 ¢/s, ceil-rounded.
@@ -96,7 +94,6 @@ async fn seedance_2p5_ultra_charges_its_own_higher_rates() {
 #[tokio::test]
 #[cfg_attr(feature = "skip_database_tests", ignore)]
 async fn seedance_2p5_bills_reference_video_input_seconds_at_worst_case_when_unprobeable() {
-  let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
   let harness = TestHarness::create().await;
 
   let cases: &[(CommonVideoModel, Option<CommonResolution>, Seconds, ExpectedCredits)] = &[

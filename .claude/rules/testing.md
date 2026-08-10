@@ -13,9 +13,10 @@
   `mysql://root:@localhost:3306/artcraft_test`); the guard panics on any
   database whose name lacks "test", on `storyteller`/`artcraft`, and on
   cloud hosts — see `mysql_testing/README.md`
-- Every database test's first statement takes
-  `mysql_testing::serial::acquire_serial_test_lock().await` — they run
-  serially regardless of `--test-threads`
+- Database tests run in PARALLEL: each test creates its own users, wallets,
+  and rows; schema setup single-flights via a MySQL named lock. Only tests
+  mutating shared/global state take
+  `mysql_testing::serial::acquire_serial_test_lock().await`
 - External providers must never be called: the harness stubs Kinovi with an
   in-process HTTP server via `KINOVI_CUSTOM_API_HOST`/`KINOVI_CUSTOM_CDN_HOST`
 

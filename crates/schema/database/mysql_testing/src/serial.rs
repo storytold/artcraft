@@ -1,14 +1,13 @@
-//! Database tests share one schema, so they must not interleave.
+//! Opt-in serialization for database tests that CANNOT be data-isolated.
 //!
-//! Every database test's FIRST statement should be:
+//! Most database tests should NOT use this: create your own users, wallets,
+//! and rows and run in parallel (schema setup already single-flights via a
+//! MySQL named lock). Take this lock only when a test must mutate shared or
+//! global state (e.g. truncating a table, changing a singleton row):
 //!
 //! ```ignore
 //! let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
 //! ```
-//!
-//! This serializes database tests within one test binary regardless of
-//! `--test-threads`, so a forgotten `--test-threads=1` can't cause flaky
-//! cross-test interference.
 
 use std::sync::OnceLock;
 

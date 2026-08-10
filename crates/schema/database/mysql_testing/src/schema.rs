@@ -20,7 +20,27 @@ CREATE TABLE IF NOT EXISTS mysql_testing_applied_migrations (
 ";
 
 /// Bring the test database schema up to date and seed required system rows.
+///
+/// Single-flighted via a MySQL named lock, so parallel tests (and parallel
+/// test processes) can all call this concurrently: one caller applies any
+/// pending migrations while the rest wait, then everyone proceeds.
 pub async fn ensure_schema(pool: &MySqlPool) {
+  let mut lock_connection = pool.acquire().await.expect("acquire for schema lock");
+  let locked: i64 = sqlx::query_scalar("SELECT GET_LOCK('mysql_testing_schema', 120)")
+    .fetch_one(&mut *lock_connection)
+    .await
+    .expect("take schema lock");
+  assert_eq!(locked, 1, "timed out waiting for the schema lock");
+
+  apply_schema(pool).await;
+
+  sqlx::query("SELECT RELEASE_LOCK('mysql_testing_schema')")
+    .execute(&mut *lock_connection)
+    .await
+    .expect("release schema lock");
+}
+
+async fn apply_schema(pool: &MySqlPool) {
   sqlx::query(MIGRATIONS_TABLE_DDL)
     .execute(pool)
     .await

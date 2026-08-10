@@ -28,7 +28,6 @@ mod seedance_2p0_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_every_duration_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -95,7 +94,6 @@ mod seedance_2p0_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_every_batch_size_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -152,7 +150,6 @@ mod seedance_2p0_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_spot_checked_combinations() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -194,7 +191,6 @@ mod seedance_2p0_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_every_duration_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -261,7 +257,6 @@ mod seedance_2p0_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_every_batch_size_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -319,7 +314,6 @@ mod seedance_2p0_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_spot_checked_combinations() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -368,7 +362,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_every_duration_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -435,7 +428,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_every_batch_size_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -492,7 +484,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_spot_checked_combinations() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -534,7 +525,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_every_duration_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -601,7 +591,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_every_batch_size_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -659,7 +648,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_spot_checked_combinations() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -701,7 +689,6 @@ mod seedance_2p0_bp_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn preview_model_fast_charges_the_byteplus_fast_rates() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     assert_successful_generation_charges(
@@ -725,7 +712,6 @@ mod seedance_2p0_bpu_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_every_duration_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -792,7 +778,6 @@ mod seedance_2p0_bpu_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_every_batch_size_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -849,7 +834,6 @@ mod seedance_2p0_bpu_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn charges_spot_checked_combinations() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -891,7 +875,6 @@ mod seedance_2p0_bpu_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_every_duration_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -958,7 +941,6 @@ mod seedance_2p0_bpu_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_every_batch_size_at_every_resolution() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -1016,7 +998,6 @@ mod seedance_2p0_bpu_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn video_references_charge_spot_checked_combinations() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
@@ -1065,7 +1046,6 @@ mod seedance_2p0_u_fast {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn seedance_2p0_ultra_fast_is_unroutable_and_charges_nothing() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     assert_generation_fails_and_charges_nothing(
@@ -1083,7 +1063,6 @@ mod premium {
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
   async fn seedance_2p0_byteplus_fast_charges_a_premium_over_fast() {
-    let _serial = mysql_testing::serial::acquire_serial_test_lock().await;
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[

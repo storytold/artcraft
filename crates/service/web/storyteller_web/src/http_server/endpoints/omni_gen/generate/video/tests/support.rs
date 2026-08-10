@@ -13,8 +13,6 @@ use actix_web::web::{Data, Json};
 use actix_web::HttpRequest;
 use chrono::Utc;
 use sqlx::MySqlPool;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
@@ -84,15 +82,12 @@ impl TestHarness {
     // with an ambiguous-provider error unless one is installed explicitly.
     let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
 
+    // One stub per process; the OnceLock init also points the Kinovi env
+    // override at it BEFORE any test can issue a request, so tests are free
+    // to run in parallel (each creates isolated users/wallets/media).
+    let stub_kinovi_base_url = process_stub_kinovi_base_url().clone();
+
     let pool = mysql_testing::pool::create_test_pool().await;
-    let stub_kinovi_base_url = spawn_stub_kinovi_server().await;
-
-    // Point every Kinovi call at the in-process stub. Database tests hold
-    // the mysql_testing serial lock, so this process-global setting can't
-    // race another database test.
-    std::env::set_var(ENV_KINOVI_CUSTOM_API_HOST, &stub_kinovi_base_url);
-    std::env::set_var(ENV_KINOVI_CUSTOM_CDN_HOST, &stub_kinovi_base_url);
-
     let server_state = Arc::new(build_test_server_state(pool.clone()));
 
     TestHarness {
@@ -225,69 +220,73 @@ fn uuid_v4_like() -> String {
   format!("{:016x}{:016x}", nanos as u64, count)
 }
 
-/// A stub Kinovi API: accepts any POST and answers with a successful
-/// workflow.runTask tRPC batch response. Bound to an ephemeral local port;
-/// serves connections until the test process exits.
-async fn spawn_stub_kinovi_server() -> String {
-  use std::sync::atomic::{AtomicU64, Ordering};
+/// The process-wide stub Kinovi server's base URL. First use spawns the
+/// stub (plain OS threads — it outlives every per-test tokio runtime) and
+/// sets the Kinovi host-override env vars exactly once, before returning.
+fn process_stub_kinovi_base_url() -> &'static String {
   use std::sync::OnceLock;
+  static STUB: OnceLock<String> = OnceLock::new();
+  STUB.get_or_init(|| {
+    let base_url = spawn_stub_kinovi_server();
+    std::env::set_var(ENV_KINOVI_CUSTOM_API_HOST, &base_url);
+    std::env::set_var(ENV_KINOVI_CUSTOM_CDN_HOST, &base_url);
+    base_url
+  })
+}
+
+/// A stub Kinovi API: accepts any POST and answers with a successful
+/// workflow.runTask tRPC batch response with process-unique order ids.
+/// Runs on plain OS threads so it is independent of any tokio runtime and
+/// serves connections until the test process exits.
+fn spawn_stub_kinovi_server() -> String {
+  use std::io::{Read, Write};
+  use std::net::TcpListener;
+  use std::sync::atomic::{AtomicU64, Ordering};
 
   // Order/task ids must be unique: generic_inference_jobs has a UNIQUE key
   // on the external third-party id — and the test database PERSISTS across
   // runs, so ids must be unique across processes, not just within one.
   static ORDER_COUNTER: AtomicU64 = AtomicU64::new(1);
-  static PROCESS_PREFIX: OnceLock<u64> = OnceLock::new();
-  let process_prefix = *PROCESS_PREFIX.get_or_init(|| {
-    std::time::SystemTime::now()
-      .duration_since(std::time::UNIX_EPOCH)
-      .expect("clock")
-      .as_nanos() as u64
-  });
+  let process_prefix = std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .expect("clock")
+    .as_nanos() as u64;
 
-  let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind stub kinovi");
+  let listener = TcpListener::bind("127.0.0.1:0").expect("bind stub kinovi");
   let port = listener.local_addr().expect("local addr").port();
 
-  tokio::spawn(async move {
-    loop {
-      let Ok((mut stream, _)) = listener.accept().await else {
-        return;
-      };
-      tokio::spawn(async move {
-        let order_number = ORDER_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let response_json = format!(
-          r#"[{{"result":{{"data":{{"json":{{"taskId":"task_test_{:016x}_{:04}","orderId":"ord_test_{:016x}_{:04}","violationWarning":false}}}}}}}}]"#,
-          process_prefix, order_number, process_prefix, order_number,
-        );
-        // Read the request until the connection settles; we answer every
-        // request identically, so parsing is unnecessary.
+  std::thread::spawn(move || {
+    for stream in listener.incoming() {
+      let Ok(mut stream) = stream else { continue };
+      std::thread::spawn(move || {
+        // Read the request until the connection settles; every request gets
+        // the same shape of answer, so parsing is unnecessary.
+        let _ = stream.set_read_timeout(Some(Duration::from_millis(200)));
         let mut buffer = [0u8; 65536];
         let mut read_total = 0;
         loop {
-          match tokio::time::timeout(Duration::from_millis(200), stream.read(&mut buffer)).await {
-            Ok(Ok(n)) if n > 0 => {
+          match stream.read(&mut buffer[read_total..]) {
+            Ok(n) if n > 0 => {
               read_total += n;
-              // Stop once we plausibly have the full request (headers seen
-              // and no more bytes arriving is handled by the timeout arm).
-              if read_total >= 4 && buffer[..read_total.min(buffer.len())].windows(4).any(|w| w == b"\r\n\r\n") {
-                // Keep reading briefly in case a body follows; the timeout
-                // arm below breaks us out.
+              if buffer[..read_total].windows(4).any(|w| w == b"\r\n\r\n") && read_total > 4 {
+                break;
               }
             }
             _ => break,
           }
-          if read_total > 0 {
-            break;
-          }
         }
 
-        let body = response_json.as_bytes();
-        let response = format!(
-          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-          body.len(),
+        let order_number = ORDER_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let body = format!(
+          r#"[{{"result":{{"data":{{"json":{{"taskId":"task_test_{process_prefix:016x}_{order_number:04}","orderId":"ord_test_{process_prefix:016x}_{order_number:04}","violationWarning":false}}}}}}}}]"#,
         );
-        let _ = stream.write_all(response.as_bytes()).await;
-        let _ = stream.write_all(body).await;
-        let _ = stream.shutdown().await;
+        let response = format!(
+          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+          body.len(),
+          body,
+        );
+        let _ = stream.write_all(response.as_bytes());
+        let _ = stream.shutdown(std::net::Shutdown::Both);
       });
     }
   });
