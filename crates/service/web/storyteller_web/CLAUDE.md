@@ -75,23 +75,23 @@ curl -s -c /tmp/cookies.txt -X POST http://localhost:12345/v1/login \
   -H "Content-Type: application/json" \
   -d '{"username_or_email":"newuser4","password":"newuser4"}'
 
-# 2. Generate video (GmiCloud Seedance 2.0 Fast Global):
+# 2. Generate video (Seedance 2.0 Fast):
 #    Requires a UUID-format idempotency_token.
 curl -s -b /tmp/cookies.txt -X POST http://localhost:12345/v1/omni_gen/generate/video \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "seedance_2p0_fast_g",
+    "model": "seedance_2p0_fast",
     "prompt": "a corgi running through a field",
     "duration_seconds": 5,
     "aspect_ratio": "wide_sixteen_by_nine",
     "idempotency_token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
   }'
 
-# 3. Generate video (GmiCloud Seedance 2.0 Global, 720p):
+# 3. Generate video (Seedance 2.0, 720p):
 curl -s -b /tmp/cookies.txt -X POST http://localhost:12345/v1/omni_gen/generate/video \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "seedance_2p0_g",
+    "model": "seedance_2p0",
     "prompt": "a corgi running through a field",
     "duration_seconds": 5,
     "resolution": "seven_twenty_p",
