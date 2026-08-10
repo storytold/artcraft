@@ -150,8 +150,6 @@ mod tests {
     #[test]
     fn ignores_over_limit_prompt_for_excluded_seedance_variants() {
       let excluded_models = [
-        CommonVideoModel::Seedance2p0Ultra,
-        CommonVideoModel::Seedance2p0UltraFast,
         CommonVideoModel::Seedance2p0BytePlusUltra,
         CommonVideoModel::Seedance2p0BytePlusUltraFast,
         CommonVideoModel::Seedance2p0BytePlusUltraMini,

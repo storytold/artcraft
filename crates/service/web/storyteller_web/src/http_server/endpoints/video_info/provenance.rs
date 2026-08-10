@@ -103,6 +103,8 @@ pub fn model_family_for_type(
     | Type::Kling3p0Standard
     | Type::Kling3p0Pro => Family::Kling,
     Type::HappyHorse1p0 => Family::HappyHorse,
+    // Historical rows may carry the deprecated Ultra tier variants.
+    #[allow(deprecated)]
     Type::Seedance10Lite
     | Type::Seedance1p5Pro
     | Type::Seedance2p0

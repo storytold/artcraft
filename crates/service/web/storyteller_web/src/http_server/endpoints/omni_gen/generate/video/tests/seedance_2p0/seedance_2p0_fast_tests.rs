@@ -1035,16 +1035,17 @@ mod seedance_2p0_bpu_fast {
   }
 }
 
-// ── Seedance 2.0 Ultra Fast (GmiCloud, decommissioned) ──
+// ── Seedance 2.0 Ultra Fast (deprecated, unroutable) ──
 mod seedance_2p0_u_fast {
   use super::*;
 
-  /// Seedance2p0UltraFast has no active execution route (its GmiCloud routing
-  /// is disabled in the pipeline). The request must fail cleanly BEFORE
-  /// billing. If the route is ever re-enabled, this pin fails and pricing
-  /// tests must be written for it.
+  /// Seedance2p0UltraFast is deprecated and has no execution route (its
+  /// GmiCloud routing was removed). The request must fail cleanly BEFORE
+  /// billing. If the model is ever revived, this pin fails and pricing tests
+  /// must be written for it.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
+  #[allow(deprecated)]
   async fn seedance_2p0_ultra_fast_is_unroutable_and_charges_nothing() {
     let harness = TestHarness::create().await;
 
@@ -1081,25 +1082,28 @@ mod premium {
     }
   }
 
-  /// Seedance2p0UltraFast is NOT priced higher than Fast: its legacy (GmiCloud)
-  /// rate card quotes BELOW the Fast card (720p 5s: 45 vs 64), it has no active
-  /// execution route, and production has zero jobs for it, ever. Pinned via the
-  /// cost endpoint (it cannot generate); if this fails, someone revived or
-  /// repriced the Ultra tier and real pricing tests are required.
+  /// Seedance2p0UltraFast is deprecated: its router model, rate card, and
+  /// GmiCloud routing were removed, so the cost endpoint must REJECT it while
+  /// still quoting Fast normally (720p 5s: 64). Production has zero jobs for
+  /// it, ever. If the rejection stops, someone revived the Ultra tier and
+  /// real pricing tests are required.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
-  async fn seedance_2p0_ultra_fast_quotes_below_fast_on_its_legacy_rate_card() {
+  #[allow(deprecated)]
+  async fn seedance_2p0_ultra_fast_is_deprecated_and_cannot_be_quoted() {
     use actix_web::web::Json;
 
-    let fast_quote = quote_credits(CommonVideoModel::Seedance2p0Fast).await;
-    let ultra_fast_quote = quote_credits(CommonVideoModel::Seedance2p0UltraFast).await;
+    // 720p 5s: Fast 12.727 ¢/s → 64.
+    assert_eq!(quote_credits(CommonVideoModel::Seedance2p0Fast).await.expect("Fast quotes"), 64);
 
-    // 720p 5s: Fast 12.727 ¢/s → 64; UltraFast (legacy) 8.9089 ¢/s → 45.
-    assert_eq!(fast_quote, 64);
-    assert_eq!(ultra_fast_quote, 45);
-    assert_eq!(fast_quote - ultra_fast_quote, 19);
+    assert!(
+      quote_credits(CommonVideoModel::Seedance2p0UltraFast).await.is_err(),
+      "deprecated UltraFast must not quote",
+    );
 
-    async fn quote_credits(model: CommonVideoModel) -> u64 {
+    async fn quote_credits(
+      model: CommonVideoModel,
+    ) -> Result<u64, crate::http_server::common_responses::common_web_error::CommonWebError> {
       let mut request = crate::http_server::endpoints::omni_gen::generate::video::tests::support::base_generate_request(model);
       request.resolution = Some(CommonResolution::SevenTwentyP);
       request.duration_seconds = Some(5);
@@ -1108,14 +1112,11 @@ mod premium {
         .uri("/v1/omni_gen/cost/video")
         .to_http_request();
       // No ServerState: quotes come from the router alone (no DB, no network).
-      crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler(
+      let response = crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler(
         http_request, Json(request), None,
       )
-      .await
-      .expect("cost quote should succeed")
-      .into_inner()
-      .cost_in_credits
-      .expect("quote should carry credits")
+      .await?;
+      Ok(response.into_inner().cost_in_credits.expect("quote should carry credits"))
     }
   }
 }

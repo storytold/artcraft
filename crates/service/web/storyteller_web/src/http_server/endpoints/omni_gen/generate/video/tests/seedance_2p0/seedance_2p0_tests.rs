@@ -1058,16 +1058,17 @@ mod seedance_2p0_bpu {
   }
 }
 
-// ── Seedance 2.0 Ultra (GmiCloud, decommissioned) ──
+// ── Seedance 2.0 Ultra (deprecated, unroutable) ──
 mod seedance_2p0_u {
   use super::*;
 
-  /// Seedance2p0Ultra has no active execution route (its GmiCloud routing is
-  /// disabled in the pipeline). The request must fail cleanly BEFORE billing.
+  /// Seedance2p0Ultra is deprecated and has no execution route (its
+  /// GmiCloud routing was removed). The request must fail cleanly BEFORE billing.
   /// If the route is ever re-enabled, this pin fails and pricing tests must be
   /// written for it.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]
+  #[allow(deprecated)]
   async fn seedance_2p0_ultra_is_unroutable_and_charges_nothing() {
     let harness = TestHarness::create().await;
 

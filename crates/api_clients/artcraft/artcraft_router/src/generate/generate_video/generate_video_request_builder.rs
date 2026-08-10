@@ -26,8 +26,6 @@ use crate::generate::generate_video::providers::artcraft::seedance_1p0_lite::bui
 use crate::generate::generate_video::providers::artcraft::seedance_1p5_pro::build::build_artcraft_seedance_1p5_pro;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0::build::build_artcraft_seedance_2p0;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::build::build_artcraft_seedance_2p0_fast;
-use crate::generate::generate_video::providers::artcraft::seedance_2p0_u::build::build_artcraft_seedance_2p0_u;
-use crate::generate::generate_video::providers::artcraft::seedance_2p0_u_fast::build::build_artcraft_seedance_2p0_u_fast;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp::build::build_artcraft_seedance_2p0_bp;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu::build::build_artcraft_seedance_2p0_bpu;
@@ -50,8 +48,6 @@ use crate::generate::generate_video::providers::artcraft::vidu_q3::build::build_
 use crate::generate::generate_video::providers::artcraft::vidu_q3_turbo::build::build_artcraft_vidu_q3_turbo;
 use crate::generate::generate_video::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
-use crate::generate::generate_video::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_u;
-use crate::generate::generate_video::providers::gmicloud::seedance_2p0_fast_g::build::build_gmicloud_seedance_2p0_u_fast;
 use crate::generate::generate_video::providers::grok_api::grok_imagine_video::build::build_grok_api_grok_imagine_video;
 use crate::generate::generate_video::providers::grok_api::grok_imagine_video_1p5::build::build_grok_api_grok_imagine_video_1p5;
 use crate::generate::generate_video::providers::fal::kling_1_6_pro::build::build_fal_kling_1_6_pro;
@@ -201,8 +197,6 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Artcraft, RouterVideoModel::MinimaxH3) => build_artcraft_minimax_h3(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0) => build_artcraft_seedance_2p0(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0Fast) => build_artcraft_seedance_2p0_fast(self),
-      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0Ultra) => build_artcraft_seedance_2p0_u(self),
-      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0UltraFast) => build_artcraft_seedance_2p0_u_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlus) => build_artcraft_seedance_2p0_bp(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltra) => build_artcraft_seedance_2p0_bpu(self),
@@ -250,9 +244,6 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Fal, RouterVideoModel::Veo3p1Lite) => build_fal_veo_3p1_lite(self),
       (RouterProvider::Fal, RouterVideoModel::ViduQ3) => build_fal_vidu_q3(self),
       (RouterProvider::Fal, RouterVideoModel::ViduQ3Turbo) => build_fal_vidu_q3_turbo(self),
-      // GmiCloud
-      (RouterProvider::GmiCloud, RouterVideoModel::Seedance2p0Ultra) => build_gmicloud_seedance_2p0_u(self),
-      (RouterProvider::GmiCloud, RouterVideoModel::Seedance2p0UltraFast) => build_gmicloud_seedance_2p0_u_fast(self),
       // Grok
       (RouterProvider::GrokApi, RouterVideoModel::GrokImagineVideo) => build_grok_api_grok_imagine_video(self),
       (RouterProvider::GrokApi, RouterVideoModel::GrokImagineVideo1p5) => build_grok_api_grok_imagine_video_1p5(self),

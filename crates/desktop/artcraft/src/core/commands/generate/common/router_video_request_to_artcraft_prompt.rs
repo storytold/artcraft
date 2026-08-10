@@ -78,8 +78,6 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::ViduQ3Turbo => Some(CommonModelType::ViduQ3Turbo),
     RouterVideoModel::Seedance2p0BytePlus => Some(CommonModelType::Seedance2p0BytePlus),
     RouterVideoModel::Seedance2p0BytePlusFast => Some(CommonModelType::Seedance2p0BytePlusFast),
-    RouterVideoModel::Seedance2p0Ultra => Some(CommonModelType::Seedance2p0Ultra),
-    RouterVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
     RouterVideoModel::Seedance2p0BytePlusUltra => Some(CommonModelType::Seedance2p0BytePlusUltra),
     RouterVideoModel::Seedance2p0BytePlusUltraFast => Some(CommonModelType::Seedance2p0BytePlusUltraFast),
     RouterVideoModel::Seedance2p0Mini => Some(CommonModelType::Seedance2p0Mini),
@@ -91,6 +89,7 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::GrokImagineVideo1p5 => Some(CommonModelType::GrokImagineVideo1p5),
     RouterVideoModel::Seedance2p5Preview => Some(CommonModelType::Seedance2p5Preview),
     RouterVideoModel::Seedance2p5 => Some(CommonModelType::Seedance2p5),
+    RouterVideoModel::Seedance2p5Ultra => Some(CommonModelType::Seedance2p5Ultra),
   }
 }
 
@@ -164,6 +163,7 @@ mod tests {
       duration_seconds: None,
       video_batch_count: None,
       generate_audio: None,
+      total_reference_video_input_seconds: None,
       request_mismatch_mitigation_strategy:
         artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,
