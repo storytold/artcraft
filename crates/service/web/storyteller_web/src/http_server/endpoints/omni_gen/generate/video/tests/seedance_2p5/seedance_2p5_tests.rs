@@ -940,6 +940,90 @@ mod seedance_2p5_u {
 mod input_video_duration_billing {
   use super::*;
 
+
+  /// Baseline: no input videos bills the NO-reference rate over the output
+  /// duration only (480p 11.76954733 ¢/s, 720p 26.70781893 ¢/s).
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn no_input_videos_bill_the_no_reference_rate() {
+    let harness = TestHarness::create().await;
+
+    assert_successful_generation_charges(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), Batch(1), ExpectedCredits(354),
+    ).await;
+    assert_successful_generation_charges(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::SevenTwentyP),
+      Seconds(30), Batch(1), ExpectedCredits(802),
+    ).await;
+  }
+
+  /// Single input videos of 1, 2, 3, and 4 seconds ALL bill 4 input seconds
+  /// (the per-video minimum): identical price for all four.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn single_input_videos_of_one_to_four_seconds_all_bill_four() {
+    let harness = TestHarness::create().await;
+
+    // 30s output + 4 input = 34 billed × 7.24279835 ¢/s = 246.26 → 247.
+    let cases: &[&[u64]] = &[&[1_000], &[2_000], &[3_000], &[4_000]];
+    for input_millis in cases {
+      assert_real_input_videos_charge(
+        &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+        Seconds(30), input_millis, ExpectedCredits(247),
+      ).await;
+    }
+  }
+
+  /// Single input videos above the minimum bill exactly their duration.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn single_input_videos_of_five_to_thirty_seconds_bill_their_duration() {
+    let harness = TestHarness::create().await;
+
+    // (input millis, expected credits) at 480p 30s output:
+    // billed = (30 + input) × 7.24279835 ¢/s, ceil-rounded.
+    let cases: &[(&[u64], ExpectedCredits)] = &[
+      (&[5_000], ExpectedCredits(254)),  // 35 billed
+      (&[10_000], ExpectedCredits(290)), // 40 billed
+      (&[15_000], ExpectedCredits(326)), // 45 billed
+      (&[20_000], ExpectedCredits(363)), // 50 billed
+      (&[25_000], ExpectedCredits(399)), // 55 billed
+      (&[30_000], ExpectedCredits(435)), // 60 billed (the worst case)
+    ];
+    for (input_millis, expected) in cases {
+      assert_real_input_videos_charge(
+        &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+        Seconds(30), input_millis, *expected,
+      ).await;
+    }
+  }
+
+  /// Mixed input videos sum their PER-VIDEO clamped durations (each at least
+  /// 4 seconds), up to the 30-second total cap.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn mixed_input_videos_sum_their_clamped_durations() {
+    let harness = TestHarness::create().await;
+
+    // (input millis list, billed input seconds, expected credits) at 480p
+    // 30s output: (30 + input) × 7.24279835 ¢/s, ceil-rounded.
+    let cases: &[(&[u64], ExpectedCredits)] = &[
+      (&[1_000, 2_000, 3_000], ExpectedCredits(305)),   // 4+4+4 = 12 → 42 billed
+      (&[5_000, 10_000], ExpectedCredits(326)),         // 5+10 = 15 → 45 billed
+      (&[4_000, 5_000, 6_000], ExpectedCredits(326)),   // 4+5+6 = 15 → 45 billed
+      (&[2_000, 3_000, 20_000], ExpectedCredits(421)),  // 4+4+20 = 28 → 58 billed
+      (&[1_000, 25_000], ExpectedCredits(428)),         // 4+25 = 29 → 59 billed
+      (&[10_000, 10_000, 10_000], ExpectedCredits(435)), // 10+10+10 = 30 → 60 billed
+    ];
+    for (input_millis, expected) in cases {
+      assert_real_input_videos_charge(
+        &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+        Seconds(30), input_millis, *expected,
+      ).await;
+    }
+  }
+
   /// 1.5s and 3.9s inputs both bill the 4-second minimum: identical price.
   #[tokio::test]
   #[cfg_attr(feature = "skip_database_tests", ignore)]

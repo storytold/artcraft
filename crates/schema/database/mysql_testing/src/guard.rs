@@ -138,7 +138,7 @@ mod tests {
     #[test]
     fn cloud_hosts_even_with_test_names() {
       assert!(guard_panics(
-        "mysql://doadmin:x@storyteller-db-migration-mysql-do-user-1-0.d.db.ondigitalocean.com:25060/artcraft_test"
+        "mysql://doadmin:x@mysql-do-user-1-0.d.db.ondigitalocean.com:20000/artcraft_test"
       ));
       assert!(guard_panics("mysql://u:p@db.abc123.us-east-1.rds.amazonaws.com/artcraft_test"));
       assert!(guard_panics("mysql://u:p@some-gcp-host.googleapis.com/artcraft_test"));
