@@ -22,6 +22,8 @@
 //!
 //! Billing math: each file's duration is rounded UP to a whole second, and
 //! counted once per reference (the same file referenced twice bills twice).
+//! The TOTAL is what gets billed; the router clamps it to the model's
+//! billing range (e.g. 4..=30 seconds for Seedance 2.5).
 //!
 //! Probing NEVER fails a generation: a file whose download or ffprobe fails
 //! is billed at the worst-case [`MAX_BILLED_INPUT_SECONDS`] instead (and is
@@ -44,9 +46,12 @@ use tempfile::NamedTempFile;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::util::http_download_url_to_tempfile::http_download_url_to_tempfile;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::apply_media_cdn_override;
+
 
 /// Downloaded + ffprobed reference videos.
 ///
@@ -87,6 +92,7 @@ pub async fn fetch_reference_video_sources(
   video_tokens: &[MediaFileToken],
   http_request: &HttpRequest,
   server_environment: ServerEnvironment,
+  maybe_media_cdn_override_url: Option<&str>,
   mysql_connection: &mut PoolConnection<MySql>,
 ) -> Result<Vec<ReferenceVideoSource>, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
@@ -133,7 +139,12 @@ pub async fn fetch_reference_video_sources(
         server_environment,
         &bucket_path);
 
-      (file.token, media_links.cdn_url.to_string())
+      let cdn_url = apply_media_cdn_override(
+        &media_links.cdn_url,
+        maybe_media_cdn_override_url,
+      );
+
+      (file.token, cdn_url)
     })
     .collect();
 

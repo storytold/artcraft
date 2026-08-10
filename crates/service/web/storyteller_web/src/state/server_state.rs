@@ -60,6 +60,12 @@ pub struct ServerState {
   /// Knowing if we're in production will allow us to turn off development-only functionalities.
   pub server_environment: ServerEnvironment,
 
+  /// Optional base URL (scheme + host, no trailing slash) that REPLACES the
+  /// media CDN host wherever the server itself downloads media (reference
+  /// probing, provider upload resolution). For tests and local development
+  /// against a stub server; None in production.
+  pub maybe_media_cdn_override_url: Option<String>,
+
   /// Feature flags will allow us to restart the service with different conditions embedded in the code.
   pub flags: StaticFeatureFlags,
 

@@ -80,7 +80,7 @@ pub async fn upload_file(args: UploadFileArgs) -> Result<UploadFileResponse, Kin
     }.into());
   }
 
-  let public_url = build_public_url(&args.upload_url, host)?;
+  let public_url = build_public_url(&args.upload_url, &host)?;
 
   info!("Public URL: {}", public_url);
 

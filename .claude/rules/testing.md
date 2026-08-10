@@ -1,5 +1,25 @@
 # Testing
 
+## Database Fixture Tests
+
+- Live in-crate (e.g. `storyteller-web`'s omni_gen video pricing tests) and
+  use the `mysql_testing` crate (`crates/schema/database/mysql_testing`) for
+  guarded pools, schema setup, and account/session/wallet fixtures
+- They RUN BY DEFAULT with `cargo test -p storyteller-web` and from the IDE
+  (requires a local MySQL with an `artcraft_test` database). Machines/CI
+  without MySQL skip them via the off switch:
+  `SQLX_OFFLINE=true cargo test -p storyteller-web --features skip_database_tests`
+- They connect ONLY via `ARTCRAFT_TEST_DATABASE_URL` (default
+  `mysql://root:@localhost:3306/artcraft_test`); the guard panics on any
+  database whose name lacks "test", on `storyteller`/`artcraft`, and on
+  cloud hosts — see `mysql_testing/README.md`
+- Database tests run in PARALLEL: each test creates its own users, wallets,
+  and rows; schema setup single-flights via a MySQL named lock. Only tests
+  mutating shared/global state take
+  `mysql_testing::serial::acquire_serial_test_lock().await`
+- External providers must never be called: the harness stubs Kinovi with an
+  in-process HTTP server via `KINOVI_CUSTOM_API_HOST`/`KINOVI_CUSTOM_CDN_HOST`
+
 ## Running Tests
 
 - Most crates: `cargo test -p {crate_name}`

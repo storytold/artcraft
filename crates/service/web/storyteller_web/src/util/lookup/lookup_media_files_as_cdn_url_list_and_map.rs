@@ -27,6 +27,7 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
+  maybe_media_cdn_override_url: Option<&str>,
   tokens: &[MediaFileToken],
 ) -> Result<MediaFilesAsCdnUrlListAndMap, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
@@ -92,7 +93,10 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
       server_environment,
       &public_bucket_path);
 
-    token_to_url_map.insert(file.token, media_links.cdn_url.to_string());
+    token_to_url_map.insert(
+      file.token,
+      apply_media_cdn_override(&media_links.cdn_url, maybe_media_cdn_override_url),
+    );
   }
 
   // In requested order, with duplicates preserved.
@@ -105,4 +109,37 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
     ordered_url_list,
     token_to_url_map,
   })
+}
+
+/// Rewrite a CDN URL onto the override base (keeping the path) when an
+/// override is configured; otherwise pass the URL through unchanged.
+pub fn apply_media_cdn_override(cdn_url: &url::Url, maybe_override_base: Option<&str>) -> String {
+  match maybe_override_base {
+    Some(base) => format!("{}{}", base.trim_end_matches('/'), cdn_url.path()),
+    None => cdn_url.to_string(),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::apply_media_cdn_override;
+
+  #[test]
+  fn no_override_passes_the_url_through() {
+    let url = url::Url::parse("https://cdn.example/media/a/b.mp4").unwrap();
+    assert_eq!(apply_media_cdn_override(&url, None), "https://cdn.example/media/a/b.mp4");
+  }
+
+  #[test]
+  fn override_replaces_scheme_and_host_and_keeps_the_path() {
+    let url = url::Url::parse("https://cdn.example/media/a/b.mp4").unwrap();
+    assert_eq!(
+      apply_media_cdn_override(&url, Some("http://127.0.0.1:5555")),
+      "http://127.0.0.1:5555/media/a/b.mp4",
+    );
+    assert_eq!(
+      apply_media_cdn_override(&url, Some("http://127.0.0.1:5555/")),
+      "http://127.0.0.1:5555/media/a/b.mp4",
+    );
+  }
 }

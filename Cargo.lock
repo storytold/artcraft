@@ -7364,6 +7364,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "mysql_testing"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bcrypt",
+ "bucket_paths",
+ "chrono",
+ "enums",
+ "log",
+ "mysql_queries",
+ "sqlx",
+ "tokens",
+ "tokio",
+]
+
+[[package]]
 name = "mysqlclient-sys"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11646,6 +11662,7 @@ dependencies = [
  "migration",
  "mimetypes",
  "mysql_queries",
+ "mysql_testing",
  "once_cell",
  "opaque_cursors",
  "pager",

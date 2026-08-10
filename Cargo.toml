@@ -120,6 +120,7 @@ members = [
   "crates/schema/database/elasticsearch_schema",
   "crates/schema/database/migration",
   "crates/schema/database/mysql_queries",
+  "crates/schema/database/mysql_testing",
   "crates/schema/database/redis_common",
   "crates/schema/database/redis_schema",
   "crates/schema/database/sqlite_tasks",
@@ -282,6 +283,7 @@ mimetypes = { path = "crates/lib/files/mimetypes" }
 muapi_client = { path = "crates/api_clients/muapi_client" }
 metrics = { path = "crates/lib/metrics" }
 mysql_queries = { path = "crates/schema/database/mysql_queries" }
+mysql_testing = { path = "crates/schema/database/mysql_testing" }
 pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }

@@ -1,5 +1,4 @@
 use enums::common::generation::common_resolution::CommonResolution;
-use kinovi_web_client::generate::video::generate_seedance_2p5::MAX_BILLED_INPUT_SECONDS;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p5_ultra_usd_cents;
@@ -37,8 +36,9 @@ impl ArtcraftSeedance2p5UltraCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let total_input_seconds = self.total_input_seconds
-      .min(u16::from(MAX_BILLED_INPUT_SECONDS));
+    // Input-second clamping (the 4..=30 billing range) happens inside the
+    // shared pricing function.
+    let total_input_seconds = self.total_input_seconds;
 
     let usd_cents = seedance_2p5_ultra_usd_cents(
       self.resolution,
@@ -133,9 +133,18 @@ mod tests {
     }
 
     #[test]
-    fn missing_input_seconds_bill_output_duration_only() {
-      // 8.55967078 ¢/s × 10 = 85.60 → 86¢.
-      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, None), 86);
+    fn missing_input_seconds_bill_the_four_second_minimum() {
+      // No measured input still bills the 4-second total minimum:
+      // 8.55967078 ¢/s × (10+4) = 119.84 → 120¢.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, None), 120);
+    }
+
+    #[test]
+    fn input_totals_under_four_seconds_clamp_to_four() {
+      let at_minimum = cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, Some(4));
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, Some(1)), at_minimum);
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, Some(3)), at_minimum);
+      assert!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, Some(5)) > at_minimum);
     }
 
     #[test]

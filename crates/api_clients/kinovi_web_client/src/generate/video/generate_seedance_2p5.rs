@@ -13,6 +13,12 @@ use crate::requests::workflow_run_task::workflow_run_task::{
 /// seconds beyond this are clamped for billing.
 pub const MAX_BILLED_INPUT_SECONDS: u8 = 30;
 
+/// The minimum TOTAL billed input seconds when video references are
+/// attached: however short the input videos are, the total bills at least 4
+/// seconds. (Three 1-second videos sum to 3 and clamp to 4; three 3-second
+/// videos sum to 9 and bill 9.)
+pub const MIN_BILLED_INPUT_SECONDS: u8 = 4;
+
 // ── Args ──
 
 pub struct GenerateSeedance2p5Args<'a> {
@@ -118,7 +124,7 @@ pub enum KinoviSeedance2p5OutputResolution {
 // With video references, the rate drops but the billed seconds are the
 // output duration PLUS the total seconds of reference video input
 // (`total_input_seconds`, summed across all reference videos and clamped to
-// [`MAX_BILLED_INPUT_SECONDS`]). E.g. a 30s output with a 10s video
+// the [`MIN_BILLED_INPUT_SECONDS`]..=[`MAX_BILLED_INPUT_SECONDS`] range). E.g. a 30s output with a 10s video
 // reference bills as 40 seconds; a 30s output with two 7s references (14s
 // total input) bills as 44 seconds.
 //
@@ -141,7 +147,7 @@ impl GenerateSeedance2p5Request {
       };
       let input_seconds = self.total_input_seconds
         .unwrap_or(MAX_BILLED_INPUT_SECONDS)
-        .min(MAX_BILLED_INPUT_SECONDS);
+        .clamp(MIN_BILLED_INPUT_SECONDS, MAX_BILLED_INPUT_SECONDS);
       let seconds = u64::from(self.duration_seconds) + u64::from(input_seconds);
       (rate, seconds)
     } else {
@@ -390,6 +396,16 @@ mod tests {
         assert_eq!(video_ref_720(5, Some(10)).calculate_costs().kinovi_credits, (35 * 15) as f64);
         assert_eq!(video_ref_720(10, Some(10)).calculate_costs().kinovi_credits, (35 * 20) as f64);
         assert_eq!(video_ref_720(30, Some(10)).calculate_costs().kinovi_credits, (35 * 40) as f64);
+      }
+
+      #[test]
+      fn input_totals_under_four_seconds_clamp_to_four() {
+        // Total input clamps to a 4-second minimum: 1s, 3s, and 4s totals
+        // all bill 4; 5s bills 5.
+        assert_eq!(video_ref_480(30, Some(1)).calculate_costs().kinovi_credits, (16 * 34) as f64);
+        assert_eq!(video_ref_480(30, Some(3)).calculate_costs().kinovi_credits, (16 * 34) as f64);
+        assert_eq!(video_ref_480(30, Some(4)).calculate_costs().kinovi_credits, (16 * 34) as f64);
+        assert_eq!(video_ref_480(30, Some(5)).calculate_costs().kinovi_credits, (16 * 35) as f64);
       }
 
       #[test]
