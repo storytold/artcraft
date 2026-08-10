@@ -20,8 +20,9 @@
 //!    once and ffprobes it. Callers should DROP their pooled connection
 //!    before this phase and re-acquire after.
 //!
-//! Billing math: each file's duration is rounded UP to a whole second, and
-//! counted once per reference (the same file referenced twice bills twice).
+//! Billing math: each file's duration is rounded UP to a whole second and
+//! clamped to at least [`MIN_BILLED_INPUT_SECONDS_PER_VIDEO`], and counted
+//! once per reference (the same file referenced twice bills twice).
 //!
 //! Probing NEVER fails a generation: a file whose download or ffprobe fails
 //! is billed at the worst-case [`MAX_BILLED_INPUT_SECONDS`] instead (and is
@@ -44,6 +45,10 @@ use tempfile::NamedTempFile;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+
+/// Every input video bills at least this many seconds, no matter how short
+/// the file actually is. (Input durations run 1-30s; under 4s clamps to 4.)
+pub const MIN_BILLED_INPUT_SECONDS_PER_VIDEO: u64 = 4;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::util::http_download_url_to_tempfile::http_download_url_to_tempfile;
@@ -87,6 +92,7 @@ pub async fn fetch_reference_video_sources(
   video_tokens: &[MediaFileToken],
   http_request: &HttpRequest,
   server_environment: ServerEnvironment,
+  maybe_media_cdn_override_url: Option<&str>,
   mysql_connection: &mut PoolConnection<MySql>,
 ) -> Result<Vec<ReferenceVideoSource>, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
@@ -133,7 +139,11 @@ pub async fn fetch_reference_video_sources(
         server_environment,
         &bucket_path);
 
-      (file.token, media_links.cdn_url.to_string())
+      let cdn_url = crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::apply_media_cdn_override(
+        &media_links.cdn_url,
+        maybe_media_cdn_override_url,
+      );
+      (file.token, cdn_url)
     })
     .collect();
 
@@ -173,7 +183,9 @@ pub async fn download_and_probe_reference_videos(
         info!("Probed reference video {} at {}ms", source.media_token, duration_millis);
         local_paths_by_url.insert(source.cdn_url.clone(), temp_file.path().to_path_buf());
         temp_files.push(temp_file);
-        duration_millis.div_ceil(1_000)
+        duration_millis
+          .div_ceil(1_000)
+          .max(MIN_BILLED_INPUT_SECONDS_PER_VIDEO)
       }
       Err(err) => {
         warn!(
@@ -271,6 +283,22 @@ mod tests {
   }
 
   #[test]
+  fn short_videos_clamp_to_the_per_video_minimum() {
+    // 1.5s and 3.9s each clamp to 4; a 4.1s file bills 5.
+    let sources = [
+      source("m_a", "https://cdn/a.mp4"),
+      source("m_b", "https://cdn/b.mp4"),
+      source("m_c", "https://cdn/c.mp4"),
+    ];
+    let seconds = seconds_map(&[
+      ("https://cdn/a.mp4", 1_500),
+      ("https://cdn/b.mp4", 3_900),
+      ("https://cdn/c.mp4", 4_100),
+    ]);
+    assert_eq!(total_billed_seconds(&sources, &seconds), 4 + 4 + 5);
+  }
+
+  #[test]
   fn empty_sources_sum_to_zero() {
     assert_eq!(total_billed_seconds(&[], &HashMap::new()), 0);
   }
@@ -292,7 +320,9 @@ mod tests {
   fn seconds_map(entries: &[(&str, u64)]) -> HashMap<String, u64> {
     entries
       .iter()
-      .map(|(url, millis)| (url.to_string(), millis.div_ceil(1_000)))
+      .map(|(url, millis)| {
+        (url.to_string(), millis.div_ceil(1_000).max(MIN_BILLED_INPUT_SECONDS_PER_VIDEO))
+      })
       .collect()
   }
 }

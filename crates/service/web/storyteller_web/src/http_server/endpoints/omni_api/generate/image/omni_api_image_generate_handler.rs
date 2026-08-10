@@ -130,6 +130,7 @@ pub async fn omni_api_image_generate_handler(
     &http_request,
     &mut mysql_connection,
     server_state.server_environment,
+server_state.maybe_media_cdn_override_url.as_deref(),
     request.image_media_tokens.as_deref().unwrap_or(&[]),
   ).await?;
 

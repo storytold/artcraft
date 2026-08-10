@@ -17,8 +17,9 @@ use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 
 use crate::http_server::endpoints::omni_gen::generate::video::tests::support::{
-  assert_reference_video_charge_then_refund, assert_successful_generation_charges,
-  assert_variant_charges_premium, Batch, CreditsDelta, ExpectedCredits, Seconds, TestHarness,
+  assert_real_input_videos_charge, assert_reference_video_charge_then_refund,
+  assert_successful_generation_charges, assert_variant_charges_premium, Batch, CreditsDelta,
+  ExpectedCredits, Seconds, TestHarness,
 };
 
 // ── Seedance 2.5 ──
@@ -926,6 +927,125 @@ mod seedance_2p5_u {
         &harness, CommonVideoModel::Seedance2p5Ultra, *resolution, *seconds, *batch, *expected,
       ).await;
     }
+  }
+}
+
+
+// ── Input-video DURATION billing (real probed durations) ──
+// The stub media CDN serves REAL generated videos with exact durations, so
+// these run the full pipeline: download → ffprobe → billing → upload →
+// generate. Billed input seconds per video = ceil(duration) clamped to a
+// minimum of 4 (input durations run 1-30s; under 4s bills as 4s); the TOTAL
+// across videos is capped at 30. Billed seconds = output + total input.
+mod input_video_duration_billing {
+  use super::*;
+
+  /// 1.5s and 3.9s inputs both bill the 4-second minimum: identical price.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn input_videos_under_four_seconds_clamp_to_four_seconds() {
+    let harness = TestHarness::create().await;
+
+    // 30s output + 4s clamped input = 34 billed × 7.24279835 ¢/s → 247.
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[1_500], ExpectedCredits(247),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[3_900], ExpectedCredits(247),
+    ).await;
+  }
+
+  /// Above the 4-second floor, each input bills its ceil-rounded duration.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn input_video_durations_bill_their_ceil_rounded_seconds() {
+    let harness = TestHarness::create().await;
+
+    // (resolution, input millis, expected credits) at 30s output:
+    //   4.5s → 5  → 35 billed × 7.24279835 = 253.50 → 254
+    //   6.5s → 7  → 37 billed × 7.24279835 = 267.98 → 268
+    //  10.5s → 11 → 41 billed × 7.24279835 = 296.95 → 297
+    //   6.5s → 7  → 37 billed × 15.84362140 = 586.21 → 587 (720p)
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[4_500], ExpectedCredits(254),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[6_500], ExpectedCredits(268),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[10_500], ExpectedCredits(297),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::SevenTwentyP),
+      Seconds(30), &[6_500], ExpectedCredits(587),
+    ).await;
+  }
+
+  /// The 4-second minimum applies PER VIDEO, before summing: a 2.5s + 6.5s
+  /// pair bills 4 + 7 = 11 input seconds — the same as a single 10.5s video,
+  /// and one more than a total-duration clamp (9s → 10) would produce.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn the_per_video_minimum_applies_before_summing() {
+    let harness = TestHarness::create().await;
+
+    // 30s output + 11 input = 41 billed × 7.24279835 = 296.95 → 297.
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[2_500, 6_500], ExpectedCredits(297),
+    ).await;
+  }
+
+  /// Total input seconds cap at 30: a 29.5s video (→ 30) and a pair of 20s
+  /// videos (40 → capped 30) price identically to the worst case.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn total_input_seconds_cap_at_thirty() {
+    let harness = TestHarness::create().await;
+
+    // 30s output + 30 input = 60 billed × 7.24279835 = 434.57 → 435.
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[29_500], ExpectedCredits(435),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[20_000, 20_000], ExpectedCredits(435),
+    ).await;
+  }
+
+  /// Ultra applies the same input-second rules at its own rates.
+  #[tokio::test]
+  #[cfg_attr(feature = "skip_database_tests", ignore)]
+  async fn ultra_bills_the_same_input_second_rules_at_its_rates() {
+    let harness = TestHarness::create().await;
+
+    // 30s output, ultra with-refs 480p 8.55967078 ¢/s / 720p 18.72427984 ¢/s:
+    //   2.5s → 4 (clamp) → 34 billed → 291.03 → 292
+    //  10.5s → 11        → 41 billed → 350.95 → 351
+    //  2.5s + 6.5s → 11  → 41 billed → 351 (per-video clamp, same as 10.5s)
+    //   6.5s → 7 → 37 billed × 18.72427984 = 692.80 → 693 (720p)
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[2_500], ExpectedCredits(292),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[10_500], ExpectedCredits(351),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::FourEightyP),
+      Seconds(30), &[2_500, 6_500], ExpectedCredits(351),
+    ).await;
+    assert_real_input_videos_charge(
+      &harness, CommonVideoModel::Seedance2p5Ultra, Some(CommonResolution::SevenTwentyP),
+      Seconds(30), &[6_500], ExpectedCredits(693),
+    ).await;
   }
 }
 

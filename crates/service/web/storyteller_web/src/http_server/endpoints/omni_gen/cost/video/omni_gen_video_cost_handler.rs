@@ -111,6 +111,7 @@ async fn probe_input_seconds_best_effort(
       video_tokens,
       http_request,
       server_state.server_environment,
+      server_state.maybe_media_cdn_override_url.as_deref(),
       &mut mysql_connection,
     ).await {
       Ok(sources) => sources,

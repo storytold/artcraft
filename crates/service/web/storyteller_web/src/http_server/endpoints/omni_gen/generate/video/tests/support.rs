@@ -88,7 +88,7 @@ impl TestHarness {
     let stub_kinovi_base_url = process_stub_kinovi_base_url().clone();
 
     let pool = mysql_testing::pool::create_test_pool().await;
-    let server_state = Arc::new(build_test_server_state(pool.clone()));
+    let server_state = Arc::new(build_test_server_state(pool.clone(), stub_kinovi_base_url.clone()));
 
     TestHarness {
       pool,
@@ -220,25 +220,33 @@ fn uuid_v4_like() -> String {
   format!("{:016x}{:016x}", nanos as u64, count)
 }
 
-/// The process-wide stub Kinovi server's base URL. First use spawns the
-/// stub (plain OS threads — it outlives every per-test tokio runtime) and
-/// sets the Kinovi host-override env vars exactly once, before returning.
+/// The process-wide stub server's base URL. First use spawns the stub
+/// (plain OS threads — it outlives every per-test tokio runtime) and sets
+/// BOTH the Kinovi host-override and media-CDN-override env vars exactly
+/// once, before returning.
 fn process_stub_kinovi_base_url() -> &'static String {
   use std::sync::OnceLock;
   static STUB: OnceLock<String> = OnceLock::new();
   STUB.get_or_init(|| {
-    let base_url = spawn_stub_kinovi_server();
+    let base_url = spawn_stub_server();
     std::env::set_var(ENV_KINOVI_CUSTOM_API_HOST, &base_url);
     std::env::set_var(ENV_KINOVI_CUSTOM_CDN_HOST, &base_url);
     base_url
   })
 }
 
-/// A stub Kinovi API: accepts any POST and answers with a successful
-/// workflow.runTask tRPC batch response with process-unique order ids.
-/// Runs on plain OS threads so it is independent of any tokio runtime and
-/// serves connections until the test process exits.
-fn spawn_stub_kinovi_server() -> String {
+/// A stub for BOTH the Kinovi API and the media CDN. Runs on plain OS
+/// threads so it is independent of any tokio runtime and serves connections
+/// until the test process exits.
+///
+/// - `GET` paths containing `dur{millis}ms` serve a REAL generated video of
+///   that duration (ffmpeg, cached per duration) — the reference-video
+///   billing probe downloads and ffprobes these.
+/// - `POST …uploads.signedUploadUrl` answers with an upload URL back at this
+///   stub; the subsequent `PUT` is accepted with 200.
+/// - Any other `POST` answers as a successful workflow.runTask with
+///   process-unique order ids.
+fn spawn_stub_server() -> String {
   use std::io::{Read, Write};
   use std::net::TcpListener;
   use std::sync::atomic::{AtomicU64, Ordering};
@@ -252,17 +260,18 @@ fn spawn_stub_kinovi_server() -> String {
     .expect("clock")
     .as_nanos() as u64;
 
-  let listener = TcpListener::bind("127.0.0.1:0").expect("bind stub kinovi");
+  let listener = TcpListener::bind("127.0.0.1:0").expect("bind stub server");
   let port = listener.local_addr().expect("local addr").port();
+  let base_url = format!("http://127.0.0.1:{port}");
+  let base_url_for_thread = base_url.clone();
 
   std::thread::spawn(move || {
     for stream in listener.incoming() {
       let Ok(mut stream) = stream else { continue };
+      let base_url = base_url_for_thread.clone();
       std::thread::spawn(move || {
-        // Read the request until the connection settles; every request gets
-        // the same shape of answer, so parsing is unnecessary.
-        let _ = stream.set_read_timeout(Some(Duration::from_millis(200)));
-        let mut buffer = [0u8; 65536];
+        let _ = stream.set_read_timeout(Some(Duration::from_millis(500)));
+        let mut buffer = vec![0u8; 1 << 20];
         let mut read_total = 0;
         loop {
           match stream.read(&mut buffer[read_total..]) {
@@ -275,30 +284,100 @@ fn spawn_stub_kinovi_server() -> String {
             _ => break,
           }
         }
+        let head = String::from_utf8_lossy(&buffer[..read_total]).to_string();
+        let request_line = head.lines().next().unwrap_or_default().to_string();
 
-        let order_number = ORDER_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let body = format!(
-          r#"[{{"result":{{"data":{{"json":{{"taskId":"task_test_{process_prefix:016x}_{order_number:04}","orderId":"ord_test_{process_prefix:016x}_{order_number:04}","violationWarning":false}}}}}}}}]"#,
-        );
+        let (status, content_type, body): (&str, &str, Vec<u8>) =
+          if request_line.starts_with("GET") {
+            match extract_fixture_duration_millis(&request_line) {
+              Some(millis) => ("200 OK", "video/mp4", fixture_video_bytes(millis)),
+              None => ("404 Not Found", "text/plain", b"not found".to_vec()),
+            }
+          } else if request_line.starts_with("PUT") {
+            ("200 OK", "text/plain", Vec::new())
+          } else if request_line.contains("uploads.signedUploadUrl") {
+            let upload_url = format!("{base_url}/upload-target/materials/test/fixture.mp4");
+            let json = format!(r#"[{{"result":{{"data":{{"json":"{upload_url}"}}}}}}]"#);
+            ("200 OK", "application/json", json.into_bytes())
+          } else {
+            let order_number = ORDER_COUNTER.fetch_add(1, Ordering::Relaxed);
+            let json = format!(
+              r#"[{{"result":{{"data":{{"json":{{"taskId":"task_test_{process_prefix:016x}_{order_number:04}","orderId":"ord_test_{process_prefix:016x}_{order_number:04}","violationWarning":false}}}}}}}}]"#,
+            );
+            ("200 OK", "application/json", json.into_bytes())
+          };
+
         let response = format!(
-          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+          "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
           body.len(),
-          body,
         );
         let _ = stream.write_all(response.as_bytes());
+        let _ = stream.write_all(&body);
         let _ = stream.shutdown(std::net::Shutdown::Both);
       });
     }
   });
 
-  format!("http://127.0.0.1:{port}")
+  base_url
+}
+
+/// `GET /media/.../dur2500ms_abc.mp4 HTTP/1.1` → `Some(2500)`.
+fn extract_fixture_duration_millis(request_line: &str) -> Option<u64> {
+  let idx = request_line.find("dur")?;
+  let rest = &request_line[idx + 3..];
+  let end = rest.find("ms")?;
+  rest[..end].parse().ok()
+}
+
+/// A real MP4 of the requested duration, generated with ffmpeg once per
+/// duration and cached on disk for the life of the machine's temp dir.
+fn fixture_video_bytes(duration_millis: u64) -> Vec<u8> {
+  use std::sync::Mutex;
+  // Parallel tests race on cache generation; serialize it and land finished
+  // files with an atomic rename so a reader can never see a partial write.
+  static GENERATION_LOCK: Mutex<()> = Mutex::new(());
+
+  let cache_dir = std::env::temp_dir().join("artcraft_mysql_testing_fixture_videos");
+  std::fs::create_dir_all(&cache_dir).expect("create fixture video cache dir");
+  let cache_path = cache_dir.join(format!("fixture_{duration_millis}.mp4"));
+
+  if !cache_path.exists() {
+    let _guard = GENERATION_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if !cache_path.exists() {
+      let scratch_path = cache_dir.join(format!(
+        "fixture_{duration_millis}.partial.{}.mp4",
+        std::process::id(),
+      ));
+      let seconds = duration_millis as f64 / 1_000.0;
+      let status = std::process::Command::new("ffmpeg")
+        .args([
+          "-y",
+          "-f", "lavfi",
+          // Rate INSIDE the filter so the frame count (and thus the container
+          // duration) is exact; output retiming via `-r` pads the duration.
+          "-i", &format!("color=c=black:s=64x64:r=10:d={seconds}"),
+          "-pix_fmt", "yuv420p",
+        ])
+        .arg(&scratch_path)
+        .output()
+        .expect("ffmpeg must be installed to generate fixture videos for database tests");
+      assert!(
+        status.status.success(),
+        "ffmpeg failed generating a {duration_millis}ms fixture video: {}",
+        String::from_utf8_lossy(&status.stderr),
+      );
+      std::fs::rename(&scratch_path, &cache_path).expect("land fixture video");
+    }
+  }
+
+  std::fs::read(&cache_path).expect("read fixture video")
 }
 
 /// A ServerState whose only live dependencies are the test MySQL pool and
 /// the stub Kinovi server. Everything else is inert dummy configuration:
 /// Redis/Elasticsearch/Stripe/bucket clients are constructed lazily and are
 /// never called on the video generate path.
-fn build_test_server_state(pool: MySqlPool) -> ServerState {
+fn build_test_server_state(pool: MySqlPool, media_cdn_override_url: String) -> ServerState {
   let session_cookie_manager = HttpUserSessionManager::new(TEST_COOKIE_DOMAIN, TEST_COOKIE_SECRET)
     .expect("session cookie manager");
   let avt_cookie_manager =
@@ -320,18 +399,71 @@ fn build_test_server_state(pool: MySqlPool) -> ServerState {
   let server_environment = ServerEnvironment::Development;
   let (pager, _pager_worker, paging_flags) = build_pager(server_environment, "test-host");
 
-  let dummy_bucket = || {
-    LegacyBucketClient::create(
-      "test-access-key",
-      "test-secret-key",
-      "auto",
-      "test-bucket",
-      "http://127.0.0.1:1",
-      None,
-      Some(Duration::from_secs(5)),
-    )
-    .expect("bucket client")
-  };
+  // Built once per process: these construct HTTP/TLS clients that load the
+  // platform certificate store, which intermittently fails (macOS keychain
+  // I/O errors) when dozens of parallel tests do it simultaneously.
+  struct ExpensiveDummies {
+    stripe: StripeSettings,
+    stripe_artcraft: billing_artcraft_component::utils::artcraft_stripe_config::ArtcraftStripeConfigWithClient,
+    elasticsearch: Elasticsearch,
+    private_bucket_client: LegacyBucketClient,
+    public_bucket_client: LegacyBucketClient,
+    auto_gc_bucket_client: LegacyBucketClient,
+    redis_rate_limiters: crate::state::server_state::RedisRateLimiters,
+  }
+  use std::sync::OnceLock;
+  static DUMMIES: OnceLock<ExpensiveDummies> = OnceLock::new();
+  let dummies = DUMMIES.get_or_init(|| {
+    let dummy_bucket = || {
+      LegacyBucketClient::create(
+        "test-access-key",
+        "test-secret-key",
+        "auto",
+        "test-bucket",
+        "http://127.0.0.1:1",
+        None,
+        Some(Duration::from_secs(5)),
+      )
+      .expect("bucket client")
+    };
+    ExpensiveDummies {
+      stripe: StripeSettings {
+        config: StripeConfig {
+          checkout: StripeCheckoutConfigs {
+            success_url: FullUrlOrPath::Path("/success".to_string()),
+            cancel_url: FullUrlOrPath::Path("/cancel".to_string()),
+          },
+          portal: StripeCustomerPortalConfigs {
+            return_url: FullUrlOrPath::Path("/portal".to_string()),
+            default_portal_config_id: "bpc_test".to_string(),
+          },
+          secrets: StripeSecrets {
+            publishable_key: None,
+            secret_key: "sk_test_dummy".to_string(),
+            secret_webhook_signing_key: "whsec_test_dummy".to_string(),
+          },
+        },
+        client: stripe::Client::new("sk_test_dummy"),
+        stripe_account_id: "acct_test".to_string(),
+      },
+      stripe_artcraft: ArtcraftStripeConfig {
+        stripe_account_id: "acct_test".to_string(),
+        secret_key: "sk_test_dummy".to_string(),
+        secret_webhook_signing_key: "whsec_test_dummy".to_string(),
+        checkout_success_url: "http://localhost/success".to_string(),
+        checkout_cancel_url: "http://localhost/cancel".to_string(),
+        portal_return_url: "http://localhost/portal".to_string(),
+      }
+      .to_config_with_client(),
+      elasticsearch: Elasticsearch::new(
+        Transport::single_node("http://127.0.0.1:1").expect("es transport"),
+      ),
+      private_bucket_client: dummy_bucket(),
+      public_bucket_client: dummy_bucket(),
+      auto_gc_bucket_client: dummy_bucket(),
+      redis_rate_limiters: configure_redis_rate_limiters().expect("rate limiters"),
+    }
+  });
 
   ServerState {
     env_config: EnvConfig {
@@ -343,55 +475,30 @@ fn build_test_server_state(pool: MySqlPool) -> ServerState {
       website_homepage_redirect: "http://localhost/".to_string(),
     },
     server_info: ServerInfo { build_sha: "test".to_string() },
-    stripe: StripeSettings {
-      config: StripeConfig {
-        checkout: StripeCheckoutConfigs {
-          success_url: FullUrlOrPath::Path("/success".to_string()),
-          cancel_url: FullUrlOrPath::Path("/cancel".to_string()),
-        },
-        portal: StripeCustomerPortalConfigs {
-          return_url: FullUrlOrPath::Path("/portal".to_string()),
-          default_portal_config_id: "bpc_test".to_string(),
-        },
-        secrets: StripeSecrets {
-          publishable_key: None,
-          secret_key: "sk_test_dummy".to_string(),
-          secret_webhook_signing_key: "whsec_test_dummy".to_string(),
-        },
-      },
-      client: stripe::Client::new("sk_test_dummy"),
-      stripe_account_id: "acct_test".to_string(),
-    },
-    stripe_artcraft: ArtcraftStripeConfig {
-      stripe_account_id: "acct_test".to_string(),
-      secret_key: "sk_test_dummy".to_string(),
-      secret_webhook_signing_key: "whsec_test_dummy".to_string(),
-      checkout_success_url: "http://localhost/success".to_string(),
-      checkout_cancel_url: "http://localhost/cancel".to_string(),
-      portal_return_url: "http://localhost/portal".to_string(),
-    }
-    .to_config_with_client(),
+    stripe: dummies.stripe.clone(),
+    stripe_artcraft: dummies.stripe_artcraft.clone(),
     hostname: "test-host".to_string(),
     startup_time: Utc::now(),
     server_environment,
+    // Server-side media downloads (reference probing, upload resolution) hit
+    // the stub instead of the real CDN.
+    maybe_media_cdn_override_url: Some(media_cdn_override_url),
     flags: setup_static_feature_flags(paging_flags).expect("feature flags"),
     third_party_url_redirector: ThirdPartyUrlRedirector::new(server_environment),
     health_check_status: HealthCheckStatus::new(),
     mysql_pool: pool,
-    elasticsearch: Elasticsearch::new(
-      Transport::single_node("http://127.0.0.1:1").expect("es transport"),
-    ),
+    elasticsearch: dummies.elasticsearch.clone(),
     redis_pool,
     redis_ttl_cache,
-    redis_rate_limiters: configure_redis_rate_limiters().expect("rate limiters"),
+    redis_rate_limiters: dummies.redis_rate_limiters.clone(),
     session_cookie_manager,
     avt_cookie_manager,
     session_checker,
     firehose_publisher,
     badge_granter,
-    private_bucket_client: dummy_bucket(),
-    public_bucket_client: dummy_bucket(),
-    auto_gc_bucket_client: dummy_bucket(),
+    private_bucket_client: dummies.private_bucket_client.clone(),
+    public_bucket_client: dummies.public_bucket_client.clone(),
+    auto_gc_bucket_client: dummies.auto_gc_bucket_client.clone(),
     seedance_video_bucket: None,
     inference_providers: InferenceProviders {
       fal: FalData {
@@ -610,4 +717,61 @@ pub async fn assert_variant_charges_premium(
 
   assert_successful_generation_charges(harness, base_model, resolution, seconds, batch, base).await;
   assert_successful_generation_charges(harness, variant_model, resolution, seconds, batch, variant).await;
+}
+
+/// Run one generation with REAL probeable reference videos (served by the
+/// stub CDN with exact durations) and assert the exact wallet debit. The
+/// whole flow succeeds: probe → billing → upload (to the stub) → generate.
+pub async fn assert_real_input_videos_charge(
+  harness: &TestHarness,
+  model: CommonVideoModel,
+  resolution: Option<enums::common::generation::common_resolution::CommonResolution>,
+  Seconds(duration_seconds): Seconds,
+  input_video_millis: &[u64],
+  ExpectedCredits(expected_credits): ExpectedCredits,
+) {
+  let user = harness.create_funded_user(STARTING_CREDITS).await;
+
+  let mut video_tokens = Vec::new();
+  for millis in input_video_millis {
+    let token = mysql_testing::fixtures::media_files::create_probeable_test_video_media_file(
+      &harness.pool,
+      &user.user_token,
+      *millis,
+    )
+    .await
+    .expect("create probeable video media file fixture");
+    video_tokens.push(token);
+  }
+
+  let mut request = base_generate_request(model);
+  request.resolution = resolution;
+  request.duration_seconds = Some(duration_seconds);
+  request.reference_video_media_tokens = Some(video_tokens);
+
+  let response = harness
+    .post_generate(&user, request)
+    .await
+    .unwrap_or_else(|err| {
+      panic!(
+        "{:?} {:?} {}s inputs {:?}ms: generation failed: {:?}",
+        model, resolution, duration_seconds, input_video_millis, err,
+      )
+    });
+  assert!(response.success);
+
+  let balance = harness.wallet_balance(&user).await;
+  assert_eq!(
+    STARTING_CREDITS - balance,
+    expected_credits,
+    "{:?} {:?} {}s inputs {:?}ms: wrong wallet debit",
+    model, resolution, duration_seconds, input_video_millis,
+  );
+
+  let entries = harness.ledger_entries(&user).await;
+  let debit = entries
+    .iter()
+    .find(|entry| entry.credits_delta < 0)
+    .unwrap_or_else(|| panic!("{:?}: no debit ledger entry found", model));
+  assert!(!debit.is_refunded, "{:?}: successful generation must not be refunded", model);
 }

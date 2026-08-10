@@ -126,6 +126,7 @@ pub async fn omni_gen_mesh_generate_handler(
       &http_request,
       &mut mysql_connection,
       server_state.server_environment,
+server_state.maybe_media_cdn_override_url.as_deref(),
       &all_tokens,
     ).await?;
     Some(resolved.token_to_url_map)

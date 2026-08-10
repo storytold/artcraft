@@ -13,7 +13,9 @@
 //!
 //! Requirements: a local MySQL with an `artcraft_test` database reachable via
 //! `ARTCRAFT_TEST_DATABASE_URL` (default
-//! `mysql://root:@localhost:3306/artcraft_test`).
+//! `mysql://root:@localhost:3306/artcraft_test`), plus `ffmpeg`/`ffprobe` on
+//! PATH (the stub CDN generates real fixture videos for the input-duration
+//! billing tests, and the endpoint probes them).
 //!
 //! These tests run in PARALLEL: every test creates its own users, wallets,
 //! and media rows, schema setup is single-flighted via a MySQL named lock,
