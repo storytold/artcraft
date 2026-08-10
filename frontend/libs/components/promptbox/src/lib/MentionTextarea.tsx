@@ -135,6 +135,15 @@ function isChip(node: Node): node is HTMLElement {
   );
 }
 
+/**
+ * Mention types that render as atomic thumbnail chips (vs colored text).
+ * Video/audio refs stay as text: audio has no thumbnail, and a video frame
+ * shrunk to chip size is unreadable.
+ */
+function rendersAsChip(item: MentionItem): boolean {
+  return item.type === "character" || item.type === "image";
+}
+
 /** Nearest chip element enclosing `node` (up to `root`), or null. */
 function chipContaining(root: HTMLElement, node: Node | null): HTMLElement | null {
   let current: Node | null = node;
@@ -697,11 +706,11 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       return m;
     }, [mentionItems]);
 
-    // Lowercased labels that render as atomic chips (characters only).
+    // Lowercased labels that render as atomic chips (characters + images).
     const chipLabels = useMemo(() => {
       const s = new Set<string>();
       for (const item of mentionItems) {
-        if (item.type === "character") s.add(item.label.toLowerCase());
+        if (rendersAsChip(item)) s.add(item.label.toLowerCase());
       }
       return s;
     }, [mentionItems]);
@@ -743,9 +752,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     );
 
     /**
-     * Markup for one atomic character chip. data-mention keeps the exact
-     * typed text so serialization is lossless; the visible chip shows the
-     * name without the "@".
+     * Markup for one atomic mention chip (character or image ref).
+     * data-mention keeps the exact typed text so serialization is lossless;
+     * the visible chip shows the name without the "@".
      */
     const buildChipHTML = useCallback(
       (item: MentionItem, matchText: string): string => {
@@ -766,8 +775,8 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       [lowerColorMap],
     );
 
-    // Build innerHTML with mentions inline: character mentions render as
-    // atomic thumbnail chips, other reference types as colored text.
+    // Build innerHTML with mentions inline: character and image-ref mentions
+    // render as atomic thumbnail chips, other reference types as colored text.
     const buildHTML = useCallback(
       (text: string): string => {
         if (!text) return "";
@@ -794,7 +803,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
             html += escapeHTML(text.slice(lastIndex, match.index));
           }
 
-          if (item?.type === "character") {
+          if (item && rendersAsChip(item)) {
             html += buildChipHTML(item, fullMatch);
             endsWithChip = true;
           } else if (color) {
@@ -1282,39 +1291,35 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       }
     }, [chipMenu, selectChipRange, handleInput, chipStart, value, onChange]);
 
-    const handleChipPreview = useCallback(() => {
-      if (!chipMenu) return;
-      const item =
-        (chipMenu.token &&
-          mentionItems.find(
-            (i) => i.type === "character" && i.token === chipMenu.token,
-          )) ||
-        resolveItem(chipMenu.label);
-      setChipMenu(null);
-      if (item) setPreviewItem(item);
-    }, [chipMenu, mentionItems, resolveItem]);
-
+    /** The mention item the open chip menu refers to (token beats label). */
     const chipMenuItem = useMemo(() => {
       if (!chipMenu) return undefined;
       return (
         (chipMenu.token &&
-          mentionItems.find(
-            (i) => i.type === "character" && i.token === chipMenu.token,
-          )) ||
+          mentionItems.find((i) => i.token === chipMenu.token)) ||
         resolveItem(chipMenu.label)
       );
     }, [chipMenu, mentionItems, resolveItem]);
 
+    const handleChipPreview = useCallback(() => {
+      if (!chipMenu) return;
+      setChipMenu(null);
+      if (chipMenuItem) setPreviewItem(chipMenuItem);
+    }, [chipMenu, chipMenuItem]);
+
+    // Swap candidates: other mentions of the same type as the clicked chip
+    // (characters swap with characters, image refs with image refs).
     const replaceItems = useMemo(() => {
       if (!chipMenu) return [];
+      const chipType = chipMenuItem?.type ?? "character";
       return mentionItems.filter(
         (i) =>
-          i.type === "character" &&
+          i.type === chipType &&
           (chipMenu.token
             ? i.token !== chipMenu.token
             : i.label.toLowerCase() !== chipMenu.label.toLowerCase()),
       );
-    }, [chipMenu, mentionItems]);
+    }, [chipMenu, chipMenuItem, mentionItems]);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -1355,8 +1360,8 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         // Atomic chip deletion: native contenteditable=false removal is
         // inconsistent across browsers (Safari especially), so when the caret
-        // sits at a character-mention boundary, delete the whole label from
-        // the plain-text value in one keypress.
+        // sits at a chip-mention boundary, delete the whole label from the
+        // plain-text value in one keypress.
         if (
           (e.key === "Backspace" || e.key === "Delete") &&
           chipLabels.size > 0 &&
@@ -1592,6 +1597,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
             anchorRect={chipMenu.rect}
             anchorNode={chipMenu.node}
             currentLabel={chipMenu.label}
+            currentType={chipMenuItem?.type ?? "character"}
             currentPreview={chipMenuItem ? chipMenuItem.preview : undefined}
             replaceItems={replaceItems}
             onReplace={handleChipReplace}

@@ -603,6 +603,10 @@ export default function CreateVideo() {
             label: `@Image${i + 1}`,
             type: "image" as const,
             preview: img.url,
+            // `url` is the thumbnail — the chip Preview modal renders at
+            // natural size, so it needs the full-res image (same fallback
+            // the deck cards use).
+            fullPreview: img.fullUrl ?? img.url,
           })),
           ...referenceVideos.map((vid, i) => ({
             label: `@Video${i + 1}`,
