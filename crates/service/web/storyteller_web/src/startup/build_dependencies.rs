@@ -215,7 +215,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     hostname: server_hostname.to_string(),
     startup_time,
     server_environment,
-    maybe_media_cdn_override_url: easyenv::get_env_string_optional("MEDIA_CDN_OVERRIDE_URL"),
+    maybe_media_cdn_override_url: None, // NB: This is a test escape hatch
     flags: service_feature_flags,
     third_party_url_redirector,
     health_check_status,
