@@ -242,10 +242,10 @@ mod tests {
 
     #[test]
     fn explicit_4k_without_video_reference() {
-      assert_eq!(artcraft_4k_cents(4, 1, false), 347);
-      assert_eq!(artcraft_4k_cents(5, 1, false), 433);
-      assert_eq!(artcraft_4k_cents(10, 1, false), 866);
-      assert_eq!(artcraft_4k_cents(15, 1, false), 1299);
+      assert_eq!(artcraft_4k_cents(4, 1, false), 358);
+      assert_eq!(artcraft_4k_cents(5, 1, false), 447);
+      assert_eq!(artcraft_4k_cents(10, 1, false), 893);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1340);
     }
 
     #[test]
@@ -513,9 +513,9 @@ mod tests {
 
     #[test]
     fn refs_cost_more_at_4k() {
-      assert_ref_delta(CommonResolution::FourK, 5, 433, 569, 136);
-      assert_ref_delta(CommonResolution::FourK, 10, 866, 1138, 272);
-      assert_ref_delta(CommonResolution::FourK, 15, 1299, 1707, 408);
+      assert_ref_delta(CommonResolution::FourK, 5, 447, 569, 122);
+      assert_ref_delta(CommonResolution::FourK, 10, 893, 1138, 245);
+      assert_ref_delta(CommonResolution::FourK, 15, 1340, 1707, 367);
     }
 
     /// Price the same generation with and without a reference video; pin

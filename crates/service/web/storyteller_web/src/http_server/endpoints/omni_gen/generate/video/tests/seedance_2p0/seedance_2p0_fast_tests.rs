@@ -31,18 +31,18 @@ mod seedance_2p0_fast {
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
-      (Some(CommonResolution::FourEightyP), Seconds(4), Batch(1), ExpectedCredits(21)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(26)),
-      (Some(CommonResolution::FourEightyP), Seconds(6), Batch(1), ExpectedCredits(31)),
-      (Some(CommonResolution::FourEightyP), Seconds(7), Batch(1), ExpectedCredits(36)),
-      (Some(CommonResolution::FourEightyP), Seconds(8), Batch(1), ExpectedCredits(41)),
-      (Some(CommonResolution::FourEightyP), Seconds(9), Batch(1), ExpectedCredits(47)),
-      (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(52)),
-      (Some(CommonResolution::FourEightyP), Seconds(11), Batch(1), ExpectedCredits(57)),
-      (Some(CommonResolution::FourEightyP), Seconds(12), Batch(1), ExpectedCredits(62)),
-      (Some(CommonResolution::FourEightyP), Seconds(13), Batch(1), ExpectedCredits(67)),
-      (Some(CommonResolution::FourEightyP), Seconds(14), Batch(1), ExpectedCredits(73)),
-      (Some(CommonResolution::FourEightyP), Seconds(15), Batch(1), ExpectedCredits(78)),
+      (Some(CommonResolution::FourEightyP), Seconds(4), Batch(1), ExpectedCredits(26)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(32)),
+      (Some(CommonResolution::FourEightyP), Seconds(6), Batch(1), ExpectedCredits(38)),
+      (Some(CommonResolution::FourEightyP), Seconds(7), Batch(1), ExpectedCredits(45)),
+      (Some(CommonResolution::FourEightyP), Seconds(8), Batch(1), ExpectedCredits(51)),
+      (Some(CommonResolution::FourEightyP), Seconds(9), Batch(1), ExpectedCredits(58)),
+      (Some(CommonResolution::FourEightyP), Seconds(10), Batch(1), ExpectedCredits(64)),
+      (Some(CommonResolution::FourEightyP), Seconds(11), Batch(1), ExpectedCredits(70)),
+      (Some(CommonResolution::FourEightyP), Seconds(12), Batch(1), ExpectedCredits(77)),
+      (Some(CommonResolution::FourEightyP), Seconds(13), Batch(1), ExpectedCredits(83)),
+      (Some(CommonResolution::FourEightyP), Seconds(14), Batch(1), ExpectedCredits(90)),
+      (Some(CommonResolution::FourEightyP), Seconds(15), Batch(1), ExpectedCredits(96)),
       (Some(CommonResolution::SevenTwentyP), Seconds(4), Batch(1), ExpectedCredits(51)),
       (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(64)),
       (Some(CommonResolution::SevenTwentyP), Seconds(6), Batch(1), ExpectedCredits(76)),
@@ -97,16 +97,16 @@ mod seedance_2p0_fast {
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(26)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(2), ExpectedCredits(52)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(3), ExpectedCredits(78)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(4), ExpectedCredits(104)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(5), ExpectedCredits(104)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(6), ExpectedCredits(104)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(7), ExpectedCredits(104)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(8), ExpectedCredits(104)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(9), ExpectedCredits(104)),
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(10), ExpectedCredits(104)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(32)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(2), ExpectedCredits(64)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(3), ExpectedCredits(96)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(4), ExpectedCredits(128)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(5), ExpectedCredits(128)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(6), ExpectedCredits(128)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(7), ExpectedCredits(128)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(8), ExpectedCredits(128)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(9), ExpectedCredits(128)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(10), ExpectedCredits(128)),
       (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(64)),
       (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(2), ExpectedCredits(127)),
       (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(3), ExpectedCredits(191)),
@@ -153,12 +153,12 @@ mod seedance_2p0_fast {
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits)] = &[
-      (Some(CommonResolution::FourEightyP), Seconds(6), Batch(2), ExpectedCredits(62)),
-      (Some(CommonResolution::FourEightyP), Seconds(7), Batch(3), ExpectedCredits(109)),
-      (Some(CommonResolution::FourEightyP), Seconds(9), Batch(4), ExpectedCredits(187)),
-      (Some(CommonResolution::FourEightyP), Seconds(11), Batch(5), ExpectedCredits(228)),
-      (Some(CommonResolution::FourEightyP), Seconds(13), Batch(8), ExpectedCredits(269)),
-      (Some(CommonResolution::FourEightyP), Seconds(15), Batch(10), ExpectedCredits(311)),
+      (Some(CommonResolution::FourEightyP), Seconds(6), Batch(2), ExpectedCredits(77)),
+      (Some(CommonResolution::FourEightyP), Seconds(7), Batch(3), ExpectedCredits(134)),
+      (Some(CommonResolution::FourEightyP), Seconds(9), Batch(4), ExpectedCredits(230)),
+      (Some(CommonResolution::FourEightyP), Seconds(11), Batch(5), ExpectedCredits(282)),
+      (Some(CommonResolution::FourEightyP), Seconds(13), Batch(8), ExpectedCredits(333)),
+      (Some(CommonResolution::FourEightyP), Seconds(15), Batch(10), ExpectedCredits(384)),
       (Some(CommonResolution::SevenTwentyP), Seconds(6), Batch(2), ExpectedCredits(153)),
       (Some(CommonResolution::SevenTwentyP), Seconds(7), Batch(3), ExpectedCredits(267)),
       (Some(CommonResolution::SevenTwentyP), Seconds(9), Batch(4), ExpectedCredits(458)),
@@ -1115,7 +1115,7 @@ mod premium {
     let harness = TestHarness::create().await;
 
     let cases: &[(Option<CommonResolution>, Seconds, Batch, ExpectedCredits, ExpectedCredits, CreditsDelta)] = &[
-      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(26), ExpectedCredits(45), CreditsDelta(19)),
+      (Some(CommonResolution::FourEightyP), Seconds(5), Batch(1), ExpectedCredits(32), ExpectedCredits(45), CreditsDelta(13)),
       (Some(CommonResolution::SevenTwentyP), Seconds(5), Batch(1), ExpectedCredits(64), ExpectedCredits(100), CreditsDelta(36)),
       (Some(CommonResolution::SevenTwentyP), Seconds(10), Batch(1), ExpectedCredits(127), ExpectedCredits(200), CreditsDelta(73)),
     ];

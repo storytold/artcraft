@@ -11,8 +11,8 @@ use kinovi_web_client::generate::video::generate_seedance_2p5::{
 // in hundredths of a USD cent per second so the math is exact integer arithmetic
 // (no floating point), then rounded up to whole cents.
 
-/// 4K output price, in hundredths of a USD cent per second (86.60 ¢/s).
-const FOUR_K_CENTI_CENTS_PER_SECOND: u64 = 8660;
+/// 4K output price, in hundredths of a USD cent per second (89.30 ¢/s).
+const FOUR_K_CENTI_CENTS_PER_SECOND: u64 = 8930;
 
 /// ArtCraft's price (USD cents) for Seedance 2.0 at 4K with no reference
 /// videos attached. Each model prices reference videos through its own
@@ -40,22 +40,22 @@ pub fn seedance_2p0_four_k_usd_cents(
 // rate sets and helpers below.
 
 /// Regular Mini — 480p price, USD cents per second.
-const MINI_CENTS_PER_SECOND_480P: f64 = 3.24074074;
+const MINI_CENTS_PER_SECOND_480P: f64 = 3.45;
 /// Regular Mini — 480p reference-video surcharge, USD cents per second.
-const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.86419753;
+const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.90;
 /// Regular Mini — 720p price, USD cents per second.
-const MINI_CENTS_PER_SECOND_720P: f64 = 8.64197531;
+const MINI_CENTS_PER_SECOND_720P: f64 = 8.90;
 /// Regular Mini — 720p reference-video surcharge, USD cents per second.
-const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.72839506;
+const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.80;
 
 /// BytePlus / BytePlus Ultra Mini — 480p price, USD cents per second.
-const BYTEPLUS_MINI_CENTS_PER_SECOND_480P: f64 = 3.27160494;
+const BYTEPLUS_MINI_CENTS_PER_SECOND_480P: f64 = 3.55;
 /// BytePlus / BytePlus Ultra Mini — 480p reference-video surcharge, USD cents per second.
-const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.87242798;
+const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.95;
 /// BytePlus / BytePlus Ultra Mini — 720p price, USD cents per second.
-const BYTEPLUS_MINI_CENTS_PER_SECOND_720P: f64 = 8.72427984;
+const BYTEPLUS_MINI_CENTS_PER_SECOND_720P: f64 = 9.10;
 /// BytePlus / BytePlus Ultra Mini — 720p reference-video surcharge, USD cents per second.
-const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.74485597;
+const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.85;
 
 /// ArtCraft's price (USD cents) for the regular Seedance 2.0 Mini.
 ///
@@ -273,16 +273,16 @@ mod tests {
 
   #[test]
   fn four_k_base_prices() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1), 347);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1), 433);
-    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1), 866);
-    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1), 1299);
+    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1), 358);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1), 447);
+    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1), 893);
+    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1), 1340);
   }
 
   #[test]
   fn batch_count_multiplies() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2), 866);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 4), 1732);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2), 893);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 4), 1786);
   }
 
   // ── Seedance 2.0 Mini ──
@@ -299,34 +299,34 @@ mod tests {
 
     #[test]
     fn four_eighty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 13);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 33);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 49);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 14);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 35);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 52);
     }
 
     #[test]
     fn four_eighty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 21);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 42);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 62);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 22);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 44);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 66);
     }
 
     #[test]
     fn seven_twenty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 35);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 44);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 87);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 130);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 36);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 45);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 89);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 134);
     }
 
     #[test]
     fn seven_twenty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 42);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 52);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 104);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 156);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 43);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 54);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 108);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 161);
     }
 
     #[test]
@@ -353,9 +353,9 @@ mod tests {
     fn batch_count_scales_the_total() {
       // Batch is baked in before the single round-up, so batched totals can be
       // a cent under N× the single price.
-      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 87);
-      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 173);
-      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 33);
+      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 89);
+      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 178);
+      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 35);
     }
   }
 
@@ -373,34 +373,34 @@ mod tests {
 
     #[test]
     fn four_eighty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 14);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 33);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 50);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 15);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 36);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 54);
     }
 
     #[test]
     fn four_eighty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 21);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 42);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 63);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 23);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 45);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 68);
     }
 
     #[test]
     fn seven_twenty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 35);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 44);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 88);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 131);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 37);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 46);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 91);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 137);
     }
 
     #[test]
     fn seven_twenty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 42);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 53);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 105);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 158);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 44);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 55);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 110);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 165);
     }
 
     #[test]
@@ -428,9 +428,9 @@ mod tests {
 
     #[test]
     fn batch_count_scales_the_total() {
-      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 88);
-      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 175);
-      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 33);
+      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 91);
+      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 182);
+      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 36);
     }
   }
 }
