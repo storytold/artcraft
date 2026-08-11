@@ -1,4 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon, EraserIcon, FrameIcon, MaximizeIcon, MousePointerIcon, MoveIcon, PenIcon, RectangleHorizontalIcon, RectangleVerticalIcon, Redo2Icon, RotateCcwIcon, SquareIcon, SquarePenIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
@@ -174,11 +175,10 @@ export const PromptBoxEdit = ({
     setResolution(selectedItem.label.toLowerCase() as any);
   };
 
-  const getCurrentAspectRatioIcon = () => {
+  const getCurrentAspectRatioIcon = (): LucideIcon => {
     const selected = aspectRatioList.find((item) => item.selected);
-    if (!selected || !selected.icon) return RectangleHorizontalIcon;
-    const iconElement = selected.icon as React.ReactElement<{ icon: any }>;
-    return iconElement.props.icon;
+    if (!selected?.icon) return RectangleHorizontalIcon;
+    return (selected.icon as React.ReactElement).type as LucideIcon;
   };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);

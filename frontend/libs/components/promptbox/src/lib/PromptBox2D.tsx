@@ -306,11 +306,10 @@ export const PromptBox2D = ({
     }
   };
 
-  const getCurrentAspectRatioIcon = () => {
+  const getCurrentAspectRatioIcon = (): LucideIcon => {
     const selected = aspectRatioList.find((item) => item.selected);
-    if (!selected || !selected.icon) return RectangleHorizontalIcon;
-    const iconElement = selected.icon as React.ReactElement<{ icon: LucideIcon }>;
-    return iconElement.props.icon;
+    if (!selected?.icon) return RectangleHorizontalIcon;
+    return (selected.icon as React.ReactElement).type as LucideIcon;
   };
 
   // const getCurrentAspectRatio = (): EnqueueEditImageSize => {
