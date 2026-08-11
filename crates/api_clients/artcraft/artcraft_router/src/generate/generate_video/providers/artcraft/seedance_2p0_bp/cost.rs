@@ -1,6 +1,5 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
-use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p0_four_k_usd_cents;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
@@ -19,11 +18,16 @@ const CENTS_PER_SECOND_1080P: f64 = 50.0;
 ///   480p:  10.20 ¢/s
 ///   720p:  25.70 ¢/s
 ///   1080p: 57.80 ¢/s
-///   4K:   113.80 ¢/s
+///   4K:   119.00 ¢/s
 const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P: u64 = 1_020;
 const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P: u64 = 2_570;
 const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_1080P: u64 = 5_780;
-const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_4K: u64 = 11_380;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_4K: u64 = 11_900;
+
+/// 4K output price with no reference videos, in hundredths of a USD cent
+/// per second (95.00 ¢/s), rounded up to whole cents after multiplying by
+/// duration × batch.
+const CENTI_CENTS_PER_SECOND_4K: u64 = 9_500;
 
 pub struct ArtcraftSeedance2p0BytePlusCostState {
   pub resolution: CommonResolution,
@@ -59,10 +63,10 @@ impl ArtcraftSeedance2p0BytePlusCostState {
     }
 
     if self.resolution == CommonResolution::FourK {
-      let usd_cents = seedance_2p0_four_k_usd_cents(
-        self.duration_seconds,
-        self.batch_count,
-      );
+      let total_centi_cents = CENTI_CENTS_PER_SECOND_4K
+        * self.duration_seconds as u64
+        * self.batch_count as u64;
+      let usd_cents = total_centi_cents.div_ceil(100);
       return VideoGenerationCostEstimate {
         cost_in_credits: Some(usd_cents),
         cost_in_usd_cents: Some(usd_cents),
@@ -220,19 +224,20 @@ mod tests {
 
     #[test]
     fn explicit_4k_without_video_reference() {
-      assert_eq!(artcraft_4k_cents(4, 1, false), 347);
-      assert_eq!(artcraft_4k_cents(5, 1, false), 433);
-      assert_eq!(artcraft_4k_cents(10, 1, false), 866);
-      assert_eq!(artcraft_4k_cents(15, 1, false), 1299);
+      // 95.00 ¢/s card, rounded up to whole cents.
+      assert_eq!(artcraft_4k_cents(4, 1, false), 380);
+      assert_eq!(artcraft_4k_cents(5, 1, false), 475);
+      assert_eq!(artcraft_4k_cents(10, 1, false), 950);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1425);
     }
 
     #[test]
     fn explicit_4k_with_video_reference() {
-      // 113.80 ¢/s with-reference card, rounded up to whole cents.
-      assert_eq!(artcraft_4k_cents(4, 1, true), 456);
-      assert_eq!(artcraft_4k_cents(5, 1, true), 569);
-      assert_eq!(artcraft_4k_cents(10, 1, true), 1138);
-      assert_eq!(artcraft_4k_cents(15, 1, true), 1707);
+      // 119.00 ¢/s with-reference card, rounded up to whole cents.
+      assert_eq!(artcraft_4k_cents(4, 1, true), 476);
+      assert_eq!(artcraft_4k_cents(5, 1, true), 595);
+      assert_eq!(artcraft_4k_cents(10, 1, true), 1190);
+      assert_eq!(artcraft_4k_cents(15, 1, true), 1785);
     }
   }
 
@@ -318,9 +323,9 @@ mod tests {
 
     #[test]
     fn refs_cost_more_at_4k() {
-      assert_ref_delta(CommonResolution::FourK, 5, 433, 569, 136);
-      assert_ref_delta(CommonResolution::FourK, 10, 866, 1138, 272);
-      assert_ref_delta(CommonResolution::FourK, 15, 1299, 1707, 408);
+      assert_ref_delta(CommonResolution::FourK, 5, 475, 595, 120);
+      assert_ref_delta(CommonResolution::FourK, 10, 950, 1190, 240);
+      assert_ref_delta(CommonResolution::FourK, 15, 1425, 1785, 360);
     }
 
     /// Price the same generation with and without a reference video; pin
