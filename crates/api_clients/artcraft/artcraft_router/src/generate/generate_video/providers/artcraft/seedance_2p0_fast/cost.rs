@@ -13,7 +13,7 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::req
 ///
 /// Kept as f64 because per-second rates are fractional; rounding happens
 /// once at the end after multiplying by duration * batch.
-const CENTS_PER_SECOND_480P: f64 = 5.181;
+const CENTS_PER_SECOND_480P: f64 = 6.40;
 const CENTS_PER_SECOND_720P: f64 = 12.727;
 
 /// USD cents per second, in hundredths of a cent, when one or more
@@ -149,25 +149,25 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 4, 1), 21);
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 26);
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 52);
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 78);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 4, 1), 26);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 32);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 64);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 96);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 52);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 64);
     }
 
         #[test]
     fn batch_3() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 78);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 96);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 104);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 128);
     }
   }
 

@@ -73,10 +73,15 @@ impl KinoviSeedance2p5CostState {
       }
     };
 
-    // NB: The kinovi calculator clamps too; clamping here as well keeps this
-    // state's math correct even if it's read directly.
+    // NB: The kinovi calculator clamps measured values and bills the
+    // worst-case maximum for unknown (None) or zero inputs. Zero passes
+    // through unclamped so that worst-case fallback applies — clamping it up
+    // to the minimum here would understate the cost.
     let total_input_seconds = self.total_input_seconds
-      .map(|seconds| seconds.clamp(MIN_BILLED_INPUT_SECONDS, MAX_BILLED_INPUT_SECONDS));
+      .map(|seconds| match seconds {
+        0 => 0,
+        measured => measured.clamp(MIN_BILLED_INPUT_SECONDS, MAX_BILLED_INPUT_SECONDS),
+      });
 
     let pricing_request = GenerateSeedance2p5Request {
       prompt: String::new(),

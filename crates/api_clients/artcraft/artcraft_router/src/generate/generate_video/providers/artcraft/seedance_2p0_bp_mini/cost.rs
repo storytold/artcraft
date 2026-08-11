@@ -65,18 +65,18 @@ mod tests {
 
     #[test]
     fn without_video_reference() {
-      assert_eq!(cents(RouterResolution::FourEightyP, 4, 1, false), 14);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, false), 17);
-      assert_eq!(cents(RouterResolution::FourEightyP, 10, 1, false), 33);
-      assert_eq!(cents(RouterResolution::FourEightyP, 15, 1, false), 50);
+      assert_eq!(cents(RouterResolution::FourEightyP, 4, 1, false), 15);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, false), 18);
+      assert_eq!(cents(RouterResolution::FourEightyP, 10, 1, false), 36);
+      assert_eq!(cents(RouterResolution::FourEightyP, 15, 1, false), 54);
     }
 
     #[test]
     fn with_video_reference() {
-      assert_eq!(cents(RouterResolution::FourEightyP, 4, 1, true), 17);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, true), 21);
-      assert_eq!(cents(RouterResolution::FourEightyP, 10, 1, true), 42);
-      assert_eq!(cents(RouterResolution::FourEightyP, 15, 1, true), 63);
+      assert_eq!(cents(RouterResolution::FourEightyP, 4, 1, true), 18);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, true), 23);
+      assert_eq!(cents(RouterResolution::FourEightyP, 10, 1, true), 45);
+      assert_eq!(cents(RouterResolution::FourEightyP, 15, 1, true), 68);
     }
   }
 
@@ -85,18 +85,18 @@ mod tests {
 
     #[test]
     fn without_video_reference() {
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 4, 1, false), 35);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, false), 44);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 10, 1, false), 88);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 15, 1, false), 131);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 4, 1, false), 37);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, false), 46);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 10, 1, false), 91);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 15, 1, false), 137);
     }
 
     #[test]
     fn with_video_reference() {
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 4, 1, true), 42);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, true), 53);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 10, 1, true), 105);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 15, 1, true), 158);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 4, 1, true), 44);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, true), 55);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 10, 1, true), 110);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 15, 1, true), 165);
     }
 
     #[test]
@@ -112,31 +112,31 @@ mod tests {
     /// apply). Once, batch 8 executed in full but billed as batch 4.
     #[test]
     fn every_batch_size_720p_5s() {
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, false), 44);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 2, false), 88);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 3, false), 131);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 4, false), 175);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 5, false), 219);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 6, false), 262);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 7, false), 306);
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 8, false), 349);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 1, false), 46);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 2, false), 91);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 3, false), 137);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 4, false), 182);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 5, false), 228);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 6, false), 273);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 7, false), 319);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 8, false), 364);
     }
 
     #[test]
     fn every_batch_size_480p_5s() {
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, false), 17);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 2, false), 33);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 3, false), 50);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 4, false), 66);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 5, false), 82);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 6, false), 99);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 7, false), 115);
-      assert_eq!(cents(RouterResolution::FourEightyP, 5, 8, false), 131);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 1, false), 18);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 2, false), 36);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 3, false), 54);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 4, false), 71);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 5, false), 89);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 6, false), 107);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 7, false), 125);
+      assert_eq!(cents(RouterResolution::FourEightyP, 5, 8, false), 142);
     }
 
     #[test]
     fn batch_eight_with_video_reference() {
-      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 8, true), 419);
+      assert_eq!(cents(RouterResolution::SevenTwentyP, 5, 8, true), 438);
     }
 
     #[test]
