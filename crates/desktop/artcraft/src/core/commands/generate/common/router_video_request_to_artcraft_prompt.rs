@@ -273,4 +273,19 @@ mod tests {
       assert_eq!(prompt.model_type, Some(expected));
     }
   }
+
+  #[test]
+  fn seedance_2p5_models_map_to_matching_common_models() {
+    let models = [
+      (RouterVideoModel::Seedance2p5Preview, CommonModelType::Seedance2p5Preview),
+      (RouterVideoModel::Seedance2p5, CommonModelType::Seedance2p5),
+      (RouterVideoModel::Seedance2p5Ultra, CommonModelType::Seedance2p5Ultra),
+    ];
+
+    for (router_model, expected) in models {
+      let builder = GenerateVideoRequestBuilder { model: router_model, ..base_builder() };
+      let prompt = router_video_request_to_artcraft_prompt(&builder);
+      assert_eq!(prompt.model_type, Some(expected));
+    }
+  }
 }
