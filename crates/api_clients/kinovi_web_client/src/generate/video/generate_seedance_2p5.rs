@@ -145,9 +145,12 @@ impl GenerateSeedance2p5Request {
         Some(KinoviSeedance2p5OutputResolution::FourEightyP) => 16u64,
         Some(KinoviSeedance2p5OutputResolution::SevenTwentyP) | None => 35u64,
       };
-      let input_seconds = self.total_input_seconds
-        .unwrap_or(MAX_BILLED_INPUT_SECONDS)
-        .clamp(MIN_BILLED_INPUT_SECONDS, MAX_BILLED_INPUT_SECONDS);
+      // An unknown (None) or zero input duration bills the worst-case
+      // maximum — never default toward the minimum.
+      let input_seconds = match self.total_input_seconds {
+        None | Some(0) => MAX_BILLED_INPUT_SECONDS,
+        Some(seconds) => seconds.clamp(MIN_BILLED_INPUT_SECONDS, MAX_BILLED_INPUT_SECONDS),
+      };
       let seconds = u64::from(self.duration_seconds) + u64::from(input_seconds);
       (rate, seconds)
     } else {
@@ -483,11 +486,12 @@ mod tests {
       fn video_reference_rate_is_cheaper_per_second() {
         // 16 < 26 and 35 < 59: the with-references rate is lower per billed
         // second (the input seconds are where the money goes). Compare at
-        // zero input seconds — the unknown-duration default assumes the
-        // 30-second maximum, which would swamp the rate comparison.
-        assert!(video_ref_480(10, Some(0)).calculate_costs().kinovi_credits
+        // the minimum billed input (1s clamps to 4) — unknown or zero input
+        // assumes the 30-second maximum, which would swamp the rate
+        // comparison.
+        assert!(video_ref_480(10, Some(1)).calculate_costs().kinovi_credits
           < t2v_480(10).calculate_costs().kinovi_credits);
-        assert!(video_ref_720(10, Some(0)).calculate_costs().kinovi_credits
+        assert!(video_ref_720(10, Some(1)).calculate_costs().kinovi_credits
           < t2v_720(10).calculate_costs().kinovi_credits);
       }
 

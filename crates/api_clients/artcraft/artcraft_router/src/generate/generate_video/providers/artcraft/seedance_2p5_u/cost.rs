@@ -14,7 +14,7 @@ pub struct ArtcraftSeedance2p5UltraCostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
   pub has_video_references: bool,
-  pub total_input_seconds: u16,
+  pub maybe_total_input_seconds: Option<u16>,
 }
 
 impl ArtcraftSeedance2p5UltraCostState {
@@ -31,20 +31,21 @@ impl ArtcraftSeedance2p5UltraCostState {
       resolution,
       duration_seconds,
       has_video_references,
-      total_input_seconds: request.total_input_seconds.unwrap_or(0),
+      maybe_total_input_seconds: request.total_input_seconds,
     }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Input-second clamping (the 4..=30 billing range) happens inside the
-    // shared pricing function.
-    let total_input_seconds = self.total_input_seconds;
+    // Input-second clamping (the 4..=30 billing range) and the
+    // unknown-or-zero-input failsafe happen inside the shared pricing
+    // function.
+    let maybe_total_input_seconds = self.maybe_total_input_seconds;
 
     let usd_cents = seedance_2p5_ultra_usd_cents(
       self.resolution,
       self.duration_seconds,
       self.has_video_references,
-      total_input_seconds,
+      maybe_total_input_seconds,
     );
 
     // ArtCraft credits: 100 credits = $1.00, so credits = cents.
@@ -133,10 +134,12 @@ mod tests {
     }
 
     #[test]
-    fn missing_input_seconds_bill_the_four_second_minimum() {
-      // No measured input still bills the 4-second total minimum:
-      // 8.55967078 ¢/s × (10+4) = 119.84 → 120¢.
-      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, None), 120);
+    fn missing_or_zero_input_seconds_bill_the_thirty_second_maximum() {
+      // FAILSAFE: an unmeasured (or zero) input bills the 30-second MAXIMUM,
+      // matching the provider client's fallback:
+      // 8.55967078 ¢/s × (10+30) = 342.39 → 343¢.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, None), 343);
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 10, Some(0)), 343);
     }
 
     #[test]

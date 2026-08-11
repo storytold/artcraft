@@ -154,7 +154,7 @@ pub fn seedance_2p5_usd_cents(
   resolution: CommonResolution,
   duration_seconds: u16,
   has_video_references: bool,
-  total_input_seconds: u16,
+  maybe_total_input_seconds: Option<u16>,
 ) -> u64 {
   let (cents_per_second, billed_seconds) = if has_video_references {
     let rate = match resolution {
@@ -164,8 +164,18 @@ pub fn seedance_2p5_usd_cents(
     };
     // The TOTAL input duration clamps to the 4..=30 second billing range
     // (three 1s videos sum to 3 and bill 4; three 3s videos bill 9).
-    let billed_input_seconds = total_input_seconds
-      .clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS));
+    //
+    // FAILSAFE: an unknown (never probed) or zero input duration bills the
+    // 30-second MAXIMUM, matching the provider client's own fallback. It
+    // must never default toward the minimum — billing 4 input seconds for
+    // an unmeasured input while the provider assumes 30 sells input seconds
+    // far below cost.
+    let billed_input_seconds = match maybe_total_input_seconds {
+      None | Some(0) => u16::from(MAX_BILLED_INPUT_SECONDS),
+      Some(seconds) => {
+        seconds.clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS))
+      }
+    };
     (rate, u64::from(duration_seconds) + u64::from(billed_input_seconds))
   } else {
     let rate = match resolution {
@@ -198,7 +208,7 @@ pub fn seedance_2p5_ultra_usd_cents(
   resolution: CommonResolution,
   duration_seconds: u16,
   has_video_references: bool,
-  total_input_seconds: u16,
+  maybe_total_input_seconds: Option<u16>,
 ) -> u64 {
   let (cents_per_second, billed_seconds) = if has_video_references {
     let rate = match resolution {
@@ -208,8 +218,18 @@ pub fn seedance_2p5_ultra_usd_cents(
     };
     // The TOTAL input duration clamps to the 4..=30 second billing range
     // (three 1s videos sum to 3 and bill 4; three 3s videos bill 9).
-    let billed_input_seconds = total_input_seconds
-      .clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS));
+    //
+    // FAILSAFE: an unknown (never probed) or zero input duration bills the
+    // 30-second MAXIMUM, matching the provider client's own fallback. It
+    // must never default toward the minimum — billing 4 input seconds for
+    // an unmeasured input while the provider assumes 30 sells input seconds
+    // far below cost.
+    let billed_input_seconds = match maybe_total_input_seconds {
+      None | Some(0) => u16::from(MAX_BILLED_INPUT_SECONDS),
+      Some(seconds) => {
+        seconds.clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS))
+      }
+    };
     (rate, u64::from(duration_seconds) + u64::from(billed_input_seconds))
   } else {
     let rate = match resolution {
