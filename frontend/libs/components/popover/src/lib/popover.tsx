@@ -94,8 +94,19 @@ function PortalTooltip({
   useEffect(() => {
     if (!isShowing) return;
     const handleScroll = () => checkVisibilityAndUpdatePosition();
+    // Escape dismisses the tooltip — required because the outside-safe marker
+    // below makes the enclosing Modal defer its own Escape handling to us.
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      setIsShowing(false);
+    };
     window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("keydown", handleKey);
+    };
   }, [isShowing, checkVisibilityAndUpdatePosition]);
 
   return (
@@ -112,6 +123,9 @@ function PortalTooltip({
         createPortal(
           <div
             ref={tooltipRef}
+            // Body-portaled, so inside a Radix modal (promptbox focus mode)
+            // clicks here must not count as outside clicks on the dialog.
+            data-modal-outside-safe=""
             onMouseEnter={() => setIsHoveringTooltip(true)}
             onMouseLeave={() => setIsHoveringTooltip(false)}
             style={{
@@ -228,6 +242,9 @@ function InfoHint({ content }: { content: ReactNode }) {
       {open &&
         createPortal(
           <div
+            // Body-portaled, so inside a Radix modal (promptbox focus mode)
+            // taps here must not count as outside clicks on the dialog.
+            data-modal-outside-safe=""
             style={{
               position: "fixed",
               top: position.top,
@@ -548,7 +565,9 @@ function SubmenuFlyout({
   }, [isShowing, updatePosition, setIsShowing]);
 
   // Dismiss on outside press — needed for the click/touch open path, where
-  // there is no hover-out to close the flyout.
+  // there is no hover-out to close the flyout. Escape also dismisses: the
+  // outside-safe marker on the panel makes the enclosing Modal defer its own
+  // Escape handling while the flyout is open.
   useEffect(() => {
     if (!isShowing) return;
     const onPointerDown = (e: MouseEvent) => {
@@ -557,8 +576,15 @@ function SubmenuFlyout({
       if (panelRef.current?.contains(target)) return;
       setIsShowing(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsShowing(false);
+    };
     window.addEventListener("mousedown", onPointerDown, true);
-    return () => window.removeEventListener("mousedown", onPointerDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
   }, [isShowing, setIsShowing]);
 
   return (
@@ -582,6 +608,12 @@ function SubmenuFlyout({
         createPortal(
           <div
             ref={panelRef}
+            // Body-portaled: a modal Radix dialog (promptbox focus mode) sets
+            // pointer-events: none on <body>, so re-enable them explicitly or
+            // the flyout can never be hovered and closes on row mouse-leave.
+            // The outside-safe marker keeps clicks in here from counting as
+            // outside clicks that would close the dialog.
+            data-modal-outside-safe=""
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
             style={{
@@ -591,7 +623,7 @@ function SubmenuFlyout({
               transform: "translateY(-50%)",
               zIndex: 9999,
             }}
-            className="w-[340px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
+            className="pointer-events-auto w-[340px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
           >
             <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
               {item.label}
