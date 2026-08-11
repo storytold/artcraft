@@ -4,6 +4,7 @@
 //! with dummy Actix HTTP requests as a fixture user.
 
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
@@ -791,6 +792,58 @@ pub async fn assert_generation_fails_and_charges_nothing(
     harness.wallet_balance(&user).await,
     STARTING_CREDITS,
     "{:?}: rejected generation must not charge", model,
+  );
+}
+
+/// Run the same generation twice — once without and once with a reference
+/// video, as two independent fixture users — and assert the referenced
+/// generation is CHARGED strictly more credits. The no-reference generation
+/// succeeds outright; the referenced one uses an unreachable fixture (charge
+/// then refund), so its charge is read from the ledger debit entry.
+pub async fn assert_references_charge_more(
+  harness: &TestHarness,
+  model: CommonVideoModel,
+  resolution: Option<enums::common::generation::common_resolution::CommonResolution>,
+  Seconds(duration_seconds): Seconds,
+) {
+  let no_ref_user = harness.create_funded_user(STARTING_CREDITS).await;
+  let mut request = base_generate_request(model);
+  request.resolution = resolution;
+  request.duration_seconds = Some(duration_seconds);
+  let response = harness
+    .post_generate(&no_ref_user, request)
+    .await
+    .unwrap_or_else(|err| {
+      panic!("{:?} {:?} {}s: no-reference generation failed: {:?}", model, resolution, duration_seconds, err)
+    });
+  assert!(response.success);
+  let no_ref_debit = STARTING_CREDITS - harness.wallet_balance(&no_ref_user).await;
+
+  let ref_user = harness.create_funded_user(STARTING_CREDITS).await;
+  let video_token = mysql_testing::fixtures::media_files::create_test_video_media_file(
+    &harness.pool,
+    &ref_user.user_token,
+    Some(6_000),
+  )
+  .await
+  .expect("create video media file fixture");
+  let mut request = base_generate_request(model);
+  request.resolution = resolution;
+  request.duration_seconds = Some(duration_seconds);
+  request.reference_video_media_tokens = Some(vec![video_token]);
+  // The unreachable fixture fails after billing; the charge is in the ledger.
+  let _ = harness.post_generate(&ref_user, request).await;
+  let entries = harness.ledger_entries(&ref_user).await;
+  let ref_debit = entries
+    .iter()
+    .find(|entry| entry.credits_delta < 0)
+    .unwrap_or_else(|| panic!("{:?} {:?} {}s: no ledger debit for referenced generation", model, resolution, duration_seconds));
+  let ref_debit = u64::try_from(-ref_debit.credits_delta).expect("positive debit");
+
+  assert!(
+    ref_debit > no_ref_debit,
+    "{:?} {:?} {}s: references must charge more (ref {} vs no-ref {})",
+    model, resolution, duration_seconds, ref_debit, no_ref_debit,
   );
 }
 

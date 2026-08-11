@@ -9,10 +9,20 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_fast::
 const CENTS_PER_SECOND_480P: f64 = 9.0;
 const CENTS_PER_SECOND_720P: f64 = 20.0;
 
+/// USD cents per second, in hundredths of a cent, when one or more
+/// reference videos are attached. Held as integer hundredths so the math is
+/// exact; rounded up to whole cents once, after multiplying by
+/// duration × batch.
+///   480p:  9.65 ¢/s
+///   720p: 20.50 ¢/s
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P: u64 = 965;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P: u64 = 2_050;
+
 pub struct ArtcraftSeedance2p0BytePlusFastCostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
   pub batch_count: u16,
+  pub has_video_reference: bool,
 }
 
 impl ArtcraftSeedance2p0BytePlusFastCostState {
@@ -21,10 +31,26 @@ impl ArtcraftSeedance2p0BytePlusFastCostState {
       .unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(5);
     let batch_count = request.request.video_batch_count.unwrap_or(1);
-    Self { resolution, duration_seconds, batch_count }
+    let has_video_reference = request.request.reference_video_media_tokens
+      .as_ref()
+      .is_some_and(|tokens| !tokens.is_empty());
+    Self { resolution, duration_seconds, batch_count, has_video_reference }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
+    if self.has_video_reference {
+      let usd_cents = self.with_video_reference_usd_cents();
+      return VideoGenerationCostEstimate {
+        cost_in_credits: Some(usd_cents),
+        cost_in_usd_cents: Some(usd_cents),
+        is_free: false,
+        is_unlimited: false,
+        is_rate_limited: false,
+        has_watermark: false,
+        failures_are_refunded: None,
+      };
+    }
+
     let cents_per_second = match self.resolution {
       CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
       _ => CENTS_PER_SECOND_720P,
@@ -41,6 +67,20 @@ impl ArtcraftSeedance2p0BytePlusFastCostState {
       has_watermark: false,
       failures_are_refunded: None,
     }
+  }
+
+  /// Price when one or more reference videos are attached.
+  fn with_video_reference_usd_cents(&self) -> u64 {
+    let centi_cents_per_second = match self.resolution {
+      CommonResolution::FourEightyP => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P,
+      // Everything else (including 720p) prices at 720p.
+      _ => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P,
+    };
+
+    let seconds = self.duration_seconds as u64 * self.batch_count as u64;
+
+    // Round up to whole cents.
+    (centi_cents_per_second * seconds).div_ceil(100)
   }
 }
 
