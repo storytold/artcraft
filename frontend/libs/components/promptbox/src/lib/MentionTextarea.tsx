@@ -1528,7 +1528,12 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     );
 
     return (
-      <div className="relative flex-1 min-w-0 pb-[7px]">
+      // min-h-0: in the focus-mode modal this wrapper is a flex child of a
+      // height-bounded column; without it, flexbox's min-height:auto keeps the
+      // wrapper at full content height, the modal's overflow-hidden clips it,
+      // and the editor's own overflow-y-auto never engages (the "focus mode
+      // doesn't scroll" bug). Inline, the row is content-sized, so it's a no-op.
+      <div className="relative flex-1 min-w-0 min-h-0 pb-[7px]">
         {!value && placeholder && (
           <div
             className={twMerge(
