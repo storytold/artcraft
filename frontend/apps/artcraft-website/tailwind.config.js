@@ -18,6 +18,14 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        mono: [
+          "Geist Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Consolas",
+          "monospace",
+        ],
         display: [
           "Outfit",
           "system-ui",
