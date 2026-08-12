@@ -7,10 +7,11 @@ ArtCraft is a Rust / Tauri app.
 
 To set up the ArtCraft development environment,  install the following:
 
-1. [Install Rust](https://doc.rust-lang.org/cargo/getting-started/installation.html).
-2. [Install npm](https://nodejs.org/en/download) or [nvm](https://github.com/nvm-sh/nvm). (Node version `v24.13.0` works at time of writing.) 
-3. [Install nx](https://nx.dev/docs/getting-started/installation). (Nx version `v22.4.5` works at time of writing.)
-4. [Install Tauri CLI](https://v2.tauri.app/reference/cli/). (Version `tauri-cli 2.10.0` works at time of writing.)
+1. [Install Rust](https://doc.rust-lang.org/cargo/getting-started/installation.html). (rustc/cargo version `1.96.0` works at time of writing.)
+2. Install cmake, e.g. `brew install cmake` on macOS. (Version `4.4.2` works at time of writing.) This is required to build BoringSSL via `boring-sys2` (a dependency of `wreq`); without it, the Rust build fails with "is `cmake` not installed?".
+3. [Install npm](https://nodejs.org/en/download) or [nvm](https://github.com/nvm-sh/nvm). Node `v22.22.2` / npm `10.9.7` work at time of writing (minimum: Node ≥ 20).
+4. [Install nx](https://nx.dev/docs/getting-started/installation) **globally** (`npm install -g nx`). Nx version `23.1.1` works at time of writing. The frontend dev script calls bare `nx`, which is not resolved from `node_modules/.bin` when run from a shell script, so a global install is required.
+5. [Install Tauri CLI](https://v2.tauri.app/reference/cli/). (Version `cargo-tauri 2.11.4` works at time of writing.)
 
 An easy way to get started with running the app in development is to run the two commands (in separate terminals):
 
