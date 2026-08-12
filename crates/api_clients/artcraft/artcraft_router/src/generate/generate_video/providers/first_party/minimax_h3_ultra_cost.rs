@@ -1,10 +1,5 @@
 //! Pricing for first-party Minimax H3 Ultra.
 //!
-//! First-party H3 Ultra is fulfilled on our own GPU inference (enqueued
-//! directly by storyteller-web's omni_gen pipeline, not routed through a
-//! provider), so unlike the other artcraft rate cards there is no provider
-//! cost estimate beside it — only this user-facing price.
-//!
 //! TODO(2026-08-06): Placeholder rates copied from the existing Minimax H3
 //! pricing. Finalize once first-party GPU inference costs are known.
 

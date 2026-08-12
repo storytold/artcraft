@@ -53,11 +53,8 @@ pub fn build_artcraft_omni_image_request(
   })
 }
 
-/// The largest batch each Artcraft image model accepts. This MUST match what
-/// the model's fulfiller actually generates for a request: Kinovi runs
-/// Seedream 5.0 Pro batches of up to 8, while every other fulfillment path
-/// caps at 4. If this cap is smaller than the fulfiller's, batches above it
-/// are priced at the clamped size but generated at the requested size.
+/// The largest batch each Artcraft image model accepts. Seedream 5.0 Pro and
+/// Ultra accept batches of up to 8; every other model caps at 4.
 pub fn max_batch_count(model: CommonImageModelEnum) -> u16 {
   match model {
     CommonImageModelEnum::Seedream5p0Pro | CommonImageModelEnum::Seedream5p0ProUltra => 8,
