@@ -27,7 +27,7 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::omni_gen::generate::video::first_party_minimax_h3::minimax_h3_ultra_cost::estimate_minimax_h3_ultra_cost_usd_cents;
+use artcraft_router::generate::generate_video::providers::first_party::minimax_h3_ultra_cost::estimate_minimax_h3_ultra_cost_usd_cents;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::write_prompt_records::{
   write_prompt_records, WritePromptRecordsArgs,
@@ -86,7 +86,7 @@ pub async fn enqueue_first_party_minimax_h3_job(
       None
     }
     FirstPartyMinimaxH3Model::Ultra => {
-      Some(estimate_minimax_h3_ultra_cost_usd_cents(request))
+      Some(estimate_minimax_h3_ultra_cost_usd_cents(request.duration_seconds, request.resolution))
     }
   };
 
