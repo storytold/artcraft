@@ -5,4 +5,3 @@
 //! scheduler runs the jobs later.
 
 pub mod enqueue_first_party_minimax_h3_job;
-pub mod minimax_h3_ultra_cost;

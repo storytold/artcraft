@@ -1,9 +1,13 @@
 //! Pricing for first-party Minimax H3 Ultra.
 //!
+//! First-party H3 Ultra is fulfilled on our own GPU inference (enqueued
+//! directly by storyteller-web's omni_gen pipeline, not routed through a
+//! provider), so unlike the other artcraft rate cards there is no provider
+//! cost estimate beside it — only this user-facing price.
+//!
 //! TODO(2026-08-06): Placeholder rates copied from the existing Minimax H3
 //! pricing. Finalize once first-party GPU inference costs are known.
 
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use enums::common::generation::common_resolution::CommonResolution;
 
 /// Per-second rates in hundredths of a US cent.
@@ -15,12 +19,15 @@ const DEFAULT_DURATION_SECONDS: u64 = 5;
 
 /// Estimate the user-facing Minimax H3 Ultra cost in USD cents.
 /// System credits = cents (same convention as the v2 pipeline).
-pub fn estimate_minimax_h3_ultra_cost_usd_cents(request: &OmniGenVideoCostAndGenerateRequest) -> u64 {
-  let duration_seconds = request.duration_seconds
+pub fn estimate_minimax_h3_ultra_cost_usd_cents(
+  maybe_duration_seconds: Option<u16>,
+  maybe_resolution: Option<CommonResolution>,
+) -> u64 {
+  let duration_seconds = maybe_duration_seconds
     .map(u64::from)
     .unwrap_or(DEFAULT_DURATION_SECONDS);
 
-  let rate = if is_2k(request.resolution) {
+  let rate = if is_2k(maybe_resolution) {
     HIGH_RES_RATE_HUNDREDTH_CENTS_PER_SEC
   } else {
     LOW_RES_RATE_HUNDREDTH_CENTS_PER_SEC
@@ -52,46 +59,28 @@ mod tests {
 
   #[test]
   fn default_resolution_5s_is_150() {
-    assert_eq!(cost_cents(None, None), 150);
+    assert_eq!(estimate_minimax_h3_ultra_cost_usd_cents(None, None), 150);
   }
 
   #[test]
   fn low_res_5s_is_92() {
-    assert_eq!(cost_cents(Some(5), Some(CommonResolution::SevenTwentyP)), 92);
+    assert_eq!(
+      estimate_minimax_h3_ultra_cost_usd_cents(Some(5), Some(CommonResolution::SevenTwentyP)),
+      92,
+    );
   }
 
   #[test]
   fn high_res_10s_is_299() {
-    assert_eq!(cost_cents(Some(10), Some(CommonResolution::TenEightyP)), 299);
+    assert_eq!(
+      estimate_minimax_h3_ultra_cost_usd_cents(Some(10), Some(CommonResolution::TenEightyP)),
+      299,
+    );
   }
 
   #[test]
   fn odd_duration_rounds_up_to_whole_cents() {
     // 7s high res: 2990 × 7 = 20930 hundredth-cents → 210 cents.
-    assert_eq!(cost_cents(Some(7), None), 210);
-  }
-
-  fn cost_cents(duration_seconds: Option<u16>, resolution: Option<CommonResolution>) -> u64 {
-    let request = OmniGenVideoCostAndGenerateRequest {
-      idempotency_token: None,
-      model: None,
-      prompt: None,
-      negative_prompt: None,
-      start_frame_image_media_token: None,
-      end_frame_image_media_token: None,
-      reference_image_media_tokens: None,
-      reference_video_media_tokens: None,
-      reference_audio_media_tokens: None,
-      reference_character_tokens: None,
-      resolution,
-      aspect_ratio: None,
-      bitrate: None,
-      quality: None,
-      duration_seconds,
-      video_batch_count: None,
-      generate_audio: None,
-      estimate_only: None,
-    };
-    estimate_minimax_h3_ultra_cost_usd_cents(&request)
+    assert_eq!(estimate_minimax_h3_ultra_cost_usd_cents(Some(7), None), 210);
   }
 }
