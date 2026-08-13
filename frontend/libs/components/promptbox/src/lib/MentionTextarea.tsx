@@ -1497,9 +1497,47 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       (e: React.ClipboardEvent<HTMLDivElement>) => {
         e.preventDefault();
         const text = e.clipboardData.getData("text/plain");
-        document.execCommand("insertText", false, text);
+        const el = editorRef.current;
+        const sel = window.getSelection();
+        if (!text || !el || !sel?.rangeCount) return;
+
+        // Not execCommand("insertText"): Chromium runs a separate editing
+        // command per pasted line (each re-canonicalizing positions over the
+        // whole document), so large multi-line prompts froze the tab for
+        // seconds. Splice in a single text node instead — whitespace-pre-wrap
+        // renders its "\n"s — and let handleInput do the usual serialize +
+        // rebuild. This skips the native undo stack, but any rebuild
+        // (mentions, newlines) already invalidated it.
+        try {
+          const range = sel.getRangeAt(0);
+          // A boundary inside an atomic chip would drop the pasted text into
+          // the contenteditable=false span, where serialization ignores it —
+          // snap such boundaries to the chip's outside edge.
+          const startChip = chipContaining(el, range.startContainer);
+          const endChip = chipContaining(el, range.endContainer);
+          if (range.collapsed) {
+            if (startChip) {
+              range.setStartAfter(startChip);
+              range.collapse(true);
+            }
+          } else {
+            if (startChip) range.setStartBefore(startChip);
+            if (endChip) range.setEndAfter(endChip);
+          }
+          range.deleteContents();
+          const node = document.createTextNode(text);
+          range.insertNode(node);
+          range.setStartAfter(node);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (err) {
+          console.debug("handlePaste: DOM changed during insert", err);
+          return;
+        }
+        handleInput();
       },
-      [],
+      [handleInput],
     );
 
     // Copy/cut must yield plain text with mention labels intact ("@Name"),

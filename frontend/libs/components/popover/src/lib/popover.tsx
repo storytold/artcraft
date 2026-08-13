@@ -616,6 +616,12 @@ function SubmenuFlyout({
             data-modal-outside-safe=""
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
+            // The focus-mode modal's scroll lock (react-remove-scroll) blocks
+            // any wheel/touch event that bubbles to document from outside the
+            // dialog — and this body-portaled panel counts as outside. Stop
+            // propagation so the list's native scrolling keeps working.
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
             style={{
               position: "fixed",
               top: position.top,
