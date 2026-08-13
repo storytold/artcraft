@@ -124,6 +124,7 @@ pub async fn run(state: &ArtcraftState, args: GenerateVideoArgs) -> anyhow::Resu
     duration_seconds: Some(duration),
     video_batch_count: None,
     generate_audio: None,
+    estimate_only: None,
   };
 
   info!("Sending request to omni endpoint (idempotency_token={})...", idempotency_token);
