@@ -13,7 +13,7 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::req
 ///
 /// Kept as f64 because per-second rates are fractional; rounding happens
 /// once at the end after multiplying by duration * batch.
-const CENTS_PER_SECOND_480P: f64 = 6.40;
+const CENTS_PER_SECOND_480P: f64 = 7.13;
 const CENTS_PER_SECOND_720P: f64 = 12.727;
 
 /// USD cents per second, in hundredths of a cent, when one or more
@@ -149,25 +149,25 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 4, 1), 26);
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 32);
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 64);
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 96);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 4, 1), 29);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 36);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 71);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 107);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 64);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 71);
     }
 
         #[test]
     fn batch_3() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 96);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 107);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 128);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 143);
     }
   }
 
@@ -275,6 +275,76 @@ mod tests {
       assert!(b1 < b2);
       assert!(b2 < b4);
     }
+
+    /// A video reference must never make a generation cheaper than the same
+    /// generation without one, at any resolution, duration, or batch size.
+    #[test]
+    fn no_reference_cheaper_than_with_reference() {
+      for resolution in [RouterResolution::FourEightyP, RouterResolution::SevenTwentyP] {
+        for duration in 4..=15u16 {
+          for batch in [1, 2, 4] {
+            let no_ref = cost_cents(Some(resolution), duration, batch);
+            let with_ref = cost_cents_with_video_ref(Some(resolution), duration, batch);
+            assert!(
+              no_ref < with_ref,
+              "{resolution:?} {duration}s batch {batch}: no-ref {no_ref}¢ should be cheaper than with-ref {with_ref}¢",
+            );
+          }
+        }
+      }
+    }
+
+    /// 480p must stay cheaper than 720p in the with-reference rate card too
+    /// (the no-reference case is covered by [`cost_480p_cheaper_than_720p`]).
+    #[test]
+    fn cost_480p_cheaper_than_720p_with_reference() {
+      for duration in 4..=15u16 {
+        let c480 = cost_cents_with_video_ref(Some(RouterResolution::FourEightyP), duration, 1);
+        let c720 = cost_cents_with_video_ref(Some(RouterResolution::SevenTwentyP), duration, 1);
+        assert!(c480 < c720, "{duration}s with-ref: 480p ({c480}¢) should be cheaper than 720p ({c720}¢)");
+      }
+    }
+
+    /// The BytePlus variants are premium tiers: plain Fast must stay cheaper
+    /// at every resolution, duration, and reference configuration.
+    #[test]
+    fn fast_cheaper_than_byteplus_variants() {
+      let premium_models = [
+        RouterVideoModel::Seedance2p0BytePlusFast,
+        RouterVideoModel::Seedance2p0BytePlusUltraFast,
+      ];
+      for premium_model in premium_models {
+        for resolution in [RouterResolution::FourEightyP, RouterResolution::SevenTwentyP] {
+          for with_video_reference in [false, true] {
+            for duration in 4..=15u16 {
+              let plain = model_cost_cents(RouterVideoModel::Seedance2p0Fast, resolution, duration, 1, with_video_reference);
+              let premium = model_cost_cents(premium_model, resolution, duration, 1, with_video_reference);
+              assert!(
+                plain < premium,
+                "{premium_model:?} {resolution:?} {duration}s ref={with_video_reference}: plain Fast ({plain}¢) should be cheaper than the premium tier ({premium}¢)",
+              );
+            }
+          }
+        }
+      }
+    }
+
+    /// BytePlus Fast and BytePlus Ultra Fast share one rate card.
+    #[test]
+    fn byteplus_fast_and_ultra_fast_price_identically() {
+      for resolution in [RouterResolution::FourEightyP, RouterResolution::SevenTwentyP] {
+        for with_video_reference in [false, true] {
+          for duration in 4..=15u16 {
+            let bp = model_cost_cents(RouterVideoModel::Seedance2p0BytePlusFast, resolution, duration, 1, with_video_reference);
+            let bpu = model_cost_cents(RouterVideoModel::Seedance2p0BytePlusUltraFast, resolution, duration, 1, with_video_reference);
+            assert_eq!(
+              bp, bpu,
+              "{resolution:?} {duration}s ref={with_video_reference}: BytePlus Fast ({bp}¢) and Ultra Fast ({bpu}¢) should price identically",
+            );
+          }
+        }
+      }
+    }
   }
 
   // -- Credits equal cents --
@@ -350,6 +420,34 @@ mod tests {
       reference_videos: Some(VideoListRef::MediaFileTokens(vec![
         MediaFileToken::new("mf_ref".to_string()),
       ])),
+      ..Default::default()
+    };
+    builder.build2()
+      .expect("build2 should succeed")
+      .estimate_cost()
+      .expect("estimate_cost should succeed")
+      .cost_in_usd_cents
+      .unwrap()
+  }
+
+  /// Like [`cost_cents`], for any Fast-tier model and reference configuration.
+  fn model_cost_cents(
+    model: RouterVideoModel,
+    resolution: RouterResolution,
+    duration_seconds: u16,
+    video_batch_count: u16,
+    with_video_reference: bool,
+  ) -> u64 {
+    let reference_videos = with_video_reference.then(|| VideoListRef::MediaFileTokens(vec![
+      MediaFileToken::new("mf_ref".to_string()),
+    ]));
+    let builder = GenerateVideoRequestBuilder {
+      model,
+      provider: RouterProvider::Artcraft,
+      resolution: Some(resolution),
+      duration_seconds: Some(duration_seconds),
+      video_batch_count: Some(video_batch_count),
+      reference_videos,
       ..Default::default()
     };
     builder.build2()

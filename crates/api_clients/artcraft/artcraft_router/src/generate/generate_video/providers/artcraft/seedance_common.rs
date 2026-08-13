@@ -11,8 +11,8 @@ use kinovi_web_client::generate::video::generate_seedance_2p5::{
 // in hundredths of a USD cent per second so the math is exact integer arithmetic
 // (no floating point), then rounded up to whole cents.
 
-/// 4K output price, in hundredths of a USD cent per second (89.30 ¢/s).
-const FOUR_K_CENTI_CENTS_PER_SECOND: u64 = 8930;
+/// 4K output price, in hundredths of a USD cent per second (92.50 ¢/s).
+const FOUR_K_CENTI_CENTS_PER_SECOND: u64 = 9250;
 
 /// ArtCraft's price (USD cents) for Seedance 2.0 at 4K with no reference
 /// videos attached. Each model prices reference videos through its own
@@ -273,16 +273,16 @@ mod tests {
 
   #[test]
   fn four_k_base_prices() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1), 358);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1), 447);
-    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1), 893);
-    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1), 1340);
+    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1), 370);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1), 463);
+    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1), 925);
+    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1), 1388);
   }
 
   #[test]
   fn batch_count_multiplies() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2), 893);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 4), 1786);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2), 925);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 4), 1850);
   }
 
   // ── Seedance 2.0 Mini ──

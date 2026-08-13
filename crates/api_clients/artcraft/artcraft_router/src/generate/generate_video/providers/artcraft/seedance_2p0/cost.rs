@@ -15,7 +15,7 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 /// Kept as f64 because per-second rates are fractional; rounding happens
 /// once at the end after multiplying by duration × batch.
 const CENTS_PER_SECOND_480P: f64 = 7.772;
-const CENTS_PER_SECOND_720P: f64 = 16.0;
+const CENTS_PER_SECOND_720P: f64 = 18.5;
 const CENTS_PER_SECOND_1080P: f64 = 46.632;
 
 /// USD cents per second, in hundredths of a cent, when one or more
@@ -131,32 +131,32 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 1), 64);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1), 80);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 6, 1), 96);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1), 160);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1), 240);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 1), 74);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1), 93);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 6, 1), 111);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1), 185);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1), 278);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 2), 128);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2), 160);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 2), 480);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 2), 148);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2), 185);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 2), 555);
     }
 
         #[test]
     fn batch_3() {
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 3), 192);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 3), 240);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 3), 720);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 3), 222);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 3), 278);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 3), 833);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 4), 256);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4), 320);
-      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 4), 960);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 4), 296);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4), 370);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 4), 1110);
     }
 
     #[test]
@@ -242,10 +242,10 @@ mod tests {
 
     #[test]
     fn explicit_4k_without_video_reference() {
-      assert_eq!(artcraft_4k_cents(4, 1, false), 358);
-      assert_eq!(artcraft_4k_cents(5, 1, false), 447);
-      assert_eq!(artcraft_4k_cents(10, 1, false), 893);
-      assert_eq!(artcraft_4k_cents(15, 1, false), 1340);
+      assert_eq!(artcraft_4k_cents(4, 1, false), 370);
+      assert_eq!(artcraft_4k_cents(5, 1, false), 463);
+      assert_eq!(artcraft_4k_cents(10, 1, false), 925);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1388);
     }
 
     #[test]
@@ -499,9 +499,9 @@ mod tests {
 
     #[test]
     fn refs_cost_more_at_720p() {
-      assert_ref_delta(CommonResolution::SevenTwentyP, 5, 80, 111, 31);
-      assert_ref_delta(CommonResolution::SevenTwentyP, 10, 160, 221, 61);
-      assert_ref_delta(CommonResolution::SevenTwentyP, 15, 240, 331, 91);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 5, 93, 111, 18);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 10, 185, 221, 36);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 15, 278, 331, 53);
     }
 
     #[test]
@@ -513,9 +513,9 @@ mod tests {
 
     #[test]
     fn refs_cost_more_at_4k() {
-      assert_ref_delta(CommonResolution::FourK, 5, 447, 569, 122);
-      assert_ref_delta(CommonResolution::FourK, 10, 893, 1138, 245);
-      assert_ref_delta(CommonResolution::FourK, 15, 1340, 1707, 367);
+      assert_ref_delta(CommonResolution::FourK, 5, 463, 569, 106);
+      assert_ref_delta(CommonResolution::FourK, 10, 925, 1138, 213);
+      assert_ref_delta(CommonResolution::FourK, 15, 1388, 1707, 319);
     }
 
     /// Price the same generation with and without a reference video; pin

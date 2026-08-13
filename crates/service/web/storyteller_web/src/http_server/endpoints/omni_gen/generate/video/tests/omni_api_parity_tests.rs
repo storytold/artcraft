@@ -27,7 +27,7 @@ mod billing_parity {
       CommonVideoModel::Seedance2p0,
       Some(CommonResolution::SevenTwentyP),
       Seconds(5),
-      ExpectedCredits(80),
+      ExpectedCredits(93),
     ).await;
   }
 
