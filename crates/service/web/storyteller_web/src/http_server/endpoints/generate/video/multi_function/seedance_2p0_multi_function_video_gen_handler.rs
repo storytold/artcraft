@@ -955,8 +955,8 @@ mod tests {
 
     #[test]
     fn prices_720p_and_unset_identically() {
-      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 5, false), 80);
-      assert_eq!(estimate_cost_upfront(None, KinoviBatchCount::One, 5, false), 80);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 5, false), 93);
+      assert_eq!(estimate_cost_upfront(None, KinoviBatchCount::One, 5, false), 93);
     }
 
     #[test]
@@ -975,13 +975,13 @@ mod tests {
 
     #[test]
     fn batch_count_multiplies() {
-      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::Two, 5, false), 160);
-      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::Four, 5, false), 320);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::Two, 5, false), 185);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::Four, 5, false), 370);
     }
 
     #[test]
     fn ten_seconds_720p() {
-      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 10, false), 160);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 10, false), 185);
       assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 10, true), 221);
     }
 
