@@ -33,7 +33,8 @@ pub struct KinoviGenerateVideoRequest {
   pub aspect_ratio: KinoviAspectRatio,
 
   /// The resolution
-  /// Output resolution quality (480p, 720p, 1080p). None defaults to 720p.
+  /// Output resolution quality (480p, 720p, 1080p). None resolves to an
+  /// explicit 720p on the wire, matching how estimate_credits() prices None.
   /// (Kinovi terms this "outputResolution" in the API, which is confusingly named)
   pub output_resolution: Option<KinoviOutputResolution>,
 
@@ -197,25 +198,26 @@ impl KinoviAspectRatio {
   }
 }
 
-/// Output resolution quality. When omitted, defaults to 720p.
+/// Output resolution quality. Always sent explicitly on the wire — we never
+/// omit the field and rely on the Kinovi server-side default, because the
+/// billed price assumes a specific resolution and the two must not diverge.
 #[derive(Debug, Clone, Copy)]
 pub enum KinoviOutputResolution {
   /// 480p
   FourEightyP,
-  /// 720p (default — omitting the field gives this)
+  /// 720p (what unset requests resolve to)
   SevenTwentyP,
   /// 1080p
   TenEightyP,
 }
 
 impl KinoviOutputResolution {
-  /// Returns the API string to send, or None for 720p (the default, which is
-  /// expressed by omitting the field entirely).
-  pub fn as_api_str(&self) -> Option<&'static str> {
+  /// The API string to send.
+  pub fn as_api_str(&self) -> &'static str {
     match self {
-      Self::FourEightyP => Some("480p"),
-      Self::SevenTwentyP => None, // Default — omit from request
-      Self::TenEightyP => Some("1080p"),
+      Self::FourEightyP => "480p",
+      Self::SevenTwentyP => "720p",
+      Self::TenEightyP => "1080p",
     }
   }
 }
@@ -343,7 +345,9 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           model: req.model_type.as_api_str(),
           duration,
           mode: video_input_mode,
-          output_resolution: req.output_resolution.and_then(|r| r.as_api_str()),
+          // ALWAYS sent explicitly, defaulting unset to 720p — must match
+          // estimate_credits(), which prices None as 720p.
+          output_resolution: Some(req.output_resolution.unwrap_or(KinoviOutputResolution::SevenTwentyP).as_api_str()),
           face_blur_mode,
           character_ids: req.character_ids,
           uploaded_urls,
@@ -1391,7 +1395,7 @@ mod tests {
       async fn test_720p() -> AnyhowResult<()> {
         setup_test_logging(LevelFilter::Trace);
         let session = test_session()?;
-        // 720p = None (default, outputResolution field omitted)
+        // 720p = None (unset; now sent explicitly as "720p" on the wire)
         let prompt = "A corgi running through a field of stars";
         let args = make_args_with_prompt(prompt, &session, KinoviModelType::Seedance2Pro, None);
         let result = generate_video(args).await?;
