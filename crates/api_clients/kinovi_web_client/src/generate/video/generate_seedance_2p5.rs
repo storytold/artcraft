@@ -234,7 +234,7 @@ fn to_raw_request(req: GenerateSeedance2p5Request) -> WorkflowRunTaskRequest {
     model_type: KinoviModelTypeRaw::Seedance2p5,
     prompt: req.prompt,
     aspect_ratio,
-    output_resolution: req.output_resolution.map(map_output_resolution),
+    output_resolution: Some(map_output_resolution(req.output_resolution)),
     duration_seconds: req.duration_seconds,
     batch_count: KinoviBatchCountRaw::One,
     start_frame_url,
@@ -260,10 +260,12 @@ fn map_aspect_ratio(ar: Option<KinoviSeedance2p5AspectRatio>) -> KinoviAspectRat
   }
 }
 
-fn map_output_resolution(res: KinoviSeedance2p5OutputResolution) -> KinoviOutputResolutionRaw {
+fn map_output_resolution(res: Option<KinoviSeedance2p5OutputResolution>) -> KinoviOutputResolutionRaw {
   match res {
-    KinoviSeedance2p5OutputResolution::FourEightyP => KinoviOutputResolutionRaw::FourEightyP,
-    KinoviSeedance2p5OutputResolution::SevenTwentyP => KinoviOutputResolutionRaw::SevenTwentyP,
+    Some(KinoviSeedance2p5OutputResolution::FourEightyP) => KinoviOutputResolutionRaw::FourEightyP,
+    // Unset resolves to 720p — MUST stay in lockstep with calculate_costs(),
+    // which prices None as 720p.
+    Some(KinoviSeedance2p5OutputResolution::SevenTwentyP) | None => KinoviOutputResolutionRaw::SevenTwentyP,
   }
 }
 

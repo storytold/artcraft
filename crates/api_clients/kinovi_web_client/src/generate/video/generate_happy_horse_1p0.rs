@@ -119,7 +119,7 @@ pub async fn generate_happy_horse_1p0(
     model_type: KinoviModelTypeRaw::HappyHorse1p0,
     prompt: req.prompt,
     aspect_ratio: map_aspect_ratio(req.aspect_ratio),
-    output_resolution: req.output_resolution.map(map_output_resolution),
+    output_resolution: Some(map_output_resolution(req.output_resolution)),
     batch_count: map_batch_count(req.batch_count),
     duration_seconds: req.duration_seconds,
     start_frame_url: req.start_frame_url,
@@ -159,10 +159,12 @@ fn map_aspect_ratio(ar: Option<KinoviHappyHorse1p0AspectRatio>) -> KinoviAspectR
   }
 }
 
-fn map_output_resolution(res: KinoviHappyHorse1p0OutputResolution) -> KinoviOutputResolutionRaw {
+fn map_output_resolution(res: Option<KinoviHappyHorse1p0OutputResolution>) -> KinoviOutputResolutionRaw {
   match res {
-    KinoviHappyHorse1p0OutputResolution::SevenTwentyP => KinoviOutputResolutionRaw::SevenTwentyP,
-    KinoviHappyHorse1p0OutputResolution::TenEightyP => KinoviOutputResolutionRaw::TenEightyP,
+    // Unset resolves to 720p — MUST stay in lockstep with calculate_costs(),
+    // which prices None as 720p.
+    Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP) | None => KinoviOutputResolutionRaw::SevenTwentyP,
+    Some(KinoviHappyHorse1p0OutputResolution::TenEightyP) => KinoviOutputResolutionRaw::TenEightyP,
   }
 }
 

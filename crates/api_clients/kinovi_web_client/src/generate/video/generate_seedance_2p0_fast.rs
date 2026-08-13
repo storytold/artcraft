@@ -173,7 +173,7 @@ pub async fn generate_seedance_2p0_fast(
     model_type: KinoviModelTypeRaw::Seedance2Fast,
     prompt: req.prompt,
     aspect_ratio: map_aspect_ratio(req.aspect_ratio),
-    output_resolution: req.output_resolution.map(map_output_resolution),
+    output_resolution: Some(map_output_resolution(req.output_resolution)),
     batch_count: map_batch_count(req.batch_count),
     duration_seconds: req.duration_seconds,
     start_frame_url: req.start_frame_url,
@@ -214,10 +214,12 @@ fn map_aspect_ratio(ar: Option<KinoviSeedance2p0FastAspectRatio>) -> KinoviAspec
   }
 }
 
-fn map_output_resolution(res: KinoviSeedance2p0FastOutputResolution) -> KinoviOutputResolutionRaw {
+fn map_output_resolution(res: Option<KinoviSeedance2p0FastOutputResolution>) -> KinoviOutputResolutionRaw {
   match res {
-    KinoviSeedance2p0FastOutputResolution::FourEightyP => KinoviOutputResolutionRaw::FourEightyP,
-    KinoviSeedance2p0FastOutputResolution::SevenTwentyP => KinoviOutputResolutionRaw::SevenTwentyP,
+    Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => KinoviOutputResolutionRaw::FourEightyP,
+    // Unset resolves to 720p — MUST stay in lockstep with calculate_costs(),
+    // which prices None as 720p.
+    Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP) | None => KinoviOutputResolutionRaw::SevenTwentyP,
   }
 }
 

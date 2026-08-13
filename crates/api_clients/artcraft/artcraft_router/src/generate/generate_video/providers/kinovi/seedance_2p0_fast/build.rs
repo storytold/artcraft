@@ -118,7 +118,10 @@ fn plan_output_resolution(
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<KinoviOutputResolution>, ArtcraftRouterError> {
   match resolution {
-    None => Ok(None),
+    // Unset defaults to explicit 720p. Cost estimation prices unset as 720p,
+    // so the request must pin 720p too — never leave the resolution up to the
+    // provider's server-side default, or billing and supplier cost can diverge.
+    None => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
 
     // Direct mappings
     Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
@@ -421,10 +424,10 @@ mod tests {
     }
 
     #[test]
-    fn resolution_none() {
+    fn resolution_none_defaults_to_720p() {
       let builder = GenerateVideoRequestBuilder { resolution: None, ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
-      assert!(draft.resolution.is_none());
+      assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
     }
 
     #[test]
