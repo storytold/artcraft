@@ -25,6 +25,8 @@ use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_funct
   Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest,
   Seedance2p0MultiFunctionVideoGenResponse, Seedance2p0OutputResolution,
 };
+use artcraft_router::generate::generate_video::providers::artcraft::seedance_2p0::cost::ArtcraftSeedance2p0CostState;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
@@ -214,7 +216,16 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   let batch_count = map_batch_count(request.batch_count);
   let duration_seconds = request.duration_seconds.unwrap_or(5).clamp(4, 15);
 
-  let cost_in_cents = estimate_cost_upfront(aspect_ratio, output_resolution, batch_count, duration_seconds);
+  let has_video_reference = request.reference_video_media_tokens
+      .as_ref()
+      .is_some_and(|tokens| !tokens.is_empty());
+
+  let cost_in_cents = estimate_cost_upfront(
+    output_resolution,
+    batch_count,
+    duration_seconds,
+    has_video_reference,
+  );
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -605,30 +616,39 @@ fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> KinoviBatchCou
   }
 }
 
-/// Estimate the cost without needing uploaded URLs. We construct a temporary
-/// `GenerateVideoRequest` with dummy values for the URL fields.
+/// Price through the Artcraft Seedance 2.0 rate card — the same card the
+/// omni_gen pipeline bills through — so this legacy endpoint stays in
+/// lockstep with reprices and charges the with-video-reference rates.
+/// (It previously billed the kinovi client's raw supplier-cost estimate,
+/// which had no video-reference pricing at all.)
 fn estimate_cost_upfront(
-  aspect_ratio: KinoviAspectRatio,
   output_resolution: Option<KinoviOutputResolution>,
   batch_count: KinoviBatchCount,
   duration_seconds: u8,
+  has_video_reference: bool,
 ) -> u64 {
-  let request = KinoviGenerateVideoRequest {
-    model_type: KinoviModelType::Seedance2Pro,
-    prompt: String::new(),
-    aspect_ratio,
-    duration_seconds,
-    batch_count,
-    output_resolution,
-    start_frame_url: None,
-    end_frame_url: None,
-    reference_image_urls: None,
-    reference_video_urls: None,
-    reference_audio_urls: None,
-    character_ids: None,
-    use_face_blur_hack: None,
+  let resolution = match output_resolution {
+    Some(KinoviOutputResolution::FourEightyP) => CommonResolution::FourEightyP,
+    // Unset resolves to 720p, matching what the generation request sends.
+    Some(KinoviOutputResolution::SevenTwentyP) | None => CommonResolution::SevenTwentyP,
+    Some(KinoviOutputResolution::TenEightyP) => CommonResolution::TenEightyP,
   };
-  request.estimate_cost_in_usd_cents()
+
+  let batch_count = match batch_count {
+    KinoviBatchCount::One => 1,
+    KinoviBatchCount::Two => 2,
+    KinoviBatchCount::Four => 4,
+  };
+
+  ArtcraftSeedance2p0CostState {
+    resolution,
+    duration_seconds: u16::from(duration_seconds),
+    batch_count,
+    has_video_reference,
+  }
+    .estimate_cost()
+    .cost_in_usd_cents
+    .expect("the Artcraft Seedance 2.0 rate card always returns a price")
 }
 
 /// Uploads all media files and calls generate_video using the given session.
@@ -927,6 +947,79 @@ mod tests {
         validate_seedance_2p0_limits(&req),
         Err(CommonWebError::BadInputWithSimpleMessage(_))
       ));
+    }
+  }
+
+  mod pricing_tests {
+    use super::*;
+
+    #[test]
+    fn prices_720p_and_unset_identically() {
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 5, false), 80);
+      assert_eq!(estimate_cost_upfront(None, KinoviBatchCount::One, 5, false), 80);
+    }
+
+    #[test]
+    fn prices_480p_and_1080p() {
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::FourEightyP), KinoviBatchCount::One, 5, false), 39);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::TenEightyP), KinoviBatchCount::One, 5, false), 233);
+    }
+
+    #[test]
+    fn video_references_price_on_the_with_reference_card() {
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::FourEightyP), KinoviBatchCount::One, 5, true), 45);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 5, true), 111);
+      assert_eq!(estimate_cost_upfront(None, KinoviBatchCount::One, 5, true), 111);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::TenEightyP), KinoviBatchCount::One, 5, true), 256);
+    }
+
+    #[test]
+    fn batch_count_multiplies() {
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::Two, 5, false), 160);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::Four, 5, false), 320);
+    }
+
+    #[test]
+    fn ten_seconds_720p() {
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 10, false), 160);
+      assert_eq!(estimate_cost_upfront(Some(KinoviOutputResolution::SevenTwentyP), KinoviBatchCount::One, 10, true), 221);
+    }
+
+    /// The legacy endpoint must charge exactly what the Artcraft Seedance 2.0
+    /// rate card (the omni_gen billing path) charges for the same parameters.
+    #[test]
+    fn matches_artcraft_rate_card_for_all_combos() {
+      let resolutions = [
+        (None, CommonResolution::SevenTwentyP),
+        (Some(KinoviOutputResolution::FourEightyP), CommonResolution::FourEightyP),
+        (Some(KinoviOutputResolution::SevenTwentyP), CommonResolution::SevenTwentyP),
+        (Some(KinoviOutputResolution::TenEightyP), CommonResolution::TenEightyP),
+      ];
+      let batches = [(KinoviBatchCount::One, 1u16), (KinoviBatchCount::Two, 2), (KinoviBatchCount::Four, 4)];
+
+      for (kinovi_res, common_res) in resolutions {
+        for (kinovi_batch, batch_count) in batches {
+          for duration in [4u8, 5, 10, 15] {
+            for has_ref in [false, true] {
+              let card_cents = ArtcraftSeedance2p0CostState {
+                resolution: common_res,
+                duration_seconds: u16::from(duration),
+                batch_count,
+                has_video_reference: has_ref,
+              }
+                .estimate_cost()
+                .cost_in_usd_cents
+                .unwrap();
+
+              assert_eq!(
+                estimate_cost_upfront(kinovi_res, kinovi_batch, duration, has_ref),
+                card_cents,
+                "mismatch at res={kinovi_res:?} batch={batch_count} duration={duration} has_ref={has_ref}",
+              );
+            }
+          }
+        }
+      }
     }
   }
 
