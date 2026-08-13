@@ -139,12 +139,14 @@ impl KinoviAspectRatioRaw {
   }
 }
 
-/// Output resolution quality. When omitted, defaults to 720p.
+/// Output resolution quality. Always sent explicitly on the wire — we never
+/// omit the field and rely on the Kinovi server-side default, because the
+/// billed price assumes a specific resolution and the two must not diverge.
 #[derive(Debug, Clone, Copy)]
 pub enum KinoviOutputResolutionRaw {
   /// 480p
   FourEightyP,
-  /// 720p (default — omitting the field gives this)
+  /// 720p (what unset requests resolve to)
   SevenTwentyP,
   /// 1080p
   TenEightyP,
@@ -154,20 +156,8 @@ pub enum KinoviOutputResolutionRaw {
 }
 
 impl KinoviOutputResolutionRaw {
-  /// Returns the API string to send, or None for 720p (the default, which is
-  /// expressed by omitting the field entirely).
-  pub fn as_api_str(&self) -> Option<&'static str> {
-    match self {
-      Self::FourEightyP => Some("480p"),
-      Self::SevenTwentyP => None, // Default — omit from request
-      Self::TenEightyP => Some("1080p"),
-      Self::FourK => Some("4k"),
-    }
-  }
-
-  /// The API string including the "720p" default, for models that always
-  /// send `outputResolution` explicitly (Seedance 2.5 Preview).
-  pub fn as_explicit_api_str(&self) -> &'static str {
+  /// The API string to send.
+  pub fn as_api_str(&self) -> &'static str {
     match self {
       Self::FourEightyP => "480p",
       Self::SevenTwentyP => "720p",
@@ -289,9 +279,10 @@ impl KinoviModelTypeRaw {
     matches!(self, Self::Seedance2p5)
   }
 
-  /// Whether the default field values (`outputResolution: "720p"`,
-  /// `faceBlurMode: "off"`) are always sent explicitly rather than omitted.
-  /// The 2.5 family always sends both.
+  /// Whether the default `faceBlurMode: "off"` is always sent explicitly
+  /// rather than omitted. The 2.5 family always sends it.
+  /// (`outputResolution` is always sent explicitly for EVERY model — see
+  /// `build_batch_request` — so it is no longer governed by this flag.)
   fn always_sends_default_fields(&self) -> bool {
     matches!(self, Self::Seedance2p5Preview | Self::Seedance2p5)
   }
@@ -533,11 +524,13 @@ fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
     None => None,
   };
 
-  let output_resolution = if req.model_type.always_sends_default_fields() {
+  // ALWAYS send the resolution explicitly, defaulting unset to 720p. We used
+  // to omit the field for 720p (mimicking the Kinovi web UI) and let the
+  // server default apply, but that let the supplier-side resolution — and
+  // therefore the supplier cost — float free of what we billed. Pin it.
+  let output_resolution = {
     let resolution = req.output_resolution.unwrap_or(KinoviOutputResolutionRaw::SevenTwentyP);
-    Some(resolution.as_explicit_api_str())
-  } else {
-    req.output_resolution.and_then(|r| r.as_api_str())
+    Some(resolution.as_api_str())
   };
 
   let batch_count_value = req.batch_count.as_u8();
@@ -661,30 +654,30 @@ mod tests {
 
   // ── Output-resolution serialization ──
   //
-  // `outputResolution` is sent only when non-default; 720p (the default) omits
-  // the field. 4K serializes to the literal "4k".
+  // `outputResolution` is always sent explicitly; 720p serializes to the
+  // literal "720p" and 4K to the literal "4k".
 
   mod output_resolution_serialization_tests {
     use super::*;
 
     #[test]
     fn four_k_maps_to_4k() {
-      assert_eq!(KinoviOutputResolutionRaw::FourK.as_api_str(), Some("4k"));
+      assert_eq!(KinoviOutputResolutionRaw::FourK.as_api_str(), "4k");
     }
 
     #[test]
     fn four_k_serializes_on_the_wire() {
-      let api_params = base_api_params(KinoviOutputResolutionRaw::FourK.as_api_str());
+      let api_params = base_api_params(Some(KinoviOutputResolutionRaw::FourK.as_api_str()));
       let json = serde_json::to_string(&api_params).unwrap();
       assert!(json.contains(r#""outputResolution":"4k""#), "expected outputResolution in {json}");
     }
 
     #[test]
-    fn default_720p_omits_output_resolution() {
-      assert_eq!(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str(), None);
-      let api_params = base_api_params(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str());
+    fn default_720p_serializes_explicitly() {
+      assert_eq!(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str(), "720p");
+      let api_params = base_api_params(Some(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str()));
       let json = serde_json::to_string(&api_params).unwrap();
-      assert!(!json.contains("outputResolution"), "expected no outputResolution in {json}");
+      assert!(json.contains(r#""outputResolution":"720p""#), "expected outputResolution in {json}");
     }
 
     fn base_api_params(output_resolution: Option<&'static str>) -> ApiParams {
@@ -760,7 +753,7 @@ mod tests {
     }
 
     #[test]
-    fn mini_720p_omits_output_resolution() {
+    fn mini_unset_resolution_sends_explicit_720p() {
       let body = build_batch_request(mini_request(
         KinoviAspectRatioRaw::Landscape16x9,
         None,
@@ -768,7 +761,7 @@ mod tests {
       ));
       let json = serde_json::to_string(&body).unwrap();
       assert!(json.contains(r#""aspectRatio":"16:9""#), "{json}");
-      assert!(!json.contains("outputResolution"), "{json}");
+      assert!(json.contains(r#""outputResolution":"720p""#), "{json}");
     }
 
     #[test]

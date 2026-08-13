@@ -266,7 +266,8 @@ mod tests {
     fn from_draft_720p_default() {
       let draft = make_draft(5, 1, None, false);
       let cost = KinoviSeedance2p0FastCostState::from_draft(&draft);
-      assert!(cost.resolution.is_none());
+      // Unset resolution is pinned to explicit 720p at build time.
+      assert!(matches!(cost.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
       assert_eq!(cost.duration_seconds, 5);
       assert!(matches!(cost.batch_count, Some(KinoviBatchCount::One)));
       assert!(!cost.has_video_reference);

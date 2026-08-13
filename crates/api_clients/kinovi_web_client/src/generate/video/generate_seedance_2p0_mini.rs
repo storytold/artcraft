@@ -179,7 +179,7 @@ fn to_raw_request(req: GenerateSeedance2p0MiniRequest) -> WorkflowRunTaskRequest
     model_type: KinoviModelTypeRaw::Seedance2Mini,
     prompt: req.prompt,
     aspect_ratio: map_aspect_ratio(req.aspect_ratio),
-    output_resolution: req.output_resolution.map(map_output_resolution),
+    output_resolution: Some(map_output_resolution(req.output_resolution)),
     batch_count: map_batch_count(req.batch_count),
     duration_seconds: req.duration_seconds,
     start_frame_url: req.start_frame_url,
@@ -205,10 +205,12 @@ fn map_aspect_ratio(ar: Option<KinoviSeedance2p0MiniAspectRatio>) -> KinoviAspec
   }
 }
 
-fn map_output_resolution(res: KinoviSeedance2p0MiniOutputResolution) -> KinoviOutputResolutionRaw {
+fn map_output_resolution(res: Option<KinoviSeedance2p0MiniOutputResolution>) -> KinoviOutputResolutionRaw {
   match res {
-    KinoviSeedance2p0MiniOutputResolution::FourEightyP => KinoviOutputResolutionRaw::FourEightyP,
-    KinoviSeedance2p0MiniOutputResolution::SevenTwentyP => KinoviOutputResolutionRaw::SevenTwentyP,
+    Some(KinoviSeedance2p0MiniOutputResolution::FourEightyP) => KinoviOutputResolutionRaw::FourEightyP,
+    // Unset resolves to 720p — MUST stay in lockstep with calculate_costs(),
+    // which prices None as 720p.
+    Some(KinoviSeedance2p0MiniOutputResolution::SevenTwentyP) | None => KinoviOutputResolutionRaw::SevenTwentyP,
   }
 }
 
@@ -566,11 +568,11 @@ mod tests {
     }
 
     #[test]
-    fn default_resolution_maps_to_none() {
+    fn default_resolution_maps_to_720p() {
       let mut req = sample();
       req.output_resolution = None;
       let raw = to_raw_request(req);
-      assert!(raw.output_resolution.is_none());
+      assert!(matches!(raw.output_resolution, Some(KinoviOutputResolutionRaw::SevenTwentyP)));
     }
 
     #[test]
