@@ -186,7 +186,8 @@ mod tests {
   mod pricing_tests {
     use super::*;
 
-    const FLOAT_TOLERANCE: f64 = 1e-9;
+    /// Expected fractional cents are written to 4 decimal places.
+    const FLOAT_TOLERANCE: f64 = 0.0001;
 
     // ── Full pricing tables (credits) ──
     //
@@ -320,74 +321,74 @@ mod tests {
 
       #[test]
       fn consumer_cents_480p_4s() {
-        // 184.6 credits; 18460/192.98 = 95.6576 cents.
+        // 184.6 credits.
         let cost = r480(4).calculate_consumer_costs();
         assert_eq!(cost.usd_cents_rounded_up, 96);
         assert_eq!(cost.usd_cents_rounded_down, 95);
-        assert!((cost.usd_cents_fractional - (18460.0 / 192.98)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 95.6576).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn consumer_cents_480p_15s() {
-        // 692.25 credits; 69225/192.98 = 358.7159 cents.
+        // 692.25 credits.
         let cost = r480(15).calculate_consumer_costs();
         assert_eq!(cost.usd_cents_rounded_up, 359);
         assert_eq!(cost.usd_cents_rounded_down, 358);
-        assert!((cost.usd_cents_fractional - (69225.0 / 192.98)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 358.7159).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn consumer_cents_720p_4s() {
-        // 368.12 credits; 36812/192.98 = 190.7555 cents.
+        // 368.12 credits.
         let cost = r720(4).calculate_consumer_costs();
         assert_eq!(cost.usd_cents_rounded_up, 191);
         assert_eq!(cost.usd_cents_rounded_down, 190);
-        assert!((cost.usd_cents_fractional - (36812.0 / 192.98)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 190.7555).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn consumer_cents_720p_30s() {
-        // 2760.9 credits; 276090/192.98 = 1430.6664 cents.
+        // 2760.9 credits.
         let cost = r720(30).calculate_consumer_costs();
         assert_eq!(cost.usd_cents_rounded_up, 1431);
         assert_eq!(cost.usd_cents_rounded_down, 1430);
-        assert!((cost.usd_cents_fractional - (276090.0 / 192.98)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 1430.6664).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn enterprise_cents_480p_4s() {
-        // 168.52 credits; 16852/243.16 = 69.3041 cents.
+        // 168.52 credits.
         let cost = r480(4).calculate_enterprise_costs();
         assert_eq!(cost.usd_cents_rounded_up, 70);
         assert_eq!(cost.usd_cents_rounded_down, 69);
-        assert!((cost.usd_cents_fractional - (16852.0 / 243.16)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 69.3042).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn enterprise_cents_480p_15s() {
-        // 631.95 credits; 63195/243.16 = 259.8906 cents.
+        // 631.95 credits.
         let cost = r480(15).calculate_enterprise_costs();
         assert_eq!(cost.usd_cents_rounded_up, 260);
         assert_eq!(cost.usd_cents_rounded_down, 259);
-        assert!((cost.usd_cents_fractional - (63195.0 / 243.16)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 259.8906).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn enterprise_cents_720p_4s() {
-        // 337.04 credits; 33704/243.16 = 138.6083 cents.
+        // 337.04 credits.
         let cost = r720(4).calculate_enterprise_costs();
         assert_eq!(cost.usd_cents_rounded_up, 139);
         assert_eq!(cost.usd_cents_rounded_down, 138);
-        assert!((cost.usd_cents_fractional - (33704.0 / 243.16)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 138.6083).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
       fn enterprise_cents_720p_30s() {
-        // 2527.8 credits; 252780/243.16 = 1039.5624 cents.
+        // 2527.8 credits.
         let cost = r720(30).calculate_enterprise_costs();
         assert_eq!(cost.usd_cents_rounded_up, 1040);
         assert_eq!(cost.usd_cents_rounded_down, 1039);
-        assert!((cost.usd_cents_fractional - (252780.0 / 243.16)).abs() < FLOAT_TOLERANCE);
+        assert!((cost.usd_cents_fractional - 1039.5624).abs() < FLOAT_TOLERANCE);
       }
     }
 

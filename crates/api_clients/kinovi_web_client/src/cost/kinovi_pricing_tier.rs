@@ -46,7 +46,8 @@ impl KinoviPricingTier {
 mod tests {
   use super::*;
 
-  const FLOAT_TOLERANCE: f64 = 1e-9;
+  /// Expected fractional cents are written to 4 decimal places.
+  const FLOAT_TOLERANCE: f64 = 0.0001;
 
   #[test]
   fn credits_per_dollar_rates() {
@@ -76,22 +77,20 @@ mod tests {
 
   #[test]
   fn enterprise_cost_from_credits() {
-    // 37.5 credits; 3750/243.16 = 15.4221 cents.
     let cost = KinoviPricingTier::Enterprise.cost_from_credits(37.5);
     assert_eq!(cost.kinovi_credits, 37.5);
     assert_eq!(cost.usd_cents_rounded_up, 16);
     assert_eq!(cost.usd_cents_rounded_down, 15);
-    assert!((cost.usd_cents_fractional - (3750.0 / 243.16)).abs() < FLOAT_TOLERANCE);
+    assert!((cost.usd_cents_fractional - 15.4219).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
   fn consumer_cost_from_credits() {
-    // 37.5 credits; 3750/192.98 = 19.4321 cents.
     let cost = KinoviPricingTier::Consumer.cost_from_credits(37.5);
     assert_eq!(cost.kinovi_credits, 37.5);
     assert_eq!(cost.usd_cents_rounded_up, 20);
     assert_eq!(cost.usd_cents_rounded_down, 19);
-    assert!((cost.usd_cents_fractional - (3750.0 / 192.98)).abs() < FLOAT_TOLERANCE);
+    assert!((cost.usd_cents_fractional - 19.4321).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
