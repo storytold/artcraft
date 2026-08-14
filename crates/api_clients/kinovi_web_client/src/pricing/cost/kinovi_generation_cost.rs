@@ -1,4 +1,4 @@
-use crate::cost::constants::ENTERPRISE_CREDITS_PER_DOLLAR;
+use crate::pricing::constants::ENTERPRISE_CREDITS_PER_DOLLAR;
 
 /// The cost of a Kinovi generation, in both native credits and USD cents.
 #[derive(Clone, Copy, Debug, PartialEq)]

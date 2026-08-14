@@ -1,4 +1,4 @@
-use crate::cost::kinovi_pricing_tier::KinoviPricingTier;
+use crate::pricing::kinovi_pricing_tier::KinoviPricingTier;
 
 /// The credit cost of one billable unit (e.g. one second of video for the
 /// Seedance models) at each pricing tier.

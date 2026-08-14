@@ -1,4 +1,4 @@
-use crate::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
+use crate::pricing::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WHY THIS TYPE EXISTS (don't merge it into KinoviSeedanceGenerationCost):
@@ -24,7 +24,7 @@ use crate::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCo
 /// The cost of a Kinovi Seedance 2.0 Mini generation, with the video-reference
 /// surcharge broken out from the base price.
 ///
-/// Mirrors [`crate::cost::kinovi_seedance_generation_cost::KinoviSeedanceGenerationCost`],
+/// Mirrors [`crate::pricing::cost::kinovi_seedance_generation_cost::KinoviSeedanceGenerationCost`],
 /// but with FRACTIONAL credits (see the module note above).
 ///
 /// `total_cost` covers base + surcharge. NB: the total's USD conversions are

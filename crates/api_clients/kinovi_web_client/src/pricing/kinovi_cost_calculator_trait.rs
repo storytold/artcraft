@@ -1,4 +1,4 @@
-use crate::cost::kinovi_pricing_tier::KinoviPricingTier;
+use crate::pricing::kinovi_pricing_tier::KinoviPricingTier;
 
 /// Prices a generation request at either pricing tier.
 ///

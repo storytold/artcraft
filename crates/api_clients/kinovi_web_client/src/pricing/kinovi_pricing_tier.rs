@@ -1,5 +1,5 @@
-use crate::cost::constants::{CONSUMER_CREDITS_PER_DOLLAR_FLOAT, ENTERPRISE_CREDITS_PER_DOLLAR_FLOAT};
-use crate::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
+use crate::pricing::constants::{CONSUMER_CREDITS_PER_DOLLAR_FLOAT, ENTERPRISE_CREDITS_PER_DOLLAR_FLOAT};
+use crate::pricing::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
 
 /// Which credit purchase rate and per-model credit rate to price against.
 ///

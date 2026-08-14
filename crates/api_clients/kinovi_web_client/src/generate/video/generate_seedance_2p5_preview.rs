@@ -1,9 +1,9 @@
 use crate::creds::kinovi_web_session::KinoviWebSession;
 use crate::error::kinovi_web_error::KinoviWebError;
-use crate::cost::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
-use crate::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
-use crate::cost::kinovi_pricing_rate::KinoviPricingRate;
-use crate::cost::kinovi_pricing_tier::KinoviPricingTier;
+use crate::pricing::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
+use crate::pricing::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
+use crate::pricing::kinovi_pricing_rate::KinoviPricingRate;
+use crate::pricing::kinovi_pricing_tier::KinoviPricingTier;
 use crate::requests::kinovi_host::KinoviHost;
 use crate::requests::workflow_run_task::workflow_run_task::{
   workflow_run_task, KinoviAspectRatioRaw, KinoviBatchCountRaw, KinoviModelTypeRaw,

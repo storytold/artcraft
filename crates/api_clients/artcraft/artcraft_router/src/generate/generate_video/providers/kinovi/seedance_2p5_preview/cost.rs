@@ -1,4 +1,4 @@
-use kinovi_web_client::cost::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
+use kinovi_web_client::pricing::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
 use kinovi_web_client::generate::video::generate_seedance_2p5_preview::{
   GenerateSeedance2p5PreviewRequest, KinoviSeedance2p5PreviewOutputResolution,
 };

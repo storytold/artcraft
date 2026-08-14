@@ -1,10 +1,10 @@
-use crate::cost::constants::ENTERPRISE_CREDITS_PER_DOLLAR;
+use crate::pricing::constants::ENTERPRISE_CREDITS_PER_DOLLAR;
 
 /// The cost of a Kinovi generation that bills FRACTIONAL credits, in both
 /// native credits and USD cents.
 ///
 /// This is the fractional-credit counterpart of
-/// [`crate::cost::kinovi_generation_cost::KinoviGenerationCost`] (which uses
+/// [`crate::pricing::cost::kinovi_generation_cost::KinoviGenerationCost`] (which uses
 /// `u64`). Some Kinovi models bill non-integer credits — e.g. Seedance 2.0
 /// Mini at 480p bills 7.5 credits/sec, landing on half-credits like 37.5 at
 /// odd durations. Any model with a fractional credit rate uses this type;
