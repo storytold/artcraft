@@ -1,3 +1,4 @@
+use kinovi_web_client::cost::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
 use kinovi_web_client::generate::video::generate_seedance_2p5_preview::{
   GenerateSeedance2p5PreviewRequest, KinoviSeedance2p5PreviewOutputResolution,
 };
@@ -43,8 +44,10 @@ impl KinoviSeedance2p5PreviewCostState {
       use_face_blur_hack: None,
     };
 
-    let costs = pricing_request.calculate_costs();
-    // 2.5 Preview bills fractional credits (46.81/sec at 480p). The router's
+    // Enterprise tier: what generations actually cost us (our discounted
+    // per-model credit rate at our bulk credit purchase rate).
+    let costs = pricing_request.calculate_enterprise_costs();
+    // 2.5 Preview bills fractional credits (42.13/sec at 480p). The router's
     // credit field is an integer, so round to the nearest credit; the USD
     // cents (the authoritative charge) are already rounded up.
     let cost_in_credits = costs.kinovi_credits.round() as u64;
@@ -75,24 +78,24 @@ mod tests {
 
     #[test]
     fn credits_480p() {
-      // 46.81 credits/s: 187.24 → 187, 702.15 → 702, 1170.25 → 1170.
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 4), 187);
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 10), 468);
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 15), 702);
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 20), 936);
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 25), 1170);
-      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 30), 1404);
+      // Enterprise 42.13 credits/s: 168.52 → 169, 631.95 → 632, 1053.25 → 1053.
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 4), 169);
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 10), 421);
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 15), 632);
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 20), 843);
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 25), 1053);
+      assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 30), 1264);
     }
 
     #[test]
     fn credits_720p() {
-      // 93.62 credits/s: 374.48 → 374, 1404.3 → 1404, 2808.6 → 2809.
-      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 4), 374);
-      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 10), 936);
-      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 15), 1404);
-      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 20), 1872);
-      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 25), 2341);
-      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 30), 2809);
+      // Enterprise 84.26 credits/s: 337.04 → 337, 1263.9 → 1264, 2106.5 → 2107.
+      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 4), 337);
+      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 10), 843);
+      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 15), 1264);
+      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 20), 1685);
+      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 25), 2107);
+      assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 30), 2528);
     }
 
     #[test]
@@ -108,16 +111,16 @@ mod tests {
 
     #[test]
     fn cents_480p() {
-      // 187.24 credits → 18724/243 = 77.05 → 78¢; 702.15 → 288.95 → 289¢.
-      assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 4), 78);
-      assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 15), 289);
+      // 168.52 credits → 16852/243 = 69.35 → 70¢; 631.95 → 260.06 → 261¢.
+      assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 4), 70);
+      assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 15), 261);
     }
 
     #[test]
     fn cents_720p() {
-      // 374.48 credits → 37448/243 = 154.11 → 155¢; 2808.6 → 1155.80 → 1156¢.
-      assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 4), 155);
-      assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 30), 1156);
+      // 337.04 credits → 33704/243 = 138.70 → 139¢; 2527.8 → 1040.25 → 1041¢.
+      assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 4), 139);
+      assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 30), 1041);
     }
   }
 
