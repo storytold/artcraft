@@ -321,8 +321,8 @@ mod tests {
 
       #[test]
       fn consumer_cents_480p_4s() {
-        // 184.6 credits.
         let cost = r480(4).calculate_consumer_costs();
+        assert_eq!(cost.kinovi_credits, 184.6);
         assert_eq!(cost.usd_cents_rounded_up, 96);
         assert_eq!(cost.usd_cents_rounded_down, 95);
         assert!((cost.usd_cents_fractional - 95.6576).abs() < FLOAT_TOLERANCE);
@@ -330,8 +330,8 @@ mod tests {
 
       #[test]
       fn consumer_cents_480p_15s() {
-        // 692.25 credits.
         let cost = r480(15).calculate_consumer_costs();
+        assert_eq!(cost.kinovi_credits, 692.25);
         assert_eq!(cost.usd_cents_rounded_up, 359);
         assert_eq!(cost.usd_cents_rounded_down, 358);
         assert!((cost.usd_cents_fractional - 358.7159).abs() < FLOAT_TOLERANCE);
@@ -339,8 +339,8 @@ mod tests {
 
       #[test]
       fn consumer_cents_720p_4s() {
-        // 368.12 credits.
         let cost = r720(4).calculate_consumer_costs();
+        assert_eq!(cost.kinovi_credits, 368.12);
         assert_eq!(cost.usd_cents_rounded_up, 191);
         assert_eq!(cost.usd_cents_rounded_down, 190);
         assert!((cost.usd_cents_fractional - 190.7555).abs() < FLOAT_TOLERANCE);
@@ -348,8 +348,8 @@ mod tests {
 
       #[test]
       fn consumer_cents_720p_30s() {
-        // 2760.9 credits.
         let cost = r720(30).calculate_consumer_costs();
+        assert_eq!(cost.kinovi_credits, 2760.9);
         assert_eq!(cost.usd_cents_rounded_up, 1431);
         assert_eq!(cost.usd_cents_rounded_down, 1430);
         assert!((cost.usd_cents_fractional - 1430.6664).abs() < FLOAT_TOLERANCE);
@@ -357,8 +357,8 @@ mod tests {
 
       #[test]
       fn enterprise_cents_480p_4s() {
-        // 168.52 credits.
         let cost = r480(4).calculate_enterprise_costs();
+        assert_eq!(cost.kinovi_credits, 168.52);
         assert_eq!(cost.usd_cents_rounded_up, 70);
         assert_eq!(cost.usd_cents_rounded_down, 69);
         assert!((cost.usd_cents_fractional - 69.3042).abs() < FLOAT_TOLERANCE);
@@ -366,8 +366,8 @@ mod tests {
 
       #[test]
       fn enterprise_cents_480p_15s() {
-        // 631.95 credits.
         let cost = r480(15).calculate_enterprise_costs();
+        assert_eq!(cost.kinovi_credits, 631.95);
         assert_eq!(cost.usd_cents_rounded_up, 260);
         assert_eq!(cost.usd_cents_rounded_down, 259);
         assert!((cost.usd_cents_fractional - 259.8906).abs() < FLOAT_TOLERANCE);
@@ -375,8 +375,8 @@ mod tests {
 
       #[test]
       fn enterprise_cents_720p_4s() {
-        // 337.04 credits.
         let cost = r720(4).calculate_enterprise_costs();
+        assert_eq!(cost.kinovi_credits, 337.04);
         assert_eq!(cost.usd_cents_rounded_up, 139);
         assert_eq!(cost.usd_cents_rounded_down, 138);
         assert!((cost.usd_cents_fractional - 138.6083).abs() < FLOAT_TOLERANCE);
@@ -384,8 +384,8 @@ mod tests {
 
       #[test]
       fn enterprise_cents_720p_30s() {
-        // 2527.8 credits.
         let cost = r720(30).calculate_enterprise_costs();
+        assert_eq!(cost.kinovi_credits, 2527.8);
         assert_eq!(cost.usd_cents_rounded_up, 1040);
         assert_eq!(cost.usd_cents_rounded_down, 1039);
         assert!((cost.usd_cents_fractional - 1039.5624).abs() < FLOAT_TOLERANCE);
