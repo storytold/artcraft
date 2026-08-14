@@ -1,32 +1,12 @@
 use crate::pricing::cost::kinovi_fractional_generation_cost::KinoviFractionalGenerationCost;
 use crate::pricing::kinovi_pricing_tier::KinoviPricingTier;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// WHY THIS TYPE EXISTS (don't merge it into KinoviSeedanceGenerationCost):
-//
-// This is the fractional twin of `KinoviSeedanceGenerationCost`. It is
-// structurally identical (base + optional video-reference surcharge = total)
-// and prices the SAME way conceptually — but its credits are fractional
-// (`KinoviFractionalGenerationCost`, `f64`) rather than whole
-// (`KinoviGenerationCost`, `u64`).
-//
-// Seedance 2.0 Mini at 480p bills 7.5 credits/sec, so odd durations land on
-// FRACTIONAL credits (5s = 37.5, 15s = 112.5), and Seedance 2.0's enterprise
-// rates are fractional (37.9 credits/sec at 720p). The remaining whole-credit
-// Seedance video models use `KinoviSeedanceGenerationCost` (u64 credits).
-//
-// Making the shared `u64` credit type fractional would ripple `f64` through
-// those whole-credit models AND `artcraft_router` (which stores credits as
-// `u64`), forcing hundreds of integer-literal edits. Keeping fractional
-// credits in their own small type is the cheaper, better-isolated choice.
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// The cost of a fractional-credit Kinovi Seedance generation (Seedance 2.0,
-/// Seedance 2.0 Mini), with the video-reference surcharge broken out from the
-/// base price.
+/// The cost of a Kinovi Seedance generation (Seedance 2.0, Fast, and Mini),
+/// with the video-reference surcharge broken out from the base price.
 ///
-/// Mirrors [`crate::pricing::cost::kinovi_seedance_generation_cost::KinoviSeedanceGenerationCost`],
-/// but with FRACTIONAL credits (see the module note above).
+/// Credits are fractional (`f64`): Mini's consumer 480p rate is 7.5/sec, and
+/// the enterprise discount rates land on fractional credits at most
+/// durations (e.g. Seedance 2.0 at 37.9/sec).
 ///
 /// `total_cost` covers base + surcharge. NB: the total's USD conversions are
 /// computed from the SUMMED credits (rounded once), so they may differ by a
