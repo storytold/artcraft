@@ -302,7 +302,7 @@ mod tests {
     // The standard published rates: 480p 15/s, 720p 40/s, 1080p 90/s,
     // 4K 200/s. Batch count multiplies the total.
 
-    mod consumer_credits_tables {
+    mod consumer_pricing_tables {
       use super::*;
 
       #[test]
@@ -311,6 +311,11 @@ mod tests {
         assert_eq!(consumer_credits(&r480(5)), 75.0);
         assert_eq!(consumer_credits(&r480(10)), 150.0);
         assert_eq!(consumer_credits(&r480(15)), 225.0);
+
+        assert_eq!(consumer_cents(&r480(4)), 32);
+        assert_eq!(consumer_cents(&r480(5)), 39);
+        assert_eq!(consumer_cents(&r480(10)), 78);
+        assert_eq!(consumer_cents(&r480(15)), 117);
       }
 
       #[test]
@@ -319,6 +324,25 @@ mod tests {
         assert_eq!(consumer_credits(&r720(5)), 200.0);
         assert_eq!(consumer_credits(&r720(10)), 400.0);
         assert_eq!(consumer_credits(&r720(15)), 600.0);
+
+        assert_eq!(consumer_cents(&r720(4)), 83);
+        assert_eq!(consumer_cents(&r720(5)), 104);
+        assert_eq!(consumer_cents(&r720(10)), 208);
+        assert_eq!(consumer_cents(&r720(15)), 311);
+      }
+
+      #[test]
+      fn table_720p_with_video_reference() {
+        // 48 credits/sec (40 base + 8 surcharge).
+        assert_eq!(consumer_credits(&with_video_ref(r720(4))), 192.0);
+        assert_eq!(consumer_credits(&with_video_ref(r720(5))), 240.0);
+        assert_eq!(consumer_credits(&with_video_ref(r720(10))), 480.0);
+        assert_eq!(consumer_credits(&with_video_ref(r720(15))), 720.0);
+
+        assert_eq!(consumer_cents(&with_video_ref(r720(4))), 100);
+        assert_eq!(consumer_cents(&with_video_ref(r720(5))), 125);
+        assert_eq!(consumer_cents(&with_video_ref(r720(10))), 249);
+        assert_eq!(consumer_cents(&with_video_ref(r720(15))), 374);
       }
 
       #[test]
@@ -327,6 +351,11 @@ mod tests {
         assert_eq!(consumer_credits(&r1080(5)), 450.0);
         assert_eq!(consumer_credits(&r1080(10)), 900.0);
         assert_eq!(consumer_credits(&r1080(15)), 1350.0);
+
+        assert_eq!(consumer_cents(&r1080(4)), 187);
+        assert_eq!(consumer_cents(&r1080(5)), 234);
+        assert_eq!(consumer_cents(&r1080(10)), 467);
+        assert_eq!(consumer_cents(&r1080(15)), 700);
       }
 
       #[test]
@@ -335,6 +364,11 @@ mod tests {
         assert_eq!(consumer_credits(&r4k(5)), 1000.0);
         assert_eq!(consumer_credits(&r4k(10)), 2000.0);
         assert_eq!(consumer_credits(&r4k(15)), 3000.0);
+
+        assert_eq!(consumer_cents(&r4k(4)), 415);
+        assert_eq!(consumer_cents(&r4k(5)), 519);
+        assert_eq!(consumer_cents(&r4k(10)), 1037);
+        assert_eq!(consumer_cents(&r4k(15)), 1555);
       }
 
       #[test]
@@ -344,6 +378,11 @@ mod tests {
         assert_eq!(consumer_credits(&with_video_ref(r4k(5))), 1200.0);
         assert_eq!(consumer_credits(&with_video_ref(r4k(10))), 2400.0);
         assert_eq!(consumer_credits(&with_video_ref(r4k(15))), 3600.0);
+
+        assert_eq!(consumer_cents(&with_video_ref(r4k(4))), 498);
+        assert_eq!(consumer_cents(&with_video_ref(r4k(5))), 622);
+        assert_eq!(consumer_cents(&with_video_ref(r4k(10))), 1244);
+        assert_eq!(consumer_cents(&with_video_ref(r4k(15))), 1866);
       }
 
       #[test]
@@ -368,14 +407,25 @@ mod tests {
         assert_eq!(enterprise_credits(&r720(5)), 189.5);
         assert_eq!(enterprise_credits(&r720(10)), 379.0);
         assert_eq!(enterprise_credits(&r720(15)), 568.5);
+
+        assert_eq!(enterprise_cents(&r720(4)), 63);
+        assert_eq!(enterprise_cents(&r720(5)), 78);
+        assert_eq!(enterprise_cents(&r720(10)), 156);
+        assert_eq!(enterprise_cents(&r720(15)), 234);
       }
 
       #[test]
       fn table_with_video_reference() {
         // 45.48 credits/sec combined.
+        assert_eq!(enterprise_credits(&with_video_ref(r720(4))), 181.92);
         assert_eq!(enterprise_credits(&with_video_ref(r720(5))), 227.4);
         assert_eq!(enterprise_credits(&with_video_ref(r720(10))), 454.8);
         assert_eq!(enterprise_credits(&with_video_ref(r720(15))), 682.2);
+
+        assert_eq!(enterprise_cents(&with_video_ref(r720(4))), 75);
+        assert_eq!(enterprise_cents(&with_video_ref(r720(5))), 94);
+        assert_eq!(enterprise_cents(&with_video_ref(r720(10))), 188);
+        assert_eq!(enterprise_cents(&with_video_ref(r720(15))), 281);
       }
 
       #[test]
@@ -384,6 +434,10 @@ mod tests {
         assert_eq!(costs.base_cost.kinovi_credits, 189.5); // 5s × 37.9
         assert_eq!(costs.video_reference_surcharge_cost.map(|c| c.kinovi_credits), Some(37.9)); // 5s × 7.58
         assert_eq!(costs.total_cost.kinovi_credits, 227.4); // 5s × 45.48
+
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 94);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 93);
+        assert!((costs.total_cost.usd_cents_fractional - 93.5187).abs() < FLOAT_TOLERANCE);
       }
 
       #[test]
@@ -409,111 +463,51 @@ mod tests {
       }
 
       #[test]
+      fn table_480p() {
+        assert_eq!(enterprise_credits(&r480(4)), 60.0);
+        assert_eq!(enterprise_credits(&r480(5)), 75.0);
+        assert_eq!(enterprise_credits(&r480(10)), 150.0);
+        assert_eq!(enterprise_credits(&r480(15)), 225.0);
+
+        assert_eq!(enterprise_cents(&r480(4)), 25);
+        assert_eq!(enterprise_cents(&r480(5)), 31);
+        assert_eq!(enterprise_cents(&r480(10)), 62);
+        assert_eq!(enterprise_cents(&r480(15)), 93);
+      }
+
+      #[test]
+      fn table_1080p() {
+        assert_eq!(enterprise_credits(&r1080(4)), 360.0);
+        assert_eq!(enterprise_credits(&r1080(5)), 450.0);
+        assert_eq!(enterprise_credits(&r1080(10)), 900.0);
+        assert_eq!(enterprise_credits(&r1080(15)), 1350.0);
+
+        assert_eq!(enterprise_cents(&r1080(4)), 149);
+        assert_eq!(enterprise_cents(&r1080(5)), 186);
+        assert_eq!(enterprise_cents(&r1080(10)), 371);
+        assert_eq!(enterprise_cents(&r1080(15)), 556);
+      }
+
+      #[test]
+      fn table_4k() {
+        assert_eq!(enterprise_credits(&r4k(4)), 800.0);
+        assert_eq!(enterprise_credits(&r4k(5)), 1000.0);
+        assert_eq!(enterprise_credits(&r4k(10)), 2000.0);
+        assert_eq!(enterprise_credits(&r4k(15)), 3000.0);
+
+        assert_eq!(enterprise_cents(&r4k(4)), 330);
+        assert_eq!(enterprise_cents(&r4k(5)), 412);
+        assert_eq!(enterprise_cents(&r4k(10)), 823);
+        assert_eq!(enterprise_cents(&r4k(15)), 1234);
+      }
+
+      #[test]
       fn usd_is_still_cheaper_at_the_enterprise_purchase_rate() {
         for request in [r480(5), r1080(5), r4k(5)] {
           let consumer = request.calculate_consumer_costs().total_cost.usd_cents_fractional;
           let enterprise = request.calculate_enterprise_costs().total_cost.usd_cents_fractional;
           assert!(enterprise < consumer);
         }
-      }
-    }
-
-    // ── USD cents ──
-    //
-    // usd_cents = credits × 100 / credits_per_dollar. Consumer converts at
-    // 192.98 credits/$1; enterprise converts at the bulk rate of 243.16.
-
-    mod usd_cents {
-      use super::*;
-
-      #[test]
-      fn consumer_cents_480p_5s() {
-        let cost = r480(5).calculate_consumer_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 75.0);
-        assert_eq!(cost.usd_cents_rounded_up, 39);
-        assert_eq!(cost.usd_cents_rounded_down, 38);
-        assert!((cost.usd_cents_fractional - 38.8641).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn consumer_cents_720p_5s() {
-        let cost = r720(5).calculate_consumer_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 200.0);
-        assert_eq!(cost.usd_cents_rounded_up, 104);
-        assert_eq!(cost.usd_cents_rounded_down, 103);
-        assert!((cost.usd_cents_fractional - 103.6377).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn consumer_cents_720p_10s() {
-        let cost = r720(10).calculate_consumer_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 400.0);
-        assert_eq!(cost.usd_cents_rounded_up, 208);
-        assert_eq!(cost.usd_cents_rounded_down, 207);
-        assert!((cost.usd_cents_fractional - 207.2754).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn consumer_cents_1080p_5s() {
-        let cost = r1080(5).calculate_consumer_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 450.0);
-        assert_eq!(cost.usd_cents_rounded_up, 234);
-        assert_eq!(cost.usd_cents_rounded_down, 233);
-        assert!((cost.usd_cents_fractional - 233.1848).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn consumer_cents_4k_5s() {
-        let cost = r4k(5).calculate_consumer_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 1000.0);
-        assert_eq!(cost.usd_cents_rounded_up, 519);
-        assert_eq!(cost.usd_cents_rounded_down, 518);
-        assert!((cost.usd_cents_fractional - 518.1884).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn enterprise_cents_720p_5s() {
-        let cost = r720(5).calculate_enterprise_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 189.5);
-        assert_eq!(cost.usd_cents_rounded_up, 78);
-        assert_eq!(cost.usd_cents_rounded_down, 77);
-        assert!((cost.usd_cents_fractional - 77.9322).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn enterprise_cents_720p_10s() {
-        let cost = r720(10).calculate_enterprise_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 379.0);
-        assert_eq!(cost.usd_cents_rounded_up, 156);
-        assert_eq!(cost.usd_cents_rounded_down, 155);
-        assert!((cost.usd_cents_fractional - 155.8645).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn enterprise_cents_720p_5s_with_video_reference() {
-        let cost = with_video_ref(r720(5)).calculate_enterprise_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 227.4);
-        assert_eq!(cost.usd_cents_rounded_up, 94);
-        assert_eq!(cost.usd_cents_rounded_down, 93);
-        assert!((cost.usd_cents_fractional - 93.5187).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn enterprise_cents_480p_5s_fallback() {
-        let cost = r480(5).calculate_enterprise_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 75.0);
-        assert_eq!(cost.usd_cents_rounded_up, 31);
-        assert_eq!(cost.usd_cents_rounded_down, 30);
-        assert!((cost.usd_cents_fractional - 30.8439).abs() < FLOAT_TOLERANCE);
-      }
-
-      #[test]
-      fn enterprise_cents_4k_5s_fallback() {
-        let cost = r4k(5).calculate_enterprise_costs().total_cost;
-        assert_eq!(cost.kinovi_credits, 1000.0);
-        assert_eq!(cost.usd_cents_rounded_up, 412);
-        assert_eq!(cost.usd_cents_rounded_down, 411);
-        assert!((cost.usd_cents_fractional - 411.2519).abs() < FLOAT_TOLERANCE);
       }
     }
 
@@ -762,8 +756,16 @@ mod tests {
       request.calculate_consumer_costs().total_cost.kinovi_credits
     }
 
+    fn consumer_cents(request: &GenerateSeedance2p0Request) -> u64 {
+      request.calculate_consumer_costs().total_cost.usd_cents_rounded_up
+    }
+
     fn enterprise_credits(request: &GenerateSeedance2p0Request) -> f64 {
       request.calculate_enterprise_costs().total_cost.kinovi_credits
+    }
+
+    fn enterprise_cents(request: &GenerateSeedance2p0Request) -> u64 {
+      request.calculate_enterprise_costs().total_cost.usd_cents_rounded_up
     }
   }
 
