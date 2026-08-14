@@ -50,28 +50,48 @@ mod tests {
 
   #[test]
   fn credits_per_dollar_rates() {
-    assert_eq!(KinoviPricingTier::Enterprise.credits_per_dollar(), 243.0);
-    assert_eq!(KinoviPricingTier::Consumer.credits_per_dollar(), 193.0);
+    assert_eq!(KinoviPricingTier::Enterprise.credits_per_dollar(), 243.16);
+    assert_eq!(KinoviPricingTier::Consumer.credits_per_dollar(), 192.98);
+  }
+
+  #[test]
+  fn spot_check_enterprise() {
+    // One dollar's worth of credits at the enterprise rate = exactly 100¢.
+    // Breaks if the rate changes.
+    assert_eq!(KinoviPricingTier::Enterprise.cost_from_credits(243.16).kinovi_credits, 243.16);
+    assert_eq!(KinoviPricingTier::Enterprise.cost_from_credits(243.16).usd_cents_rounded_up, 100);
+    assert_eq!(KinoviPricingTier::Enterprise.cost_from_credits(243.16).usd_cents_rounded_down, 100);
+    assert_eq!(KinoviPricingTier::Enterprise.cost_from_credits(243.16).usd_cents_fractional, 100.0);
+  }
+
+  #[test]
+  fn spot_check_consumer() {
+    // One dollar's worth of credits at the consumer rate = exactly 100¢.
+    // Breaks if the rate changes.
+    assert_eq!(KinoviPricingTier::Consumer.cost_from_credits(192.98).kinovi_credits, 192.98);
+    assert_eq!(KinoviPricingTier::Consumer.cost_from_credits(192.98).usd_cents_rounded_up, 100);
+    assert_eq!(KinoviPricingTier::Consumer.cost_from_credits(192.98).usd_cents_rounded_down, 100);
+    assert_eq!(KinoviPricingTier::Consumer.cost_from_credits(192.98).usd_cents_fractional, 100.0);
   }
 
   #[test]
   fn enterprise_cost_from_credits() {
-    // 37.5 credits; 3750/243 = 15.4320 cents.
+    // 37.5 credits; 3750/243.16 = 15.4221 cents.
     let cost = KinoviPricingTier::Enterprise.cost_from_credits(37.5);
     assert_eq!(cost.kinovi_credits, 37.5);
     assert_eq!(cost.usd_cents_rounded_up, 16);
     assert_eq!(cost.usd_cents_rounded_down, 15);
-    assert!((cost.usd_cents_fractional - (3750.0 / 243.0)).abs() < FLOAT_TOLERANCE);
+    assert!((cost.usd_cents_fractional - (3750.0 / 243.16)).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
   fn consumer_cost_from_credits() {
-    // 37.5 credits; 3750/193 = 19.4301 cents.
+    // 37.5 credits; 3750/192.98 = 19.4321 cents.
     let cost = KinoviPricingTier::Consumer.cost_from_credits(37.5);
     assert_eq!(cost.kinovi_credits, 37.5);
     assert_eq!(cost.usd_cents_rounded_up, 20);
     assert_eq!(cost.usd_cents_rounded_down, 19);
-    assert!((cost.usd_cents_fractional - (3750.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert!((cost.usd_cents_fractional - (3750.0 / 192.98)).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
@@ -80,20 +100,5 @@ mod tests {
     // must land exactly on 692.25.
     let cost = KinoviPricingTier::Enterprise.cost_from_credits(46.15 * 15.0);
     assert_eq!(cost.kinovi_credits, 692.25);
-  }
-
-  #[test]
-  fn exact_dollar_boundaries_do_not_round() {
-    // 243 credits = exactly $1.00 at the enterprise rate.
-    let cost = KinoviPricingTier::Enterprise.cost_from_credits(243.0);
-    assert_eq!(cost.usd_cents_rounded_up, 100);
-    assert_eq!(cost.usd_cents_rounded_down, 100);
-    assert!((cost.usd_cents_fractional - 100.0).abs() < FLOAT_TOLERANCE);
-
-    // 193 credits = exactly $1.00 at the consumer rate.
-    let cost = KinoviPricingTier::Consumer.cost_from_credits(193.0);
-    assert_eq!(cost.usd_cents_rounded_up, 100);
-    assert_eq!(cost.usd_cents_rounded_down, 100);
-    assert!((cost.usd_cents_fractional - 100.0).abs() < FLOAT_TOLERANCE);
   }
 }

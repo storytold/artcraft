@@ -111,16 +111,16 @@ mod tests {
 
     #[test]
     fn cents_480p() {
-      // 168.52 credits → 16852/243 = 69.35 → 70¢; 631.95 → 260.06 → 261¢.
+      // 168.52 credits → 16852/243.16 = 69.30 → 70¢; 631.95 → 259.89 → 260¢.
       assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 4), 70);
-      assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 15), 261);
+      assert_eq!(usd_cents(Some(KinoviOutputResolution::FourEightyP), 15), 260);
     }
 
     #[test]
     fn cents_720p() {
-      // 337.04 credits → 33704/243 = 138.70 → 139¢; 2527.8 → 1040.25 → 1041¢.
+      // 337.04 credits → 33704/243.16 = 138.61 → 139¢; 2527.8 → 1039.56 → 1040¢.
       assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 4), 139);
-      assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 30), 1041);
+      assert_eq!(usd_cents(Some(KinoviOutputResolution::SevenTwentyP), 30), 1040);
     }
   }
 
