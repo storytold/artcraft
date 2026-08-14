@@ -3,9 +3,10 @@ use crate::pricing::cost::kinovi_generation_cost::KinoviGenerationCost;
 /// The cost of a Kinovi Seedance generation, with the video-reference
 /// surcharge broken out from the base price.
 ///
-/// Used by the WHOLE-credit Seedance video models (regular + Fast). Seedance
-/// 2.0 Mini bills fractional credits and has its own `f64` twin,
-/// [`crate::pricing::cost::kinovi_seedance_mini_generation_cost::KinoviSeedanceMiniGenerationCost`]
+/// Used by the WHOLE-credit Seedance video models (currently Fast). Models
+/// that bill fractional credits (Seedance 2.0, Seedance 2.0 Mini) use the
+/// `f64` twin,
+/// [`crate::pricing::cost::kinovi_seedance_fractional_generation_cost::KinoviSeedanceFractionalGenerationCost`]
 /// — see that file for why they aren't merged.
 ///
 /// `total_cost` covers base + surcharge. NB: the total's USD conversions are

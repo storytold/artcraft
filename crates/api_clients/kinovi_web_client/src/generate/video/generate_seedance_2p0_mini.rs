@@ -1,6 +1,6 @@
 use crate::creds::kinovi_web_session::KinoviWebSession;
 use crate::error::kinovi_web_error::KinoviWebError;
-use crate::pricing::cost::kinovi_seedance_mini_generation_cost::KinoviSeedanceMiniGenerationCost;
+use crate::pricing::cost::kinovi_seedance_fractional_generation_cost::KinoviSeedanceFractionalGenerationCost;
 use crate::requests::kinovi_host::KinoviHost;
 use crate::requests::workflow_run_task::workflow_run_task::{
   workflow_run_task, KinoviAspectRatioRaw, KinoviBatchCountRaw, KinoviBitrateRaw,
@@ -93,7 +93,7 @@ pub enum KinoviSeedance2p0MiniBitrate {
 impl GenerateSeedance2p0MiniRequest {
   /// Calculate the cost of this generation request, in Kinovi credits
   /// (possibly fractional) and USD cents.
-  pub fn calculate_costs(&self) -> KinoviSeedanceMiniGenerationCost {
+  pub fn calculate_costs(&self) -> KinoviSeedanceFractionalGenerationCost {
     let credits_per_second: f64 = match self.output_resolution {
       Some(KinoviSeedance2p0MiniOutputResolution::FourEightyP) => 7.5,
       Some(KinoviSeedance2p0MiniOutputResolution::SevenTwentyP) | None => 20.0,
@@ -118,7 +118,7 @@ impl GenerateSeedance2p0MiniRequest {
       None
     };
 
-    KinoviSeedanceMiniGenerationCost::from_base_and_surcharge(
+    KinoviSeedanceFractionalGenerationCost::from_base_and_surcharge(
       base_credits,
       maybe_video_reference_surcharge_credits,
     )
