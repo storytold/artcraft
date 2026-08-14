@@ -2,6 +2,7 @@ use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
   GenerateSeedance2p0MiniRequest, KinoviSeedance2p0MiniBatchCount,
   KinoviSeedance2p0MiniOutputResolution,
 };
+use kinovi_web_client::pricing::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::draft::KinoviSeedance2p0MiniDraftState;
@@ -66,8 +67,10 @@ impl KinoviSeedance2p0MiniCostState {
       bitrate: None,
     };
 
-    let costs = pricing_request.calculate_costs();
-    // Mini credits can be fractional (e.g. 480p odd durations land on 37.5).
+    // Enterprise tier: what generations actually cost us (our discounted
+    // per-model credit rate at our bulk credit purchase rate).
+    let costs = pricing_request.calculate_enterprise_costs();
+    // Mini credits can be fractional (e.g. 480p + video ref at 4s = 15.2).
     // The router's credit field is an integer, so round to the nearest credit;
     // the USD cents (the authoritative charge) are already rounded up.
     let cost_in_credits = costs.total_cost.kinovi_credits.round() as u64;
@@ -108,18 +111,20 @@ mod tests {
 
     #[test]
     fn without_video_reference() {
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One, false), 13);
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One, false), 16);
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One, false), 31);
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One, false), 47);
+      // Enterprise 3 credits/s.
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One, false), 5);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One, false), 7);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One, false), 13);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One, false), 19);
     }
 
     #[test]
     fn with_video_reference() {
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One, true), 16);
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One, true), 20);
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One, true), 40);
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One, true), 59);
+      // Enterprise 3.8 credits/s (3 base + 0.8 surcharge).
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One, true), 7);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One, true), 8);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One, true), 16);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One, true), 24);
     }
   }
 
@@ -128,18 +133,20 @@ mod tests {
 
     #[test]
     fn without_video_reference() {
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One, false), 33);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, false), 42);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One, false), 83);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One, false), 124);
+      // Enterprise 8 credits/s.
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One, false), 14);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, false), 17);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One, false), 33);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One, false), 50);
     }
 
     #[test]
     fn with_video_reference() {
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One, true), 40);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, true), 50);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One, true), 99);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One, true), 149);
+      // Enterprise 9.6 credits/s (8 base + 1.6 surcharge).
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One, true), 16);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, true), 20);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One, true), 40);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One, true), 60);
     }
   }
 
@@ -150,17 +157,18 @@ mod tests {
 
     #[test]
     fn credits_480p() {
-      // 7.5 credits/s; odd durations are fractional (37.5 → 38, 112.5 → 113).
-      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One, false), 30);
-      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One, false), 38);
-      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One, false), 75);
-      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One, false), 113);
+      // Enterprise 3 credits/s (whole at every duration).
+      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One, false), 12);
+      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One, false), 15);
+      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One, false), 30);
+      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One, false), 45);
     }
 
     #[test]
     fn credits_720p() {
-      assert_eq!(credits(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, false), 100);
-      assert_eq!(credits(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One, false), 300);
+      // Enterprise 8 credits/s.
+      assert_eq!(credits(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, false), 40);
+      assert_eq!(credits(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One, false), 120);
     }
   }
 
@@ -210,7 +218,7 @@ mod tests {
       assert!(matches!(cost.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
       assert_eq!(cost.duration_seconds, 5);
       assert!(!cost.has_video_reference);
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(42));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(17));
     }
 
     #[test]
@@ -218,7 +226,7 @@ mod tests {
       let req = make_request_state(Some(KinoviOutputResolution::FourEightyP), 5, KinoviBatchCount::One, true);
       let cost = KinoviSeedance2p0MiniCostState::from_request(&req);
       assert!(cost.has_video_reference);
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(20));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(8));
     }
 
     #[test]
@@ -226,7 +234,7 @@ mod tests {
       let req = make_request_state(None, 5, KinoviBatchCount::One, false);
       let cost = KinoviSeedance2p0MiniCostState::from_request(&req);
       assert!(cost.resolution.is_none());
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(42));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(17));
     }
   }
 
@@ -240,7 +248,7 @@ mod tests {
       let draft = make_draft(5, 1, Some(RouterResolution::FourEightyP), false);
       let cost = KinoviSeedance2p0MiniCostState::from_draft(&draft);
       assert!(matches!(cost.resolution, Some(KinoviOutputResolution::FourEightyP)));
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(16));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(7));
     }
 
     #[test]
@@ -248,16 +256,16 @@ mod tests {
       let draft = make_draft(5, 1, Some(RouterResolution::SevenTwentyP), true);
       let cost = KinoviSeedance2p0MiniCostState::from_draft(&draft);
       assert!(cost.has_video_reference);
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(50));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(20));
     }
 
     #[test]
     fn from_draft_batch_8() {
-      // Mini supports up to batch 8: 720p 5s × 8 = 800 credits → 80000/243 → 330¢.
+      // Mini supports up to batch 8: 720p 5s × 8 = 320 credits → 32000/243.16 → 132¢.
       let draft = make_draft(5, 8, Some(RouterResolution::SevenTwentyP), false);
       let cost = KinoviSeedance2p0MiniCostState::from_draft(&draft);
       assert!(matches!(cost.batch_count, Some(KinoviBatchCount::Eight)));
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(330));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(132));
     }
   }
 

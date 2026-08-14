@@ -1,4 +1,4 @@
-use crate::cost::kinovi_generation_cost::KinoviGenerationCost;
+use crate::pricing::cost::kinovi_generation_cost::KinoviGenerationCost;
 use crate::creds::kinovi_web_session::KinoviWebSession;
 use crate::error::kinovi_web_error::KinoviWebError;
 use crate::requests::generate_image::generate_image::{
