@@ -18,25 +18,48 @@
 # `.sqlx/*.json` files after BOTH prepares succeed, so a failure part-way
 # never leaves the repo without a query cache.
 
-set -euxo pipefail
+set -euo pipefail
 
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-sqlite_db_file="/tmp/tasks.sqlite"
+sqlite_db_file="$(mktemp /tmp/artcraft_sqlx_tasks.XXXXXX)"
 sqlite_package_path="${root_dir}/crates/schema/database/sqlite_tasks"
 mysql_package_path="${root_dir}/crates/schema/database/mysql_queries"
 
 query_cache_dir="${root_dir}/.sqlx"
 staging_dir="$(mktemp -d /tmp/sqlx_codegen.XXXXXX)"
 
-# The dev MySQL database. Falls back to the DATABASE_URL in the repo root
-# .env so the script works from any directory.
-mysql_database_url="${DATABASE_URL:-$(grep -m1 '^DATABASE_URL=mysql' "${root_dir}/.env" | cut -d= -f2-)}"
+cleanup() {
+  rm -f -- "${sqlite_db_file}"
+
+  if [[ -d "${staging_dir}" ]]; then
+    rm -f -- "${staging_dir}/"*.json
+    rmdir "${staging_dir}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
+# The dev MySQL database. Falls back to DATABASE_URL in the repo-root .env so
+# the script works from any directory. Keep the credential out of shell trace,
+# command arguments, and process listings.
+if [[ -n "${DATABASE_URL:-}" ]]; then
+  mysql_database_url="${DATABASE_URL}"
+elif [[ -f "${root_dir}/.env" ]]; then
+  mysql_database_url="$(
+    sed -n 's/^DATABASE_URL=\(mysql.*\)$/\1/p' "${root_dir}/.env" | head -n 1
+  )"
+else
+  echo "DATABASE_URL is unset and ${root_dir}/.env does not exist." >&2
+  exit 1
+fi
+
+if [[ -z "${mysql_database_url}" ]]; then
+  echo "A MySQL DATABASE_URL is required to regenerate the query cache." >&2
+  exit 1
+fi
 
 prepare_sqlite_tasks() {
   echo "Creating a fresh Tauri SQLite tasks database..."
-  rm -f "${sqlite_db_file}"
-  touch "${sqlite_db_file}"
 
   echo "Migrating the SQLite tasks database..."
   cargo sqlx migrate run \
@@ -55,8 +78,7 @@ prepare_sqlite_tasks() {
 prepare_mysql() {
   echo "Preparing the MySQL query cache..."
   pushd "${mysql_package_path}"
-  cargo sqlx prepare \
-    --database-url "${mysql_database_url}"
+  DATABASE_URL="${mysql_database_url}" cargo sqlx prepare
   popd
 
   mv "${mysql_package_path}/.sqlx/"*.json "${staging_dir}/"
