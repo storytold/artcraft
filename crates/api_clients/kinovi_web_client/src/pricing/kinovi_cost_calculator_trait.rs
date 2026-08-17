@@ -2,9 +2,9 @@ use crate::pricing::kinovi_pricing_tier::KinoviPricingTier;
 
 /// Prices a generation request at either pricing tier.
 ///
-/// NOTE: currently only Seedance 2.5 Preview implements this; the other
-/// models still expose single-rate inherent `calculate_costs()` methods and
-/// will migrate here.
+/// NOTE: the Seedance video models implement this; the other models still
+/// expose single-rate inherent `calculate_costs()` methods and will migrate
+/// here.
 pub trait KinoviCostCalculatorTrait {
   type Cost;
 

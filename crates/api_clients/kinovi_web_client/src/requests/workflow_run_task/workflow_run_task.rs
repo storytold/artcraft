@@ -1047,6 +1047,26 @@ mod tests {
     }
 
     #[test]
+    fn text_to_video_1080p_matches_observed_request() {
+      // Mirrors external/requests/sites/kinovi.ai/2026-08-17-seedance2p5-1080p/
+      // 1_seedance2p5_1080p.txt: mode "reference", aspectRatio "16:9", 4s,
+      // outputResolution "1080p".
+      let mut request = base_request("A car driving on the beach", 4);
+      request.output_resolution = Some(KinoviOutputResolutionRaw::TenEightyP);
+
+      let body = build_batch_request(request);
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"seedance25-preview-video-generation""#), "{json}");
+      assert!(json.contains(r#""model":"seedance2-5""#), "{json}");
+      assert!(json.contains(r#""mode":"reference""#), "{json}");
+      assert!(json.contains(r#""aspectRatio":"16:9""#), "{json}");
+      assert!(json.contains(r#""duration":"4s""#), "{json}");
+      assert!(json.contains(r#""outputResolution":"1080p""#), "{json}");
+      assert!(json.contains(r#""faceBlurMode":"off""#), "{json}");
+      assert!(json.contains(r#""contentMode":"normal""#), "{json}");
+    }
+
+    #[test]
     fn default_720p_and_face_blur_off_are_sent_explicitly() {
       let mut request = base_request("a corgi", 5);
       request.output_resolution = None;
