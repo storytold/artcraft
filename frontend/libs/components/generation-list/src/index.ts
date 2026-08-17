@@ -5,6 +5,7 @@ export * from "./lib/prompts-cache";
 export * from "./lib/media-prompt-token-cache";
 export * from "./lib/gallery-view-store";
 export * from "./lib/gallery-selection-store";
+export * from "./lib/last-viewed-store";
 export * from "./lib/GalleryViewToggle";
 export * from "./lib/GalleryAutoplayToggle";
 export * from "./lib/GallerySelectToggle";

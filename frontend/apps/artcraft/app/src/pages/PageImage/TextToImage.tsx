@@ -27,13 +27,13 @@ import {
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   useGalleryData,
+  useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
-import { useLastViewedGenerationStore } from "~/components/generation-feed/last-viewed-store";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 

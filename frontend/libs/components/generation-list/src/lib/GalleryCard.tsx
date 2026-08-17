@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
-import { BoxIcon, CheckIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import {
   getCreatorIconPathForModelId,
@@ -230,7 +230,8 @@ export const GalleryCard = memo(function GalleryCard({
           in the lightbox). Top-right so it never collides with the selection
           checkbox chip at top-left. */}
       {lastViewed && (
-        <div className="pointer-events-none absolute right-2 top-2 z-10 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+          <EyeIcon />
           Last viewed
         </div>
       )}

@@ -18,12 +18,12 @@ import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {
   useGalleryData,
   useGenerationJobs,
+  useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
-import { useLastViewedGenerationStore } from "~/components/generation-feed/last-viewed-store";
 
 const AUDIO_FILTER = [FilterMediaClasses.AUDIO];
 

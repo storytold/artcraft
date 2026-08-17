@@ -1,5 +1,5 @@
 import { memo, useCallback, type ReactNode } from "react";
-import { BoxIcon, CheckIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -128,7 +128,8 @@ export const GalleryRow = memo(function GalleryRow({
         {/* Persistent "Last viewed" badge (stays until another item is
             opened in the lightbox). */}
         {lastViewed && (
-          <div className="pointer-events-none absolute left-1 top-1 z-10 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/80">
+          <div className="pointer-events-none absolute left-1 top-1 z-10 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/80">
+            <EyeIcon />
             Last viewed
           </div>
         )}
