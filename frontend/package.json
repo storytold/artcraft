@@ -116,6 +116,8 @@
     "apps/**/*",
     "libs/**/*",
     "!apps/artcraft-dashboard",
-    "!apps/artcraft-dashboard/**"
+    "!apps/artcraft-dashboard/**",
+    "!apps/artcraft-website-next",
+    "!apps/artcraft-website-next/**"
   ]
 }

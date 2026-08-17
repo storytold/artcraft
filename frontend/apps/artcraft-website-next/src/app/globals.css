@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+/*
+ * ArtCraft marketing site — design tokens.
+ *
+ * Two committed themes sharing one structural language (hairline rules, hard
+ * edges, mono micro-labels, single blue accent):
+ *   dark  — "viewport": near-black terminal surfaces, white ink
+ *   light — "blueprint": warm paper surfaces, near-black ink
+ *
+ * Light is the :root base; dark applies via explicit [data-theme="dark"] or
+ * system preference when no explicit choice is stored. `--accent-ink` is the
+ * AA-contrast-safe accent for text/small glyphs; `--accent` is the raw brand
+ * blue for surfaces, glows, and large shapes only.
+ */
+
+:root {
+  --bg: #f2f1ee;
+  --bg-raised: #faf9f7;
+  --bg-sunken: #e9e8e4;
+  --ink: #101014;
+  --ink-strong: #000000;
+  --muted: rgba(16, 16, 20, 0.62);
+  --faint: rgba(16, 16, 20, 0.42);
+  --line: rgba(16, 16, 20, 0.16);
+  --line-strong: rgba(16, 16, 20, 0.4);
+  --accent: #2d81ff;
+  --accent-ink: #1659c4;
+  --invert-bg: #101014;
+  --invert-fg: #f2f1ee;
+  --danger: #b3261e;
+  --scanline: rgba(16, 16, 20, 0.03);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0b0c;
+  --bg-raised: #101014;
+  --bg-sunken: #060607;
+  --ink: #f2f1ee;
+  --ink-strong: #ffffff;
+  --muted: rgba(242, 241, 238, 0.6);
+  --faint: rgba(242, 241, 238, 0.38);
+  --line: rgba(242, 241, 238, 0.15);
+  --line-strong: rgba(242, 241, 238, 0.4);
+  --accent: #2d81ff;
+  --accent-ink: #74aaff;
+  --invert-bg: #ffffff;
+  --invert-fg: #0b0b0c;
+  --danger: #ff6259;
+  --scanline: rgba(255, 255, 255, 0.025);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0b0c;
+    --bg-raised: #101014;
+    --bg-sunken: #060607;
+    --ink: #f2f1ee;
+    --ink-strong: #ffffff;
+    --muted: rgba(242, 241, 238, 0.6);
+    --faint: rgba(242, 241, 238, 0.38);
+    --line: rgba(242, 241, 238, 0.15);
+    --line-strong: rgba(242, 241, 238, 0.4);
+    --accent: #2d81ff;
+    --accent-ink: #74aaff;
+    --invert-bg: #ffffff;
+    --invert-fg: #0b0b0c;
+    --danger: #ff6259;
+    --scanline: rgba(255, 255, 255, 0.025);
+
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-ink: var(--ink);
+  --color-ink-strong: var(--ink-strong);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-invert-bg: var(--invert-bg);
+  --color-invert-fg: var(--invert-fg);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-outfit), system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, serif;
+  --font-body: var(--font-source-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* No rounded corners anywhere in this design language. */
+  --radius-*: initial;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* Signature interaction: label blocks invert on hover/active. */
+.invert-block {
+  transition: background-color 120ms linear, color 120ms linear;
+}
+.invert-block:hover,
+.invert-block[data-active="true"] {
+  background: var(--invert-bg);
+  color: var(--invert-fg);
+}
+
+/* Renders the brand mark in the current theme's ink color. */
+.themed-logo {
+  filter: brightness(0);
+}
+:root[data-theme="dark"] .themed-logo {
+  filter: brightness(0) invert(1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .themed-logo {
+    filter: brightness(0) invert(1);
+  }
+}
+
+/* Mono HUD micro-label. */
+.hud-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Crosshair tick straddling a grid intersection. */
+.tick {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+}
+.tick::before,
+.tick::after {
+  content: "";
+  position: absolute;
+  background: var(--line-strong);
+}
+.tick::before {
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.tick::after {
+  top: 5px;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+/* Mono capability marquee. Duplicated track scrolls -50%; the reduced-motion
+ * blanket below freezes it in place. */
+.marquee {
+  display: flex;
+  overflow: hidden;
+}
+.marquee-track {
+  display: flex;
+  flex-shrink: 0;
+  min-width: 100%;
+  animation: marquee-scroll 36s linear infinite;
+}
+@keyframes marquee-scroll {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
