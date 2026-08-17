@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { watchThemeColors, type ThemeColors } from "@/lib/theme-colors";
 import {
   sampleWordmark,
@@ -189,6 +190,44 @@ function FittedCamera() {
   return null;
 }
 
+// Studio reflections without any network fetch: three's procedural room,
+// prefiltered once per WebGL context. This is what gives the dark "car
+// paint" balls something to mirror.
+function StudioEnvironment() {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+  return null;
+}
+
+const HALO_VERTEX = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const HALO_FRAGMENT = /* glsl */ `
+  varying vec2 vUv;
+  uniform vec3 uColor;
+  uniform float uAlpha;
+  void main() {
+    float d = distance(vUv, vec2(0.5)) * 2.0;
+    float a = pow(clamp(1.0 - d, 0.0, 1.0), 2.6);
+    gl_FragColor = vec4(uColor, a * uAlpha);
+  }
+`;
+
 function BallField({
   sample,
   colors,
@@ -200,7 +239,8 @@ function BallField({
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
-  const lightPos = useRef(new THREE.Vector3(0, 120, 170));
+  const haloRef = useRef<THREE.Mesh>(null);
+  const lightPos = useRef(new THREE.Vector3(0, 120, 0));
   const sim = useMemo(() => new WordmarkSim(sample), [sample]);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
@@ -209,26 +249,52 @@ function BallField({
     return c.r + c.g + c.b < 1.5;
   }, [colors.bg]);
 
-  // Per-ball colors: ink with slight tonal variety, plus sparse brand-accent
-  // balls scattered through the crowd.
+  // The halo sits behind the text plane, so the balls eclipse it: bodies go
+  // to silhouette against the glow while their rims catch the back light.
+  const haloMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: HALO_VERTEX,
+        fragmentShader: HALO_FRAGMENT,
+        uniforms: {
+          uColor: {
+            value: new THREE.Color(dark ? "#a8c4ff" : colors.accent),
+          },
+          uAlpha: { value: dark ? 0.5 : 0.14 },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: dark ? THREE.AdditiveBlending : THREE.NormalBlending,
+      }),
+    [dark, colors.accent],
+  );
+  useEffect(() => () => haloMaterial.dispose(), [haloMaterial]);
+
+  // Per-ball colors. Light theme: ink with slight tonal variety. Dark theme:
+  // near-black lacquer, so shape comes from reflections and the back rim
+  // instead of albedo. Both keep sparse brand-accent balls.
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    const ink = new THREE.Color(colors.ink);
     const bg = new THREE.Color(colors.bg);
+    const ink = new THREE.Color(colors.ink);
     const accent = new THREE.Color(colors.accent);
+    const base = dark
+      ? bg.clone().lerp(ink, 0.10)
+      : ink.clone();
     const c = new THREE.Color();
     const rand = seeded(4242);
     for (let i = 0; i < sim.n; i++) {
-      if (rand() < 0.055) {
+      if (rand() < 0.05) {
         c.copy(accent);
+        if (dark) c.multiplyScalar(0.8);
       } else {
-        c.copy(ink).lerp(bg, rand() * 0.16);
+        c.copy(base).lerp(ink, rand() * (dark ? 0.08 : 0.16));
       }
       mesh.setColorAt(i, c);
     }
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [colors, sim]);
+  }, [colors, sim, dark]);
 
   useFrame((state, delta) => {
     const mesh = meshRef.current;
@@ -245,38 +311,98 @@ function BallField({
     }
     mesh.instanceMatrix.needsUpdate = true;
 
-    // The light chases the cursor; unattended it wanders a slow Lissajous
-    // path so the relief never goes flat.
+    // The cursor light (and its halo) chase the pointer; unattended they
+    // wander a slow Lissajous path so the relief never goes flat.
     const t = state.clock.elapsedTime;
     const targetX = p.active ? p.x : Math.sin(t * 0.22) * 320;
     const targetY = p.active ? p.y : Math.cos(t * 0.17) * 130;
     const k = 1 - Math.exp(-6 * delta);
     lightPos.current.x += (targetX - lightPos.current.x) * k;
     lightPos.current.y += (targetY - lightPos.current.y) * k;
-    lightRef.current?.position.copy(lightPos.current);
+    lightRef.current?.position.set(
+      lightPos.current.x,
+      lightPos.current.y,
+      130,
+    );
+    haloRef.current?.position.set(
+      lightPos.current.x,
+      lightPos.current.y,
+      -90,
+    );
+
+    // At rest the word sits in near-eclipse; approaching with the cursor
+    // brings the light up to full.
+    const light = lightRef.current;
+    if (light) {
+      const full = dark ? 58000 : 30000;
+      const target = p.active ? full : full * 0.3;
+      light.intensity += (target - light.intensity) * k;
+    }
   });
 
   return (
     <>
-      <ambientLight intensity={dark ? 0.24 : 0.6} />
-      <directionalLight
-        position={[-260, 340, 420]}
-        intensity={dark ? 0.35 : 0.8}
-      />
+      {/* No environment in dark mode: three applies scene.environment at
+          effectively full strength here regardless of envMapIntensity, and
+          any env flood washes the eclipse out. The rim lights are the only
+          broad sources; the cursor light does the revealing. */}
+      {!dark && <StudioEnvironment />}
+
+      {dark ? (
+        // Eclipse rig: almost no front light. A cool key from behind-above
+        // rims the top edges, a faint counter-rim catches the lower-right,
+        // and the cursor light does the actual revealing.
+        <>
+          <ambientLight intensity={0.05} />
+          <directionalLight position={[-160, 340, -460]} intensity={2.2} color="#e9f1ff" />
+          <directionalLight position={[430, -180, -380]} intensity={0.7} color="#7fa8e8" />
+          <directionalLight position={[0, -60, 520]} intensity={0.06} />
+        </>
+      ) : (
+        <>
+          <ambientLight intensity={0.55} />
+          <directionalLight position={[-260, 340, 420]} intensity={0.75} />
+          <directionalLight position={[180, 260, -420]} intensity={0.5} color="#eef3ff" />
+        </>
+      )}
+
+      {/* Cursor light: physical inverse-square falloff, so nearby balls are
+          genuinely brighter than distant ones. Intensity is candela-scale
+          because the scene is measured in pixels. */}
       <pointLight
         ref={lightRef}
-        position={[0, 120, 170]}
-        intensity={dark ? 4.2 : 2.8}
-        decay={0}
-        color={dark ? "#dfe8ff" : "#ffffff"}
+        position={[0, 120, 130]}
+        intensity={dark ? 42000 : 30000}
+        decay={2}
+        distance={900}
+        color={dark ? "#d6e4ff" : "#ffffff"}
       />
+
+      <mesh ref={haloRef} position={[0, 120, -90]} material={haloMaterial}>
+        <planeGeometry args={[720, 720]} />
+      </mesh>
+
       <instancedMesh
         ref={meshRef}
         args={[undefined, undefined, sim.n]}
         frustumCulled={false}
       >
-        <sphereGeometry args={[1, 20, 14]} />
-        <meshStandardMaterial roughness={0.26} metalness={0.08} />
+        <sphereGeometry args={[1, 24, 16]} />
+        {dark ? (
+          <meshPhysicalMaterial
+            roughness={0.42}
+            metalness={0.5}
+            clearcoat={0.9}
+            clearcoatRoughness={0.22}
+            envMapIntensity={0.05}
+          />
+        ) : (
+          <meshStandardMaterial
+            roughness={0.3}
+            metalness={0.15}
+            envMapIntensity={0.55}
+          />
+        )}
       </instancedMesh>
     </>
   );

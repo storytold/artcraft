@@ -80,6 +80,17 @@ export function sampleWordmark(opts: {
   const rowH = spacing * (Math.SQRT2 / 2) * 1.22; // hex-ish row pitch
   const balls: Ball[] = [];
 
+  // Organic sizing: a smooth spatial noise drifts the ball size across the
+  // word (clusters of big and small), white noise roughens it per ball. The
+  // neighbor cap below keeps every draw collision-safe, so variance only
+  // ever shrinks balls — which is exactly what reads as hand-made.
+  const sizeNoise = makeValueNoise(41);
+  const desiredRadius = (x: number, y: number) =>
+    spacing *
+    (0.24 +
+      0.36 * Math.pow(sizeNoise(x / 130, y / 130), 1.15) +
+      rand() * 0.16);
+
   for (let layer = 0; layer < layers; layer++) {
     const z = (layer - (layers - 1) / 2) * spacing * 0.92;
     // Alternate layers shift half a cell both ways so depth neighbors nest
@@ -96,7 +107,7 @@ export function sampleWordmark(opts: {
           x: jx,
           y: jy,
           z: z + (rand() - 0.5) * jitter * 2,
-          r: spacing * (0.42 + rand() * 0.2), // desired; capped below
+          r: desiredRadius(jx, jy), // desired; capped below
         });
       }
     }
@@ -146,8 +157,29 @@ function capRadiiToNeighbors(balls: Ball[], spacing: number) {
   }
   for (let i = 0; i < balls.length; i++) {
     const fit = nearest[i] * 0.5 - 0.4;
-    balls[i].r = Math.max(spacing * 0.22, Math.min(balls[i].r, fit));
+    balls[i].r = Math.max(spacing * 0.15, Math.min(balls[i].r, fit));
   }
+}
+
+// Deterministic bilinear value noise, 0..1 — smooth variation across space.
+function makeValueNoise(seed: number): (x: number, y: number) => number {
+  const hash = (ix: number, iy: number) => {
+    let h = ix * 374761393 + iy * 668265263 + seed * 2246822519;
+    h = (h ^ (h >>> 13)) * 1274126177;
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  };
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = smooth(x - ix);
+    const fy = smooth(y - iy);
+    const a = hash(ix, iy);
+    const b = hash(ix + 1, iy);
+    const c = hash(ix, iy + 1);
+    const d = hash(ix + 1, iy + 1);
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  };
 }
 
 function mulberry32(seed: number): () => number {
