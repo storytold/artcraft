@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import LazyVideo from "@/components/lazy-video";
-import type { SceneColors } from "./hero-scene";
+import { watchThemeColors, type ThemeColors } from "@/lib/theme-colors";
 
 // Plain code-split dynamic import — NOT `ssr: false`. It never renders during
 // SSR (gated by `ready`, false on the server), so WebGL stays off the server
@@ -31,7 +31,7 @@ export default function HeroViewport({
   videoLabel: string;
 }) {
   const [ready, setReady] = useState(false);
-  const [colors, setColors] = useState<SceneColors | null>(null);
+  const [colors, setColors] = useState<ThemeColors | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const clipRef = useRef<HTMLDivElement>(null);
@@ -62,21 +62,7 @@ export default function HeroViewport({
   // Theme tokens → scene colors, re-derived when the theme flips.
   useEffect(() => {
     if (!ready) return;
-
-    const derive = () => setColors(deriveSceneColors());
-    derive();
-
-    const observer = new MutationObserver(derive);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    mq.addEventListener("change", derive);
-    return () => {
-      observer.disconnect();
-      mq.removeEventListener("change", derive);
-    };
+    return watchThemeColors(setColors);
   }, [ready]);
 
   // Scan-line driver: pointer position while hovered, slow sweep when idle.
@@ -194,39 +180,3 @@ class CanvasBoundary extends Component<
   }
 }
 
-// Resolves theme tokens to concrete hex colors for the scene. Tokens with
-// alpha (the hairline colors) are flattened against the viewport backdrop so
-// line materials can stay opaque.
-function deriveSceneColors(): SceneColors {
-  const styles = getComputedStyle(document.documentElement);
-  const probe = document.createElement("span");
-  probe.style.display = "none";
-  document.body.appendChild(probe);
-
-  const resolve = (token: string): [number, number, number, number] => {
-    probe.style.color = "";
-    probe.style.color = styles.getPropertyValue(token).trim();
-    const parsed = getComputedStyle(probe).color.match(/[\d.]+/g) ?? [];
-    const [r = 0, g = 0, b = 0, a = 1] = parsed.map(Number);
-    return [r, g, b, a];
-  };
-
-  const toHex = (r: number, g: number, b: number) =>
-    `#${[r, g, b]
-      .map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0"))
-      .join("")}`;
-
-  const bg = resolve("--bg-sunken");
-  const flatten = ([r, g, b, a]: [number, number, number, number]) =>
-    toHex(r * a + bg[0] * (1 - a), g * a + bg[1] * (1 - a), b * a + bg[2] * (1 - a));
-
-  const result: SceneColors = {
-    line: flatten(resolve("--line")),
-    lineStrong: flatten(resolve("--line-strong")),
-    accent: flatten(resolve("--accent")),
-    ink: flatten(resolve("--ink")),
-  };
-
-  probe.remove();
-  return result;
-}

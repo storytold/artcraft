@@ -1,38 +1,38 @@
 import { AppleIcon, MonitorIcon } from "lucide-react";
-import { GitHubIcon } from "@/components/icons";
 import { SOCIAL_LINKS, WEBAPP_URL } from "@/lib/links";
 import { HERO_VIDEO_URL } from "@/lib/landing-data";
+import { GitHubIcon } from "@/components/icons";
+import HeroWordmark from "./hero-wordmark";
 import HeroViewport from "./hero-viewport";
 import CtaLink from "./cta-link";
 
 export default function Hero() {
   return (
     <section className="relative">
+      {/* Full-bleed ball-field wordmark — the brand as an object you can
+          shove apart and watch reassemble. */}
+      <HeroWordmark />
+
       <div className="relative mx-auto max-w-[1280px] border-x border-line">
-        {/* HUD strip */}
-        <div className="flex items-center justify-between gap-4 border-b border-line px-6 py-3 md:px-10">
-          <p className="hud-label text-muted">
-            Open-source AI studio
-          </p>
+        <div className="flex items-center justify-between gap-4 border-y border-line px-6 py-3 md:px-10">
+          <p className="hud-label text-muted">Open-source AI studio</p>
           <p className="hud-label text-accent-ink">
             Now with Seedance 2.0, Nano Banana 2 &amp; more
           </p>
         </div>
 
-        {/* Headline */}
-        <div data-reveal-group className="px-6 pt-14 pb-10 md:px-10 md:pt-20">
+        <div data-reveal-group className="px-6 pt-12 pb-10 md:px-10">
           <h1
             data-reveal
-            className="font-display text-[clamp(3rem,8.5vw,7.5rem)] leading-[0.98] font-medium tracking-[-0.04em] text-ink-strong"
+            className="max-w-3xl font-display text-4xl font-medium leading-[1.02] tracking-[-0.035em] text-ink-strong sm:text-5xl md:text-6xl"
           >
-            Controllable AI
-            <br />
-            <span className="font-serif italic font-normal tracking-[-0.01em] text-muted">
+            Controllable AI{" "}
+            <span className="font-serif italic font-normal text-muted">
               for artists.
             </span>
           </h1>
 
-          <div className="mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
+          <div className="mt-8 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <p
               data-reveal
               className="max-w-md text-lg leading-relaxed text-muted"
@@ -71,8 +71,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Viewport frame — the product-demo stage. Currently the commercial
-            reel; the interactive 3D blocking→render demo mounts here. */}
+        {/* Viewport frame — the product-demo stage: blocking vs. AI render. */}
         <figure className="relative border-t border-line">
           <div className="flex items-center justify-between gap-4 border-b border-line px-6 py-2 md:px-10">
             <figcaption className="hud-label text-faint">
