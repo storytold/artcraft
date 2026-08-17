@@ -23,6 +23,7 @@ import {
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
+import { useLastViewedGenerationStore } from "~/components/generation-feed/last-viewed-store";
 
 const AUDIO_FILTER = [FilterMediaClasses.AUDIO];
 
@@ -115,7 +116,10 @@ const CreateAudio = () => {
 
   // Open a completed row in the global lightbox (rendered by TopBar's
   // gallery modal); prev/next walk the merged feed order.
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
+
   const openInLightbox = useCallback((item: GalleryItem) => {
+    useLastViewedGenerationStore.getState().setId(item.id);
     const list = flatCompletedRef.current;
     const index = list.findIndex((i) => i.id === item.id);
     galleryModalLightboxNavPrev.value =
@@ -156,6 +160,7 @@ const CreateAudio = () => {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
+          lastViewedId={lastViewedId}
         />
       }
       promptBox={

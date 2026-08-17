@@ -38,6 +38,9 @@ export interface DesktopGenerationGalleryProps {
   isInitialLoading: boolean;
   onLoadMore: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
+  /** Id of the item most recently viewed in the lightbox; that tile gets a
+   *  persistent "Last viewed" badge. */
+  lastViewedId?: string | null;
   /** Image page only: show a "Make Video" quick action on image items. */
   enableMakeVideo?: boolean;
   /** Enables the multi-select + batch download flow (select toggle in the
