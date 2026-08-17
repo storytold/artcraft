@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { CommonAspectRatio } from "./CommonAspectRatio.js";
 import { SizeIconOption } from "../metadata/SizeOption.js";
 import {
