@@ -121,7 +121,8 @@ mod tests {
 
   use super::*;
 
-  // ── Credits without video references (26/sec at 480p, 59/sec at 720p) ──
+  // ── Credits without video references (26/sec at 480p, 59/sec at 720p,
+  //    103.25/sec at 1080p enterprise) ──
 
   mod credits_without_video_references {
     use super::*;
@@ -140,6 +141,15 @@ mod tests {
     }
 
     #[test]
+    fn credits_1080p() {
+      // 103.25/sec enterprise; fractional totals round to the nearest credit
+      // (516.25 → 516, 1032.5 → 1033, 3097.5 → 3098).
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 5, false, None), 516);
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 10, false, None), 1033);
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 30, false, None), 3098);
+    }
+
+    #[test]
     fn default_resolution_is_720p() {
       assert_eq!(credits(None, 10, false, None), credits(Some(KinoviOutputResolution::SevenTwentyP), 10, false, None));
     }
@@ -151,7 +161,7 @@ mod tests {
   }
 
   // ── Credits with video references (16/sec at 480p, 35/sec at 720p,
-  //    over output duration + input seconds) ──
+  //    61.69/sec at 1080p enterprise, over output duration + input seconds) ──
 
   mod credits_with_video_references {
     use super::*;
@@ -160,6 +170,8 @@ mod tests {
     fn thirty_second_output_with_ten_input_seconds_bills_forty() {
       assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 30, true, Some(10)), 16 * 40);
       assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 30, true, Some(10)), 35 * 40);
+      // 61.69/sec enterprise × 40 = 2467.6 → 2468 credits.
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 30, true, Some(10)), 2468);
     }
 
     #[test]

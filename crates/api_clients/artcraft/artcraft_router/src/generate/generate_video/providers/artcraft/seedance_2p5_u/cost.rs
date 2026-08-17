@@ -94,6 +94,20 @@ mod tests {
     }
 
     #[test]
+    fn table_1080p() {
+      // 50.10486922 ¢/s, rounded up.
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 4), 201);
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 5), 251);
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 10), 502);
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 30), 1504);
+    }
+
+    #[test]
+    fn four_k_downgrades_to_1080p_and_prices_accordingly() {
+      assert_eq!(cents(Some(RouterResolution::FourK), 10), cents(Some(RouterResolution::TenEightyP), 10));
+    }
+
+    #[test]
     fn none_defaults_to_720p() {
       assert_eq!(cents(None, 10), cents(Some(RouterResolution::SevenTwentyP), 10));
     }
@@ -105,6 +119,8 @@ mod tests {
         (RouterResolution::FourEightyP, 30),
         (RouterResolution::SevenTwentyP, 5),
         (RouterResolution::SevenTwentyP, 30),
+        (RouterResolution::TenEightyP, 5),
+        (RouterResolution::TenEightyP, 30),
       ] {
         let ultra = cents(Some(resolution), duration);
         let regular = estimate_for_model(RouterVideoModel::Seedance2p5, |b| {
@@ -125,6 +141,16 @@ mod tests {
       assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 30, Some(10)), 343);
       // 18.72427984 ¢/s × 40 = 748.97 → 749¢.
       assert_eq!(cents_with_video_refs(Some(RouterResolution::SevenTwentyP), 30, Some(10)), 749);
+      // 29.93674947 ¢/s × 40 = 1197.47 → 1198¢.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 30, Some(10)), 1198);
+    }
+
+    #[test]
+    fn table_1080p_with_ten_input_seconds() {
+      // 29.93674947 ¢/s over (output + 10) billed seconds, rounded up.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 5, Some(10)), 450);
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 10, Some(10)), 599);
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 30, Some(10)), 1198);
     }
 
     #[test]

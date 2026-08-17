@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use log::{error, info, warn};
-use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::router_provider::RouterProvider;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video::video_generation_draft_context::VideoGenerationDraftContext;
