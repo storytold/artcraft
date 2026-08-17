@@ -12,7 +12,7 @@ pub fn seedance_2p5_video_models() -> Vec<OmniGenVideoModelDetails> {
     model: CommonVideoModel::Seedance2p5,
     model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedance 2.5".to_string()),
-    extra_info: Some("Seedance 2.5. Supports videos up to 30 seconds, start/end keyframes (adaptive aspect ratio), and image/video/audio references, with 480p/720p output. Video references bill their input seconds on top of the output duration.".to_string()),
+    extra_info: Some("Seedance 2.5. Supports videos up to 30 seconds, start/end keyframes (adaptive aspect ratio), and image/video/audio references, with 480p/720p/1080p output. Video references bill their input seconds on top of the output duration.".to_string()),
     extra_info_short: Some("Seedance 2.5; up to 30s videos".to_string()),
     text_prompt_supported: Some(true),
     text_prompt_max_length: Some(10_000),
@@ -39,6 +39,7 @@ pub fn seedance_2p5_video_models() -> Vec<OmniGenVideoModelDetails> {
     resolution_options: Some(vec![
       CommonResolution::FourEightyP,
       CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
     batch_size_options: Some(vec![1]),
@@ -53,7 +54,7 @@ pub fn seedance_2p5_video_models() -> Vec<OmniGenVideoModelDetails> {
     model: CommonVideoModel::Seedance2p5Ultra,
     model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedance 2.5 Ultra".to_string()),
-    extra_info: Some("Seedance 2.5 Ultra. Supports videos up to 30 seconds, start/end keyframes (adaptive aspect ratio), and image/video/audio references, with 480p/720p output. Video references bill their input seconds on top of the output duration.".to_string()),
+    extra_info: Some("Seedance 2.5 Ultra. Supports videos up to 30 seconds, start/end keyframes (adaptive aspect ratio), and image/video/audio references, with 480p/720p/1080p output. Video references bill their input seconds on top of the output duration.".to_string()),
     extra_info_short: Some("Seedance 2.5 Ultra; up to 30s videos".to_string()),
     text_prompt_supported: Some(true),
     text_prompt_max_length: Some(10_000),
@@ -80,6 +81,7 @@ pub fn seedance_2p5_video_models() -> Vec<OmniGenVideoModelDetails> {
     resolution_options: Some(vec![
       CommonResolution::FourEightyP,
       CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
     batch_size_options: Some(vec![1]),

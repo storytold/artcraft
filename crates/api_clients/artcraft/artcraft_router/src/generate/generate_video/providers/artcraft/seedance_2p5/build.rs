@@ -53,7 +53,7 @@ pub fn build_artcraft_seedance_2p5(mut builder: GenerateVideoRequestBuilder) -> 
   let mut request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Seedance2p5,
-    SupportedResolutions::Fast,
+    SupportedResolutions::Full,
     UltraWideSupport::Supported,
   )?;
   request.duration_seconds = duration_seconds;
@@ -216,9 +216,15 @@ mod tests {
     }
 
     #[test]
-    fn res_1080p_downgrades_to_720p() {
+    fn res_1080p_maps_directly() {
       let req = unwrap_request(builder_with(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
-      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
+    }
+
+    #[test]
+    fn res_4k_downgrades_to_1080p() {
+      let req = unwrap_request(builder_with(|b| { b.resolution = Some(RouterResolution::FourK); }));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
   }
 

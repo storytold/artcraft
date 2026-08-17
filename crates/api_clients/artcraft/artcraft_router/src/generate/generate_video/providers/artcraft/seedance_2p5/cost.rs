@@ -93,6 +93,20 @@ mod tests {
     }
 
     #[test]
+    fn table_1080p() {
+      // 45.85869386 ¢/s, rounded up.
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 4), 184);
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 5), 230);
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 10), 459);
+      assert_eq!(cents(Some(RouterResolution::TenEightyP), 30), 1376);
+    }
+
+    #[test]
+    fn four_k_downgrades_to_1080p_and_prices_accordingly() {
+      assert_eq!(cents(Some(RouterResolution::FourK), 10), cents(Some(RouterResolution::TenEightyP), 10));
+    }
+
+    #[test]
     fn none_defaults_to_720p() {
       assert_eq!(cents(None, 10), cents(Some(RouterResolution::SevenTwentyP), 10));
     }
@@ -107,6 +121,16 @@ mod tests {
       assert_eq!(cents_with_video_refs(Some(RouterResolution::FourEightyP), 30, Some(10)), 290);
       // 15.84362140 ¢/s × 40 = 633.74 → 634¢.
       assert_eq!(cents_with_video_refs(Some(RouterResolution::SevenTwentyP), 30, Some(10)), 634);
+      // 27.39973680 ¢/s × 40 = 1095.99 → 1096¢.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 30, Some(10)), 1096);
+    }
+
+    #[test]
+    fn table_1080p_with_ten_input_seconds() {
+      // 27.39973680 ¢/s over (output + 10) billed seconds, rounded up.
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 5, Some(10)), 411);
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 10, Some(10)), 548);
+      assert_eq!(cents_with_video_refs(Some(RouterResolution::TenEightyP), 30, Some(10)), 1096);
     }
 
     #[test]

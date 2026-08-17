@@ -144,8 +144,11 @@ fn nearest_aspect_ratio(aspect_ratio: RouterAspectRatio) -> KinoviAspectRatio {
   }
 }
 
-// Seedance 2.5 supports output resolutions: 480p and 720p only.
-// 1080p (and higher) is NOT supported — downgrade to 720p or error based on strategy.
+// Seedance 2.5 supports output resolutions: 480p, 720p, and 1080p.
+// 4K (and other resolutions) are NOT supported — they map to the nearest
+// offered resolution or error based on strategy. This planning MUST stay in
+// lockstep with the Artcraft billing twin (`SupportedResolutions::Full` in
+// build_common) so billing and execution always land on the same resolution.
 fn plan_output_resolution(
   resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
@@ -159,19 +162,20 @@ fn plan_output_resolution(
     // Direct mappings
     Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
     Some(RouterResolution::SevenTwentyP) => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
+    Some(RouterResolution::TenEightyP) => Ok(Some(KinoviOutputResolution::TenEightyP)),
 
-    // 1080p is not supported — handle via strategy
-    Some(RouterResolution::TenEightyP) => match strategy {
+    // 4K is not supported — handle via strategy
+    Some(RouterResolution::FourK) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "resolution",
-          value: format!("{:?}", RouterResolution::TenEightyP),
+          value: format!("{:?}", RouterResolution::FourK),
         }))
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade
       | RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        // 1080p not available — downgrade to 720p (highest supported)
-        Ok(Some(KinoviOutputResolution::SevenTwentyP))
+        // 4K not available — downgrade to 1080p (highest supported)
+        Ok(Some(KinoviOutputResolution::TenEightyP))
       }
     },
 
@@ -187,7 +191,7 @@ fn plan_output_resolution(
       | RequestMismatchMitigationStrategy::PayLessDowngrade => {
         Ok(Some(match unsupported {
           RouterResolution::HalfK => KinoviOutputResolution::FourEightyP,
-          _ => KinoviOutputResolution::SevenTwentyP,
+          _ => KinoviOutputResolution::TenEightyP,
         }))
       }
     },
@@ -403,28 +407,41 @@ mod tests {
     }
 
     #[test]
-    fn resolution_480p_and_720p() {
+    fn resolution_480p_720p_and_1080p() {
       let builder = GenerateVideoRequestBuilder { resolution: Some(RouterResolution::FourEightyP), ..base_builder() };
       assert!(matches!(unwrap_draft(build_kinovi_seedance_2p5(builder)).resolution, Some(KinoviOutputResolution::FourEightyP)));
 
       let builder = GenerateVideoRequestBuilder { resolution: Some(RouterResolution::SevenTwentyP), ..base_builder() };
       assert!(matches!(unwrap_draft(build_kinovi_seedance_2p5(builder)).resolution, Some(KinoviOutputResolution::SevenTwentyP)));
+
+      let builder = GenerateVideoRequestBuilder { resolution: Some(RouterResolution::TenEightyP), ..base_builder() };
+      assert!(matches!(unwrap_draft(build_kinovi_seedance_2p5(builder)).resolution, Some(KinoviOutputResolution::TenEightyP)));
     }
 
     #[test]
-    fn resolution_1080p_downgrades_to_720p() {
+    fn resolution_1080p_error_out_strategy_still_maps_directly() {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::TenEightyP),
+        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+        ..base_builder()
+      };
+      assert!(matches!(unwrap_draft(build_kinovi_seedance_2p5(builder)).resolution, Some(KinoviOutputResolution::TenEightyP)));
+    }
+
+    #[test]
+    fn resolution_4k_downgrades_to_1080p() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
         ..base_builder()
       };
-      assert!(matches!(unwrap_draft(build_kinovi_seedance_2p5(builder)).resolution, Some(KinoviOutputResolution::SevenTwentyP)));
+      assert!(matches!(unwrap_draft(build_kinovi_seedance_2p5(builder)).resolution, Some(KinoviOutputResolution::TenEightyP)));
     }
 
     #[test]
-    fn resolution_1080p_error_out() {
+    fn resolution_4k_error_out() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(RouterResolution::TenEightyP),
+        resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..base_builder()
       };

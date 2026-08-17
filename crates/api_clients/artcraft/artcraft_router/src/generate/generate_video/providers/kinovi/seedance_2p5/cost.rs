@@ -2,6 +2,7 @@ use kinovi_web_client::generate::video::generate_seedance_2p5::{
   GenerateSeedance2p5Request, KinoviSeedance2p5Modality, KinoviSeedance2p5OutputResolution,
   MAX_BILLED_INPUT_SECONDS, MIN_BILLED_INPUT_SECONDS,
 };
+use kinovi_web_client::pricing::kinovi_cost_calculator_trait::KinoviCostCalculatorTrait;
 
 use crate::api::video_list_ref::VideoListRef;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
@@ -92,9 +93,13 @@ impl KinoviSeedance2p5CostState {
       use_face_blur_hack: None,
     };
 
-    let costs = pricing_request.calculate_costs();
-    // 2.5 bills whole credits, so the rounding below is exact; the USD cents
-    // (the authoritative charge) are rounded up.
+    // Enterprise tier: what generations actually cost us (our discounted
+    // per-model credit rate at our bulk credit purchase rate).
+    let costs = pricing_request.calculate_enterprise_costs();
+    // 2.5 bills whole credits at 480p/720p, so the rounding below is exact
+    // there; 1080p bills fractional credits (103.25/sec) and rounds to the
+    // nearest credit. The USD cents (the authoritative charge) are rounded
+    // up.
     let cost_in_credits = costs.kinovi_credits.round() as u64;
     let cost_in_usd_cents = costs.usd_cents_rounded_up;
 
@@ -116,7 +121,8 @@ mod tests {
 
   use super::*;
 
-  // ── Credits without video references (26/sec at 480p, 59/sec at 720p) ──
+  // ── Credits without video references (26/sec at 480p, 59/sec at 720p,
+  //    103.25/sec at 1080p enterprise) ──
 
   mod credits_without_video_references {
     use super::*;
@@ -135,6 +141,15 @@ mod tests {
     }
 
     #[test]
+    fn credits_1080p() {
+      // 103.25/sec enterprise; fractional totals round to the nearest credit
+      // (516.25 → 516, 1032.5 → 1033, 3097.5 → 3098).
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 5, false, None), 516);
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 10, false, None), 1033);
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 30, false, None), 3098);
+    }
+
+    #[test]
     fn default_resolution_is_720p() {
       assert_eq!(credits(None, 10, false, None), credits(Some(KinoviOutputResolution::SevenTwentyP), 10, false, None));
     }
@@ -146,7 +161,7 @@ mod tests {
   }
 
   // ── Credits with video references (16/sec at 480p, 35/sec at 720p,
-  //    over output duration + input seconds) ──
+  //    61.69/sec at 1080p enterprise, over output duration + input seconds) ──
 
   mod credits_with_video_references {
     use super::*;
@@ -155,6 +170,8 @@ mod tests {
     fn thirty_second_output_with_ten_input_seconds_bills_forty() {
       assert_eq!(credits(Some(KinoviOutputResolution::FourEightyP), 30, true, Some(10)), 16 * 40);
       assert_eq!(credits(Some(KinoviOutputResolution::SevenTwentyP), 30, true, Some(10)), 35 * 40);
+      // 61.69/sec enterprise × 40 = 2467.6 → 2468 credits.
+      assert_eq!(credits(Some(KinoviOutputResolution::TenEightyP), 30, true, Some(10)), 2468);
     }
 
     #[test]
@@ -185,7 +202,7 @@ mod tests {
 
   #[test]
   fn usd_cents_are_rounded_up() {
-    // 130 credits → 13000/243 = 53.4979 → 54¢.
+    // 130 credits → 13000/243.16 = 53.4627 → 54¢.
     let estimate = cost_state(Some(KinoviOutputResolution::FourEightyP), 5, false, None).estimate_cost();
     assert_eq!(estimate.cost_in_usd_cents, Some(54));
   }

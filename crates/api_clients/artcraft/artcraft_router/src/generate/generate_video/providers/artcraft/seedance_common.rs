@@ -137,19 +137,24 @@ pub fn seedance_2p5_preview_usd_cents(
 const SEEDANCE_2P5_CENTS_PER_SECOND_480P: f64 = 11.76954733;
 /// Seedance 2.5 — 720p price, USD cents per second.
 const SEEDANCE_2P5_CENTS_PER_SECOND_720P: f64 = 26.70781893;
+/// Seedance 2.5 — 1080p price, USD cents per second.
+const SEEDANCE_2P5_CENTS_PER_SECOND_1080P: f64 = 45.85869386;
 /// Seedance 2.5 — 480p price with video references, USD cents per second.
 const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_480P: f64 = 7.24279835;
 /// Seedance 2.5 — 720p price with video references, USD cents per second.
 const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 15.84362140;
+/// Seedance 2.5 — 1080p price with video references, USD cents per second.
+const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P: f64 = 27.39973680;
 
 /// ArtCraft's price (USD cents) for Seedance 2.5.
 ///
-/// Only 480p and 720p are offered; any other resolution prices at 720p.
-/// Without video references, billed seconds = output duration. With video
-/// references, the per-second rate drops but the billed seconds are the
-/// output duration PLUS the total seconds of reference video input (clamped
-/// to the 4..=30 second billing range). The fractional total is rounded UP
-/// to a whole cent. No batching.
+/// 480p, 720p, and 1080p are offered; any other resolution prices at 720p
+/// (the request planner maps unsupported resolutions before pricing, so
+/// this fallback is only a failsafe). Without video references, billed
+/// seconds = output duration. With video references, the per-second rate
+/// drops but the billed seconds are the output duration PLUS the total
+/// seconds of reference video input (clamped to the 4..=30 second billing
+/// range). The fractional total is rounded UP to a whole cent. No batching.
 pub fn seedance_2p5_usd_cents(
   resolution: CommonResolution,
   duration_seconds: u16,
@@ -159,6 +164,7 @@ pub fn seedance_2p5_usd_cents(
   let (cents_per_second, billed_seconds) = if has_video_references {
     let rate = match resolution {
       CommonResolution::FourEightyP => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P,
       // Everything else (including 720p and unsupported resolutions) prices at 720p.
       _ => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
     };
@@ -180,6 +186,7 @@ pub fn seedance_2p5_usd_cents(
   } else {
     let rate = match resolution {
       CommonResolution::FourEightyP => SEEDANCE_2P5_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_CENTS_PER_SECOND_1080P,
       _ => SEEDANCE_2P5_CENTS_PER_SECOND_720P,
     };
     (rate, u64::from(duration_seconds))
@@ -192,18 +199,24 @@ pub fn seedance_2p5_usd_cents(
 const SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_480P: f64 = 13.90946502;
 /// Seedance 2.5 Ultra — 720p price, USD cents per second.
 const SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_720P: f64 = 31.56378601;
+/// Seedance 2.5 Ultra — 1080p price, USD cents per second.
+const SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_1080P: f64 = 50.10486922;
 /// Seedance 2.5 Ultra — 480p price with video references, USD cents per second.
 const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_480P: f64 = 8.55967078;
 /// Seedance 2.5 Ultra — 720p price with video references, USD cents per second.
 const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 18.72427984;
+/// Seedance 2.5 Ultra — 1080p price with video references, USD cents per second.
+const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P: f64 = 29.93674947;
 
 /// ArtCraft's price (USD cents) for Seedance 2.5 Ultra.
 ///
-/// Only 480p and 720p are offered; any other resolution prices at 720p.
-/// Without video references, billed seconds = output duration. With video
-/// references, the per-second rate drops but the billed seconds are the
-/// output duration PLUS the total seconds of reference video input. The
-/// fractional total is rounded UP to a whole cent. No batching.
+/// 480p, 720p, and 1080p are offered; any other resolution prices at 720p
+/// (the request planner maps unsupported resolutions before pricing, so
+/// this fallback is only a failsafe). Without video references, billed
+/// seconds = output duration. With video references, the per-second rate
+/// drops but the billed seconds are the output duration PLUS the total
+/// seconds of reference video input. The fractional total is rounded UP to
+/// a whole cent. No batching.
 pub fn seedance_2p5_ultra_usd_cents(
   resolution: CommonResolution,
   duration_seconds: u16,
@@ -213,6 +226,7 @@ pub fn seedance_2p5_ultra_usd_cents(
   let (cents_per_second, billed_seconds) = if has_video_references {
     let rate = match resolution {
       CommonResolution::FourEightyP => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P,
       // Everything else (including 720p and unsupported resolutions) prices at 720p.
       _ => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
     };
@@ -234,6 +248,7 @@ pub fn seedance_2p5_ultra_usd_cents(
   } else {
     let rate = match resolution {
       CommonResolution::FourEightyP => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_1080P,
       _ => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_720P,
     };
     (rate, u64::from(duration_seconds))
