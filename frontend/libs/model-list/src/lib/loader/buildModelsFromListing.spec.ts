@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { VideoModel } from "../classes/VideoModel.js";
 import { getVideoDurationConstraint } from "../classes/properties/VideoDuration.js";
 import { ModelCreator } from "../classes/metadata/ModelCreator.js";
