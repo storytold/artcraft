@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
-import { BoxIcon, CheckIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import {
   getCreatorIconPathForModelId,
@@ -73,6 +73,8 @@ export interface GalleryCardProps {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (item: GalleryItem) => void;
+  /** Persistent badge marking the item most recently viewed in the lightbox. */
+  lastViewed?: boolean;
 }
 
 export const GalleryCard = memo(function GalleryCard({
@@ -84,6 +86,7 @@ export const GalleryCard = memo(function GalleryCard({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  lastViewed = false,
 }: GalleryCardProps) {
   const isSquare = shape === "square";
   const cached = aspectRatioCache.get(item.id);
@@ -162,7 +165,7 @@ export const GalleryCard = memo(function GalleryCard({
     <div
       role="button"
       tabIndex={0}
-      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : ""}`}
+      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : lastViewed ? "ring-2 ring-primary-400/50" : ""}`}
       style={outerStyle}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -220,6 +223,16 @@ export const GalleryCard = memo(function GalleryCard({
           }`}
         >
           <CheckIcon  className="text-[10px]" />
+        </div>
+      )}
+
+      {/* Persistent "Last viewed" badge (stays until another item is opened
+          in the lightbox). Top-right so it never collides with the selection
+          checkbox chip at top-left. */}
+      {lastViewed && (
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+          <EyeIcon />
+          Last viewed
         </div>
       )}
 

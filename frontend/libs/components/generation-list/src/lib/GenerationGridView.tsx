@@ -53,6 +53,8 @@ export interface GenerationGridViewProps {
   selectionMode?: boolean;
   selectedIds?: ReadonlySet<string>;
   onToggleSelect?: (item: GalleryItem) => void;
+  /** Marks the tile the user most recently viewed in the lightbox. */
+  lastViewedId?: string | null;
 }
 
 export function GenerationGridView({
@@ -71,6 +73,7 @@ export function GenerationGridView({
   selectionMode = false,
   selectedIds,
   onToggleSelect,
+  lastViewedId,
 }: GenerationGridViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -198,6 +201,7 @@ export function GenerationGridView({
                 selectMode={selectionMode}
                 selected={selectionMode && selectedIds?.has(entry.item.id)}
                 onToggleSelect={onToggleSelect}
+                lastViewed={!!lastViewedId && entry.item.id === lastViewedId}
               />
             )}
           </div>

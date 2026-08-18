@@ -4,9 +4,9 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   GenerationListView,
   type GalleryItem,
-  is3DMediaClass,
   type RecreateSlotContext,
   useGallerySelectionStore,
+  useLastViewedGenerationStore,
 } from "@storyteller/ui-generation-list";
 import { toast } from "../toast/toast";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
@@ -38,6 +38,7 @@ export function GenerationGalleryList({
 }: GenerationGalleryProps) {
   const selectionActive = useGallerySelectionStore((s) => s.active);
   const selectedIds = useGallerySelectionStore((s) => s.ids);
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
   return (
     <GenerationListView
       inProgressJobs={inProgressJobs}
@@ -63,6 +64,7 @@ export function GenerationGalleryList({
       selectionMode={!!selectable && selectionActive}
       selectedIds={selectedIds}
       onToggleSelect={handleToggleSelect}
+      lastViewedId={lastViewedId}
     />
   );
 }
@@ -86,14 +88,16 @@ function RowRecreateButton({
   mediaClass,
   kind,
 }: RecreateSlotContext) {
-  // Recreate only targets the image/video create pages; 3D generations have no
-  // recreate flow, so map to a valid class for the hook and render nothing.
+  // Recreate only targets the image/video create pages; 3D and audio
+  // generations have no recreate flow, so map to a valid class for the hook
+  // (it must run unconditionally) and render nothing.
+  const hasRecreateFlow = mediaClass === "image" || mediaClass === "video";
   const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
     promptToken,
-    is3DMediaClass(mediaClass) ? "image" : mediaClass,
+    hasRecreateFlow ? mediaClass : "image",
   );
 
-  if (is3DMediaClass(mediaClass)) return null;
+  if (!hasRecreateFlow) return null;
   return (
     <Tooltip content="Recreate" position="top">
       <button
