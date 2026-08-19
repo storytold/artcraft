@@ -318,6 +318,16 @@ export const PromptBoxAudio = ({
     onDropFiles: handleDroppedFiles,
   });
 
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={imageRefsSupported}
+      acceptsVideos={false}
+      acceptsAudio={audioRefsSupported}
+    />
+  );
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
   };
@@ -551,12 +561,7 @@ export const PromptBoxAudio = ({
           )}
           {...drop.dropZoneProps}
         >
-          <PromptBoxDropOverlay
-            dragState={drop.dragState}
-            acceptsImages={imageRefsSupported}
-            acceptsVideos={false}
-            acceptsAudio={audioRefsSupported}
-          />
+          {dropOverlay}
           {referenceRow}
 
           <div className="flex justify-center gap-2">
@@ -649,6 +654,8 @@ export const PromptBoxAudio = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={Infinity}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
         clearAllButton={
           <PromptClearAllButton
             onClick={handleClearAll}
