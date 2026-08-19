@@ -561,6 +561,7 @@ export const PromptBoxVideo = ({
         id: img.id,
         kind: "image" as const,
         url: img.url,
+        previewUrl: img.fullUrl ?? img.url,
         name: `Image ${i + 1}`,
       })),
       ...deck.uploadingImages.map((entry, i) => ({
@@ -718,6 +719,7 @@ export const PromptBoxVideo = ({
         id: referenceImages[0].id,
         kind: "image",
         url: referenceImages[0].url,
+        previewUrl: referenceImages[0].fullUrl ?? referenceImages[0].url,
         name: "First frame",
       }
     : deck.uploadingImages[0]
@@ -735,6 +737,7 @@ export const PromptBoxVideo = ({
         id: endFrameImage.id,
         kind: "image",
         url: endFrameImage.url,
+        previewUrl: endFrameImage.fullUrl ?? endFrameImage.url,
         name: "Last frame",
       }
     : deck.uploadingEnd
