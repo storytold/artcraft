@@ -161,6 +161,7 @@ export const PromptBoxImage = ({
         id: img.id,
         kind: "image" as const,
         url: img.url,
+        previewUrl: img.fullUrl ?? img.url,
         name: `Image ${i + 1}`,
       })),
       ...deck.uploadingImages.map((entry, i) => ({

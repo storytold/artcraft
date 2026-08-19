@@ -8,11 +8,15 @@ import {
   AUDIO_FILE_TYPE_ERROR,
   isAudioFile,
 } from "../common/audioFiles";
+import { createImagePreviewUrl, revokeIfBlobUrl } from "../common/imagePreview";
 
 /** Minimal structural shapes so both apps' ref types fit. */
 export interface DeckRefLike {
   id: string;
   url: string;
+  /** Full-resolution URL for the tap-preview modal. Uploads set it to an
+   *  object URL of the original file; `url` is a downscaled thumbnail. */
+  fullUrl?: string;
   /** Set once the media file exists server-side (uploads fill it in late). */
   mediaToken?: string;
 }
@@ -20,7 +24,8 @@ export interface DeckMediaRefLike extends DeckRefLike {
   duration: number;
 }
 
-/** An in-flight upload; `previewUrl` is a memoized object URL. */
+/** An in-flight upload. `previewUrl` is an object URL; for images it's a
+ *  downscaled preview and stays empty until the downscale finishes. */
 export interface DeckUploadEntry {
   id: string;
   file: File;
@@ -173,12 +178,34 @@ export function useDeckMedia<
     referenceAudiosRef.current = referenceAudios;
   }, [referenceAudios]);
 
+  // Committed refs live in the caller's store, whose update can render one
+  // pass before this hook's entry-removal state lands — briefly showing the
+  // committed card AND its spinner. Commits reuse their entry's id, so
+  // hiding entries whose id is already committed removes that flicker (and
+  // the deck's keyed card morphs from spinner to thumbnail in place).
+  const visibleUploadingImages = useMemo(
+    () =>
+      uploadingImages.filter(
+        (entry) => !referenceImages.some((img) => img.id === entry.id),
+      ),
+    [uploadingImages, referenceImages],
+  );
+  const visibleUploadingVideo =
+    uploadingVideo && referenceVideos.some((v) => v.id === uploadingVideo.id)
+      ? null
+      : uploadingVideo;
+  const visibleUploadingAudio =
+    uploadingAudio && referenceAudios.some((a) => a.id === uploadingAudio.id)
+      ? null
+      : uploadingAudio;
+
   // The hook only ever commits `{ id, url, file, mediaToken, duration? }`,
   // which is structurally assignable to both apps' ref types (desktop
   // promptStore refs match exactly; the webapp's extra fields are optional).
   const asImage = (img: {
     id: string;
     url: string;
+    fullUrl?: string;
     file: File;
     mediaToken: string;
   }) => img as unknown as TImage;
@@ -226,7 +253,7 @@ export function useDeckMedia<
     files: File[],
     uploadTarget: "start" | "end",
   ) => {
-    const currentCount = referenceImages.length + uploadingImages.length;
+    const currentCount = referenceImages.length + visibleUploadingImages.length;
     const availableSlots = Math.max(0, maxImages - currentCount);
     if (availableSlots <= 0 && uploadTarget !== "end") {
       return;
@@ -237,31 +264,57 @@ export function useDeckMedia<
         ? files.slice(0, 1)
         : files.slice(0, availableSlots);
 
-    filesToProcess.forEach((file) => {
-      const entry = makeEntry(file);
+    filesToProcess.forEach(async (file) => {
+      // Register the slot synchronously (spinner card + slot accounting)…
+      const entryId = randomId();
       if (uploadTarget === "end") {
-        setUploadingEnd(entry);
+        setUploadingEnd({ id: entryId, file, previewUrl: "" });
       } else {
-        setUploadingImages((prev) => [...prev, entry]);
+        setUploadingImages((prev) => [
+          ...prev,
+          { id: entryId, file, previewUrl: "" },
+        ]);
       }
 
-      const finishEntry = () => {
-        URL.revokeObjectURL(entry.previewUrl);
+      // …then fill in the thumbnail once the downscale finishes. Full-res
+      // previews are what used to OOM-crash iOS tabs, so it's never the
+      // original pixels here.
+      const previewUrl = await createImagePreviewUrl(file);
+      if (uploadTarget === "end") {
+        setUploadingEnd((prev) =>
+          prev && prev.id === entryId ? { ...prev, previewUrl } : prev,
+        );
+      } else {
+        setUploadingImages((prev) =>
+          prev.map((e) => (e.id === entryId ? { ...e, previewUrl } : e)),
+        );
+      }
+
+      const removeEntry = () => {
         if (uploadTarget === "end") {
           setUploadingEnd(null);
         } else {
-          setUploadingImages((prev) => prev.filter((e) => e.id !== entry.id));
+          setUploadingImages((prev) => prev.filter((e) => e.id !== entryId));
         }
       };
 
-      const commit = (url: string, mediaToken: string) => {
+      const fail = () => {
+        revokeIfBlobUrl(previewUrl);
+        removeEntry();
+      };
+
+      const commit = (mediaToken: string) => {
+        // The downscaled preview lives on as the committed thumbnail; the
+        // original file backs the full-res tap-preview via `fullUrl`. The
+        // ref keeps the entry's id so the deck card swaps in place.
         const referenceImage = asImage({
-          id: randomId(),
-          url,
+          id: entryId,
+          url: previewUrl,
+          fullUrl: URL.createObjectURL(file),
           file,
           mediaToken,
         });
-        finishEntry();
+        removeEntry();
         if (uploadTarget === "end") {
           setEndFrameImage?.(referenceImage);
         } else {
@@ -269,29 +322,24 @@ export function useDeckMedia<
         }
       };
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (uploadImage) {
-          await uploadImage({
-            title: randomTitle("reference-image"),
-            assetFile: file,
-            progressCallback: (newState) => {
-              if (newState.status === UploaderStates.success && newState.data) {
-                commit(reader.result as string, newState.data);
-              } else if (
-                newState.status === UploaderStates.assetError ||
-                newState.status === UploaderStates.imageCreateError
-              ) {
-                finishEntry();
-              }
-            },
-          });
-        } else {
-          commit(reader.result as string, "");
-        }
-
-      };
-      reader.readAsDataURL(file);
+      if (uploadImage) {
+        await uploadImage({
+          title: randomTitle("reference-image"),
+          assetFile: file,
+          progressCallback: (newState) => {
+            if (newState.status === UploaderStates.success && newState.data) {
+              commit(newState.data);
+            } else if (
+              newState.status === UploaderStates.assetError ||
+              newState.status === UploaderStates.imageCreateError
+            ) {
+              fail();
+            }
+          },
+        });
+      } else {
+        commit("");
+      }
     });
   };
 
@@ -333,9 +381,10 @@ export function useDeckMedia<
 
       const commit = (mediaToken: string) => {
         // Reuse the entry's object URL as the committed thumbnail so it
-        // stays alive exactly as long as the ref does.
+        // stays alive exactly as long as the ref does, and the entry's id
+        // so the deck card swaps in place.
         const refVideo = asVideo({
-          id: randomId(),
+          id: entry.id,
           url: entry.previewUrl,
           file,
           mediaToken,
@@ -409,7 +458,7 @@ export function useDeckMedia<
 
       const commit = (mediaToken: string) => {
         const refAudio = asAudio({
-          id: randomId(),
+          id: entry.id,
           url: entry.previewUrl,
           file,
           mediaToken,
@@ -666,7 +715,7 @@ export function useDeckMedia<
 
   const availableImageSlots = Math.max(
     0,
-    maxImages - referenceImages.length - uploadingImages.length,
+    maxImages - referenceImages.length - visibleUploadingImages.length,
   );
 
   const fileInputs: ReactNode = (
@@ -776,10 +825,10 @@ export function useDeckMedia<
   ) : null;
 
   return {
-    uploadingImages,
+    uploadingImages: visibleUploadingImages,
     uploadingEnd,
-    uploadingVideo,
-    uploadingAudio,
+    uploadingVideo: visibleUploadingVideo,
+    uploadingAudio: visibleUploadingAudio,
     availableImageSlots,
     processImageFiles,
     processVideoFiles,

@@ -1,6 +1,4 @@
 import {
-  useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -12,6 +10,10 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { Modal } from "@storyteller/ui-modal";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
+import {
+  createImagePreviewUrl,
+  revokeIfBlobUrl,
+} from "@storyteller/ui-promptbox";
 import {
   DndContext,
   closestCenter,
@@ -76,13 +78,23 @@ export const ImagePromptRow = ({
     if (rootRef.current?.contains(e.target as Node)) e.stopPropagation();
   };
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
+  // `previewUrl` is a downscaled object URL, empty until the downscale
+  // finishes. Full-res previews (base64 data URLs of camera photos) used to
+  // OOM-crash iOS tabs, which reloaded the page and wiped the deck.
   const [uploadingImages, setUploadingImages] = useState<
-    { id: string; file: File }[]
+    { id: string; previewUrl: string }[]
   >([]);
   const [previewImage, setPreviewImage] = useState<RefImage | null>(null);
 
   const referenceImagesRef = useRef(referenceImages);
   referenceImagesRef.current = referenceImages;
+
+  // Committed refs land in the page's store one render before the local
+  // entry removal — commits reuse the entry's id, so hide entries whose ref
+  // is already committed to avoid the card flashing next to its spinner.
+  const visibleUploadingImages = uploadingImages.filter(
+    (entry) => !referenceImages.some((img) => img.id === entry.id),
+  );
 
   const allowReorder = maxImagePromptCount > 1 && referenceImages.length > 1;
 
@@ -95,7 +107,7 @@ export const ImagePromptRow = ({
 
   const usedSlots = Math.min(
     maxImagePromptCount,
-    referenceImages.length + uploadingImages.length,
+    referenceImages.length + visibleUploadingImages.length,
   );
 
   const handleRemoveReference = (id: string) => {
@@ -107,7 +119,8 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const currentCount = referenceImages.length + uploadingImages.length;
+    const currentCount =
+      referenceImages.length + visibleUploadingImages.length;
     const availableSlots = Math.max(0, maxImagePromptCount - currentCount);
     if (availableSlots <= 0) {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -116,41 +129,46 @@ export const ImagePromptRow = ({
 
     const filesToProcess = files.slice(0, availableSlots);
 
-    filesToProcess.forEach((file) => {
+    filesToProcess.forEach(async (file) => {
       const uploadId = Math.random().toString(36).substring(7);
-      setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
+      setUploadingImages((prev) => [...prev, { id: uploadId, previewUrl: "" }]);
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        await uploadImage({
-          title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              const refImage: RefImage = {
-                id: Math.random().toString(36).substring(7),
-                url: reader.result as string,
-                file,
-                mediaToken: newState.data,
-              };
-              setUploadingImages((prev) =>
-                prev.filter((img) => img.id !== uploadId),
-              );
-              setReferenceImages([...referenceImagesRef.current, refImage]);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              setUploadingImages((prev) =>
-                prev.filter((img) => img.id !== uploadId),
-              );
-            }
-          },
-        });
+      // Downscaled preview; the committed thumbnail reuses it while the
+      // original file backs the full-res preview modal via `fullUrl`.
+      const previewUrl = await createImagePreviewUrl(file);
+      setUploadingImages((prev) =>
+        prev.map((e) => (e.id === uploadId ? { ...e, previewUrl } : e)),
+      );
 
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      };
-      reader.readAsDataURL(file);
+      const removeEntry = () =>
+        setUploadingImages((prev) => prev.filter((img) => img.id !== uploadId));
+
+      await uploadImage({
+        title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
+        assetFile: file,
+        progressCallback: (newState) => {
+          if (newState.status === UploaderStates.success && newState.data) {
+            // Same id as the uploading entry so the card swaps in place.
+            const refImage: RefImage = {
+              id: uploadId,
+              url: previewUrl,
+              fullUrl: URL.createObjectURL(file),
+              file,
+              mediaToken: newState.data,
+            };
+            removeEntry();
+            setReferenceImages([...referenceImagesRef.current, refImage]);
+          } else if (
+            newState.status === UploaderStates.assetError ||
+            newState.status === UploaderStates.imageCreateError
+          ) {
+            revokeIfBlobUrl(previewUrl);
+            removeEntry();
+          }
+        },
+      });
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
     });
   };
 
@@ -163,40 +181,42 @@ export const ImagePromptRow = ({
     setReferenceImages(arrayMove(referenceImages, oldIndex, newIndex));
   };
 
-  const handleEndFrameUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEndFrameUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file || !setEndFrameImage) return;
 
     setUploadingEndFrame(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      await uploadImage({
-        title: `end-frame-${Math.random().toString(36).substring(2, 15)}`,
-        assetFile: file,
-        progressCallback: (newState) => {
-          if (newState.status === UploaderStates.success && newState.data) {
-            setEndFrameImage({
-              id: Math.random().toString(36).substring(7),
-              url: reader.result as string,
-              file,
-              mediaToken: newState.data,
-            });
-            setUploadingEndFrame(false);
-          } else if (
-            newState.status === UploaderStates.assetError ||
-            newState.status === UploaderStates.imageCreateError
-          ) {
-            setUploadingEndFrame(false);
-          }
-        },
-      });
-      if (endFrameInputRef.current) endFrameInputRef.current.value = "";
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = await createImagePreviewUrl(file);
+    await uploadImage({
+      title: `end-frame-${Math.random().toString(36).substring(2, 15)}`,
+      assetFile: file,
+      progressCallback: (newState) => {
+        if (newState.status === UploaderStates.success && newState.data) {
+          setEndFrameImage({
+            id: Math.random().toString(36).substring(7),
+            url: previewUrl,
+            fullUrl: URL.createObjectURL(file),
+            file,
+            mediaToken: newState.data,
+          });
+          setUploadingEndFrame(false);
+        } else if (
+          newState.status === UploaderStates.assetError ||
+          newState.status === UploaderStates.imageCreateError
+        ) {
+          revokeIfBlobUrl(previewUrl);
+          setUploadingEndFrame(false);
+        }
+      },
+    });
+    if (endFrameInputRef.current) endFrameInputRef.current.value = "";
   };
 
   const canAddMore =
-    referenceImages.length + uploadingImages.length < maxImagePromptCount;
+    referenceImages.length + visibleUploadingImages.length <
+    maxImagePromptCount;
 
   // Context-aware labels
   const sectionLabel = isVideo
@@ -297,13 +317,13 @@ export const ImagePromptRow = ({
                 ))
             )}
 
-            {uploadingImages
+            {visibleUploadingImages
               .slice(
                 0,
                 Math.max(0, maxImagePromptCount - referenceImages.length),
               )
-              .map(({ id, file }) => (
-                <UploadingThumbnail key={id} file={file} />
+              .map(({ id, previewUrl }) => (
+                <UploadingThumbnail key={id} previewUrl={previewUrl} />
               ))}
 
             {canAddMore && (
@@ -356,10 +376,7 @@ export const ImagePromptRow = ({
                 </div>
               ) : uploadingEndFrame ? (
                 <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <LoaderCircleIcon
-                    
-                    spin
-                    className="h-5 w-5 text-white" />
+                  <LoaderCircleIcon className="h-5 w-5 animate-spin text-white" />
                 </div>
               ) : (
                 <AddButton
@@ -599,23 +616,20 @@ const SortableImage = ({
   );
 };
 
-const UploadingThumbnail = ({ file }: { file: File }) => {
-  const previewUrl = useMemo(() => URL.createObjectURL(file), [file]);
-  useEffect(() => () => URL.revokeObjectURL(previewUrl), [previewUrl]);
+const UploadingThumbnail = ({ previewUrl }: { previewUrl: string }) => {
   return (
     <div className="glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30">
-      <div className="absolute inset-0">
-        <img
-          src={previewUrl}
-          alt="Uploading preview"
-          className="h-full w-full object-cover blur-sm"
-        />
-      </div>
+      {previewUrl && (
+        <div className="absolute inset-0">
+          <img
+            src={previewUrl}
+            alt="Uploading preview"
+            className="h-full w-full object-cover blur-sm"
+          />
+        </div>
+      )}
       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-        <LoaderCircleIcon
-          
-          spin
-          className="h-6 w-6 text-white" />
+        <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
       </div>
     </div>
   );

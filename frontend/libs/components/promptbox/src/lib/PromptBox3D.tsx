@@ -693,7 +693,7 @@ export const PromptBox3D = ({
             onImageClick={(image) => {
               setContent(
                 <img
-                  src={image.url}
+                  src={image.fullUrl ?? image.url}
                   alt="Reference preview"
                   className="w-full h-full object-contain"
                 />,

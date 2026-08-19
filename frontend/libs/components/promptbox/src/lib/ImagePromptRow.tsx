@@ -13,6 +13,10 @@ import { downloadFileFromUrl } from "@storyteller/api";
 import { ImageIcon, ImagesIcon, LoaderCircleIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { RefImage, RefVideo, RefAudio } from "./promptStore";
+import {
+  createImagePreviewUrl,
+  revokeIfBlobUrl,
+} from "./common/imagePreview";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
@@ -181,8 +185,10 @@ export const ImagePromptRow = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const audioFileInputRef = useRef<HTMLInputElement>(null);
+  // `previewUrl` is a downscaled object URL, empty until the downscale
+  // finishes (full-res uploading previews used to OOM-crash iOS tabs).
   const [uploadingImages, setUploadingImages] = useState<
-    { id: string; file: File }[]
+    { id: string; file: File; previewUrl: string }[]
   >([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [galleryTarget, setGalleryTarget] = useState<"start" | "end" | "video">(
@@ -197,6 +203,7 @@ export const ImagePromptRow = ({
   const [uploadingEnd, setUploadingEnd] = useState<{
     id: string;
     file: File;
+    previewUrl: string;
   } | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState<{
     id: string;
@@ -212,6 +219,17 @@ export const ImagePromptRow = ({
   useEffect(() => {
     referenceImagesRef.current = referenceImages;
   }, [referenceImages]);
+
+  // Committed refs land in the caller's store one render before the local
+  // entry removal — commits reuse the entry's id, so hide entries whose ref
+  // is already committed to avoid the card flashing next to its spinner.
+  const visibleUploadingImages = useMemo(
+    () =>
+      uploadingImages.filter(
+        (entry) => !referenceImages.some((img) => img.id === entry.id),
+      ),
+    [uploadingImages, referenceImages],
+  );
 
   const allowReorder = useMemo(
     () => maxImagePromptCount > 1 && referenceImages.length > 1,
@@ -306,28 +324,32 @@ export const ImagePromptRow = ({
     () =>
       Math.min(
         maxImagePromptCount,
-        referenceImages.length + uploadingImages.length,
+        referenceImages.length + visibleUploadingImages.length,
       ),
-    [maxImagePromptCount, referenceImages.length, uploadingImages.length],
+    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
   );
   const availableSlotsRender = useMemo(
     () =>
       Math.max(
         0,
-        maxImagePromptCount - referenceImages.length - uploadingImages.length,
+        maxImagePromptCount -
+          referenceImages.length -
+          visibleUploadingImages.length,
       ),
-    [maxImagePromptCount, referenceImages.length, uploadingImages.length],
+    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
   );
 
   useEffect(() => {
     const anyVisible =
       visible &&
-      (referenceImages.length > 0 || uploadingImages.length > 0 || allowUpload);
+      (referenceImages.length > 0 ||
+        visibleUploadingImages.length > 0 ||
+        allowUpload);
     onVisibilityChange?.(!!anyVisible);
   }, [
     visible,
     referenceImages.length,
-    uploadingImages.length,
+    visibleUploadingImages.length,
     allowUpload,
     onVisibilityChange,
   ]);
@@ -593,7 +615,8 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const currentCount = referenceImages.length + uploadingImages.length;
+    const currentCount =
+      referenceImages.length + visibleUploadingImages.length;
     const availableSlots = Math.max(0, maxImagePromptCount - currentCount);
     if (availableSlots <= 0 && uploadTarget !== "end") {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -605,83 +628,80 @@ export const ImagePromptRow = ({
         ? files.slice(0, 1)
         : files.slice(0, availableSlots);
 
-    filesToProcess.forEach((file) => {
+    filesToProcess.forEach(async (file) => {
       const uploadId = Math.random().toString(36).substring(7);
       if (uploadTarget === "end") {
-        setUploadingEnd({ id: uploadId, file });
+        setUploadingEnd({ id: uploadId, file, previewUrl: "" });
       } else {
-        setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
+        setUploadingImages((prev) => [
+          ...prev,
+          { id: uploadId, file, previewUrl: "" },
+        ]);
       }
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (uploadImage) {
-          await uploadImage({
-            title: `reference-image-${Math.random()
-              .toString(36)
-              .substring(2, 15)}`,
-            assetFile: file,
-            progressCallback: (newState) => {
-              if (newState.status === UploaderStates.success && newState.data) {
-                const referenceImage: RefImage = {
-                  id: Math.random().toString(36).substring(7),
-                  url: reader.result as string,
-                  file,
-                  mediaToken: newState.data,
-                };
-                if (uploadTarget === "end") {
-                  setUploadingEnd(null);
-                } else {
-                  setUploadingImages((prev) =>
-                    prev.filter((img) => img.id !== uploadId),
-                  );
-                }
-                if (uploadTarget === "end") {
-                  setEndFrameImage?.(referenceImage);
-                } else {
-                  setReferenceImages([
-                    ...referenceImagesRef.current,
-                    referenceImage,
-                  ]);
-                }
-              } else if (
-                newState.status === UploaderStates.assetError ||
-                newState.status === UploaderStates.imageCreateError
-              ) {
-                if (uploadTarget === "end") {
-                  setUploadingEnd(null);
-                } else {
-                  setUploadingImages((prev) =>
-                    prev.filter((img) => img.id !== uploadId),
-                  );
-                }
-              }
-            },
-          });
-        } else {
-          const referenceImage: RefImage = {
-            id: Math.random().toString(36).substring(7),
-            url: reader.result as string,
-            file,
-            mediaToken: "",
-          };
-          if (uploadTarget === "end") {
-            setUploadingEnd(null);
-          } else {
-            setUploadingImages((prev) =>
-              prev.filter((img) => img.id !== uploadId),
-            );
-          }
-          if (uploadTarget === "end") {
-            setEndFrameImage?.(referenceImage);
-          } else {
-            setReferenceImages([...referenceImagesRef.current, referenceImage]);
-          }
-        }
+      // Downscaled preview; the committed thumbnail reuses it while the
+      // original file backs the full-res preview modal via `fullUrl`.
+      const previewUrl = await createImagePreviewUrl(file);
+      if (uploadTarget === "end") {
+        setUploadingEnd((prev) =>
+          prev && prev.id === uploadId ? { ...prev, previewUrl } : prev,
+        );
+      } else {
+        setUploadingImages((prev) =>
+          prev.map((e) => (e.id === uploadId ? { ...e, previewUrl } : e)),
+        );
+      }
 
-        if (fileInputRef.current) fileInputRef.current.value = "";
+      const removeEntry = () => {
+        if (uploadTarget === "end") {
+          setUploadingEnd(null);
+        } else {
+          setUploadingImages((prev) =>
+            prev.filter((img) => img.id !== uploadId),
+          );
+        }
       };
-      reader.readAsDataURL(file);
+
+      const commit = (mediaToken: string) => {
+        // Same id as the uploading entry so the card swaps in place.
+        const referenceImage: RefImage = {
+          id: uploadId,
+          url: previewUrl,
+          fullUrl: URL.createObjectURL(file),
+          file,
+          mediaToken,
+        };
+        removeEntry();
+        if (uploadTarget === "end") {
+          setEndFrameImage?.(referenceImage);
+        } else {
+          setReferenceImages([...referenceImagesRef.current, referenceImage]);
+        }
+      };
+
+      if (uploadImage) {
+        await uploadImage({
+          title: `reference-image-${Math.random()
+            .toString(36)
+            .substring(2, 15)}`,
+          assetFile: file,
+          progressCallback: (newState) => {
+            if (newState.status === UploaderStates.success && newState.data) {
+              commit(newState.data);
+            } else if (
+              newState.status === UploaderStates.assetError ||
+              newState.status === UploaderStates.imageCreateError
+            ) {
+              revokeIfBlobUrl(previewUrl);
+              removeEntry();
+            }
+          },
+        });
+      } else {
+        commit("");
+      }
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
     });
   };
 
@@ -943,18 +963,17 @@ export const ImagePromptRow = ({
                       </div>
                     ))
                 )}
-                {uploadingImages
+                {visibleUploadingImages
                   .slice(
                     0,
                     Math.max(0, maxImagePromptCount - referenceImages.length),
                   )
-                  .map(({ id, file }) => {
-                    const previewUrl = URL.createObjectURL(file);
-                    return (
-                      <div
-                        key={id}
-                        className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30"
-                      >
+                  .map(({ id, previewUrl }) => (
+                    <div
+                      key={id}
+                      className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30"
+                    >
+                      {previewUrl && (
                         <div className="absolute inset-0">
                           <img
                             src={previewUrl}
@@ -962,15 +981,15 @@ export const ImagePromptRow = ({
                             className="h-full w-full object-cover blur-sm"
                           />
                         </div>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <LoaderCircleIcon
-                            
-                            className="h-6 w-6 animate-spin text-white" />
-                        </div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <LoaderCircleIcon
+
+                          className="h-6 w-6 animate-spin text-white" />
                       </div>
-                    );
-                  })}
-                {referenceImages.length + uploadingImages.length <
+                    </div>
+                  ))}
+                {referenceImages.length + visibleUploadingImages.length <
                   maxImagePromptCount && (
                   <Tooltip
                     interactive={true}
@@ -1067,16 +1086,18 @@ export const ImagePromptRow = ({
                     </div>
                   ) : uploadingEnd ? (
                     <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30">
-                      <div className="absolute inset-0">
-                        <img
-                          src={URL.createObjectURL(uploadingEnd.file)}
-                          alt="Uploading preview"
-                          className="h-full w-full object-cover blur-sm"
-                        />
-                      </div>
+                      {uploadingEnd.previewUrl && (
+                        <div className="absolute inset-0">
+                          <img
+                            src={uploadingEnd.previewUrl}
+                            alt="Uploading preview"
+                            className="h-full w-full object-cover blur-sm"
+                          />
+                        </div>
+                      )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <LoaderCircleIcon
-                          
+
                           className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
