@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { PROMO_PCT, planPricing } from "./promo-discounts";
 
 const DISCOUNT_PILL_CLASS =
-  "inline-flex items-center text-xs font-bold uppercase tracking-wide rounded-md px-1.5 py-0.5 border bg-primary/80 text-white border-primary/30";
+  "inline-flex items-center text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 border bg-primary/80 text-white border-primary/30";
 
 const billingTabs = [
   { id: "yearly", label: "Yearly" },
@@ -136,8 +136,8 @@ const PricingTable = ({
     colorScheme: SubscriptionPlanDetails["colorScheme"],
   ) => {
     const baseClasses = unifiedTheme
-      ? "relative rounded-2xl sm:rounded-[28px] p-5 md:p-6 border flex flex-col transition-all duration-300"
-      : "relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md";
+      ? "relative p-5 md:p-6 border flex flex-col transition-all duration-300"
+      : "relative p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md";
 
     switch (colorScheme) {
       case "dark":
@@ -341,12 +341,10 @@ const PricingTable = ({
           tabs={billingTabs}
           activeTab={billingType}
           onTabChange={setBillingType}
-          className="w-fit border border-white/20 rounded-lg bg-white/5"
+          className="w-fit border border-white/15 bg-white/5"
           tabClassName="w-24 text-md"
-          indicatorClassName="bg-primary/30 border border-primary"
-          selectedTabClassName="text-white"
         />
-        <span className="bg-primary text-white px-3 py-0.5 rounded-full text-sm font-medium -top-3 -right-10 md:-left-6 md:right-auto absolute pointer-events-none transform md:-rotate-12 rotate-12">
+        <span className="bg-primary text-white px-3 py-0.5 text-sm font-medium -top-3 -right-10 md:-left-6 md:right-auto absolute pointer-events-none transform md:-rotate-12 rotate-12">
           -{PROMO_PCT}%
         </span>
       </div>
@@ -379,7 +377,7 @@ const PricingTable = ({
               )}
             >
               {isCurrent && (
-                <div className="absolute top-3 right-3 bg-white text-black px-3 py-0.5 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
+                <div className="absolute top-3 right-3 bg-white text-black px-3 py-0.5 text-xs font-bold shadow-lg whitespace-nowrap">
                   CURRENT
                 </div>
               )}
@@ -414,7 +412,7 @@ const PricingTable = ({
 
               <Button
                 className={twMerge(
-                  "w-full justify-center border-transparent mb-6 md:mb-8 h-11 rounded-xl",
+                  "w-full justify-center border-transparent mb-6 md:mb-8 h-11",
                   isCurrent
                     ? "bg-white/20 cursor-default"
                     : frame
@@ -483,7 +481,7 @@ const PricingTable = ({
             <div key={plan.slug} className="relative">
               <div
                 className={twMerge(
-                  "absolute inset-x-0 bottom-[calc(100%_-_1.75rem)] z-0 flex items-center justify-center gap-1.5 rounded-t-2xl sm:rounded-t-[28px] pt-2 pb-8 text-xs font-bold uppercase tracking-[0.1em] text-white",
+                  "absolute inset-x-0 bottom-[calc(100%_-_1.75rem)] z-0 flex items-center justify-center gap-1.5 pt-2 pb-8 text-xs font-bold uppercase tracking-[0.1em] text-white",
                   frame?.tab,
                 )}
               >
@@ -504,8 +502,8 @@ const PricingTable = ({
           <div
             className={
               unifiedTheme
-                ? "relative rounded-2xl sm:rounded-[28px] p-5 md:p-6 border flex flex-col transition-all duration-300 bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
-                : "relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+                ? "relative p-5 md:p-6 border flex flex-col transition-all duration-300 bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+                : "relative p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
             }
           >
             <h3 className="text-xl md:text-2xl font-semibold mb-2 text-white">
@@ -520,7 +518,7 @@ const PricingTable = ({
 
             <ContactUsButton
               wrapperClassName="w-full mb-6 md:mb-8"
-              triggerClassName="w-full flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors h-11"
+              triggerClassName="w-full flex items-center justify-center gap-2 border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors h-11"
             />
 
             <div className="text-sm text-white/50 mb-3">
@@ -540,8 +538,8 @@ const PricingTable = ({
         <div
           className={
             unifiedTheme
-              ? "mt-4 relative rounded-2xl sm:rounded-[28px] p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
-              : "mt-4 relative rounded-3xl p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+              ? "mt-4 relative p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+              : "mt-4 relative p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
           }
         >
           <div className="flex-shrink-0">
@@ -563,7 +561,7 @@ const PricingTable = ({
           </div>
           <ContactUsButton
             wrapperClassName="md:self-center flex-shrink-0"
-            triggerClassName="w-full md:w-auto flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors"
+            triggerClassName="w-full md:w-auto flex items-center justify-center gap-2 border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors"
             menuClassName="right-0 min-w-[12rem]"
           />
         </div>
@@ -627,7 +625,7 @@ const Feature = ({
 }) => (
   <li className="flex items-start gap-3">
     <div
-      className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}
+      className={`mt-1 w-5 h-5 flex items-center justify-center shrink-0 ${highlighted ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}
     >
       <CheckIcon  className="text-xs" />
     </div>
@@ -694,7 +692,7 @@ const ContactUsButton = ({
       {open && (
         <div
           className={twMerge(
-            "absolute top-full z-20 mt-2 overflow-hidden rounded-xl border border-white/15 bg-[#1b1b20] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]",
+            "absolute top-full z-20 mt-2 overflow-hidden border border-white/15 bg-[#1b1b20] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]",
             menuClassName,
           )}
         >

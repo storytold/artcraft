@@ -41,7 +41,7 @@ export function AuthGateModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="w-full max-w-md overflow-hidden rounded-2xl border border-white/[5%] bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+      className="w-full max-w-md overflow-hidden border border-white/[5%] bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
       showClose={true}
       closeOnOutsideClick={true}
       resizable={false}
@@ -51,7 +51,7 @@ export function AuthGateModal({
       <div className="relative overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-primary/25 blur-[80px]"
+          className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 bg-primary/25 blur-[80px]"
         />
         <div
           aria-hidden
@@ -73,7 +73,7 @@ export function AuthGateModal({
                   key={perk}
                   className="flex items-start gap-3 text-[14px] text-white/75"
                 >
-                  <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                  <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center bg-primary/15">
                     <CheckIcon
                       
                       className="text-[9px] text-primary" />
@@ -86,7 +86,7 @@ export function AuthGateModal({
 
           <div className="mt-7 space-y-4">
             {googleError && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
+              <div className=" border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
                 {googleError}
               </div>
             )}
@@ -180,7 +180,7 @@ function InlineLoginForm({ onSuccess }: { onSuccess: () => void }) {
       }}
     >
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
+        <div className=" border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
           {error}
         </div>
       )}
@@ -195,7 +195,7 @@ function InlineLoginForm({ onSuccess }: { onSuccess: () => void }) {
           onChange={(e) => setUsernameOrEmail(e.target.value)}
           placeholder="you@example.com"
           autoFocus
-          inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+          inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
         />
       </div>
 
@@ -209,7 +209,7 @@ function InlineLoginForm({ onSuccess }: { onSuccess: () => void }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Your password"
-            inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+            inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
           />
           <button
             type="button"
@@ -224,7 +224,7 @@ function InlineLoginForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="pt-2">
         <Button
-          className="h-10 w-full justify-center rounded-full border-none bg-primary font-bold text-white hover:bg-primary-600"
+          className="h-10 w-full justify-center border-none bg-primary font-bold text-white hover:bg-primary-600"
           type="submit"
           disabled={isLoading}
         >

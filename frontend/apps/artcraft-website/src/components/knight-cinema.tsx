@@ -82,7 +82,7 @@ export const KnightCinema = forwardRef<KnightCinemaHandle, KnightCinemaProps>(
           className="absolute top-0 inset-x-0 h-[12vh] bg-black flex items-end px-6 sm:px-10 pb-3 sm:pb-4 will-change-transform"
         >
           <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] uppercase tracking-[0.32em] font-semibold text-white/55">
-            <span className="inline-block h-1 w-1 rounded-full bg-primary" />
+            <span className="inline-block h-1 w-1 bg-primary" />
             {topLabel}
           </span>
         </div>
@@ -121,7 +121,7 @@ KnightCinema.displayName = "KnightCinema";
  * Appends the cinema's three animation phases to a GSAP timeline:
  *   3. Letterbox bars slide in + cinema fades in
  *   4. Scroll-scrubbed video (with live timecode + progress line)
- *   5. Bars retract + cinema scales down to navbar width with rounded corners
+ *   5. Bars retract + cinema scales down to navbar width with corners
  *
  * Call this AFTER you've added the manifesto words / hold / text-fade phases
  * to your timeline. The phases are appended at the end (`>`).

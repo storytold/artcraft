@@ -65,7 +65,7 @@ const Login = () => {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 p-6 py-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold mb-2">Welcome Back</h1>
             <p className="text-white/60 text-sm">Log in to your account</p>
@@ -96,7 +96,7 @@ const Login = () => {
               }}
             >
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                   {error}
                 </div>
               )}
@@ -110,7 +110,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com or username"
-                  inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                  inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                 />
               </div>
               <div className="space-y-2">
@@ -131,7 +131,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                   />
                   <button
                     type="button"

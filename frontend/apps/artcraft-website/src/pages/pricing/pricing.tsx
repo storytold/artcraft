@@ -17,10 +17,10 @@ import { TruchetPattern } from "../../components/truchet-pattern";
 const SeedanceBanner = () => (
   <div className="flex flex-col gap-5">
     <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-full px-3 py-1">
+      <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-200 bg-primary/[0.12] border border-primary/25 px-3 py-1">
         Early access
       </span>
-      <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65 bg-white/[0.04] border border-white/[0.08] rounded-full px-3 py-1">
+      <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65 bg-white/[0.04] border border-white/[0.08] px-3 py-1">
         Available today in ArtCraft
       </span>
     </div>
@@ -36,7 +36,7 @@ const SeedanceBanner = () => (
       </p>
     </div>
 
-    <div className="relative w-full rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08]">
+    <div className="relative w-full overflow-hidden bg-[#080808] border border-white/[0.08]">
       <div style={{ paddingTop: "56.25%" }} className="relative">
         <iframe
           src="https://player.vimeo.com/video/1169289718?autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
@@ -49,7 +49,7 @@ const SeedanceBanner = () => (
     </div>
 
     <div className="grid grid-cols-2 gap-3">
-      <div className="rounded-xl bg-gradient-to-br from-primary/15 via-white/[0.03] to-white/[0.02] border border-primary/25 p-4">
+      <div className=" bg-gradient-to-br from-primary/15 via-white/[0.03] to-white/[0.02] border border-primary/25 p-4">
         <div className="text-[12px] font-semibold uppercase tracking-wider text-primary mb-1">
           Seedance video credits
         </div>
@@ -57,7 +57,7 @@ const SeedanceBanner = () => (
           Included with every paid ArtCraft plan
         </div>
       </div>
-      <div className="rounded-xl bg-[#080808] border border-white/[0.08] p-4">
+      <div className=" bg-[#080808] border border-white/[0.08] p-4">
         <div className="text-[12px] font-semibold uppercase tracking-wider text-white/70 mb-1">
           First in the world
         </div>
@@ -212,7 +212,7 @@ const Pricing = () => {
           </p>
           <Button
             variant="secondary"
-            className="mt-4 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
+            className="mt-4 gap-2 border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
             onClick={() => setCreditsModalOpen(true)}
           >
             <CoinsIcon

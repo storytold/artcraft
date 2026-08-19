@@ -19,16 +19,16 @@ export const ButtonLink = ({
   function getVariantClassNames(variant: string) {
     switch (variant) {
       case "secondary": {
-        return "bg-brand-secondary hover:bg-brand-secondary-600 text-white focus-visible:outline-brand-secondary";
+        return "bg-transparent text-base-fg border border-ui-controls-border hover:bg-white/10 hover:border-white/30";
       }
       case "primary":
       default: {
-        return "bg-brand-primary hover:bg-brand-primary-400 text-white focus-visible:outline-brand-primary-600";
+        return "bg-white hover:bg-white/80 text-black font-bold";
       }
     }
   }
   const baseClassName =
-    "text-sm font-medium whitespace-nowrap rounded-lg px-3 py-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 transition-all duration-150";
+    "font-mono text-xs font-semibold uppercase tracking-[0.15em] whitespace-nowrap rounded-none px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150";
   const variantClassNames = getVariantClassNames(variant);
   const className = twMerge(baseClassName, variantClassNames, propsClassName);
   // END TODO

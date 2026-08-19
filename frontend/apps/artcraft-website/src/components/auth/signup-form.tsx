@@ -115,7 +115,7 @@ export const SignupForm = ({
         }}
       >
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
             {error}
           </div>
         )}
@@ -130,7 +130,7 @@ export const SignupForm = ({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoFocus={autoFocus}
-            inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+            inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
           />
         </div>
 
@@ -144,7 +144,7 @@ export const SignupForm = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min. 8 characters"
-              inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+              inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
             />
             <button
               type="button"
@@ -159,7 +159,7 @@ export const SignupForm = ({
 
         <div className="pt-2">
           <Button
-            className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+            className=" w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
             type="submit"
             disabled={isLoading}
           >

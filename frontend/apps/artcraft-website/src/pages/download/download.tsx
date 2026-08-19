@@ -112,14 +112,14 @@ const Download = () => {
           <div className="mt-10 flex items-center justify-center">
             {isMobile ? (
               <Button
-                className="rounded-full text-lg font-semibold rounded-xl shadow-lg"
+                className=" text-lg font-semibold shadow-lg"
                 disabled
               >
                 Download on a desktop
               </Button>
             ) : DOWNLOADS_ENABLED ? (
               <Button
-                className="rounded-full glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
+                className=" glow-border-animated text-md px-8 py-4 text-lg font-semibold shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
                 as="link"
                 href={detectedLink}
                 onClick={onDownloadClick}
@@ -129,7 +129,7 @@ const Download = () => {
               </Button>
             ) : (
               <Button
-                className="rounded-full text-lg font-semibold rounded-xl shadow-lg"
+                className=" text-lg font-semibold shadow-lg"
                 disabled
               >
                 Downloads temporarily unavailable — check back soon
@@ -140,7 +140,7 @@ const Download = () => {
 
         {/* App preview */}
         <div className="mb-20 sm:mb-24">
-          <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-primary/5">
+          <div className=" overflow-hidden border border-white/10 shadow-2xl shadow-primary/5">
             <img
               src="/images/3d-interface-preview.jpg"
               alt="ArtCraft Interface Preview"
@@ -165,14 +165,14 @@ const Download = () => {
               return (
                 <div
                   key={system.os}
-                  className={`relative rounded-2xl p-8 flex flex-col border transition-all duration-300 ${
+                  className={`relative p-8 flex flex-col border transition-all duration-300 ${
                     isDetected && !isMobile
                       ? "bg-white/[0.08] border-primary/40 shadow-[0_0_30px_rgba(45,129,255,0.1)]"
                       : "bg-white/5 border-white/10 hover:border-white/20"
                   }`}
                 >
                   {isDetected && !isMobile && (
-                    <span className="absolute -top-3 left-6 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+                    <span className="absolute -top-3 left-6 bg-primary text-white text-xs font-bold px-3 py-1">
                       Your system
                     </span>
                   )}
@@ -202,14 +202,14 @@ const Download = () => {
 
                   {isMobile ? (
                     <Button
-                      className="rounded-full w-full justify-center font-semibold"
+                      className=" w-full justify-center font-semibold"
                       disabled
                     >
                       Desktop only
                     </Button>
                   ) : DOWNLOADS_ENABLED ? (
                     <Button
-                      className="rounded-full w-full justify-center font-semibold gap-2"
+                      className=" w-full justify-center font-semibold gap-2"
                       as="link"
                       href={system.link}
                       icon={ArrowDownToLineIcon}
@@ -219,7 +219,7 @@ const Download = () => {
                     </Button>
                   ) : (
                     <Button
-                      className="rounded-full w-full justify-center font-semibold"
+                      className=" w-full justify-center font-semibold"
                       disabled
                     >
                       Temporarily unavailable
@@ -257,9 +257,9 @@ const Download = () => {
             ].map((item) => (
               <div
                 key={item.step}
-                className="text-center bg-white/5 border border-white/10 rounded-2xl p-8"
+                className="text-center bg-white/5 border border-white/10 p-8"
               >
-                <div className="w-10 h-10 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center mx-auto mb-4">
+                <div className="w-10 h-10 bg-primary/20 text-primary font-bold text-sm flex items-center justify-center mx-auto mb-4">
                   {item.step}
                 </div>
                 <h3 className="font-medium text-lg mb-2">{item.title}</h3>

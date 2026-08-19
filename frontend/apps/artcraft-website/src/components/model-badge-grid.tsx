@@ -23,7 +23,7 @@ const ROW_DURATIONS = [56, 68, 62];
 // highlight border appears, so the marquee doesn't jitter. The chip lights up
 // only while the pointer is over it.
 const badgeClasses =
-  "rounded-2xl px-6 py-3 text-2xl font-normal flex-shrink-0 bg-[#121212] text-white/90 text-center h-[58px] flex items-center justify-center gap-1.5 border-2 border-transparent transition-all duration-300 hover:bg-primary/30 hover:text-white hover:font-semibold hover:shadow-lg hover:border-primary/60";
+  " px-6 py-3 text-2xl font-normal flex-shrink-0 bg-[#121212] text-white/90 text-center h-[58px] flex items-center justify-center gap-1.5 border-2 border-transparent transition-all duration-300 hover:bg-primary/30 hover:text-white hover:font-semibold hover:shadow-lg hover:border-primary/60";
 
 // Build one badge per unique model (deduped by display name so e.g. an
 // image+video pair like "Grok" only shows once), pulling the correct brand

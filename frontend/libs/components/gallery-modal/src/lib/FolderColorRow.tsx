@@ -25,7 +25,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
         onClick={() => onSetColor(c)}
         style={{ backgroundColor: c }}
         className={twMerge(
-          "h-5 w-5 rounded-full border border-black/20 transition-transform hover:scale-110",
+          "h-5 w-5 border border-black/20 transition-transform hover:scale-110",
           colorCode === c &&
             "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
         )}
@@ -37,7 +37,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
       aria-label="Clear color"
       onClick={() => onSetColor(null)}
       className={twMerge(
-        "flex h-5 w-5 items-center justify-center rounded-full border border-ui-panel-border text-base-fg/50 hover:text-base-fg",
+        "flex h-5 w-5 items-center justify-center border border-ui-panel-border text-base-fg/50 hover:text-base-fg",
         !colorCode && "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
       )}
     >
@@ -46,7 +46,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
     {/* Custom hex (native picker) */}
     <label
       title="Custom color"
-      className="relative h-5 w-5 cursor-pointer overflow-hidden rounded-full border border-ui-panel-border"
+      className="relative h-5 w-5 cursor-pointer overflow-hidden border border-ui-panel-border"
       style={{
         background:
           "conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red)",

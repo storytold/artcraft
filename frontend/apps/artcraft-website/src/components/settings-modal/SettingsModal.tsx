@@ -44,7 +44,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   key={t.id}
                   onClick={() => setTab(t.id)}
                   className={twMerge(
-                    "h-9 w-full rounded-lg p-2 text-left transition-colors",
+                    "h-9 w-full p-2 text-left transition-colors",
                     tab === t.id ? "bg-[#63636B]/20" : "hover:bg-white/[0.04]",
                   )}
                 >

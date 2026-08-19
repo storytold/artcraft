@@ -88,10 +88,10 @@ export const ToastContainer = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="glass flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white animate-toast-in"
+          className="glass flex items-center gap-3 px-4 py-2.5 text-sm text-white animate-toast-in"
         >
           <div
-            className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
+            className={`flex h-6 w-6 flex-shrink-0 items-center justify-center ${
               toast.type === "success" ? "bg-green-500" : "bg-red-500"
             }`}
           >

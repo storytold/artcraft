@@ -38,7 +38,7 @@ export const Select = ({
           <>
             <ListboxButton
               id={id}
-              className="relative h-10 w-full cursor-pointer rounded-md bg-ui-controls text-base-fg border border-ui-controls-border py-2 pl-3 pr-10 text-left outline-none outline-offset-0 transition-all duration-150 ease-in-out sm:text-sm focus:!outline-none hover:bg-ui-controls/80"
+              className="relative h-10 w-full cursor-pointer rounded-none bg-ui-controls text-base-fg border border-ui-controls-border py-2 pl-3 pr-10 text-left outline-none outline-offset-0 transition-colors duration-150 ease-in-out sm:text-sm focus:!outline-none hover:border-white/40"
             >
               <span
                 className={twMerge("block truncate", !value && "opacity-50")}
@@ -57,16 +57,16 @@ export const Select = ({
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-ui-panel border border-ui-panel-border py-1.5 text-base shadow-xl focus:outline-none sm:text-sm">
+              <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-none bg-ui-panel border border-ui-panel-border text-base focus:outline-none sm:text-sm">
                 {options.map((option, itemIdx) => (
                   <ListboxOption
                     key={itemIdx}
                     className={({ focus, selected }) =>
                       twMerge(
-                        "relative cursor-pointer select-none py-2 pl-7 pr-2 transition-all duration-150 ease-in-out",
-                        focus && "bg-ui-controls/50",
-                        selected && "bg-primary/20",
-                        !selected ? "text-base-fg/90" : "text-base-fg"
+                        "relative cursor-pointer select-none py-2 pl-7 pr-2 transition-colors duration-150 ease-in-out",
+                        !selected ? "text-base-fg/90" : "text-base-fg",
+                        selected && "bg-white/10",
+                        focus && "bg-white text-black"
                       )
                     }
                     value={option.value}

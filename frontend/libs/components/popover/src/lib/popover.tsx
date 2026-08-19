@@ -136,7 +136,7 @@ function PortalTooltip({
               zIndex: 9999,
             }}
             className={twMerge(
-              "pointer-events-auto rounded-lg bg-ui-panel p-3 shadow-xl border border-ui-panel-border text-base-fg",
+              "pointer-events-auto rounded-none bg-ui-panel p-3 border border-ui-panel-border text-base-fg",
               className,
             )}
           >
@@ -253,7 +253,7 @@ function InfoHint({ content }: { content: ReactNode }) {
               transform: "translate(-50%, -100%)",
               zIndex: 10000,
             }}
-            className="pointer-events-auto rounded-lg border border-white/10 bg-ui-controls px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg shadow-xl"
+            className="pointer-events-auto rounded-none border border-ui-panel-border bg-ui-panel px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg"
             onClick={(e) => e.stopPropagation()}
             onMouseEnter={() => {
               if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -349,7 +349,7 @@ function RichListRow({
         if (!item.disabled) onClick?.();
       }}
       className={twMerge(
-        "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
+        "group flex cursor-pointer items-center gap-3 rounded-none px-2 py-2 transition-colors",
         item.selected ? "bg-ui-controls/70" : "hover:bg-ui-controls/50",
         !item.selected && active ? "bg-ui-controls/50" : "",
         item.disabled ? "!cursor-not-allowed opacity-50" : "",
@@ -357,9 +357,9 @@ function RichListRow({
     >
       <span
         className={twMerge(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-none border text-base-fg/80 transition-colors",
           item.selected
-            ? "border-primary bg-primary/20"
+            ? "border-white bg-white/10"
             : "border-ui-controls-border bg-ui-controls/60",
         )}
       >
@@ -389,7 +389,7 @@ function RichListRow({
               {item.badges.map((badge, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+                  className="inline-flex items-center gap-1 rounded-none bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
                 >
                   {badge?.icon && <span>{badge.icon}</span>}
                   {badge?.label || ""}
@@ -404,10 +404,10 @@ function RichListRow({
       {rightNode ??
         (item.selected &&
           (item.selectedRight ?? (
-            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
+            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-none bg-white">
               <CheckIcon
-                
-                className="text-[11px] font-bold text-white" />
+
+                className="text-[11px] font-bold text-black" />
             </span>
           )))}
     </div>
@@ -629,7 +629,7 @@ function SubmenuFlyout({
               transform: "translateY(-50%)",
               zIndex: 9999,
             }}
-            className="pointer-events-auto w-[340px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
+            className="pointer-events-auto w-[340px] rounded-none border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg"
           >
             <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
               {item.label}
@@ -850,11 +850,10 @@ export const PopoverMenu = ({
   };
 
   const className = twMerge(
-    "text-sm font-medium rounded-lg px-2.5 py-1.5 shadow-sm",
+    "text-sm font-medium rounded-none px-2.5 py-1.5",
     "flex gap-2 items-center justify-center outline-none",
-    "transition-all duration-150",
+    "transition-colors duration-150",
     "bg-ui-controls px-3 text-base-fg hover:bg-ui-controls/80 border border-ui-controls-border",
-    "active:scale-95 transform",
     buttonClassName,
   );
 
@@ -1092,7 +1091,7 @@ export const PopoverMenu = ({
                   <div
                     ref={panelContentRef}
                     className={twMerge(
-                      "z-10 min-w-48 mt-2 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border overflow-visible",
+                      "z-10 min-w-48 mt-2 rounded-none bg-ui-panel p-1.5 border border-ui-panel-border overflow-visible",
                       position === "top" ? "mb-2" : "mt-2",
                       panelClassName,
                     )}
@@ -1281,9 +1280,9 @@ export const PopoverMenu = ({
                                   }
                                 }}
                                 className={twMerge(
-                                  "group flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 transition-all",
+                                  "group flex cursor-pointer items-start gap-2 rounded-none px-2 py-2 transition-all",
                                   item.selected
-                                    ? "bg-ui-controls/70 border-l-4 border-primary"
+                                    ? "bg-white/10 border-l-2 border-white"
                                     : "hover:bg-ui-controls/50",
                                   !item.selected && openTooltipIdx === index
                                     ? "bg-ui-controls/50"
@@ -1322,7 +1321,7 @@ export const PopoverMenu = ({
                                               key={i}
                                               className="flex items-center gap-1 min-w-0"
                                             >
-                                              <span className="inline-flex items-center rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
+                                              <span className="inline-flex items-center rounded-none bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
                                                 {badge?.icon && (
                                                   <span>{badge.icon}</span>
                                                 )}
@@ -1342,7 +1341,7 @@ export const PopoverMenu = ({
 
                                   {item.selected &&
                                     (item.selectedRight ?? (
-                                      <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
+                                      <span className="text-white text-xl flex items-center justify-center mr-1">
                                         <CircleCheckIcon />
                                       </span>
                                     ))}
@@ -1376,7 +1375,7 @@ export const PopoverMenu = ({
                                       position="right"
                                       delay={item.tooltipDelayMs ?? 300}
                                       interactive
-                                      className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                                      className="!pointer-events-auto z-50 min-w-48 rounded-none bg-ui-panel p-1.5 border border-ui-panel-border"
                                       onOpenChange={(open) =>
                                         setOpenTooltipIdx((prev) =>
                                           open
@@ -1441,7 +1440,7 @@ export const PopoverMenu = ({
                                 position="right"
                                 delay={item.tooltipDelayMs ?? 1000}
                                 interactive
-                                className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                                className="!pointer-events-auto z-50 min-w-48 rounded-none bg-ui-panel p-1.5 border border-ui-panel-border"
                                 onOpenChange={(open) =>
                                   setOpenTooltipIdx((prev) =>
                                     open ? index : prev === index ? null : prev,
@@ -1505,16 +1504,16 @@ export const PopoverMenu = ({
                                   {mode === "toggle" && (
                                     <span
                                       className={twMerge(
-                                        "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
+                                        "ml-2 h-5 w-5 rounded-none border flex items-center justify-center transition-colors",
                                         item.selected
-                                          ? "border-primary bg-primary"
+                                          ? "border-white bg-white"
                                           : "border-transparent bg-transparent",
                                       )}
                                     >
                                       {item.selected && (
                                         <CheckIcon
                                           
-                                          className="text-base-fg text-xs font-bold" />
+                                          className="text-black text-xs font-bold" />
                                       )}
                                     </span>
                                   )}
@@ -1568,16 +1567,16 @@ export const PopoverMenu = ({
                                 {mode === "toggle" && (
                                   <span
                                     className={twMerge(
-                                      "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
+                                      "ml-2 h-5 w-5 rounded-none border flex items-center justify-center transition-colors",
                                       item.selected
-                                        ? "border-primary bg-primary"
+                                        ? "border-white bg-white"
                                         : "border-transparent bg-transparent",
                                     )}
                                   >
                                     {item.selected && (
                                       <CheckIcon
                                         
-                                        className="text-base-fg text-xs font-bold" />
+                                        className="text-black text-xs font-bold" />
                                     )}
                                   </span>
                                 )}

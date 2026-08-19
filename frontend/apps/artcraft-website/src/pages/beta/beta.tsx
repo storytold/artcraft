@@ -59,7 +59,7 @@ interface FieldErrors {
 const FIELD_LABEL_CLASS = "block text-xs font-semibold text-white/70 ml-1";
 
 const inputClass = (hasError: boolean) =>
-  `w-full bg-black/20 border rounded-xl px-4 py-3 text-white placeholder-white/25 outline-none transition-colors ${
+  `w-full bg-black/20 border px-4 py-3 text-white placeholder-white/25 outline-none transition-colors ${
     hasError
       ? "border-red-500/50 focus:border-red-500/70"
       : "border-white/10 focus:border-primary/50"
@@ -187,7 +187,7 @@ const Beta = () => {
             <ul className="space-y-5">
               {BETA_PERKS.map((perk) => (
                 <li key={perk.title} className="flex gap-4">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/30">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center bg-primary/15 border border-primary/30">
                     <CheckIcon
                       
                       className="text-primary text-[11px]" />
@@ -201,10 +201,10 @@ const Beta = () => {
             </ul>
           </div>
 
-          <div className="bg-[#16161A] border border-white/[0.08] rounded-[24px] p-6 sm:p-8 shadow-2xl">
+          <div className="bg-[#16161A] border border-white/[0.08] p-6 sm:p-8 shadow-2xl">
             {isSubmitted ? (
               <div className="text-center py-8" role="status" aria-live="polite">
-                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 border border-primary/30">
+                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center bg-primary/15 border border-primary/30">
                   <CheckIcon
                     
                     className="text-primary text-xl" />
@@ -220,7 +220,7 @@ const Beta = () => {
                 </p>
                 <Link
                   to="/"
-                  className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-sm font-semibold transition-all hover:-translate-y-px"
+                  className="inline-flex items-center justify-center h-11 px-6 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-sm font-semibold transition-all hover:-translate-y-px"
                 >
                   Back to the homepage
                 </Link>
@@ -238,7 +238,7 @@ const Beta = () => {
 
                 <form className="space-y-5" onSubmit={handleSubmit} noValidate>
                   {submitError && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm text-center">
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 text-sm text-center">
                       {submitError}
                     </div>
                   )}
@@ -317,7 +317,7 @@ const Beta = () => {
                             role="radio"
                             aria-checked={isSelected}
                             onClick={() => selectType(type)}
-                            className={`h-10 px-4 rounded-full border text-sm font-medium transition-colors ${
+                            className={`h-10 px-4 border text-sm font-medium transition-colors ${
                               isSelected
                                 ? "bg-primary/15 border-primary/60 text-white"
                                 : "bg-black/20 border-white/10 text-white/70 hover:border-white/25 hover:text-white"
@@ -379,7 +379,7 @@ const Beta = () => {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-11"
+                      className=" w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-11"
                     >
                       {isLoading ? (
                         <LoaderCircleIcon

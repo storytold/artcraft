@@ -9,18 +9,18 @@ interface PricingPromoBannerProps {
 export const PricingPromoBanner = ({ className }: PricingPromoBannerProps) => (
   <div
     className={twMerge(
-      "relative overflow-hidden rounded-2xl sm:rounded-[24px] border border-primary/30 bg-gradient-to-r from-primary-600/35 via-primary-500/15 to-primary/10 px-6 py-6 sm:px-10 sm:py-8",
+      "relative overflow-hidden border border-primary/30 bg-gradient-to-r from-primary-600/35 via-primary-500/15 to-primary/10 px-6 py-6 sm:px-10 sm:py-8",
       className,
     )}
   >
     {/* Decorative glow, top-right */}
     <div
       aria-hidden
-      className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-primary/25 blur-3xl"
+      className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 bg-primary/25 blur-3xl"
     />
 
     <div className="relative flex flex-col gap-3">
-      <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-white">
+      <span className="inline-flex w-fit items-center gap-1.5 bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-white">
         <TagIcon  className="text-[10px]" />
         Limited-time offer
       </span>

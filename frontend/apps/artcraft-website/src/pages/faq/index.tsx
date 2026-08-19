@@ -55,7 +55,7 @@ const FaqIndex = () => {
             <Link
               key={item.slug}
               to={`/faq/${item.slug}`}
-              className="group block rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-5 transition-all"
+              className="group block border border-white/10 bg-white/5 hover:bg-white/10 p-5 transition-all"
             >
               <h2 className="text-xl font-medium mb-2 group-hover:text-blue-400 transition-colors flex items-center gap-2">
                 {item.title}

@@ -302,16 +302,16 @@ export const GalleryCard = memo(function GalleryCard({
     <div
       role="button"
       tabIndex={0}
-      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""}`}
+      className={`group relative block w-full bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""}`}
       style={outerStyle}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
     >
       {/* Media layer — kept in its own overflow-hidden box so the hover
           overlay below (including tooltips from the action pill) can render
-          outside the card's rounded corners without being clipped. */}
+          outside the card's corners without being clipped. */}
       <div
-        className="absolute inset-0 overflow-hidden rounded-[inherit]"
+        className="absolute inset-0 overflow-hidden"
         style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
       >
         {retrying ? (
@@ -355,12 +355,12 @@ export const GalleryCard = memo(function GalleryCard({
       {/* Hover overlay with media type + model badges and quick actions */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
-          <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
+          <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
             <DynamicIcon icon={mediaIcon} className="text-[10px]" />
             {mediaLabel}
           </div>
           {modelDisplayName && modelIconPath && (
-            <div className="flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-[10px] text-white/80">
+            <div className="flex items-center gap-1 bg-black/60 px-2 py-1 text-[10px] text-white/80">
               <img
                 src={modelIconPath}
                 alt=""
@@ -371,12 +371,12 @@ export const GalleryCard = memo(function GalleryCard({
           )}
         </div>
 
-        <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-lg bg-black/60 p-1 backdrop-blur-sm">
+        <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 bg-black/60 p-1 backdrop-blur-sm">
           {recreateMediaClass && (
             <Tooltip content="Recreate" position="top">
               <button
                 type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
+                className="flex h-7 w-7 items-center justify-center text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
                 onClick={handleRecreate}
                 disabled={isRecreating}
                 aria-label="Recreate"
@@ -392,7 +392,7 @@ export const GalleryCard = memo(function GalleryCard({
             <Tooltip content="Make Video" position="top">
               <button
                 type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+                className="flex h-7 w-7 items-center justify-center text-white/85 transition-colors hover:bg-white/15 hover:text-white"
                 onClick={handleMakeVideo}
                 aria-label="Make Video"
               >
@@ -403,7 +403,7 @@ export const GalleryCard = memo(function GalleryCard({
           <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
             <button
               type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              className="flex h-7 w-7 items-center justify-center text-white/85 transition-colors hover:bg-white/15 hover:text-white"
               onClick={handleShare}
               aria-label="Share"
             >
@@ -419,7 +419,7 @@ export const GalleryCard = memo(function GalleryCard({
                 type="button"
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
+                className="flex h-7 w-7 items-center justify-center text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
                 aria-label="Download"
               >
                 <DynamicIcon

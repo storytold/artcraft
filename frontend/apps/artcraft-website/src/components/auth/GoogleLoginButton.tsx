@@ -58,7 +58,7 @@ export function GoogleLoginButton({
   return (
     <div className={`relative w-full h-12 ${className}`}>
       {/* Custom visual button - shown behind */}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors">
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black font-medium border border-gray-200 hover:bg-gray-50 transition-colors">
         {isLoading ? (
           <LoaderCircleIcon
             

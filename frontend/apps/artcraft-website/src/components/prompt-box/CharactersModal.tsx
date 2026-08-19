@@ -289,7 +289,7 @@ const CharacterListView = ({
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="flex flex-col overflow-hidden rounded-lg border border-transparent bg-white/[0.05]"
+              className="flex flex-col overflow-hidden border border-transparent bg-white/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden">
                 <div
@@ -301,7 +301,7 @@ const CharacterListView = ({
               </div>
               <div className="px-2 py-1.5 flex justify-center bg-white/[0.04]">
                 <div
-                  className="h-3 w-2/3 rounded bg-white/[0.08]"
+                  className="h-3 w-2/3 bg-white/[0.08]"
                   style={{
                     animation: `charPulse 1.8s ease-in-out ${i * 0.07 + 0.1}s infinite`,
                   }}
@@ -321,7 +321,7 @@ const CharacterListView = ({
           {/* Create New card */}
           <button
             onClick={onCreateClick}
-            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/10 bg-white/[0.05] text-white/60 transition-colors hover:border-white/25 hover:text-white/80"
+            className="flex flex-col items-center justify-center gap-2 overflow-hidden border-2 border-dashed border-white/10 bg-white/[0.05] text-white/60 transition-colors hover:border-white/25 hover:text-white/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
               <PlusIcon  className="text-lg" />
@@ -333,7 +333,7 @@ const CharacterListView = ({
           {pendingCharacters.map((pending) => (
             <div
               key={`pending-${pending.name}`}
-              className="relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-white/[0.05]"
+              className="relative flex flex-col overflow-hidden border border-transparent bg-white/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden bg-white/[0.05]">
                 {pending.previewUrl ? (
@@ -370,7 +370,7 @@ const CharacterListView = ({
             return (
               <div
                 key={character.token}
-                className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-white/[0.05] transition-colors hover:border-white/25 hover:bg-white/10"
+                className="group relative flex flex-col overflow-hidden border border-transparent bg-white/[0.05] transition-colors hover:border-white/25 hover:bg-white/10"
               >
                 <button
                   onClick={() => onSelectCharacter?.(character)}
@@ -407,7 +407,7 @@ const CharacterListView = ({
                         e.stopPropagation();
                         onEditCharacter(character);
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                      className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                     >
                       <PenIcon  className="text-[10px]" />
                     </button>
@@ -416,7 +416,7 @@ const CharacterListView = ({
                         e.stopPropagation();
                         setConfirmDelete(character);
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                      className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                     >
                       <Trash2Icon
                         
@@ -433,7 +433,7 @@ const CharacterListView = ({
       {/* Delete confirmation overlay */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-sm rounded-xl border border-white/10 bg-[#1e1e22] p-6 shadow-2xl">
+          <div className="mx-4 w-full max-w-sm border border-white/10 bg-[#1e1e22] p-6 shadow-2xl">
             <h3 className="mb-2 text-lg font-semibold text-white">
               Delete character?
             </h3>
@@ -540,7 +540,7 @@ const EditCharacterView = ({
 
         {/* Avatar preview */}
         {character.maybe_avatar?.cdn_url && (
-          <div className="flex h-56 max-h-56 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.05]">
+          <div className="flex h-56 max-h-56 shrink-0 items-center justify-center overflow-hidden bg-white/[0.05]">
             <img
               src={character.maybe_avatar.cdn_url}
               alt={character.name}
@@ -560,7 +560,7 @@ const EditCharacterView = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="Character name"
             autoComplete="off"
-            className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
+            className="w-full border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
           />
         </div>
 
@@ -576,7 +576,7 @@ const EditCharacterView = ({
             placeholder="Description..."
             rows={3}
             autoComplete="off"
-            className="w-full resize-none rounded-lg border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
+            className="w-full resize-none border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
           />
         </div>
       </div>
@@ -791,7 +791,7 @@ const NewCharacterView = ({
         <div
           ref={dropZoneRef}
           className={twMerge(
-            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-white/[0.05] transition-colors overflow-hidden",
+            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center border-2 border-dashed border-white/20 bg-white/[0.05] transition-colors overflow-hidden",
             isDragging && "border-blue-400 bg-blue-500/10",
           )}
           onDragEnter={handleDragEnter}
@@ -822,7 +822,7 @@ const NewCharacterView = ({
                   e.stopPropagation();
                   removeImage(0);
                 }}
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
                 <XIcon  className="text-sm" />
               </button>
@@ -859,7 +859,7 @@ const NewCharacterView = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="Character name"
             autoComplete="off"
-            className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
+            className="w-full border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
           />
         </div>
 
@@ -875,7 +875,7 @@ const NewCharacterView = ({
             placeholder="Description..."
             rows={3}
             autoComplete="off"
-            className="w-full resize-none rounded-lg border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
+            className="w-full resize-none border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-primary"
           />
         </div>
       </div>

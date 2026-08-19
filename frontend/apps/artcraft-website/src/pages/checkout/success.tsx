@@ -80,16 +80,16 @@ const CheckoutSuccess = () => {
 
       {/* Background gradient - celebratory green/purple */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
+        <div className="w-[900px] h-[900px] bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
       </div>
 
       <main className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         {/* Success Card */}
         <div className="max-w-4xl w-full">
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-12 text-center">
+          <div className="bg-[#1A1A1E] border border-white/10 p-8 md:p-12 text-center">
             {/* Success Icon */}
             <div className="mb-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto bg-green-500/20 flex items-center justify-center">
                 <CircleCheckIcon
                   
                   className="text-5xl text-green-400" />
@@ -107,9 +107,9 @@ const CheckoutSuccess = () => {
             </p>
 
             {/* Next Steps */}
-            <div className="bg-[#252529] rounded-2xl p-6 mb-8 text-left">
+            <div className="bg-[#252529] p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary/20 flex items-center justify-center">
                   <RocketIcon
                     
                     className="text-primary text-sm" />
@@ -125,7 +125,7 @@ const CheckoutSuccess = () => {
                   "Start creating with all premium features!",
                 ].map((step, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <div className="w-6 h-6 shrink-0 rounded-full bg-primary/50 flex items-center justify-center text-xs font-bold text-white mt-0.5">
+                    <div className="w-6 h-6 shrink-0 bg-primary/50 flex items-center justify-center text-xs font-bold text-white mt-0.5">
                       {idx + 1}
                     </div>
                     <span className="text-white/80">{step}</span>
@@ -141,7 +141,7 @@ const CheckoutSuccess = () => {
                   <Button
                     as="link"
                     href={downloadUrl}
-                    className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                    className=" bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold justify-center"
                   >
                     <DownloadIcon  className="mr-2" />
                     Download ArtCraft
@@ -149,7 +149,7 @@ const CheckoutSuccess = () => {
                 )}
               </div>
             ) : (
-              <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
+              <div className="bg-[#431407] border border-orange-900/50 p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
                   <MonitorIcon  className="text-2xl" />
                 </div>
@@ -165,14 +165,14 @@ const CheckoutSuccess = () => {
                   href={DOWNLOAD_LINKS.WINDOWS}
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  <span className="w-1.5 h-1.5 bg-current"></span>
                   Windows
                 </a>
                 <a
                   href={DOWNLOAD_LINKS.MACOS}
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  <span className="w-1.5 h-1.5 bg-current"></span>
                   Mac
                 </a>
               </div>
@@ -189,7 +189,7 @@ const CheckoutSuccess = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className=" bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold justify-center border-transparent"
               >
                 <DiscordIcon />
                 Join Discord

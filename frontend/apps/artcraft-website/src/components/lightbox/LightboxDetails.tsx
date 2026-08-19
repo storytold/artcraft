@@ -138,11 +138,11 @@ export function LightboxDetails({
     !!createdAt;
 
   return (
-    <div className="relative flex w-full sm:w-[320px] shrink-0 flex-col bg-ui-panel rounded-b-xl sm:rounded-b-none sm:rounded-r-xl min-h-0 flex-1 sm:flex-none sm:h-full overflow-hidden">
+    <div className="relative flex w-full sm:w-[320px] shrink-0 flex-col bg-ui-panel sm:rounded-b-none min-h-0 flex-1 sm:flex-none sm:h-full overflow-hidden">
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
+          className="absolute top-3 right-3 z-20 flex h-8 w-8 items-center justify-center bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
           aria-label="Close"
         >
           <XIcon  className="h-4 w-4" />
@@ -153,13 +153,13 @@ export function LightboxDetails({
         {promptData.loading ? (
           <div className="space-y-6 animate-pulse">
             <div className="space-y-2">
-              <div className="h-4 w-20 bg-white/10 rounded" />
-              <div className="h-20 w-full bg-white/10 rounded-lg" />
+              <div className="h-4 w-20 bg-white/10" />
+              <div className="h-20 w-full bg-white/10" />
             </div>
             <div className="space-y-2">
-              <div className="h-4 w-32 bg-white/10 rounded" />
-              <div className="h-10 w-full bg-white/10 rounded-lg" />
-              <div className="h-10 w-full bg-white/10 rounded-lg" />
+              <div className="h-4 w-32 bg-white/10" />
+              <div className="h-10 w-full bg-white/10" />
+              <div className="h-10 w-full bg-white/10" />
             </div>
           </div>
         ) : (
@@ -177,10 +177,10 @@ export function LightboxDetails({
                     backgroundIndex={
                       creator.core_info.default_avatar.color_index
                     }
-                    className="rounded-xl border-white/10"
+                    className=" border-white/10"
                   />
                 ) : (
-                  <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/10 text-white/50 border border-white/5">
+                  <div className="h-9 w-9 shrink-0 flex items-center justify-center bg-white/10 text-white/50 border border-white/5">
                     <UserIcon />
                   </div>
                 )}
@@ -216,7 +216,7 @@ export function LightboxDetails({
                   )}
                 </div>
 
-                <div className="text-sm text-white/90 break-words px-4 py-3 rounded-xl bg-black/20 leading-relaxed border border-white/5">
+                <div className="text-sm text-white/90 break-words px-4 py-3 bg-black/20 leading-relaxed border border-white/5">
                   <div
                     ref={promptRef}
                     className={!isPromptExpanded ? "line-clamp-4" : ""}
@@ -256,7 +256,7 @@ export function LightboxDetails({
                         href={`/media/${contextImage.media_token}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/40 transition-colors block"
+                        className="relative aspect-square overflow-hidden border border-white/10 hover:border-white/40 transition-colors block"
                       >
                         <img
                           src={thumbnail}
@@ -277,7 +277,7 @@ export function LightboxDetails({
                   <span>Information</span>
                 </div>
 
-                <div className="flex flex-col rounded-xl bg-black/20 border border-white/5 overflow-hidden">
+                <div className="flex flex-col bg-black/20 border border-white/5 overflow-hidden">
                   {promptData.modelType && (
                     <InfoRow
                       label="Model"
@@ -381,7 +381,7 @@ export function LightboxDetails({
                 setIsDownloading(false);
               }
             }}
-            className={`w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-ui-panel-border ${
+            className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border border-ui-panel-border ${
               mediaUrl
                 ? "bg-ui-controls/40 hover:bg-ui-controls/60 text-white disabled:opacity-60"
                 : "bg-ui-controls/20 text-white/60 cursor-not-allowed"

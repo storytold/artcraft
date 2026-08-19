@@ -56,7 +56,7 @@ const FaqArticle = () => {
         <div className="mb-6">
           <Link
             to="/faq"
-            className="rounded-lg px-4 py-2 text-sm border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2"
+            className=" px-4 py-2 text-sm border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2"
           >
             <ChevronLeftIcon />
             Back to FAQ
@@ -69,7 +69,7 @@ const FaqArticle = () => {
         {description && <p className="text-white/70 mb-8">{description}</p>}
 
         {thumbnail && (
-          <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black mb-10">
+          <div className="w-full overflow-hidden border border-white/10 bg-black mb-10">
             <img
               src={thumbnail}
               alt={item.title || slug}

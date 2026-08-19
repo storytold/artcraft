@@ -362,10 +362,10 @@ export const Tooltip = ({
           }}
           className={twMerge(
             isFixed ? "fixed" : "absolute",
-            "w-max rounded-lg bg-ui-controls shadow-xl border border-ui-controls-border",
+            "w-max rounded-none bg-ui-panel border border-ui-panel-border",
             interactive
               ? "pointer-events-auto p-3"
-              : "px-2.5 py-1.5 text-[13px] font-medium pointer-events-none",
+              : "px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] pointer-events-none",
             "text-base-fg",
             className ? className : "",
           )}
@@ -379,11 +379,11 @@ export const Tooltip = ({
                 <img
                   src={imageSrc}
                   alt="tooltip"
-                  className="mb-1 aspect-square w-56 rounded-md"
+                  className="mb-1 aspect-square w-56 rounded-none"
                 />
               )}
               {description && (
-                <p className="text-sm text-base-fg font-normal">
+                <p className="font-sans text-xs font-normal normal-case tracking-normal text-base-fg/80">
                   {description}
                 </p>
               )}

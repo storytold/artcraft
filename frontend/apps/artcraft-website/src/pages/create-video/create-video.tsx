@@ -854,9 +854,9 @@ export default function CreateVideo() {
 
   const videoGlowOrbs = (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
-      <div className="absolute bottom-[-15%] left-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-purple-600 opacity-[0.08] blur-[120px] transform-gpu" />
-      <div className="absolute bottom-[10%] right-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
+      <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
+      <div className="absolute bottom-[-15%] left-[-10%] h-[500px] w-[500px] bg-gradient-to-br from-[#00AABA] via-blue-500 to-purple-600 opacity-[0.08] blur-[120px] transform-gpu" />
+      <div className="absolute bottom-[10%] right-[-10%] h-[400px] w-[400px] bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
     </div>
   );
 
@@ -898,7 +898,7 @@ export default function CreateVideo() {
           style={{ animationDelay: "150ms" }}
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
-            <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
+            <div className="mb-2 flex items-start gap-2.5 border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
               <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
                 Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
@@ -1107,7 +1107,7 @@ export default function CreateVideo() {
                   <button
                     type="button"
                     onClick={() => setIsCharactersModalOpen(true)}
-                    className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg shadow-sm transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+                    className="flex h-9 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg shadow-sm transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
                   >
                     @Characters
                   </button>

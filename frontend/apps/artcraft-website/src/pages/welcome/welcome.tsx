@@ -24,13 +24,13 @@ const Welcome = () => {
 
       {/* Background gradient */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-primary/40 via-purple-600/30 to-blue-500/20 opacity-30 blur-[120px]"></div>
+        <div className="w-[900px] h-[900px] bg-gradient-to-br from-primary/40 via-purple-600/30 to-blue-500/20 opacity-30 blur-[120px]"></div>
       </div>
 
       <main className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8">
         {/* Success Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-full px-6 py-3 mb-6">
+          <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/30 px-6 py-3 mb-6">
             <CircleCheckIcon
               
               className="text-xl text-primary" />
@@ -59,9 +59,9 @@ const Welcome = () => {
 
         {/* Next Steps Section */}
         <div className="max-w-3xl mx-auto">
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-10">
+          <div className="bg-[#1A1A1E] border border-white/10 p-8 md:p-10">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary/20 flex items-center justify-center">
                 <RocketIcon
                   
                   className="text-primary text-lg" />
@@ -84,9 +84,9 @@ const Welcome = () => {
               ].map((item) => (
                 <div
                   key={item.step}
-                  className="bg-[#252529] p-4 rounded-xl flex items-center gap-4"
+                  className="bg-[#252529] p-4 flex items-center gap-4"
                 >
-                  <div className="w-8 h-8 shrink-0 rounded-full bg-primary/60 flex items-center justify-center text-sm font-bold text-white">
+                  <div className="w-8 h-8 shrink-0 bg-primary/60 flex items-center justify-center text-sm font-bold text-white">
                     {item.step}
                   </div>
                   <div className="text-white/90 font-medium">{item.text}</div>
@@ -105,7 +105,7 @@ const Welcome = () => {
                     <Button
                       as="link"
                       href={downloadUrl}
-                      className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold rounded-xl"
+                      className=" bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold"
                     >
                       <DownloadIcon  className="mr-2" />
                       Download for {isMacOs ? "Mac" : "Windows"}
@@ -115,14 +115,14 @@ const Welcome = () => {
                         href={DOWNLOAD_LINKS.WINDOWS}
                         className="hover:text-white transition-colors flex items-center gap-2"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        <span className="w-1.5 h-1.5 bg-current"></span>
                         Windows
                       </a>
                       <a
                         href={DOWNLOAD_LINKS.MACOS}
                         className="hover:text-white transition-colors flex items-center gap-2"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        <span className="w-1.5 h-1.5 bg-current"></span>
                         Mac
                       </a>
                     </div>
@@ -132,7 +132,7 @@ const Welcome = () => {
             )}
 
             {isMobile && (
-              <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
+              <div className="bg-[#431407] border border-orange-900/50 p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
                   <MonitorIcon  className="text-2xl" />
                 </div>

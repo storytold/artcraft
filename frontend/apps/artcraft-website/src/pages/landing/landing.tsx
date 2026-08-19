@@ -24,7 +24,7 @@ const Landing = () => {
       <div className="relative flex overflow-hidden xl:items-center xl:pt-0">
         <div className="w-full flex flex-col items-center justify-center text-center pt-40 pb-20 px-10">
           <div className="relative">
-            <div className="absolute -inset-1 rounded-lg blur-xl"></div>
+            <div className="absolute -inset-1 blur-xl"></div>
             <h1 className="relative mb-10 font-bold text-5xl lg:text-7xl">
               AI Canvas & Scene Editor
               <br />
@@ -46,7 +46,7 @@ const Landing = () => {
             <DownloadButton />
             <Button
               icon={DiscordIcon}
-              className="rounded-xl px-8 py-4 text-md border-2 border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-md"
+              className=" px-8 py-4 text-md border-2 border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-md"
               as="link"
               href={SOCIAL_LINKS.DISCORD}
               target="_blank"
@@ -55,15 +55,15 @@ const Landing = () => {
             </Button>
           </div>
 
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-3xl -z-10 animate-pulse-slow" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-3xl -z-10 animate-pulse-slow" />
         </div>
       </div>
 
       {/* Video Sections */}
       <div className="relative z-10 mx-auto max-w-[1920px] px-4 py-20 md:px-16 lg:px-12 xl:px-32">
         {/* First Video Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 items-center gap-16 mb-32 p-5 lg:pr-16 bg-white/10 backdrop-blur-md lg:rounded-[80px] rounded-[40px]">
-          <div className="lg:col-span-3 rounded-[30px] lg:rounded-[60px] overflow-hidden bg-[#1C1C20]">
+        <div className="grid grid-cols-1 lg:grid-cols-5 items-center gap-16 mb-32 p-5 lg:pr-16 bg-white/10 backdrop-blur-md">
+          <div className="lg:col-span-3 overflow-hidden bg-[#1C1C20]">
             <video
               muted
               autoPlay
@@ -88,7 +88,7 @@ const Landing = () => {
             </div>
             <Button
               icon={ArrowDownToLineIcon}
-              className="rounded-lg px-5 py-3.5 text-md bg-[#2D81FF] hover:bg-[#438AF6]"
+              className=" px-5 py-3.5 text-md bg-[#2D81FF] hover:bg-[#438AF6]"
               as="link"
               href="/download"
             >
@@ -98,7 +98,7 @@ const Landing = () => {
         </div>
 
         {/* Second Video Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 items-center gap-16 p-5 lg:pl-16 bg-white/10 backdrop-blur-md lg:rounded-[80px] rounded-[40px]">
+        <div className="grid grid-cols-1 lg:grid-cols-5 items-center gap-16 p-5 lg:pl-16 bg-white/10 backdrop-blur-md">
           <div className="lg:col-span-2 order-2 lg:order-1 space-y-9">
             <div className="space-y-6">
               <h2 className="text-5xl font-bold leading-tight">
@@ -114,14 +114,14 @@ const Landing = () => {
             </div>
             <Button
               icon={ArrowDownToLineIcon}
-              className="rounded-lg px-5 py-3.5 text-md bg-[#2D81FF] hover:bg-[#438AF6]"
+              className=" px-5 py-3.5 text-md bg-[#2D81FF] hover:bg-[#438AF6]"
               as="link"
               href="/download"
             >
               Download App
             </Button>
           </div>
-          <div className="lg:col-span-3 order-1 lg:order-2 rounded-[30px] lg:rounded-[60px] overflow-hidden bg-[#1C1C20]">
+          <div className="lg:col-span-3 order-1 lg:order-2 overflow-hidden bg-[#1C1C20]">
             <video
               muted
               autoPlay
@@ -152,9 +152,9 @@ const Landing = () => {
             {videos.map((video, index) => (
               <div
                 key={index}
-                className="group relative rounded-2xl bg-white/10 backdrop-blur-md p-1.5 transition-all duration-300 hover:bg-white/20 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/20"
+                className="group relative bg-white/10 backdrop-blur-md p-1.5 transition-all duration-300 hover:bg-white/20 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/20"
               >
-                <div className="aspect-video overflow-hidden rounded-xl">
+                <div className="aspect-video overflow-hidden">
                   <iframe
                     width="100%"
                     height="100%"
@@ -163,10 +163,10 @@ const Landing = () => {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
-                    className="rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
+                    className=" transition-transform duration-300 group-hover:scale-[1.02]"
                   />
                 </div>
-                <div className="absolute inset-0 rounded-2xl border border-white/10 group-hover:border-white/20 transition-colors duration-300 pointer-events-none" />
+                <div className="absolute inset-0 border border-white/10 group-hover:border-white/20 transition-colors duration-300 pointer-events-none" />
               </div>
             ))}
           </div>
@@ -175,7 +175,7 @@ const Landing = () => {
 
       <div className="relative z-10 mx-auto max-w-[1920px] px-4 pt-20 pb-40 sm:px-24 lg:px-32">
         {/* Discord CTA Section */}
-        <div className="flex flex-col items-center justify-center text-center p-12 py-20 rounded-[40px] bg-primary/10 backdrop-blur-md border-[6px] border-primary/30">
+        <div className="flex flex-col items-center justify-center text-center p-12 py-20 bg-primary/10 backdrop-blur-md border-[6px] border-primary/30">
           <h2 className="text-5xl font-bold mb-6">Join Our Community</h2>
           <p className="text-lg text-gray-400 mb-8 max-w-2xl">
             Connect with other creators, share your work, get feedback, and stay
@@ -183,7 +183,7 @@ const Landing = () => {
           </p>
           <Button
             icon={DiscordIcon}
-            className="rounded-xl px-8 py-4 text-md bg-[#5865F2] hover:bg-[#6a76ff] transition-all duration-300 backdrop-blur-md"
+            className=" px-8 py-4 text-md bg-[#5865F2] hover:bg-[#6a76ff] transition-all duration-300 backdrop-blur-md"
             as="link"
             href={SOCIAL_LINKS.DISCORD}
             target="_blank"

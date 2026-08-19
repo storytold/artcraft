@@ -248,7 +248,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       type="button"
       tabIndex={-1}
       className={twMerge(
-        "w-full group relative overflow-visible rounded-md border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",
+        "w-full group relative overflow-visible border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",
         selected || bulkSelected
           ? "border-primary"
           : disabled
@@ -272,7 +272,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         {isAudio ? (
           <div className="flex h-full w-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02]">
             <div className="flex min-h-0 flex-1 items-center justify-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+              <div className="flex h-11 w-11 items-center justify-center bg-white/10 ring-1 ring-white/15">
                 <MusicIcon
                   
                   className="text-lg text-white/70" />
@@ -316,12 +316,12 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           </>
         )}
         {selected && (
-          <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+          <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center bg-primary">
             <CheckIcon  className="text-sm" />
           </div>
         )}
         {disabled && (
-          <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+          <div className="absolute left-2 top-2 bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
             Added
           </div>
         )}
@@ -359,7 +359,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             triggerIcon={
               <EllipsisIcon  className="text-base-fg" />
             }
-            buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
+            buttonClassName="h-7 w-7 p-0 bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
             panelClassName="w-max min-w-44 p-1"
             closeOnUnhover
           >
@@ -394,7 +394,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             />
             <div
               ref={ctxPanelRef}
-              className="fixed z-[9999] w-max min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              className="fixed z-[9999] w-max min-w-44 border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
               style={{ left: ctxMenu.x, top: ctxMenu.y }}
             >
               <GalleryItemMenuItems
@@ -418,7 +418,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {mode !== "select" && onBulkSelectToggle && (
         <div
           className={twMerge(
-            "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded border-2 cursor-pointer transition-all duration-100",
+            "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center border-2 cursor-pointer transition-all duration-100",
             bulkSelected
               ? "bg-primary border-primary"
               : "border-white/60 bg-black/40 hover:border-white",
@@ -441,7 +441,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
-        <div className="pointer-events-none absolute left-2 bottom-2 z-[1] rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div className="pointer-events-none absolute left-2 bottom-2 z-[1] bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           {item.mediaClass === "dimensional" ||
           item.mediaClass === "mesh" ||
           item.mediaClass === "splat"
@@ -451,7 +451,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
       {/* Upload badge — bottom-right (always visible, even in select mode) */}
       {item.isUpload && (
-        <div className="pointer-events-none absolute right-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
+        <div className="pointer-events-none absolute right-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center bg-black/50 backdrop-blur-lg text-white">
           <UploadIcon  className="text-[10px]" />
         </div>
       )}

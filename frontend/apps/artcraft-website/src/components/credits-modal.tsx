@@ -51,7 +51,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="rounded-2xl max-h-[90vh] w-full max-w-2xl overflow-y-auto border border-white/10 bg-[#16161a] p-0 shadow-2xl"
+      className=" max-h-[90vh] w-full max-w-2xl overflow-y-auto border border-white/10 bg-[#16161a] p-0 shadow-2xl"
       allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
@@ -76,10 +76,10 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
               type="button"
               onClick={() => handlePurchase(pack)}
               disabled={purchasingId !== null}
-              className="group relative flex flex-col justify-between rounded-xl border border-white/10 p-5 text-left transition-all hover:border-primary/40 hover:bg-white/[0.03] disabled:opacity-60"
+              className="group relative flex flex-col justify-between border border-white/10 p-5 text-left transition-all hover:border-primary/40 hover:bg-white/[0.03] disabled:opacity-60"
             >
               {pack.badge && (
-                <div className="absolute -top-2.5 right-4 rounded-full bg-primary px-3 py-0.5 text-xs font-bold text-white shadow-lg">
+                <div className="absolute -top-2.5 right-4 bg-primary px-3 py-0.5 text-xs font-bold text-white shadow-lg">
                   {pack.badge}
                 </div>
               )}
@@ -99,7 +99,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                 </span>
                 <Button
                   variant="primary"
-                  className="rounded-full pointer-events-none rounded-lg px-5 py-2 text-sm font-semibold"
+                  className=" pointer-events-none px-5 py-2 text-sm font-semibold"
                   disabled={purchasingId !== null}
                 >
                   {purchasingId === pack.id ? "Loading..." : "Purchase"}

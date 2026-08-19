@@ -38,7 +38,7 @@ export const DownloadButton = ({ className = "" }: DownloadButtonProps) => {
 
   return (
     <Button
-      className={`rounded-full rounded-xl px-8 py-4 text-md transition-all duration-300 shadow-lg hover:shadow-blue-500/25 ${className}`}
+      className={` px-8 py-4 text-md transition-all duration-300 shadow-lg hover:shadow-blue-500/25 ${className}`}
       disabled={isMobile || !downloadLink}
       icon={getIcon()}
       as="link"

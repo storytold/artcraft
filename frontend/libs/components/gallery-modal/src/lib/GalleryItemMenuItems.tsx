@@ -28,7 +28,7 @@ export interface GalleryItemMenuItemsProps {
 }
 
 const ROW =
-  "flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap";
+  "flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap";
 
 /**
  * The gallery-tile menu body (Open / Edit / Add to Folder ▸ / Remove from
@@ -103,7 +103,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         >
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap"
+            className="flex w-full items-center justify-between gap-2 px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap"
             onClick={(e) => {
               e.stopPropagation();
               setFolderSubmenuOpen((v) => !v);
@@ -124,7 +124,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             (COARSE_POINTER ? (
               // Touch: expand inline (accordion) — a fly-out would overflow
               // the screen edge on narrow viewports.
-              <div className="mb-1 max-h-48 overflow-y-auto rounded-md bg-ui-controls/20 p-1">
+              <div className="mb-1 max-h-48 overflow-y-auto bg-ui-controls/20 p-1">
                 <FolderList
                   item={item}
                   folders={folders}
@@ -138,7 +138,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
               </div>
             ) : (
               <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
-                <div className="max-h-64 overflow-y-auto w-max min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
+                <div className="max-h-64 overflow-y-auto w-max min-w-36 border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
                   <FolderList
                     item={item}
                     folders={folders}
@@ -173,7 +173,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
       {onDelete && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm whitespace-nowrap"
+          className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm whitespace-nowrap"
           onClick={(e) => {
             e.stopPropagation();
             close();
@@ -209,7 +209,7 @@ const FolderList = ({
       <button
         key={folder.id}
         type="button"
-        className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
+        className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg text-sm"
         onClick={(e) => {
           e.stopPropagation();
           onAddToFolder?.([item.id], folder.id);
@@ -228,7 +228,7 @@ const FolderList = ({
     )}
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg/70 text-sm whitespace-nowrap"
+      className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg/70 text-sm whitespace-nowrap"
       onClick={(e) => {
         e.stopPropagation();
         closeAll();

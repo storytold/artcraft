@@ -12,7 +12,7 @@ export const Badge = ({ label, className, icon }: BadgeProps) => {
   return (
     <div
       className={twMerge(
-        "flex items-center gap-1 rounded-[6px] bg-ui-controls/45 px-[4px] py-[1px] text-[10px] shadow-sm",
+        "flex items-center gap-1 rounded-none border border-ui-controls-border bg-black/40 px-1.5 py-px font-mono text-[10px] font-medium uppercase tracking-[0.1em]",
         className
       )}
     >
