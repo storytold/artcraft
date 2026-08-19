@@ -552,6 +552,17 @@ export const PromptBoxVideo = ({
     onDropFiles: handleDroppedFiles,
   });
 
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={maxImageCount > 0}
+      acceptsVideos={dropAcceptsVideos}
+      acceptsAudio={dropAcceptsAudio}
+      keyframeMode={!isReferenceMode}
+    />
+  );
+
   // Mixed deck items ordered images → videos → audios: the @ImageN/@VideoN/
   // @AudioN mention labels are index-derived per type, so this ordering (and
   // image-only reordering) is load-bearing.
@@ -1342,13 +1353,7 @@ export const PromptBoxVideo = ({
           )}
           {...drop.dropZoneProps}
         >
-          <PromptBoxDropOverlay
-            dragState={drop.dragState}
-            acceptsImages={maxImageCount > 0}
-            acceptsVideos={dropAcceptsVideos}
-            acceptsAudio={dropAcceptsAudio}
-            keyframeMode={!isReferenceMode}
-          />
+          {dropOverlay}
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon
@@ -1610,6 +1615,8 @@ export const PromptBoxVideo = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
         clearAllButton={
           <PromptClearAllButton
             onClick={handleClearAll}

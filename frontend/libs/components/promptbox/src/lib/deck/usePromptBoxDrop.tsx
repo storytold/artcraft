@@ -26,6 +26,15 @@ export interface UsePromptBoxDropOptions {
   onDropFiles: (files: DroppedFiles) => void;
 }
 
+/** Spreadable props that make an element a prompt-box drop target. */
+export interface PromptBoxDropZoneProps {
+  ref: React.RefObject<HTMLDivElement | null>;
+  onDragEnter: React.DragEventHandler<HTMLDivElement>;
+  onDragOver: React.DragEventHandler<HTMLDivElement>;
+  onDragLeave: React.DragEventHandler<HTMLDivElement>;
+  onDrop: React.DragEventHandler<HTMLDivElement>;
+}
+
 interface PromptBoxDropOverlayProps {
   dragState: DropDragState;
   acceptsImages: boolean;
@@ -135,6 +144,9 @@ export function usePromptBoxDrop({
 }: UsePromptBoxDropOptions) {
   const [dragState, setDragState] = useState<DropDragState>("idle");
   const zoneRef = useRef<HTMLDivElement>(null);
+  // Second zone for the focus-mode modal (PromptFullscreenModal); mounted
+  // only while it's open, when it visually covers the inline box.
+  const fullscreenZoneRef = useRef<HTMLDivElement>(null);
   const enabled = acceptsImages || acceptsVideos || acceptsAudio;
   const isDesktop = IsDesktopApp();
 
@@ -286,9 +298,10 @@ export function usePromptBoxDrop({
     let disposed = false;
 
     // Tauri reports positions in physical pixels; CSS coordinates need the
-    // display's scale factor divided back out.
+    // display's scale factor divided back out. While focus mode is open its
+    // zone covers the inline box, so it takes over the hit-test.
     const isInsideZone = (position: { x: number; y: number }) => {
-      const zone = zoneRef.current;
+      const zone = fullscreenZoneRef.current ?? zoneRef.current;
       if (!zone) return false;
       const scale = window.devicePixelRatio || 1;
       const x = position.x / scale;
@@ -411,6 +424,15 @@ export function usePromptBoxDrop({
       ref: zoneRef,
       // Under Tauri these never fire, but leaving them attached keeps a
       // single code path and costs nothing.
+      onDragEnter: handleDragOver,
+      onDragOver: handleDragOver,
+      onDragLeave: handleDragLeave,
+      onDrop: handleDrop,
+    },
+    // Same handlers with the focus-mode ref, for PromptFullscreenModal —
+    // drops there behave exactly like drops on the inline box.
+    fullscreenDropZoneProps: {
+      ref: fullscreenZoneRef,
       onDragEnter: handleDragOver,
       onDragOver: handleDragOver,
       onDragLeave: handleDragLeave,

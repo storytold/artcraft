@@ -155,6 +155,16 @@ export const PromptBoxImage = ({
     onDropFiles: handleDroppedFiles,
   });
 
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={dropAcceptsImages}
+      acceptsVideos={false}
+      acceptsAudio={false}
+    />
+  );
+
   const deckItems: DeckItem[] = useMemo(
     () => [
       ...referenceImages.map((img, i) => ({
@@ -463,12 +473,7 @@ export const PromptBoxImage = ({
           )}
           {...drop.dropZoneProps}
         >
-          <PromptBoxDropOverlay
-            dragState={drop.dragState}
-            acceptsImages={dropAcceptsImages}
-            acceptsVideos={false}
-            acceptsAudio={false}
-          />
+          {dropOverlay}
           <div className="flex justify-center gap-2">
             {renderReferenceDeck()}
 
@@ -602,6 +607,8 @@ export const PromptBoxImage = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
         footerControls={modelSelector}
         imagePromptRow={renderReferenceDeck(true) ?? undefined}
         clearAllButton={

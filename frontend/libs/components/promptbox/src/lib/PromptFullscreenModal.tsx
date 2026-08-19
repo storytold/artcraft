@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { focusEditorAtEnd } from "./focusEditorAtEnd";
+import { PromptBoxDropZoneProps } from "./deck/usePromptBoxDrop";
 
 // Shared "focus mode" overlay for prompt editors. Reuses @storyteller/ui-modal
 // (Trello-card style: centered panel + blurred backdrop) and renders whatever
@@ -37,6 +38,16 @@ interface PromptFullscreenModalProps {
    * the Done button (pass the box's PromptClearAllButton).
    */
   clearAllButton?: ReactNode;
+  /**
+   * Drop-zone wiring (usePromptBoxDrop's `fullscreenDropZoneProps`) so drag &
+   * drop keeps working while focus mode covers the inline box.
+   */
+  dropZoneProps?: PromptBoxDropZoneProps;
+  /**
+   * The same PromptBoxDropOverlay element the inline box renders, shown over
+   * the panel while files hover it.
+   */
+  dropOverlay?: ReactNode;
 }
 
 export const PromptFullscreenModal = ({
@@ -48,6 +59,8 @@ export const PromptFullscreenModal = ({
   footerControls,
   imagePromptRow,
   clearAllButton,
+  dropZoneProps,
+  dropOverlay,
 }: PromptFullscreenModalProps) => {
   const overLimit = isFinite(maxLength) && promptLength > maxLength;
   const contentRef = useRef<HTMLDivElement>(null);
@@ -76,7 +89,12 @@ export const PromptFullscreenModal = ({
           is reliably bounded across the modal's nested wrappers — that's what
           lets the editor's textarea scroll instead of stretching the panel.
           min-h-0 on the flex children lets them shrink below content size. */}
-      <div className="flex min-h-0 flex-col gap-2" style={{ height: "70vh" }}>
+      <div
+        {...dropZoneProps}
+        className="relative flex min-h-0 flex-col gap-2"
+        style={{ height: "70vh" }}
+      >
+        {dropOverlay}
         <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
         {/* flex-1 so the editor takes only the space left after the (shrink-0)
             image row + footer — that's what keeps it from overflowing when the

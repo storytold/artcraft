@@ -277,6 +277,17 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onDropFiles: handleDroppedFiles,
     });
 
+    // One overlay element serves both drop zones (inline box + focus mode).
+    const dropOverlay = (
+      <PromptBoxDropOverlay
+        dragState={drop.dragState}
+        acceptsImages={dropAcceptsImages}
+        acceptsVideos={dropAcceptsVideos}
+        acceptsAudio={dropAcceptsAudio}
+        keyframeMode={isKeyframeMode}
+      />
+    );
+
     // Mixed deck items ordered images → videos → audios so the page's
     // index-derived @ImageN/@VideoN/@AudioN mention labels stay aligned.
     const deckItems: DeckItem[] = useMemo(
@@ -774,13 +785,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             )}
             {...drop.dropZoneProps}
           >
-            <PromptBoxDropOverlay
-              dragState={drop.dragState}
-              acceptsImages={dropAcceptsImages}
-              acceptsVideos={dropAcceptsVideos}
-              acceptsAudio={dropAcceptsAudio}
-              keyframeMode={isKeyframeMode}
-            />
+            {dropOverlay}
             <div className="flex gap-3">
               {renderReferenceWidget()}
               {referenceSlots}
@@ -985,6 +990,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           onClose={closeFullscreen}
           promptLength={prompt.length}
           maxPromptLength={maxPromptLength}
+          dropZoneProps={drop.dropZoneProps}
+          dropOverlay={dropOverlay}
           footerControls={
             <>
               {modelSelector}
