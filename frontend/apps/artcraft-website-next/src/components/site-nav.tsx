@@ -7,6 +7,7 @@ import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import { ChevronDownIcon, MenuIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { SOCIAL_LINKS, WEBAPP_URL, webappUrl } from "@/lib/links";
+import { Button } from "@/components/ui";
 import ThemeToggle from "./theme-toggle";
 
 type NavLeaf = { name: string; href: string };
@@ -38,8 +39,6 @@ const NAV_LABEL_CLASSES =
 const NAV_LABEL_ACTIVE_CLASSES = "bg-invert-bg text-invert-fg";
 const DROPDOWN_ITEM_CLASSES =
   "group flex px-3 py-2.5 hud-label whitespace-nowrap";
-const SOLID_CTA_CLASSES =
-  "flex h-full items-center border-l border-line bg-invert-bg px-5 hud-label font-bold text-invert-fg hover:opacity-80";
 
 const isExternalHref = (href: string) => /^https?:\/\//.test(href);
 
@@ -193,9 +192,12 @@ export default function SiteNav() {
               <span className={NAV_LABEL_CLASSES}>Pricing</span>
             </Link>
             <ThemeToggle className="w-12 border-l border-line" />
-            <a href={WEBAPP_URL} className={SOLID_CTA_CLASSES}>
+            <Button
+              href={WEBAPP_URL}
+              className="h-full border-l border-line px-5"
+            >
               Launch App
-            </a>
+            </Button>
           </div>
 
           {/* Mobile: theme + hamburger */}
@@ -305,12 +307,12 @@ export default function SiteNav() {
 
           <div className="border-t border-line" />
 
-          <a
+          <Button
             href={WEBAPP_URL}
-            className="flex h-11 items-center justify-center bg-invert-bg px-4 hud-label font-bold text-invert-fg active:opacity-80"
+            className="h-11 w-full active:opacity-80"
           >
             Launch App
-          </a>
+          </Button>
           <div className="flex items-stretch border-t border-line">
             <Link
               href="/pricing"

@@ -92,9 +92,9 @@
   --color-invert-fg: var(--invert-fg);
   --color-danger: var(--danger);
 
-  --font-display: var(--font-outfit), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
   --font-serif: var(--font-instrument), Georgia, serif;
-  --font-body: var(--font-source-sans), system-ui, sans-serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* No rounded corners anywhere in this design language. */

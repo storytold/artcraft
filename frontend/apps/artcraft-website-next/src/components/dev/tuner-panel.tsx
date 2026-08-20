@@ -6,6 +6,7 @@ import {
   tunerSnapshot,
   type TunableGroup,
 } from "@/lib/tuner";
+import { Button } from "@/components/ui";
 
 const UI_KEY = "artcraft-tuner-ui";
 
@@ -138,14 +139,15 @@ function Panel() {
 
 function HeaderButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={onClick}
       onPointerDown={(e) => e.stopPropagation()}
-      className="hud-label min-w-[44px] border border-line px-1.5 py-0.5 text-[10px] text-muted hover:bg-invert-bg hover:text-invert-fg"
+      className="min-w-[44px] border border-line px-1.5 py-0.5 text-[10px] font-medium"
     >
       {label}
-    </button>
+    </Button>
   );
 }
 

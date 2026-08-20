@@ -2,9 +2,9 @@ import { AppleIcon, MonitorIcon } from "lucide-react";
 import { SOCIAL_LINKS, WEBAPP_URL } from "@/lib/links";
 import { HERO_VIDEO_URL } from "@/lib/landing-data";
 import { GitHubIcon } from "@/components/icons";
+import { Button } from "@/components/ui";
 import HeroWordmark from "./hero-wordmark";
 import HeroViewport from "./hero-viewport";
-import CtaLink from "./cta-link";
 
 export default function Hero() {
   return (
@@ -42,14 +42,14 @@ export default function Hero() {
               render with AI.
             </p>
             <div data-reveal className="flex flex-wrap items-center gap-3">
-              <CtaLink href="/download">
+              <Button href="/download" size="lg">
                 <AppleIcon aria-hidden className="h-4 w-4" />
                 <MonitorIcon aria-hidden className="h-4 w-4" />
                 Download free
-              </CtaLink>
-              <CtaLink href={WEBAPP_URL} variant="outline">
+              </Button>
+              <Button href={WEBAPP_URL} variant="secondary" size="lg">
                 Use on web
-              </CtaLink>
+              </Button>
             </div>
           </div>
 

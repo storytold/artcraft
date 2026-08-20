@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Instrument_Serif, Source_Sans_3, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
 import SiteNav from "@/components/site-nav";
 import SiteFooter from "@/components/site-footer";
 import MotionProvider from "@/components/motion-provider";
@@ -8,9 +8,9 @@ import "./globals.css";
 
 const SITE_URL = "https://getartcraft.com";
 
-const outfit = Outfit({
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -22,9 +22,9 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-const sourceSans = Source_Sans_3({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-source-sans",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -88,13 +88,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${bricolage.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body
-        className={`${outfit.variable} ${instrumentSerif.variable} ${sourceSans.variable} ${geistMono.variable}`}
-      >
+      <body>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}

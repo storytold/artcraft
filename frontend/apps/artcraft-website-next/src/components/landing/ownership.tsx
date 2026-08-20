@@ -1,4 +1,5 @@
 import { GitHubIcon } from "@/components/icons";
+import { Button } from "@/components/ui";
 import { SOCIAL_LINKS } from "@/lib/links";
 import { SectionShell, SectionEyebrow } from "./section-shell";
 
@@ -49,15 +50,17 @@ export default function Ownership() {
             </h3>
             <p className="mt-2 leading-relaxed text-muted">{pillar.body}</p>
             {pillar.href && (
-              <a
+              <Button
                 href={pillar.href}
+                variant="secondary"
+                size="sm"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="invert-block hud-label mt-6 inline-flex items-center gap-1.5 border border-line-strong px-3 py-1.5 text-ink hover:border-transparent"
+                className="mt-6 gap-1.5 font-medium"
               >
                 <GitHubIcon className="h-3.5 w-3.5" />
                 View source
-              </a>
+              </Button>
             )}
           </article>
         ))}
