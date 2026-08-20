@@ -171,7 +171,7 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
       delay={300}
     >
       <button
-        className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+        className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
         aria-label="Copy prompt"
         onClick={(e) => {
           e.stopPropagation();
@@ -211,9 +211,9 @@ const InProgressCard = ({
     : null;
 
   return (
-    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+    <div className=" p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-ui-controls">
           <LoaderCircleIcon
             
             className="animate-spin text-base-fg/60"
@@ -255,9 +255,9 @@ const InProgressCard = ({
             </div>
           )}
           <div className="mt-1.5 flex items-center gap-2">
-            <div className="h-1.5 min-w-0 flex-1 rounded bg-ui-controls">
+            <div className="h-1.5 min-w-0 flex-1 bg-ui-controls">
               <div
-                className="h-1.5 rounded bg-primary-400"
+                className="h-1.5 bg-primary-400"
                 style={{
                   width: `${Math.max(0, Math.min(100, task.progress))}%`,
                 }}
@@ -273,7 +273,7 @@ const InProgressCard = ({
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
               aria-label="Dismiss"
               onClick={(e) => {
                 e.stopPropagation();
@@ -300,12 +300,12 @@ const CompletedCard = ({
 }) => {
   return (
     <div
-      className="flex cursor-pointer items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-ui-controls/40"
+      className="flex cursor-pointer items-center gap-2.5 p-2 transition-colors hover:bg-ui-controls/40"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
     >
-      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded bg-ui-controls">
+      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden bg-ui-controls">
         {task.thumbnailUrl ? (
           <img
             src={task.thumbnailUrl}
@@ -341,7 +341,7 @@ const CompletedCard = ({
         {task.prompt && <CopyPromptButton prompt={task.prompt} />}
         {onDismiss && (
           <button
-            className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+            className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
             aria-label="Dismiss"
             onClick={(e) => {
               e.stopPropagation();
@@ -365,9 +365,9 @@ const FailedCard = ({
 }) => {
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
   return (
-    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+    <div className=" p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-red-500/10">
           <CircleAlertIcon
             
             className="text-red-400"
@@ -385,7 +385,7 @@ const FailedCard = ({
             </div>
           )}
           <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
-            <span className="shrink-0 rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
+            <span className="shrink-0 bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
               {statusLabel}
             </span>
             {task.failureReason && (
@@ -429,7 +429,7 @@ const FailedCard = ({
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
               aria-label="Dismiss"
               onClick={(e) => {
                 e.stopPropagation();
@@ -1063,14 +1063,14 @@ export const TaskQueue = () => {
       <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
         <div className="relative task-queue-trigger">
           {badgeCount > 0 && (
-            <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-primary-400 px-1 text-[10px] font-semibold text-white ring-2 ring-[#121212]">
+            <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center bg-primary-400 px-1 text-[10px] font-semibold text-white ring-2 ring-[#121212]">
               {badgeCount}
             </div>
           )}
           <PopoverMenu
             mode="default"
-            buttonClassName="h-8 w-8 !p-0 relative bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/80 rounded-lg shadow-none"
-            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-[#1a1a1a] border border-white/[0.08] mt-2 rounded-xl"
+            buttonClassName="h-8 w-8 !p-0 relative bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/80 shadow-none"
+            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-[#1a1a1a] border border-white/[0.08] mt-2"
             position="bottom"
             align="end"
             triggerIcon={
@@ -1116,33 +1116,33 @@ export const TaskQueue = () => {
         showClose={false}
       >
         <div className="flex h-full flex-col">
-          <div className="rounded-t-xl border-ui-panel-border bg-ui-panel">
+          <div className=" border-ui-panel-border bg-ui-panel">
             <div className="flex items-center justify-between p-3">
               <h2 className="text-lg font-semibold">Task Queue</h2>
               <div className="flex items-center gap-2">
                 <Button
-                  className="rounded-full flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
+                  className=" flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
                   <BrushIcon  className="mr-1.5" />
                   Clear completed
                 </Button>
                 <Button
-                  className="rounded-full flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
+                  className=" flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
                   <Trash2Icon  className="mr-1.5" />
                   Clear stale
                 </Button>
                 <Button
-                  className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
+                  className=" flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
                   <Trash2Icon  className="mr-1.5" />
                   Clear failed
                 </Button>
                 <Button
-                  className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
+                  className=" flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
                   <BombIcon  className="mr-1.5" />

@@ -23,7 +23,7 @@ export const FailedCard = memo(function FailedCard({
 }: FailedCardProps) {
   const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
+    <div className="relative aspect-square w-full overflow-hidden bg-red-500/10">
       <div className="flex h-full flex-col items-center justify-center gap-2 px-4 sm:px-6">
         <CircleAlertIcon
           
@@ -38,7 +38,7 @@ export const FailedCard = memo(function FailedCard({
         )}
         <button
           onClick={() => onDismiss(id)}
-          className="mt-1 flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
+          className="mt-1 flex items-center gap-1.5 bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
         >
           <XIcon />
           Dismiss

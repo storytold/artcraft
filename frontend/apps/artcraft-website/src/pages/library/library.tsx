@@ -279,7 +279,7 @@ export default function Library() {
             <Link to="/login">
               <Button
                 variant="primary"
-                className="rounded-full bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5 rounded-lg"
+                className=" bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5"
               >
                 Login
               </Button>
@@ -287,7 +287,7 @@ export default function Library() {
             <Link to="/signup">
               <Button
                 variant="primary"
-                className="rounded-full text-sm font-semibold px-6 py-2.5 rounded-lg"
+                className=" text-sm font-semibold px-6 py-2.5"
               >
                 Sign up
               </Button>
@@ -326,7 +326,7 @@ export default function Library() {
                   isLoadingRef.current = false;
                   loadItems(true);
                 }}
-                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                 title="Refresh library"
               >
                 <RefreshCwIcon
@@ -336,12 +336,12 @@ export default function Library() {
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+            <div className="flex items-center gap-1 bg-ui-controls/40 p-1 overflow-x-auto">
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
                   onClick={() => navigate(filter.route)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeFilter === filter.id
                       ? "bg-ui-controls text-white"
                       : "text-white/60 hover:text-white"
@@ -361,12 +361,12 @@ export default function Library() {
             // Skeleton grid
             <div className="space-y-6">
               <div>
-                <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
+                <div className="h-4 w-24 bg-white/[0.06] mb-3" />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
                   {Array.from({ length: 15 }).map((_, i) => (
                     <div
                       key={i}
-                      className="aspect-square rounded-lg overflow-hidden"
+                      className="aspect-square overflow-hidden"
                     >
                       <div
                         className="h-full w-full bg-white/[0.06]"
@@ -392,7 +392,7 @@ export default function Library() {
                 <Link to="/create-image">
                   <Button
                     variant="primary"
-                    className="rounded-full text-sm px-4 py-2"
+                    className=" text-sm px-4 py-2"
                   >
                     Create Image
                   </Button>
@@ -400,7 +400,7 @@ export default function Library() {
                 <Link to="/create-video">
                   <Button
                     variant="secondary"
-                    className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
+                    className=" text-sm px-4 py-2 border border-ui-panel-border"
                   >
                     Create Video
                   </Button>

@@ -29,13 +29,13 @@ export const LandingActionButtons = ({
       }`}
     >
       {isMobile ? (
-        <Button className="text-lg font-semibold rounded-xl shadow-lg" disabled>
+        <Button className="text-lg font-semibold shadow-lg" disabled>
           Download on a desktop
         </Button>
       ) : (
         <>
           <Button
-            className="glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 border-2 border-primary/30 bg-gradient-to-r from-primary/20 to-purple-600/20 hover:from-primary/30 hover:to-purple-600/30 backdrop-blur-md"
+            className="glow-border-animated text-md px-8 py-4 text-lg font-semibold shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 border-2 border-primary/30 bg-gradient-to-r from-primary/20 to-purple-600/20 hover:from-primary/30 hover:to-purple-600/30 backdrop-blur-md"
             as="link"
             href="/pricing"
           >
@@ -45,7 +45,7 @@ export const LandingActionButtons = ({
           {DOWNLOADS_ENABLED && (
             <div className="relative">
               <Button
-                className="text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 bg-white hover:bg-white/80 text-black"
+                className="text-md px-8 py-4 text-lg font-semibold shadow-lg gap-3 transition-all duration-300 bg-white hover:bg-white/80 text-black"
                 as="link"
                 href={downloadUrl}
                 onClick={onDownloadClick}

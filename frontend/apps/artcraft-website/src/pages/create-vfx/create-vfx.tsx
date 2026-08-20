@@ -258,7 +258,7 @@ export default function CreateVFX() {
           description="Swap the backdrop of a video using a reference image."
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
-          <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
+          <div className="h-[600px] w-[600px] bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
         </div>
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
           <SparklesIcon
@@ -388,7 +388,7 @@ interface EmptyStateProps {
 
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+    <div className="flex h-12 w-12 items-center justify-center bg-white/5 ring-1 ring-white/10">
       <SparklesIcon  className="text-2xl text-white/40" />
     </div>
     <h3 className="text-2xl font-bold text-white">{title}</h3>

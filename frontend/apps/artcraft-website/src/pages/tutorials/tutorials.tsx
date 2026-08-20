@@ -68,7 +68,7 @@ export const TutorialsPage = () => {
               type="button"
               onClick={() => setActiveCategory(cat)}
               className={twMerge(
-                "px-4 py-2 rounded-xl border",
+                "px-4 py-2 border",
                 activeCategory === cat
                   ? "bg-primary/30 border-primary/90"
                   : "bg-white/5 border-white/10 hover:bg-white/10"
@@ -87,7 +87,7 @@ export const TutorialsPage = () => {
               <Link
                 key={item.slug}
                 to={href}
-                className="group block overflow-hidden rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-left"
+                className="group block overflow-hidden border border-white/10 bg-white/5 hover:bg-white/10 text-left"
               >
                 <div className="aspect-video w-full overflow-hidden relative">
                   <img
@@ -109,7 +109,7 @@ export const TutorialsPage = () => {
                 <div className="p-3 text-sm text-white/90 flex items-center justify-between">
                   <span>{item.title}</span>
                   {item.category && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 border border-white/10">
+                    <span className="px-2 py-0.5 text-xs bg-white/10 border border-white/10">
                       {item.category}
                     </span>
                   )}

@@ -768,7 +768,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
 
           <div
             className={twMerge(
-              "glass rounded-2xl p-3 sm:p-4 !transition-all duration-200",
+              "glass p-3 sm:p-4 !transition-all duration-200",
               isFocused && "ring-1 ring-primary",
             )}
             {...drop.dropZoneProps}
@@ -848,7 +848,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     />
 
                     {mentionOpen && filteredMentionItems.length > 0 && (
-                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-ui-panel-border bg-ui-controls shadow-lg backdrop-blur-xl">
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden border border-ui-panel-border bg-ui-controls shadow-lg backdrop-blur-xl">
                         <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
                           Mentions
                         </div>
@@ -867,7 +867,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                             }}
                             onMouseEnter={() => setMentionIndex(i)}
                           >
-                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-black/20">
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden border border-white/20 bg-black/20">
                               {(item.type === "image" ||
                                 item.type === "character") &&
                               item.preview ? (

@@ -67,7 +67,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
       }}
       style={colorCode ? { borderColor: colorCode } : undefined}
       className={twMerge(
-        "group/chip relative w-full aspect-square overflow-hidden rounded-md border-2 border-ui-controls/40 bg-ui-controls/20 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out cursor-pointer hover:border-primary/60",
+        "group/chip relative w-full aspect-square overflow-hidden border-2 border-ui-controls/40 bg-ui-controls/20 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out cursor-pointer hover:border-primary/60",
         // A dragged item hovering the folder makes it lift and glow — clear,
         // tactile "drop here" feedback rather than a flat color swap.
         "[&.folder-drag-over]:scale-[1.04] [&.folder-drag-over]:border-primary [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:ring-2 [&.folder-drag-over]:ring-primary/40",
@@ -168,7 +168,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
             e.stopPropagation();
             openMenuAt(e.currentTarget as HTMLElement);
           }}
-          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100 [@media(pointer:coarse)]:opacity-100"
+          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100 [@media(pointer:coarse)]:opacity-100"
         >
           <EllipsisIcon  className="text-sm" />
         </span>

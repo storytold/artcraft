@@ -170,12 +170,10 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
             tabs={billingTabs}
             activeTab={billingType}
             onTabChange={setBillingType}
-            className="w-fit rounded-lg border border-white/20 bg-white/5"
+            className="w-fit rounded-none border border-white/15 bg-white/5"
             tabClassName="w-24 text-md"
-            indicatorClassName="bg-primary/30 border border-primary"
-            selectedTabClassName="text-white"
           />
-          <span className="pointer-events-none absolute -left-6 -top-3 rounded-full bg-primary px-3 py-0.5 text-sm font-medium text-white">
+          <span className="pointer-events-none absolute -left-6 -top-3 rounded-none bg-primary px-3 py-0.5 text-sm font-medium text-white">
             -{pricingConfig.yearlyDiscount}%
           </span>
         </div>

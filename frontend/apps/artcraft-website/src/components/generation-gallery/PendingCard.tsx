@@ -43,10 +43,10 @@ export const PendingCard = memo(function PendingCard({
   const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]">
+    <div className="relative aspect-square w-full overflow-hidden bg-white/[0.03]">
       <div className="animate-shimmer h-full w-full" />
       {batchCount != null && batchCount > 1 && (
-        <div className="absolute left-2 right-2 top-2 z-10 rounded-md bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
+        <div className="absolute left-2 right-2 top-2 z-10 bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
           Generating {batchCount} videos · Results may appear one at a time
         </div>
       )}
@@ -78,9 +78,9 @@ export const PendingCard = memo(function PendingCard({
           </p>
         </div>
         {progressPercent != null && (
-          <div className="mt-1.5 h-1 w-full rounded-full bg-white/10">
+          <div className="mt-1.5 h-1 w-full bg-white/10">
             <div
-              className="h-1 rounded-full bg-primary-400 transition-all duration-500"
+              className="h-1 bg-primary-400 transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

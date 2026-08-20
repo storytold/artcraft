@@ -39,20 +39,20 @@ export const Button = ({
   function getVariantClassNames(variant: string) {
     switch (variant) {
       case "secondary": {
-        return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80 focus-visible:outline-secondary";
+        return "bg-transparent text-base-fg border border-ui-controls-border hover:bg-white/10 hover:border-white/30";
       }
       case "action": {
-        return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80 focus-visible:outline-action";
+        return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80";
       }
       case "destructive": {
-        return "bg-red hover:bg-red/90 text-white focus-visible:outline-red";
+        return "bg-red-500 hover:bg-red-400 text-white";
       }
       case "ghost": {
-        return "bg-transparent text-base-fg border border-ui-controls-border/70 hover:bg-ui-controls/30 focus-visible:outline-primary-600";
+        return "bg-transparent text-base-fg/70 hover:bg-white/10 hover:text-base-fg";
       }
       case "primary":
       default: {
-        return "bg-primary hover:bg-primary-400 text-white focus-visible:outline-primary-600";
+        return "bg-white hover:bg-white/80 text-black font-bold";
       }
     }
   }
@@ -62,7 +62,7 @@ export const Button = ({
   );
 
   const className = twMerge(
-    "w-fit text-sm font-medium rounded-lg px-3 py-1.5 border border-transparent shadow-sm focus-visible:outline focus-visible:outline-0 focus-visible:outline-offset-0 transition-all duration-150 flex gap-2 items-center justify-center active:scale-95 transform",
+    "w-fit rounded-none font-mono text-xs font-semibold uppercase tracking-[0.15em] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150 flex gap-2 items-center justify-center",
     getVariantClassNames(propsVariant),
     propsClassName,
     disabledClass,

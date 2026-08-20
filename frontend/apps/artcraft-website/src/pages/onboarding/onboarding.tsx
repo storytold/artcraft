@@ -299,13 +299,13 @@ const Onboarding = () => {
           description="Your account setup is complete."
         />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
+          <div className="w-[900px] h-[900px] bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
         </div>
 
         <main className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto bg-green-500/20 flex items-center justify-center">
                 <CircleCheckIcon
                   
                   className="text-5xl text-green-400" />
@@ -329,13 +329,13 @@ const Onboarding = () => {
       />
 
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]"></div>
+        <div className="w-[900px] h-[900px] bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]"></div>
       </div>
 
       <main className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="max-w-md w-full">
           {isNewAccount && (
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6 flex items-start gap-3 animate-fade-in shadow-lg shadow-blue-900/10">
+            <div className="bg-blue-500/10 border border-blue-500/30 p-4 mb-6 flex items-start gap-3 animate-fade-in shadow-lg shadow-blue-900/10">
               <InfoIcon
                 
                 className="text-blue-400 mt-1 flex-shrink-0 text-lg" />
@@ -351,7 +351,7 @@ const Onboarding = () => {
             </div>
           )}
 
-          <div className="bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
+          <div className="bg-[#1C1C20] border border-white/10 p-6 py-8 shadow-2xl">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-semibold mb-2">
                 {currentStep === "password" &&
@@ -376,7 +376,7 @@ const Onboarding = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                   {error}
                 </div>
               )}
@@ -393,7 +393,7 @@ const Onboarding = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                       placeholder="Enter your password"
                       minLength={8}
                     />
@@ -408,7 +408,7 @@ const Onboarding = () => {
                       value={passwordConfirmation}
                       onChange={(e) => setPasswordConfirmation(e.target.value)}
                       required
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                       placeholder="Confirm your password"
                       minLength={8}
                     />
@@ -427,7 +427,7 @@ const Onboarding = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -443,7 +443,7 @@ const Onboarding = () => {
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                     placeholder="Your display name"
                   />
                 </div>

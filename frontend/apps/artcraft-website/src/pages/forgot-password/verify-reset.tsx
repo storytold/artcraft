@@ -113,7 +113,7 @@ const VerifyReset = () => {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 p-6 py-8 shadow-2xl">
           {!success ? (
             <>
               <div className="text-center mb-8">
@@ -133,7 +133,7 @@ const VerifyReset = () => {
                 }}
               >
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                     {error}
                   </div>
                 )}
@@ -150,7 +150,7 @@ const VerifyReset = () => {
                     onChange={(e) => setVerificationCode(e.target.value)}
                     placeholder="Enter verification code"
                     isError={!!fieldErrors.verificationCode}
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                   />
                   {fieldErrors.verificationCode && (
                     <p className="text-red-400 text-xs ml-1">
@@ -172,7 +172,7 @@ const VerifyReset = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       isError={!!fieldErrors.newPassword}
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"
@@ -204,7 +204,7 @@ const VerifyReset = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Enter new password again"
                       isError={!!fieldErrors.confirmPassword}
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"
@@ -228,7 +228,7 @@ const VerifyReset = () => {
                 <div className="pt-2">
                   <Button
                     id="change-password-btn"
-                    className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    className=" w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -255,7 +255,7 @@ const VerifyReset = () => {
           ) : (
             <>
               <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
+                <div className="w-16 h-16 bg-green-500/20 flex items-center justify-center mx-auto mb-4 text-green-500">
                   <CircleCheckIcon  className="text-2xl" />
                 </div>
                 <h3 className="text-xl font-medium mb-2">
@@ -267,7 +267,7 @@ const VerifyReset = () => {
                 </p>
                 <Button
                   id="back-to-homepage-btn"
-                  className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                  className=" w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                   onClick={() => navigate(redirectTo)}
                 >
                   {redirectLabel}

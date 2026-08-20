@@ -84,7 +84,7 @@ export default function Navbar() {
     <Disclosure as="nav" className="z-50 fixed top-0 left-0 w-full">
       {({ open }) => (
         <div className="px-3 sm:px-5 pt-3">
-          <div className="liquid-glass mx-auto rounded-3xl max-w-6xl">
+          <div className="liquid-glass mx-auto max-w-6xl">
             <div className="flex h-11 sm:h-12 items-center justify-between pl-4 pr-2 sm:pl-5 sm:pr-2.5">
               {/* Left: Logo + nav items */}
               <div className="flex items-center gap-5 min-w-0">
@@ -104,7 +104,7 @@ export default function Navbar() {
                     {NAV_ITEMS.map((entry) => {
                       const active = isEntryActive(location.pathname, entry);
                       const baseClasses =
-                        "px-3 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5";
+                        "px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap flex items-center gap-1.5";
                       const stateClasses = active
                         ? "text-white bg-white/[0.08]"
                         : "text-white/60 hover:text-white hover:bg-white/[0.04]";
@@ -170,7 +170,7 @@ export default function Navbar() {
                                 className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180" />
                             </NavigationMenu.Trigger>
                           )}
-                          <NavigationMenu.Content className="absolute top-full left-0 mt-2 rounded-xl border border-white/[0.08] bg-[#1a1a1a] shadow-xl overflow-hidden">
+                          <NavigationMenu.Content className="absolute top-full left-0 mt-2 border border-white/[0.08] bg-[#1a1a1a] shadow-xl overflow-hidden">
                             <ul className="flex flex-col p-1.5 min-w-[180px]">
                               {entry.children.map((child) => {
                                 const childActive = isPathActive(
@@ -186,7 +186,7 @@ export default function Navbar() {
                                           childActive ? "page" : undefined
                                         }
                                         className={twMerge(
-                                          "block px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap",
+                                          "block px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
                                           childActive
                                             ? "text-white bg-white/[0.08]"
                                             : "text-white/70 hover:text-white hover:bg-white/[0.06]",
@@ -215,7 +215,7 @@ export default function Navbar() {
                   <div className="hidden md:flex items-center gap-2">
                     <Link
                       to="/pricing"
-                      className="hidden xl:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
+                      className="hidden xl:flex h-8 items-center gap-1.5 px-3 text-sm font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
                     >
                       <GemIcon  className="text-[11px]" />
                       Pricing
@@ -224,7 +224,7 @@ export default function Navbar() {
                     {USE_WEBAPP_FOR_APP_FEATURES && (
                       <a
                         href={WEBAPP_URL}
-                        className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                        className="group h-8 flex items-center gap-1.5 px-3.5 text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                       >
                         <RocketIcon
                           
@@ -234,7 +234,7 @@ export default function Navbar() {
                     )}
 
                     <Menu as="div" className="relative ml-1">
-                      <MenuButton className="flex h-8 w-8 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/40 ring-offset-2 ring-offset-[#121212]">
+                      <MenuButton className="flex h-8 w-8 overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/40 ring-offset-2 ring-offset-[#121212]">
                         <span className="sr-only">Open user menu</span>
                         <img
                           className="h-full w-full object-cover"
@@ -253,7 +253,7 @@ export default function Navbar() {
                       >
                         <MenuItems
                           modal={false}
-                          className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-xl focus:outline-none overflow-hidden"
+                          className="absolute right-0 z-50 mt-2 w-48 origin-top-right bg-[#1a1a1a] border border-white/[0.08] shadow-xl focus:outline-none overflow-hidden"
                         >
                           <div className="px-4 py-3 border-b border-white/[0.06]">
                             <p className="text-sm font-medium text-white truncate">
@@ -333,7 +333,7 @@ export default function Navbar() {
                   <div className="hidden md:flex items-center gap-2">
                     <Link
                       to="/pricing"
-                      className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
+                      className="h-8 flex items-center gap-1.5 px-3 text-sm font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
                     >
                       <GemIcon  className="text-[11px]" />
                       Pricing
@@ -341,7 +341,7 @@ export default function Navbar() {
                     {USE_WEBAPP_FOR_APP_FEATURES ? (
                       <a
                         href={WEBAPP_URL}
-                        className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                        className="group h-8 flex items-center gap-1.5 px-3.5 text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                       >
                         <RocketIcon
                           
@@ -352,13 +352,13 @@ export default function Navbar() {
                       <>
                         <Link
                           to="/login"
-                          className="h-8 flex items-center px-3 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.04] transition-all"
+                          className="h-8 flex items-center px-3 text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.04] transition-all"
                         >
                           Login
                         </Link>
                         <Link
                           to="/signup"
-                          className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                          className="group h-8 flex items-center gap-1.5 px-3.5 text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                         >
                           Sign up
                           <ArrowRightIcon
@@ -372,7 +372,7 @@ export default function Navbar() {
 
                 {/* Mobile: hamburger only */}
                 <div className="flex items-center gap-1.5 lg:hidden">
-                  <DisclosureButton className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors">
+                  <DisclosureButton className="flex h-8 w-8 items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors">
                     <span className="sr-only">Open main menu</span>
                     <DynamicIcon
                       icon={open ? XIcon : MenuIcon}
@@ -402,7 +402,7 @@ export default function Navbar() {
                         entry.href,
                       );
                       const leafClassName = twMerge(
-                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        " px-3 py-2 text-sm font-medium transition-colors",
                         isCurrent
                           ? "bg-white/[0.08] text-white"
                           : "text-white/60 active:bg-white/[0.04]",
@@ -439,7 +439,7 @@ export default function Navbar() {
                             as={Link}
                             to={entry.href}
                             className={twMerge(
-                              "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                              " px-3 py-2 text-sm font-medium transition-colors",
                               headerActive
                                 ? "bg-white/[0.08] text-white"
                                 : "text-white/60 active:bg-white/[0.04]",
@@ -464,7 +464,7 @@ export default function Navbar() {
                                 as={Link}
                                 to={child.href}
                                 className={twMerge(
-                                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                  " px-3 py-2 text-sm font-medium transition-colors",
                                   childActive
                                     ? "bg-white/[0.08] text-white"
                                     : "text-white/55 active:bg-white/[0.04]",
@@ -488,7 +488,7 @@ export default function Navbar() {
                       <DisclosureButton
                         as="a"
                         href={WEBAPP_URL}
-                        className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
+                        className="group h-10 flex items-center justify-center gap-1.5 px-3.5 text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
                       >
                         <RocketIcon
                           
@@ -500,7 +500,7 @@ export default function Navbar() {
                       <DisclosureButton
                         as={Link}
                         to="/pricing"
-                        className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
+                        className="flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
                       >
                         <GemIcon
                           
@@ -512,7 +512,7 @@ export default function Navbar() {
                         href={SOCIAL_LINKS.DISCORD}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
+                        className="flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
                       >
                         <DiscordIcon
                           
@@ -523,7 +523,7 @@ export default function Navbar() {
                         <DisclosureButton
                           as="a"
                           href={webappUrl("/referrals")}
-                          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
+                          className="flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
                         >
                           <GiftIcon
                             
@@ -534,7 +534,7 @@ export default function Navbar() {
                     </div>
                     <div className="flex items-center gap-2">
                       <img
-                        className="h-7 w-7 rounded-full border border-white/[0.08] shrink-0"
+                        className="h-7 w-7 border border-white/[0.08] shrink-0"
                         src={`https://www.gravatar.com/avatar/${user.email_gravatar_hash}?d=mp`}
                         alt=""
                       />
@@ -544,7 +544,7 @@ export default function Navbar() {
                       <DisclosureButton
                         as="button"
                         onClick={handleLogout}
-                        className="flex h-7 items-center rounded-lg px-2.5 text-[12px] font-medium text-red-400/80 active:bg-red-500/10 transition-colors shrink-0"
+                        className="flex h-7 items-center px-2.5 text-[12px] font-medium text-red-400/80 active:bg-red-500/10 transition-colors shrink-0"
                       >
                         Sign out
                       </DisclosureButton>
@@ -555,7 +555,7 @@ export default function Navbar() {
                     <DisclosureButton
                       as="a"
                       href={WEBAPP_URL}
-                      className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
+                      className="group h-10 flex items-center justify-center gap-1.5 px-3.5 text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
                     >
                       <RocketIcon  className="text-[10px]" />
                       Launch App
@@ -565,14 +565,14 @@ export default function Navbar() {
                       <DisclosureButton
                         as={Link}
                         to="/login"
-                        className="flex-1 h-9 rounded-lg text-sm font-semibold text-white/80 bg-white/[0.06] active:bg-white/10 transition-colors flex items-center justify-center"
+                        className="flex-1 h-9 text-sm font-semibold text-white/80 bg-white/[0.06] active:bg-white/10 transition-colors flex items-center justify-center"
                       >
                         Login
                       </DisclosureButton>
                       <DisclosureButton
                         as={Link}
                         to="/signup"
-                        className="flex-1 h-9 rounded-lg text-sm font-semibold text-black bg-white active:bg-white/90 transition-colors flex items-center justify-center"
+                        className="flex-1 h-9 text-sm font-semibold text-black bg-white active:bg-white/90 transition-colors flex items-center justify-center"
                       >
                         Sign up
                       </DisclosureButton>

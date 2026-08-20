@@ -173,7 +173,7 @@ export default function Referrals() {
             <div className="h-px w-10 bg-white/20" />
           </div>
 
-          <section className="rounded-2xl bg-[#1C1C20] border border-white/10 p-6 sm:p-8 shadow-2xl">
+          <section className=" bg-[#1C1C20] border border-white/10 p-6 sm:p-8 shadow-2xl">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary mb-2">
@@ -197,7 +197,7 @@ export default function Referrals() {
                 <LoadingSpinner className="h-7 w-7 text-white/60" />
               </div>
             ) : listError ? (
-              <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+              <div className=" bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
                 {listError}
               </div>
             ) : codes.length === 0 ? (
@@ -241,12 +241,12 @@ export default function Referrals() {
                   }
                   disabled={atLimit || creating}
                   maxLength={REFERRAL_CODE_MAX_LENGTH}
-                  className="flex-1 h-11 rounded-xl bg-black/20 border border-white/10 focus:border-primary/50 px-4 text-sm text-white placeholder-white/25 outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 h-11 bg-black/20 border border-white/10 focus:border-primary/50 px-4 text-sm text-white placeholder-white/25 outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"
                   disabled={submitDisabled}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary-600 px-6 text-[14px] font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex h-11 items-center justify-center gap-2 bg-primary hover:bg-primary-600 px-6 text-[14px] font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <PlusIcon  className="text-[12px]" />
                   {creating ? "Creating…" : "Create"}
@@ -278,7 +278,7 @@ export default function Referrals() {
 
 function ProfileLinkPanel({ profileLink }: { profileLink: string }) {
   return (
-    <section className="rounded-2xl bg-[#1C1C20] border border-white/10 p-6 sm:p-8 shadow-2xl">
+    <section className=" bg-[#1C1C20] border border-white/10 p-6 sm:p-8 shadow-2xl">
       <div className="mb-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary mb-2">
           Option 1
@@ -319,7 +319,7 @@ function ReferralCodeRow({
   });
 
   return (
-    <li className="rounded-xl bg-black/20 border border-white/[0.08] px-4 py-3.5">
+    <li className=" bg-black/20 border border-white/[0.08] px-4 py-3.5">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-medium text-white truncate">
@@ -335,7 +335,7 @@ function ReferralCodeRow({
               type="button"
               onClick={onCancelDelete}
               disabled={isDeleting}
-              className="h-9 px-3 rounded-full text-xs font-semibold text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-50"
+              className="h-9 px-3 text-xs font-semibold text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -343,7 +343,7 @@ function ReferralCodeRow({
               type="button"
               onClick={onConfirmDelete}
               disabled={isDeleting}
-              className="h-9 px-3.5 rounded-full text-xs font-semibold text-white bg-red-500/85 hover:bg-red-500 transition-colors disabled:opacity-50"
+              className="h-9 px-3.5 text-xs font-semibold text-white bg-red-500/85 hover:bg-red-500 transition-colors disabled:opacity-50"
             >
               {isDeleting ? "Deleting…" : "Delete"}
             </button>
@@ -352,7 +352,7 @@ function ReferralCodeRow({
           <button
             type="button"
             onClick={onRequestDelete}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="h-9 w-9 inline-flex items-center justify-center text-white/45 hover:text-white hover:bg-white/[0.06] transition-colors"
             title="Delete referral code"
           >
             <Trash2Icon  className="text-[13px]" />
@@ -384,12 +384,12 @@ function CopyableLink({ value }: { value: string }) {
         value={value}
         readOnly
         onFocus={(e) => e.currentTarget.select()}
-        className="flex-1 min-w-0 h-11 rounded-xl bg-black/20 border border-white/10 focus:border-primary/50 px-4 text-sm text-white/80 font-mono outline-none transition-colors"
+        className="flex-1 min-w-0 h-11 bg-black/20 border border-white/10 focus:border-primary/50 px-4 text-sm text-white/80 font-mono outline-none transition-colors"
       />
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex h-11 items-center gap-2 rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 text-xs font-semibold text-white/85 transition-all"
+        className="inline-flex h-11 items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 text-xs font-semibold text-white/85 transition-all"
       >
         <DynamicIcon
           icon={copied ? CheckIcon : CopyIcon}

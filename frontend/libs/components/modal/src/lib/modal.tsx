@@ -107,8 +107,7 @@ const AnimatedBackdrop = ({
         style={{
           opacity: styles.opacity,
           pointerEvents: "none",
-          background:
-            "radial-gradient(800px 400px at 10% -10%, rgba(45,129,255,0.10), transparent), radial-gradient(600px 320px at 110% 110%, rgba(28,182,190,0.10), transparent), rgba(0,0,0,0.60)",
+          background: "rgba(0, 0, 0, 0.7)",
         }}
       />
     </Dialog.Overlay>
@@ -148,7 +147,7 @@ const ExpandButton = ({ className, size = "md" }: ExpandButtonProps) => {
       aria-label={expanded ? "Restore modal size" : "Expand modal"}
       onClick={toggleExpanded}
       className={twMerge(
-        "flex items-center justify-center rounded-full bg-black/40 text-white/60 transition-all hover:bg-black/70 hover:text-white",
+        "flex items-center justify-center rounded-none bg-black/40 text-white/60 transition-colors hover:bg-white hover:text-black",
         sizeClasses[size],
         "relative z-[70]",
         className,
@@ -1037,7 +1036,7 @@ export const Modal = ({
                   >
                     <animated.div
                       className={twMerge(
-                        "w-full max-w-lg rounded-2xl relative border border-ui-panel-border bg-ui-modal text-left align-middle shadow-2xl z-[70]",
+                        "w-full max-w-lg rounded-none relative border border-ui-panel-border bg-ui-modal text-left align-middle z-[70]",
                         childPadding && !expanded ? "p-4" : "",
                         className,
                         "!transition-none", // Always disable CSS transitions for spring animations

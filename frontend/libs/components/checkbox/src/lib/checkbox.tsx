@@ -97,12 +97,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         <span
           aria-hidden
           className={twMerge(
-            "relative inline-block shrink-0 rounded-[4px] border transition-colors",
+            "relative inline-block shrink-0 rounded-none border transition-colors",
             boxDims,
             isChecked
-              ? "border-primary bg-primary text-white"
-              : "border-ui-controls-border bg-ui-controls hover:border-primary/60",
-            "peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40",
+              ? "border-white bg-white text-black"
+              : "border-ui-controls-border bg-transparent hover:border-white/60",
+            "peer-focus-visible:ring-1 peer-focus-visible:ring-white/60",
             checkboxClassName,
           )}
         >

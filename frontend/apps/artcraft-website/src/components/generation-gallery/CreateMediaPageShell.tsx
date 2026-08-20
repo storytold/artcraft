@@ -84,7 +84,7 @@ export function CreateMediaPageShell({
           />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
-          <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
+          <div className="h-[600px] w-[600px] bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
         </div>
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
           <DynamicIcon
@@ -127,9 +127,9 @@ export function CreateMediaPageShell({
       {!hasContent &&
         (glowOrbs ?? (
           <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-            <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
-            <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
-            <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
+            <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
+            <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
+            <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
           </div>
         ))}
 

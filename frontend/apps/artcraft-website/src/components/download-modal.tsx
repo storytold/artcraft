@@ -57,13 +57,13 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
 
       {/* Modal Content */}
       <div
-        className={`relative w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-3xl p-8 shadow-2xl transform transition-all duration-300 ${
+        className={`relative w-full max-w-md bg-[#1C1C20] border border-white/10 p-8 shadow-2xl transform transition-all duration-300 ${
           isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-8"
         }`}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
         >
           <XIcon />
         </button>
@@ -71,14 +71,14 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
         {!USE_WEBAPP_FOR_APP_FEATURES && view === "signup" && (
           <button
             onClick={() => setView("menu")}
-            className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
+            className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
           >
             <ArrowLeftIcon />
           </button>
         )}
 
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary">
+          <div className="w-16 h-16 bg-primary/20 flex items-center justify-center mx-auto mb-6 text-primary">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-8 w-8 animate-bounce"
@@ -109,7 +109,7 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
             <Button
               as="link"
               href={webappUrl("/signup")}
-              className="rounded-full w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
+              className=" w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
             >
               <MailIcon  className="text-lg" />
               Sign up
@@ -119,7 +119,7 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
         ) : view === "menu" ? (
           <div className="space-y-3">
             <Button
-              className="rounded-full w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
+              className=" w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
               onClick={() => setView("signup")}
             >
               <MailIcon  className="text-lg" />

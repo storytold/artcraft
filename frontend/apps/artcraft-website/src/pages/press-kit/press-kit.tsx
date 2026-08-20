@@ -40,7 +40,7 @@ const AssetCard = ({
   };
 
   return (
-    <div className="group relative flex flex-col bg-[#28282C] rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 hover:border-white/10 hover:shadow-xl hover:shadow-primary/5">
+    <div className="group relative flex flex-col bg-[#28282C] overflow-hidden border border-white/5 transition-all duration-300 hover:border-white/10 hover:shadow-xl hover:shadow-primary/5">
       {/* Thumbnail */}
       <div
         className={`relative aspect-video bg-black/40 overflow-hidden ${
@@ -72,7 +72,7 @@ const AssetCard = ({
         {/* Play button overlay for videos and embeds */}
         {(asset.type === "embed" || asset.type === "video") && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 group-hover:bg-black/40">
-            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform duration-300 group-hover:scale-110">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform duration-300 group-hover:scale-110">
               <PlayIcon
                 
                 className="text-white text-xl ml-1" />
@@ -81,7 +81,7 @@ const AssetCard = ({
         )}
 
         {/* Type badge - show "Video" for both video and embed types */}
-        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-xs font-medium text-white/80 flex items-center gap-1.5">
+        <div className="absolute top-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-sm text-xs font-medium text-white/80 flex items-center gap-1.5">
           <DynamicIcon icon={getTypeIcon()} className="text-[10px]" />
           <span className="capitalize">
             {asset.type === "embed" ? "Video" : asset.type}
@@ -110,7 +110,7 @@ const AssetCard = ({
             download
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 rounded-xl bg-white hover:bg-white/90 text-black font-medium text-sm transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 bg-white hover:bg-white/90 text-black font-medium text-sm transition-all duration-200"
           >
             <ArrowDownToLineIcon />
             <span>{asset.downloadLabel || "Download"}</span>
@@ -119,7 +119,7 @@ const AssetCard = ({
             )}
           </a>
         ) : (
-          <div className="inline-flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 rounded-xl bg-white/10 text-white/40 font-medium text-sm cursor-not-allowed">
+          <div className="inline-flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 bg-white/10 text-white/40 font-medium text-sm cursor-not-allowed">
             <ArrowDownToLineIcon />
             <span>Download Coming Soon</span>
           </div>
@@ -149,7 +149,7 @@ const VideoModal = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl"
+        className="relative w-full max-w-5xl aspect-video overflow-hidden bg-black shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {isEmbed ? (
@@ -171,7 +171,7 @@ const VideoModal = ({
         )}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
+          className="absolute top-4 right-4 w-10 h-10 bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
           aria-label="Close video"
         >
           <XIcon />
@@ -263,7 +263,7 @@ export default function PressKitPage() {
             </div>
           ) : (
             <div className="text-center py-20 px-4">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-white/5 flex items-center justify-center">
                 <FileArchiveIcon
                   
                   className="text-3xl text-white/30" />
@@ -279,7 +279,7 @@ export default function PressKitPage() {
           )}
 
           {/* Contact Section */}
-          <div className="mt-20 text-center py-12 px-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm">
+          <div className="mt-20 text-center py-12 px-6 bg-white/5 border border-white/10 backdrop-blur-sm">
             <h2 className="text-2xl sm:text-3xl font-medium text-white mb-4">
               Need Something Specific?
             </h2>
@@ -291,7 +291,7 @@ export default function PressKitPage() {
               href="https://discord.gg/artcraft"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold transition-colors"
             >
               Contact Us on Discord
             </a>

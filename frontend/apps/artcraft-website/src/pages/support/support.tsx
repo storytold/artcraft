@@ -59,7 +59,7 @@ const Support = () => {
           </p>
         </header>
 
-        <ul className="divide-y divide-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.02]">
+        <ul className="divide-y divide-white/[0.06] border border-white/[0.06] overflow-hidden bg-white/[0.02]">
           {ROWS.map((row) => (
             <li key={row.title}>
               <SupportLink row={row} />
@@ -80,7 +80,7 @@ const SupportLink = ({ row }: { row: SupportRow }) => {
   const content = (
     <>
       <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition-colors ${
+        className={`flex h-10 w-10 shrink-0 items-center justify-center border transition-colors ${
           row.iconBgClass ?? "bg-white/[0.04] border-white/[0.06]"
         } ${row.iconColorClass ?? "text-white/70 group-hover:text-white"}`}
       >

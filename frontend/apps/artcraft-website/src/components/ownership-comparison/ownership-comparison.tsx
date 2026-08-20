@@ -23,13 +23,13 @@ export const OwnershipComparison = () => {
         </p>
       </div>
 
-      <div className="relative w-full flex flex-col md:flex-row md:aspect-[2/1] lg:aspect-[2.4/1] rounded-[32px] sm:rounded-[40px] overflow-hidden shadow-2xl border border-white/5 ring-4 ring-white/10">
+      <div className="relative w-full flex flex-col md:flex-row md:aspect-[2/1] lg:aspect-[2.4/1] overflow-hidden shadow-2xl border border-white/5 ring-4 ring-white/10">
          
          <div className="relative flex-1 flex flex-col justify-center items-center p-8 sm:p-12 overflow-hidden bg-[#1a1a1c] border-b md:border-b-0 md:border-r border-white/5 min-h-[500px] md:min-h-0">
             <div className="absolute inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none" />
             <div className="absolute inset-0 bg-[#ef4444]/5" />
             
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-[#ef4444]/5 blur-[50px] md:blur-[100px] rounded-full transform-gpu" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-[#ef4444]/5 blur-[50px] md:blur-[100px] transform-gpu" />
 
             <div className="relative z-10 flex flex-col items-center text-center max-w-md w-full my-auto">
                
@@ -40,7 +40,7 @@ export const OwnershipComparison = () => {
                     return (
                       <div 
                         key={i} 
-                        className="absolute w-14 h-14 bg-[#1e1e24] rounded-2xl flex items-center justify-center border border-white/10 text-white/40 shadow-xl z-10"
+                        className="absolute w-14 h-14 bg-[#1e1e24] flex items-center justify-center border border-white/10 text-white/40 shadow-xl z-10"
                         style={{
                            transform: transform,
                            zIndex: 10 + i,
@@ -48,7 +48,7 @@ export const OwnershipComparison = () => {
                       >
                          <DynamicIcon icon={icon} className="text-xl" />
                          
-                         <div className="absolute -top-3 -right-3 w-7 h-7 bg-[#ef4444] rounded-full flex items-center justify-center border-4 border-[#121214] text-white text-xs shadow-md">
+                         <div className="absolute -top-3 -right-3 w-7 h-7 bg-[#ef4444] flex items-center justify-center border-4 border-[#121214] text-white text-xs shadow-md">
                            <XIcon  className="font-bold" />
                          </div>
                       </div>
@@ -65,10 +65,10 @@ export const OwnershipComparison = () => {
                </p>
 
                <div className="flex flex-wrap justify-center gap-3 text-xs sm:text-sm font-bold tracking-wide uppercase">
-                  <div className="flex items-center gap-2 text-[#ffc9c9] bg-[#ef4444]/10 px-4 py-2.5 rounded-xl border border-[#ef4444]/20 shadow-lg shadow-red-900/10">
+                  <div className="flex items-center gap-2 text-[#ffc9c9] bg-[#ef4444]/10 px-4 py-2.5 border border-[#ef4444]/20 shadow-lg shadow-red-900/10">
                      <BanIcon  className="text-[#ef4444]" /> NO OWNERSHIP
                   </div>
-                  <div className="flex items-center gap-2 text-[#ffc9c9] bg-[#ef4444]/10 px-4 py-2.5 rounded-xl border border-[#ef4444]/20 shadow-lg shadow-red-900/10">
+                  <div className="flex items-center gap-2 text-[#ffc9c9] bg-[#ef4444]/10 px-4 py-2.5 border border-[#ef4444]/20 shadow-lg shadow-red-900/10">
                      <CreditCardIcon  className="text-[#ef4444]" /> MONTHLY FEES
                   </div>
                </div>
@@ -79,15 +79,15 @@ export const OwnershipComparison = () => {
              <div className="absolute inset-0 bg-[radial-gradient(#00AABA15_1px,transparent_1px)] [background-size:20px_20px] opacity-20 pointer-events-none" />
              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-100" />
              
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/10 blur-[45px] md:blur-[90px] rounded-full opacity-100 scale-110 transform-gpu" />
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/10 blur-[45px] md:blur-[90px] opacity-100 scale-110 transform-gpu" />
 
              <div className="relative z-10 flex flex-col items-center text-center max-w-md w-full my-auto">
                 
                 <div className="mb-10 relative">
-                   <div className="w-24 h-24 bg-gradient-to-br from-primary to-blue-600 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl shadow-primary/30 z-10 relative scale-110 rotate-3">
+                   <div className="w-24 h-24 bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-4xl shadow-2xl shadow-primary/30 z-10 relative scale-110 rotate-3">
                       <img src="/images/services/artcraft.svg" alt="ArtCraft" className="w-[55%] h-[55%] object-contain drop-shadow-md brightness-0 invert" />
                    </div>
-                   <div className="absolute -right-6 -bottom-4 w-16 h-16 bg-[#24292e] rounded-2xl flex items-center justify-center text-white text-3xl border-4 border-[#1C1C20] z-20 shadow-xl translate-x-2 translate-y-2">
+                   <div className="absolute -right-6 -bottom-4 w-16 h-16 bg-[#24292e] flex items-center justify-center text-white text-3xl border-4 border-[#1C1C20] z-20 shadow-xl translate-x-2 translate-y-2">
                       <GithubIcon />
                    </div>
                 </div>
@@ -103,10 +103,10 @@ export const OwnershipComparison = () => {
                 </p>
 
                  <div className="flex flex-wrap justify-center gap-3 text-xs sm:text-sm font-bold tracking-wide uppercase">
-                    <div className="flex items-center gap-2 text-white bg-primary/20 px-4 py-2.5 rounded-xl border border-primary/30 shadow-lg shadow-primary/10">
+                    <div className="flex items-center gap-2 text-white bg-primary/20 px-4 py-2.5 border border-primary/30 shadow-lg shadow-primary/10">
                        <LockOpenIcon  className="text-primary" /> YOURS FOREVER
                     </div>
-                    <div className="flex items-center gap-2 text-white bg-primary/20 px-4 py-2.5 rounded-xl border border-primary/30 shadow-lg shadow-primary/10">
+                    <div className="flex items-center gap-2 text-white bg-primary/20 px-4 py-2.5 border border-primary/30 shadow-lg shadow-primary/10">
                        <KeyIcon className="text-primary" /> BYO KEYS
                     </div>
                 </div>
@@ -117,7 +117,7 @@ export const OwnershipComparison = () => {
          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center">
             <div className="absolute w-[400px] h-[3px] md:w-[3px] md:h-[600px] bg-gradient-to-r md:bg-gradient-to-b from-transparent via-white/30 to-transparent" />
             
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16 bg-ui-panel rounded-full flex items-center justify-center border-4 border-white/80 shadow-xl">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 bg-ui-panel flex items-center justify-center border-4 border-white/80 shadow-xl">
                <span className="text-white/80 font-bold text-sm sm:text-base tracking-tighter">VS</span>
             </div>
          </div>

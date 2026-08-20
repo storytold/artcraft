@@ -58,7 +58,7 @@ const ForgotPassword = () => {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 p-6 py-8 shadow-2xl">
           {!submitted ? (
             <>
               <div className="text-center mb-8">
@@ -76,7 +76,7 @@ const ForgotPassword = () => {
                 }}
               >
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                     {error}
                   </div>
                 )}
@@ -91,14 +91,14 @@ const ForgotPassword = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                   />
                 </div>
 
                 <div className="pt-2">
                   <Button
                     id="send-reset-btn"
-                    className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    className=" w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -115,7 +115,7 @@ const ForgotPassword = () => {
             </>
           ) : (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
+              <div className="w-16 h-16 bg-green-500/20 flex items-center justify-center mx-auto mb-4 text-green-500">
                 <MailIcon  className="text-2xl" />
               </div>
               <h3 className="text-xl font-medium mb-2">Check your email</h3>
@@ -124,12 +124,12 @@ const ForgotPassword = () => {
                 <span className="text-white font-medium">{email}</span>
               </p>
               <Link to="/forgot-password/verify">
-                <Button className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10 mb-3">
+                <Button className=" w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10 mb-3">
                   Enter Verification Code
                 </Button>
               </Link>
               <Button
-                className="rounded-full w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10"
+                className=" w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10"
                 onClick={() => setSubmitted(false)}
               >
                 Try another email

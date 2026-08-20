@@ -10,8 +10,8 @@ export function AppDownloadCta() {
   if (!visible) return null;
 
   return (
-    <div className="glass animate-fade-in-up mb-2 hidden sm:flex w-fit mx-auto items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white">
-      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+    <div className="glass animate-fade-in-up mb-2 hidden sm:flex w-fit mx-auto items-center gap-3 px-4 py-2.5 text-sm text-white">
+      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center bg-primary/20 text-primary">
         <MonitorIcon  className="h-3.5 w-3.5" />
       </div>
       <span className="text-white/90">
@@ -19,7 +19,7 @@ export function AppDownloadCta() {
       </span>
       <Link
         to="/download"
-        className="rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary"
+        className=" bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary"
       >
         Download
       </Link>
