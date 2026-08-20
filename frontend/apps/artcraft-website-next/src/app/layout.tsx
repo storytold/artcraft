@@ -3,6 +3,7 @@ import { Outfit, Instrument_Serif, Source_Sans_3, Geist_Mono } from "next/font/g
 import SiteNav from "@/components/site-nav";
 import SiteFooter from "@/components/site-footer";
 import MotionProvider from "@/components/motion-provider";
+import TunerPanel from "@/components/dev/tuner-panel";
 import "./globals.css";
 
 const SITE_URL = "https://getartcraft.com";
@@ -103,6 +104,7 @@ export default function RootLayout({
           <main>{children}</main>
           <SiteFooter />
         </MotionProvider>
+        <TunerPanel />
       </body>
     </html>
   );

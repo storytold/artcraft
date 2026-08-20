@@ -1,8 +1,9 @@
 // Wordmark ball field: the brand name rasterized to a mask, then filled with
-// small 3D balls on a jittered close-packed lattice a few layers deep. The
-// balls separate under the cursor's push and rejoin on their home springs; a
-// 3D collision pass keeps them from intersecting, so the text reads as a
-// solid object built from spheres rather than a flat particle billboard.
+// small 3D balls by multi-pass dart throwing — big balls land first, smaller
+// ones settle into the gaps, like a pile that collided into the letter shape
+// (a faked impression, not a physics solve; it must run on laptops/phones).
+// The balls separate under the cursor's push and rejoin on their home
+// springs; a 3D collision pass keeps them from intersecting.
 //
 // Units are CSS pixels at the text's z=0 plane — the camera is fitted so one
 // world unit projects to one pixel there, which keeps pointer math trivial.
@@ -20,6 +21,20 @@ export type SampledWordmark = {
   height: number;
 };
 
+// All knobs of the arrangement — registered with the dev tuner in
+// hero-tunables.ts. Size factors are multiples of `spacing`.
+export type FormationParams = {
+  sizeMin: number;
+  sizeMax: number;
+  sizeNoiseScale: number; // px wavelength of the size clusters
+  sizeRoughen: number;    // 0..1 per-ball white-noise contribution
+  gap: number;            // px clearance between resting balls
+  depth: number;          // slab thickness, × spacing
+  density: number;        // dart-attempt multiplier
+  edgeMargin: number;     // 0..1 — how far inside the stroke big balls stay
+  seed: number;
+};
+
 // ————————————————————————————— sampling —————————————————————————————
 
 export function sampleWordmark(opts: {
@@ -27,12 +42,12 @@ export function sampleWordmark(opts: {
   fontFamily: string;
   fontWeight: number;
   targetWidth: number;
-  /** Lattice spacing in px — sets ball size (~spacing/2) and count. */
+  /** Base unit in px — ball sizes and slab depth scale from this. */
   spacing: number;
-  /** Depth layers (2–3 keeps it chunky without mush). */
-  layers: number;
+  formation: FormationParams;
 }): SampledWordmark {
-  const { text, fontFamily, fontWeight, targetWidth, spacing, layers } = opts;
+  const { text, fontFamily, fontWeight, targetWidth, spacing, formation } =
+    opts;
 
   // Each glyph is measured and drawn individually with a small manual gap:
   // no shaping ever runs across letters, so the font can't fuse tight pairs
@@ -75,90 +90,106 @@ export function sampleWordmark(opts: {
     return alpha[(y * width + x) * 4 + 3] > 127;
   };
 
-  const rand = mulberry32(1013);
-  const jitter = spacing * 0.13;
-  const rowH = spacing * (Math.SQRT2 / 2) * 1.22; // hex-ish row pitch
-  const balls: Ball[] = [];
-
-  // Organic sizing: a smooth spatial noise drifts the ball size across the
-  // word (clusters of big and small), white noise roughens it per ball. The
-  // neighbor cap below keeps every draw collision-safe, so variance only
-  // ever shrinks balls — which is exactly what reads as hand-made.
-  const sizeNoise = makeValueNoise(41);
-  const desiredRadius = (x: number, y: number) =>
-    spacing *
-    (0.24 +
-      0.36 * Math.pow(sizeNoise(x / 130, y / 130), 1.15) +
-      rand() * 0.16);
-
-  for (let layer = 0; layer < layers; layer++) {
-    const z = (layer - (layers - 1) / 2) * spacing * 0.92;
-    // Alternate layers shift half a cell both ways so depth neighbors nest
-    // into the gaps instead of stacking into columns.
-    const layerOff = layer % 2 === 0 ? 0 : spacing * 0.5;
-    let row = 0;
-    for (let y = pad * 0.5; y < height - pad * 0.5; y += rowH, row++) {
-      const rowOff = (row % 2 === 0 ? 0 : spacing * 0.5) + layerOff;
-      for (let x = pad * 0.5 + rowOff; x < width - pad * 0.5; x += spacing) {
-        const jx = x + (rand() - 0.5) * jitter * 2;
-        const jy = y + (rand() - 0.5) * jitter * 2;
-        if (!covered(Math.round(jx), Math.round(jy))) continue;
-        balls.push({
-          x: jx,
-          y: jy,
-          z: z + (rand() - 0.5) * jitter * 2,
-          r: desiredRadius(jx, jy), // desired; capped below
-        });
-      }
+  // Fast "random point inside the ink" sampling: collect covered pixels on a
+  // coarse stride once, then darts pick from that list with subpixel jitter.
+  const inkCells: number[] = [];
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      if (covered(x, y)) inkCells.push(y * width + x);
     }
   }
+  if (!inkCells.length) return { balls: [], width, height };
 
-  // Cap every radius at half its nearest-home-neighbor distance so the rest
-  // pose is non-overlapping regardless of jitter — collisions then only ever
-  // matter mid-shove, never in the settled wordmark.
-  capRadiiToNeighbors(balls, spacing);
+  const rand = mulberry32(formation.seed);
+  const sizeNoise = makeValueNoise(formation.seed + 41);
+  const rMin = spacing * formation.sizeMin;
+  const rMax = spacing * formation.sizeMax;
+  const halfDepth = (spacing * formation.depth) / 2;
 
-  return { balls, width, height };
-}
+  // Organic sizing: smooth spatial noise drifts the size in clusters across
+  // the word; white noise roughens it per ball.
+  const desiredRadius = (x: number, y: number) => {
+    const n = Math.pow(
+      sizeNoise(x / formation.sizeNoiseScale, y / formation.sizeNoiseScale),
+      1.15,
+    );
+    const roughened =
+      n * (1 - formation.sizeRoughen) + rand() * formation.sizeRoughen;
+    return rMin + (rMax - rMin) * roughened;
+  };
 
-function capRadiiToNeighbors(balls: Ball[], spacing: number) {
-  const cell = spacing * 2;
+  // A ball only counts as "inside the letter" if its center plus four cross
+  // points at ~edgeMargin·r are on ink — big balls stay inside the strokes,
+  // small ones may nestle right up to the edge, keeping letterforms crisp.
+  const insideStroke = (x: number, y: number, r: number) => {
+    const m = r * formation.edgeMargin;
+    return (
+      covered(Math.round(x), Math.round(y)) &&
+      covered(Math.round(x + m), Math.round(y)) &&
+      covered(Math.round(x - m), Math.round(y)) &&
+      covered(Math.round(x), Math.round(y + m)) &&
+      covered(Math.round(x), Math.round(y - m))
+    );
+  };
+
+  // Dart throwing with a 3D hash for overlap rejection. Three passes with a
+  // descending size floor: the big balls claim their spots first and the
+  // smaller ones settle into the leftover gaps — the arrangement reads like
+  // a settled pile instead of a grid.
+  const balls: Ball[] = [];
+  const cell = rMax * 2 + formation.gap;
   const grid = new Map<number, number[]>();
   const key = (x: number, y: number, z: number) =>
     (Math.floor(x / cell) * 73856093) ^
     (Math.floor(y / cell) * 19349663) ^
     (Math.floor(z / cell) * 83492791);
-  balls.forEach((b, i) => {
-    const k = key(b.x, b.y, b.z);
-    const bucket = grid.get(k);
-    if (bucket) bucket.push(i);
-    else grid.set(k, [i]);
-  });
 
-  const nearest = new Float32Array(balls.length).fill(Infinity);
-  for (let i = 0; i < balls.length; i++) {
-    const b = balls[i];
+  const fits = (x: number, y: number, z: number, r: number) => {
     for (let gz = -1; gz <= 1; gz++) {
       for (let gy = -1; gy <= 1; gy++) {
         for (let gx = -1; gx <= 1; gx++) {
           const bucket = grid.get(
-            key(b.x + gx * cell, b.y + gy * cell, b.z + gz * cell),
+            key(x + gx * cell, y + gy * cell, z + gz * cell),
           );
           if (!bucket) continue;
           for (const j of bucket) {
-            if (j === i) continue;
             const o = balls[j];
-            const d = Math.hypot(b.x - o.x, b.y - o.y, b.z - o.z);
-            if (d < nearest[i]) nearest[i] = d;
+            const dx = o.x - x;
+            const dy = o.y - y;
+            const dz = o.z - z;
+            const min = o.r + r + formation.gap;
+            if (dx * dx + dy * dy + dz * dz < min * min) return false;
           }
         }
       }
     }
+    return true;
+  };
+
+  const passes = [0.7, 0.35, 0]; // descending floor on the size range
+  const attemptsPerPass = Math.floor(
+    inkCells.length * 0.9 * formation.density,
+  );
+  for (const floor of passes) {
+    for (let a = 0; a < attemptsPerPass; a++) {
+      const c = inkCells[(rand() * inkCells.length) | 0];
+      const x = (c % width) + rand() * 2 - 1;
+      const y = Math.floor(c / width) + rand() * 2 - 1;
+      const z = (rand() * 2 - 1) * halfDepth;
+      let r = desiredRadius(x, y);
+      const passMin = rMin + (rMax - rMin) * floor;
+      if (r < passMin) r = passMin + (r - rMin) * 0.2;
+      if (!insideStroke(x, y, r)) continue;
+      if (!fits(x, y, z, r)) continue;
+      balls.push({ x, y, z, r });
+      const k = key(x, y, z);
+      const bucket = grid.get(k);
+      if (bucket) bucket.push(balls.length - 1);
+      else grid.set(k, [balls.length - 1]);
+    }
   }
-  for (let i = 0; i < balls.length; i++) {
-    const fit = nearest[i] * 0.5 - 0.4;
-    balls[i].r = Math.max(spacing * 0.15, Math.min(balls[i].r, fit));
-  }
+
+  return { balls, width, height };
 }
 
 // Deterministic bilinear value noise, 0..1 — smooth variation across space.

@@ -12,12 +12,19 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { watchThemeColors, type ThemeColors } from "@/lib/theme-colors";
+import { useTunerStore } from "@/lib/tuner";
 import {
   sampleWordmark,
   WordmarkSim,
-  DEFAULT_PARAMS,
   type SampledWordmark,
 } from "./wordmark-sim";
+import {
+  formationTuner,
+  physicsTuner,
+  lightTuner,
+  materialTuner,
+  haloTuner,
+} from "./hero-tunables";
 
 const WORDMARK = "artcraft";
 const FONT_WEIGHT = 700;
@@ -62,7 +69,8 @@ export default function HeroWordmark() {
   }, [ready]);
 
   // Rasterize + sample once the display font is really loaded; re-sample when
-  // the container width changes meaningfully (not on mobile URL-bar jitter).
+  // the container width changes meaningfully (not on mobile URL-bar jitter)
+  // or when a Formation tunable moves in the dev tuner.
   useEffect(() => {
     if (!ready) return;
     const container = containerRef.current;
@@ -72,9 +80,9 @@ export default function HeroWordmark() {
     let lastWidth = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
-    const build = async () => {
+    const build = async (force = false) => {
       const width = container.clientWidth;
-      if (!width || width === lastWidth) return;
+      if (!width || (!force && width === lastWidth)) return;
       lastWidth = width;
 
       const family = getComputedStyle(container).fontFamily;
@@ -85,7 +93,8 @@ export default function HeroWordmark() {
       }
       if (cancelled) return;
 
-      const spacing = Math.min(18, Math.max(11, width / 62));
+      const { ballScale, ...formation } = formationTuner.read();
+      const spacing = Math.min(18, Math.max(11, width / 62)) * ballScale;
       setSample(
         sampleWordmark({
           text: WORDMARK,
@@ -93,7 +102,7 @@ export default function HeroWordmark() {
           fontWeight: FONT_WEIGHT,
           targetWidth: Math.min(width * 0.88, 1280),
           spacing,
-          layers: width < 720 ? 2 : 3,
+          formation,
         }),
       );
     };
@@ -104,10 +113,22 @@ export default function HeroWordmark() {
       timer = setTimeout(build, 350);
     });
     ro.observe(container);
+
+    // Formation tunables change the arrangement itself — debounce a rebuild.
+    let lastFormation = JSON.stringify(formationTuner.read());
+    const unsubscribe = useTunerStore.subscribe(() => {
+      const now = JSON.stringify(formationTuner.read());
+      if (now === lastFormation) return;
+      lastFormation = now;
+      clearTimeout(timer);
+      timer = setTimeout(() => build(true), 250);
+    });
+
     return () => {
       cancelled = true;
       clearTimeout(timer);
       ro.disconnect();
+      unsubscribe();
     };
   }, [ready]);
 
@@ -221,9 +242,10 @@ const HALO_FRAGMENT = /* glsl */ `
   varying vec2 vUv;
   uniform vec3 uColor;
   uniform float uAlpha;
+  uniform float uFalloff;
   void main() {
     float d = distance(vUv, vec2(0.5)) * 2.0;
-    float a = pow(clamp(1.0 - d, 0.0, 1.0), 2.6);
+    float a = pow(clamp(1.0 - d, 0.0, 1.0), uFalloff);
     gl_FragColor = vec4(uColor, a * uAlpha);
   }
 `;
@@ -240,9 +262,20 @@ function BallField({
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
   const haloRef = useRef<THREE.Mesh>(null);
+  const ambientRef = useRef<THREE.AmbientLight>(null);
+  const keyRef = useRef<THREE.DirectionalLight>(null);
+  const counterRef = useRef<THREE.DirectionalLight>(null);
+  const fillRef = useRef<THREE.DirectionalLight>(null);
   const lightPos = useRef(new THREE.Vector3(0, 120, 0));
-  const sim = useMemo(() => new WordmarkSim(sample), [sample]);
+  const sim = useMemo(
+    () => new WordmarkSim(sample, physicsTuner.read().scatter),
+    [sample],
+  );
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  // Reactive so recoloring reruns when the accent share slider moves.
+  const accentShare = useTunerStore(
+    (s) => s.values["material.accentShare"] ?? 0.05,
+  );
 
   const dark = useMemo(() => {
     const c = new THREE.Color(colors.bg);
@@ -261,6 +294,7 @@ function BallField({
             value: new THREE.Color(dark ? "#a8c4ff" : colors.accent),
           },
           uAlpha: { value: dark ? 0.5 : 0.14 },
+          uFalloff: { value: 2.6 },
         },
         transparent: true,
         depthWrite: false,
@@ -285,7 +319,7 @@ function BallField({
     const c = new THREE.Color();
     const rand = seeded(4242);
     for (let i = 0; i < sim.n; i++) {
-      if (rand() < 0.05) {
+      if (rand() < accentShare) {
         c.copy(accent);
         if (dark) c.multiplyScalar(0.8);
       } else {
@@ -294,14 +328,20 @@ function BallField({
       mesh.setColorAt(i, c);
     }
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [colors, sim, dark]);
+  }, [colors, sim, dark, accentShare]);
 
   useFrame((state, delta) => {
     const mesh = meshRef.current;
     if (!mesh) return;
     const p = pointer.current;
 
-    sim.step(delta, p.x, p.y, p.active, DEFAULT_PARAMS);
+    // Live tuner values — read every frame so slider changes apply instantly.
+    const phys = physicsTuner.read();
+    const lt = lightTuner.read();
+    const mt = materialTuner.read();
+    const ht = haloTuner.read();
+
+    sim.step(delta, p.x, p.y, p.active, phys);
 
     for (let i = 0; i < sim.n; i++) {
       dummy.position.set(sim.x[i], sim.y[i], sim.z[i]);
@@ -322,22 +362,50 @@ function BallField({
     lightRef.current?.position.set(
       lightPos.current.x,
       lightPos.current.y,
-      130,
+      lt.lightZ,
     );
     haloRef.current?.position.set(
       lightPos.current.x,
       lightPos.current.y,
-      -90,
+      ht.z,
     );
 
     // At rest the word sits in near-eclipse; approaching with the cursor
     // brings the light up to full.
     const light = lightRef.current;
     if (light) {
-      const full = dark ? 58000 : 30000;
-      const target = p.active ? full : full * 0.3;
+      light.distance = lt.lightRange;
+      const full = dark ? lt.intensityDark : lt.intensityLight;
+      const target = p.active ? full : full * lt.idleDim;
       light.intensity += (target - light.intensity) * k;
     }
+
+    // Rig + material + halo bindings.
+    if (ambientRef.current) {
+      ambientRef.current.intensity = dark ? lt.ambientDark : lt.ambientLight;
+    }
+    if (keyRef.current) {
+      keyRef.current.intensity = dark ? lt.keyIntensity : lt.dirLight;
+    }
+    if (counterRef.current) counterRef.current.intensity = lt.counterIntensity;
+    if (fillRef.current) fillRef.current.intensity = lt.frontFill;
+
+    const mat = mesh.material as THREE.MeshPhysicalMaterial &
+      THREE.MeshStandardMaterial;
+    if (dark) {
+      mat.roughness = mt.roughnessDark;
+      mat.metalness = mt.metalnessDark;
+      mat.clearcoat = mt.clearcoat;
+      mat.clearcoatRoughness = mt.clearcoatRoughness;
+    } else {
+      mat.roughness = mt.roughnessLight;
+      mat.metalness = mt.metalnessLight;
+      mat.envMapIntensity = mt.envLight;
+    }
+
+    haloMaterial.uniforms.uAlpha.value = dark ? ht.alphaDark : ht.alphaLight;
+    haloMaterial.uniforms.uFalloff.value = ht.falloff;
+    haloRef.current?.scale.setScalar(ht.size / 720);
   });
 
   return (
@@ -353,15 +421,15 @@ function BallField({
         // rims the top edges, a faint counter-rim catches the lower-right,
         // and the cursor light does the actual revealing.
         <>
-          <ambientLight intensity={0.05} />
-          <directionalLight position={[-160, 340, -460]} intensity={2.2} color="#e9f1ff" />
-          <directionalLight position={[430, -180, -380]} intensity={0.7} color="#7fa8e8" />
-          <directionalLight position={[0, -60, 520]} intensity={0.06} />
+          <ambientLight ref={ambientRef} intensity={0.05} />
+          <directionalLight ref={keyRef} position={[-160, 340, -460]} intensity={2.2} color="#e9f1ff" />
+          <directionalLight ref={counterRef} position={[430, -180, -380]} intensity={0.7} color="#7fa8e8" />
+          <directionalLight ref={fillRef} position={[0, -60, 520]} intensity={0.06} />
         </>
       ) : (
         <>
-          <ambientLight intensity={0.55} />
-          <directionalLight position={[-260, 340, 420]} intensity={0.75} />
+          <ambientLight ref={ambientRef} intensity={0.55} />
+          <directionalLight ref={keyRef} position={[-260, 340, 420]} intensity={0.75} />
           <directionalLight position={[180, 260, -420]} intensity={0.5} color="#eef3ff" />
         </>
       )}
