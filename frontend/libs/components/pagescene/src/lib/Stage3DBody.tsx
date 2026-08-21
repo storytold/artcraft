@@ -51,7 +51,6 @@ import { SceneModePill } from "./comps/SceneModePill";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
-import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
 import { EntranceDebugPanel } from "./comps/EntranceDebugPanel";
 import { Outliner } from "./comps/Outliner";
