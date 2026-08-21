@@ -1,6 +1,6 @@
 import { WEBAPP_URL } from "@/lib/links";
+import { Button } from "@/components/ui";
 import { SectionShell } from "./section-shell";
-import CtaLink from "./cta-link";
 
 export default function FinalCta() {
   return (
@@ -19,10 +19,12 @@ export default function FinalCta() {
           are minutes away.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <CtaLink href="/download">Download for desktop</CtaLink>
-          <CtaLink href={WEBAPP_URL} variant="outline">
+          <Button href="/download" size="lg">
+            Download for desktop
+          </Button>
+          <Button href={WEBAPP_URL} variant="secondary" size="lg">
             Launch in browser
-          </CtaLink>
+          </Button>
         </div>
       </div>
     </SectionShell>
