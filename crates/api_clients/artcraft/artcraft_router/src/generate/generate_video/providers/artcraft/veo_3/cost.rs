@@ -11,14 +11,14 @@ impl ArtcraftVeo3CostState {
   pub fn from_request(request: &ArtcraftVeo3RequestState) -> Self {
     Self {
       duration_seconds: duration_seconds_for_cost(request.request.duration_seconds),
-      // v1 legacy Veo 3 handler defaults generate_audio to false.
-      generate_audio: request.request.generate_audio.unwrap_or(false),
+      // Unset defaults to audio on.
+      generate_audio: request.request.generate_audio.unwrap_or(true),
     }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client veo_3: $0.20/sec audio off, $0.40/sec audio on.
-    let per_second_cents: u64 = if self.generate_audio { 40 } else { 20 };
+    // $0.24/sec audio off, $0.48/sec audio on.
+    let per_second_cents: u64 = if self.generate_audio { 48 } else { 24 };
     let cost_in_usd_cents = per_second_cents * self.duration_seconds;
 
     VideoGenerationCostEstimate {
@@ -61,19 +61,19 @@ mod tests {
   }
 
   #[test]
-  fn audio_off_4s_is_80() { assert_eq!(cost_cents(Some(4), Some(false)), 80); }
+  fn audio_off_4s_is_96() { assert_eq!(cost_cents(Some(4), Some(false)), 96); }
 
   #[test]
-  fn audio_off_6s_is_120() { assert_eq!(cost_cents(Some(6), Some(false)), 120); }
+  fn audio_off_6s_is_144() { assert_eq!(cost_cents(Some(6), Some(false)), 144); }
 
   #[test]
-  fn audio_off_8s_is_160() { assert_eq!(cost_cents(Some(8), Some(false)), 160); }
+  fn audio_off_8s_is_192() { assert_eq!(cost_cents(Some(8), Some(false)), 192); }
 
   #[test]
-  fn audio_on_4s_is_160() { assert_eq!(cost_cents(Some(4), Some(true)), 160); }
+  fn audio_on_4s_is_192() { assert_eq!(cost_cents(Some(4), Some(true)), 192); }
 
   #[test]
-  fn audio_on_8s_is_320() { assert_eq!(cost_cents(Some(8), Some(true)), 320); }
+  fn audio_on_8s_is_384() { assert_eq!(cost_cents(Some(8), Some(true)), 384); }
 
   #[test]
   fn default_duration_is_8s() {
@@ -81,8 +81,7 @@ mod tests {
   }
 
   #[test]
-  fn audio_default_is_off() {
-    // None → audio defaults to false.
-    assert_eq!(cost_cents(Some(8), None), cost_cents(Some(8), Some(false)));
+  fn audio_default_is_on() {
+    assert_eq!(cost_cents(Some(8), None), cost_cents(Some(8), Some(true)));
   }
 }

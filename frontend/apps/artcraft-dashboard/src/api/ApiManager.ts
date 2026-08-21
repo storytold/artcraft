@@ -6,6 +6,11 @@ export interface ApiResponse<T, P = undefined> {
 }
 
 const getApiHost = () => {
+  // NB: Temporary for Brandon's machine
+  console.log("window.location.hostname:", window.location.hostname);
+  if (window.location.hostname === "localhost") {
+    return "http://localhost:12345"
+  }
   return import.meta.env.VITE_API_HOST || "/api";
 };
 

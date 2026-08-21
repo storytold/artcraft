@@ -1,8 +1,9 @@
 import { memo, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 import { derivePendingStatus } from "./pending-status";
+import { batchNoun } from "./types";
+import type { GenerationMediaClass } from "./types";
 
 export interface PendingCardProps {
   id: string;
@@ -12,7 +13,7 @@ export interface PendingCardProps {
   progress?: number;
   estimatedTimeLeftMs?: number;
   batchCount?: number;
-  mediaClass: "image" | "video";
+  mediaClass: GenerationMediaClass;
   /** Hover-revealed action (e.g. a Recreate button) next to the prompt. */
   recreateSlot?: ReactNode;
 }
@@ -39,16 +40,14 @@ export const PendingCard = memo(function PendingCard({
       <div className="animate-shimmer h-full w-full" />
       {batchCount != null && batchCount > 1 && (
         <div className="absolute left-2 right-2 top-2 z-10 rounded-md bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
-          Generating {batchCount}{" "}
-          {mediaClass === "image" ? "images" : "videos"} · Results may appear
+          Generating {batchCount} {batchNoun(mediaClass)} · Results may appear
           one at a time
         </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
-          className="animate-spin text-2xl text-white/20"
-        />
+        <LoaderCircleIcon
+          
+          className="animate-spin text-2xl text-white/20" />
         {progressPercent != null && (
           <span className="text-xs tabular-nums text-white/40">
             {progressPercent}%

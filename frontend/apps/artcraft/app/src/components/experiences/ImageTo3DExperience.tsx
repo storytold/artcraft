@@ -4,14 +4,7 @@ import { Button, GenerateButton } from "@storyteller/ui-button";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCube,
-  faImages,
-  faPlus,
-  faUpload,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, ImagesIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useImageTo3DStore } from "../../pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "../../pages/PageImageTo3DWorld/ImageTo3DWorldStore";
@@ -540,7 +533,7 @@ export const ImageTo3DExperience = ({
         <div className="flex flex-col gap-1.5 text-left">
           <Button
             variant="primary"
-            icon={faUpload}
+            icon={UploadIcon}
             onClick={() => fileInputRef.current?.click()}
             className="w-full"
           >
@@ -548,7 +541,7 @@ export const ImageTo3DExperience = ({
           </Button>
           <Button
             variant="action"
-            icon={faImages}
+            icon={ImagesIcon}
             onClick={handlePickFromLibrary}
             className="w-full"
           >
@@ -590,13 +583,12 @@ export const ImageTo3DExperience = ({
           }
         }}
       >
-        <FontAwesomeIcon
-          icon={faPlus}
+        <PlusIcon
+          
           className={twMerge(
             "text-base-fg opacity-90 drop-shadow",
             hasResults ? "text-2xl" : "text-4xl",
-          )}
-        />
+          )} />
         {!hasResults && (
           <span className="mt-3 text-[15px] font-medium text-base-fg opacity-60">
             Add Image
@@ -640,7 +632,7 @@ export const ImageTo3DExperience = ({
                 setUploadedMediaToken(null);
               }}
             >
-              <FontAwesomeIcon icon={faXmark} className="text-xs" />
+              <XIcon  className="text-xs" />
             </button>
           )}
         </div>
@@ -683,7 +675,7 @@ export const ImageTo3DExperience = ({
                 <div className="flex flex-col gap-1.5 text-left">
                   <Button
                     variant="primary"
-                    icon={faUpload}
+                    icon={UploadIcon}
                     onClick={() => worldFileInputRef.current?.click()}
                     className="w-full"
                   >
@@ -691,7 +683,7 @@ export const ImageTo3DExperience = ({
                   </Button>
                   <Button
                     variant="action"
-                    icon={faImages}
+                    icon={ImagesIcon}
                     onClick={handlePickFromLibrary}
                     className="w-full"
                   >
@@ -741,10 +733,9 @@ export const ImageTo3DExperience = ({
                   }
                 }}
               >
-                <FontAwesomeIcon
-                  icon={faPlus}
-                  className="text-3xl text-base-fg opacity-90 drop-shadow"
-                />
+                <PlusIcon
+                  
+                  className="text-3xl text-base-fg opacity-90 drop-shadow" />
                 <span className="mt-2 text-sm font-medium text-base-fg/50">
                   Add Images
                 </span>
@@ -798,7 +789,7 @@ export const ImageTo3DExperience = ({
               removeWorldImage(img.id);
             }}
           >
-            <FontAwesomeIcon icon={faXmark} className="h-2 w-2" />
+            <XIcon  className="h-2 w-2" />
           </button>
         )}
       </div>
@@ -814,7 +805,7 @@ export const ImageTo3DExperience = ({
           <div className="flex flex-col gap-1.5 text-left">
             <Button
               variant="primary"
-              icon={faUpload}
+              icon={UploadIcon}
               onClick={() => worldFileInputRef.current?.click()}
               className="w-full"
             >
@@ -822,7 +813,7 @@ export const ImageTo3DExperience = ({
             </Button>
             <Button
               variant="action"
-              icon={faImages}
+              icon={ImagesIcon}
               onClick={handlePickFromLibrary}
               className="w-full"
             >
@@ -839,13 +830,12 @@ export const ImageTo3DExperience = ({
           )}
           onClick={() => worldFileInputRef.current?.click()}
         >
-          <FontAwesomeIcon
-            icon={faPlus}
+          <PlusIcon
+            
             className={twMerge(
               "text-base-fg opacity-80",
               hasResults ? "text-lg" : "text-2xl",
-            )}
-          />
+            )} />
         </Button>
       </Tooltip>
     );
@@ -998,7 +988,7 @@ export const ImageTo3DExperience = ({
                   </Button>
                   <Button
                     variant="action"
-                    icon={faCube}
+                    icon={BoxIcon}
                     onClick={() => {
                       toast.promise(
                         downloadFileFromUrl(activeResult.modelUrl!),
@@ -1057,10 +1047,9 @@ export const ImageTo3DExperience = ({
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-base-fg/25">
-                              <FontAwesomeIcon
-                                icon={faCube}
-                                className="text-lg"
-                              />
+                              <BoxIcon
+                                
+                                className="text-lg" />
                             </div>
                           )}
                           {isPending && (
@@ -1219,7 +1208,7 @@ export const ImageTo3DExperience = ({
             className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
             onClick={() => setPreviewImage(null)}
           >
-            <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+            <XIcon  className="h-4 w-4" />
           </button>
           <img
             src={previewImage}

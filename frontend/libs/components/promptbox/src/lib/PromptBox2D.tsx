@@ -4,19 +4,9 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  faFrame,
-  faExpand,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import {
-  faRectangleVertical,
-  faSquare,
-  faRectangle,
-} from "@fortawesome/pro-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
+import { ChevronDownIcon, ChevronUpIcon, FrameIcon, MaximizeIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SquareIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 
 import {
   Prompt2DStore,
@@ -28,6 +18,12 @@ import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 
@@ -78,6 +74,8 @@ export const PromptBox2D = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
@@ -111,17 +109,17 @@ export const PromptBox2D = ({
     {
       label: "Wide",
       selected: aspectRatio === "wide",
-      icon: <FontAwesomeIcon icon={faRectangle} className="h-4 w-4" />,
+      icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
       label: "Tall",
       selected: aspectRatio === "tall",
-      icon: <FontAwesomeIcon icon={faRectangleVertical} className="h-4 w-4" />,
+      icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
       label: "Square",
       selected: aspectRatio === "square",
-      icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
+      icon: <SquareIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -129,17 +127,17 @@ export const PromptBox2D = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -273,6 +271,13 @@ export const PromptBox2D = ({
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
+
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
@@ -301,11 +306,10 @@ export const PromptBox2D = ({
     }
   };
 
-  const getCurrentAspectRatioIcon = () => {
+  const getCurrentAspectRatioIcon = (): LucideIcon => {
     const selected = aspectRatioList.find((item) => item.selected);
-    if (!selected || !selected.icon) return faRectangle;
-    const iconElement = selected.icon as React.ReactElement<{ icon: IconProp }>;
-    return iconElement.props.icon;
+    if (!selected?.icon) return RectangleHorizontalIcon;
+    return (selected.icon as React.ReactElement).type as LucideIcon;
   };
 
   // const getCurrentAspectRatio = (): EnqueueEditImageSize => {
@@ -373,7 +377,7 @@ export const PromptBox2D = ({
             onImageClick={(image) => {
               setContent(
                 <img
-                  src={image.url}
+                  src={image.fullUrl ?? image.url}
                   alt="Reference preview"
                   className="w-full h-full object-contain"
                 />,
@@ -429,7 +433,7 @@ export const PromptBox2D = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe your image..."
-                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
+                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -437,6 +441,7 @@ export const PromptBox2D = ({
                 onFocus={() => {}}
                 onBlur={() => {}}
               />
+              <PromptFullscreenButton onClick={openFullscreen} />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -461,7 +466,7 @@ export const PromptBox2D = ({
                     panelTitle="Aspect Ratio"
                     showIconsInList
                     triggerIcon={
-                      <FontAwesomeIcon
+                      <DynamicIcon
                         icon={getCurrentAspectRatioIcon()}
                         className="h-4 w-4"
                       />
@@ -483,13 +488,18 @@ export const PromptBox2D = ({
                     panelTitle="Resolution"
                     showIconsInList
                     triggerIcon={
-                      <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                      <MaximizeIcon  className="h-4 w-4" />
                     }
                   />
                 </Tooltip>
               )}
             </div>
             <div className="flex items-center gap-2">
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={referenceImages.length > 0}
+              />
               {onFitPressed && (
                 <Tooltip
                   content={"Fit canvas to screen"}
@@ -502,7 +512,7 @@ export const PromptBox2D = ({
                     className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                     onClick={onFitPressed}
                   >
-                    <FontAwesomeIcon icon={faFrame} className="h-4 w-4" />
+                    <FrameIcon  className="h-4 w-4" />
                     Fit
                   </Button>
                 </Tooltip>
@@ -536,8 +546,8 @@ export const PromptBox2D = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -545,6 +555,45 @@ export const PromptBox2D = ({
           </div>
         </div>
       </div>
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+        footerControls={modelSelector}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
+        imagePromptRow={
+          selectedImageModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedImageModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage as any}
+              className="relative top-auto rounded-2xl"
+            />
+          ) : undefined
+        }
+      >
+        <textarea
+          placeholder="Describe your image..."
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          value={prompt}
+          onChange={handleChange}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+        />
+      </PromptFullscreenModal>
     </>
   );
 };

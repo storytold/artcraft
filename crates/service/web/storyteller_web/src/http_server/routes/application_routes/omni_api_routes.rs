@@ -5,6 +5,8 @@ use actix_web::{web, App, Error, HttpResponse};
 
 use crate::http_server::endpoints::omni_api::generate::image::omni_api_image_generate_handler::omni_api_image_generate_handler;
 use crate::http_server::endpoints::omni_api::generate::video::omni_api_video_generate_handler::omni_api_video_generate_handler;
+use crate::http_server::endpoints::omni_api::job_status::batch_get_job_status_handler::omni_api_batch_get_job_status_handler;
+use crate::http_server::endpoints::omni_api::job_status::get_job_status_handler::omni_api_get_job_status_handler;
 use crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::omni_upload_audio_media_file_handler;
 use crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::omni_upload_image_media_file_handler;
 use crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::omni_upload_video_media_file_handler;
@@ -46,6 +48,16 @@ where
           )
           .service(web::resource("/video")
               .route(web::post().to(omni_upload_video_media_file_handler))
+              .route(web::head().to(|| HttpResponse::Ok()))
+          )
+      )
+      .service(web::scope("/job_status")
+          .service(web::resource("/job/{token}")
+              .route(web::get().to(omni_api_get_job_status_handler))
+              .route(web::head().to(|| HttpResponse::Ok()))
+          )
+          .service(web::resource("/batch")
+              .route(web::get().to(omni_api_batch_get_job_status_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
           )
       )

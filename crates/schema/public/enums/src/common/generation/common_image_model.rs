@@ -47,6 +47,10 @@ pub enum CommonImageModel {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
   #[serde(rename = "qwen_edit_2511_angles")]
   QwenEdit2511Angles,
   #[serde(rename = "flux_2_lora_angles")]
@@ -75,6 +79,8 @@ impl CommonImageModel {
       Self::Seedream4 => CommonModelType::Seedream4,
       Self::Seedream4p5 => CommonModelType::Seedream4p5,
       Self::Seedream5Lite => CommonModelType::Seedream5Lite,
+      Self::Seedream5p0Pro => CommonModelType::Seedream5p0Pro,
+      Self::Seedream5p0ProUltra => CommonModelType::Seedream5p0ProUltra,
       Self::QwenEdit2511Angles => CommonModelType::QwenEdit2511Angles,
       Self::Flux2LoraAngles => CommonModelType::Flux2LoraAngles,
     }
@@ -111,6 +117,8 @@ mod tests {
       assert_serialization(CommonImageModel::Seedream4, "seedream_4");
       assert_serialization(CommonImageModel::Seedream4p5, "seedream_4p5");
       assert_serialization(CommonImageModel::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(CommonImageModel::Seedream5p0Pro, "seedream_5p0_pro");
+      assert_serialization(CommonImageModel::Seedream5p0ProUltra, "seedream_5p0_pro_u");
       assert_serialization(CommonImageModel::QwenEdit2511Angles, "qwen_edit_2511_angles");
       assert_serialization(CommonImageModel::Flux2LoraAngles, "flux_2_lora_angles");
     }
@@ -136,6 +144,8 @@ mod tests {
         (CommonImageModel::Seedream4, CommonModelType::Seedream4),
         (CommonImageModel::Seedream4p5, CommonModelType::Seedream4p5),
         (CommonImageModel::Seedream5Lite, CommonModelType::Seedream5Lite),
+        (CommonImageModel::Seedream5p0Pro, CommonModelType::Seedream5p0Pro),
+        (CommonImageModel::Seedream5p0ProUltra, CommonModelType::Seedream5p0ProUltra),
         (CommonImageModel::QwenEdit2511Angles, CommonModelType::QwenEdit2511Angles),
         (CommonImageModel::Flux2LoraAngles, CommonModelType::Flux2LoraAngles),
       ];
@@ -164,7 +174,7 @@ mod tests {
     #[test]
     fn variant_count() {
       use strum::IntoEnumIterator;
-      assert_eq!(CommonImageModel::iter().len(), 20);
+      assert_eq!(CommonImageModel::iter().len(), 22);
     }
 
     #[test]

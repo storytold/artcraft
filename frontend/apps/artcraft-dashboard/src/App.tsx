@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { LoginPage } from "@/pages/Login";
@@ -22,9 +22,17 @@ import { UserReferrals } from "@/pages/UserReferrals";
 import { JobInfo } from "@/pages/JobInfo";
 import { JobTokenSearch } from "@/pages/JobTokenSearch";
 import { DebugLogs } from "@/pages/DebugLogs";
+import { DebugLogsAll } from "@/pages/DebugLogsAll";
+import { UserDebugLogs } from "@/pages/UserDebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
+import { SpendEvents } from "@/pages/SpendEvents";
+import { TopSpenders } from "@/pages/TopSpenders";
+import { ReengagementList } from "@/pages/ReengagementList";
+import { UserSpendSummary } from "@/pages/UserSpendSummary";
+import { UserSpendHistory } from "@/pages/UserSpendHistory";
 import { NotFoundPage } from "@/pages/NotFound";
 import { Spinner } from "./components/ui/spinner";
+import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
 function AppRoutes() {
@@ -59,9 +67,14 @@ function AppRoutes() {
         <Route path="user/profile/:username/jobs" element={<JobHistory />} />
         <Route path="user/profile/:username/creations" element={<UserCreations />} />
         <Route path="user/profile/:username/referrals" element={<UserReferrals />} />
+        <Route path="user/spend-summary/:username" element={<UserSpendSummary />} />
+        <Route path="user/spend-history/:username" element={<UserSpendHistory />} />
         <Route path="stripe-lookup" element={<StripeLookup />} />
         <Route path="user-signups" element={<UserSignups />} />
         <Route path="subscriber-signups" element={<SubscriberSignups />} />
+        <Route path="top-spenders" element={<TopSpenders />} />
+        <Route path="spend-events" element={<SpendEvents />} />
+        <Route path="reengagement-list" element={<ReengagementList />} />
         <Route path="impersonation" element={<Impersonation />} />
         <Route path="staff-audit-logs" element={<StaffAuditLogs />} />
         <Route path="send-pager" element={<SendPager />} />
@@ -76,9 +89,13 @@ function AppRoutes() {
           path="moderation/debug-logs-search"
           element={<DebugLogsSearch />}
         />
+        <Route path="debug_logs/list" element={<DebugLogsAll />} />
+        <Route path="debug_logs/user/:userToken" element={<UserDebugLogs />} />
+        <Route path="debug_logs/:eventToken" element={<DebugLogs />} />
+        {/* Legacy URL — redirect old links/bookmarks to the new path. */}
         <Route
           path="moderation/debug-logs/:eventToken"
-          element={<DebugLogs />}
+          element={<LegacyDebugLogsRedirect />}
         />
       </Route>
 
@@ -96,8 +113,16 @@ function App() {
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
+      <Toaster position="bottom-right" />
     </ThemeProvider>
   );
 }
 
 export default App;
+
+function LegacyDebugLogsRedirect() {
+  const { eventToken } = useParams<{ eventToken: string }>();
+  return (
+    <Navigate to={`/debug_logs/${encodeURIComponent(eventToken || "")}`} replace />
+  );
+}

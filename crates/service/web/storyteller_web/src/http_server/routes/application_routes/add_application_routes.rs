@@ -8,6 +8,7 @@ use crate::http_server::routes::application_routes::dev_routes::add_dev_routes;
 use crate::http_server::routes::application_routes::featured_item_routes::add_featured_item_routes;
 use crate::http_server::routes::application_routes::folders_routes::add_folders_routes;
 use crate::http_server::routes::application_routes::generate_routes::add_generate_routes;
+use crate::http_server::routes::application_routes::internal_routes::add_internal_routes;
 use crate::http_server::routes::application_routes::job_routes::add_job_routes;
 use crate::http_server::routes::application_routes::media_files_routes::add_media_file_routes;
 use crate::http_server::routes::application_routes::moderation_routes::add_moderator_routes;
@@ -53,14 +54,15 @@ where
   app = add_omni_api_routes(app); // /v1/omni_api/... (API-key authenticated generate)
   app = add_character_routes(app); // /v1/character/... and /v1/characters/...
   app = add_webhook_routes(app); // /v1/webhooks/... (fal)
+  app = add_internal_routes(app); // /v1/internal/... (internal API key authenticated worker fleets)
   
   // Legacy FakeYou surface area that might be useful again one day
-  app = add_tag_routes(app); // /v1/tags
   app = add_weights_routes(app); // v1/weights
 
   // Media files routes
   app = add_media_file_routes(app); // /v1/media_files/...
   app = add_folders_routes(app); // /v1/folders/...
+  app = add_tag_routes(app); // /v1/tags/...
   app = add_api_keys_routes(app); // /v1/api_keys/...
   app = add_featured_item_routes(app); // /v1/featured_item/...
   app = add_prompts_routes(app); // /v1/prompts/...

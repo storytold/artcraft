@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO user_spend_events\nSET\n  token = ?,\n  payments_namespace = ?,\n  maybe_user_token = ?,\n  event_type = ?,\n  amount_usd_cents = ?,\n  maybe_credits_granted = ?,\n  maybe_user_subscription_token = ?,\n  maybe_wallet_ledger_entry_token = ?,\n  payment_source = ?,\n  source_object_id = ?,\n  maybe_stripe_customer_id = ?,\n  maybe_stripe_invoice_id = ?,\n  maybe_stripe_payment_intent_id = ?,\n  maybe_stripe_charge_id = ?,\n  maybe_stripe_event_id = ?,\n  is_production = ?,\n  payment_occurred_at = ?\nON DUPLICATE KEY UPDATE token = token\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 17
+    },
+    "nullable": []
+  },
+  "hash": "3e5a71cedc31cc656177c8331c2de1d1d2d2eb310aabeb7e6238943b073f6998"
+}

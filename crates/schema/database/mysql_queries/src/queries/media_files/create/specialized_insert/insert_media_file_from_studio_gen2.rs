@@ -75,6 +75,10 @@ pub async fn insert_media_file_from_studio_gen2(args: InsertArgs<'_>) -> AnyhowR
 
     const MODEL_TYPE : MediaFileOriginModelType = MediaFileOriginModelType::StorytellerStudio;
 
+    let media_type = args.maybe_mime_type
+        .and_then(MediaFileType::try_from_mime_type)
+        .unwrap_or(MediaFileType::Video); // Coarse fallback for unrecognized mimes
+
     let record_id = {
         let query_result = sqlx::query!(
         r#"
@@ -121,7 +125,7 @@ SET
       result_token.as_str(),
 
       MediaFileClass::Video.to_str(),
-      MediaFileType::Video.to_str(), // TODO(bt,2024-04-30): This needs to become "mp4" after a frontend migration
+      media_type.to_str(),
 
       ORIGIN_CATEGORY.to_str(),
       PRODUCT.to_str(),

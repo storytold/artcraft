@@ -158,7 +158,7 @@ pub async fn update_weight_handler(
             let maybe_media_file_type = maybe_media_file.map(|media_file| media_file.media_type);
 
             match maybe_media_file_type {
-                Some(MediaFileType::Image) => cover_image = Some(CoverImageOption::SetCoverImage(media_file_token)),
+                Some(media_file_type) if media_file_type.is_image() => cover_image = Some(CoverImageOption::SetCoverImage(media_file_token)),
                 None => return Err(CommonWebError::BadInputWithSimpleMessage("Media file does not exist".to_string())),
                 _ => return Err(CommonWebError::BadInputWithSimpleMessage("Media file is the wrong type".to_string())),
             }

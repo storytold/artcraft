@@ -1,3 +1,5 @@
+use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
+
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::veo_3p1::request::ArtcraftVeo3p1RequestState;
 
@@ -5,6 +7,7 @@ use crate::generate::generate_video::providers::artcraft::veo_3p1::request::Artc
 pub struct ArtcraftVeo3p1CostState {
   pub duration_seconds: u64,
   pub generate_audio: bool,
+  pub is_4k: bool,
 }
 
 impl ArtcraftVeo3p1CostState {
@@ -14,12 +17,19 @@ impl ArtcraftVeo3p1CostState {
       duration_seconds: request.request.duration_seconds.map(u64::from).unwrap_or(6),
       // v1 legacy Veo 3.1 handler defaults generate_audio to true.
       generate_audio: request.request.generate_audio.unwrap_or(true),
+      is_4k: request.request.resolution == Some(CommonResolutionEnum::FourK),
     }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client veo_3p1: $0.20/sec audio off, $0.40/sec audio on.
-    let per_second_cents: u64 = if self.generate_audio { 40 } else { 20 };
+    // $0.24/sec audio off, $0.48/sec audio on; 4K renders bill a premium:
+    // $0.48/sec audio off, $0.72/sec audio on.
+    let per_second_cents: u64 = match (self.is_4k, self.generate_audio) {
+      (false, false) => 24,
+      (false, true) => 48,
+      (true, false) => 48,
+      (true, true) => 72,
+    };
     let cost_in_usd_cents = per_second_cents * self.duration_seconds;
 
     VideoGenerationCostEstimate {
@@ -36,12 +46,22 @@ impl ArtcraftVeo3p1CostState {
 
 #[cfg(test)]
 mod tests {
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, generate_audio: Option<bool>) -> u64 {
+    cost_cents_at(duration_seconds, generate_audio, None)
+  }
+
+  fn cost_cents_at(
+    duration_seconds: Option<u16>,
+    generate_audio: Option<bool>,
+    resolution: Option<RouterResolution>,
+  ) -> u64 {
     let b = GenerateVideoRequestBuilder {
+      resolution,
       model: RouterVideoModel::Veo3p1,
       provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
@@ -53,24 +73,42 @@ mod tests {
   }
 
   #[test]
-  fn audio_on_4s_is_160() { assert_eq!(cost_cents(Some(4), Some(true)), 160); }
+  fn audio_on_4s_is_192() { assert_eq!(cost_cents(Some(4), Some(true)), 192); }
 
   #[test]
-  fn audio_on_6s_is_240() { assert_eq!(cost_cents(Some(6), Some(true)), 240); }
+  fn audio_on_6s_is_288() { assert_eq!(cost_cents(Some(6), Some(true)), 288); }
 
   #[test]
-  fn audio_on_8s_is_320() { assert_eq!(cost_cents(Some(8), Some(true)), 320); }
+  fn audio_on_8s_is_384() { assert_eq!(cost_cents(Some(8), Some(true)), 384); }
 
   #[test]
-  fn audio_off_4s_is_80() { assert_eq!(cost_cents(Some(4), Some(false)), 80); }
+  fn audio_off_4s_is_96() { assert_eq!(cost_cents(Some(4), Some(false)), 96); }
 
   #[test]
   fn default_duration_is_6s() {
-    assert_eq!(cost_cents(None, Some(true)), 240);
+    assert_eq!(cost_cents(None, Some(true)), 288);
   }
 
   #[test]
   fn audio_default_is_on() {
-    assert_eq!(cost_cents(Some(6), None), 240);
+    assert_eq!(cost_cents(Some(6), None), 288);
+  }
+
+  #[test]
+  fn four_k_audio_off_4s_is_192() {
+    assert_eq!(cost_cents_at(Some(4), Some(false), Some(RouterResolution::FourK)), 192);
+  }
+
+  #[test]
+  fn four_k_audio_on_4s_is_288() {
+    assert_eq!(cost_cents_at(Some(4), Some(true), Some(RouterResolution::FourK)), 288);
+  }
+
+  #[test]
+  fn non_four_k_resolutions_share_the_base_rate() {
+    assert_eq!(
+      cost_cents_at(Some(8), Some(true), Some(RouterResolution::SevenTwentyP)),
+      cost_cents_at(Some(8), Some(true), Some(RouterResolution::TenEightyP)),
+    );
   }
 }

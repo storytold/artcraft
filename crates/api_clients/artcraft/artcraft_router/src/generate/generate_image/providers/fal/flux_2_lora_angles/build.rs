@@ -1,6 +1,5 @@
-use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
-  EnqueueFlux2LoraAngleImageSize, EnqueueFlux2LoraAngleNumImages,
-  EnqueueFlux2LoraEditImageAngleRequest,
+use fal_client::requests::api::image::angle::flux_2_lora_edit_image_angle::api::{
+  Flux2LoraAngleImageSize, Flux2LoraAngleNumImages, Flux2LoraEditImageAngleRequest,
 };
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
@@ -27,7 +26,7 @@ pub fn build_fal_flux_2_lora_angles(
   let num_images = plan_num_images(builder.image_batch_count, strategy)?;
   let image_size = plan_image_size(builder.aspect_ratio, strategy)?;
 
-  let request = EnqueueFlux2LoraEditImageAngleRequest {
+  let request = Flux2LoraEditImageAngleRequest {
     image_urls,
     horizontal_angle: builder.horizontal_angle,
     vertical_angle: builder.vertical_angle.map(|v| v.clamp(0.0, 60.0)),
@@ -57,8 +56,8 @@ fn resolve_image_urls(image_inputs: Option<ImageListRef>) -> Result<Vec<String>,
 fn plan_num_images(
   image_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<EnqueueFlux2LoraAngleNumImages, ArtcraftRouterError> {
-  use EnqueueFlux2LoraAngleNumImages as N;
+) -> Result<Flux2LoraAngleNumImages, ArtcraftRouterError> {
+  use Flux2LoraAngleNumImages as N;
   let count = image_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
@@ -81,8 +80,8 @@ fn plan_num_images(
 fn plan_image_size(
   aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<EnqueueFlux2LoraAngleImageSize>, ArtcraftRouterError> {
-  use EnqueueFlux2LoraAngleImageSize as S;
+) -> Result<Option<Flux2LoraAngleImageSize>, ArtcraftRouterError> {
+  use Flux2LoraAngleImageSize as S;
   match aspect_ratio {
     None => Ok(None),
 
@@ -117,34 +116,6 @@ mod tests {
   use super::*;
   use crate::api::router_image_model::RouterImageModel;
   use crate::api::router_provider::RouterProvider;
-
-  fn base() -> GenerateImageRequestBuilder {
-    GenerateImageRequestBuilder {
-      model: RouterImageModel::Flux2LoraAngles,
-      provider: RouterProvider::Fal,
-      prompt: None,
-      image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/x.jpg".to_string()])),
-      resolution: None,
-      aspect_ratio: None,
-      quality: None,
-      image_batch_count: None,
-      horizontal_angle: Some(45.0),
-      vertical_angle: Some(-15.0),
-      zoom: Some(2.0),
-      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-      generation_mode_mismatch_strategy: None,
-      idempotency_token: None,
-    }
-  }
-
-  fn unwrap_request(result: Result<ImageGenerationDraftOrRequest, ArtcraftRouterError>) -> EnqueueFlux2LoraEditImageAngleRequest {
-    let ImageGenerationDraftOrRequest::Request(
-      ImageGenerationRequest::FalFlux2LoraAngles(state)
-    ) = result.expect("build should succeed") else {
-      panic!("expected FalFlux2LoraAngles variant")
-    };
-    state.request
-  }
 
   #[test]
   fn passes_through_camera_params() {
@@ -206,5 +177,33 @@ mod tests {
       build_fal_flux_2_lora_angles(builder),
       Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations))
     ));
+  }
+
+  fn base() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
+      model: RouterImageModel::Flux2LoraAngles,
+      provider: RouterProvider::Fal,
+      prompt: None,
+      image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/x.jpg".to_string()])),
+      resolution: None,
+      aspect_ratio: None,
+      quality: None,
+      image_batch_count: None,
+      horizontal_angle: Some(45.0),
+      vertical_angle: Some(-15.0),
+      zoom: Some(2.0),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      generation_mode_mismatch_strategy: None,
+      idempotency_token: None,
+    }
+  }
+
+  fn unwrap_request(result: Result<ImageGenerationDraftOrRequest, ArtcraftRouterError>) -> Flux2LoraEditImageAngleRequest {
+    let ImageGenerationDraftOrRequest::Request(
+      ImageGenerationRequest::FalFlux2LoraAngles(state)
+    ) = result.expect("build should succeed") else {
+      panic!("expected FalFlux2LoraAngles variant")
+    };
+    state.request
   }
 }

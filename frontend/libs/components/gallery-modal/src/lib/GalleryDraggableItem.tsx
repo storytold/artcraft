@@ -5,8 +5,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faEllipsis, faUpload } from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, EllipsisIcon, MusicIcon, UploadIcon } from "lucide-react";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
@@ -41,8 +40,14 @@ interface GalleryDraggableItemProps {
   mode: ModalMode;
   activeFilter: string;
   selected: boolean;
+  /** Select mode: the item is already in the destination (e.g. the reference
+   *  deck), so it's greyed out and can't be picked again. */
+  disabled?: boolean;
   onClick: () => void;
   onImageError: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  /** Resolved prompt text for audio items — shown on the tile since audio has
+   *  no thumbnail to speak for itself. */
+  audioPromptText?: string;
   disableTooltipAndBadge?: boolean;
   imageFit?: "cover" | "contain";
   onDeleted?: (id: string) => void;
@@ -66,8 +71,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   mode,
   activeFilter,
   selected,
+  disabled = false,
   onClick,
   onImageError,
+  audioPromptText,
   disableTooltipAndBadge = false,
   imageFit = "cover",
   onDeleted,
@@ -92,6 +99,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // preview GIF, so the thumbnail URL 404s for a while. Show a spinner and
   // refresh the image every 5s until it loads.
   const isVideo = item.mediaClass === "video";
+  // Audio tiles are click-only: there is no canvas drop target for audio, so
+  // they never start a gallery drag.
+  const isAudio = item.mediaClass === "audio";
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
@@ -191,6 +201,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     // No drag tracking on touch: a finger drag should scroll the page, and a
     // tap still clicks via the button's onClick.
     if (event.pointerType === "touch") return;
+    if (isAudio) return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -221,6 +232,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // selection when bulk-selecting / in select mode (handled by the host's onClick).
   const handleButtonClick = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
+    if (disabled) return;
     if (dragStarted.current) return;
     const globalDrag = galleryDnd.getDragState();
     if (globalDrag.isDragging) return;
@@ -239,21 +251,38 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         "w-full group relative overflow-visible rounded-md border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",
         selected || bulkSelected
           ? "border-primary"
-          : disableTooltipAndBadge
-            ? "border-transparent hover:border-primary/80"
-            : "border-transparent hover:border-primary",
-        mode === "select"
-          ? "cursor-pointer"
-          : disableTooltipAndBadge && !bulkSelectionMode
+          : disabled
+            ? "border-transparent"
+            : disableTooltipAndBadge
+              ? "border-transparent hover:border-primary/80"
+              : "border-transparent hover:border-primary",
+        disabled
+          ? "cursor-not-allowed opacity-40"
+          : mode === "select"
             ? "cursor-pointer"
-            : "cursor-grab hover:cursor-grab active:cursor-grabbing",
+            : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio
+              ? "cursor-pointer"
+              : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}
       onPointerDown={handlePointerDown}
       onClick={handleButtonClick}
       aria-label={item.label}
     >
       <div className="relative h-full w-full">
-        {!item.thumbnail ? (
+        {isAudio ? (
+          <div className="flex h-full w-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02]">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                <MusicIcon
+                  
+                  className="text-lg text-white/70" />
+              </div>
+            </div>
+            <p className="line-clamp-2 shrink-0 px-2.5 pb-2.5 text-left text-xs leading-snug text-white/75">
+              {audioPromptText || item.label}
+            </p>
+          </div>
+        ) : !item.thumbnail ? (
           <div className="flex h-full w-full items-center justify-center bg-black/30">
             <span className="text-white/60">Image not available</span>
           </div>
@@ -288,7 +317,12 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         )}
         {selected && (
           <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-            <FontAwesomeIcon icon={faCheck} className="text-sm" />
+            <CheckIcon  className="text-sm" />
+          </div>
+        )}
+        {disabled && (
+          <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+            Added
           </div>
         )}
       </div>
@@ -309,7 +343,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
-          className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
+          // Tile chrome stays under sticky page headers (e.g. the library
+          // filter bar at z-10): z-[2]/z-[1] keep the in-tile ordering
+          // (menu/checkbox above badges) without escaping the page layers.
+          className="absolute right-2 top-2 z-[2] opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -320,7 +357,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             align="end"
             mode="default"
             triggerIcon={
-              <FontAwesomeIcon icon={faEllipsis} className="text-base-fg" />
+              <EllipsisIcon  className="text-base-fg" />
             }
             buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
             panelClassName="w-max min-w-44 p-1"
@@ -381,7 +418,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {mode !== "select" && onBulkSelectToggle && (
         <div
           className={twMerge(
-            "absolute left-2 top-2 z-30 flex h-5 w-5 items-center justify-center rounded border-2 cursor-pointer transition-all duration-100",
+            "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded border-2 cursor-pointer transition-all duration-100",
             bulkSelected
               ? "bg-primary border-primary"
               : "border-white/60 bg-black/40 hover:border-white",
@@ -396,23 +433,26 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           }}
         >
           {bulkSelected && (
-            <FontAwesomeIcon
-              icon={faCheck}
-              className="text-[10px] text-white"
-            />
+            <CheckIcon
+              
+              className="text-[10px] text-white" />
           )}
         </div>
       )}
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
-        <div className="pointer-events-none absolute left-2 bottom-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          {item.mediaClass === "dimensional" ? "3D" : item.mediaClass}
+        <div className="pointer-events-none absolute left-2 bottom-2 z-[1] rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {item.mediaClass === "dimensional" ||
+          item.mediaClass === "mesh" ||
+          item.mediaClass === "splat"
+            ? "3D"
+            : item.mediaClass}
         </div>
       )}
       {/* Upload badge — bottom-right (always visible, even in select mode) */}
       {item.isUpload && (
-        <div className="pointer-events-none absolute right-2 bottom-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
-          <FontAwesomeIcon icon={faUpload} className="text-[10px]" />
+        <div className="pointer-events-none absolute right-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
+          <UploadIcon  className="text-[10px]" />
         </div>
       )}
       {/* Conditionally wrap with Tooltip — hidden when selecting or in bulk mode */}
@@ -423,14 +463,18 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           className="-mt-3 bg-ui-controls text-base-fg border border-ui-panel-border"
           content={
             <div className="flex flex-col items-center text-xs whitespace-nowrap">
-              <span>
-                <span className="font-bold">Drag</span>
-                <span className="opacity-50">
-                  {item.mediaClass === "dimensional"
-                    ? " to add to scene"
-                    : " to add"}
+              {!isAudio && (
+                <span>
+                  <span className="font-bold">Drag</span>
+                  <span className="opacity-50">
+                    {item.mediaClass === "dimensional" ||
+                    item.mediaClass === "mesh" ||
+                    item.mediaClass === "splat"
+                      ? " to add to scene"
+                      : " to add"}
+                  </span>
                 </span>
-              </span>
+              )}
               <span>
                 <span className="font-bold">Click</span>
                 <span className="opacity-50"> to view</span>

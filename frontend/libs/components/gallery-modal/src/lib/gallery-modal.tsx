@@ -18,9 +18,15 @@ import {
   FoldersApi,
   GalleryModalApi,
   MediaFilesApi,
+  TagsApi,
   UsersApi,
 } from "@storyteller/api";
-import type { FolderInfo, FolderMediaFileListItem } from "@storyteller/api";
+import type {
+  FolderInfo,
+  FolderMediaFileListItem,
+  TagDetails,
+  TagMediaFileListItem,
+} from "@storyteller/api";
 import type { GalleryFolder } from "./GalleryDraggableItem";
 import { compareFolders } from "./folderUtils";
 import {
@@ -41,6 +47,7 @@ import {
   getMediaThumbnail,
   THUMBNAIL_SIZES,
   PLACEHOLDER_IMAGES,
+  is3DModelUrl,
 } from "@storyteller/common";
 import {
   galleryModalDraggingUnder,
@@ -53,25 +60,32 @@ import {
   galleryModalLightboxNavNext,
 } from "./galleryModalSignals";
 import galleryDnd, { FOLDER_DROP_EVENT } from "./galleryDnd";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBorderAll,
-  faImage,
-  faVideo,
-  faCube,
-  faUpload,
-  faExpand,
-  faCompress,
-  faArrowsRotate,
-  faTrashCan,
-  faXmark,
-  faFolder,
-  faPlus,
-  faFolderPlus,
-  faEllipsis,
-  faPencil,
-  faStar,
-} from "@fortawesome/pro-solid-svg-icons";
+  BoxIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderPlusIcon,
+  GlobeIcon,
+  Grid3x3Icon,
+  ImageIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  MusicIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  StarIcon,
+  TagIcon,
+  Trash2Icon,
+  UploadIcon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
+import {
+  useMediaPromptTokens,
+  usePrompts,
+} from "@storyteller/ui-generation-list";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -87,6 +101,8 @@ interface GalleryCacheEntry {
   pageIndex: number;
   hasMore: boolean;
   timestamp: number;
+  /** Keyset cursor for the mesh/splat tabs (their endpoints paginate by cursor). */
+  cursor?: string;
 }
 
 const galleryCacheMap = new Map<string, GalleryCacheEntry>();
@@ -236,6 +252,10 @@ export interface GalleryItem {
   batchImageToken?: string;
   mediaTokens?: string[];
   imageUrls?: string[];
+  /** Prompt token, when the list endpoint returns one (used by audio tiles). */
+  promptToken?: string;
+  /** Duration for audio/video items, when known. */
+  durationMillis?: number;
 }
 
 interface GroupedItems {
@@ -248,6 +268,10 @@ interface GalleryModalProps {
   onClose?: () => void;
   mode: ModalMode;
   selectedItemIds?: string[];
+  /** Select mode: ids that are already added to the destination (e.g. the
+   *  reference deck). Shown greyed out with an "Added" badge and unclickable,
+   *  so the same media file can't be picked twice. */
+  disabledItemIds?: string[];
   onSelectItem?: (id: string) => void;
   maxSelections?: number;
   onUseSelected?: (selectedItems: GalleryItem[]) => void;
@@ -300,31 +324,44 @@ interface GalleryModalProps {
 const EMPTY_SELECTED_IDS: string[] = [];
 
 const SIDEBAR_FILTERS = [
-  { id: "all", label: "All Assets", icon: faBorderAll },
-  { id: "image", label: "Image", icon: faImage },
-  { id: "video", label: "Video", icon: faVideo },
-  { id: "3d", label: "3D", icon: faCube },
-  { id: "uploaded", label: "Uploaded", icon: faUpload },
+  { id: "all", label: "All Assets", icon: Grid3x3Icon },
+  { id: "image", label: "Image", icon: ImageIcon },
+  { id: "video", label: "Video", icon: VideoIcon },
+  { id: "audio", label: "Audio", icon: MusicIcon },
+  { id: "mesh", label: "Mesh", icon: BoxIcon },
+  { id: "splat", label: "Splat", icon: GlobeIcon },
+  { id: "uploaded", label: "Uploaded", icon: UploadIcon },
 ];
 
+// Media classes for the user-list endpoint. The Mesh and Splat tabs don't use
+// it — they call the session mesh/splat list endpoints instead.
 const getFilterMediaClass = (filter: string) => {
   switch (filter) {
     case "image":
       return [FilterMediaClasses.IMAGE];
     case "video":
       return [FilterMediaClasses.VIDEO];
-    case "3d":
-      return [FilterMediaClasses.DIMENSIONAL];
+    case "audio":
+      return [FilterMediaClasses.AUDIO];
     case "uploaded":
       return [
         FilterMediaClasses.IMAGE,
         FilterMediaClasses.VIDEO,
         FilterMediaClasses.DIMENSIONAL,
+        FilterMediaClasses.MESH,
+        FilterMediaClasses.SPLAT,
       ];
     default:
       return undefined;
   }
 };
+
+// The backend used to file all 3D media under the (now deprecated) coarse
+// "dimensional" class; new records are "mesh" or "splat". Treat all three as 3D.
+const is3DClass = (mediaClass: string | undefined | null): boolean =>
+  mediaClass === "dimensional" ||
+  mediaClass === "mesh" ||
+  mediaClass === "splat";
 
 const getLabel = (item: any) => {
   if (!!item.maybe_title) {
@@ -335,8 +372,13 @@ const getLabel = (item: any) => {
       return "Image Generation";
     case "video":
       return "Video Generation";
+    case "audio":
+      return "Audio Generation";
     case "dimensional":
+    case "mesh":
       return "3D Object Generation";
+    case "splat":
+      return "3D World Generation";
     default:
       return "Generation";
   }
@@ -355,6 +397,71 @@ const PAGE_SIZE = 100;
 
 // Folder media is paginated via cursor; one scroll page at a time.
 const FOLDER_PAGE_SIZE = 60;
+
+// The sidebar shows the five most-used tags; "All tags" opens the word cloud.
+const SIDEBAR_TAG_LIMIT = 5;
+
+const hashString = (s: string): number => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+};
+
+/**
+ * The all-tags browser view: a word cloud where font size and emphasis encode
+ * use count, and a deterministic hash shuffle spreads big words among small
+ * ones (stable order — no reflow between renders). Mirrors the webapp's
+ * library Tags tab.
+ */
+function TagCloudView({
+  tags,
+  onOpen,
+}: {
+  tags: TagDetails[];
+  onOpen: (tagToken: string) => void;
+}) {
+  const words = useMemo(() => {
+    const counts = tags.map((t) => t.use_count);
+    const min = Math.min(...counts);
+    const span = Math.max(1, Math.max(...counts) - min);
+    return [...tags]
+      .sort((a, b) => hashString(a.tag_token) - hashString(b.tag_token))
+      .map((tag) => ({
+        tag,
+        // sqrt compresses the top end so one mega-tag doesn't dwarf the rest.
+        weight: Math.sqrt((tag.use_count - min) / span),
+      }));
+  }, [tags]);
+
+  return (
+    <div className="flex min-h-full items-center justify-center p-8">
+      <div className="flex max-w-3xl flex-wrap items-baseline justify-center gap-x-5 gap-y-3 select-none">
+        {words.map(({ tag, weight }) => (
+          <button
+            key={tag.tag_token}
+            type="button"
+            onClick={() => onOpen(tag.tag_token)}
+            title={`${tag.use_count} file${tag.use_count === 1 ? "" : "s"}`}
+            style={{ fontSize: `${Math.round(15 + weight * 33)}px` }}
+            className={twMerge(
+              "max-w-full truncate leading-none transition-all duration-200 hover:scale-110 hover:text-violet-400",
+              hashString(tag.tag_token) % 2 === 0
+                ? "hover:rotate-2"
+                : "hover:-rotate-2",
+              weight > 0.66
+                ? "font-bold text-base-fg"
+                : weight > 0.33
+                  ? "font-semibold text-base-fg/70"
+                  : "font-medium text-base-fg/40",
+            )}
+          >
+            {tag.tag_value}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const SHOW_UPLOADS_STORAGE_KEY = "gallery-modal-show-uploads";
 
@@ -380,7 +487,7 @@ const BulkThumb = ({
         />
       ) : (
         <div className="h-full w-full flex items-center justify-center bg-black/50">
-          <FontAwesomeIcon
+          <DynamicIcon
             icon={placeholderIcon}
             className="text-xs text-white/50"
           />
@@ -426,8 +533,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onToggleStar(folderId, !hasStar)}
     >
-      <FontAwesomeIcon
-        icon={faStar}
+      <StarIcon
         className={twMerge(
           "w-4",
           hasStar ? "text-amber-400" : "text-base-fg/40",
@@ -445,7 +551,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onNewSubfolder(folderId)}
     >
-      <FontAwesomeIcon icon={faFolderPlus} className="w-4" />
+      <FolderPlusIcon className="w-4" />
       <span>New subfolder</span>
     </button>
     <button
@@ -453,7 +559,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onRename(folderId)}
     >
-      <FontAwesomeIcon icon={faPencil} className="w-4" />
+      <PencilIcon className="w-4" />
       <span>Rename</span>
     </button>
     <button
@@ -461,7 +567,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
       onClick={() => onDelete(folderId)}
     >
-      <FontAwesomeIcon icon={faTrashCan} className="w-4" />
+      <Trash2Icon className="w-4" />
       <span>Delete folder</span>
     </button>
   </div>
@@ -472,6 +578,7 @@ export const GalleryModal = React.memo(
     onClose,
     mode = "view",
     selectedItemIds = EMPTY_SELECTED_IDS,
+    disabledItemIds = EMPTY_SELECTED_IDS,
     onSelectItem,
     maxSelections = 4,
     onUseSelected,
@@ -589,6 +696,21 @@ export const GalleryModal = React.memo(
     const folderCursorRef = useRef<Record<string, string | undefined>>({});
     const folderHasMoreRef = useRef<Record<string, boolean>>({});
     const folderLoadingRef = useRef<Record<string, boolean>>({});
+
+    // Tags state — sidebar tag browsing (mirrors the folder plumbing). Both
+    // tag views live on the assets tab: `activeTagToken` swaps the grid to
+    // that tag's media, `tagBrowserOpen` shows the all-tags word cloud.
+    const [userTags, setUserTags] = useState<TagDetails[]>([]);
+    const [tagBrowserOpen, setTagBrowserOpen] = useState(false);
+    const [activeTagToken, setActiveTagToken] = useState<string | null>(null);
+    const [tagMediaItems, setTagMediaItems] = useState<
+      Record<string, GalleryItem[]>
+    >({});
+    const [tagContentLoading, setTagContentLoading] = useState(false);
+    const [tagLoadingMore, setTagLoadingMore] = useState(false);
+    const tagCursorRef = useRef<Record<string, string | undefined>>({});
+    const tagHasMoreRef = useRef<Record<string, boolean>>({});
+    const tagLoadingRef = useRef<Record<string, boolean>>({});
     // Rename state — shared by inline (header) and modal (sidebar) flows
     const [renamingFolderId, setRenamingFolderId] = useState<string | null>(
       null,
@@ -685,6 +807,7 @@ export const GalleryModal = React.memo(
     const api = useMemo(() => new GalleryModalApi(), []);
     const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
     const foldersApi = useMemo(() => new FoldersApi(), []);
+    const tagsApi = useMemo(() => new TagsApi(), []);
 
     // Shared API-folder → UI-folder mapper (see folderMapping.ts).
     const mapFolder = mapFolderInfo;
@@ -726,6 +849,76 @@ export const GalleryModal = React.memo(
       [activeFolderItems, groupItemsByDate],
     );
 
+    // Tag view memos — backed by the per-tag media cache.
+    const activeTagItems = useMemo(
+      () => (activeTagToken ? (tagMediaItems[activeTagToken] ?? []) : []),
+      [activeTagToken, tagMediaItems],
+    );
+    const tagGroupedItems = useMemo(
+      () => groupItemsByDate(activeTagItems),
+      [activeTagItems, groupItemsByDate],
+    );
+    const activeTag = activeTagToken
+      ? (userTags.find((t) => t.tag_token === activeTagToken) ?? null)
+      : null;
+    // Most-used-first ordering for the sidebar tag list.
+    const sortedTags = useMemo(
+      () =>
+        [...userTags].sort(
+          (a, b) =>
+            b.use_count - a.use_count ||
+            a.tag_value_lowercase.localeCompare(b.tag_value_lowercase),
+        ),
+      [userTags],
+    );
+    const sidebarTags = sortedTags.slice(0, SIDEBAR_TAG_LIMIT);
+
+    // Audio tiles have no thumbnail, so they show their prompt text instead.
+    // Resolve it via the shared batched caches (media token → prompt token →
+    // prompt text) for audio items only; image/video walls skip the lookups.
+    const audioMediaTokensNeedingPrompt = useMemo(() => {
+      const tokens: string[] = [];
+      const collect = (item: GalleryItem) => {
+        if (item.mediaClass === "audio" && !item.promptToken) {
+          tokens.push(item.id);
+        }
+      };
+      allItems.forEach(collect);
+      activeFolderItems.forEach(collect);
+      return tokens;
+    }, [allItems, activeFolderItems]);
+    const resolvedAudioPromptTokens = useMediaPromptTokens(
+      audioMediaTokensNeedingPrompt,
+    );
+
+    const audioPromptTokens = useMemo(() => {
+      const tokens: string[] = [];
+      const collect = (item: GalleryItem) => {
+        if (item.mediaClass !== "audio") return;
+        const token =
+          item.promptToken || resolvedAudioPromptTokens.get(item.id);
+        if (token) tokens.push(token);
+      };
+      allItems.forEach(collect);
+      activeFolderItems.forEach(collect);
+      return tokens;
+    }, [allItems, activeFolderItems, resolvedAudioPromptTokens]);
+    const audioPromptsMap = usePrompts(audioPromptTokens);
+
+    const audioPromptTextFor = useCallback(
+      (item: GalleryItem): string | undefined => {
+        if (item.mediaClass !== "audio") return undefined;
+        const token =
+          item.promptToken || resolvedAudioPromptTokens.get(item.id);
+        return (
+          (token
+            ? audioPromptsMap.get(token)?.maybe_positive_prompt
+            : undefined) || undefined
+        );
+      },
+      [resolvedAudioPromptTokens, audioPromptsMap],
+    );
+
     const handleImageError = useCallback((url: string) => {
       console.error(`Failed to load gallery modal image: ${url}`);
       failedImageUrls.current.add(url);
@@ -748,6 +941,12 @@ export const GalleryModal = React.memo(
       const modalIsOpen =
         isOpen || (mode === "view" && galleryModalVisibleViewMode.value);
       if (!modalIsOpen) return;
+      // Clear any stale drag-under state from a previous session. A canvas-drop
+      // close (reopen-off) intentionally leaves this true so the panel stays
+      // faded through the close animation; if we didn't reset it on reopen, the
+      // freshly-opened modal would render hidden (contentHidden) and the user
+      // couldn't see it — making the library button appear broken.
+      galleryModalDraggingUnder.value = false;
       let cancelled = false;
       (async () => {
         setUsernameError(false);
@@ -784,19 +983,28 @@ export const GalleryModal = React.memo(
       [],
     );
 
+    // Keyset cursors for the mesh/splat tabs (their endpoints paginate by
+    // cursor rather than page index), keyed by filter id.
+    const byClassCursorRef = useRef<Record<string, string | undefined>>({});
+
     // Map raw API item to GalleryItem
     const mapApiItem = useCallback(
       (item: any): GalleryItem => ({
         id: item.token,
         label: getLabel(item),
         thumbnail:
-          item.media_class === "video"
-            ? item.media_links.maybe_video_previews?.animated
-            : item.media_class === "dimensional"
-              ? item.cover_image?.maybe_cover_image_public_bucket_url
-              : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
-                  width: THUMBNAIL_SIZES.MEDIUM,
-                }),
+          item.media_class === "audio"
+            ? null
+            : item.media_class === "video"
+              ? item.media_links.maybe_video_previews?.animated
+              : is3DClass(item.media_class)
+                ? // Prefer the modern CDN link; fall back to the deprecated
+                  // bucket URL for older responses.
+                  (item.cover_image?.maybe_links?.cdn_url ??
+                  item.cover_image?.maybe_cover_image_public_bucket_url)
+                : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
+                    width: THUMBNAIL_SIZES.MEDIUM,
+                  }),
         thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
         fullImage: item.media_links.cdn_url,
         createdAt: item.created_at,
@@ -805,30 +1013,39 @@ export const GalleryModal = React.memo(
           (item.filter_media_classes ? item.filter_media_classes[0] : "image"),
         isUpload: item.origin_category === "upload",
         assetType:
-          item.media_class === "dimensional"
+          item.media_class === "dimensional" || item.media_class === "mesh"
             ? item.maybe_animation_type ||
               item.origin_product_category === "character" ||
               (item.origin && item.origin.product_category === "character")
               ? "character"
               : "object"
-            : undefined,
+            : item.media_class === "splat"
+              ? "splat"
+              : undefined,
+        promptToken: item.maybe_prompt_token ?? undefined,
+        durationMillis: item.maybe_duration_millis ?? undefined,
       }),
       [],
     );
 
-    // Map a folder media-file list item → GalleryItem. The list item already
-    // carries media_links/cover, so no batch-get is needed (unlike `mapApiItem`,
-    // which reads the raw user-media list shape: origin_category / no batch token).
+    // Map a folder/tag media-file list item → GalleryItem (same lean wire
+    // shape). The list item already carries media_links/cover, so no batch-get
+    // is needed (unlike `mapApiItem`, which reads the raw user-media list
+    // shape: origin_category / no batch token).
     const mapFolderListItem = useCallback(
-      (item: FolderMediaFileListItem): GalleryItem => ({
+      (item: FolderMediaFileListItem | TagMediaFileListItem): GalleryItem => ({
         id: item.token,
         label: getLabel(item),
         thumbnail:
-          item.media_class === "dimensional"
-            ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
-            : getMediaThumbnail(item.media_links, item.media_class, {
-                size: THUMBNAIL_SIZES.MEDIUM,
-              }),
+          item.media_class === "audio"
+            ? null
+            : is3DClass(item.media_class)
+              ? (item.cover_image?.maybe_links?.cdn_url ??
+                item.cover_image?.maybe_cover_image_public_bucket_url ??
+                null)
+              : getMediaThumbnail(item.media_links, item.media_class, {
+                  size: THUMBNAIL_SIZES.MEDIUM,
+                }),
         thumbnailUrlTemplate:
           item.media_links?.maybe_thumbnail_template ?? undefined,
         fullImage: item.media_links?.cdn_url ?? null,
@@ -836,6 +1053,8 @@ export const GalleryModal = React.memo(
         mediaClass: item.media_class || "image",
         isUpload: !!item.is_user_upload,
         batchImageToken: item.maybe_batch_token ?? undefined,
+        promptToken: item.maybe_prompt_token ?? undefined,
+        durationMillis: item.maybe_duration_millis ?? undefined,
       }),
       [],
     );
@@ -852,6 +1071,63 @@ export const GalleryModal = React.memo(
         setLoading(true);
         if (!reset) setPaginationLoading(true);
         try {
+          if (currentFilter === "mesh" || currentFilter === "splat") {
+            // The Mesh / Splat tabs use the session by-class list endpoints
+            // (server-scoped, cursor-paginated) instead of the user list.
+            const cursor = reset
+              ? undefined
+              : byClassCursorRef.current[currentFilter];
+            const response =
+              currentFilter === "splat"
+                ? await mediaFilesApi.ListSessionSplatMediaFiles({
+                    cursor,
+                    page_size: PAGE_SIZE,
+                  })
+                : await mediaFilesApi.ListSessionMeshMediaFiles({
+                    cursor,
+                    page_size: PAGE_SIZE,
+                  });
+
+            if (response.success && response.data) {
+              setItemsLoadError(null);
+              const newItems = response.data.map(mapApiItem);
+
+              if (reset) {
+                setAllItems(newItems);
+              } else {
+                setAllItems((prev) => [...prev, ...newItems]);
+              }
+
+              const nextCursor = response.pagination?.maybe_next ?? undefined;
+              byClassCursorRef.current[currentFilter] = nextCursor;
+              const more = newItems.length >= PAGE_SIZE && !!nextCursor;
+              setPageIndex(0);
+              setHasMore(more);
+
+              const cacheKey = getCacheKey();
+              setAllItems((latest) => {
+                galleryCacheMap.set(cacheKey, {
+                  items: latest,
+                  pageIndex: 0,
+                  hasMore: more,
+                  timestamp: Date.now(),
+                  cursor: nextCursor,
+                });
+                return latest;
+              });
+            } else {
+              setItemsLoadError(
+                response.errorMessage || "Request failed (unknown error)",
+              );
+            }
+
+            setLoading(false);
+            setPaginationLoading(false);
+            setInitialLoading(false);
+            isLoadingRef.current = false;
+            return;
+          }
+
           const filterMediaClasses = getFilterMediaClass(currentFilter);
           const query = {
             filter_media_classes: filterMediaClasses,
@@ -859,9 +1135,9 @@ export const GalleryModal = React.memo(
             include_user_uploads:
               currentFilter === "uploaded" ||
               currentFilter === "all" ||
-              currentFilter === "3d" ||
               currentFilter === "image" ||
-              currentFilter === "video",
+              currentFilter === "video" ||
+              currentFilter === "audio",
             user_uploads_only: currentFilter === "uploaded",
             page_index: reset ? 0 : pageIndexRef.current,
             page_size: PAGE_SIZE,
@@ -872,7 +1148,17 @@ export const GalleryModal = React.memo(
             setItemsLoadError(null);
             const newItems = response.data
               .filter(
-                (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
+                (item: any) =>
+                  item.media_type !== FilterMediaType.SCENE_JSON &&
+                  // Drop 3D-model cover screenshots the backend surfaces as
+                  // 3D-classed items (mesh/splat, or legacy pre-split
+                  // "dimensional") whose asset is actually a .png.
+                  !(
+                    (item.media_class === "dimensional" ||
+                      item.media_class === "mesh" ||
+                      item.media_class === "splat") &&
+                    !is3DModelUrl(item.media_links?.cdn_url)
+                  ),
               )
               .map(mapApiItem);
 
@@ -951,7 +1237,7 @@ export const GalleryModal = React.memo(
         setInitialLoading(false);
         isLoadingRef.current = false;
       },
-      [api, mapApiItem, getCacheKey],
+      [api, mediaFilesApi, mapApiItem, getCacheKey],
     );
 
     // refresh logic — shows cached items immediately, then background-refreshes
@@ -966,6 +1252,7 @@ export const GalleryModal = React.memo(
         setAllItems(cached.items);
         setPageIndex(cached.pageIndex);
         setHasMore(cached.hasMore);
+        byClassCursorRef.current[activeFilterRef.current] = cached.cursor;
         setInitialLoading(false);
         // Background refresh — silently fetch page 0 and merge new items
         loadItems(true);
@@ -1206,7 +1493,10 @@ export const GalleryModal = React.memo(
           if (lastCy < r.top + EDGE) {
             dy = -Math.min(MAX_SPEED, Math.ceil((r.top + EDGE - lastCy) / 3));
           } else if (lastCy > r.bottom - EDGE) {
-            dy = Math.min(MAX_SPEED, Math.ceil((lastCy - (r.bottom - EDGE)) / 3));
+            dy = Math.min(
+              MAX_SPEED,
+              Math.ceil((lastCy - (r.bottom - EDGE)) / 3),
+            );
           }
           if (dy === 0) return;
           scroller.scrollTop += dy;
@@ -1269,6 +1559,7 @@ export const GalleryModal = React.memo(
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
         if (mode === "select" && onSelectItem) {
+          if (disabledItemIds.includes(item.id)) return;
           onSelectItem(item.id);
         } else if (bulkSelectionMode) {
           toggleBulkSelect(item.id);
@@ -1278,7 +1569,13 @@ export const GalleryModal = React.memo(
           galleryModalLightboxMediaId.value = item.id;
         }
       },
-      [mode, onSelectItem, bulkSelectionMode, toggleBulkSelect],
+      [
+        mode,
+        onSelectItem,
+        disabledItemIds,
+        bulkSelectionMode,
+        toggleBulkSelect,
+      ],
     );
 
     const handleCloseLightbox = useCallback(() => {
@@ -1298,11 +1595,21 @@ export const GalleryModal = React.memo(
     }, [selectedItemIds, onSelectItem]);
 
     const handleUseSelected = useCallback(() => {
-      const selectedItems = Object.values(groupedItems)
-        .flat()
-        .filter((item) => selectedItemIds.includes(item.id));
+      // Selected items can live in the root library (groupedItems) or inside
+      // the active folder (folderGroupedItems). Search both, deduping by id,
+      // so picks made while browsing a folder still resolve to real items.
+      const itemsById = new Map<string, GalleryItem>();
+      for (const item of [
+        ...Object.values(groupedItems).flat(),
+        ...Object.values(folderGroupedItems).flat(),
+      ]) {
+        itemsById.set(item.id, item);
+      }
+      const selectedItems = selectedItemIds
+        .map((id: string) => itemsById.get(id))
+        .filter((item): item is GalleryItem => item !== undefined);
       onUseSelected?.(selectedItems);
-    }, [groupedItems, selectedItemIds, onUseSelected]);
+    }, [groupedItems, folderGroupedItems, selectedItemIds, onUseSelected]);
 
     const handleItemDeleted = useCallback((id: string) => {
       // Drop from local state (functional setter — must stay pure).
@@ -1437,6 +1744,69 @@ export const GalleryModal = React.memo(
       [foldersApi],
     );
 
+    // Load the user's tag list for the sidebar (same paging cap as folders).
+    const loadTags = useCallback(async () => {
+      try {
+        const all: TagDetails[] = [];
+        let cursor: string | undefined = undefined;
+        for (let page = 0; page < 50; page++) {
+          const res = await tagsApi.ListTags({ cursor });
+          if (!res.success || !res.data) break;
+          all.push(...res.data);
+          const next = res.pagination?.maybe_cursor;
+          if (!next) break;
+          cursor = next;
+        }
+        setUserTags(all);
+      } catch (err) {
+        console.error("Failed to load tags:", err);
+      }
+    }, [tagsApi]);
+
+    // Resolve a tag's media one page at a time — mirrors `loadFolderMedia`.
+    const loadTagMedia = useCallback(
+      async (tagToken: string, reset = false) => {
+        if (tagLoadingRef.current[tagToken]) return;
+        if (!reset && tagHasMoreRef.current[tagToken] === false) return;
+        tagLoadingRef.current[tagToken] = true;
+        if (reset) {
+          tagCursorRef.current[tagToken] = undefined;
+          tagHasMoreRef.current[tagToken] = true;
+          setTagContentLoading(true);
+        } else {
+          setTagLoadingMore(true);
+        }
+        try {
+          const listRes = await tagsApi.ListMediaFilesWithTag({
+            tagToken,
+            cursor: reset ? undefined : tagCursorRef.current[tagToken],
+            limit: FOLDER_PAGE_SIZE,
+          });
+          if (!listRes.success || !listRes.data) return;
+          const nextCursor = listRes.pagination?.maybe_cursor ?? undefined;
+          tagCursorRef.current[tagToken] = nextCursor;
+          tagHasMoreRef.current[tagToken] = !!nextCursor;
+          const ordered = listRes.data.map(mapFolderListItem);
+          setTagMediaItems((prev) => {
+            const existing = reset ? [] : (prev[tagToken] ?? []);
+            const seen = new Set(existing.map((i) => i.id));
+            const merged = [
+              ...existing,
+              ...ordered.filter((i) => !seen.has(i.id)),
+            ];
+            return { ...prev, [tagToken]: merged };
+          });
+        } catch (err) {
+          console.error("Failed to load tag media:", err);
+        } finally {
+          tagLoadingRef.current[tagToken] = false;
+          setTagContentLoading(false);
+          setTagLoadingMore(false);
+        }
+      },
+      [tagsApi, mapFolderListItem],
+    );
+
     // `handleAddToFolder` is defined further down; reach it through a ref so the
     // earlier `handleCreateFolder` can add the just-created folder's seed items.
     const addToFolderRef = useRef<
@@ -1496,6 +1866,8 @@ export const GalleryModal = React.memo(
     const handleOpenFolder = useCallback(
       (folderId: string | null) => {
         setActiveFolderId(folderId);
+        setActiveTagToken(null);
+        setTagBrowserOpen(false);
         setRenamingFolderId(null);
         setBulkSelectedIds(new Set());
         setFolderMenuOpen(false);
@@ -1510,10 +1882,13 @@ export const GalleryModal = React.memo(
       handleOpenFolder(null);
     }, [handleOpenFolder]);
 
-    // Switch top-level tab; leaving the folder browser exits any open folder.
+    // Switch top-level tab; leaving the folder browser exits any open folder
+    // (and any open tag view).
     const switchGalleryTab = useCallback((tab: "unsorted" | "folders") => {
       setGalleryTab(tab);
       setActiveFolderId(null);
+      setActiveTagToken(null);
+      setTagBrowserOpen(false);
       setBulkSelectedIds(new Set());
       setFolderMenuOpen(false);
       setContextMenu(null);
@@ -1528,6 +1903,37 @@ export const GalleryModal = React.memo(
       },
       [handleOpenFolder],
     );
+
+    // Open a tag view from the sidebar or the tag browser: the tag's media
+    // takes over the grid on the assets tab until dismissed.
+    const handleOpenTagFromSidebar = useCallback(
+      (tagToken: string) => {
+        setGalleryTab("unsorted");
+        setActiveFolderId(null);
+        setActiveTagToken(tagToken);
+        setBulkSelectedIds(new Set());
+        setFolderMenuOpen(false);
+        setContextMenu(null);
+        loadTagMedia(tagToken, true);
+      },
+      [loadTagMedia],
+    );
+
+    // Open the all-tags word cloud (the "Tags" browser view).
+    const handleOpenTagBrowser = useCallback(() => {
+      setGalleryTab("unsorted");
+      setActiveFolderId(null);
+      setActiveTagToken(null);
+      setTagBrowserOpen(true);
+      setBulkSelectedIds(new Set());
+      setFolderMenuOpen(false);
+      setContextMenu(null);
+    }, []);
+
+    const handleCloseTagView = useCallback(() => {
+      setActiveTagToken(null);
+      setTagBrowserOpen(false);
+    }, []);
 
     // Close any open folder menus
     const closeFolderMenus = useCallback(() => {
@@ -1940,6 +2346,7 @@ export const GalleryModal = React.memo(
             : true;
       if (modalIsOpen && username) {
         loadFolders();
+        loadTags();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode, isOpen, galleryModalVisibleViewMode.value, username]);
@@ -1975,14 +2382,13 @@ export const GalleryModal = React.memo(
         if ((item as any).mediaType === "scene_json") return false;
         if (!showUploads && activeFilter !== "uploaded" && item.isUpload)
           return false;
-        if (activeFilter === "3d") return item.mediaClass === "dimensional";
+        if (activeFilter === "mesh") return item.mediaClass === "mesh";
+        if (activeFilter === "splat") return item.mediaClass === "splat";
         if (activeFilter === "image") return item.mediaClass === "image";
         if (activeFilter === "video") return item.mediaClass === "video";
+        if (activeFilter === "audio") return item.mediaClass === "audio";
         if (activeFilter === "all") {
-          return (
-            item.mediaClass !== "audio" &&
-            (item as any).mediaType !== "scene_json"
-          );
+          return (item as any).mediaType !== "scene_json";
         }
         return true;
       },
@@ -2073,7 +2479,15 @@ export const GalleryModal = React.memo(
       (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
         if (scrollHeight - scrollTop - clientHeight >= 100) return;
-        if (activeFolderId) {
+        if (activeTagToken) {
+          // Infinite-scroll the open tag's media.
+          if (
+            tagHasMoreRef.current[activeTagToken] !== false &&
+            !tagLoadingRef.current[activeTagToken]
+          ) {
+            loadTagMedia(activeTagToken, false);
+          }
+        } else if (activeFolderId) {
           // Infinite-scroll the open folder's media.
           if (
             folderHasMoreRef.current[activeFolderId] !== false &&
@@ -2089,7 +2503,14 @@ export const GalleryModal = React.memo(
           loadItems();
         }
       },
-      [activeFolderId, hasMore, loadItems, loadFolderMedia],
+      [
+        activeTagToken,
+        activeFolderId,
+        hasMore,
+        loadItems,
+        loadFolderMedia,
+        loadTagMedia,
+      ],
     );
 
     // Folder tiles for the current location, rendered on the same grid as media
@@ -2206,14 +2627,53 @@ export const GalleryModal = React.memo(
                         onClick={() => handleOpenNewFolderModal(null)}
                         className="flex items-center gap-2 rounded-lg bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-base-fg hover:bg-ui-controls/90 transition-colors relative z-[51]"
                       >
-                        <FontAwesomeIcon
-                          icon={faFolderPlus}
-                          className="text-xs"
-                        />
+                        <FolderPlusIcon className="text-xs" />
                         New folder
                       </button>
                     )}
-                  {galleryTab === "folders" && activeFolder ? (
+                  {activeTag ? (
+                    /* ── Tag view header (Tags / name) ── */
+                    <div className="flex items-center gap-1.5 relative z-[51]">
+                      <button
+                        type="button"
+                        onClick={handleOpenTagBrowser}
+                        className="text-base-fg/50 hover:text-base-fg text-sm transition-colors"
+                      >
+                        Tags
+                      </button>
+                      <span className="text-base-fg/30">/</span>
+                      <TagIcon className="text-sm text-violet-400" />
+                      <h2 className="text-lg font-semibold truncate max-w-[16rem]">
+                        {activeTag.tag_value}
+                      </h2>
+                      <span className="text-base-fg/40 text-sm">
+                        {activeTag.use_count} file
+                        {activeTag.use_count === 1 ? "" : "s"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCloseTagView}
+                        aria-label="Close tag view"
+                        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                      >
+                        <XIcon className="text-sm" />
+                      </button>
+                    </div>
+                  ) : tagBrowserOpen ? (
+                    /* ── All-tags browser header ── */
+                    <div className="flex items-center gap-2 relative z-[51]">
+                      <TagIcon className="text-sm text-violet-400" />
+                      <h2 className="text-lg font-semibold">Tags</h2>
+                      <button
+                        type="button"
+                        onClick={handleCloseTagView}
+                        aria-label="Close tags"
+                        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                      >
+                        <XIcon className="text-sm" />
+                      </button>
+                    </div>
+                  ) : galleryTab === "folders" && activeFolder ? (
                     /* ── Folder header (breadcrumb trail) ── */
                     <div className="flex items-center gap-1.5 relative z-[51] flex-wrap">
                       <button
@@ -2274,10 +2734,7 @@ export const GalleryModal = React.memo(
                           onClick={() => setFolderMenuOpen((v) => !v)}
                           className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                         >
-                          <FontAwesomeIcon
-                            icon={faEllipsis}
-                            className="text-sm"
-                          />
+                          <EllipsisIcon className="text-sm" />
                         </button>
                         {folderMenuOpen && (
                           <>
@@ -2312,19 +2769,25 @@ export const GalleryModal = React.memo(
                             ? maxSelections === 1
                               ? "Select Video"
                               : "Select Videos"
-                            : activeFilter === "3d"
-                              ? maxSelections === 1
-                                ? "Select 3D Object"
-                                : "Select 3D Objects"
-                              : activeFilter === "uploaded"
+                            : activeFilter === "audio"
+                              ? "Select Audio"
+                              : activeFilter === "mesh"
                                 ? maxSelections === 1
-                                  ? "Select Upload"
-                                  : "Select Uploads"
-                                : activeFilter === "all"
-                                  ? "Select Media"
-                                  : maxSelections === 1
-                                    ? "Select Image"
-                                    : "Select Images"}
+                                  ? "Select 3D Object"
+                                  : "Select 3D Objects"
+                                : activeFilter === "splat"
+                                  ? maxSelections === 1
+                                    ? "Select 3D World"
+                                    : "Select 3D Worlds"
+                                  : activeFilter === "uploaded"
+                                    ? maxSelections === 1
+                                      ? "Select Upload"
+                                      : "Select Uploads"
+                                    : activeFilter === "all"
+                                      ? "Select Media"
+                                      : maxSelections === 1
+                                        ? "Select Image"
+                                        : "Select Images"}
                         </h2>
                       )}
                       {mode === "view" && galleryTab === "unsorted" && (
@@ -2342,16 +2805,19 @@ export const GalleryModal = React.memo(
                       )}
                     </>
                   )}
-                  {galleryTab === "unsorted" && activeFilter !== "uploaded" && (
-                    <div className="relative z-[51] flex items-center">
-                      <Checkbox
-                        id="gallery-show-uploads"
-                        checked={showUploads}
-                        onChange={(e) => setShowUploads(e.target.checked)}
-                        label="Show uploads"
-                      />
-                    </div>
-                  )}
+                  {galleryTab === "unsorted" &&
+                    !activeTagToken &&
+                    !tagBrowserOpen &&
+                    activeFilter !== "uploaded" && (
+                      <div className="relative z-[51] flex items-center">
+                        <Checkbox
+                          id="gallery-show-uploads"
+                          checked={showUploads}
+                          onChange={(e) => setShowUploads(e.target.checked)}
+                          label="Show uploads"
+                        />
+                      </div>
+                    )}
                 </div>
                 <div className="flex justify-end gap-2 items-center flex-wrap ml-auto">
                   {/* Refresh button */}
@@ -2363,12 +2829,11 @@ export const GalleryModal = React.memo(
                     <Button
                       variant="action"
                       onClick={refreshGallery}
-                      className="relative z-[51] h-9 w-9"
+                      className="relative z-[51] h-9 w-9 p-2.5"
                       disabled={loading}
                       aria-label="Refresh list"
                     >
-                      <FontAwesomeIcon
-                        icon={faArrowsRotate}
+                      <RefreshCwIcon
                         className={`text-lg text-base-fg ${loading ? "animate-spin" : ""}`}
                       />
                     </Button>
@@ -2386,10 +2851,12 @@ export const GalleryModal = React.memo(
                           fit === "cover" ? "contain" : "cover",
                         )
                       }
-                      className="relative z-[51] h-9 w-9"
+                      className="relative z-[51] h-9 w-9 p-2.5"
                     >
-                      <FontAwesomeIcon
-                        icon={imageFit === "cover" ? faExpand : faCompress}
+                      <DynamicIcon
+                        icon={
+                          imageFit === "cover" ? MaximizeIcon : MinimizeIcon
+                        }
                         className="text-lg text-base-fg"
                       />
                     </Button>
@@ -2450,7 +2917,10 @@ export const GalleryModal = React.memo(
                           }}
                           className={twMerge(
                             "flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-                            isActive && !activeFolderId
+                            isActive &&
+                              !activeFolderId &&
+                              !activeTagToken &&
+                              !tagBrowserOpen
                               ? "bg-ui-controls/60 text-base-fg font-medium"
                               : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
                             forceFilter &&
@@ -2459,7 +2929,7 @@ export const GalleryModal = React.memo(
                           )}
                         >
                           <div className="flex items-center gap-2.5">
-                            <FontAwesomeIcon
+                            <DynamicIcon
                               icon={f.icon}
                               className="text-xs w-4"
                             />
@@ -2481,7 +2951,7 @@ export const GalleryModal = React.memo(
                         aria-label="New folder"
                         className="flex h-5 w-5 items-center justify-center rounded text-base-fg/50 hover:bg-ui-controls/60 hover:text-base-fg transition-colors"
                       >
-                        <FontAwesomeIcon icon={faPlus} className="text-[10px]" />
+                        <PlusIcon className="text-[10px]" />
                       </button>
                     )}
                   </div>
@@ -2518,8 +2988,7 @@ export const GalleryModal = React.memo(
                               : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faFolder}
+                          <FolderIcon
                             className={twMerge(
                               "text-xs w-4",
                               !folder.colorCode && "text-primary",
@@ -2532,13 +3001,60 @@ export const GalleryModal = React.memo(
                           />
                           <span className="truncate">{folder.name}</span>
                           {folder.hasStar && (
-                            <FontAwesomeIcon
-                              icon={faStar}
-                              className="ml-auto text-[10px] text-amber-400"
-                            />
+                            <StarIcon className="ml-auto text-[10px] text-amber-400" />
                           )}
                         </button>
                       ))
+                    )}
+
+                    {/* Tags — most-used first, capped until "Show all". Hidden
+                        entirely until the user has tags (they're created from
+                        the item view's Tags section). */}
+                    {userTags.length > 0 && (
+                      <>
+                        <div className="flex items-center justify-between px-1.5 pt-3 pb-1 flex-shrink-0">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-base-fg/40">
+                            Tags
+                          </span>
+                        </div>
+                        {sidebarTags.map((tag) => (
+                          <button
+                            key={tag.tag_token}
+                            type="button"
+                            onClick={() =>
+                              handleOpenTagFromSidebar(tag.tag_token)
+                            }
+                            className={twMerge(
+                              "flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                              activeTagToken === tag.tag_token
+                                ? "bg-ui-controls/60 text-base-fg font-medium"
+                                : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
+                            )}
+                          >
+                            <TagIcon className="text-xs w-4 text-violet-400" />
+                            <span className="truncate">{tag.tag_value}</span>
+                            <span className="ml-auto text-[10px] text-base-fg/40">
+                              {tag.use_count}
+                            </span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={handleOpenTagBrowser}
+                          className={twMerge(
+                            "flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                            tagBrowserOpen && !activeTagToken
+                              ? "bg-ui-controls/60 text-base-fg font-medium"
+                              : "text-base-fg/50 hover:bg-ui-controls/30 hover:text-base-fg",
+                          )}
+                        >
+                          <EllipsisIcon className="text-xs w-4" />
+                          <span>All tags</span>
+                          <span className="ml-auto text-[10px] text-base-fg/40">
+                            {sortedTags.length}
+                          </span>
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -2555,15 +3071,128 @@ export const GalleryModal = React.memo(
               >
                 {/* Subfolder tiles for the current location (root or open folder) */}
                 {folderChipsSection}
-                {galleryTab === "folders" && !activeFolderId ? (
+                {activeTagToken ? (
+                  /* ── Tag view ── */
+                  tagContentLoading && activeTagItems.length === 0 ? (
+                    <div className="flex h-full items-center justify-center">
+                      <LoadingSpinner className="h-8 w-8" />
+                    </div>
+                  ) : activeTagItems.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-400/10">
+                        <TagIcon className="text-violet-400 text-2xl" />
+                      </div>
+                      <div className="text-base-fg font-semibold">
+                        No files carry this tag
+                      </div>
+                      <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
+                        Add tags to media from the item view's Tags section.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 p-4">
+                      {Object.entries(tagGroupedItems).map(
+                        ([date, dateItems], groupIndex) => {
+                          const filteredItems = dateItems.filter(filterItem);
+                          if (filteredItems.length === 0) return null;
+                          return (
+                            <LazyDateGroup
+                              key={date}
+                              eager={groupIndex < 2}
+                              itemCount={filteredItems.length}
+                              gridColumns={gridColumns}
+                              scrollRoot={scrollContainerRef.current}
+                            >
+                              <h3 className="text-md mb-2 font-medium text-base-fg/60">
+                                {date}
+                              </h3>
+                              <div
+                                className={twMerge("grid", gapClass)}
+                                style={{
+                                  gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+                                }}
+                              >
+                                {filteredItems.map((item) => (
+                                  <GalleryDraggableItem
+                                    key={item.id}
+                                    item={item}
+                                    mode={mode}
+                                    activeFilter={activeFilter}
+                                    audioPromptText={audioPromptTextFor(item)}
+                                    selected={selectedItemIds.includes(item.id)}
+                                    disabled={
+                                      mode === "select" &&
+                                      disabledItemIds.includes(item.id)
+                                    }
+                                    onClick={() => handleItemClick(item)}
+                                    onImageError={(e) => {
+                                      e.currentTarget.src =
+                                        PLACEHOLDER_IMAGES.DEFAULT;
+                                      e.currentTarget.style.opacity = "0.3";
+                                      (
+                                        e.currentTarget as HTMLImageElement
+                                      ).dataset.brokenurl =
+                                        item.thumbnail || "";
+                                      handleImageError(item.thumbnail!);
+                                    }}
+                                    disableTooltipAndBadge={mode === "select"}
+                                    imageFit={imageFit}
+                                    onDeleted={handleItemDeleted}
+                                    onDelete={onDeleteMedia}
+                                    onEditClicked={onEditClicked}
+                                    maxSelections={maxSelections}
+                                    bulkSelected={bulkSelectedIds.has(item.id)}
+                                    onBulkSelectToggle={() =>
+                                      toggleBulkSelect(item.id)
+                                    }
+                                    bulkSelectionMode={bulkSelectionMode}
+                                    getBulkDragItems={getBulkDragItems}
+                                    folders={folders}
+                                    onAddToFolder={requestFolderDrop}
+                                    onCreateFolderFromMenu={
+                                      handleOpenNewFolderModal
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            </LazyDateGroup>
+                          );
+                        },
+                      )}
+                      {tagLoadingMore && (
+                        <div className="flex justify-center py-4">
+                          <LoadingSpinner className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                ) : tagBrowserOpen ? (
+                  /* ── All-tags word cloud ── */
+                  userTags.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-400/10">
+                        <TagIcon className="text-violet-400 text-2xl" />
+                      </div>
+                      <div className="text-base-fg font-semibold">
+                        No tags yet
+                      </div>
+                      <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
+                        Open any item and add tags in its details panel —
+                        they'll show up here.
+                      </div>
+                    </div>
+                  ) : (
+                    <TagCloudView
+                      tags={sortedTags}
+                      onOpen={handleOpenTagFromSidebar}
+                    />
+                  )
+                ) : galleryTab === "folders" && !activeFolderId ? (
                   /* ── Folders tab, root: folder cards only (above) ── */
                   currentSubfolders.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3">
                       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                        <FontAwesomeIcon
-                          icon={faFolder}
-                          className="text-primary text-2xl"
-                        />
+                        <FolderIcon className="text-primary text-2xl" />
                       </div>
                       <div className="text-base-fg font-semibold">
                         No folders yet
@@ -2574,7 +3203,7 @@ export const GalleryModal = React.memo(
                       {mode === "view" && (
                         <Button
                           variant="action"
-                          icon={faFolderPlus}
+                          icon={FolderPlusIcon}
                           onClick={() => handleOpenNewFolderModal(null)}
                           className="mt-1 px-3 py-1.5 text-sm"
                         >
@@ -2595,10 +3224,7 @@ export const GalleryModal = React.memo(
                     currentSubfolders.length > 0 ? null : (
                       <div className="flex h-full flex-col items-center justify-center gap-3">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                          <FontAwesomeIcon
-                            icon={faFolder}
-                            className="text-primary text-2xl"
-                          />
+                          <FolderIcon className="text-primary text-2xl" />
                         </div>
                         <div className="text-base-fg font-semibold">
                           This folder is empty
@@ -2611,7 +3237,7 @@ export const GalleryModal = React.memo(
                         {mode === "view" && (
                           <Button
                             variant="action"
-                            icon={faFolderPlus}
+                            icon={FolderPlusIcon}
                             onClick={() =>
                               handleOpenNewFolderModal(activeFolderId)
                             }
@@ -2651,7 +3277,12 @@ export const GalleryModal = React.memo(
                                     item={item}
                                     mode={mode}
                                     activeFilter={activeFilter}
+                                    audioPromptText={audioPromptTextFor(item)}
                                     selected={selectedItemIds.includes(item.id)}
+                                    disabled={
+                                      mode === "select" &&
+                                      disabledItemIds.includes(item.id)
+                                    }
                                     onClick={() => handleItemClick(item)}
                                     onImageError={(e) => {
                                       e.currentTarget.src =
@@ -2795,9 +3426,14 @@ export const GalleryModal = React.memo(
                                       item={item}
                                       mode={mode}
                                       activeFilter={activeFilter}
+                                      audioPromptText={audioPromptTextFor(item)}
                                       selected={selectedItemIds.includes(
                                         item.id,
                                       )}
+                                      disabled={
+                                        mode === "select" &&
+                                        disabledItemIds.includes(item.id)
+                                      }
                                       onClick={() => handleItemClick(item)}
                                       onImageError={(e) => {
                                         e.currentTarget.src =
@@ -2894,10 +3530,14 @@ export const GalleryModal = React.memo(
                     {bulkSelectedItems.slice(0, 4).map((si) => {
                       const placeholderIcon =
                         si.mediaClass === "video"
-                          ? faVideo
-                          : si.mediaClass === "dimensional"
-                            ? faCube
-                            : faImage;
+                          ? VideoIcon
+                          : si.mediaClass === "audio"
+                            ? MusicIcon
+                            : si.mediaClass === "dimensional" ||
+                                si.mediaClass === "mesh" ||
+                                si.mediaClass === "splat"
+                              ? BoxIcon
+                              : ImageIcon;
                       return (
                         <BulkThumb
                           key={si.id}
@@ -2925,7 +3565,7 @@ export const GalleryModal = React.memo(
                       variant="action"
                       onClick={() => setBulkFolderPopoverOpen((v) => !v)}
                       className="px-3 bg-ui-controls/60 hover:bg-ui-controls/90"
-                      icon={faFolderPlus}
+                      icon={FolderPlusIcon}
                     >
                       Add to folder
                     </Button>
@@ -2946,7 +3586,9 @@ export const GalleryModal = React.memo(
                               No folders yet
                             </div>
                           ) : (
-                            folders.map((folder) => (
+                            // Same ordering as the folder chips: starred
+                            // first, then alphabetical.
+                            [...folders].sort(compareFolders).map((folder) => (
                               <button
                                 key={folder.id}
                                 type="button"
@@ -2957,10 +3599,7 @@ export const GalleryModal = React.memo(
                                   setBulkFolderPopoverOpen(false);
                                 }}
                               >
-                                <FontAwesomeIcon
-                                  icon={faFolder}
-                                  className="text-primary text-xs"
-                                />
+                                <FolderIcon className="text-primary text-xs" />
                                 <span className="truncate">{folder.name}</span>
                               </button>
                             ))
@@ -2975,10 +3614,7 @@ export const GalleryModal = React.memo(
                               handleOpenNewFolderModal(undefined, ids);
                             }}
                           >
-                            <FontAwesomeIcon
-                              icon={faPlus}
-                              className="text-xs w-4"
-                            />
+                            <PlusIcon className="text-xs w-4" />
                             <span>Create new folder</span>
                           </button>
                         </div>
@@ -2990,7 +3626,7 @@ export const GalleryModal = React.memo(
                       variant="destructive"
                       onClick={handleBulkDelete}
                       className="px-3"
-                      icon={faTrashCan}
+                      icon={Trash2Icon}
                     >
                       Delete
                     </Button>
@@ -3000,7 +3636,7 @@ export const GalleryModal = React.memo(
                     className="flex h-8 w-8 items-center justify-center rounded-md bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg transition-colors"
                     aria-label="Clear selection"
                   >
-                    <FontAwesomeIcon icon={faXmark} className="text-base" />
+                    <XIcon className="text-base" />
                   </button>
                 </div>
               </div>

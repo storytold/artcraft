@@ -1,24 +1,15 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faCube,
-  faImage,
-  faLink,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ImageIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
-  getModelCreatorIconPath,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
@@ -128,7 +119,10 @@ export const GalleryCard = memo(function GalleryCard({
   const [isRecreating, setIsRecreating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D =
+    item.mediaClass === "dimensional" ||
+    item.mediaClass === "mesh" ||
+    item.mediaClass === "splat";
   const recreateMediaClass: RecreateMediaClass | null = isVideo
     ? "video"
     : is3D
@@ -191,21 +185,11 @@ export const GalleryCard = memo(function GalleryCard({
     ? getModelDisplayName(item.modelId)
     : null;
   const modelIconPath = item.modelId
-    ? getModelCreatorIconPath(item.modelId)
+    ? getCreatorIconPathForModelId(item.modelId)
     : null;
 
-  const mediaIcon =
-    item.mediaClass === "video"
-      ? faVideo
-      : item.mediaClass === "dimensional"
-        ? faCube
-        : faImage;
-  const mediaLabel =
-    item.mediaClass === "video"
-      ? "Video"
-      : item.mediaClass === "dimensional"
-        ? "3D"
-        : "Image";
+  const mediaIcon = item.mediaClass === "video" ? VideoIcon : is3D ? BoxIcon : ImageIcon;
+  const mediaLabel = item.mediaClass === "video" ? "Video" : is3D ? "3D" : "Image";
 
   const handleLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -333,10 +317,9 @@ export const GalleryCard = memo(function GalleryCard({
         {retrying ? (
           <>
             <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-              <FontAwesomeIcon
-                icon={faSpinnerThird}
-                className="animate-spin text-lg text-white/30"
-              />
+              <LoaderCircleIcon
+                
+                className="animate-spin text-lg text-white/30" />
               <span className="text-[10px] text-white/30">
                 Loading thumbnail…
               </span>
@@ -364,7 +347,7 @@ export const GalleryCard = memo(function GalleryCard({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <FontAwesomeIcon icon={mediaIcon} className="text-xl text-white/20" />
+            <DynamicIcon icon={mediaIcon} className="text-xl text-white/20" />
           </div>
         )}
       </div>
@@ -373,7 +356,7 @@ export const GalleryCard = memo(function GalleryCard({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
           <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
-            <FontAwesomeIcon icon={mediaIcon} className="text-[10px]" />
+            <DynamicIcon icon={mediaIcon} className="text-[10px]" />
             {mediaLabel}
           </div>
           {modelDisplayName && modelIconPath && (
@@ -398,8 +381,8 @@ export const GalleryCard = memo(function GalleryCard({
                 disabled={isRecreating}
                 aria-label="Recreate"
               >
-                <FontAwesomeIcon
-                  icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+                <DynamicIcon
+                  icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
                   className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
                 />
               </button>
@@ -413,7 +396,7 @@ export const GalleryCard = memo(function GalleryCard({
                 onClick={handleMakeVideo}
                 aria-label="Make Video"
               >
-                <FontAwesomeIcon icon={faVideo} className="text-sm" />
+                <VideoIcon  className="text-sm" />
               </button>
             </Tooltip>
           )}
@@ -424,8 +407,8 @@ export const GalleryCard = memo(function GalleryCard({
               onClick={handleShare}
               aria-label="Share"
             >
-              <FontAwesomeIcon
-                icon={shareCopied ? faCheck : faLink}
+              <DynamicIcon
+                icon={shareCopied ? CheckIcon : LinkIcon}
                 className="text-sm"
               />
             </button>
@@ -439,8 +422,8 @@ export const GalleryCard = memo(function GalleryCard({
                 className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
                 aria-label="Download"
               >
-                <FontAwesomeIcon
-                  icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+                <DynamicIcon
+                  icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
                   className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
                 />
               </button>

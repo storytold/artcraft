@@ -60,6 +60,7 @@ import { AppsIndexPage } from "./PageApps/AppsIndexPage";
 import PageDraw from "./PageDraw/PageDraw";
 import TextToImage from "./PageImage/TextToImage";
 import ImageToVideo from "./PageVideo/ImageToVideo";
+import CreateAudio from "./PageAudio/CreateAudio";
 import { VideoFrameExtractor } from "./PageVideoFrameExtractor";
 import { VideoWatermarkRemover } from "./PageVideoWatermarkRemover";
 import { ImageWatermarkRemover } from "./PageImageWatermarkRemover";
@@ -245,6 +246,12 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
       return (
         <div>
           <ImageToVideo />
+        </div>
+      );
+    case "AUDIO":
+      return (
+        <div>
+          <CreateAudio />
         </div>
       );
     case "VIDEO_FRAME_EXTRACTOR":

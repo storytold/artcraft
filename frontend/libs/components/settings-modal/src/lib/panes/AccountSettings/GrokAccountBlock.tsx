@@ -1,8 +1,7 @@
 import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { GrokGetCredentialInfo, GrokGetCredentialInfoSuccess } from "@storyteller/tauri-api";
@@ -74,10 +73,9 @@ export const GrokAccountBlock = () => {
         disabled={isCheckingGrokSession}
       >
         {isCheckingGrokSession ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-sm"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-sm" />
         ) : grokSession?.payload?.can_clear_state ? (
           "Disconnect"
         ) : (

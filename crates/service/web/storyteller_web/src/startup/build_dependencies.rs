@@ -14,7 +14,7 @@ use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
-use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use crate::http_server::web_utils::web_opaque_cursor_encoder_v2::WebOpaqueCursorEncoderV2;
 use pager::worker::pager_worker::PagerWorker;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -34,6 +34,8 @@ use crate::startup::setup_bans::{
   load_static_container_ip_bans, load_troll_user_token_bans,
 };
 use crate::startup::setup_inference_providers::setup_inference_providers;
+use crate::startup::setup_internal_api_keys::setup_internal_api_keys;
+use crate::startup::setup_dashboards::setup_dashboards;
 use crate::startup::setup_seedance_video_bucket::setup_seedance_video_bucket;
 use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
 use crate::startup::setup_stripe_artcraft::setup_stripe_artcraft;
@@ -46,7 +48,7 @@ use crate::state::server_state::{
   ServerState, TrollBans,
 };
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -147,16 +149,8 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     easyenv::get_env_duration_seconds_or_default("DATABASE_TTS_CATEGORY_LIST_CACHE_TTL_SECONDS", Duration::from_secs(60))
   );
 
-  let tts_queue_length_cache = SingleItemTtlCache::create_with_duration(
-    easyenv::get_env_duration_seconds_or_default("TTS_QUEUE_LENGTH_CACHE_TTL_SECONDS", Duration::from_secs(30))
-  );
-
   let tts_model_category_assignments_cache = SingleItemTtlCache::create_with_duration(
     easyenv::get_env_duration_seconds_or_default("TTS_MODEL_CATEGORY_ASSIGNMENTS_CACHE_TTL_SECONDS", Duration::from_secs(60))
-  );
-
-  let leaderboard_cache = SingleItemTtlCache::create_with_duration(
-    easyenv::get_env_duration_seconds_or_default("LEADERBOARD_CACHE_TTL_SECONDS", Duration::from_secs(60))
   );
 
   let inference_queue_length_cache = SingleItemTtlCache::create_with_duration(
@@ -164,8 +158,8 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   );
 
   let sort_key_crypto_secret = easyenv::get_env_string_or_default("SORT_KEY_SECRET", "webscale");
-  let sort_key_crypto = SortKeyCrypto::new(&sort_key_crypto_secret);
-  let opaque_cursor_encoder = OpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
+  let sort_key_crypto = WebSortKeyCrypto::new(&sort_key_crypto_secret);
+  let opaque_cursor_encoder = WebOpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
 
   let health_check_interval = easyenv::get_env_duration_seconds_or_default(
     "HEALTH_CHECK_INTERVAL_SECS", Duration::from_secs(3));
@@ -221,6 +215,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     hostname: server_hostname.to_string(),
     startup_time,
     server_environment,
+    maybe_media_cdn_override_url: None, // NB: This is a test escape hatch
     flags: service_feature_flags,
     third_party_url_redirector,
     health_check_status,
@@ -242,6 +237,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     sort_key_crypto,
     opaque_cursors: opaque_cursor_encoder,
     static_api_token_set,
+    internal_api_keys: setup_internal_api_keys(),
     inference_providers,
     resend: ResendData {
       api_key: resend_api_key,
@@ -253,19 +249,9 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
       },
       ephemeral: EphemeralInMemoryCaches {
         tts_model_list: voice_list_cache,
-        voice_conversion_model_list: SingleItemTtlCache::create_with_duration(
-          easyenv::get_env_duration_seconds_or_default(
-            "VOICE_CONVERSION_MODEL_LIST_CACHE_TTL_SECONDS",
-            Duration::from_secs(60))),
         database_tts_category_list: database_tts_category_list_cache,
-        tts_queue_length: tts_queue_length_cache,
         tts_model_category_assignments: tts_model_category_assignments_cache,
-        leaderboard: leaderboard_cache,
         inference_queue_length: inference_queue_length_cache,
-        queue_stats: SingleItemTtlCache::create_with_duration(
-          easyenv::get_env_duration_seconds_or_default(
-            "QUEUE_STATS_CACHE_TTL_SECONDS",
-            Duration::from_secs(60))),
         featured_media_files_sieve: ArcTtlSieve::with_capacity_and_ttl_duration(
           easyenv::get_env_num("FEATURED_MEDIA_FILES_CACHE_SIZE", 25)?,
           easyenv::get_env_duration_seconds_or_default("FEATURED_MEDIA_FILES_TTL_SECONDS", Duration::from_secs(60)),
@@ -280,6 +266,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     },
     temp_dir_creator: ScopedTempDirCreator::auto_setup(),
     google_sign_in_cert: GoogleSignInCert::new(),
+    dashboards: setup_dashboards(),
   };
 
   Ok(SetupResult {

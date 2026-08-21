@@ -1,11 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCubes,
-  faLayerGroup,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxesIcon, LayersIcon, XIcon } from "lucide-react";
 import { SceneSplashCard } from "./splash/SceneSplashCard";
 import { EXAMPLE_SCENES } from "./splash/example-scenes";
 
@@ -70,7 +65,7 @@ function CollapsedPill({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="flex items-center gap-2.5 rounded-full border border-primary/40 bg-gradient-to-r from-primary/90 to-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:from-primary hover:to-primary animate-in fade-in slide-in-from-bottom-2 duration-300"
     >
-      <FontAwesomeIcon icon={faCubes} className="h-3.5 w-3.5" />
+      <BoxesIcon  className="h-3.5 w-3.5" />
       <span>See other demo scenes</span>
     </button>
   );
@@ -87,10 +82,9 @@ function ExpandedPanel({ scenes, onClose, onPick }: ExpandedPanelProps) {
     <div className="glass w-[860px] max-w-[90vw] overflow-hidden rounded-xl border border-ui-controls-border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="flex items-center justify-between border-b border-ui-controls-border/60 px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <FontAwesomeIcon
-            icon={faLayerGroup}
-            className="h-3 w-3 text-primary"
-          />
+          <LayersIcon
+            
+            className="h-3 w-3 text-primary" />
           <div className="text-xs font-semibold uppercase tracking-wider text-base-fg">
             Other demo scenes
           </div>
@@ -101,7 +95,7 @@ function ExpandedPanel({ scenes, onClose, onPick }: ExpandedPanelProps) {
           aria-label="Close other scenes"
           className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
         >
-          <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+          <XIcon  className="h-4 w-4" />
         </button>
       </div>
       <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3">

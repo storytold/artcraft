@@ -1,4 +1,9 @@
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import {
   useClassyModelSelectorStore,
   useSelectedProviderForModel,
@@ -7,9 +12,12 @@ import { useEffect, useMemo } from "react";
 import { ModelPage } from "./model-pages";
 import { Provider } from "@storyteller/tauri-api";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
-import { Model } from "@storyteller/model-list";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleCheck, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
+import {
+  Model,
+  getCreatorIcon,
+  getModelFamilyName,
+} from "@storyteller/model-list";
+import { ChevronUpIcon, CircleCheckIcon } from "lucide-react";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { defaultModelForPage } from "./defaultModelForPage";
@@ -44,7 +52,14 @@ interface ClassyModelSelectorProps {
   showProviderSelection?: boolean;
 }
 
-const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
+// Model instances are rebuilt when the backend listing hydrates, so compare by
+// tauriId rather than object identity.
+const isSameModel = (a: Model | undefined, b: Model | undefined): boolean =>
+  a !== undefined && b !== undefined && a.tauriId === b.tauriId;
+
+const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [
+  GenerationProvider.Artcraft,
+];
 
 function ProviderTooltipContent({
   page,
@@ -104,7 +119,7 @@ function ProviderTooltipContent({
             </span>
             {selectedProvider === p && (
               <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center">
-                <FontAwesomeIcon icon={faCircleCheck} />
+                <CircleCheckIcon />
               </span>
             )}
           </button>
@@ -127,9 +142,10 @@ export function ClassyModelSelector({
   const { selectedModels, setSelectedModel, setSelectedProvider } =
     useClassyModelSelectorStore();
   const itemModels: Model[] = items
-    .map(item => item.model)
-    .filter(model => model !== undefined);
-  const selectedModel = selectedModels[page] || defaultModelForPage(itemModels, page);
+    .map((item) => item.model)
+    .filter((model) => model !== undefined);
+  const selectedModel =
+    selectedModels[page] || defaultModelForPage(itemModels, page);
   const selectedProvider = useSelectedProviderForModel(page, selectedModel?.id);
   const selectedProvidersByModel = useClassyModelSelectorStore(
     (s) => s.selectedProviders[page] ?? {},
@@ -142,6 +158,20 @@ export function ClassyModelSelector({
       setSelectedModel(page, defaultModelForPage(itemModels, page));
     }
   }, []);
+
+  // The backend listing hydrates asynchronously and rebuilds the model
+  // instances with API capabilities. Swap a stale selected instance for the
+  // fresh one so capability-driven UI (keyframes, references, pickers)
+  // reflects the API data without needing a manual re-select.
+  useEffect(() => {
+    const selected = selectedModels[page];
+    if (!selected) return;
+    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
+    if (fresh !== undefined && fresh !== selected) {
+      setSelectedModel(page, fresh);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, selectedModels, page]);
 
   // Initialize a default provider for each model so we can render icons even when not selected
   useEffect(() => {
@@ -166,7 +196,8 @@ export function ClassyModelSelector({
     () =>
       items.map((item) => {
         const modelId = item.model?.id;
-        const allowedProviders = item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
+        const allowedProviders =
+          item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
 
         // When provider selection is hidden, treat every model as
         // single-provider so the submenu and provider chips never render.
@@ -175,7 +206,7 @@ export function ClassyModelSelector({
 
         return {
           ...item,
-          selected: item.model === selectedModel,
+          selected: isSameModel(item.model as Model | undefined, selectedModel),
           hoverTooltip: hasMultipleProviders
             ? (close: () => void) => (
                 <ProviderTooltipContent
@@ -190,7 +221,8 @@ export function ClassyModelSelector({
             : undefined,
           tooltipDelayMs: providerTooltipDelayMs,
           trailing:
-            item.model !== selectedModel && hasMultipleProviders
+            !isSameModel(item.model as Model | undefined, selectedModel) &&
+            hasMultipleProviders
               ? (() => {
                   const prov = modelId
                     ? selectedProvidersByModel[modelId]
@@ -206,7 +238,7 @@ export function ClassyModelSelector({
                 })()
               : undefined,
           selectedRight:
-            item.model === selectedModel &&
+            isSameModel(item.model as Model | undefined, selectedModel) &&
             selectedProvider &&
             hasMultipleProviders ? (
               <div className="mr-1 rounded-md p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
@@ -229,17 +261,35 @@ export function ClassyModelSelector({
     ],
   );
 
+  // Fold the (decorated) flat list into family submenus when the user prefers
+  // the grouped picker. Only the embedded richList variant renders groups; the
+  // floating hoverSelect list stays flat.
+  const pickerStyle = useModelPickerStyleStore((s) => s.style);
+  const embeddedList = useMemo(
+    () =>
+      pickerStyle === "grouped"
+        ? groupModelItems(modelList, (i) =>
+            getModelFamilyName(i.model?.id, i.model?.creator),
+          )
+        : modelList,
+    [modelList, pickerStyle],
+  );
+
   if (variant === "embedded") {
-    const selectedIcon = modelList.find((i) => i.selected)?.icon;
+    // The trigger pill keeps the mono icon; the color variants are only for
+    // list rows.
+    const selectedIcon = selectedModel
+      ? getCreatorIcon(selectedModel.creator)
+      : modelList.find((i) => i.selected)?.icon;
     return (
       <Tooltip content="Model" position="top" className="z-50" closeOnClick>
         <PopoverMenu
-          items={modelList}
+          items={embeddedList}
           onSelect={handleModelSelect}
           mode="toggle"
           richList
           panelTitle="Select Model"
-          panelClassName="w-[360px]"
+          panelClassName="w-[280px]"
           maxListHeight={maxListHeight}
           buttonClassName="max-w-48"
           triggerIcon={
@@ -265,7 +315,8 @@ export function ClassyModelSelector({
         {...popoverProps}
         buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {
-          const modelTitle = selectedItem?.label ?? "";
+          const modelTitle =
+            selectedItem?.label ?? selectedModel?.selectorName ?? "";
           const providerIcon = selectedProvider
             ? getProviderIcon(selectedProvider)
             : null;
@@ -289,10 +340,9 @@ export function ClassyModelSelector({
                   </span>
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faChevronUp}
-                className="text-base text-base-fg/70 self-center"
-              />
+              <ChevronUpIcon
+                
+                className="text-base text-base-fg/70 self-center" />
             </div>
           );
         }}

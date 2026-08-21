@@ -314,7 +314,7 @@ export function JobInfo() {
                 {job.maybe_debug_log_event_token && (
                   <Button variant="default" size="sm" asChild>
                     <Link
-                      to={`/moderation/debug-logs/${encodeURIComponent(
+                      to={`/debug_logs/${encodeURIComponent(
                         job.maybe_debug_log_event_token,
                       )}`}
                     >

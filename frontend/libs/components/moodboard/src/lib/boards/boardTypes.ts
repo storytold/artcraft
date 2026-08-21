@@ -82,6 +82,19 @@ export interface Board {
   itemOrder: string[];
   items: Record<string, BoardItem>;
   sections: BoardSection[];
+  // Server-side project token (media_file_token of the mood_board document),
+  // set by the first successful remote save. Absent/null for local-only
+  // boards and for library payloads persisted before remote sync existed.
+  remoteToken?: string | null;
+  // User id of the account this board syncs to, stamped at hydration/first
+  // push. localStorage is machine-shared, so the sync layer refuses to push
+  // a board owned by a different account (cross-account write protection).
+  // Absent/null = unowned local board, adoptable by whoever pushes it first.
+  ownerId?: string | null;
+  // Durable dirty flag: true when local edits haven't reached the server
+  // yet. Persisted so a closed tab resumes its pending push next session,
+  // and so hydration knows local content is newer than the server copy.
+  needsSync?: boolean;
 }
 
 // Nominal aspect ratios for non-media items, so masonry stays deterministic.

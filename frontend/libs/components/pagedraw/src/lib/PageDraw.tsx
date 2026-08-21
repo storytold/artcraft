@@ -23,7 +23,7 @@ import { ContextMenuContainer } from "./components/ui/ContextMenu";
 import InpaintToolBar from "./components/ui/InpaintToolBar";
 import { ImageModel } from "@storyteller/model-list";
 import {
-  CANVAS_2D_PAGE_MODEL_LIST,
+  useCanvas2dPageModelList,
   ClassyModelSelector,
   ModelPage,
   useSelectedImageModel,
@@ -48,12 +48,7 @@ import {
   Model3DOverlay,
   type Model3DOverlayHandle,
 } from "./components/Model3DOverlay";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUpRightAndDownLeftFromCenter,
-  faArrowsRotate,
-  faCamera,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
@@ -237,17 +232,17 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
       style={{ left: cx, top: cy }}
     >
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} />}
+        icon={<Maximize2Icon />}
         title="Scale — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
       />
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faArrowsRotate} />}
+        icon={<RefreshCwIcon />}
         title="Rotate — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
       />
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faCamera} />}
+        icon={<CameraIcon />}
         title="Field of view — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
       />
@@ -292,6 +287,7 @@ const PageDraw = ({
   fillParentHeight = false,
   showBottomRightControls = true,
 }: PageDrawProps) => {
+  const canvas2dModelList = useCanvas2dPageModelList();
   const canvasWidth = useRef<number>(1024);
   const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
@@ -1216,7 +1212,7 @@ const PageDraw = ({
           modelSelector={
             <ClassyModelSelector
               variant="embedded"
-              items={CANVAS_2D_PAGE_MODEL_LIST}
+              items={canvas2dModelList}
               page={PAGE_ID}
               showProviderSelection={false}
             />

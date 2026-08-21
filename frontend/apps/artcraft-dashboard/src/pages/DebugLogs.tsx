@@ -3,70 +3,20 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ModerationApi } from "@/api/ModerationApi";
 import type { DebugLog } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { humanize } from "@/lib/utils";
-import { RawTag } from "@/components/RawTag";
+import { DebugLogCard } from "@/components/DebugLogCard";
 import {
   IconAlertCircle,
   IconArrowLeft,
   IconBug,
   IconCheck,
   IconCopy,
-  IconChevronDown,
-  IconChevronRight,
   IconRefresh,
   IconSearch,
 } from "@tabler/icons-react";
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
-function getLogTypeBadgeProps(logType: string): {
-  variant: "default" | "secondary" | "destructive" | "outline";
-  className: string;
-} {
-  switch (logType) {
-    case "http_request":
-      return {
-        variant: "secondary",
-        className: "bg-blue-500/10 text-blue-400 border-transparent",
-      };
-    case "fal_request":
-      return {
-        variant: "secondary",
-        className: "bg-purple-500/10 text-purple-400 border-transparent",
-      };
-    case "fal_queue":
-      return {
-        variant: "secondary",
-        className: "bg-fuchsia-500/10 text-fuchsia-400 border-transparent",
-      };
-    case "fal_webhook":
-      return {
-        variant: "secondary",
-        className: "bg-amber-500/10 text-amber-400 border-transparent",
-      };
-    case "kinovi_request":
-      return {
-        variant: "secondary",
-        className: "bg-cyan-500/10 text-cyan-400 border-transparent",
-      };
-    default:
-      return { variant: "outline", className: "text-muted-foreground" };
-  }
-}
 
 const DEFAULT_LIMIT = 100;
 
@@ -243,173 +193,4 @@ export function DebugLogs() {
       )}
     </div>
   );
-}
-
-interface DebugLogCardProps {
-  log: DebugLog;
-  copiedId: string | null;
-  onCopy: (value: string, id: string) => void;
-}
-
-function DebugLogCard({ log, copiedId, onCopy }: DebugLogCardProps) {
-  const [expanded, setExpanded] = useState(true);
-  const badge = getLogTypeBadgeProps(log.debug_log_type);
-  const copyId = `log_${log.id}`;
-
-  return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left"
-      >
-        {expanded ? (
-          <IconChevronDown className="size-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />
-        )}
-        <Badge variant={badge.variant} className={badge.className}>
-          {humanize(log.debug_log_type)}
-        </Badge>
-        <RawTag value={log.debug_log_type} />
-        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-          {formatDateTime(log.created_at)}
-        </span>
-        <span className="text-xs text-muted-foreground/60 font-mono ml-auto">
-          #{log.id}
-        </span>
-        <span
-          className="ml-2 inline-flex items-center"
-          onClick={(e) => {
-            e.stopPropagation();
-            onCopy(log.message, copyId);
-          }}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            title="Copy payload"
-          >
-            {copiedId === copyId ? (
-              <IconCheck className="size-3.5 text-emerald-400" />
-            ) : (
-              <IconCopy className="size-3.5" />
-            )}
-          </Button>
-        </span>
-      </button>
-
-      {expanded && (
-        <div className="border-t border-border/50 p-4 flex flex-col gap-3">
-          {log.maybe_creator_user_token && (
-            <div className="text-xs text-muted-foreground">
-              <span className="uppercase tracking-wider font-medium">
-                User Token:
-              </span>{" "}
-              <span className="font-mono text-foreground/80">
-                {log.maybe_creator_user_token}
-              </span>
-            </div>
-          )}
-          <PrettyPayload raw={log.message} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function tryParseJson(raw: string): unknown | undefined {
-  const trimmed = raw.trim();
-  if (
-    !(
-      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-      (trimmed.startsWith("[") && trimmed.endsWith("]"))
-    )
-  ) {
-    return undefined;
-  }
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return undefined;
-  }
-}
-
-function PrettyPayload({ raw }: { raw: string }) {
-  const parsed = useMemo(() => tryParseJson(raw), [raw]);
-
-  if (parsed !== undefined) {
-    return (
-      <pre className="text-xs font-mono whitespace-pre-wrap wrap-break-word bg-muted/40 p-4 rounded-lg max-h-[600px] overflow-auto text-foreground/90">
-        {JSON.stringify(parsed, null, 2)}
-      </pre>
-    );
-  }
-
-  // Likely a Rust struct debug print or plain text. Re-indent loosely so it's readable.
-  const formatted = formatRustyDebug(raw);
-  return (
-    <pre className="text-xs font-mono whitespace-pre-wrap wrap-break-word bg-muted/40 p-4 rounded-lg max-h-[600px] overflow-auto text-foreground/80">
-      {formatted}
-    </pre>
-  );
-}
-
-// Lightweight reformatter for Rust's `Debug` output (e.g. `Foo { a: 1, b: Bar { c: 2 } }`).
-// Adds line breaks and indentation around `{`, `}`, `[`, `]`, and top-level commas.
-// Falls back gracefully for anything it doesn't understand.
-function formatRustyDebug(raw: string): string {
-  const looksRusty = /[{[].+[}\]]/s.test(raw);
-  if (!looksRusty) return raw;
-
-  let depth = 0;
-  let out = "";
-  let inString = false;
-  let stringChar: '"' | "'" | null = null;
-
-  const indent = () => "    ".repeat(depth);
-
-  for (let i = 0; i < raw.length; i++) {
-    const ch = raw[i];
-    const prev = raw[i - 1];
-
-    // String tracking (handle escapes)
-    if (inString) {
-      out += ch;
-      if (ch === stringChar && prev !== "\\") {
-        inString = false;
-        stringChar = null;
-      }
-      continue;
-    }
-    if (ch === '"' || ch === "'") {
-      inString = true;
-      stringChar = ch;
-      out += ch;
-      continue;
-    }
-
-    if (ch === "{" || ch === "[") {
-      depth++;
-      out += ch + "\n" + indent();
-      continue;
-    }
-    if (ch === "}" || ch === "]") {
-      depth = Math.max(0, depth - 1);
-      out = out.replace(/[ \t]+$/, "");
-      out += "\n" + indent() + ch;
-      continue;
-    }
-    if (ch === "," && depth > 0) {
-      out += ",\n" + indent();
-      // Skip following whitespace
-      while (i + 1 < raw.length && raw[i + 1] === " ") i++;
-      continue;
-    }
-
-    out += ch;
-  }
-
-  return out.trim();
 }

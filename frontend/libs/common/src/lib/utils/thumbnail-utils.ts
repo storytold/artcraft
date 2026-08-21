@@ -61,6 +61,12 @@ export function getMediaThumbnail(
 
   let thumbnailUrl: string | null = null;
 
+  if (mediaClass === "audio") {
+    // Audio has no image thumbnail; falling through to cdn_url would hand an
+    // mp3 to an <img>. Callers render a placeholder/waveform instead.
+    return null;
+  }
+
   if (mediaClass === "video" && mediaLinks.maybe_video_previews?.animated) {
     thumbnailUrl = mediaLinks.maybe_video_previews.animated;
   } else if (mediaLinks.maybe_thumbnail_template) {
@@ -76,6 +82,41 @@ export function getMediaThumbnail(
   }
 
   return thumbnailUrl;
+}
+
+// Still-frame thumbnail for a video (first frame), for hosts that let the
+// user turn off animated previews. Falls back to the regular thumbnail
+// template when the backend hasn't attached still previews.
+export function getMediaStillThumbnail(
+  mediaLinks:
+    | {
+        maybe_thumbnail_template?: string | null;
+        maybe_video_previews?: {
+          still?: string | null;
+          still_thumbnail_template?: string | null;
+        } | null;
+      }
+    | null
+    | undefined,
+  options: MediaThumbnailOptions = {},
+): string | null {
+  if (!mediaLinks) return null;
+
+  const { size = THUMBNAIL_SIZES.MEDIUM } = options;
+  const previews = mediaLinks.maybe_video_previews;
+
+  if (previews?.still_thumbnail_template) {
+    return getThumbnailUrl(previews.still_thumbnail_template, { width: size });
+  }
+  if (previews?.still) {
+    return previews.still;
+  }
+  if (mediaLinks.maybe_thumbnail_template) {
+    return getThumbnailUrl(mediaLinks.maybe_thumbnail_template, {
+      width: size,
+    });
+  }
+  return null;
 }
 
 export function getContextImageThumbnail(
@@ -136,4 +177,17 @@ export function getPlaceholderForMediaClass(mediaClass?: string): string {
     default:
       return PLACEHOLDER_IMAGES.DEFAULT;
   }
+}
+
+// File extensions for actual 3D-model assets (meshes + gaussian splats).
+export const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz", ".obj", ".ply"];
+
+/** Whether a URL points at a real 3D-model asset (vs. e.g. a cover screenshot).
+ *  Used to keep 3D-model cover images — which the backend can surface as
+ *  "dimensional" media files whose asset is actually a .png — out of the 3D
+ *  feeds and library. */
+export function is3DModelUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return MODEL_3D_EXTENSIONS.some((ext) => lower.includes(ext));
 }

@@ -169,60 +169,6 @@ export class UsersApi extends ApiManager {
       }));
   }
 
-  public async RequestPasswordReset({
-    email,
-  }: {
-    email: string;
-  }): Promise<ApiResponse<null>> {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/request_password_reset`;
-    return await this.post<
-      { email: string },
-      { success: boolean; error_message?: string }
-    >({
-      endpoint,
-      body: { email },
-    })
-      .then((response) => ({
-        success: response.success,
-        errorMessage: response.error_message,
-      }))
-      .catch((err) => ({
-        success: false,
-        errorMessage: err.message,
-      }));
-  }
-
-  public async ResetPassword({
-    token,
-    password,
-    passwordConfirmation,
-  }: {
-    token: string;
-    password: string;
-    passwordConfirmation: string;
-  }): Promise<ApiResponse<null>> {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/reset_password`;
-    return await this.post<
-      { token: string; password: string; password_confirmation: string },
-      { success: boolean; error_message?: string }
-    >({
-      endpoint,
-      body: {
-        token,
-        password,
-        password_confirmation: passwordConfirmation,
-      },
-    })
-      .then((response) => ({
-        success: response.success,
-        errorMessage: response.error_message,
-      }))
-      .catch((err) => ({
-        success: false,
-        errorMessage: err.message,
-      }));
-  }
-
   public async ChangePassword({
     password,
     passwordConfirmation,

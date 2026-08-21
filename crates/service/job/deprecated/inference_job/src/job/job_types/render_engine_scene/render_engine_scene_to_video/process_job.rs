@@ -257,7 +257,9 @@ pub async fn process_job(args: BvhToWorkflowJobArgs<'_>) -> Result<JobSuccessRes
     pool: &args.job_dependencies.db.mysql_pool,
     job: &job,
     media_class: MediaFileClass::Video,
-    media_type: MediaFileType::Video,
+    media_type: maybe_mimetype.as_deref()
+        .and_then(MediaFileType::try_from_mime_type)
+        .unwrap_or(MediaFileType::Video), // Coarse fallback for unrecognized mimes
     origin_category: MediaFileOriginCategory::Processed,
     origin_product_category: MediaFileOriginProductCategory::Mocap,
     maybe_origin_model_type: None,

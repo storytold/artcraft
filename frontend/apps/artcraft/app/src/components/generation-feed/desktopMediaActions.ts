@@ -3,6 +3,7 @@ import {
   FilterMediaClasses,
   PromptsApi,
   downloadUrlToPath,
+  pickDownloadDirectory,
   promptDownloadLocationIfNeeded,
 } from "@storyteller/api";
 import type { Prompts } from "@storyteller/api";
@@ -29,7 +30,10 @@ import {
   galleryModalVisibleDuringDrag,
   galleryModalVisibleViewMode,
 } from "@storyteller/ui-gallery-modal";
-import { getCachedPrompt } from "@storyteller/ui-generation-list";
+import {
+  getCachedPrompt,
+  type GalleryItem,
+} from "@storyteller/ui-generation-list";
 import { useTabStore } from "~/pages/Stores/TabState";
 
 // Media item actions shared by the TopBar gallery modal / lightbox wiring and
@@ -37,6 +41,30 @@ import { useTabStore } from "~/pages/Stores/TabState";
 // global stores via getState(), so they're safe to call from anywhere.
 
 export const SHARE_URL_BASE = "https://getartcraft.com/media/";
+
+const EXT_BY_MEDIA_CLASS: Record<string, string> = {
+  image: "png",
+  video: "mp4",
+  audio: "mp3",
+  // "dimensional" is the deprecated pre-split 3D class; mesh/splat replace it.
+  dimensional: "glb",
+  mesh: "glb",
+  splat: "spz",
+};
+
+function extensionForUrl(url: string, mediaClass?: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const match = pathname.match(/\.([a-z0-9]{2,5})$/i);
+    if (match) return match[1].toLowerCase();
+  } catch {
+    // ignore — fall through to mediaClass default
+  }
+  if (mediaClass && EXT_BY_MEDIA_CLASS[mediaClass]) {
+    return EXT_BY_MEDIA_CLASS[mediaClass];
+  }
+  return "bin";
+}
 
 /** Download a media file, prompting for a location when configured to. */
 export async function downloadMediaFileToDisk(url: string, mediaClass?: string) {
@@ -61,6 +89,61 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string) 
     // NB: Rust/Tauri should now flash a toast instead.
     //toast.error("Failed to download file");
   }
+}
+
+/**
+ * Batch download: prompt for a directory, then save each item as its own
+ * file (`artcraft-{token}.{ext}`). Progress and the outcome are surfaced via
+ * a single updating toast. Returns true when at least one file was saved
+ * (false on dismiss / nothing downloadable).
+ */
+export async function downloadMediaFilesToFolder(
+  items: GalleryItem[],
+): Promise<boolean> {
+  const downloadable = items.filter(
+    (it): it is GalleryItem & { fullImage: string } => !!it.fullImage,
+  );
+  if (downloadable.length === 0) return false;
+
+  const dir = await pickDownloadDirectory();
+  if (!dir) {
+    // User dismissed the picker.
+    return false;
+  }
+
+  const toastId = toast.loading(`Saving 1 of ${downloadable.length}…`);
+  let failedCount = 0;
+  for (let i = 0; i < downloadable.length; i++) {
+    const item = downloadable[i];
+    toast.loading(`Saving ${i + 1} of ${downloadable.length}…`, {
+      id: toastId,
+    });
+    try {
+      const ext = extensionForUrl(item.fullImage, item.mediaClass);
+      await downloadUrlToPath(
+        item.fullImage,
+        `${dir}/artcraft-${item.id}.${ext}`,
+      );
+    } catch (error) {
+      console.error(">>> Failed to save file:", error);
+      failedCount++;
+    }
+  }
+
+  const saved = downloadable.length - failedCount;
+  if (failedCount === 0) {
+    toast.success(`Saved ${saved} ${saved === 1 ? "file" : "files"}`, {
+      id: toastId,
+    });
+  } else if (saved > 0) {
+    toast.error(
+      `${failedCount} of ${downloadable.length} files failed to save`,
+      { id: toastId },
+    );
+  } else {
+    toast.error("Could not save the selected files.", { id: toastId });
+  }
+  return saved > 0;
 }
 
 /** Seed the video page with `url` as the starting image and switch to it. */

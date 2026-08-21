@@ -16,11 +16,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faGripVertical,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
+import { GripVerticalIcon, LoaderCircleIcon } from "lucide-react";
 import {
   SetProviderOrder,
   Provider,
@@ -84,10 +80,9 @@ const SortableItem = ({
         <span className="font-medium">{name}</span>
       </div>
       <div className="flex items-center">
-        <FontAwesomeIcon
-          icon={faGripVertical}
-          className="text-base-fg/40 text-sm"
-        />
+        <GripVerticalIcon
+          
+          className="text-base-fg/40 text-sm" />
       </div>
     </div>
   );
@@ -224,7 +219,7 @@ export const ProviderPrioritySettingsPane = () => {
 
       {isUpdating && (
         <div className="text-xs rounded-full animate-pulse mt-4 flex items-center gap-2 text-base-fg/70">
-          <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          <LoaderCircleIcon  className="animate-spin" />
           Updating...
         </div>
       )}

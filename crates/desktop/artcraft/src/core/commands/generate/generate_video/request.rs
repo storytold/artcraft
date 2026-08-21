@@ -10,19 +10,27 @@ use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 
 /// This is used in the Tauri command bridge.
 /// Don't change the serializations without coordinating with the frontend.
+///
+/// MIGRATION (2026-07): we're moving the frontend to send storyteller-web omni
+/// identifiers (`CommonVideoModel` serde strings). Variants whose legacy Tauri
+/// id differs carry the omni id as a `#[serde(alias)]` so BOTH deserialize.
+/// Once the frontend is 100% omni ids, the legacy renames can be dropped.
 #[derive(Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum TauriVideoModel {
-  #[serde(rename = "grok_video")]
+  #[serde(rename = "grok_video", alias = "grok_imagine_video")]
   GrokVideo,
 
-  #[serde(rename = "kling_1.6_pro")]
+  #[serde(rename = "grok_imagine_video_1p5")]
+  GrokImagineVideo1p5,
+
+  #[serde(rename = "kling_1.6_pro", alias = "kling_1p6_pro")]
   Kling16Pro,
 
-  #[serde(rename = "kling_2.1_pro")]
+  #[serde(rename = "kling_2.1_pro", alias = "kling_2p1_pro")]
   Kling21Pro,
 
-  #[serde(rename = "kling_2.1_master")]
+  #[serde(rename = "kling_2.1_master", alias = "kling_2p1_master")]
   Kling21Master,
 
   #[serde(rename = "kling_2p5_turbo_pro")]
@@ -40,7 +48,7 @@ pub enum TauriVideoModel {
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
-  #[serde(rename = "seedance_1.0_lite")]
+  #[serde(rename = "seedance_1.0_lite", alias = "seedance_1p0_lite")]
   Seedance10Lite,
 
   #[serde(rename = "seedance_1p5_pro")]

@@ -1,13 +1,6 @@
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faPlay,
-  faImage,
-  faVideo,
-  faFileZipper,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, FileArchiveIcon, ImageIcon, PlayIcon, VideoIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import Footer from "../../components/footer";
 import Seo from "../../components/seo";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
@@ -28,13 +21,13 @@ const AssetCard = ({
     switch (asset.type) {
       case "video":
       case "embed":
-        return faVideo;
+        return VideoIcon;
       case "image":
-        return faImage;
+        return ImageIcon;
       case "link":
-        return faFileZipper;
+        return FileArchiveIcon;
       default:
-        return faImage;
+        return ImageIcon;
     }
   };
 
@@ -69,7 +62,7 @@ const AssetCard = ({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={getTypeIcon()}
               className="text-4xl text-white/30"
             />
@@ -80,17 +73,16 @@ const AssetCard = ({
         {(asset.type === "embed" || asset.type === "video") && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 group-hover:bg-black/40">
             <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform duration-300 group-hover:scale-110">
-              <FontAwesomeIcon
-                icon={faPlay}
-                className="text-white text-xl ml-1"
-              />
+              <PlayIcon
+                
+                className="text-white text-xl ml-1" />
             </div>
           </div>
         )}
 
         {/* Type badge - show "Video" for both video and embed types */}
         <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-xs font-medium text-white/80 flex items-center gap-1.5">
-          <FontAwesomeIcon icon={getTypeIcon()} className="text-[10px]" />
+          <DynamicIcon icon={getTypeIcon()} className="text-[10px]" />
           <span className="capitalize">
             {asset.type === "embed" ? "Video" : asset.type}
           </span>
@@ -120,7 +112,7 @@ const AssetCard = ({
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 rounded-xl bg-white hover:bg-white/90 text-black font-medium text-sm transition-all duration-200"
           >
-            <FontAwesomeIcon icon={faArrowDownToLine} />
+            <ArrowDownToLineIcon />
             <span>{asset.downloadLabel || "Download"}</span>
             {asset.fileSize && (
               <span className="text-black/50 ml-1">({asset.fileSize})</span>
@@ -128,7 +120,7 @@ const AssetCard = ({
           </a>
         ) : (
           <div className="inline-flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 rounded-xl bg-white/10 text-white/40 font-medium text-sm cursor-not-allowed">
-            <FontAwesomeIcon icon={faArrowDownToLine} />
+            <ArrowDownToLineIcon />
             <span>Download Coming Soon</span>
           </div>
         )}
@@ -182,7 +174,7 @@ const VideoModal = ({
           className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
           aria-label="Close video"
         >
-          <FontAwesomeIcon icon={faXmark} />
+          <XIcon />
         </button>
       </div>
     </div>
@@ -272,10 +264,9 @@ export default function PressKitPage() {
           ) : (
             <div className="text-center py-20 px-4">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faFileZipper}
-                  className="text-3xl text-white/30"
-                />
+                <FileArchiveIcon
+                  
+                  className="text-3xl text-white/30" />
               </div>
               <h2 className="text-2xl font-medium text-white mb-3">
                 Press Kit Coming Soon

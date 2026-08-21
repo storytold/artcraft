@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon } from "lucide-react";
 import EnvironmentVariables from "./environment-variables";
 interface Props {
   size: number;
@@ -75,7 +74,7 @@ function Gravatar(props: Props) {
     >
       {showLoader && (
         <div className="absolute flex h-full w-full items-center justify-center bg-brand-secondary">
-          <FontAwesomeIcon icon={faSpinnerThird} spin size={"lg"} />
+          <LoaderCircleIcon className="animate-spin" size="1.25em" />
         </div>
       )}
       <img

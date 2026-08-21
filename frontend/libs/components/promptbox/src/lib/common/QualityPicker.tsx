@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGem } from "@fortawesome/pro-solid-svg-icons";
+import { GemIcon } from "lucide-react";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { CommonQuality, ImageModel } from "@storyteller/model-list";
@@ -54,7 +53,7 @@ export const QualityPicker = ({
         onSelect={handleSelectAdapter}
         mode="toggle"
         panelTitle="Quality"
-        triggerIcon={<FontAwesomeIcon icon={faGem} className="h-3.5 w-3.5" />}
+        triggerIcon={<GemIcon  className="h-3.5 w-3.5" />}
       />
     </Tooltip>
   );

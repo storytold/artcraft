@@ -1,19 +1,7 @@
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faListCheck,
-  faSpinnerThird,
-  faXmark,
-  faTrashAlt,
-  faTasks,
-  faBroom,
-  faBomb,
-  faCircleExclamation,
-  faCopy,
-  faCheck,
-  faArrowRotateRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, RotateCwIcon, Trash2Icon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { JobsApi, JobStatus } from "@storyteller/api";
@@ -23,6 +11,7 @@ import { Button } from "@storyteller/ui-button";
 import {
   getProviderDisplayName,
   getModelDisplayName,
+  getCreatorIconPathForModelId,
   findModelByKey,
 } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
@@ -30,7 +19,6 @@ import dayjs from "dayjs";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 import { showToast } from "../toast/toast";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { twMerge } from "tailwind-merge";
@@ -201,8 +189,8 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
           setTimeout(() => setCopied(false), 3000);
         }}
       >
-        <FontAwesomeIcon
-          icon={copied ? faCheck : faCopy}
+        <DynamicIcon
+          icon={copied ? CheckIcon : CopyIcon}
           className={copied ? "text-green-400" : ""}
         />
       </button>
@@ -237,8 +225,8 @@ const RecreateTaskButton = ({
         disabled={isRecreating}
         onClick={handleRecreate}
       >
-        <FontAwesomeIcon
-          icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+        <DynamicIcon
+          icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
           className={isRecreating ? "animate-spin" : ""}
         />
       </button>
@@ -263,18 +251,17 @@ const InProgressCard = ({
       ? formatTimeLeft(task.estimatedTimeLeftMs)
       : null;
   const modelIconPath = task.modelType
-    ? getModelCreatorIconPath(task.modelType)
+    ? getCreatorIconPathForModelId(task.modelType)
     : null;
 
   return (
     <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
         <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
+          <LoaderCircleIcon
+            
             className="animate-spin text-base-fg/60"
-            size="lg"
-          />
+            size="lg" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
@@ -327,7 +314,7 @@ const InProgressCard = ({
                 onDismiss();
               }}
             >
-              <FontAwesomeIcon icon={faXmark} />
+              <XIcon />
             </button>
           )}
         </div>
@@ -399,7 +386,7 @@ const CompletedCard = ({
               onDismiss();
             }}
           >
-            <FontAwesomeIcon icon={faXmark} />
+            <XIcon />
           </button>
         )}
       </div>
@@ -419,11 +406,10 @@ const FailedCard = ({
     <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
         <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
-          <FontAwesomeIcon
-            icon={faCircleExclamation}
+          <CircleAlertIcon
+            
             className="text-red-400"
-            size="lg"
-          />
+            size="lg" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
@@ -492,7 +478,7 @@ const FailedCard = ({
                 onDismiss();
               }}
             >
-              <FontAwesomeIcon icon={faXmark} />
+              <XIcon />
             </button>
           )}
         </div>
@@ -761,7 +747,7 @@ export const TaskQueue = () => {
     title: "",
     message: null,
     primaryActionText: "",
-    primaryActionIcon: faTrashAlt,
+    primaryActionIcon: Trash2Icon,
     primaryActionBtnClassName: "",
     onConfirm: async () => {},
   });
@@ -778,7 +764,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Clear completed",
-      primaryActionIcon: faBroom,
+      primaryActionIcon: BrushIcon,
       primaryActionBtnClassName:
         "bg-green-500/10 hover:bg-green-500/20 text-green-500",
       onConfirm: async () => {
@@ -797,7 +783,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Clear stale",
-      primaryActionIcon: faTrashAlt,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName:
         "bg-orange-500/10 hover:bg-orange-500/20 text-orange-500",
       onConfirm: async () => {
@@ -816,7 +802,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Clear failed",
-      primaryActionIcon: faTrashAlt,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName:
         "bg-red-500/10 hover:bg-red-500/20 text-red-500",
       onConfirm: async () => {
@@ -836,7 +822,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Nuke all",
-      primaryActionIcon: faBomb,
+      primaryActionIcon: BombIcon,
       primaryActionBtnClassName:
         "bg-red-500/10 hover:bg-red-500/20 text-red-500",
       onConfirm: async () => {
@@ -904,6 +890,15 @@ export const TaskQueue = () => {
             (j) => !prevFailedIdsRef.current.has(j.job_token),
           );
           prevFailedIdsRef.current = newFailedIdSet;
+
+          if (newlyFailedJobs.length > 0) {
+            // A failure may have triggered a server-side refund — nudge the
+            // credits chip now, and again once the refund has settled.
+            window.dispatchEvent(new Event("credits-change"));
+            setTimeout(() => {
+              window.dispatchEvent(new Event("credits-change"));
+            }, 2500);
+          }
 
           for (const job of newlyFailedJobs) {
             const parts = formatTitleParts(job);
@@ -1040,7 +1035,7 @@ export const TaskQueue = () => {
       {hasNothing ? (
         <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
           <div className="flex items-center gap-2.5 text-sm opacity-60">
-            <FontAwesomeIcon icon={faTasks} /> No tasks yet
+            <ListChecksIcon /> No tasks yet
           </div>
         </div>
       ) : (
@@ -1069,7 +1064,7 @@ export const TaskQueue = () => {
                   className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
                   onClick={() => handleClearFailed()}
                 >
-                  <FontAwesomeIcon icon={faXmark} className="mr-1" />
+                  <XIcon  className="mr-1" />
                   Clear failed
                 </button>
               </div>
@@ -1092,7 +1087,7 @@ export const TaskQueue = () => {
                   className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
                   onClick={() => handleClearCompleted()}
                 >
-                  <FontAwesomeIcon icon={faXmark} className="mr-1" />
+                  <XIcon  className="mr-1" />
                   Clear completed
                 </button>
               </div>
@@ -1139,12 +1134,11 @@ export const TaskQueue = () => {
             align="end"
             triggerIcon={
               inProgressCount > 0 ? (
-                <FontAwesomeIcon
-                  icon={faSpinnerThird}
-                  className="animate-spin text-[11px]"
-                />
+                <LoaderCircleIcon
+                  
+                  className="animate-spin text-[11px]" />
               ) : (
-                <FontAwesomeIcon icon={faListCheck} className="text-[11px]" />
+                <ListChecksIcon  className="text-[11px]" />
               )
             }
             onOpenChange={handleOpenChange}
@@ -1189,28 +1183,28 @@ export const TaskQueue = () => {
                   className="rounded-full flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
-                  <FontAwesomeIcon icon={faBroom} className="mr-1.5" />
+                  <BrushIcon  className="mr-1.5" />
                   Clear completed
                 </Button>
                 <Button
                   className="rounded-full flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
-                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  <Trash2Icon  className="mr-1.5" />
                   Clear stale
                 </Button>
                 <Button
                   className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
-                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  <Trash2Icon  className="mr-1.5" />
                   Clear failed
                 </Button>
                 <Button
                   className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
-                  <FontAwesomeIcon icon={faBomb} className="mr-1.5" />
+                  <BombIcon  className="mr-1.5" />
                   Remove all
                 </Button>
                 <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />

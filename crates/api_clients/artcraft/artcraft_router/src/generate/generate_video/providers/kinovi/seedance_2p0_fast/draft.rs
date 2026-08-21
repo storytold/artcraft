@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+use kinovi_web_client::generate::video::generate_seedance_2p0_fast::{
   GenerateSeedance2p0FastRequest, KinoviSeedance2p0FastAspectRatio, KinoviSeedance2p0FastBitrate,
   KinoviSeedance2p0FastBatchCount, KinoviSeedance2p0FastOutputResolution,
 };
@@ -44,7 +44,7 @@ impl KinoviSeedance2p0FastDraftState {
     &mut self,
     draft_context: &VideoGenerationDraftContext<'_>,
   ) -> Result<KinoviSeedance2p0FastRequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let mut start_frame_url = None;
@@ -56,20 +56,21 @@ impl KinoviSeedance2p0FastDraftState {
 
     if let Some(remaining) = self.unhandled_request_state.take() {
       let map = draft_context.media_file_to_artcraft_url_map;
+      let predownloaded = draft_context.predownloaded_media_paths;
 
-      start_frame_url = resolve_and_upload_single(session, remaining.start_frame, map).await?;
-      end_frame_url = resolve_and_upload_single(session, remaining.end_frame, map).await?;
+      start_frame_url = resolve_and_upload_single(session, remaining.start_frame, map, predownloaded).await?;
+      end_frame_url = resolve_and_upload_single(session, remaining.end_frame, map, predownloaded).await?;
 
       reference_image_urls = resolve_and_upload_list(
-        session, remaining.reference_images.map(image_list_ref_into_urls_or_tokens), map,
+        session, remaining.reference_images.map(image_list_ref_into_urls_or_tokens), map, predownloaded,
       ).await?;
 
       reference_video_urls = resolve_and_upload_list(
-        session, remaining.reference_videos.map(video_list_ref_into_urls_or_tokens), map,
+        session, remaining.reference_videos.map(video_list_ref_into_urls_or_tokens), map, predownloaded,
       ).await?;
 
       reference_audio_urls = resolve_and_upload_list(
-        session, remaining.reference_audio.map(audio_list_ref_into_urls_or_tokens), map,
+        session, remaining.reference_audio.map(audio_list_ref_into_urls_or_tokens), map, predownloaded,
       ).await?;
 
       character_ids = resolve_character_tokens(

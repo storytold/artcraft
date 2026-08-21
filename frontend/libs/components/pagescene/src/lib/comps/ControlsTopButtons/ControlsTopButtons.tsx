@@ -1,10 +1,5 @@
 import React, { useCallback, useContext, useState } from "react";
-import {
-  faCheckSquare,
-  faFile,
-  faKeyboard,
-  faSquare,
-} from "@fortawesome/pro-solid-svg-icons";
+import { FileIcon, KeyboardIcon, SquareCheckIcon, SquareIcon } from "lucide-react";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
@@ -16,7 +11,7 @@ import {
   usePageSceneStore,
   useIsVisitingOthersScene,
 } from "../../PageSceneStore";
-import { CameraAspectRatio, ToastTypes } from "../../enums";
+import { DEFAULT_CAMERA_ASPECT_RATIO, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
 import { Help } from "./Help/Help";
@@ -54,7 +49,7 @@ export const ControlsTopButtons = () => {
 
   const handleResetScene = () => {
     editor?.cameraController.changeRenderCameraAspectRatio(
-      CameraAspectRatio.HORIZONTAL_3_2,
+      DEFAULT_CAMERA_ASPECT_RATIO,
     );
   };
 
@@ -247,7 +242,7 @@ export const ControlsTopButtons = () => {
       <div className="flex gap-1.5">
         <ButtonDropdown
           label="File"
-          icon={faFile}
+          icon={FileIcon}
           className="shadow-xl"
           options={[
             {
@@ -384,7 +379,7 @@ export const ControlsTopButtons = () => {
         />
 
         <Button
-          icon={outlinerShowing ? faCheckSquare : faSquare}
+          icon={outlinerShowing ? SquareCheckIcon : SquareIcon}
           className="shadow-xl"
           iconClassName={twMerge(
             "text-[16px]",
@@ -397,7 +392,7 @@ export const ControlsTopButtons = () => {
         </Button>
 
         <Button
-          icon={faKeyboard}
+          icon={KeyboardIcon}
           variant="secondary"
           className="shadow-xl"
           onClick={() => setShortcutsIsShowing(true)}

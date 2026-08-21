@@ -2,7 +2,11 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Scene from "./scene";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
-import { CameraAspectRatio, ClipGroup } from "../enums";
+import {
+  CameraAspectRatio,
+  ClipGroup,
+  DEFAULT_CAMERA_ASPECT_RATIO,
+} from "../enums";
 import { SceneUtils } from "./helper";
 import { MouseControls } from "./keybinds_controls";
 import { SaveManager } from "./save_manager";
@@ -16,6 +20,9 @@ import { GizmoController } from "./editor/GizmoController";
 import { SelectionBridge } from "./editor/SelectionBridge";
 import { CameraController } from "./editor/CameraController";
 import { HistoryManager } from "./editor/HistoryManager";
+import { TimelineController } from "./editor/TimelineController";
+import { CharacterAnimationManager } from "./animation/CharacterAnimationManager";
+import { SkeletonHelperController } from "./editor/SkeletonHelperController";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
 import { CreateAction } from "./editor/actions/CreateAction";
@@ -28,10 +35,14 @@ import { ensureAmmoLoaded } from "./ammoLoader";
 import { EngineEventBus } from "./events/EngineEventBus";
 import { EngineStoreBridge } from "./EngineStoreBridge";
 import {
+  CameraAspectRatioChangedEvent,
   EditorStateChangedEvent,
   EngineInitializedEvent,
   GridVisibleChangedEvent,
+  CameraViewToggleRequestedEvent,
   InspectorPanelChangedEvent,
+  OutlinerRefreshedEvent,
+  PoseModeChangedEvent,
   SceneLoadedEvent,
   SceneResetEvent,
   TransformSpaceChangedEvent,
@@ -79,6 +90,11 @@ class Editor {
   selection: SelectionBridge;
   // Owns the camera state, FreeCam plumbing, and the per-frame camera tick.
   cameraController: CameraController;
+  // Owns the animation timeline + keyframe playback (evaluated per frame).
+  timelineController: TimelineController;
+  // Drives skeletal (Mixamo) clip lanes onto characters, deterministically
+  // from the timeline playhead. See CharacterAnimationManager.
+  characterAnimationManager: CharacterAnimationManager;
   // Owns the undo/redo stack. Mutation sites push UndoableAction
   // instances via editor.history.record(...); each action class under
   // engine/editor/actions/ encapsulates its own apply/revert.
@@ -98,6 +114,14 @@ class Editor {
   // Store→engine reactor for grid visibility (toggling the gridHelper
   // mesh in/out of the THREE.js scene). Cleared on unmountEngine.
   private gridSubscription: () => void;
+  private cameraViewSubscription: () => void;
+  private skeletonSyncSubscription: () => void;
+  private poseModeSubscription: () => void;
+
+  // Persistent per-object skeleton overlays (outliner bone icon).
+  readonly skeletonHelpers = new SkeletonHelperController(
+    () => this.activeScene.scene,
+  );
 
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
@@ -186,6 +210,38 @@ class Editor {
       this.activeScene?.applyGridVisibility(e.visible),
     );
 
+    // Look-through toggle. The double-click intercept and the outliner/exit
+    // buttons emit this; the controller owns the enter/exit transition.
+    this.cameraViewSubscription = this.bus.subscribe(
+      CameraViewToggleRequestedEvent,
+      () => this.cameraController.switchCameraView(),
+    );
+
+    // Skeleton overlays and animation runtimes reconcile on every outliner
+    // refresh — add/delete/load/new-scene all funnel through one, so no
+    // bespoke lifecycle hooks. The runtime revalidation matters for objects
+    // recreated under the same uuid (delete→undo, in-session scene reloads),
+    // whose mixers would otherwise stay bound to the detached old instance.
+    this.skeletonSyncSubscription = this.bus.subscribe(
+      OutlinerRefreshedEvent,
+      () => {
+        this.skeletonHelpers.sync();
+        this.characterAnimationManager.revalidate();
+      },
+    );
+    // FK/pose mode draws its own rig overlay for the posed character —
+    // suppress our persistent helper for it so bones aren't double-drawn,
+    // and restore when pose mode exits.
+    this.poseModeSubscription = this.bus.subscribe(PoseModeChangedEvent, (e) => {
+      if (e.mode === "pose") {
+        this.skeletonHelpers.suppress(
+          this.mouse_controls?.selected?.[0]?.uuid ?? null,
+        );
+      } else {
+        this.skeletonHelpers.suppress(null);
+      }
+    });
+
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
@@ -251,6 +307,7 @@ class Editor {
         getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
           ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
           : undefined,
+        onGlbLoaded: () => this.selection.refreshOutliner(),
       },
     );
     this.activeScene.initialize();
@@ -298,6 +355,19 @@ class Editor {
       loadSceneState: (token) => this.adapter.loadScene(token),
       getCameras: () => usePageSceneStore.getState().cameras,
       getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
+      getTimeline: () => this.timelineController.getTimeline(),
+      loadTimeline: (timeline) =>
+        this.timelineController.loadTimeline(timeline),
+      resetTimeline: () => this.timelineController.reset(),
+      getRenderCameraTransform: () => {
+        const cam = this.cameraController.cam_obj;
+        if (!cam) return null;
+        return {
+          position: { x: cam.position.x, y: cam.position.y, z: cam.position.z },
+          rotation: { x: cam.rotation.x, y: cam.rotation.y, z: cam.rotation.z },
+        };
+      },
+      recreateCameraObject: () => this.activeScene._create_camera_obj(),
       bus: this.bus,
     });
     this.viewport = new ViewportController({
@@ -319,6 +389,14 @@ class Editor {
     // Action classes under engine/editor/actions/ encapsulate their own
     // apply/revert + dependencies. HistoryManager just stores them.
     this.history = new HistoryManager({ capacity: 64 });
+
+    // Animation timeline. Holds keyframes + drives playback; ticked each
+    // frame in renderSingleFrame() after the entrance animator. An empty
+    // timeline always exists so the collapsed timeline bar (the sole
+    // build-mode bottom UI) is functional; a loaded scene overrides it.
+    this.characterAnimationManager = new CharacterAnimationManager(this);
+    this.timelineController = new TimelineController(this);
+    this.timelineController.create();
 
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
@@ -501,6 +579,11 @@ class Editor {
           } else if (this.activeTransform) {
             if (this.activeTransform.commit()) {
               this.history.record(this.activeTransform);
+              // Auto-key: if the dragged object is already keyframed, record
+              // its new transform at the playhead (replaces the keyframe there
+              // or creates one at the current scrub point).
+              const uuid = this.sceneManager?.selected_objects?.[0]?.uuid;
+              if (uuid) this.timelineController.autoKeyIfTracked(uuid);
             }
             this.activeTransform = null;
           }
@@ -550,6 +633,7 @@ class Editor {
       isHotkeyDisabled: () =>
         usePageSceneStore.getState().hotkeyStatus.disabled,
       getTransformSpace: () => usePageSceneStore.getState().transformSpace,
+      isViewportLocked: () => this.cameraController.locked,
     });
 
     this.sceneManager = new SceneManager(
@@ -612,7 +696,9 @@ class Editor {
   }
 
   public isMovable(): boolean {
-    return this.focused;
+    // A locked viewport (record mode) blocks mouse-look entirely —
+    // playback is read-only, so the camera must not turn.
+    return this.focused && !this.cameraController.locked;
   }
 
   // Toggle the three.js Stats panel (FPS / ms / mb). Bound to the
@@ -698,6 +784,14 @@ class Editor {
     const originalRenderCameraAspect =
       renderCamera?.aspect || originalCameraAspect;
 
+    // The camera-view framing offset maps the render frame into an inset
+    // rect of the viewport canvas — it must not leak into the snapshot,
+    // which renders the frame full-bleed at the target resolution.
+    // CameraController.applyFrameProjection reapplies it afterwards.
+    if (camera.view?.enabled) {
+      camera.clearViewOffset();
+    }
+
     // Temporarily set renderer to high resolution
     this.renderer.setSize(targetWidth, targetHeight, false);
     this.renderer.setPixelRatio(1);
@@ -738,6 +832,10 @@ class Editor {
     this.renderer.setSize(originalWidth, originalHeight, false);
     this.renderer.setPixelRatio(originalPixelRatio);
 
+    // Reapply the camera-view framing offset (if active) before the
+    // restore render so the viewport doesn't flash an unframed frame.
+    this.cameraController.applyFrameProjection();
+
     // Re-render at original resolution
     if (this.postProcessing.composer) {
       this.postProcessing.composer.setSize(originalWidth, originalHeight);
@@ -776,8 +874,19 @@ class Editor {
 
   public async newScene(sceneTitleInput: string) {
     this.activeScene.clear();
+    // A fresh scene starts with a fresh timeline — the previous scene's
+    // tracks and clip strips must not carry over.
+    this.timelineController.reset();
     this.cameraController.cam_obj = this.activeScene.get_object_by_name(
       this.cameraController.camera_name,
+    );
+    // Fresh scenes always start at the default aspect ratio — don't
+    // inherit whatever the previously loaded scene used.
+    this.cameraController.changeRenderCameraAspectRatio(
+      DEFAULT_CAMERA_ASPECT_RATIO,
+    );
+    this.bus.emit(
+      new CameraAspectRatioChangedEvent(DEFAULT_CAMERA_ASPECT_RATIO),
     );
     const sceneTitle =
       sceneTitleInput && sceneTitleInput !== ""
@@ -833,6 +942,17 @@ class Editor {
       sceneToken: sceneToken,
       sceneGenerationMetadata: sceneGenerationMetadata,
     });
+  }
+
+  // True if any object in the scene carries a THREE animation clip (e.g. an
+  // animated GLB import). Used to auto-expand the timeline on load.
+  sceneHasAnimation(): boolean {
+    let found = false;
+    this.activeScene.scene.traverse((o) => {
+      const clips = (o as unknown as { animations?: unknown[] }).animations;
+      if (clips && clips.length > 0) found = true;
+    });
+    return found;
   }
 
   deleteObject(uuid: string) {
@@ -911,6 +1031,10 @@ class Editor {
     // Advance any in-flight entrance animations.
     this.entranceAnimator.tick(delta_time);
 
+    // Evaluate the animation timeline (writes transforms only while
+    // playing or right after a seek).
+    this.timelineController.tick(delta_time);
+
     this.activeScene.shader_objects.forEach((shader) => {
       shader.material.uniforms["time"].value += 0.5 * delta_time;
     });
@@ -963,6 +1087,16 @@ class Editor {
     }
   }
 
+  // Liveness for late async callbacks that captured this instance (e.g. a
+  // queued animation drop resolving after its clip fetch): false once
+  // unmountEngine ran — including the EngineProvider teardown/recreate
+  // footgun, where this instance is abandoned for a fresh Editor. A
+  // same-instance remount flips it back, and completing against a
+  // remounted editor is correct.
+  get isLive(): boolean {
+    return this.isMounted;
+  }
+
   remountEngine() {
     const store = usePageSceneStore.getState();
     if (!store.is3DEditorInitialized) {
@@ -1002,6 +1136,10 @@ class Editor {
     this.isMounted = false;
     this.bus.emit(new EngineInitializedEvent(false));
     this.gridSubscription();
+    this.cameraViewSubscription();
+    this.skeletonSyncSubscription();
+    this.poseModeSubscription();
+    this.skeletonHelpers.clear();
     this.storeBridge.dispose();
     console.log("3D Editor Engine unmounted");
   }

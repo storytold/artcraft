@@ -23,14 +23,15 @@ impl ArtcraftSeedance10LiteCostState {
     };
     let resolution = match request.request.resolution {
       Some(CommonResolutionEnum::FourEightyP) => Seedance1LiteResolution::FourEightyP,
+      Some(CommonResolutionEnum::TenEightyP) => Seedance1LiteResolution::TenEightyP,
       _ => Seedance1LiteResolution::SevenTwentyP,
     };
     Self { duration, resolution }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Delegate to the Fal client's cost calculator to guarantee parity with
-    // what we charge through the underlying provider.
+    // Derived from the Fal client's cost calculator so the price tracks
+    // upstream pricing across every resolution and duration.
     let req = Seedance1LiteRequest {
       image_url: String::new(),
       end_frame_image_url: None,
@@ -41,7 +42,7 @@ impl ArtcraftSeedance10LiteCostState {
       camera_fixed: false,
       seed: None,
     };
-    let cost_in_usd_cents = req.calculate_cost_in_cents();
+    let cost_in_usd_cents = (req.calculate_cost_in_cents() * 21).div_ceil(20);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -75,22 +76,27 @@ mod tests {
   }
 
   #[test]
-  fn default_is_720p_5s_priced_at_18() {
-    // 720p + 5s is the special-cased price from the fal calculator: 18¢.
-    assert_eq!(cost_cents(None, None), 18);
+  fn default_is_720p_5s_priced_at_19() {
+    assert_eq!(cost_cents(None, None), 19);
   }
 
   #[test]
-  fn p720_5s_is_18() { assert_eq!(cost_cents(Some(5), Some(RouterResolution::SevenTwentyP)), 18); }
+  fn p480_5s_is_10() { assert_eq!(cost_cents(Some(5), Some(RouterResolution::FourEightyP)), 10); }
 
   #[test]
-  fn p720_10s_is_95() {
-    // 1280×720×30×10/1024 = 270000 tokens × $1.8/M = $0.486 → ceil = 49¢ ...
-    // No wait — fal kling not seedance. The Seedance 1.0 Lite rate is different.
-    // Trust the fal calculator: assert whatever the actual computed value is.
-    let v = cost_cents(Some(10), Some(RouterResolution::SevenTwentyP));
-    assert!(v > 18, "10s should cost more than 5s, got {}", v);
-  }
+  fn p480_10s_is_18() { assert_eq!(cost_cents(Some(10), Some(RouterResolution::FourEightyP)), 18); }
+
+  #[test]
+  fn p720_5s_is_19() { assert_eq!(cost_cents(Some(5), Some(RouterResolution::SevenTwentyP)), 19); }
+
+  #[test]
+  fn p720_10s_is_52() { assert_eq!(cost_cents(Some(10), Some(RouterResolution::SevenTwentyP)), 52); }
+
+  #[test]
+  fn p1080_5s_is_58() { assert_eq!(cost_cents(Some(5), Some(RouterResolution::TenEightyP)), 58); }
+
+  #[test]
+  fn p1080_10s_is_116() { assert_eq!(cost_cents(Some(10), Some(RouterResolution::TenEightyP)), 116); }
 
   #[test]
   fn p480_5s_cheaper_than_p720_5s() {

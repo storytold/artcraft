@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
-import { faCube, faImages, faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { BoxIcon, ImagesIcon, Maximize2Icon } from "lucide-react";
 import {
   UploadModal3D,
   UploadModalImage,
   UploadModalSplat,
 } from "@storyteller/ui-upload-modal";
+import { isPromptBoxDropZoneActive } from "@storyteller/ui-promptbox";
 import { FilterEngineCategories } from "../../enums";
 
 type ModalType = "3d" | "image" | "splat" | null;
@@ -21,6 +21,15 @@ function getModalTypeForFileName(name: string): ModalType {
 
 function isAnyModalOpen(): boolean {
   return !!document.querySelector("[data-radix-dialog-content]");
+}
+
+/**
+ * Whole-app drops stand down while a prompt box owns them. On the create
+ * pages the prompt box is the only drop target (matching the webapp), so a
+ * drop anywhere else must do nothing rather than open the upload modal.
+ */
+function isGlobalDropSuppressed(): boolean {
+  return isAnyModalOpen() || isPromptBoxDropZoneActive();
 }
 
 const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
@@ -50,12 +59,14 @@ export function GlobalFileDropHandler() {
             const payload = event.payload;
 
             if (payload.type === "enter") {
-              if (!isAnyModalOpen()) setIsDragging(true);
+              if (!isGlobalDropSuppressed()) setIsDragging(true);
             } else if (payload.type === "over") {
-              // overlay stays visible
+              // The prompt box can mount mid-drag (or the pointer can move
+              // onto it), so keep re-checking rather than trusting "enter".
+              if (isGlobalDropSuppressed()) setIsDragging(false);
             } else if (payload.type === "drop") {
               setIsDragging(false);
-              if (isAnyModalOpen()) return;
+              if (isGlobalDropSuppressed()) return;
 
               if (payload.paths.length === 0) return;
 
@@ -117,7 +128,7 @@ export function GlobalFileDropHandler() {
       const handleDragEnter = (e: DragEvent) => {
         e.preventDefault();
         if (!e.dataTransfer?.types.includes("Files")) return;
-        if (isAnyModalOpen()) return;
+        if (isGlobalDropSuppressed()) return;
         dragCounter.current++;
         setIsDragging(true);
       };
@@ -135,7 +146,7 @@ export function GlobalFileDropHandler() {
         e.preventDefault();
         setIsDragging(false);
         dragCounter.current = 0;
-        if (isAnyModalOpen()) return;
+        if (isGlobalDropSuppressed()) return;
 
         const allFiles = Array.from(e.dataTransfer.files);
         if (allFiles.length === 0) return;
@@ -182,7 +193,7 @@ export function GlobalFileDropHandler() {
       {isDragging && modalType === null && (
         <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
           <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-white/60 bg-black/30 px-16 py-12 text-white backdrop-blur-sm">
-            <FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} className="text-4xl opacity-80" />
+            <Maximize2Icon  className="text-4xl opacity-80" />
             <div className="text-xl font-semibold">Drop to Upload</div>
             <div className="text-sm opacity-60">GLB, PNG, JPG, JPEG, SPZ</div>
           </div>
@@ -194,7 +205,7 @@ export function GlobalFileDropHandler() {
         onClose={closeModal}
         onSuccess={(_category: FilterEngineCategories) => closeModal()}
         title="Upload a 3D Model"
-        titleIcon={faCube}
+        titleIcon={BoxIcon}
       />
       <UploadModalImage
         isOpen={modalType === "image"}
@@ -202,7 +213,7 @@ export function GlobalFileDropHandler() {
         onClose={closeModal}
         onSuccess={() => closeModal()}
         title="Upload an Image"
-        titleIcon={faImages}
+        titleIcon={ImagesIcon}
       />
       <UploadModalSplat
         isOpen={modalType === "splat"}
@@ -210,7 +221,7 @@ export function GlobalFileDropHandler() {
         onClose={closeModal}
         onSuccess={() => {}}
         title="Upload a Splat"
-        titleIcon={faCube}
+        titleIcon={BoxIcon}
       />
     </>
   );

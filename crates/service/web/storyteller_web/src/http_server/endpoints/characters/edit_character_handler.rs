@@ -7,11 +7,11 @@ use log::{error, info, warn};
 use artcraft_api_defs::characters::edit_character::{EditCharacterRequest, EditCharacterResponse};
 use mysql_queries::queries::characters::get_character_by_token::get_character_by_token;
 use mysql_queries::queries::characters::update_character_name_and_description::update_character_name_and_description;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::update_character::update_character::{update_character, UpdateCharacterArgs};
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
+use kinovi_web_client::requests::update_character::update_character::{update_character, UpdateCharacterArgs};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::require_api_or_web_session;
 use crate::state::server_state::ServerState;
 
 /// Edit a character's name or description.
@@ -38,7 +38,12 @@ pub async fn edit_character_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *mysql_connection).await?;
+  let user_session = require_api_or_web_session(
+    &http_request,
+    &server_state.session_checker,
+    &server_state.avt_cookie_manager,
+    &mut *mysql_connection,
+  ).await?;
 
   let user_token = &user_session.user_token;
   let is_mod = user_session.is_mod();
@@ -96,8 +101,8 @@ pub async fn edit_character_handler(
 
   if has_name_change {
     if let Some(ref kinovi_id) = character.kinovi_character_id {
-      let session = Seedance2ProSession::from_cookies_string(
-        server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
+      let session = KinoviWebSession::from_cookies_string(
+        server_state.inference_providers.kinovi_web.cookies_volcengine.clone()
       );
 
       update_character(UpdateCharacterArgs {

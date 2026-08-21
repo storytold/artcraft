@@ -1,10 +1,8 @@
 import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinnerThird,
-  type IconDefinition,
-} from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { type PopoverItem } from "@storyteller/ui-popover";
 import Seo from "../../components/seo";
@@ -19,7 +17,7 @@ interface CreateMediaPageShellProps {
   authChecked: boolean;
   isLoggedIn: boolean;
   // Unauthenticated state
-  heroIcon: IconDefinition;
+  heroIcon: LucideIcon;
   heroTitle: string;
   heroSubtitle: string;
   // Content
@@ -58,10 +56,9 @@ export function CreateMediaPageShell({
   if (!authChecked) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#101014]">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
-          className="animate-spin text-4xl text-primary/80"
-        />
+        <LoaderCircleIcon
+          
+          className="animate-spin text-4xl text-primary/80" />
       </div>
     );
   }
@@ -90,7 +87,7 @@ export function CreateMediaPageShell({
           <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
         </div>
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
-          <FontAwesomeIcon
+          <DynamicIcon
             icon={heroIcon}
             className="mb-6 text-5xl text-white/20"
           />

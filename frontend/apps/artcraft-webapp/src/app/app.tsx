@@ -7,14 +7,17 @@ import {
   useLocation,
   useNavigationType,
 } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import Home from "../pages/home";
 import Media from "../pages/media";
 import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
+import CreateAudio from "../pages/create-audio";
+import CreateObject from "../pages/create-object";
+import CreateWorld from "../pages/create-world";
 import CreateVFX from "../pages/create-vfx";
+import FrameExtractor from "../pages/frame-extractor";
 import PageScene from "../pages/pagescene";
 import PageDraw from "../pages/pagedraw";
 import VideoEditorPage from "../pages/video-editor";
@@ -59,10 +62,9 @@ function ScrollToTop() {
 function AuthCheckSpinner() {
   return (
     <div className="flex h-screen items-center justify-center bg-[#101014]">
-      <FontAwesomeIcon
-        icon={faSpinnerThird}
-        className="animate-spin text-4xl text-primary/80"
-      />
+      <LoaderCircleIcon
+        
+        className="animate-spin text-4xl text-primary/80" />
     </div>
   );
 }
@@ -153,16 +155,15 @@ export function App() {
           <Route path="/" element={<Home />} />
           <Route path="/create-image" element={<CreateImage />} />
           <Route path="/create-video" element={<CreateVideo />} />
+          <Route path="/create-audio" element={<CreateAudio />} />
+          <Route path="/create-object" element={<CreateObject />} />
+          <Route path="/create-world" element={<CreateWorld />} />
           <Route path="/background-change" element={<CreateVFX />} />
+          <Route path="/frame-extractor" element={<FrameExtractor />} />
           <Route path="/moodboard" element={<MoodboardPage />} />
           <Route path="/edit-3d" element={<PageScene />} />
           <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
           <Route path="/edit-image" element={<PageDraw />} />
-          <Route path="/video-editor" element={<VideoEditorPage />} />
-          <Route
-            path="/video-editor/:projectId"
-            element={<VideoEditorPage />}
-          />
           <Route path="/support" element={<Support />} />
           <Route path="/pricing" element={<Pricing />} />
           {/* Welcome is public so it stays reachable right after signup
@@ -173,12 +174,21 @@ export function App() {
 
           {/* Protected — sign-in required (user-owned content / billing flows) */}
           <Route element={<RequireAuth />}>
+            {/* Video projects persist server-side, so the whole editor is
+                sign-in gated: logged-out visits bounce to /login?from=...
+                and return here after auth. */}
+            <Route path="/video-editor" element={<VideoEditorPage />} />
+            <Route
+              path="/video-editor/:projectId"
+              element={<VideoEditorPage />}
+            />
             <Route path="/media" element={<Media />} />
             <Route path="/media/:id" element={<Media />} />
             <Route path="/library" element={<Library />} />
             <Route path="/library/folders" element={<Library />} />
-            {/* `:slug` is a media-class filter (images/videos/meshes) OR a
-                folder token (prefixed `folder_`); the page disambiguates. */}
+            {/* `:slug` is a media-class filter (images/videos/meshes), a
+                folder token (prefixed `folder_`), the static `tags` tab, or
+                a tag token (prefixed `tag_`); the page disambiguates. */}
             <Route path="/library/:slug" element={<Library />} />
             <Route path="/referrals" element={<Referrals />} />
             <Route path="/onboarding" element={<Onboarding />} />

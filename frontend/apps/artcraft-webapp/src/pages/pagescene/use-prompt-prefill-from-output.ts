@@ -13,7 +13,7 @@
 //
 // Aspect ratio is intentionally not restored: Stage3DBody's cold-sync
 // applies the selected model's defaultAspectRatio (16:9 for the
-// InstructiveEdit-tagged models that populate STAGE_3D_PAGE_MODEL_LIST),
+// InstructiveEdit-tagged models that populate the Stage3D page model list),
 // which matches the common case. Prompts rendered at other aspects lose
 // that nuance on prefill — acceptable for a "starting point" seed.
 //

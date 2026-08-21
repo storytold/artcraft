@@ -25,11 +25,11 @@ pub struct FalImageResponsePayload {
   pub maybe_outbound_request: Option<Arc<dyn Debug + Send + Sync>>,
 }
 
-/// Response from the Seedance2Pro/Kinovi provider (used for Midjourney
-/// image generation). Mirrors `Seedance2proVideoResponsePayload` on the
+/// Response from the KinoviWeb/Kinovi provider (used for Midjourney
+/// image generation). Mirrors `KinoviWebVideoResponsePayload` on the
 /// video side.
 #[derive(Clone, Debug)]
-pub struct Seedance2proImageResponsePayload {
+pub struct KinoviWebImageResponsePayload {
   pub order_id: String,
   pub task_id: String,
   pub maybe_order_ids: Option<Vec<String>>,
@@ -40,7 +40,7 @@ pub struct Seedance2proImageResponsePayload {
 pub enum GenerateImageResponse {
   Artcraft(ArtcraftImageResponsePayload),
   Fal(FalImageResponsePayload),
-  Seedance2Pro(Seedance2proImageResponsePayload),
+  KinoviWeb(KinoviWebImageResponsePayload),
 }
 
 impl GenerateImageResponse {
@@ -58,9 +58,9 @@ impl GenerateImageResponse {
     }
   }
 
-  pub fn get_seedance2pro_payload(&self) -> Option<Seedance2proImageResponsePayload> {
+  pub fn get_kinovi_web_payload(&self) -> Option<KinoviWebImageResponsePayload> {
     match self {
-      Self::Seedance2Pro(p) => Some(p.clone()),
+      Self::KinoviWeb(p) => Some(p.clone()),
       _ => None,
     }
   }

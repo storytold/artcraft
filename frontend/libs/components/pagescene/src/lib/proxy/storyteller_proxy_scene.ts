@@ -281,6 +281,11 @@ export class StoryTellerProxyScene {
       if (json_object.user_data?.shapeType !== undefined) {
         obj.userData["shapeType"] = json_object.user_data.shapeType;
       }
+      // Persistent skeleton-overlay toggle (outliner bone icon). The engine
+      // recreates the helper from this flag on the post-load outliner sync.
+      if (json_object.user_data?.skeletonVisible !== undefined) {
+        obj.userData["skeletonVisible"] = json_object.user_data.skeletonVisible;
+      }
       if (json_object.visible !== undefined) {
         this.scene.setVisible(obj.uuid, json_object.visible);
       }

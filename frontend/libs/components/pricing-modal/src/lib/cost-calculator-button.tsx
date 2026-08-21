@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalculator, faCoins } from "@fortawesome/pro-solid-svg-icons";
+import { CalculatorIcon, CoinsIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
@@ -25,11 +24,11 @@ export function CostCalculatorButton({
       className={className}
       title="Cost Calculator"
     >
-      <FontAwesomeIcon icon={faCalculator} className="text-base-fg" />
+      <CalculatorIcon  className="text-base-fg" />
       <span>Costs</span>
       {credits != null && (
         <span className="text-xs font-semibold flex items-center gap-1">
-          <FontAwesomeIcon icon={faCoins} className="text-base-fg" />
+          <CoinsIcon  className="text-base-fg" />
           {credits}
         </span>
       )}

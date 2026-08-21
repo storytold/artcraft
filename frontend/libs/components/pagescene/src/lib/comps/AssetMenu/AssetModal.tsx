@@ -1,19 +1,7 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  faSearch,
-  faChevronLeft,
-  faLayerGroup,
-  faUser,
-  faSun,
-  faCube,
-  faChevronRight,
-  faMountainCity,
-  faDog,
-  faFaceGrinStars,
-  faUpFromLine,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowUpFromLineIcon, BoxIcon, ChevronLeftIcon, ChevronRightIcon, DogIcon, FootprintsIcon, LaughIcon, LayersIcon, MountainIcon, SearchIcon, SunIcon, UserIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { Input } from "@storyteller/ui-input";
@@ -30,7 +18,11 @@ import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { ItemElements } from "./shared/ItemElements";
-import { useUserObjects, useFeaturedObjects } from "./hooks";
+import {
+  useAnimationLibrary,
+  useUserObjects,
+  useFeaturedObjects,
+} from "./hooks";
 import { isAnyStatusFetching } from "./utilities/misc";
 import { FilterEngineCategories, FilterMediaType } from "../../enums";
 import {
@@ -46,7 +38,7 @@ type AssetTab = {
   id: string;
   label: string;
   labelSingle?: string;
-  icon: typeof faLayerGroup;
+  icon: typeof LayersIcon;
   engineCategory?: FilterEngineCategories;
   items: MediaItem[];
 };
@@ -69,7 +61,7 @@ const AllTabSection = ({
         onClick={onViewAll}
       >
         View all
-        <FontAwesomeIcon icon={faChevronRight} className="text-xs opacity-70" />
+        <ChevronRightIcon  className="text-xs opacity-70" />
       </Button>
     </div>
     <div className="h-[170px]">
@@ -85,6 +77,7 @@ const AllTabSection = ({
 // Mapping from upload category to AssetTab id, so the modal can
 // auto-switch the user to the tab matching what they just uploaded.
 const categoryToTabIdMap: Partial<Record<FilterEngineCategories, string>> = {
+  [FilterEngineCategories.ANIMATION]: "animations",
   [FilterEngineCategories.CHARACTER]: "characters",
   [FilterEngineCategories.CREATURE]: "creatures",
   [FilterEngineCategories.IMAGE_PLANE]: "image-planes",
@@ -150,6 +143,10 @@ export const AssetModal = () => {
       // upload-reopen). It can't clobber an active drag: `assetModalVisible`
       // doesn't change mid-drag, so this effect doesn't re-run then.
       usePageSceneStore.getState().setAssetDraggingUnder(false);
+
+      // Pick up animations the user uploaded since the last open (silent
+      // for anonymous users — see the hook's suppressErrorToast).
+      fetchUserAnimations();
 
       const lastUploadedTab = sessionStorage.getItem("lastUploadedTab");
       if (lastUploadedTab) {
@@ -252,6 +249,15 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching featured image planes",
   });
 
+  // Animations data shared with the standalone AnimationsModal. Unlike the
+  // other user-asset hooks (dead "Mine" tab), fetchUserAnimations fires on
+  // every modal open — silently, since anonymous users legitimately 401.
+  const {
+    allAnimations,
+    fetchUserAnimations,
+    fetchStatuses: animationFetchStatuses,
+  } = useAnimationLibrary();
+
   const isFetching = isAnyStatusFetching([
     userCharactersFetchStatus,
     userObjectsFetchStatus,
@@ -263,6 +269,7 @@ export const AssetModal = () => {
     featuredSetsFetchStatus,
     featuredCreaturesFetchStatus,
     featuredImagePlanesFetchStatus,
+    ...animationFetchStatuses,
   ]);
 
   const assetTabs = useMemo<AssetTab[]>(() => {
@@ -292,12 +299,12 @@ export const AssetModal = () => {
     const orderedCharacters = [...priorityCharacters, ...remainingCharacters];
 
     return [
-      { id: "all", label: "All", icon: faLayerGroup, items: [] },
+      { id: "all", label: "All", icon: LayersIcon, items: [] },
       {
         id: "character",
         label: "Characters",
         labelSingle: "Character",
-        icon: faUser,
+        icon: UserIcon,
         engineCategory: FilterEngineCategories.CHARACTER,
         items: orderedCharacters,
       },
@@ -305,7 +312,7 @@ export const AssetModal = () => {
         id: "objects",
         label: "Objects",
         labelSingle: "Object",
-        icon: faCube,
+        icon: BoxIcon,
         engineCategory: FilterEngineCategories.OBJECT,
         items:
           activeLibraryTab === "library"
@@ -316,7 +323,7 @@ export const AssetModal = () => {
         id: "memes",
         label: "Memes",
         labelSingle: "Meme",
-        icon: faFaceGrinStars,
+        icon: LaughIcon,
         engineCategory: FilterEngineCategories.CHARACTER,
         items:
           activeLibraryTab === "library"
@@ -327,7 +334,7 @@ export const AssetModal = () => {
         id: "sets",
         label: "Sets",
         labelSingle: "Set",
-        icon: faMountainCity,
+        icon: MountainIcon,
         engineCategory: FilterEngineCategories.LOCATION,
         items:
           activeLibraryTab === "library"
@@ -338,7 +345,7 @@ export const AssetModal = () => {
         id: "creatures",
         label: "Creatures",
         labelSingle: "Creature",
-        icon: faDog,
+        icon: DogIcon,
         engineCategory: FilterEngineCategories.CREATURE,
         items:
           activeLibraryTab === "library"
@@ -346,10 +353,20 @@ export const AssetModal = () => {
             : (userCreatures ?? []),
       },
       {
+        id: "animations",
+        label: "Animations",
+        labelSingle: "Animation",
+        icon: FootprintsIcon,
+        engineCategory: FilterEngineCategories.ANIMATION,
+        // Uploads-first ordering with the demo-clip fallback lives in
+        // useAnimationLibrary (shared with the standalone AnimationsModal).
+        items: activeLibraryTab === "library" ? allAnimations : [],
+      },
+      {
         id: "skybox",
         label: "Skybox",
         labelSingle: "Skybox",
-        icon: faSun,
+        icon: SunIcon,
         items: activeLibraryTab === "library" ? demoSkyboxItems : [],
       },
     ];
@@ -357,6 +374,7 @@ export const AssetModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
+      allAnimations,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,
@@ -459,6 +477,7 @@ export const AssetModal = () => {
     fetchUserSets();
     fetchUserCreatures();
     fetchUserImagePlanes();
+    fetchUserAnimations();
   };
 
   const clearSearch = () => setSearchTerm("");
@@ -506,7 +525,7 @@ export const AssetModal = () => {
                   )}
                   onClick={() => setActiveAssetTab(tab.id)}
                 >
-                  <FontAwesomeIcon
+                  <DynamicIcon
                     icon={tab.icon}
                     className="mr-2 opacity-70"
                   />
@@ -533,7 +552,7 @@ export const AssetModal = () => {
                       placeholder="Search"
                       className="relative z-[51] grow"
                       inputClassName="pr-2.5"
-                      icon={faSearch}
+                      icon={SearchIcon}
                       value={searchTerm}
                       onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         setSearchTerm(e.target.value)
@@ -566,10 +585,9 @@ export const AssetModal = () => {
                           className="flex items-center gap-2 border-none bg-transparent px-3 py-1.5 text-sm text-white/70 hover:bg-transparent hover:text-white/100"
                           onClick={() => setActiveAssetTab("all")}
                         >
-                          <FontAwesomeIcon
-                            icon={faChevronLeft}
-                            className="text-sm font-semibold opacity-70"
-                          />
+                          <ChevronLeftIcon
+                            
+                            className="text-sm font-semibold opacity-70" />
                         </Button>
                         {currentTab.label}
                       </div>
@@ -589,7 +607,7 @@ export const AssetModal = () => {
           onClose: () => setIsUploadModalOpen(false),
           onSuccess: handleUploadSuccess,
           title: "Upload 3D Asset",
-          titleIcon: faUpFromLine,
+          titleIcon: ArrowUpFromLineIcon,
         })}
     </>
   );

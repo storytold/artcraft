@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRightLong } from "@fortawesome/pro-solid-svg-icons";
+import { MoveRightIcon } from "lucide-react";
 import { useViewportSize } from "../hooks/useViewportSize";
 
 export const PreviewImages = () => {
@@ -20,10 +19,9 @@ export const PreviewImages = () => {
         <canvas id="raw-preview" width={imageWidth} height={imageHeight} />
       </div>
       <div className="flex w-[60px] flex-col justify-center">
-        <FontAwesomeIcon
-          icon={faArrowRightLong}
-          className="text-3xl opacity-60"
-        />
+        <MoveRightIcon
+          
+          className="text-3xl opacity-60" />
       </div>
       <div
         className="block w-full overflow-hidden rounded-lg border border-ui-controls/25 bg-ui-panel"

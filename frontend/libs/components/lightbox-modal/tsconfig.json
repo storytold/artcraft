@@ -24,6 +24,9 @@
       "path": "../../analytics/google-analytics"
     },
     {
+      "path": "../audio-player"
+    },
+    {
       "path": "../viewer-3d"
     },
     {
@@ -31,6 +34,9 @@
     },
     {
       "path": "../../tauri-api"
+    },
+    {
+      "path": "../../icons"
     },
     {
       "path": "../button"

@@ -12,12 +12,14 @@ use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
+use crate::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
 use crate::queries::generic_inference::api_providers::common::insert_generic_inference_job_for_provider::{
   insert_generic_inference_job_for_provider,
   InsertGenericInferenceJobForProviderArgs,
@@ -49,6 +51,11 @@ pub struct InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs<'e, 'c, E>
   /// The platform the enqueuing request came from, inferred from its User-Agent.
   pub maybe_platform_type: Option<PlatformType>,
 
+  /// Estimated system (user-facing) and provider-side costs.
+  pub maybe_cost_estimates: Option<JobCostEstimates>,
+
+  pub maybe_debug_log_event_token: Option<&'e DebugLogEventToken>,
+
   pub mysql_executor: E,
 
   pub phantom: PhantomData<&'c E>,
@@ -76,8 +83,8 @@ pub async fn insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_t
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
     maybe_platform_type: args.maybe_platform_type,
-    maybe_cost_estimates: None,
-    maybe_debug_log_event_token: None,
+    maybe_cost_estimates: args.maybe_cost_estimates,
+    maybe_debug_log_event_token: args.maybe_debug_log_event_token,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
     status: JobStatusPlus::Pending,

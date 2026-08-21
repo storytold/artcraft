@@ -8,6 +8,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
@@ -25,6 +26,12 @@ pub enum UploadType {
   Filesystem,
   DeviceCaptureApi,
   StorytellerEngine,
+
+  /// Internal project documents (scenes, mood boards, timelines, etc.)
+  /// created by our apps and uploaded by the client. Stored with origin
+  /// `upload`; the project nature is captured by `media_class = 'project'`
+  /// and `maybe_project_type`.
+  ProjectFile,
 }
 
 pub struct InsertMediaFileFromUploadArgs<'a> {
@@ -32,6 +39,9 @@ pub struct InsertMediaFileFromUploadArgs<'a> {
 
   pub media_file_type: MediaFileType,
   pub maybe_media_class: Option<MediaFileClass>,
+
+  /// Only set for internal Artcraft project documents (`media_class = 'project'`).
+  pub maybe_project_type: Option<MediaFileProjectType>,
 
   pub upload_type: UploadType,
 
@@ -74,6 +84,7 @@ pub async fn insert_media_file_from_file_upload(
   let mut origin_category = match args.upload_type {
     UploadType::ThirdPartyInference => MediaFileOriginCategory::ThirdPartyInference,
     UploadType::Filesystem => MediaFileOriginCategory::Upload,
+    UploadType::ProjectFile => MediaFileOriginCategory::Upload,
     UploadType::DeviceCaptureApi => MediaFileOriginCategory::DeviceApi,
     UploadType::StorytellerEngine => MediaFileOriginCategory::StorytellerStudio,
   };
@@ -126,6 +137,7 @@ SET
 
   media_class = ?,
   media_type = ?,
+  maybe_project_type = ?,
 
   origin_category = ?,
   origin_product_category = ?,
@@ -174,6 +186,8 @@ SET
         .unwrap_or_else(|| MediaFileClass::Unknown.to_str()),
 
       args.media_file_type.to_str(),
+
+      args.maybe_project_type.map(|project_type| project_type.to_str()),
 
       origin_category.to_str(),
       ORIGIN_PRODUCT_CATEGORY.to_str(),

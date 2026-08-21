@@ -20,7 +20,7 @@ import {
   removeImageDropListener,
 } from "@storyteller/ui-gallery-modal";
 import {
-  STAGE_3D_PAGE_MODEL_LIST,
+  useStage3dPageModelList,
   ModelPage,
   defaultModelForPage,
   useClassyModelSelectorStore,
@@ -38,15 +38,16 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
 import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import type { PopoverItem } from "@storyteller/ui-popover";
 import { v4 as uuidv4 } from "uuid";
 
 import { EngineContext } from "./contexts/EngineContext/EngineContext";
 import { AnonHintChip } from "./comps/AnonHintChip";
+import { AspectRatioMenu } from "./comps/AspectRatioMenu";
 import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { Controls3D } from "./comps/Controls3D";
+import { SceneModePill } from "./comps/SceneModePill";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
@@ -55,10 +56,16 @@ import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
 import { EntranceDebugPanel } from "./comps/EntranceDebugPanel";
 import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
+import { ExitCameraView } from "./comps/ExitCameraView";
+import { RecordControls } from "./comps/RecordControls";
+import { CameraStatusPill } from "./comps/CameraStatusPill";
+import { RenderOverlay } from "./comps/RenderOverlay";
+import { CompletionModal } from "./comps/CompletionModal";
 import { PreviewBox } from "./comps/PreviewBox";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { SceneContainer } from "./comps/SceneContainer";
-import { addCharacter, addObject, setCameraAspect } from "./actions";
+import { addCharacter, addObject } from "./actions";
+import { TimelineBar, TimelineEditor } from "./comps/Timeline";
 import { useEditorCanvas } from "./hooks/useEditorCanvas";
 import { useFreeCam } from "./hooks/useFreeCam";
 import { useViewportPointer } from "./hooks/useViewportPointer";
@@ -110,6 +117,7 @@ export const Stage3DBody = ({
   topBarStartSlot,
   topBarEndSlot,
 }: Stage3DBodyProps = {}) => {
+  const stage3dModelList = useStage3dPageModelList();
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -126,6 +134,13 @@ export const Stage3DBody = ({
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
+  const timelineExists = usePageSceneStore((s) => s.timelineExists);
+  const timelineExpanded = usePageSceneStore((s) => s.timelineExpanded);
+  const setTimelineExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
+  const timelineTracks = usePageSceneStore((s) => s.timelineTracks);
+  const is3DSceneLoaded = usePageSceneStore((s) => s.is3DSceneLoaded);
+  const sceneMode = usePageSceneStore((s) => s.sceneMode);
+  const isRecord = sceneMode === "record";
   const previewImageUrl = usePageSceneStore((s) => s.sceneMeta.previewImageUrl);
   const isVisitingOthersScene = useIsVisitingOthersScene();
   const addCamera = usePageSceneStore((s) => s.addCamera);
@@ -166,20 +181,25 @@ export const Stage3DBody = ({
   useEffect(() => {
     if (modelSelectorPlacement !== "prompt-box") return;
     if (selectedImageModel) return;
-    const models = STAGE_3D_PAGE_MODEL_LIST.map((i) => i.model).filter(
+    const models = stage3dModelList.map((i) => i.model).filter(
       (m): m is NonNullable<typeof m> => m !== undefined,
     );
     const def = defaultModelForPage(models, PAGE_ID);
     if (def) setSelectedModel(PAGE_ID, def);
-  }, [modelSelectorPlacement, selectedImageModel, setSelectedModel]);
+  }, [
+    modelSelectorPlacement,
+    selectedImageModel,
+    setSelectedModel,
+    stage3dModelList,
+  ]);
 
   const inlineModelItems: PopoverItem[] = useMemo(
     () =>
-      STAGE_3D_PAGE_MODEL_LIST.map((item) => ({
+      stage3dModelList.map((item) => ({
         ...item,
         selected: item.model === selectedImageModel,
       })),
-    [selectedImageModel],
+    [selectedImageModel, stage3dModelList],
   );
   const handleInlineModelSelect = useCallback(
     (item: PopoverItem) => {
@@ -189,9 +209,9 @@ export const Stage3DBody = ({
   );
   const selectedModelIcon = useMemo(
     () =>
-      STAGE_3D_PAGE_MODEL_LIST.find((i) => i.model === selectedImageModel)
+      stage3dModelList.find((i) => i.model === selectedImageModel)
         ?.icon,
-    [selectedImageModel],
+    [selectedImageModel, stage3dModelList],
   );
   const inlineModelSelector =
     modelSelectorPlacement === "prompt-box" ? (
@@ -213,6 +233,30 @@ export const Stage3DBody = ({
   );
 
   const editor = useContext(EngineContext);
+
+  // Record mode is read-only playback through the render camera: enter
+  // camera view + lock the viewport on entry, restore on exit.
+  useEffect(() => {
+    if (!editor) return;
+    if (isRecord) {
+      editor.cameraController.enterCameraView();
+      editor.cameraController.setLocked(true);
+    } else {
+      editor.cameraController.setLocked(false);
+      editor.cameraController.exitCameraView();
+    }
+  }, [isRecord, editor]);
+
+  // Auto-expand the timeline once when a loaded scene has keyframes or an
+  // imported Three.js animation; otherwise it stays collapsed by default.
+  const didAutoExpandTimelineRef = useRef(false);
+  useEffect(() => {
+    if (!editor || !is3DSceneLoaded || didAutoExpandTimelineRef.current) return;
+    didAutoExpandTimelineRef.current = true;
+    if (timelineTracks.length > 0 || editor.sceneHasAnimation()) {
+      setTimelineExpanded(true);
+    }
+  }, [editor, is3DSceneLoaded, timelineTracks, setTimelineExpanded]);
 
   // Reactive viewport sizing. useViewportSize listens to window
   // resize and re-renders the component. Falls back to
@@ -339,28 +383,6 @@ export const Stage3DBody = ({
     }
   };
 
-  const onAspectRatioSelect = (newRatio: CameraAspectRatio) => {
-    if (!editor) return;
-    setCameraAspect(editor, newRatio);
-  };
-
-  // Cold-load sync: align the editor letterbox with the picker's
-  // initial display once when the engine + a `supportsNewAspectRatio()`
-  // model are both ready. Per-model-switch sync is intentionally NOT
-  // done because every model defaults to Square, which would override
-  // the user's pick.
-  const didColdSyncRef = useRef(false);
-  useEffect(() => {
-    if (didColdSyncRef.current) return;
-    if (!editor || !selectedImageModel?.supportsNewAspectRatio()) return;
-    const def = selectedImageModel.defaultAspectRatio;
-    if (!def) return;
-    const mapped = commonToCameraAspect(def);
-    if (!mapped) return;
-    setCameraAspect(editor, mapped);
-    didColdSyncRef.current = true;
-  }, [editor, selectedImageModel]);
-
   // Gallery → 3D scene drop handler. Stage3D mounts only when 3D is
   // active so this is implicitly 3D-only.
   useEffect(() => {
@@ -383,17 +405,35 @@ export const Stage3DBody = ({
             position.y,
           );
           try {
-            if (item.mediaClass === "dimensional") {
+            if (
+              item.mediaClass === "dimensional" ||
+              item.mediaClass === "mesh" ||
+              item.mediaClass === "splat"
+            ) {
               const isCharacter = item.assetType === "character";
+              const isSplat = item.mediaClass === "splat";
               const mediaItem: MediaItem = {
                 version: 1,
-                type: isCharacter ? AssetType.CHARACTER : AssetType.OBJECT,
+                type: isCharacter
+                  ? AssetType.CHARACTER
+                  : isSplat
+                    ? AssetType.SPLAT
+                    : AssetType.OBJECT,
                 media_id: item.id || uuidv4(),
-                name: item.label || (isCharacter ? "Character" : "3D Object"),
+                name:
+                  item.label ||
+                  (isCharacter
+                    ? "Character"
+                    : isSplat
+                      ? "3D World"
+                      : "3D Object"),
               };
               if (isCharacter) {
                 await addCharacter(editor, mediaItem, worldPosition);
               } else {
+                // NB: Splats intentionally route through addObject too — the
+                // engine's sceneManager resolves the media token to a splat
+                // (same as the engine's own DnD in DndAsset.ts).
                 await addObject(editor, mediaItem, worldPosition);
               }
             } else {
@@ -441,6 +481,8 @@ export const Stage3DBody = ({
             {import.meta.env.DEV && <EntranceDebugPanel />}
             <FocalLengthDisplay />
             <PoseModeSelector />
+            <RenderOverlay />
+            <CompletionModal />
 
             <div
               className="absolute left-0 top-0 w-full"
@@ -448,87 +490,77 @@ export const Stage3DBody = ({
             >
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-start gap-2">
-                  <ControlsTopButtons />
-                  {topBarStartSlot && (
+                  {!isRecord && <ControlsTopButtons />}
+                  {!isRecord && topBarStartSlot && (
                     <div className="pl-3">{topBarStartSlot}</div>
                   )}
                 </div>
-                <Controls3D showImageTo3DButton={showImageTo3DButton} />
+                <div className="flex flex-col items-center">
+                  <SceneModePill />
+                  {!isRecord && (
+                    <Controls3D showImageTo3DButton={showImageTo3DButton} />
+                  )}
+                </div>
                 <div className="flex items-start justify-end gap-2 pr-3 pt-3">
-                  {topBarEndSlot}
-                  <AnonHintChip />
+                  {/* Camera cluster: which camera drives the viewport +
+                      the render-frame aspect ratio. */}
+                  {!isRecord && <CameraStatusPill />}
+                  {!isRecord && <AspectRatioMenu />}
+                  {!isRecord && topBarEndSlot}
+                  {!isRecord && <AnonHintChip />}
                 </div>
               </div>
+            </div>
+
+            {/* Outliner: vertically centered against the viewport. Sized in
+                vh — deliberately independent of the camera aspect ratio. */}
+            <div
+              className={`absolute left-4 top-1/2 -translate-y-1/2${
+                isRecord ? " hidden" : ""
+              }`}
+            >
+              <Outliner />
             </div>
 
             <div
               className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >
+              {/* Always mounted: PreviewEngineCamera owns the cam-view canvas
+                  that EngineProvider depends on — unmounting it in record mode
+                  tears down + recreates the whole engine (wiping the scene).
+                  Hide with CSS in record instead. */}
               <div
-                className="absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2"
+                className={`absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2${
+                  isRecord ? " hidden" : ""
+                }`}
                 style={{ transform: `scale(${getScale()})` }}
               >
-                <Outliner />
                 <PreviewEngineCamera />
               </div>
 
-              <ControlPanelSceneObject />
+              {!isRecord && <ControlPanelSceneObject />}
             </div>
 
             {isVisitingOthersScene && <PreviewBox imageUrl={previewImageUrl} />}
 
-            <PromptBox3D
-              cameras={cameras}
-              cameraAspectRatio={camAspect}
-              disableHotkeyInput={disableHotkeyInput}
-              enableHotkeyInput={enableHotkeyInput}
-              gridVisibility={gridVisible}
-              setGridVisibility={(visible: boolean) =>
-                editor?.bus.emit(new GridVisibleChangedEvent(visible))
-              }
-              selectedCameraId={selectedCameraId}
-              deleteCamera={deleteCamera}
-              focalLengthDragging={focalLengthDragging}
-              setFocalLengthDragging={setFocalLengthDragging}
-              isPromptBoxFocused={isPromptBoxFocused}
-              setIsPromptBoxFocused={setIsPromptBoxFocused}
-              uploadImage={
-                editor
-                  ? (((arg: Parameters<typeof editor.adapter.uploadImage>[0]) =>
-                      editor.adapter.uploadImage(arg)) as never)
-                  : undefined
-              }
-              handleCameraSelect={handleCameraSelect}
-              handleAddCamera={handleAddCamera}
-              handleCameraNameChange={handleCameraNameChange}
-              handleCameraFocalLengthChange={handleCameraFocalLengthChange}
-              onAspectRatioSelect={onAspectRatioSelect}
-              selectedImageModel={selectedImageModel}
-              selectedProvider={selectedProvider}
-              credits={imageCredits}
-              setEnginePrompt={(prompt) => {
-                if (!editor) return;
-                editor.positive_prompt = prompt;
-              }}
-              snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
-              modelSelector={inlineModelSelector}
-              aboveStackSlot={
-                <>
-                  <OnboardingHelper />
-                  {promptboxAboveStackSlot}
-                </>
-              }
-              onBeforeSubmit={() => {
-                const currentUserToken =
-                  usePageSceneStore.getState().currentUserToken;
-                if (!currentUserToken && editor?.adapter.promptSignup) {
-                  editor.adapter.promptSignup("generate");
-                  return false;
-                }
-                return true;
-              }}
-            />
+            {/* Build mode: the animation timeline is the sole bottom UI —
+                collapsed bar by default, expanded editor via the chevron.
+                The exit-camera-view button docks to the bar's right edge. */}
+            {!isRecord && !timelineExpanded && (
+              <div className="absolute bottom-4 left-1/2 w-[90vw] max-w-3xl -translate-x-1/2">
+                <TimelineBar />
+                <ExitCameraView className="absolute -right-2 top-1/2 -translate-y-1/2 translate-x-full" />
+              </div>
+            )}
+            {!isRecord && timelineExpanded && (
+              <>
+                <TimelineEditor />
+                <ExitCameraView className="absolute bottom-4 right-4" />
+              </>
+            )}
+
+            {isRecord && <RecordControls />}
 
             <LoadingDots
               className="absolute left-0 top-0 z-50"
@@ -540,7 +572,7 @@ export const Stage3DBody = ({
             {modelSelectorPlacement === "bottom-left" && (
               <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
                 <ClassyModelSelector
-                  items={STAGE_3D_PAGE_MODEL_LIST}
+                  items={stage3dModelList}
                   page={PAGE_ID}
                   panelTitle="Select Model"
                   panelClassName="min-w-[300px]"

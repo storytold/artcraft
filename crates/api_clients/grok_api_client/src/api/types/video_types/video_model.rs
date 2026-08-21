@@ -17,11 +17,11 @@ pub enum VideoModel {
   /// generation, editing, and extension endpoints.
   GrokImagineVideo,
 
-  /// `grok-imagine-video-1.5-preview` — the 1.5 preview model. xAI also
-  /// accepts the dated alias `grok-imagine-video-1.5-2026-05-30`, which
-  /// resolves to the same model server-side; serialize via this variant for
-  /// the canonical name.
-  GrokImagineVideo1p5Preview,
+  /// `grok-imagine-video-1.5` — the GA 1.5 model (formerly
+  /// `grok-imagine-video-1.5-preview`). xAI still accepts the old `-preview`
+  /// name and the dated alias `grok-imagine-video-1.5-2026-05-30` as synonyms
+  /// server-side; this variant serializes to the new canonical name.
+  GrokImagineVideo1p5,
 
   /// Escape hatch for model identifiers not yet enumerated here.
   Custom(String),
@@ -32,7 +32,7 @@ impl VideoModel {
   pub fn as_str(&self) -> &str {
     match self {
       Self::GrokImagineVideo          => "grok-imagine-video",
-      Self::GrokImagineVideo1p5Preview => "grok-imagine-video-1.5-preview",
+      Self::GrokImagineVideo1p5 => "grok-imagine-video-1.5",
       Self::Custom(s)                 => s.as_str(),
     }
   }
@@ -44,10 +44,12 @@ impl VideoModel {
   pub fn pricing_tier(&self) -> VideoModelPricingTier {
     match self {
       Self::GrokImagineVideo => VideoModelPricingTier::V1,
-      Self::GrokImagineVideo1p5Preview => VideoModelPricingTier::V1p5Preview,
+      Self::GrokImagineVideo1p5 => VideoModelPricingTier::V1p5,
       Self::Custom(s) => match s.as_str() {
-        "grok-imagine-video-1.5-preview" | "grok-imagine-video-1.5-2026-05-30" => {
-          VideoModelPricingTier::V1p5Preview
+        "grok-imagine-video-1.5"
+        | "grok-imagine-video-1.5-preview"
+        | "grok-imagine-video-1.5-2026-05-30" => {
+          VideoModelPricingTier::V1p5
         }
         _ => VideoModelPricingTier::V1,
       },
@@ -63,8 +65,8 @@ pub enum VideoModelPricingTier {
   /// `grok-imagine-video` and any unrecognized identifier that defaults
   /// to v1 rates.
   V1,
-  /// `grok-imagine-video-1.5-preview` (and its dated alias).
-  V1p5Preview,
+  /// `grok-imagine-video-1.5` (and its old `-preview` / dated aliases).
+  V1p5,
 }
 
 // Serialize as the wire string ("grok-imagine-video" or the Custom inner
@@ -89,12 +91,12 @@ mod tests {
   #[test]
   fn one_point_five_preview_serializes_canonical_name() {
     assert_eq!(
-      VideoModel::GrokImagineVideo1p5Preview.as_str(),
-      "grok-imagine-video-1.5-preview",
+      VideoModel::GrokImagineVideo1p5.as_str(),
+      "grok-imagine-video-1.5",
     );
     assert_eq!(
-      serde_json::to_string(&VideoModel::GrokImagineVideo1p5Preview).unwrap(),
-      "\"grok-imagine-video-1.5-preview\"",
+      serde_json::to_string(&VideoModel::GrokImagineVideo1p5).unwrap(),
+      "\"grok-imagine-video-1.5\"",
     );
   }
 
@@ -124,22 +126,28 @@ mod tests {
     #[test]
     fn one_point_five_preview_enum_is_v1p5() {
       assert_eq!(
-        VideoModel::GrokImagineVideo1p5Preview.pricing_tier(),
-        VideoModelPricingTier::V1p5Preview,
+        VideoModel::GrokImagineVideo1p5.pricing_tier(),
+        VideoModelPricingTier::V1p5,
       );
     }
 
     #[test]
     fn custom_with_canonical_1p5_name_is_v1p5() {
+      let m = VideoModel::Custom("grok-imagine-video-1.5".to_string());
+      assert_eq!(m.pricing_tier(), VideoModelPricingTier::V1p5);
+    }
+
+    #[test]
+    fn custom_with_old_preview_name_is_still_v1p5() {
       let m = VideoModel::Custom("grok-imagine-video-1.5-preview".to_string());
-      assert_eq!(m.pricing_tier(), VideoModelPricingTier::V1p5Preview);
+      assert_eq!(m.pricing_tier(), VideoModelPricingTier::V1p5);
     }
 
     #[test]
     fn custom_with_dated_1p5_alias_is_v1p5() {
       // xAI treats this alias as a synonym for the 1.5 preview model.
       let m = VideoModel::Custom("grok-imagine-video-1.5-2026-05-30".to_string());
-      assert_eq!(m.pricing_tier(), VideoModelPricingTier::V1p5Preview);
+      assert_eq!(m.pricing_tier(), VideoModelPricingTier::V1p5);
     }
 
     #[test]

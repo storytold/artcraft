@@ -1,0 +1,212 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  e.token AS `token!: UserSpendEventToken`,\n  e.payments_namespace AS `payments_namespace!`,\n  e.maybe_user_token AS `maybe_user_token: UserToken`,\n  u.username AS `maybe_username?`,\n  u.display_name AS `maybe_display_name?`,\n  u.email_gravatar_hash AS `maybe_email_gravatar_hash?`,\n  e.event_type AS `event_type!`,\n  e.amount_usd_cents,\n  e.maybe_credits_granted AS `maybe_credits_granted: u32`,\n  e.payment_source AS `payment_source!`,\n  e.source_object_id AS `maybe_source_object_id`,\n  e.maybe_stripe_invoice_id,\n  e.maybe_stripe_payment_intent_id,\n  e.maybe_stripe_charge_id,\n  e.maybe_stripe_customer_id,\n  e.is_production AS `is_production: bool`,\n  e.payment_occurred_at AS `payment_occurred_at!: DateTime<Utc>`,\n  e.created_at AS `created_at!: DateTime<Utc>`\nFROM user_spend_events e\nLEFT JOIN users u ON u.token = e.maybe_user_token\nWHERE (? IS NULL OR e.payments_namespace = ?)\nORDER BY e.payment_occurred_at DESC, e.id DESC\nLIMIT ? OFFSET ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token!: UserSpendEventToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "payments_namespace!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "maybe_user_token: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_username?",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_display_name?",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_email_gravatar_hash?",
+        "type_info": {
+          "type": "String",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "event_type!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "amount_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_credits_granted: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "payment_source!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_source_object_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_stripe_invoice_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_stripe_payment_intent_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "maybe_stripe_charge_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "maybe_stripe_customer_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "is_production: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "payment_occurred_at!: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "created_at!: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d5d3a59ea4885868b26168cd305f6168a1e62fe9f8fa663063591335c645b927"
+}

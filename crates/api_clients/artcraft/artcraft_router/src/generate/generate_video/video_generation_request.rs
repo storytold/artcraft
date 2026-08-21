@@ -21,8 +21,14 @@ use crate::generate::generate_video::providers::artcraft::kling_2_6_pro::cost::A
 use crate::generate::generate_video::providers::artcraft::kling_2_6_pro::request::ArtcraftKling2p6ProRequestState;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_pro::cost::ArtcraftKling3p0ProCostState;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_pro::request::ArtcraftKling3p0ProRequestState;
+use crate::generate::generate_video::providers::artcraft::flux_3::cost::ArtcraftFlux3CostState;
+use crate::generate::generate_video::providers::artcraft::flux_3::request::ArtcraftFlux3RequestState;
+use crate::generate::generate_video::providers::artcraft::flux_3_draft::cost::ArtcraftFlux3DraftCostState;
+use crate::generate::generate_video::providers::artcraft::flux_3_draft::request::ArtcraftFlux3DraftRequestState;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_standard::cost::ArtcraftKling3p0StandardCostState;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_standard::request::ArtcraftKling3p0StandardRequestState;
+use crate::generate::generate_video::providers::artcraft::minimax_h3::cost::ArtcraftMinimaxH3CostState;
+use crate::generate::generate_video::providers::artcraft::minimax_h3::request::ArtcraftMinimaxH3RequestState;
 use crate::generate::generate_video::providers::artcraft::preview_model::cost::ArtcraftPreviewModelCostState;
 use crate::generate::generate_video::providers::artcraft::preview_model::request::ArtcraftPreviewModelRequestState;
 use crate::generate::generate_video::providers::artcraft::preview_model_fast::cost::ArtcraftPreviewModelFastCostState;
@@ -35,10 +41,6 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0::cost::Ar
 use crate::generate::generate_video::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::cost::ArtcraftSeedance2p0FastCostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::request::ArtcraftSeedance2p0FastRequestState;
-use crate::generate::generate_video::providers::artcraft::seedance_2p0_u::cost::ArtcraftSeedance2p0UltraCostState;
-use crate::generate::generate_video::providers::artcraft::seedance_2p0_u::request::ArtcraftSeedance2p0UltraRequestState;
-use crate::generate::generate_video::providers::artcraft::seedance_2p0_u_fast::cost::ArtcraftSeedance2p0UltraFastCostState;
-use crate::generate::generate_video::providers::artcraft::seedance_2p0_u_fast::request::ArtcraftSeedance2p0UltraFastRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp::cost::ArtcraftSeedance2p0BytePlusCostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_fast::cost::ArtcraftSeedance2p0BytePlusFastCostState;
@@ -47,6 +49,18 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu::cost
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu::request::ArtcraftSeedance2p0BytePlusUltraRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_fast::cost::ArtcraftSeedance2p0BytePlusUltraFastCostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_fast::request::ArtcraftSeedance2p0BytePlusUltraFastRequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::cost::ArtcraftSeedance2p0MiniCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::request::ArtcraftSeedance2p0MiniRequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5::cost::ArtcraftSeedance2p5CostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5::request::ArtcraftSeedance2p5RequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_u::cost::ArtcraftSeedance2p5UltraCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_u::request::ArtcraftSeedance2p5UltraRequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::cost::ArtcraftSeedance2p5PreviewCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::request::ArtcraftSeedance2p5PreviewRequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_mini::cost::ArtcraftSeedance2p0BytePlusMiniCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_mini::request::ArtcraftSeedance2p0BytePlusMiniRequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_mini::cost::ArtcraftSeedance2p0BytePlusUltraMiniCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_mini::request::ArtcraftSeedance2p0BytePlusUltraMiniRequestState;
 use crate::generate::generate_video::providers::artcraft::sora_2::cost::ArtcraftSora2CostState;
 use crate::generate::generate_video::providers::artcraft::sora_2::request::ArtcraftSora2RequestState;
 use crate::generate::generate_video::providers::artcraft::sora_2_pro::cost::ArtcraftSora2ProCostState;
@@ -61,6 +75,12 @@ use crate::generate::generate_video::providers::artcraft::veo_3p1::cost::Artcraf
 use crate::generate::generate_video::providers::artcraft::veo_3p1::request::ArtcraftVeo3p1RequestState;
 use crate::generate::generate_video::providers::artcraft::veo_3p1_fast::cost::ArtcraftVeo3p1FastCostState;
 use crate::generate::generate_video::providers::artcraft::veo_3p1_fast::request::ArtcraftVeo3p1FastRequestState;
+use crate::generate::generate_video::providers::artcraft::veo_3p1_lite::cost::ArtcraftVeo3p1LiteCostState;
+use crate::generate::generate_video::providers::artcraft::veo_3p1_lite::request::ArtcraftVeo3p1LiteRequestState;
+use crate::generate::generate_video::providers::artcraft::vidu_q3::cost::ArtcraftViduQ3CostState;
+use crate::generate::generate_video::providers::artcraft::vidu_q3::request::ArtcraftViduQ3RequestState;
+use crate::generate::generate_video::providers::artcraft::vidu_q3_turbo::cost::ArtcraftViduQ3TurboCostState;
+use crate::generate::generate_video::providers::artcraft::vidu_q3_turbo::request::ArtcraftViduQ3TurboRequestState;
 use crate::generate::generate_video::providers::fal::kling_1_6_pro::cost::FalKling16ProCostState;
 use crate::generate::generate_video::providers::fal::kling_1_6_pro::request::FalKling16ProRequestState;
 use crate::generate::generate_video::providers::fal::kling_2_1_master::cost::FalKling21MasterCostState;
@@ -73,8 +93,14 @@ use crate::generate::generate_video::providers::fal::kling_2_6_pro::cost::FalKli
 use crate::generate::generate_video::providers::fal::kling_2_6_pro::request::FalKling2p6ProRequestState;
 use crate::generate::generate_video::providers::fal::kling_3p0_pro::cost::FalKling3p0ProCostState;
 use crate::generate::generate_video::providers::fal::kling_3p0_pro::request::FalKling3p0ProRequestState;
+use crate::generate::generate_video::providers::fal::flux_3::cost::FalFlux3CostState;
+use crate::generate::generate_video::providers::fal::flux_3::request::FalFlux3RequestState;
+use crate::generate::generate_video::providers::fal::flux_3_draft::cost::FalFlux3DraftCostState;
+use crate::generate::generate_video::providers::fal::flux_3_draft::request::FalFlux3DraftRequestState;
 use crate::generate::generate_video::providers::fal::kling_3p0_standard::cost::FalKling3p0StandardCostState;
 use crate::generate::generate_video::providers::fal::kling_3p0_standard::request::FalKling3p0StandardRequestState;
+use crate::generate::generate_video::providers::fal::minimax_h3::cost::FalMinimaxH3CostState;
+use crate::generate::generate_video::providers::fal::minimax_h3::request::FalMinimaxH3RequestState;
 use crate::generate::generate_video::providers::fal::seedance_1p0_lite::cost::FalSeedance10LiteCostState;
 use crate::generate::generate_video::providers::fal::seedance_1p0_lite::request::FalSeedance10LiteRequestState;
 use crate::generate::generate_video::providers::fal::sora_2::cost::FalSora2CostState;
@@ -93,10 +119,12 @@ use crate::generate::generate_video::providers::fal::veo_3p1::cost::FalVeo3p1Cos
 use crate::generate::generate_video::providers::fal::veo_3p1::request::FalVeo3p1RequestState;
 use crate::generate::generate_video::providers::fal::veo_3p1_fast::cost::FalVeo3p1FastCostState;
 use crate::generate::generate_video::providers::fal::veo_3p1_fast::request::FalVeo3p1FastRequestState;
-use crate::generate::generate_video::providers::gmicloud::seedance_2p0_g::cost::GmiCloudSeedance2p0UltraCostState;
-use crate::generate::generate_video::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0UltraRequestState;
-use crate::generate::generate_video::providers::gmicloud::seedance_2p0_fast_g::cost::GmiCloudSeedance2p0UltraFastCostState;
-use crate::generate::generate_video::providers::gmicloud::seedance_2p0_fast_g::request::GmiCloudSeedance2p0UltraFastRequestState;
+use crate::generate::generate_video::providers::fal::veo_3p1_lite::cost::FalVeo3p1LiteCostState;
+use crate::generate::generate_video::providers::fal::veo_3p1_lite::request::FalVeo3p1LiteRequestState;
+use crate::generate::generate_video::providers::fal::vidu_q3::cost::FalViduQ3CostState;
+use crate::generate::generate_video::providers::fal::vidu_q3::request::FalViduQ3RequestState;
+use crate::generate::generate_video::providers::fal::vidu_q3_turbo::cost::FalViduQ3TurboCostState;
+use crate::generate::generate_video::providers::fal::vidu_q3_turbo::request::FalViduQ3TurboRequestState;
 use crate::generate::generate_video::providers::grok_api::grok_imagine_video::cost::GrokApiGrokImagineVideoCostState;
 use crate::generate::generate_video::providers::grok_api::grok_imagine_video::request::GrokApiGrokImagineVideoRequestState;
 use crate::generate::generate_video::providers::grok_api::grok_imagine_video_1p5::cost::GrokApiGrokImagineVideo1p5CostState;
@@ -107,11 +135,19 @@ use crate::generate::generate_video::providers::kinovi::seedance_2p0::cost::Kino
 use crate::generate::generate_video::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::cost::KinoviSeedance2p0FastCostState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::request::KinoviSeedance2p0FastRequestState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::cost::KinoviSeedance2p0MiniCostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::request::KinoviSeedance2p0MiniRequestState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5::cost::KinoviSeedance2p5CostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5::request::KinoviSeedance2p5RequestState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::cost::KinoviSeedance2p5PreviewCostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::request::KinoviSeedance2p5PreviewRequestState;
 
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
   ArtcraftGrokImagineVideo(ArtcraftGrokImagineVideoRequestState),
   ArtcraftGrokImagineVideo1p5(ArtcraftGrokImagineVideo1p5RequestState),
+  ArtcraftFlux3(ArtcraftFlux3RequestState),
+  ArtcraftFlux3Draft(ArtcraftFlux3DraftRequestState),
   ArtcraftHappyHorse1p0(ArtcraftHappyHorse1p0RequestState),
   ArtcraftKling16Pro(ArtcraftKling16ProRequestState),
   ArtcraftKling21Master(ArtcraftKling21MasterRequestState),
@@ -120,18 +156,23 @@ pub enum VideoGenerationRequest {
   ArtcraftKling2p6Pro(ArtcraftKling2p6ProRequestState),
   ArtcraftKling3p0Pro(ArtcraftKling3p0ProRequestState),
   ArtcraftKling3p0Standard(ArtcraftKling3p0StandardRequestState),
+  ArtcraftMinimaxH3(ArtcraftMinimaxH3RequestState),
   ArtcraftPreviewModel(ArtcraftPreviewModelRequestState),
   ArtcraftPreviewModelFast(ArtcraftPreviewModelFastRequestState),
   ArtcraftSeedance10Lite(ArtcraftSeedance10LiteRequestState),
   ArtcraftSeedance1p5Pro(ArtcraftSeedance1p5ProRequestState),
   ArtcraftSeedance2p0(ArtcraftSeedance2p0RequestState),
   ArtcraftSeedance2p0Fast(ArtcraftSeedance2p0FastRequestState),
-  ArtcraftSeedance2p0Ultra(ArtcraftSeedance2p0UltraRequestState),
-  ArtcraftSeedance2p0UltraFast(ArtcraftSeedance2p0UltraFastRequestState),
   ArtcraftSeedance2p0BytePlus(ArtcraftSeedance2p0BytePlusRequestState),
   ArtcraftSeedance2p0BytePlusFast(ArtcraftSeedance2p0BytePlusFastRequestState),
   ArtcraftSeedance2p0BytePlusUltra(ArtcraftSeedance2p0BytePlusUltraRequestState),
   ArtcraftSeedance2p0BytePlusUltraFast(ArtcraftSeedance2p0BytePlusUltraFastRequestState),
+  ArtcraftSeedance2p0Mini(ArtcraftSeedance2p0MiniRequestState),
+  ArtcraftSeedance2p5Preview(ArtcraftSeedance2p5PreviewRequestState),
+  ArtcraftSeedance2p5(ArtcraftSeedance2p5RequestState),
+  ArtcraftSeedance2p5Ultra(ArtcraftSeedance2p5UltraRequestState),
+  ArtcraftSeedance2p0BytePlusMini(ArtcraftSeedance2p0BytePlusMiniRequestState),
+  ArtcraftSeedance2p0BytePlusUltraMini(ArtcraftSeedance2p0BytePlusUltraMiniRequestState),
   ArtcraftSora2(ArtcraftSora2RequestState),
   ArtcraftSora2Pro(ArtcraftSora2ProRequestState),
   ArtcraftVeo2(ArtcraftVeo2RequestState),
@@ -139,6 +180,11 @@ pub enum VideoGenerationRequest {
   ArtcraftVeo3Fast(ArtcraftVeo3FastRequestState),
   ArtcraftVeo3p1(ArtcraftVeo3p1RequestState),
   ArtcraftVeo3p1Fast(ArtcraftVeo3p1FastRequestState),
+  ArtcraftVeo3p1Lite(ArtcraftVeo3p1LiteRequestState),
+  ArtcraftViduQ3(ArtcraftViduQ3RequestState),
+  ArtcraftViduQ3Turbo(ArtcraftViduQ3TurboRequestState),
+  FalFlux3(FalFlux3RequestState),
+  FalFlux3Draft(FalFlux3DraftRequestState),
   FalKling16Pro(FalKling16ProRequestState),
   FalKling21Master(FalKling21MasterRequestState),
   FalKling21Pro(FalKling21ProRequestState),
@@ -146,6 +192,7 @@ pub enum VideoGenerationRequest {
   FalKling2p6Pro(FalKling2p6ProRequestState),
   FalKling3p0Pro(FalKling3p0ProRequestState),
   FalKling3p0Standard(FalKling3p0StandardRequestState),
+  FalMinimaxH3(FalMinimaxH3RequestState),
   FalSeedance10Lite(FalSeedance10LiteRequestState),
   FalSeedance1p5Pro(FalSeedance1p5ProRequestState),
   FalSora2(FalSora2RequestState),
@@ -155,13 +202,17 @@ pub enum VideoGenerationRequest {
   FalVeo3Fast(FalVeo3FastRequestState),
   FalVeo3p1(FalVeo3p1RequestState),
   FalVeo3p1Fast(FalVeo3p1FastRequestState),
-  GmiCloudSeedance2p0Ultra(GmiCloudSeedance2p0UltraRequestState),
-  GmiCloudSeedance2p0UltraFast(GmiCloudSeedance2p0UltraFastRequestState),
+  FalVeo3p1Lite(FalVeo3p1LiteRequestState),
+  FalViduQ3(FalViduQ3RequestState),
+  FalViduQ3Turbo(FalViduQ3TurboRequestState),
   GrokApiGrokImagineVideo(GrokApiGrokImagineVideoRequestState),
   GrokApiGrokImagineVideo1p5(GrokApiGrokImagineVideo1p5RequestState),
   KinoviHappyHorse1p0(KinoviHappyHorse1p0RequestState),
   KinoviSeedance2p0(KinoviSeedance2p0RequestState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastRequestState),
+  KinoviSeedance2p0Mini(KinoviSeedance2p0MiniRequestState),
+  KinoviSeedance2p5Preview(KinoviSeedance2p5PreviewRequestState),
+  KinoviSeedance2p5(KinoviSeedance2p5RequestState),
 }
 
 impl VideoGenerationRequest {
@@ -177,19 +228,26 @@ impl VideoGenerationRequest {
       Self::ArtcraftKling2p5TurboPro(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling2p6Pro(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling3p0Pro(_) => RouterProvider::Artcraft,
+      Self::ArtcraftFlux3(_) => RouterProvider::Artcraft,
+      Self::ArtcraftFlux3Draft(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling3p0Standard(_) => RouterProvider::Artcraft,
+      Self::ArtcraftMinimaxH3(_) => RouterProvider::Artcraft,
       Self::ArtcraftPreviewModel(_) => RouterProvider::Artcraft,
       Self::ArtcraftPreviewModelFast(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance10Lite(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance1p5Pro(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0Fast(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedance2p0Ultra(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedance2p0UltraFast(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlus(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusFast(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusUltra(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusUltraFast(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p0Mini(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p5Preview(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p5(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p5Ultra(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p0BytePlusMini(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p0BytePlusUltraMini(_) => RouterProvider::Artcraft,
       Self::ArtcraftSora2(_) => RouterProvider::Artcraft,
       Self::ArtcraftSora2Pro(_) => RouterProvider::Artcraft,
       Self::ArtcraftVeo2(_) => RouterProvider::Artcraft,
@@ -197,13 +255,19 @@ impl VideoGenerationRequest {
       Self::ArtcraftVeo3Fast(_) => RouterProvider::Artcraft,
       Self::ArtcraftVeo3p1(_) => RouterProvider::Artcraft,
       Self::ArtcraftVeo3p1Fast(_) => RouterProvider::Artcraft,
+      Self::ArtcraftVeo3p1Lite(_) => RouterProvider::Artcraft,
+      Self::ArtcraftViduQ3(_) => RouterProvider::Artcraft,
+      Self::ArtcraftViduQ3Turbo(_) => RouterProvider::Artcraft,
       Self::FalKling16Pro(_) => RouterProvider::Fal,
       Self::FalKling21Master(_) => RouterProvider::Fal,
       Self::FalKling21Pro(_) => RouterProvider::Fal,
       Self::FalKling2p5TurboPro(_) => RouterProvider::Fal,
       Self::FalKling2p6Pro(_) => RouterProvider::Fal,
       Self::FalKling3p0Pro(_) => RouterProvider::Fal,
+      Self::FalFlux3(_) => RouterProvider::Fal,
+      Self::FalFlux3Draft(_) => RouterProvider::Fal,
       Self::FalKling3p0Standard(_) => RouterProvider::Fal,
+      Self::FalMinimaxH3(_) => RouterProvider::Fal,
       Self::FalSeedance10Lite(_) => RouterProvider::Fal,
       Self::FalSeedance1p5Pro(_) => RouterProvider::Fal,
       Self::FalSora2(_) => RouterProvider::Fal,
@@ -213,13 +277,17 @@ impl VideoGenerationRequest {
       Self::FalVeo3Fast(_) => RouterProvider::Fal,
       Self::FalVeo3p1(_) => RouterProvider::Fal,
       Self::FalVeo3p1Fast(_) => RouterProvider::Fal,
-      Self::GmiCloudSeedance2p0Ultra(_) => RouterProvider::GmiCloud,
-      Self::GmiCloudSeedance2p0UltraFast(_) => RouterProvider::GmiCloud,
+      Self::FalVeo3p1Lite(_) => RouterProvider::Fal,
+      Self::FalViduQ3(_) => RouterProvider::Fal,
+      Self::FalViduQ3Turbo(_) => RouterProvider::Fal,
       Self::GrokApiGrokImagineVideo(_) => RouterProvider::GrokApi,
       Self::GrokApiGrokImagineVideo1p5(_) => RouterProvider::GrokApi,
-      Self::KinoviHappyHorse1p0(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0Fast(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviHappyHorse1p0(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0Fast(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0Mini(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p5Preview(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p5(_) => RouterProvider::KinoviWeb,
     }
   }
 
@@ -235,19 +303,26 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftKling2p5TurboPro(request) => Ok(ArtcraftKling2p5TurboProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling2p6Pro(request) => Ok(ArtcraftKling2p6ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling3p0Pro(request) => Ok(ArtcraftKling3p0ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftFlux3(request) => Ok(ArtcraftFlux3CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftFlux3Draft(request) => Ok(ArtcraftFlux3DraftCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling3p0Standard(request) => Ok(ArtcraftKling3p0StandardCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftMinimaxH3(request) => Ok(ArtcraftMinimaxH3CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModel(request) => Ok(ArtcraftPreviewModelCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModelFast(request) => Ok(ArtcraftPreviewModelFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance10Lite(request) => Ok(ArtcraftSeedance10LiteCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance1p5Pro(request) => Ok(ArtcraftSeedance1p5ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0(request) => Ok(ArtcraftSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0Fast(request) => Ok(ArtcraftSeedance2p0FastCostState::from_request(request).estimate_cost()),
-      VideoGenerationRequest::ArtcraftSeedance2p0Ultra(request) => Ok(ArtcraftSeedance2p0UltraCostState::from_request(request).estimate_cost()),
-      VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(request) => Ok(ArtcraftSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlus(request) => Ok(ArtcraftSeedance2p0BytePlusCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => Ok(ArtcraftSeedance2p0BytePlusFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltra(request) => Ok(ArtcraftSeedance2p0BytePlusUltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraFast(request) => Ok(ArtcraftSeedance2p0BytePlusUltraFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p0Mini(request) => Ok(ArtcraftSeedance2p0MiniCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p5Preview(request) => Ok(ArtcraftSeedance2p5PreviewCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p5(request) => Ok(ArtcraftSeedance2p5CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p5Ultra(request) => Ok(ArtcraftSeedance2p5UltraCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p0BytePlusMini(request) => Ok(ArtcraftSeedance2p0BytePlusMiniCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraMini(request) => Ok(ArtcraftSeedance2p0BytePlusUltraMiniCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSora2(request) => Ok(ArtcraftSora2CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSora2Pro(request) => Ok(ArtcraftSora2ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftVeo2(request) => Ok(ArtcraftVeo2CostState::from_request(request).estimate_cost()),
@@ -255,13 +330,19 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftVeo3Fast(request) => Ok(ArtcraftVeo3FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftVeo3p1(request) => Ok(ArtcraftVeo3p1CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftVeo3p1Fast(request) => Ok(ArtcraftVeo3p1FastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftVeo3p1Lite(request) => Ok(ArtcraftVeo3p1LiteCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftViduQ3(request) => Ok(ArtcraftViduQ3CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftViduQ3Turbo(request) => Ok(ArtcraftViduQ3TurboCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling16Pro(request) => Ok(FalKling16ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling21Master(request) => Ok(FalKling21MasterCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling21Pro(request) => Ok(FalKling21ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling2p5TurboPro(request) => Ok(FalKling2p5TurboProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling2p6Pro(request) => Ok(FalKling2p6ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling3p0Pro(request) => Ok(FalKling3p0ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalFlux3(request) => Ok(FalFlux3CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalFlux3Draft(request) => Ok(FalFlux3DraftCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalKling3p0Standard(request) => Ok(FalKling3p0StandardCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalMinimaxH3(request) => Ok(FalMinimaxH3CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance10Lite(request) => Ok(FalSeedance10LiteCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance1p5Pro(request) => Ok(FalSeedance1p5ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSora2(request) => Ok(FalSora2CostState::from_request(request).estimate_cost()),
@@ -271,13 +352,17 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::FalVeo3Fast(request) => Ok(FalVeo3FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalVeo3p1(request) => Ok(FalVeo3p1CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalVeo3p1Fast(request) => Ok(FalVeo3p1FastCostState::from_request(request).estimate_cost()),
-      VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => Ok(GmiCloudSeedance2p0UltraCostState::from_request(request).estimate_cost()),
-      VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => Ok(GmiCloudSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalVeo3p1Lite(request) => Ok(FalVeo3p1LiteCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalViduQ3(request) => Ok(FalViduQ3CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalViduQ3Turbo(request) => Ok(FalViduQ3TurboCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GrokApiGrokImagineVideo(request) => Ok(GrokApiGrokImagineVideoCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GrokApiGrokImagineVideo1p5(request) => GrokApiGrokImagineVideo1p5CostState::from_request(request).estimate_cost(),
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => Ok(KinoviHappyHorse1p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviSeedance2p0Mini(request) => Ok(KinoviSeedance2p0MiniCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviSeedance2p5Preview(request) => Ok(KinoviSeedance2p5PreviewCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviSeedance2p5(request) => Ok(KinoviSeedance2p5CostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -325,6 +410,18 @@ impl VideoGenerationRequest {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
+      VideoGenerationRequest::ArtcraftMinimaxH3(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftFlux3(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftFlux3Draft(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
       VideoGenerationRequest::ArtcraftPreviewModel(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
@@ -349,14 +446,6 @@ impl VideoGenerationRequest {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
-      VideoGenerationRequest::ArtcraftSeedance2p0Ultra(request) => {
-        let client_ref = client.get_artcraft_client_ref()?;
-        request.send(client_ref).await
-      },
-      VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(request) => {
-        let client_ref = client.get_artcraft_client_ref()?;
-        request.send(client_ref).await
-      },
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlus(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
@@ -370,6 +459,30 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraFast(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p0Mini(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p5Preview(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p5(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p5Ultra(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p0BytePlusMini(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraMini(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
@@ -401,6 +514,18 @@ impl VideoGenerationRequest {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
+      VideoGenerationRequest::ArtcraftVeo3p1Lite(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftViduQ3(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftViduQ3Turbo(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
       VideoGenerationRequest::FalKling16Pro(request) => {
         let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
@@ -426,6 +551,18 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::FalKling3p0Standard(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalMinimaxH3(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalFlux3(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalFlux3Draft(request) => {
         let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
@@ -465,12 +602,16 @@ impl VideoGenerationRequest {
         let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
-      VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => {
-        let client_ref = client.get_gmicloud_client_ref()?;
+      VideoGenerationRequest::FalVeo3p1Lite(request) => {
+        let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
-      VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => {
-        let client_ref = client.get_gmicloud_client_ref()?;
+      VideoGenerationRequest::FalViduQ3(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalViduQ3Turbo(request) => {
+        let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::GrokApiGrokImagineVideo(request) => {
@@ -482,15 +623,27 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviSeedance2p0Mini(request) => {
+        let client_ref = client.get_kinovi_web_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviSeedance2p5Preview(request) => {
+        let client_ref = client.get_kinovi_web_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviSeedance2p5(request) => {
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
     }

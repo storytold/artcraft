@@ -8,14 +8,8 @@ import {
   FilterMediaClasses,
   FilterMediaType,
 } from "@storyteller/api";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowsRotate,
-  faBorderAll,
-  faCube,
-  faImage,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, Grid3x3Icon, ImageIcon, RefreshCwIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { GalleryCard } from "../../components/generation-gallery/GalleryCard";
@@ -24,10 +18,10 @@ import type { GalleryItem } from "../../components/generation-gallery/useGallery
 const PAGE_SIZE = 60;
 
 const FILTERS = [
-  { id: "all", label: "All", icon: faBorderAll, route: "/library" },
-  { id: "image", label: "Images", icon: faImage, route: "/library/images" },
-  { id: "video", label: "Videos", icon: faVideo, route: "/library/videos" },
-  { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
+  { id: "all", label: "All", icon: Grid3x3Icon, route: "/library" },
+  { id: "image", label: "Images", icon: ImageIcon, route: "/library/images" },
+  { id: "video", label: "Videos", icon: VideoIcon, route: "/library/videos" },
+  { id: "meshes", label: "Meshes", icon: BoxIcon, route: "/library/meshes" },
 ];
 
 const ROUTE_TO_FILTER: Record<string, string> = {
@@ -72,7 +66,10 @@ const getLabel = (item: any) => {
     case "video":
       return "Video Generation";
     case "dimensional":
+    case "mesh":
       return "3D Mesh";
+    case "splat":
+      return "3D World";
     default:
       return "Generation";
   }
@@ -119,10 +116,14 @@ export default function Library() {
 
   // Map API item to GalleryItem
   const mapApiItem = useCallback((item: any): GalleryItem => {
-    const isDimensional = item.media_class === "dimensional";
-    // Meshes don't have image thumbnails — show cube icon instead
+    // 3D classes: mesh/splat, plus the legacy pre-split "dimensional".
+    const is3D =
+      item.media_class === "dimensional" ||
+      item.media_class === "mesh" ||
+      item.media_class === "splat";
+    // 3D assets don't have image thumbnails — show cube icon instead
     // For videos, getMediaThumbnail tries animated preview first, then template, then cdn_url
-    const thumbnail = isDimensional
+    const thumbnail = is3D
       ? null
       : getMediaThumbnail(item.media_links, item.media_class, {
           size: THUMBNAIL_SIZES.LARGE,
@@ -328,10 +329,9 @@ export default function Library() {
                 className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                 title="Refresh library"
               >
-                <FontAwesomeIcon
-                  icon={faArrowsRotate}
-                  className={`text-xs sm:text-sm ${initialLoading ? "animate-spin" : ""}`}
-                />
+                <RefreshCwIcon
+                  
+                  className={`text-xs sm:text-sm ${initialLoading ? "animate-spin" : ""}`} />
               </button>
             </div>
 
@@ -347,7 +347,7 @@ export default function Library() {
                       : "text-white/60 hover:text-white"
                   }`}
                 >
-                  <FontAwesomeIcon icon={filter.icon} className="text-xs" />
+                  <DynamicIcon icon={filter.icon} className="text-xs" />
                   <span className="hidden sm:inline">{filter.label}</span>
                 </button>
               ))}

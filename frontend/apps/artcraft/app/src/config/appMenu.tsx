@@ -1,18 +1,5 @@
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  faCube,
-  faFilm,
-  faImage,
-  faDroplet,
-  faPhotoFilm,
-  faGlobe,
-  faPencil,
-  faWandMagicSparkles,
-  faPenNib,
-  faCrosshairs,
-  faSparkles,
-  faObjectGroup,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CrosshairIcon, DropletIcon, FilmIcon, GlobeIcon, GroupIcon, ImageIcon, ImagesIcon, MusicIcon, PenToolIcon, PencilIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useMemo } from "react";
 import {
   useExperimentalStore,
@@ -23,6 +10,7 @@ import { useTabStore, TabId } from "~/pages/Stores/TabState";
 export type AppId =
   | "IMAGE"
   | "VIDEO"
+  | "AUDIO"
   | "EDIT"
   | "2D"
   | "3D"
@@ -41,7 +29,7 @@ export type AppId =
 export interface AppDescriptor {
   id: AppId;
   label: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   imageSrc?: string;
   description?: string;
   large?: boolean;
@@ -51,26 +39,31 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
   {
     id: "IMAGE",
     label: "Create Image",
-    icon: faImage,
+    icon: ImageIcon,
   },
   {
     id: "VIDEO",
     label: "Create Video",
-    icon: faFilm,
+    icon: FilmIcon,
+  },
+  {
+    id: "AUDIO",
+    label: "Create Audio",
+    icon: MusicIcon,
   },
   {
     id: "2D",
     label: "Image Editor",
-    icon: faPenNib,
-    imageSrc: "/resources/gifs/2D_CANVAS_DEMO.gif",
+    icon: PenToolIcon,
+    imageSrc: "/resources/gifs/2D_CANVAS_DEMO.webp",
     description: "Easy edits. Great for graphic design.",
     large: true,
   },
   {
     id: "3D",
     label: "3D Stage",
-    icon: faCube,
-    imageSrc: "/resources/gifs/3D_CANVAS_DEMO.gif",
+    icon: BoxIcon,
+    imageSrc: "/resources/gifs/3D_CANVAS_DEMO.webp",
     description: "Precision control. Great for AI film.",
     large: true,
   },
@@ -80,7 +73,7 @@ export interface FullAppItem {
   id: string;
   label: string;
   description: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   category: "generate" | "edit";
   badge?: "NEW" | "BEST" | "SOON" | "BETA";
   action?: AppId;
@@ -112,6 +105,11 @@ const APP_CARD_PALETTES: Record<string, AppCardPalette> = {
     accent: "from-amber-500/20 to-amber-500/0",
     iconBg: "bg-amber-500/20 border-amber-400/30",
     iconColor: "text-amber-300",
+  },
+  "create-audio": {
+    accent: "from-pink-500/20 to-pink-500/0",
+    iconBg: "bg-pink-500/20 border-pink-400/30",
+    iconColor: "text-pink-300",
   },
   "image-to-3d-object": {
     accent: "from-emerald-500/20 to-emerald-500/0",
@@ -194,7 +192,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "text-to-image",
     label: "Create Image",
     description: "Generate AI images",
-    icon: faImage,
+    icon: ImageIcon,
     category: "generate",
     action: "IMAGE",
     color: "bg-blue-600/40",
@@ -203,16 +201,25 @@ export const ALL_APPS: FullAppItem[] = [
     id: "image-to-video",
     label: "Create Video",
     description: "Create video from images",
-    icon: faFilm,
+    icon: FilmIcon,
     category: "generate",
     action: "VIDEO",
     color: "bg-amber-500/40",
   },
   {
+    id: "create-audio",
+    label: "Create Audio",
+    description: "Generate music and sound effects",
+    icon: MusicIcon,
+    category: "generate",
+    action: "AUDIO",
+    color: "bg-pink-500/40",
+  },
+  {
     id: "image-to-3d-object",
     label: "Image to 3D Object",
     description: "Convert references into textured assets",
-    icon: faCube,
+    icon: BoxIcon,
     category: "generate",
     action: "IMAGE_TO_3D_OBJECT",
     color: "bg-emerald-500/40",
@@ -221,7 +228,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "image-to-3d-world",
     label: "Image to 3D World",
     description: "Turn mood boards into explorable worlds",
-    icon: faGlobe,
+    icon: GlobeIcon,
     category: "generate",
     action: "IMAGE_TO_3D_WORLD",
     color: "bg-blue-500/40",
@@ -230,7 +237,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "edit-image",
     label: "Edit Image",
     description: "Change with inpainting",
-    icon: faPencil,
+    icon: PencilIcon,
     category: "edit",
     action: "2D",
     color: "bg-purple-600/40",
@@ -239,7 +246,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "video-frame-extractor",
     label: "Video Frame Extractor",
     description: "Extract frames from video",
-    icon: faPhotoFilm,
+    icon: ImagesIcon,
     category: "edit",
     action: "VIDEO_FRAME_EXTRACTOR",
     color: "bg-rose-600/40",
@@ -248,7 +255,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "video-watermark-removal",
     label: "Video Watermark Remover",
     description: "Remove watermarks from videos",
-    icon: faDroplet,
+    icon: DropletIcon,
     category: "edit",
     badge: "SOON",
     color: "bg-cyan-500/40",
@@ -257,7 +264,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "image-watermark-removal",
     label: "Image Watermark Remover",
     description: "Remove watermarks from images",
-    icon: faDroplet,
+    icon: DropletIcon,
     category: "edit",
     badge: "SOON",
     color: "bg-indigo-600/40",
@@ -266,7 +273,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "remove-background",
     label: "Remove Background",
     description: "Remove backgrounds from images",
-    icon: faWandMagicSparkles,
+    icon: WandSparklesIcon,
     category: "edit",
     action: "REMOVE_BACKGROUND",
     color: "bg-violet-500/40",
@@ -275,7 +282,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "angles",
     label: "Angles",
     description: "Generate new camera angles from a single photo",
-    icon: faCrosshairs,
+    icon: CrosshairIcon,
     category: "generate",
     action: "ANGLES",
     color: "bg-lime-500/40",
@@ -286,7 +293,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "storyboard",
     label: "Storyboard",
     description: "Plan your shots with a visual storyboard",
-    icon: faPhotoFilm,
+    icon: ImagesIcon,
     category: "generate",
     action: "STORYBOARD",
     color: "bg-fuchsia-600/40",
@@ -296,7 +303,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "moodboard",
     label: "Moodboard",
     description: "Collect references and steer generations from a board",
-    icon: faObjectGroup,
+    icon: GroupIcon,
     category: "generate",
     action: "MOODBOARD",
     color: "bg-orange-500/40",
@@ -306,7 +313,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "background-change",
     label: "Background Change",
     description: "Swap the backdrop of a video using a reference image",
-    icon: faSparkles,
+    icon: SparklesIcon,
     category: "edit",
     action: "BACKGROUND_CHANGE",
     color: "bg-orange-500/40",
@@ -316,7 +323,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "video-editor",
     label: "Video Editor",
     description: "Edit and assemble videos on a timeline",
-    icon: faFilm,
+    icon: FilmIcon,
     category: "edit",
     action: "VIDEO_EDITOR",
     color: "bg-teal-500/40",
@@ -326,7 +333,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "2d-canvas",
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
-    icon: faPenNib,
+    icon: PenToolIcon,
     category: "edit",
     action: "2D",
     color: "bg-sky-500/40",
@@ -335,7 +342,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "3d-editor",
     label: "3D Stage",
     description: "Precision control. Great for AI film.",
-    icon: faCube,
+    icon: BoxIcon,
     category: "generate",
     action: "3D",
     color: "bg-emerald-600/40",
@@ -398,6 +405,7 @@ export const goToApp = (action?: string) => {
     [
       "IMAGE",
       "VIDEO",
+      "AUDIO",
       "2D",
       "3D",
       "VIDEO_FRAME_EXTRACTOR",

@@ -28,6 +28,8 @@ interface MediaCardProps {
 const classIcons: Record<string, typeof IconPhoto> = {
   video: IconVideo,
   dimensional: IconCube,
+  mesh: IconCube,
+  splat: IconCube,
 };
 
 function formatDuration(ms: number): string {

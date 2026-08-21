@@ -1,22 +1,6 @@
-import {
-  faRectangle,
-  faRectangleVertical,
-  faSquare,
-} from "@fortawesome/pro-regular-svg-icons";
-import {
-  faEdit,
-  faMousePointer,
-  faFrame,
-  faPen,
-  faEraser,
-  faUndo,
-  faRedo,
-  faExpand,
-  faArrowsUpDownLeftRight,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDownIcon, ChevronUpIcon, EraserIcon, FrameIcon, MaximizeIcon, MousePointerIcon, MoveIcon, PenIcon, RectangleHorizontalIcon, RectangleVerticalIcon, Redo2Icon, RotateCcwIcon, SquareIcon, SquarePenIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
@@ -30,6 +14,12 @@ import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
@@ -83,6 +73,8 @@ export const PromptBoxEdit = ({
   const [prompt, setPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
@@ -113,23 +105,23 @@ export const PromptBoxEdit = ({
       label: "Auto",
       selected: aspectRatio === "auto",
       icon: (
-        <FontAwesomeIcon icon={faArrowsUpDownLeftRight} className="h-4 w-4" />
+        <MoveIcon  className="h-4 w-4" />
       ),
     },
     {
       label: "Wide",
       selected: aspectRatio === "wide",
-      icon: <FontAwesomeIcon icon={faRectangle} className="h-4 w-4" />,
+      icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
       label: "Tall",
       selected: aspectRatio === "tall",
-      icon: <FontAwesomeIcon icon={faRectangleVertical} className="h-4 w-4" />,
+      icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
       label: "Square",
       selected: aspectRatio === "square",
-      icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
+      icon: <SquareIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -137,17 +129,17 @@ export const PromptBoxEdit = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -183,11 +175,10 @@ export const PromptBoxEdit = ({
     setResolution(selectedItem.label.toLowerCase() as any);
   };
 
-  const getCurrentAspectRatioIcon = () => {
+  const getCurrentAspectRatioIcon = (): LucideIcon => {
     const selected = aspectRatioList.find((item) => item.selected);
-    if (!selected || !selected.icon) return faRectangle;
-    const iconElement = selected.icon as React.ReactElement<{ icon: any }>;
-    return iconElement.props.icon;
+    if (!selected?.icon) return RectangleHorizontalIcon;
+    return (selected.icon as React.ReactElement).type as LucideIcon;
   };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -259,6 +250,13 @@ export const PromptBoxEdit = ({
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
+
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
@@ -291,12 +289,12 @@ export const PromptBoxEdit = ({
     ? [
         {
           value: "marker",
-          icon: faPen,
+          icon: PenIcon,
           text: "Marker",
         },
         {
           value: "eraser",
-          icon: faEraser,
+          icon: EraserIcon,
           text: "Eraser",
         },
       ]
@@ -304,24 +302,24 @@ export const PromptBoxEdit = ({
       ? [
           {
             value: "edit",
-            icon: faEdit,
+            icon: SquarePenIcon,
             text: "Edit Region",
           },
           {
             value: "eraser",
-            icon: faEraser,
+            icon: EraserIcon,
             text: "Eraser",
           },
         ]
       : [
           {
             value: "edit",
-            icon: faEdit,
+            icon: SquarePenIcon,
             text: "Edit Region",
           },
           {
             value: "select",
-            icon: faMousePointer,
+            icon: MousePointerIcon,
             text: "Select",
           },
         ];
@@ -351,7 +349,7 @@ export const PromptBoxEdit = ({
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={!onUndo}
                 >
-                  <FontAwesomeIcon icon={faUndo} className="h-4 w-4" />
+                  <RotateCcwIcon  className="h-4 w-4" />
                 </button>
               </Tooltip>
               <Tooltip content="Redo" position="top" delay={200}>
@@ -360,7 +358,7 @@ export const PromptBoxEdit = ({
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={!onRedo}
                 >
-                  <FontAwesomeIcon icon={faRedo} className="h-4 w-4" />
+                  <Redo2Icon  className="h-4 w-4" />
                 </button>
               </Tooltip>
             </div>
@@ -430,7 +428,7 @@ export const PromptBoxEdit = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Write what you want to change in your image and click generate..."
-                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
+                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -438,6 +436,7 @@ export const PromptBoxEdit = ({
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                 />
+                <PromptFullscreenButton onClick={openFullscreen} />
                 <span
                   className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
                 >
@@ -469,7 +468,7 @@ export const PromptBoxEdit = ({
                         panelTitle="Aspect Ratio"
                         showIconsInList
                         triggerIcon={
-                          <FontAwesomeIcon
+                          <DynamicIcon
                             icon={getCurrentAspectRatioIcon()}
                             className="h-4 w-4"
                           />
@@ -491,13 +490,18 @@ export const PromptBoxEdit = ({
                       panelTitle="Resolution"
                       showIconsInList
                       triggerIcon={
-                        <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                        <MaximizeIcon  className="h-4 w-4" />
                       }
                     />
                   </Tooltip>
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={referenceImages.length > 0}
+                />
                 {onFitPressed && (
                   <Tooltip
                     content={"Fit canvas to screen"}
@@ -510,7 +514,7 @@ export const PromptBoxEdit = ({
                       className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                       onClick={onFitPressed}
                     >
-                      <FontAwesomeIcon icon={faFrame} className="h-4 w-4" />
+                      <FrameIcon  className="h-4 w-4" />
                       Fit
                     </Button>
                   </Tooltip>
@@ -546,8 +550,8 @@ export const PromptBoxEdit = ({
                 onClick={toggleExpand}
                 className="text-white/30 hover:text-white/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -555,6 +559,44 @@ export const PromptBoxEdit = ({
           </div>
         </div>
       </div>
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
+        imagePromptRow={
+          selectedImageModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedImageModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage}
+              className="relative top-auto rounded-2xl"
+            />
+          ) : undefined
+        }
+      >
+        <textarea
+          placeholder="Write what you want to change in your image and click generate..."
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          value={prompt}
+          onChange={handleChange}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+        />
+      </PromptFullscreenModal>
     </>
   );
 };

@@ -1,3 +1,8 @@
+// Deprecated model variants (e.g. the Seedance 2.0 Ultra tier) must keep
+// their classification arms here so historical rows still map; suppress the
+// deprecation lint file-wide.
+#![allow(deprecated)]
+
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -27,7 +32,21 @@ pub enum MediaFileClass {
   Video,
 
   /// 3D engine data: glb, gltf, etc.
+  /// Being split into `Mesh`, `Splat`, and `Project`. Do not write new records
+  /// with this value; it remains readable until existing rows are backfilled.
+  #[deprecated(note = "Split into Mesh, Splat, and Project. Read-only until backfilled.")]
   Dimensional,
+
+  /// 3D mesh assets: glb, gltf, fbx, obj, pmx, pmd, etc.
+  Mesh,
+
+  /// Gaussian splats: spz, etc.
+  Splat,
+
+  /// Internal Artcraft project documents (JSON): 3D editor scenes, mood boards,
+  /// graph workflows, video editor timelines, etc.
+  /// The specific kind is stored in `maybe_project_type`.
+  Project,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -44,6 +63,9 @@ impl MediaFileClass {
       Self::Image => "image",
       Self::Video => "video",
       Self::Dimensional => "dimensional",
+      Self::Mesh => "mesh",
+      Self::Splat => "splat",
+      Self::Project => "project",
     }
   }
 
@@ -54,6 +76,9 @@ impl MediaFileClass {
       "image" => Ok(Self::Image),
       "video" => Ok(Self::Video),
       "dimensional" => Ok(Self::Dimensional),
+      "mesh" => Ok(Self::Mesh),
+      "splat" => Ok(Self::Splat),
+      "project" => Ok(Self::Project),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -67,6 +92,9 @@ impl MediaFileClass {
       Self::Image,
       Self::Video,
       Self::Dimensional,
+      Self::Mesh,
+      Self::Splat,
+      Self::Project,
     ])
   }
 }
@@ -86,6 +114,9 @@ mod tests {
       assert_serialization(MediaFileClass::Image, "image");
       assert_serialization(MediaFileClass::Video, "video");
       assert_serialization(MediaFileClass::Dimensional, "dimensional");
+      assert_serialization(MediaFileClass::Mesh, "mesh");
+      assert_serialization(MediaFileClass::Splat, "splat");
+      assert_serialization(MediaFileClass::Project, "project");
     }
   }
 
@@ -99,6 +130,9 @@ mod tests {
       assert_eq!(MediaFileClass::Image.to_str(), "image");
       assert_eq!(MediaFileClass::Video.to_str(), "video");
       assert_eq!(MediaFileClass::Dimensional.to_str(), "dimensional");
+      assert_eq!(MediaFileClass::Mesh.to_str(), "mesh");
+      assert_eq!(MediaFileClass::Splat.to_str(), "splat");
+      assert_eq!(MediaFileClass::Project.to_str(), "project");
     }
 
     #[test]
@@ -108,6 +142,9 @@ mod tests {
       assert_eq!(MediaFileClass::from_str("image").unwrap(), MediaFileClass::Image);
       assert_eq!(MediaFileClass::from_str("video").unwrap(), MediaFileClass::Video);
       assert_eq!(MediaFileClass::from_str("dimensional").unwrap(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileClass::from_str("mesh").unwrap(), MediaFileClass::Mesh);
+      assert_eq!(MediaFileClass::from_str("splat").unwrap(), MediaFileClass::Splat);
+      assert_eq!(MediaFileClass::from_str("project").unwrap(), MediaFileClass::Project);
       assert!(MediaFileClass::from_str("foo").is_err());
     }
   }
@@ -118,12 +155,15 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = MediaFileClass::all_variants();
-      assert_eq!(variants.len(), 5);
+      assert_eq!(variants.len(), 8);
       assert_eq!(variants.pop_first(), Some(MediaFileClass::Unknown));
       assert_eq!(variants.pop_first(), Some(MediaFileClass::Audio));
       assert_eq!(variants.pop_first(), Some(MediaFileClass::Image));
       assert_eq!(variants.pop_first(), Some(MediaFileClass::Video));
       assert_eq!(variants.pop_first(), Some(MediaFileClass::Dimensional));
+      assert_eq!(variants.pop_first(), Some(MediaFileClass::Mesh));
+      assert_eq!(variants.pop_first(), Some(MediaFileClass::Splat));
+      assert_eq!(variants.pop_first(), Some(MediaFileClass::Project));
       assert_eq!(variants.pop_first(), None);
     }
   }

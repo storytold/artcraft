@@ -41,11 +41,15 @@ const classLabels: Record<string, string> = {
   image: "Image",
   video: "Video",
   dimensional: "3D",
+  mesh: "3D Object",
+  splat: "3D World",
 };
 
 const classIcons: Record<string, typeof IconPhoto> = {
   video: IconVideo,
   dimensional: IconCube,
+  mesh: IconCube,
+  splat: IconCube,
 };
 
 function formatModelType(model: string): string {

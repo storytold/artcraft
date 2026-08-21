@@ -254,8 +254,8 @@ pub async fn omni_upload_video_media_file_handler(
   // distribution format we want for the media file record. Transcode them to
   // mp4 in a tempdir so we can resample / upload mp4 instead.
 
-  let mut transcode_tempdir_ref = None;
-  let mut resample_tempdir_ref = None;
+  let mut _transcode_tempdir_ref = None;
+  let mut _resample_tempdir_ref = None;
 
   let mut final_upload_file_path = form.file.file.path().to_path_buf();
 
@@ -284,7 +284,7 @@ pub async fn omni_upload_video_media_file_handler(
         })?;
     mimetype = "video/mp4".to_string();
     final_upload_file_path = transcoded_path;
-    transcode_tempdir_ref = Some(transcode_tempdir);
+    _transcode_tempdir_ref = Some(transcode_tempdir);
   }
 
   // ==================== OPTIONAL VIDEO RESAMPLE ==================== //
@@ -331,7 +331,7 @@ pub async fn omni_upload_video_media_file_handler(
         })?;
 
     final_upload_file_path = video_output_path;
-    resample_tempdir_ref = Some(frame_temp_dir); // NB: Keep from going out of scope
+    _resample_tempdir_ref = Some(frame_temp_dir); // NB: Keep from going out of scope
   }
 
   // True if we touched the user's file in any way (transcoded, resampled, or both).
@@ -456,9 +456,14 @@ pub async fn omni_upload_video_media_file_handler(
     UploadType::Filesystem
   };
 
+  let maybe_upload_filename = form.file.file_name.as_deref();
+
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Video),
-    media_file_type: MediaFileType::Video,
+    maybe_project_type: None,
+    media_file_type: MediaFileType::try_from_mime_type(&mimetype)
+        .or_else(|| maybe_upload_filename.and_then(MediaFileType::try_from_filename_or_extension))
+        .unwrap_or(MediaFileType::Video), // Coarse fallback for unrecognized files
     maybe_creator_user_token: maybe_user_token,
     // NB: AVT (anonymous visitor) tokens are a web-session concept; API-key callers have none.
     maybe_creator_anonymous_visitor_token: None,

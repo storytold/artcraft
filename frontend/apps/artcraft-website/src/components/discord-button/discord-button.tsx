@@ -1,5 +1,5 @@
 import { Button } from "@storyteller/ui-button";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { DiscordIcon } from "@storyteller/icons";
 import { SOCIAL_LINKS } from "../../config/links";
 
 interface DiscordButtonProps {
@@ -18,7 +18,7 @@ export const DiscordButton = ({
   return (
     <Button
       className={`rounded-full relative z-10 ${sizeClasses} font-semibold transition-all duration-300 shadow-lg bg-white text-black hover:bg-gray-200 ${className}`}
-      icon={faDiscord}
+      icon={DiscordIcon}
       as="link"
       href={SOCIAL_LINKS.DISCORD}
       target="_blank"

@@ -53,6 +53,7 @@ pub(crate) enum TokenPrefix {
   UserBookmark,
   UserReferralCode,
   UserSession,
+  UserSpendEvent,
   UserSubscription,
   VoiceConversionModel,
   VoiceConversionResult,
@@ -145,6 +146,7 @@ impl PrefixGenerator for TokenPrefix {
       Self::UserBookmark => "ub_",
       Self::UserReferralCode => "urc_",
       Self::UserSession => "session_",
+      Self::UserSpendEvent => "spend_",
       Self::UserSubscription => "subscription_", // NB: Previously "SUB:"
       Self::VoiceConversionModel => "vcm_",
       Self::VoiceConversionResult => "vcr_",

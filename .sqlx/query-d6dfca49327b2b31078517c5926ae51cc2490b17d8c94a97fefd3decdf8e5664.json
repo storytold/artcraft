@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  pci.media_token as `media_token: MediaFileToken`\nFROM prompt_context_items pci\nJOIN media_files m\n  ON pci.media_token = m.token\nWHERE pci.prompt_token = ?\n  AND m.media_class = 'image'\n  AND m.user_deleted_at IS NULL\n  AND m.mod_deleted_at IS NULL\nORDER BY pci.id ASC\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "media_token: MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d6dfca49327b2b31078517c5926ae51cc2490b17d8c94a97fefd3decdf8e5664"
+}

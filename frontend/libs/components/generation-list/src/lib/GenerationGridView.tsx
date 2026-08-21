@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import Masonry from "react-masonry-css";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { PendingCard } from "./PendingCard";
@@ -8,6 +8,8 @@ import {
   useMergedGalleryEntries,
   useInfiniteScrollSentinel,
 } from "./useGalleryEntries";
+import { usePrompts } from "./prompts-cache";
+import { useMediaPromptTokens } from "./media-prompt-token-cache";
 import type { RecreateSlotContext } from "./GenerationListView";
 import type { FailedJob, GalleryItem, InProgressJob } from "./types";
 
@@ -46,6 +48,13 @@ export interface GenerationGridViewProps {
     item: GalleryItem,
     ctx: { modelId?: string; promptToken?: string },
   ) => ReactNode;
+  /** Multi-select mode for completed cards (pending/failed cards are never
+   *  selectable). See useGallerySelectionStore for the shared state. */
+  selectionMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelect?: (item: GalleryItem) => void;
+  /** Marks the tile the user most recently viewed in the lightbox. */
+  lastViewedId?: string | null;
 }
 
 export function GenerationGridView({
@@ -61,6 +70,10 @@ export function GenerationGridView({
   onGalleryItemClick,
   renderRecreate,
   renderGalleryActions,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
+  lastViewedId,
 }: GenerationGridViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -71,6 +84,51 @@ export function GenerationGridView({
     galleryItems,
     newlyCompletedTokens,
   });
+
+  // Audio cards show their prompt inline (no image speaks for them), so
+  // resolve prompt text the same way the list view does — but only for audio
+  // items, keeping image/video walls free of the extra lookups. Both steps
+  // (media token → prompt token → prompt text) are batched + cached.
+  const audioMediaTokensNeedingPrompt = useMemo(
+    () =>
+      mergedEntries.flatMap((entry) =>
+        entry.kind === "gallery" &&
+        entry.item.mediaClass === "audio" &&
+        !entry.item.promptToken
+          ? [entry.item.id]
+          : [],
+      ),
+    [mergedEntries],
+  );
+  const resolvedPromptTokens = useMediaPromptTokens(
+    audioMediaTokensNeedingPrompt,
+  );
+
+  const audioPromptTokens = useMemo(() => {
+    const tokens: string[] = [];
+    for (const entry of mergedEntries) {
+      if (entry.kind !== "gallery" || entry.item.mediaClass !== "audio") {
+        continue;
+      }
+      const token =
+        entry.item.promptToken || resolvedPromptTokens.get(entry.item.id);
+      if (token) tokens.push(token);
+    }
+    return tokens;
+  }, [mergedEntries, resolvedPromptTokens]);
+  const promptsMap = usePrompts(audioPromptTokens);
+
+  const audioTitleFor = useCallback(
+    (item: GalleryItem): string | undefined => {
+      if (item.mediaClass !== "audio") return undefined;
+      const token = item.promptToken || resolvedPromptTokens.get(item.id);
+      return (
+        (token ? promptsMap.get(token)?.maybe_positive_prompt : undefined) ||
+        undefined
+      );
+    },
+    [resolvedPromptTokens, promptsMap],
+  );
 
   if (isInitialLoading) {
     return (
@@ -135,10 +193,15 @@ export function GenerationGridView({
               <GalleryCard
                 item={entry.item}
                 onClick={onGalleryItemClick}
+                title={audioTitleFor(entry.item)}
                 actionsSlot={renderGalleryActions?.(entry.item, {
                   modelId: entry.item.modelId,
                   promptToken: entry.item.promptToken,
                 })}
+                selectMode={selectionMode}
+                selected={selectionMode && selectedIds?.has(entry.item.id)}
+                onToggleSelect={onToggleSelect}
+                lastViewed={!!lastViewedId && entry.item.id === lastViewedId}
               />
             )}
           </div>

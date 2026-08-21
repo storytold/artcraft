@@ -13,7 +13,7 @@ export function DebugLogsSearch() {
       buttonLabel="Open"
       icon={IconBug}
       buildHref={(token) =>
-        `/moderation/debug-logs/${encodeURIComponent(token)}`
+        `/debug_logs/${encodeURIComponent(token)}`
       }
     />
   );

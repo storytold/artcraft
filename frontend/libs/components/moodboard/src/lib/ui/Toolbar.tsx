@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { twMerge } from "tailwind-merge";
@@ -29,8 +29,10 @@ export const ToolbarDivider = () => (
   <span className="h-7 w-px shrink-0 bg-ui-divider" aria-hidden />
 );
 
-interface ToolbarIconButtonProps {
-  icon: IconDefinition;
+// Exported: FloatingToolbarButton re-exports ToolbarIconButton, and
+// declaration emit (TS4023) needs this props type to be nameable there.
+export interface ToolbarIconButtonProps {
+  icon: LucideIcon;
   label: string;
   active?: boolean;
   disabled?: boolean;

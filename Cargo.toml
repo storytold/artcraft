@@ -27,7 +27,7 @@ members = [
   "crates/api_clients/openart_client",
   "crates/api_clients/rootly_client",
   "crates/api_clients/runwayml_client",
-  "crates/api_clients/seedance2pro_client",
+  "crates/api_clients/kinovi_web_client",
   "crates/api_clients/thumbnail_generator",
   "crates/api_clients/worldlabs_api_client",
   "crates/api_clients/worldlabs_consumer_client",
@@ -120,6 +120,7 @@ members = [
   "crates/schema/database/elasticsearch_schema",
   "crates/schema/database/migration",
   "crates/schema/database/mysql_queries",
+  "crates/schema/database/mysql_testing",
   "crates/schema/database/redis_common",
   "crates/schema/database/redis_schema",
   "crates/schema/database/sqlite_tasks",
@@ -130,12 +131,14 @@ members = [
   "crates/schema/public/enums",
   "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
   "crates/schema/public/tokens",
+  "crates/schema/trace_id",
 
   # Services: API servers, jobs, workers, etc.
   "crates/service/job/gmicloud_job",
   "crates/service/job/grok_api_job",
   "crates/service/job/seedance2_pro_job",
   "crates/service/job/video_thumbnail_job",
+  "crates/service/job/user_spend_analytics_job",
   "crates/service/job/worldlabs_job",
   "crates/service/web/dummy_service",
   "crates/service/web/storyteller_web",
@@ -280,10 +283,11 @@ mimetypes = { path = "crates/lib/files/mimetypes" }
 muapi_client = { path = "crates/api_clients/muapi_client" }
 metrics = { path = "crates/lib/metrics" }
 mysql_queries = { path = "crates/schema/database/mysql_queries" }
+mysql_testing = { path = "crates/schema/database/mysql_testing" }
 pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
-seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }
+kinovi_web_client = { path = "crates/api_clients/kinovi_web_client" }
 server_environment = { path = "crates/lib/server_environment" }
 sha1_hash = { path = "crates/lib/sha1_hash" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
@@ -292,6 +296,7 @@ subprocess_common = { path = "crates/lib/deprecated/subprocess_common" }
 test_data = { path = "crates/testing/test_data" }
 test_utils = { path = "crates/testing/test_utils" }
 tokens = { path = "crates/schema/public/tokens" }
+trace_id = { path = "crates/schema/trace_id" }
 url_utils = { path = "crates/lib/url_utils" }
 users = { path = "crates/lib/users" }
 uuid_utils = { path = "crates/lib/uuid_utils" }

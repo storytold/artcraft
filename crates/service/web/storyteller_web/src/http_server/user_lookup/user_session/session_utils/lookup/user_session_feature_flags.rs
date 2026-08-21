@@ -102,8 +102,12 @@ impl UserSessionFeatureFlags {
     self.feature_flags.contains(&UserFeatureFlag::ReferralsProgram)
   }
 
-  pub fn can_create_api_key(&self) -> bool {
-    self.feature_flags.contains(&UserFeatureFlag::ApiKey)
+  pub fn can_use_minimax(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::Minimax)
+  }
+
+  pub fn can_use_minimax_priority(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::MinimaxPriority)
   }
 }
 

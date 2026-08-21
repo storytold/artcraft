@@ -42,6 +42,25 @@ interface BoardLibraryState extends PersistedLibrary {
   deleteBoard: (id: string) => void;
   setActiveBoard: (id: string) => void;
 
+  // Remote sync bookkeeping (used by the persistence layer, not views).
+  setBoardRemoteToken: (id: string, token: string) => void;
+  // Flag local edits pending a server push (no-op if already flagged, so
+  // repeat edits don't churn board identity).
+  markBoardNeedsSync: (id: string) => void;
+  // Record a completed push/pull: clears needsSync and stamps ownership.
+  markBoardSynced: (id: string, args: { ownerId: string }) => void;
+  // Insert a remotely loaded board, or replace the content of the local
+  // board already linked to the token. Does not change the active board.
+  // Returns the (existing or new) local board id.
+  upsertRemoteBoard: (args: {
+    token: string;
+    name: string;
+    ownerId: string;
+    itemOrder: string[];
+    items: Record<string, BoardItem>;
+    sections: Board["sections"];
+  }) => string;
+
   // Item entry — typed creators that fill base fields + aspect.
   addImageItem: (
     boardId: string,
@@ -180,6 +199,91 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       setActiveBoard: (id) => {
         if (!get().boards[id]) return;
         set({ activeBoardId: id, selectedItemIds: new Set() });
+      },
+
+      setBoardRemoteToken: (id, token) => {
+        set((s) => {
+          const board = s.boards[id];
+          if (!board || board.remoteToken === token) return s;
+          return {
+            boards: { ...s.boards, [id]: { ...board, remoteToken: token } },
+          };
+        });
+      },
+
+      markBoardNeedsSync: (id) => {
+        set((s) => {
+          const board = s.boards[id];
+          if (!board || board.needsSync === true) return s;
+          return {
+            boards: { ...s.boards, [id]: { ...board, needsSync: true } },
+          };
+        });
+      },
+
+      markBoardSynced: (id, { ownerId }) => {
+        set((s) => {
+          const board = s.boards[id];
+          if (!board) return s;
+          if (board.needsSync !== true && board.ownerId === ownerId) return s;
+          return {
+            boards: {
+              ...s.boards,
+              [id]: { ...board, needsSync: false, ownerId },
+            },
+          };
+        });
+      },
+
+      upsertRemoteBoard: ({
+        token,
+        name,
+        ownerId,
+        itemOrder,
+        items,
+        sections,
+      }) => {
+        const existing = Object.values(get().boards).find(
+          (b) => b.remoteToken === token,
+        );
+        if (existing) {
+          set((s) => ({
+            boards: {
+              ...s.boards,
+              [existing.id]: {
+                ...existing,
+                name,
+                itemOrder,
+                items,
+                sections,
+                ownerId,
+                needsSync: false,
+                updatedAt: nextSeq(),
+              },
+            },
+          }));
+          return existing.id;
+        }
+
+        const id = uuidv4();
+        const order = nextSeq();
+        const board: Board = {
+          id,
+          name,
+          createdAt: order,
+          updatedAt: order,
+          itemOrder,
+          items,
+          sections,
+          remoteToken: token,
+          ownerId,
+          needsSync: false,
+        };
+        set((s) => ({
+          boards: { ...s.boards, [id]: board },
+          boardOrder: [...s.boardOrder, id],
+        }));
+        return id;
       },
 
       addImageItem: (boardId, data) =>

@@ -1,21 +1,5 @@
-import {
-  faDash,
-  faSquare,
-  faWindowRestore,
-  faXmark,
-} from "@fortawesome/pro-regular-svg-icons";
-import {
-  faCoins,
-  faGear,
-  faGem,
-  faGrid2,
-  faHouse,
-  faImages,
-  faCalculator,
-  faExclamation,
-  faCheck,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CalculatorIcon, CheckIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
@@ -51,7 +35,11 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { GalleryViewToggle } from "@storyteller/ui-generation-list";
+import {
+  GalleryAutoplayToggle,
+  GallerySelectToggle,
+  GalleryViewToggle,
+} from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
@@ -104,7 +92,7 @@ const appMenuTabs: MenuIconItem[] = [
   {
     id: "APPS",
     label: "Home",
-    icon: <FontAwesomeIcon icon={faHouse} />,
+    icon: <HouseIcon />,
     description: "Explore all apps and miniapps",
     large: true,
     tooltipContent: <AppsQuickMenu />,
@@ -114,7 +102,7 @@ const appMenuTabs: MenuIconItem[] = [
   ...APP_DESCRIPTORS.map((d) => ({
     id: d.id,
     label: d.label,
-    icon: <FontAwesomeIcon icon={d.icon} />,
+    icon: <DynamicIcon icon={d.icon} />,
     imageSrc: d.imageSrc,
     description: d.description,
     large: d.large,
@@ -138,7 +126,7 @@ const CreditsCoinWithStatus = ({
         ? "bg-emerald-500 text-white"
         : "bg-amber-400 text-black"; // 'slow'
 
-  const badgeIconDef = iconStatus === "recovered" ? faCheck : faExclamation;
+  const badgeIconDef = iconStatus === "recovered" ? CheckIcon : CircleAlertIcon;
 
   const tooltipMessage =
     iconStatus === "failed"
@@ -179,12 +167,12 @@ const CreditsCoinWithStatus = ({
       }
     >
       <span className="relative inline-flex">
-        <FontAwesomeIcon icon={faCoins} className="text-primary" />
+        <CoinsIcon  className="text-primary" />
         {showBadge && (
           <span
             className={`absolute -right-1.5 -top-1.5 flex h-3 w-3 items-center justify-center rounded-full ring-1 ring-ui-background ${badgeColorClass}`}
           >
-            <FontAwesomeIcon icon={badgeIconDef} className="text-[7px]" />
+            <DynamicIcon icon={badgeIconDef} className="text-[7px]" />
           </span>
         )}
       </span>
@@ -248,7 +236,19 @@ export const TopBar = ({ pageName }: Props) => {
       void useCreditsState.getState().fetchFromServer();
       console.log("TopBar: Polled credits");
     }, CREDITS_POLL_INTERVAL);
-    return () => clearInterval(interval);
+
+    // Imperative refresh requests, e.g. dispatched by the shared
+    // useGenerationJobs hook when it observes a newly-failed job (the server
+    // may have refunded the charge).
+    const handleCreditsChange = () => {
+      void useCreditsState.getState().fetchFromServer();
+    };
+    window.addEventListener("credits-change", handleCreditsChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("credits-change", handleCreditsChange);
+    };
   }, [authStatus]);
 
   useCreditsBalanceChangedEvent(async () => {
@@ -357,6 +357,8 @@ export const TopBar = ({ pageName }: Props) => {
         return "Create Image";
       case "VIDEO":
         return "Create Video";
+      case "AUDIO":
+        return "Create Audio";
       case "EDIT":
         return "Edit Image";
       case "VIDEO_FRAME_EXTRACTOR":
@@ -499,7 +501,11 @@ export const TopBar = ({ pageName }: Props) => {
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
               {(tabStore.activeTabId === "IMAGE" ||
-                tabStore.activeTabId === "VIDEO") && <GalleryViewToggle />}
+                tabStore.activeTabId === "VIDEO") && <GallerySelectToggle />}
+              {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
+              {(tabStore.activeTabId === "IMAGE" ||
+                tabStore.activeTabId === "VIDEO" ||
+                tabStore.activeTabId === "AUDIO") && <GalleryViewToggle />}
               <PopoverMenu
                 position="bottom"
                 align="center"
@@ -531,10 +537,9 @@ export const TopBar = ({ pageName }: Props) => {
                       </button>
                     </div>
                     <div className="flex items-center gap-2 text-4xl font-bold text-base-fg">
-                      <FontAwesomeIcon
-                        icon={faCoins}
-                        className="text-2xl text-primary"
-                      />
+                      <CoinsIcon
+                        
+                        className="text-2xl text-primary" />
                       {sumTotalCredits}
                     </div>
 
@@ -545,7 +550,7 @@ export const TopBar = ({ pageName }: Props) => {
                         useCostBreakdownModalStore.getState().openModal();
                       }}
                     >
-                      <FontAwesomeIcon icon={faCalculator} />
+                      <CalculatorIcon />
                       Cost calculator
                     </button>
 
@@ -567,7 +572,7 @@ export const TopBar = ({ pageName }: Props) => {
                           close();
                           toggleSubscriptionModal();
                         }}
-                        icon={faGem}
+                        icon={GemIcon}
                       >
                         Support
                       </Button>
@@ -579,7 +584,7 @@ export const TopBar = ({ pageName }: Props) => {
               {!hasPaidPlan && (
                 <Button
                   variant="primary"
-                  icon={faGem}
+                  icon={GemIcon}
                   onClick={toggleSubscriptionModal}
                   className="transition-all duration-300"
                 >
@@ -592,7 +597,7 @@ export const TopBar = ({ pageName }: Props) => {
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
                   variant="secondary"
-                  icon={faGear}
+                  icon={SettingsIcon}
                   className="h-[34px] w-[34px]"
                   onClick={() => {
                     setSettingsSection("general");
@@ -604,7 +609,7 @@ export const TopBar = ({ pageName }: Props) => {
 
               <Button
                 variant="secondary"
-                icon={faImages}
+                icon={ImagesIcon}
                 onClick={handleOpenGalleryModal}
               >
                 <span className="hidden whitespace-nowrap text-base-fg xl:block">
@@ -627,15 +632,15 @@ export const TopBar = ({ pageName }: Props) => {
                   className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
                   onClick={minimize}
                 >
-                  <FontAwesomeIcon icon={faDash} className="text-xs" />
+                  <MinusIcon  className="text-xs" />
                 </Button>
                 <Button
                   variant="secondary"
                   className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
                   onClick={toggleMaximize}
                 >
-                  <FontAwesomeIcon
-                    icon={isMaximized ? faWindowRestore : faSquare}
+                  <DynamicIcon
+                    icon={isMaximized ? PictureInPicture2Icon : SquareIcon}
                     className="text-xs"
                   />
                 </Button>
@@ -644,7 +649,7 @@ export const TopBar = ({ pageName }: Props) => {
                   className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-red/10 hover:text-red"
                   onClick={close}
                 >
-                  <FontAwesomeIcon icon={faXmark} className="text-lg" />
+                  <XIcon  className="text-lg" />
                 </Button>
               </div>
             )}

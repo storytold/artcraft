@@ -39,6 +39,9 @@
       "path": "../tooltip"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "../button"
     },
     {

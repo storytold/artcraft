@@ -1,10 +1,10 @@
 import { Link, LinkProps } from "react-router-dom";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 
 interface LinkButtonProps extends LinkProps {
-  icon?: IconDefinition;
+  icon?: LucideIcon;
   variant?: "primary" | "secondary";
 }
 
@@ -36,7 +36,7 @@ export const ButtonLink = ({
   return (
     <Link {...rest}>
       <button className={className}>
-        {icon && <FontAwesomeIcon className="mr-2" icon={icon} size="sm" />}
+        {icon && <DynamicIcon className="mr-2" icon={icon} size="0.875em" />}
         {children}
       </button>
     </Link>

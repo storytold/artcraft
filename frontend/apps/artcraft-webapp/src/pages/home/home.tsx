@@ -1,16 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faImage,
-  faVideo,
-  faWandMagicSparkles,
-  faCube,
-  faFilm,
-  faObjectGroup,
-  faArrowRight,
-} from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { ArrowRightIcon, BoxIcon, FilmIcon, GlobeIcon, GroupIcon, ImageIcon, ImagesIcon, MusicIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import Seo from "../../components/seo";
 import { Reveal, RevealGroup } from "../../components/motion/reveal";
 import { TRANSITION_SPRING } from "../../lib/motion";
@@ -21,7 +13,7 @@ type AppCard = {
   label: string;
   description: string;
   href: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   accent: string;
   iconBg: string;
   iconColor: string;
@@ -33,7 +25,7 @@ const APPS: AppCard[] = [
     label: "Image",
     description: "Generate images from prompts and references.",
     href: "/create-image",
-    icon: faImage,
+    icon: ImageIcon,
     accent: "from-blue-500/20 to-blue-500/0",
     iconBg: "bg-blue-500/25 border-blue-400/30",
     iconColor: "text-blue-300",
@@ -42,16 +34,43 @@ const APPS: AppCard[] = [
     label: "Video",
     description: "Generate cinematic clips from text or images.",
     href: "/create-video",
-    icon: faVideo,
+    icon: VideoIcon,
     accent: "from-purple-500/20 to-purple-500/0",
     iconBg: "bg-purple-500/25 border-purple-400/30",
     iconColor: "text-purple-300",
   },
   {
+    label: "Audio",
+    description: "Generate songs and sound effects from prompts.",
+    href: "/create-audio",
+    icon: MusicIcon,
+    accent: "from-pink-500/20 to-pink-500/0",
+    iconBg: "bg-pink-500/25 border-pink-400/30",
+    iconColor: "text-pink-300",
+  },
+  {
+    label: "3D Object",
+    description: "Turn a prompt or image into a 3D model.",
+    href: "/create-object",
+    icon: BoxIcon,
+    accent: "from-cyan-500/20 to-cyan-500/0",
+    iconBg: "bg-cyan-500/25 border-cyan-400/30",
+    iconColor: "text-cyan-300",
+  },
+  {
+    label: "3D World",
+    description: "Turn a prompt or image into an explorable world.",
+    href: "/create-world",
+    icon: GlobeIcon,
+    accent: "from-teal-500/20 to-teal-500/0",
+    iconBg: "bg-teal-500/25 border-teal-400/30",
+    iconColor: "text-teal-300",
+  },
+  {
     label: "Edit 3D",
     description: "Compose 3D scenes and render with AI cameras.",
     href: "/edit-3d",
-    icon: faCube,
+    icon: BoxIcon,
     accent: "from-amber-500/20 to-amber-500/0",
     iconBg: "bg-amber-500/25 border-amber-400/30",
     iconColor: "text-amber-300",
@@ -60,7 +79,7 @@ const APPS: AppCard[] = [
     label: "Background Change",
     description: "Swap or remove backgrounds with AI VFX.",
     href: "/background-change",
-    icon: faWandMagicSparkles,
+    icon: WandSparklesIcon,
     accent: "from-emerald-500/20 to-emerald-500/0",
     iconBg: "bg-emerald-500/25 border-emerald-400/30",
     iconColor: "text-emerald-300",
@@ -69,7 +88,7 @@ const APPS: AppCard[] = [
     label: "Edit Video",
     description: "Trim, arrange, and edit clips on a timeline.",
     href: "/video-editor",
-    icon: faFilm,
+    icon: FilmIcon,
     accent: "from-rose-500/20 to-rose-500/0",
     iconBg: "bg-rose-500/25 border-rose-400/30",
     iconColor: "text-rose-300",
@@ -79,11 +98,21 @@ const APPS: AppCard[] = [
     label: "Moodboard",
     description: "Collect references and ideas to steer a generation.",
     href: "/moodboard",
-    icon: faObjectGroup,
+    icon: GroupIcon,
     accent: "from-indigo-500/20 to-indigo-500/0",
     iconBg: "bg-indigo-500/25 border-indigo-400/30",
     iconColor: "text-indigo-300",
     badge: "BETA",
+  },
+  {
+    label: "Frame Extractor",
+    description: "Grab a still frame from any video.",
+    href: "/frame-extractor",
+    icon: ImagesIcon,
+    accent: "from-orange-500/20 to-orange-500/0",
+    iconBg: "bg-orange-500/25 border-orange-400/30",
+    iconColor: "text-orange-300",
+    badge: "NEW",
   },
 ];
 
@@ -126,7 +155,7 @@ export function Home() {
                   <div
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${app.iconBg} ${app.iconColor} shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105`}
                   >
-                    <FontAwesomeIcon icon={app.icon} className="text-base" />
+                    <DynamicIcon icon={app.icon} className="text-base" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
@@ -141,7 +170,7 @@ export function Home() {
                         )}
                       </div>
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.04] text-white/40 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:bg-white/10 group-hover:text-white/80 group-hover:translate-x-0.5">
-                        <FontAwesomeIcon icon={faArrowRight} className="text-xs" />
+                        <ArrowRightIcon  className="text-xs" />
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-white/55 leading-snug">

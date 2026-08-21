@@ -7,13 +7,8 @@ import {
   useState,
 } from "react";
 import { Transition } from "@headlessui/react";
-import {
-  faChevronDown,
-  faChevronUp,
-  faCube,
-  faTrash,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { BoxIcon, ChevronDownIcon, ChevronUpIcon, TrashIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 
 import { EngineContext } from "../../contexts/EngineContext";
 import { InputVector } from "@storyteller/ui-input";
@@ -322,14 +317,14 @@ export const ControlPanelSceneObject = () => {
     >
       <div className="mb-1 flex justify-between">
         <div className="flex items-center gap-2">
-          <FontAwesomeIcon icon={faCube} />
+          <BoxIcon />
           <p className="max-w-36 truncate font-semibold">
             {currentSceneObject.object_name.charAt(0).toUpperCase() +
               currentSceneObject.object_name.slice(1)}
           </p>
         </div>
-        <FontAwesomeIcon
-          icon={isCollapsed ? faChevronUp : faChevronDown}
+        <DynamicIcon
+          icon={isCollapsed ? ChevronUpIcon : ChevronDownIcon}
           onClick={toggleCollapse}
           className="cursor-pointer opacity-75 transition-opacity duration-100 ease-in-out hover:opacity-50"
         />
@@ -438,7 +433,7 @@ export const ControlPanelSceneObject = () => {
         </Button> */}
         <Button
           variant="secondary"
-          icon={faTrash}
+          icon={TrashIcon}
           onClick={handleDeleteObject}
           className="w-full"
         >

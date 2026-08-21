@@ -5,10 +5,10 @@ use chrono::Utc;
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_video_jobs::{list_pending_kinovi_web_video_jobs, PendingKinoviWebJob};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, PollOrdersResponse};
+use kinovi_web_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, PollOrdersResponse};
 
 use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
@@ -93,8 +93,8 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
     ),
   };
 
-  // 1. Query all (limit 25,000) non-terminal Seedance2Pro jobs from the DB.
-  let pending_jobs = match list_pending_seedance2pro_video_jobs(&deps.mysql_pool, third_party, job_type).await {
+  // 1. Query all (limit 25,000) non-terminal KinoviWeb jobs from the DB.
+  let pending_jobs = match list_pending_kinovi_web_video_jobs(&deps.mysql_pool, third_party, job_type).await {
     Ok(jobs) => jobs,
     Err(err) => {
       error!("Failed to list pending database jobs: {:?}", err);
@@ -135,9 +135,9 @@ struct WalkResult {
 /// recent jobs are caught with lower latency than the long tail.
 async fn walk_orders(
   deps: &JobDependencies,
-  pending_jobs: Vec<PendingSeedance2ProJob>,
+  pending_jobs: Vec<PendingKinoviWebJob>,
 ) -> anyhow::Result<WalkResult> {
-  let job_by_order_id: HashMap<String, PendingSeedance2ProJob> = pending_jobs
+  let job_by_order_id: HashMap<String, PendingKinoviWebJob> = pending_jobs
       .into_iter()
       .map(|job| (job.order_id.clone(), job))
       .collect();
@@ -248,7 +248,7 @@ async fn walk_orders(
 /// finished matches. Used mid-walk to keep recent-job latency low.
 async fn recheck_head_pages(
   deps: &JobDependencies,
-  job_by_order_id: &HashMap<String, PendingSeedance2ProJob>,
+  job_by_order_id: &HashMap<String, PendingKinoviWebJob>,
 ) -> anyhow::Result<WalkResult> {
   info!("Re-checking the {} newest order page(s).", HEAD_PAGE_COUNT);
 
@@ -287,7 +287,7 @@ struct PageStageSummary {
 fn stage_finished_orders(
   deps: &JobDependencies,
   orders: &[OrderStatus],
-  job_by_order_id: &HashMap<String, PendingSeedance2ProJob>,
+  job_by_order_id: &HashMap<String, PendingKinoviWebJob>,
 ) -> PageStageSummary {
   let mut staged = 0u32;
 
@@ -341,7 +341,7 @@ async fn poll_orders_with_retry(
 
   for attempt in 1..=max_retries {
     match poll_orders(PollOrdersArgs {
-      session: &deps.seedance2pro_session,
+      session: &deps.kinovi_web_session,
       cursor,
       host_override: None,
     }).await {

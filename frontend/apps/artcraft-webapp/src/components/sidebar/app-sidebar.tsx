@@ -1,22 +1,9 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faHouse,
-  faVideo,
-  faImage,
-  faCube,
-  faFilm,
-  faObjectGroup,
-  faWandMagicSparkles,
-  faGraduationCap,
-  faNewspaper,
-  faCircleQuestion,
-  faDownload,
-  faGift,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { BoxIcon, CircleHelpIcon, DownloadIcon, FilmIcon, GiftIcon, GlobeIcon, GraduationCapIcon, GroupIcon, HouseIcon, ImageIcon, ImagesIcon, MusicIcon, NewspaperIcon, PencilIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { USER_FEATURE_FLAGS } from "@storyteller/api";
 import { useSession } from "../../lib/session";
@@ -34,7 +21,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "../ui/sidebar";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { MARKETING_SITE, SOCIAL_LINKS } from "../../config/links";
 import { useSceneCacheStore } from "../../pages/pagescene/scene-cache-store";
 import { LibraryFoldersNav } from "./library-folders-nav";
@@ -42,33 +28,44 @@ import { LibraryFoldersNav } from "./library-folders-nav";
 type NavItem = {
   label: string;
   href: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   external?: boolean;
   badge?: string;
 };
 
-const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
+const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: HouseIcon }];
 
-// "Edit 3D" entry's href is computed at render time from the
-// session-scoped scene-cache store (see useCreateItems below). The other
-// entries stay static.
+// Generation entries — make something from a prompt.
 const CREATE_ITEMS_STATIC: NavItem[] = [
-  { label: "Image", href: "/create-image", icon: faImage },
-  { label: "Video", href: "/create-video", icon: faVideo },
-  // Edit Image is hidden from the sidebar for now.
-  // { label: "Edit Image", href: "/edit-image", icon: faPencil },
-  { label: "Edit 3D", href: "/edit-3d", icon: faCube },
-  { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
+  { label: "Image", href: "/create-image", icon: ImageIcon },
+  { label: "Video", href: "/create-video", icon: VideoIcon },
+  { label: "Audio", href: "/create-audio", icon: MusicIcon },
+  { label: "3D Object", href: "/create-object", icon: BoxIcon },
+  { label: "3D World", href: "/create-world", icon: GlobeIcon },
+];
+
+// "Studio" entries — edit, compose, and refine existing content. "Edit 3D"'s
+// href is computed at render time from the scene-cache store (see useStudioItems).
+const STUDIO_ITEMS_STATIC: NavItem[] = [
+  { label: "Edit Image", href: "/edit-image", icon: PencilIcon },
+  { label: "Edit 3D", href: "/edit-3d", icon: BoxIcon },
+  { label: "Edit Video", href: "/video-editor", icon: FilmIcon, badge: "BETA" },
   {
     label: "BG Change",
     href: "/background-change",
-    icon: faWandMagicSparkles,
+    icon: WandSparklesIcon,
   },
   {
     label: "Moodboard",
     href: "/moodboard",
-    icon: faObjectGroup,
+    icon: GroupIcon,
     badge: "BETA",
+  },
+  {
+    label: "Frame Extract",
+    href: "/frame-extractor",
+    icon: ImagesIcon,
+    badge: "NEW",
   },
 ];
 
@@ -76,11 +73,11 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
 // scene (if any) so returning to the editor from another sidebar page
 // drops them back into the same scene rather than the blank splash.
 // sessionStorage scope — closes when the tab closes.
-function useCreateItems(): NavItem[] {
+function useStudioItems(): NavItem[] {
   const lastSceneToken = useSceneCacheStore((s) => s.lastVisitedSceneToken);
   return useMemo(
     () =>
-      CREATE_ITEMS_STATIC.map((item) =>
+      STUDIO_ITEMS_STATIC.map((item) =>
         item.href === "/edit-3d" && lastSceneToken
           ? { ...item, href: `/edit-3d/${lastSceneToken}` }
           : item,
@@ -92,26 +89,26 @@ function useCreateItems(): NavItem[] {
 const REFERRALS_ITEM: NavItem = {
   label: "Referrals",
   href: "/referrals",
-  icon: faGift,
+  icon: GiftIcon,
 };
 
 const RESOURCES_ITEMS: NavItem[] = [
   {
     label: "Tutorials",
     href: `${MARKETING_SITE}/tutorials`,
-    icon: faGraduationCap,
+    icon: GraduationCapIcon,
     external: true,
   },
   {
     label: "News",
     href: `${MARKETING_SITE}/news`,
-    icon: faNewspaper,
+    icon: NewspaperIcon,
     external: true,
   },
   {
     label: "FAQ",
     href: `${MARKETING_SITE}/faq`,
-    icon: faCircleQuestion,
+    icon: CircleHelpIcon,
     external: true,
   },
 ];
@@ -120,7 +117,7 @@ const SUPPORT_ITEMS: NavItem[] = [
   {
     label: "Join Discord",
     href: SOCIAL_LINKS.DISCORD,
-    icon: faDiscord,
+    icon: DiscordIcon,
     external: true,
   },
 ];
@@ -151,13 +148,17 @@ function NavMenuItem({
     <>
       {/* Icon nudges up in scale on hover — a small tactile cue that the row is
           interactive, kept subtle to stay within the "restrained chrome" lane. */}
-      <FontAwesomeIcon
+      <DynamicIcon
         icon={item.icon}
         className="transition-transform duration-200 ease-out group-hover/menu-item:scale-110"
       />
       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
-        <span className="ml-auto bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full">
+        <span
+          className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full ${
+            item.badge === "NEW" ? "bg-purple-600" : "bg-amber-600"
+          }`}
+        >
           {item.badge}
         </span>
       )}
@@ -180,11 +181,7 @@ function NavMenuItem({
           }
         />
       )}
-      <SidebarMenuButton
-        asChild
-        isActive={active}
-        tooltip={item.label}
-      >
+      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
         {item.external ? (
           <a
             href={item.href}
@@ -241,7 +238,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile, state } = useSidebar();
   const { user } = useSession();
   const showSidebarLogo = state === "expanded" || isMobile;
-  const createItems = useCreateItems();
+  const studioItems = useStudioItems();
 
   const hasReferralsFlag = !!user?.maybe_feature_flags?.includes(
     USER_FEATURE_FLAGS.REFERRALS,
@@ -281,7 +278,13 @@ export function AppSidebar() {
         />
         <NavSection
           label="Create"
-          items={createItems}
+          items={CREATE_ITEMS_STATIC}
+          pathname={pathname}
+          onClick={handleNavClick}
+        />
+        <NavSection
+          label="Studio"
+          items={studioItems}
           pathname={pathname}
           onClick={handleNavClick}
         />
@@ -311,7 +314,7 @@ export function AppSidebar() {
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
         <Button
           variant="primary"
-          icon={faDownload}
+          icon={DownloadIcon}
           onClick={() =>
             window.open(DOWNLOAD_URL, "_blank", "noopener,noreferrer")
           }

@@ -4,7 +4,11 @@ import { toast } from "../components/toast/toast";
 const EXT_BY_MEDIA_CLASS: Record<string, string> = {
   image: "png",
   video: "mp4",
+  // "dimensional" is the deprecated pre-split 3D class (rows persist until
+  // the backfill lands); mesh/splat are its replacements.
   dimensional: "glb",
+  mesh: "glb",
+  splat: "spz",
 };
 
 function extensionForUrl(url: string, mediaClass?: string | null): string {

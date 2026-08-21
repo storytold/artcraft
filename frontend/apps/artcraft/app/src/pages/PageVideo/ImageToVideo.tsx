@@ -13,7 +13,7 @@ import {
 import BackgroundGallery from "./BackgroundGallery";
 import {
   ClassyModelSelector,
-  IMAGE_TO_VIDEO_PAGE_MODEL_LIST,
+  useImageToVideoPageModelList,
   ModelPage,
   useSelectedVideoModel,
   useSelectedProviderForModel,
@@ -39,6 +39,7 @@ import {
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   useGalleryData,
+  useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
@@ -56,6 +57,7 @@ interface ImageToVideoProps {
 }
 
 const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
+  const imageToVideoModelList = useImageToVideoPageModelList();
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
   const promptContentRef = useRef<HTMLDivElement>(null);
@@ -155,7 +157,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
 
   // Open a completed row in the global lightbox (rendered by TopBar's
   // gallery modal); prev/next walk the merged feed order.
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
+
   const openInLightbox = useCallback((item: GalleryItem) => {
+    useLastViewedGenerationStore.getState().setId(item.id);
     const list = flatCompletedRef.current;
     const index = list.findIndex((i) => i.id === item.id);
     galleryModalLightboxNavPrev.value =
@@ -196,6 +201,9 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
+          lastViewedId={lastViewedId}
+          selectable
+          selectionBarBottomOffset={promptHeight + 32}
         />
       }
       promptBox={
@@ -215,7 +223,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                 modelSelector={
                   <ClassyModelSelector
                     variant="embedded"
-                    items={IMAGE_TO_VIDEO_PAGE_MODEL_LIST}
+                    items={imageToVideoModelList}
                     page={PAGE_ID}
                   />
                 }

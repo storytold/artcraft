@@ -1,7 +1,4 @@
-import {
-  faArrowUpFromBracket,
-  faImages,
-} from "@fortawesome/pro-regular-svg-icons";
+import { ImagesIcon, UploadIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 
 interface Props {
@@ -34,7 +31,7 @@ export const BoardEmptyState = ({ onUpload, onLibrary }: Props) => {
           <Button
             variant="primary"
             onClick={onUpload}
-            icon={faArrowUpFromBracket}
+            icon={UploadIcon}
             className={CTA_CLASS}
           >
             Upload
@@ -42,7 +39,7 @@ export const BoardEmptyState = ({ onUpload, onLibrary }: Props) => {
           <Button
             variant="secondary"
             onClick={onLibrary}
-            icon={faImages}
+            icon={ImagesIcon}
             className={CTA_CLASS}
           >
             From library

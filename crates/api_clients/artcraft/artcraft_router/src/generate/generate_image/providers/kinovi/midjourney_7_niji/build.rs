@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7_niji::{
+use kinovi_web_client::generate::image::generate_midjourney_v7_niji::{
   GenerateMidjourneyV7NijiAspectRatio, GenerateMidjourneyV7NijiQuality,
   GenerateMidjourneyV7NijiRequest, KinoviMidjourneyBatchCount,
 };
@@ -126,6 +126,7 @@ pub(crate) fn plan_batch_count(
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
     1 => Ok(KinoviMidjourneyBatchCount::One),
     2 => Ok(KinoviMidjourneyBatchCount::Two),
+    3 => Ok(KinoviMidjourneyBatchCount::Three),
     4 => Ok(KinoviMidjourneyBatchCount::Four),
     other => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -134,11 +135,11 @@ pub(crate) fn plan_batch_count(
           value: format!("{}", other),
         }))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        Ok(if other < 3 { KinoviMidjourneyBatchCount::Two } else { KinoviMidjourneyBatchCount::Four })
-      }
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if other < 4 { KinoviMidjourneyBatchCount::Two } else { KinoviMidjourneyBatchCount::Four })
+      // Kinovi supports batches of 1–4; only counts of 5+ reach here, so both
+      // mitigation strategies clamp to the maximum supported batch.
+      RequestMismatchMitigationStrategy::PayMoreUpgrade
+      | RequestMismatchMitigationStrategy::PayLessDowngrade => {
+        Ok(KinoviMidjourneyBatchCount::Four)
       }
     },
   }
@@ -146,7 +147,7 @@ pub(crate) fn plan_batch_count(
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::generate::image::generate_midjourney_v7_niji::KinoviMidjourneyBatchCount;
+  use kinovi_web_client::generate::image::generate_midjourney_v7_niji::KinoviMidjourneyBatchCount;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_list_ref::ImageListRef;
@@ -165,7 +166,7 @@ mod tests {
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Midjourney7Niji,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a magical anime forest scene".to_string()),
       image_inputs: None,
       resolution: None,
@@ -213,6 +214,16 @@ mod tests {
   }
 
   #[test]
+  fn batch_count_three_is_accepted() {
+    let builder = GenerateImageRequestBuilder { image_batch_count: Some(3), ..base_builder() };
+    let req = match build_kinovi_midjourney_7_niji(builder).expect("build") {
+      ImageGenerationDraftOrRequest::Request(ImageGenerationRequest::KinoviMidjourney7Niji(r)) => r,
+      _ => panic!("expected Request"),
+    };
+    assert_eq!(req.request.batch_count, KinoviMidjourneyBatchCount::Three);
+  }
+
+  #[test]
   fn batch_count_four_is_accepted() {
     let builder = GenerateImageRequestBuilder { image_batch_count: Some(4), ..base_builder() };
     let req = match build_kinovi_midjourney_7_niji(builder).expect("build") {
@@ -224,7 +235,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_passes_through_to_niji_enum() {
-    use seedance2pro_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiAspectRatio as Ar;
+    use kinovi_web_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiAspectRatio as Ar;
     let builder = GenerateImageRequestBuilder {
       aspect_ratio: Some(RouterAspectRatio::WideTwentyOneByNine),
       ..base_builder()
@@ -238,7 +249,7 @@ mod tests {
 
   #[test]
   fn quality_high_maps_to_full() {
-    use seedance2pro_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiQuality as Q;
+    use kinovi_web_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiQuality as Q;
     let builder = GenerateImageRequestBuilder {
       quality: Some(RouterQuality::High),
       ..base_builder()

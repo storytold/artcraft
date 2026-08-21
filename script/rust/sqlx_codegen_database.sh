@@ -1,106 +1,90 @@
 #!/bin/bash
-
-# NB: This format can be used without changing directory:
-# SQLX_OFFLINE=true cargo sqlx prepare -- --bin storyteller-web --manifest-path crates/service/storyteller_web/Cargo.toml
+#
+# Regenerates the workspace-root `.sqlx/` offline query cache for BOTH query
+# crates:
+#
+#   1. `sqlite_tasks` — desktop app "tasks" queries, checked against a scratch
+#      SQLite database migrated from `_database/sql/artcraft_migrations`.
+#   2. `mysql_queries` — backend queries, checked against the local dev MySQL
+#      (the `DATABASE_URL` in the repo root `.env`, overridable via env).
+#
+# Requirements:
+#   - sqlx-cli matching the workspace sqlx version, with both drivers:
+#       cargo install sqlx-cli --version 0.7.4 --no-default-features \
+#         --features mysql,sqlite,rustls --locked
+#   - A running local MySQL with the migrated dev database.
+#
+# The new cache is staged in a temp directory and only replaces the old
+# `.sqlx/*.json` files after BOTH prepares succeed, so a failure part-way
+# never leaves the repo without a query cache.
 
 set -euxo pipefail
 
-# TODO: Fix up root dir determination
-root_dir=$(pwd)
-sqlite_db_file="/tmp/tasks.sqlite"
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+sqlite_db_file="/tmp/tasks.sqlite"
 sqlite_package_path="${root_dir}/crates/schema/database/sqlite_tasks"
 mysql_package_path="${root_dir}/crates/schema/database/mysql_queries"
 
-query_cache_dir="${root_dir}/.sqlx/"
+query_cache_dir="${root_dir}/.sqlx"
+staging_dir="$(mktemp -d /tmp/sqlx_codegen.XXXXXX)"
 
-remove_old_query_cache() {
-  echo "Removing old query cache files..."
-  pushd "${query_cache_dir}"
-  rm -f *.json
-  popd
-}
+# The dev MySQL database. Falls back to the DATABASE_URL in the repo root
+# .env so the script works from any directory.
+mysql_database_url="${DATABASE_URL:-$(grep -m1 '^DATABASE_URL=mysql' "${root_dir}/.env" | cut -d= -f2-)}"
 
 prepare_sqlite_tasks() {
-  echo 'Create Tauri SQLite tasks database file...'
+  echo "Creating a fresh Tauri SQLite tasks database..."
+  rm -f "${sqlite_db_file}"
   touch "${sqlite_db_file}"
 
-  echo "Migrate Tauri SQLite tasks database file..."
+  echo "Migrating the SQLite tasks database..."
   cargo sqlx migrate run \
     --database-url "sqlite:${sqlite_db_file}" \
     --source "${root_dir}/_database/sql/artcraft_migrations"
 
-  echo "Prepare Tauri SQLite tasks query cache..."
+  echo "Preparing the SQLite tasks query cache..."
   pushd "${sqlite_package_path}"
   cargo sqlx prepare \
     --database-url "sqlite:${sqlite_db_file}"
   popd
 
-  echo "Move query cache files..."
-  pushd "${sqlite_package_path}/.sqlx"
-  mv *.json "${query_cache_dir}"
-  popd
+  mv "${sqlite_package_path}/.sqlx/"*.json "${staging_dir}/"
 }
 
 prepare_mysql() {
-  echo "Prepare MySQL database query cache..."
+  echo "Preparing the MySQL query cache..."
   pushd "${mysql_package_path}"
-  cargo sqlx prepare
+  cargo sqlx prepare \
+    --database-url "${mysql_database_url}"
   popd
 
-  echo "Move query cache files..."
-  pushd "${mysql_package_path}/.sqlx"
-  mv *.json "${query_cache_dir}"
-  popd
+  mv "${mysql_package_path}/.sqlx/"*.json "${staging_dir}/"
 }
 
-remove_old_query_cache
+replace_query_cache() {
+  echo "Replacing the query cache..."
+  mkdir -p "${query_cache_dir}"
+  rm -f "${query_cache_dir}/"*.json
+  mv "${staging_dir}/"*.json "${query_cache_dir}/"
+  rmdir "${staging_dir}"
+
+  # Remove the (now empty) per-package cache dirs so sqlx never resolves
+  # offline queries against a stale crate-local cache instead of the
+  # workspace root one.
+  rmdir "${sqlite_package_path}/.sqlx" "${mysql_package_path}/.sqlx" 2>/dev/null || true
+}
+
+# The sqlx macros only emit query metadata when the crates actually
+# recompile; a fresh (cached) build would yield an EMPTY cache. Force both
+# query crates to rebuild.
+cargo clean -p sqlite_tasks -p mysql_queries
+
+# Prepare must expand the macros against the live databases.
+export SQLX_OFFLINE=false
+
 prepare_sqlite_tasks
 prepare_mysql
-
-# NB(bt): Below are several generational revisions of sqlx query caching. 
-# The most recent was for a workspace with only one sqlx query package.
-# There are older remnants from a multi-package configuration, but I believe
-# the tooling has improved since then. Keeping this here just in case.
-#
-#   #export DATABASE_URL="sqlite:${sqlite_db_file}"
-#   
-#   # NB: Database used by desktop app for AiChatBot sidecar.
-#   # Make sure it has been migrated (use aichatbot-sidecar app directory as root).
-#   # SQLITE_DATABASE_PATH=./runtime_data/database.db
-#   
-#   # NB: OpenSSL is broken on Ubuntu 22.04 (this is documented elsewhere)
-#   # See https://askubuntu.com/a/1403961
-#   # For some reason, the choice of "rustls" or the vendored openssl is not persistent between calls.
-#   #cargo install sqlx-cli --features openssl-vendored,mysql
-#   
-#   build_shared_mysql_database_library() {
-#
-#     # NB: For now, this is our monolithic DB that serves all of our microservices (gross)
-#
-#     # It's a single package so that queries can be shared (again, gross)
-#     #pushd crates/lib/mysql_queries
-#     #SQLX_OFFLINE=true cargo sqlx prepare
-#     #popd
-#     cargo sqlx prepare --workspace
-#   }
-#   
-#   #build_shared_sqlite_database_library() {
-#   #  # NB(1): These are *SQLite* queries for the desktop AiChatBot app.
-#   #  # NB(2): Make sure to run migrations first.
-#
-#   #  # NB(3): SqLite has trouble with relative paths, so we copy the file to /
-#   #  cp $SQLITE_DATABASE_PATH /tmp
-#   #  pushd crates/lib/sqlite_queries
-#   #  DATABASE_URL=sqlite:///tmp/database.db cargo sqlx prepare --merged
-#   #  popd
-#   #}
-#   
-#   
-#   echo 'mysql prepare (if this takes a while, it may need to rebuild all the rust code)'
-#   build_shared_mysql_database_library
-#   
-#   #echo 'sqlite prepare'
-#   #build_shared_sqlite_database_library
+replace_query_cache
 
 echo 'done'

@@ -6,6 +6,7 @@ import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 import { CameraAspectRatio } from "../enums";
 import type Scene from "./scene";
 import type { EngineEventBus } from "./events/EngineEventBus";
+import { cloneTimeline, type TimelineData } from "./timeline/types";
 import {
   CameraAspectRatioChangedEvent,
   CamerasReplacedEvent,
@@ -71,6 +72,24 @@ export type SaveManagerDeps = {
   getCameras: () => Camera[];
   getSelectedCameraId: () => string;
 
+  // Animation timeline persistence (in-memory controller ↔ scene JSON).
+  getTimeline: () => TimelineData | null;
+  loadTimeline: (timeline: TimelineData) => void;
+  // Fresh empty timeline — used when the loaded scene carries no usable
+  // timeline, so the previous scene's animation data is never inherited.
+  resetTimeline: () => void;
+
+  // Live render-camera (::CAM:: frustum) transform, read at save time so the
+  // persisted render-camera position reflects the actual scene object rather
+  // than the (possibly stale) store config. Null if no frustum exists.
+  getRenderCameraTransform: () => {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+  } | null;
+  // Recreate the ::CAM:: frustum after a load (the load path strips it). Must
+  // run AFTER the store cameras are restored so it reads the loaded config.
+  recreateCameraObject: () => void;
+
   // Typed event bus — every engine→store write goes through here.
   bus: EngineEventBus;
 };
@@ -131,20 +150,49 @@ export class SaveManager {
     const proxyScene = new StoryTellerProxyScene(version, scene);
     const scene_json = proxyScene.saveToScene(version);
 
-    const camerasData = this.deps.getCameras().map((cam: Camera) => ({
-      id: cam.id,
-      label: cam.label,
-      focalLength: cam.focalLength,
-      position: cam.position,
-      rotation: cam.rotation,
-      lookAt: cam.lookAt,
-    }));
+    // The render camera's true position lives on the live ::CAM:: frustum,
+    // not the store config (which goes stale on edit-mode gizmo moves). At
+    // save time, override the render-camera entry (first non-"main") with the
+    // live transform so a reload restores where the frustum actually is.
+    const renderTransform = this.deps.getRenderCameraTransform();
+    const renderCameraId = this.deps
+      .getCameras()
+      .find((cam) => cam.id !== "main")?.id;
+    const camerasData = this.deps.getCameras().map((cam: Camera) => {
+      const useLive = renderTransform && cam.id === renderCameraId;
+      return {
+        id: cam.id,
+        label: cam.label,
+        focalLength: cam.focalLength,
+        position: useLive ? renderTransform.position : cam.position,
+        rotation: useLive ? renderTransform.rotation : cam.rotation,
+        lookAt: cam.lookAt,
+      };
+    });
+
+    // The in-memory timeline retains tracks/clip lanes for deleted objects
+    // (so undoing the delete restores its strips), but those orphans must
+    // not outlive the session: filter anything whose object has no live
+    // scene root, on a CLONE — saves stay clean and reloads can't resurrect
+    // orphans, while the live timeline (and delete-undo) is untouched.
+    const liveTimeline = this.deps.getTimeline();
+    let timeline: TimelineData | null = null;
+    if (liveTimeline) {
+      const liveUuids = new Set(scene.scene.children.map((c) => c.uuid));
+      timeline = cloneTimeline(liveTimeline);
+      timeline.tracks = timeline.tracks.filter((t) =>
+        liveUuids.has(t.objectUuid),
+      );
+      timeline.clipLanes = timeline.clipLanes.filter((l) =>
+        liveUuids.has(l.objectUuid),
+      );
+    }
 
     return {
       version,
       scene: scene_json,
       ...sceneGenerationMetadata,
-      timeline: "",
+      timeline,
       skybox: scene.skybox,
       camera_data: {
         position: camera?.position,
@@ -284,7 +332,28 @@ export class SaveManager {
     }
 
     this.deps.setVersion(scene_json["version"]);
+
+    // The load path stripped ::CAM::; recreate it now that the store cameras
+    // are restored (CamerasReplacedEvent above ran synchronously), so the
+    // frustum lands at the saved render-camera transform, then re-anchor it.
+    this.deps.recreateCameraObject();
     this.deps.refreshCamObj();
+
+    // Restore the animation timeline. Guard legacy scenes where `timeline`
+    // was a `""` stub (or absent/null) — those RESET rather than fall
+    // through, so the previous scene's tracks/strips are never inherited
+    // by a scene that saved none.
+    const timeline = scene_json["timeline"];
+    if (
+      timeline &&
+      typeof timeline === "object" &&
+      Array.isArray(timeline.tracks)
+    ) {
+      this.deps.loadTimeline(timeline);
+    } else {
+      this.deps.resetTimeline();
+    }
+
     return true;
   }
 }

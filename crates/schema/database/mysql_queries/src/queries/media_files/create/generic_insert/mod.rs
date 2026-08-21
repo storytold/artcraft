@@ -1,2 +1,3 @@
 pub mod insert_media_file_generic;
+pub mod insert_media_file_generic_executor;
 pub mod insert_media_file_generic_from_job;

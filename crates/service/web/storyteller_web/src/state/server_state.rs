@@ -1,11 +1,10 @@
+use std::collections::HashSet;
+
 use crate::configs::app_startup::username_set::UsernameSet;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::ModelTokensByCategoryToken;
-use crate::http_server::deprecated_endpoints::leaderboard::get_leaderboard::LeaderboardInfo;
 use crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::ListFeaturedMediaFilesQueryParams;
-use crate::http_server::endpoints::stats::result_transformer::CacheableQueueStats;
 use crate::http_server::endpoints::tts::list_tts_models::TtsModelRecordForResponse;
-use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::VoiceConversionModel;
 use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
@@ -14,7 +13,8 @@ use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::flags::paging_flags::PagingFlags;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
+use crate::util::internal_api_key::InternalApiKey;
 use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
@@ -34,8 +34,7 @@ use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::generic_inference::web::get_pending_inference_job_count::InferenceQueueLengthResult;
 use mysql_queries::queries::media_files::list::list_featured_media_files::FeaturedMediaFileListPage;
 use mysql_queries::queries::model_categories::list_categories_query_builder::CategoryList;
-use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_count::TtsQueueLengthResult;
-use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use crate::http_server::web_utils::web_opaque_cursor_encoder_v2::WebOpaqueCursorEncoderV2;
 use pager::client::pager::Pager;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -60,6 +59,12 @@ pub struct ServerState {
 
   /// Knowing if we're in production will allow us to turn off development-only functionalities.
   pub server_environment: ServerEnvironment,
+
+  /// Optional base URL (scheme + host, no trailing slash) that REPLACES the
+  /// media CDN host wherever the server itself downloads media (reference
+  /// probing, provider upload resolution). For tests and local development
+  /// against a stub server; None in production.
+  pub maybe_media_cdn_override_url: Option<String>,
 
   /// Feature flags will allow us to restart the service with different conditions embedded in the code.
   pub flags: StaticFeatureFlags,
@@ -102,8 +107,8 @@ pub struct ServerState {
   /// Where to store audio uploads for w2l
   pub audio_uploads_bucket_root: String,
 
-  pub sort_key_crypto: SortKeyCrypto,
-  pub opaque_cursors: OpaqueCursorEncoderV2,
+  pub sort_key_crypto: WebSortKeyCrypto,
+  pub opaque_cursors: WebOpaqueCursorEncoderV2,
 
   pub ip_ban_list: IpBanList,
 
@@ -113,11 +118,19 @@ pub struct ServerState {
 
   pub static_api_token_set: StaticApiTokenSet,
 
+  /// Accepted internal API keys for our own worker fleets (GPU inference).
+  /// Loaded from `INTERNAL_API_KEYS` at startup; empty when unset.
+  pub internal_api_keys: HashSet<InternalApiKey>,
+
   pub caches: InMemoryCaches,
 
   pub google_sign_in_cert: GoogleSignInCert,
 
   pub temp_dir_creator: ScopedTempDirCreator,
+
+  /// Embedded metrics dashboards for the admin dashboard, configured from
+  /// optional env vars at startup.
+  pub dashboards: Dashboards,
 }
 
 #[derive(Clone)]
@@ -190,9 +203,6 @@ pub struct EphemeralInMemoryCaches {
   /// Contains a list of all TTS models.
   pub tts_model_list: SingleItemTtlCache<Vec<TtsModelRecordForResponse>>,
 
-  /// Contains a list of all voice conversion models.
-  pub voice_conversion_model_list: SingleItemTtlCache<Vec<VoiceConversionModel>>,
-
   /// Contains a list of all TTS categories in the database
   /// (before any enrichment with synthetic categories)
   /// This is used in several places (list categories, computed category assignments)
@@ -202,22 +212,10 @@ pub struct EphemeralInMemoryCaches {
   /// This is approximately O(n^3) and recursively generates all super-category membership.
   pub tts_model_category_assignments: SingleItemTtlCache<ModelTokensByCategoryToken>,
 
-  /// Stats on generic inference queue and legacy TTS queue (combined).
-  /// The frontend will consult a distributed cache and use the monotonic DB time as a
-  /// vector clock.
-  pub queue_stats: SingleItemTtlCache<CacheableQueueStats>,
-
   /// Generic inference queue length
   /// The frontend will consult a distributed cache and use the monotonic DB time as a
   /// vector clock.
   pub inference_queue_length: SingleItemTtlCache<InferenceQueueLengthResult>,
-
-  /// TTS queue length
-  /// The frontend will consult a distributed cache and use the monotonic DB time as a
-  /// vector clock.
-  pub tts_queue_length: SingleItemTtlCache<TtsQueueLengthResult>,
-
-  pub leaderboard: SingleItemTtlCache<LeaderboardInfo>,
 
   /// Cache of featured media files
   pub featured_media_files_sieve: ArcTtlSieve<ListFeaturedMediaFilesQueryParams, FeaturedMediaFileListPage>,
@@ -245,32 +243,15 @@ pub struct StaticFeatureFlags {
   /// If we're suffering an outage, set custom text for the alert message.
   pub maybe_status_alert_custom_message: Option<String>,
 
-  /// Disable the live `/v1/stats/queues` endpoint for all users and serve a static value instead.
-  pub disable_unified_queue_stats_endpoint: bool,
-
   /// Disable the live `/v1/model_inference/queue_length` endpoint for all users and serve a static value instead.
   pub disable_inference_queue_length_endpoint: bool,
-
-  /// Disable the live `/tts/queue_length` endpoint for all users and serve a static value instead.
-  pub disable_tts_queue_length_endpoint: bool,
 
   /// Disable the live `/tts/list` endpoint for all users and serve a static value instead.
   pub disable_tts_model_list_endpoint: bool,
 
-  /// Disable the live `/v1/voice_conversion/model_list` endpoint for all users and serve a static value instead.
-  pub disable_voice_conversion_model_list_endpoint: bool,
-
-  /// Tell the frontend client how fast to refresh their view of queue stats.
-  /// During an attack, we may want this to go extremely slow.
-  pub frontend_unified_queue_stats_refresh_interval_millis: u64,
-
   /// Tell the frontend client how fast to refresh their view of the pending inference count.
   /// During an attack, we may want this to go extremely slow.
   pub frontend_pending_inference_refresh_interval_millis: u64,
-
-  /// Tell the frontend client how fast to refresh their view of the pending TTS count.
-  /// During an attack, we may want this to go extremely slow.
-  pub frontend_pending_tts_refresh_interval_millis: u64,
 
   /// For "troll banned" users, what percentage of the time will the service misbehave?
   /// This should be a number over 100.
@@ -295,10 +276,6 @@ pub struct StaticFeatureFlags {
   /// If true, respond with 429.
   pub disable_tts: bool,
 
-  /// Disable voice conversion endpoints
-  /// If true, respond with 429.
-  pub disable_voice_conversion: bool,
-
   /// Paging system flags.
   pub paging: PagingFlags,
 }
@@ -315,4 +292,18 @@ pub struct TrollBans {
 #[derive(Clone)]
 pub struct ResendData {
   pub api_key: String,
+}
+
+/// Embedded metrics dashboards surfaced to admins/mods.
+#[derive(Clone)]
+pub struct Dashboards {
+  pub databox: DataboxDashboards,
+}
+
+/// Databox datawall IDs. Each is `None` when its env var isn't configured,
+/// in which case the dashboard is simply omitted from the moderation API.
+#[derive(Clone)]
+pub struct DataboxDashboards {
+  pub daus_id: Option<String>,
+  pub daily_generations_id: Option<String>,
 }

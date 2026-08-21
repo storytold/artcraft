@@ -116,8 +116,12 @@ export function getMediaThumbnailUrl(
     }
   }
 
-  // 3D/dimensional: use cover image URL
-  if (item.media_class === "dimensional") {
+  // 3D (mesh/splat, plus legacy pre-split "dimensional"): use cover image URL
+  if (
+    item.media_class === "mesh" ||
+    item.media_class === "splat" ||
+    item.media_class === "dimensional"
+  ) {
     if ("cover_image" in item && item.cover_image) {
       if (item.cover_image.maybe_cover_image_public_bucket_url) {
         return item.cover_image.maybe_cover_image_public_bucket_url;

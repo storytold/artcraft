@@ -21,6 +21,9 @@
       "path": "../keybinds"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

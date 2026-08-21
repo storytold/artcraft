@@ -72,6 +72,7 @@ pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option
 
     // TODO: Better estimates for FAL, etc.
     InferenceCategory::VideoGeneration => percent(duration_seconds, 60*5),
+    InferenceCategory::AudioGeneration => percent(duration_seconds, 60*2),
     InferenceCategory::BackgroundRemoval => percent(duration_seconds, 10),
     InferenceCategory::ObjectGeneration => percent(duration_seconds, 60*2),
 

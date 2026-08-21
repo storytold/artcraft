@@ -38,6 +38,9 @@
       "path": "../../common/tsconfig.lib.json"
     },
     {
+      "path": "../promptbox/tsconfig.lib.json"
+    },
+    {
       "path": "../gallery-modal/tsconfig.lib.json"
     },
     {
@@ -48,6 +51,9 @@
     },
     {
       "path": "../button/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

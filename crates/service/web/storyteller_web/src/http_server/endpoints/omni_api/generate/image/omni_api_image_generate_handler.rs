@@ -8,16 +8,18 @@ use sqlx::Acquire;
 use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::OmniApiImageGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -27,16 +29,18 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_api::generate::image::check_request::check_request;
 use crate::http_server::endpoints::omni_api::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_api::generate::image::ingest_url_inputs::ingest_url_inputs;
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
-use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_kinovi_web_jobs::{insert_kinovi_web_jobs, InsertKinoviWebJobsArgs};
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_api::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
-use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
@@ -106,6 +110,7 @@ pub async fn omni_api_image_generate_handler(
     })?;
 
   let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
 
   // ==================== INGEST URL INPUTS ==================== //
 
@@ -125,6 +130,7 @@ pub async fn omni_api_image_generate_handler(
     &http_request,
     &mut mysql_connection,
     server_state.server_environment,
+server_state.maybe_media_cdn_override_url.as_deref(),
     request.image_media_tokens.as_deref().unwrap_or(&[]),
   ).await?;
 
@@ -132,12 +138,23 @@ pub async fn omni_api_image_generate_handler(
 
   let router_builder = hydrate_to_router_request(&request)?;
 
+  // ==================== PIPELINE DISPATCH ==================== //
+
+  let kinovi_account = match request.model {
+    Some(CommonImageModel::Seedream5p0ProUltra) => KinoviAccount::BytePlusUltra,
+    // Everything else goes through Volcengine
+    _ => KinoviAccount::Volcengine,
+  };
+
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
     apriori_debug_log_event_token: Some(&debug_log_event_token),
     maybe_creator_user_token: Some(user_token),
     debug_log_type: DebugLogType::HttpRequest,
+    maybe_log_level: Some(DebugLogLevel::Info),
+    maybe_ip_address: Some(&ip_address),
+    maybe_url: Some(&request_url),
     message: &serde_json::to_string(&*request).unwrap_or_default(),
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
@@ -147,36 +164,57 @@ pub async fn omni_api_image_generate_handler(
 
   // ==================== PIPELINE ==================== //
 
-  // NB: Release the pooled DB connection before the (slow, external) generation call so we don't
-  // hold a pool slot idle while waiting on the provider — that's what starves the pool and causes
-  // PoolTimedOut on unrelated endpoints. We re-acquire below to write the result.
-  drop(mysql_connection);
+  // NB: The pipeline takes over the connection for its remaining pre-request DB writes (billing,
+  // outbound provider request debug log) and releases it before the (slow, external) generation
+  // call — holding a pool slot across that call is what starves the pool and causes PoolTimedOut
+  // on unrelated endpoints. We re-acquire below to write the result.
+
+  let debug_log_context = GenerationDebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
 
   let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
     router_builder: &router_builder,
     server_state: &server_state,
     user_token,
     resolved_media: &resolved_media,
-  }).await?;
+    kinovi_account,
+    debug_log_context: &debug_log_context,
+    mysql_connection,
+  }).await;
+
+  // ==================== DEBUG LOG: PIPELINE ERROR ==================== //
+
+  let pipeline_result = match pipeline_result {
+    Ok(result) => result,
+    Err(err) => {
+      // Best-effort error log; never mask the original error.
+      if let Ok(mut error_log_connection) = server_state.mysql_pool.acquire().await {
+        if let Err(log_err) = insert_debug_log(InsertDebugLogArgs {
+          apriori_debug_log_event_token: Some(&debug_log_event_token),
+          maybe_creator_user_token: Some(user_token),
+          debug_log_type: DebugLogType::BackendFailure,
+          maybe_log_level: Some(DebugLogLevel::Error),
+          maybe_ip_address: Some(&ip_address),
+          maybe_url: Some(&request_url),
+          message: &format!("Image generation pipeline failed: {:?}", err),
+          mysql_executor: &mut *error_log_connection,
+          phantom: Default::default(),
+        }).await {
+          warn!("Failed to insert pipeline error debug log: {:?}", log_err);
+        }
+      }
+      return Err(err);
+    }
+  };
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  // ==================== DEBUG LOG: FAL REQUEST ==================== //
-
-  if let GenerateImageResponse::Fal(ref fal_payload) = pipeline_result.response {
-    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
-      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
-        apriori_debug_log_event_token: Some(&debug_log_event_token),
-        maybe_creator_user_token: Some(user_token),
-        debug_log_type: DebugLogType::FalRequest,
-        message: &format!("{:#?}", outbound_request),
-        mysql_executor: &mut *mysql_connection,
-        phantom: Default::default(),
-      }).await {
-        warn!("Failed to insert Fal request debug log: {:?}", err);
-      }
-    }
-  }
+  // NB: Outbound provider requests (Fal/Grok/Kinovi) are debug-logged inside
+  // the pipeline BEFORE the send, so the payload is captured even on failure.
 
   // ==================== WRITE RESULT ==================== //
 
@@ -256,19 +294,20 @@ pub async fn omni_api_image_generate_handler(
   // -- Inference job --
   //
   // Each provider has its own queue / worker. Branch by response variant
-  // so the row lands on the correct queue (the Seedance2Pro/Kinovi worker
+  // so the row lands on the correct queue (the KinoviWeb/Kinovi worker
   // for Midjourney; the Fal worker for everything else).
 
   let job_token: InferenceJobToken = match &pipeline_result.response {
-    GenerateImageResponse::Seedance2Pro(payload) => {
-      info!("Inserting seedance2pro image job(s) with token: {:?}", pipeline_result.apriori_job_token);
+    GenerateImageResponse::KinoviWeb(payload) => {
+      info!("Inserting kinovi_web image job(s) with token: {:?}", pipeline_result.apriori_job_token);
 
-      // The image-side omni pipeline always dispatches Midjourney via the
-      // Volcengine Kinovi account today. If we ever route to BytePlus /
-      // BytePlus Ultra here, mirror the video-side `kinovi_account` knob.
-      let kinovi_version = KinoviVersion::Volcengine;
+      let kinovi_version = match kinovi_account {
+        KinoviAccount::Volcengine => KinoviVersion::Volcengine,
+        KinoviAccount::BytePlus => KinoviVersion::BytePlus,
+        KinoviAccount::BytePlusUltra => KinoviVersion::BytePlusUltra,
+      };
 
-      let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+      let result = insert_kinovi_web_jobs(InsertKinoviWebJobsArgs {
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.maybe_wallet_ledger_entry_token.as_ref(),

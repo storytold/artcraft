@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+use kinovi_web_client::generate::video::generate_seedance_2p0_fast::{
   KinoviSeedance2p0FastAspectRatio as KinoviAspectRatio,
   KinoviSeedance2p0FastBitrate as KinoviBitrate,
   KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
@@ -118,7 +118,10 @@ fn plan_output_resolution(
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<KinoviOutputResolution>, ArtcraftRouterError> {
   match resolution {
-    None => Ok(None),
+    // Unset defaults to explicit 720p. Cost estimation prices unset as 720p,
+    // so the request must pin 720p too — never leave the resolution up to the
+    // provider's server-side default, or billing and supplier cost can diverge.
+    None => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
 
     // Direct mappings
     Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
@@ -163,7 +166,7 @@ fn plan_output_resolution(
   }
 }
 
-// Seedance2p0Fast supports batch counts of 1, 2, and 4 only.
+// Seedance2p0Fast supports batch counts of 1 through 4.
 fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -173,7 +176,9 @@ fn plan_batch_count(
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
     1 => Ok(KinoviBatchCount::One),
     2 => Ok(KinoviBatchCount::Two),
+    3 => Ok(KinoviBatchCount::Three),
     4 => Ok(KinoviBatchCount::Four),
+    // 5 and above:
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -181,12 +186,8 @@ fn plan_batch_count(
           value: format!("{}", count),
         }))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        Ok(if count < 4 { KinoviBatchCount::Four } else { KinoviBatchCount::Four })
-      }
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { KinoviBatchCount::Two } else { KinoviBatchCount::Four })
-      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(KinoviBatchCount::Four),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(KinoviBatchCount::Four),
     },
   }
 }
@@ -226,7 +227,7 @@ fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<KinoviBitrate> {
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+  use kinovi_web_client::generate::video::generate_seedance_2p0_fast::{
     KinoviSeedance2p0FastAspectRatio as KinoviAspectRatio,
     KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
     KinoviSeedance2p0FastOutputResolution as KinoviOutputResolution,
@@ -258,27 +259,27 @@ mod tests {
 
     #[test]
     fn prompt_is_passed_through() {
-      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(seedance2pro_fast_builder()));
+      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(kinovi_web_fast_builder()));
       assert_eq!(draft.prompt, "a cat dancing");
     }
 
     #[test]
     fn prompt_defaults_to_empty() {
-      let builder = GenerateVideoRequestBuilder { prompt: None, ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { prompt: None, ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert_eq!(draft.prompt, "");
     }
 
     #[test]
     fn duration_seconds_converted() {
-      let builder = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert_eq!(draft.duration_seconds, 10);
     }
 
     #[test]
     fn duration_defaults_to_5() {
-      let builder = GenerateVideoRequestBuilder { duration_seconds: None, ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { duration_seconds: None, ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert_eq!(draft.duration_seconds, 5);
     }
@@ -287,7 +288,7 @@ mod tests {
     fn duration_clamped_to_max() {
       let builder = GenerateVideoRequestBuilder {
         duration_seconds: Some(99),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert_eq!(draft.duration_seconds, 15);
@@ -295,21 +296,28 @@ mod tests {
 
     #[test]
     fn batch_count_one() {
-      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.batch_count, KinoviBatchCount::One));
     }
 
     #[test]
     fn batch_count_two() {
-      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.batch_count, KinoviBatchCount::Two));
     }
 
     #[test]
+    fn batch_count_three() {
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(3), ..kinovi_web_fast_builder() };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
+      assert!(matches!(draft.batch_count, KinoviBatchCount::Three));
+    }
+
+    #[test]
     fn batch_count_four() {
-      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.batch_count, KinoviBatchCount::Four));
     }
@@ -324,7 +332,7 @@ mod tests {
     fn aspect_ratio_wide() {
       let builder = GenerateVideoRequestBuilder {
         aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Landscape16x9));
@@ -334,7 +342,7 @@ mod tests {
     fn aspect_ratio_tall() {
       let builder = GenerateVideoRequestBuilder {
         aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Portrait9x16));
@@ -344,7 +352,7 @@ mod tests {
     fn aspect_ratio_square() {
       let builder = GenerateVideoRequestBuilder {
         aspect_ratio: Some(RouterAspectRatio::Square),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Square1x1));
@@ -352,7 +360,7 @@ mod tests {
 
     #[test]
     fn aspect_ratio_defaults_to_landscape() {
-      let builder = GenerateVideoRequestBuilder { aspect_ratio: None, ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { aspect_ratio: None, ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Landscape16x9));
     }
@@ -367,7 +375,7 @@ mod tests {
     fn resolution_480p() {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::FourEightyP),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::FourEightyP)));
@@ -377,7 +385,7 @@ mod tests {
     fn resolution_720p() {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::SevenTwentyP),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
@@ -388,7 +396,7 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
@@ -399,7 +407,7 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
@@ -410,16 +418,16 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       assert!(build_kinovi_seedance_2p0_fast(builder).is_err());
     }
 
     #[test]
-    fn resolution_none() {
-      let builder = GenerateVideoRequestBuilder { resolution: None, ..seedance2pro_fast_builder() };
+    fn resolution_none_defaults_to_720p() {
+      let builder = GenerateVideoRequestBuilder { resolution: None, ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
-      assert!(draft.resolution.is_none());
+      assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
     }
 
     #[test]
@@ -427,7 +435,7 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       assert!(build_kinovi_seedance_2p0_fast(builder).is_err());
     }
@@ -437,7 +445,7 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
@@ -453,7 +461,7 @@ mod tests {
     fn bitrate_high() {
       let builder = GenerateVideoRequestBuilder {
         bitrate: Some(RouterBitrate::High),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(matches!(draft.bitrate, Some(KinoviBitrate::High)));
@@ -463,7 +471,7 @@ mod tests {
     fn bitrate_normal_maps_to_standard() {
       let builder = GenerateVideoRequestBuilder {
         bitrate: Some(RouterBitrate::Normal),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(draft.bitrate.is_none());
@@ -471,7 +479,7 @@ mod tests {
 
     #[test]
     fn bitrate_none_maps_to_standard() {
-      let builder = GenerateVideoRequestBuilder { bitrate: None, ..seedance2pro_fast_builder() };
+      let builder = GenerateVideoRequestBuilder { bitrate: None, ..kinovi_web_fast_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       assert!(draft.bitrate.is_none());
     }
@@ -484,7 +492,7 @@ mod tests {
 
     #[test]
     fn unhandled_state_is_present() {
-      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(seedance2pro_fast_builder()));
+      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(kinovi_web_fast_builder()));
       assert!(draft.unhandled_request_state.is_some());
     }
 
@@ -492,7 +500,7 @@ mod tests {
     fn start_frame_placed_in_unhandled() {
       let builder = GenerateVideoRequestBuilder {
         start_frame: Some(ImageRef::Url("https://example.com/start.jpg".to_string())),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -503,7 +511,7 @@ mod tests {
     fn end_frame_placed_in_unhandled() {
       let builder = GenerateVideoRequestBuilder {
         end_frame: Some(ImageRef::Url("https://example.com/end.jpg".to_string())),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -514,7 +522,7 @@ mod tests {
     fn start_frame_media_token_placed_in_unhandled() {
       let builder = GenerateVideoRequestBuilder {
         start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test123".to_string()))),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -528,7 +536,7 @@ mod tests {
           "https://example.com/ref1.jpg".to_string(),
           "https://example.com/ref2.jpg".to_string(),
         ])),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -548,7 +556,7 @@ mod tests {
         reference_videos: Some(VideoListRef::Urls(vec![
           "https://example.com/vid.mp4".to_string(),
         ])),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -561,7 +569,7 @@ mod tests {
         reference_audio: Some(AudioListRef::Urls(vec![
           "https://example.com/audio.mp3".to_string(),
         ])),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -575,7 +583,7 @@ mod tests {
           CharacterToken::new("char_abc".to_string()),
           CharacterToken::new("char_def".to_string()),
         ])),
-        ..seedance2pro_fast_builder()
+        ..kinovi_web_fast_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
       let remaining = draft.unhandled_request_state.unwrap();
@@ -591,7 +599,7 @@ mod tests {
 
     #[test]
     fn empty_refs_are_none_in_unhandled() {
-      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(seedance2pro_fast_builder()));
+      let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(kinovi_web_fast_builder()));
       let remaining = draft.unhandled_request_state.unwrap();
       assert!(remaining.start_frame.is_none());
       assert!(remaining.end_frame.is_none());
@@ -620,7 +628,7 @@ mod tests {
       reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
         CharacterToken::new("char_xyz".to_string()),
       ])),
-      ..seedance2pro_fast_builder()
+      ..kinovi_web_fast_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0_fast(builder));
 
@@ -641,10 +649,10 @@ mod tests {
 
   // ── Helpers ──
 
-  fn seedance2pro_fast_builder() -> GenerateVideoRequestBuilder {
+  fn kinovi_web_fast_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Fast,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a cat dancing".to_string()),
       duration_seconds: Some(5),
       video_batch_count: Some(1),

@@ -8,5 +8,6 @@ pub enum RouterProvider {
   Fal,
   GmiCloud,
   GrokApi,
-  Seedance2Pro,
+  KinoviWeb,
+  WorldLabs,
 }

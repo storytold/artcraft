@@ -26,7 +26,7 @@ pub async fn seed_test_videos(mysql_pool: &Pool<MySql>, user_token: UserToken) -
     let media1 = InsertArgs {
         pool: &mysql_pool,
         maybe_use_apriori_media_token: Some(&model_weight_token1),
-        media_file_type: MediaFileType::Video,
+        media_file_type: MediaFileType::Mp4,
         maybe_mime_type: Some(&*metadata1.mimetype),
         file_size_bytes: metadata1.file_size_bytes,
         sha256_checksum: &metadata1.sha256_checksum,

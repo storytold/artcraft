@@ -2,21 +2,22 @@ import { useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  faArrowsRotate,
-  faArrowsUpDownLeftRight,
-  faGlobe,
-  faMagicWandSparkles,
-  faPlus,
-  faUpRightAndDownLeftFromCenter,
-  faCube,
-  faImages,
-  faArrowUpFromBracket,
-} from "@fortawesome/pro-solid-svg-icons";
+  BoxIcon,
+  FilmIcon,
+  GlobeIcon,
+  ImagesIcon,
+  Maximize2Icon,
+  MoveIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  UploadIcon,
+  WandSparklesIcon,
+} from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   galleryModalVisibleViewMode,
   galleryModalVisibleDuringDrag,
@@ -25,9 +26,13 @@ import {
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { setTransformMode } from "../../actions";
+import {
+  openAnimationsModal,
+  openAssetModal,
+  setTransformMode,
+} from "../../actions";
 import { usePageSceneStore, type TransformMode } from "../../PageSceneStore";
-import { AssetModal } from "../AssetMenu";
+import { AnimationsModal, AssetModal } from "../AssetMenu";
 
 export interface Controls3DProps {
   /** Show the magic-wand "Create 3D model from image" shortcut next
@@ -42,9 +47,6 @@ export const Controls3D = ({
   const editor = useContext(EngineContext);
   const {
     assetModalVisible,
-    setAssetModalVisible,
-    setAssetModalVisibleDuringDrag,
-    setAssetDraggingUnder,
     selectedMode,
     transformSpace,
     currentUserToken,
@@ -52,9 +54,6 @@ export const Controls3D = ({
   } = usePageSceneStore(
     useShallow((s) => ({
       assetModalVisible: s.assetModalVisible,
-      setAssetModalVisible: s.setAssetModalVisible,
-      setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
-      setAssetDraggingUnder: s.setAssetDraggingUnder,
       selectedMode: s.selectedMode,
       transformSpace: s.transformSpace,
       currentUserToken: s.currentUserToken,
@@ -100,14 +99,6 @@ export const Controls3D = ({
     }
   };
 
-  const handleOpenModal = () => {
-    setAssetModalVisibleDuringDrag(true);
-    setAssetModalVisible(true);
-    // Clear any leftover drag-under state so the panel opens fully shown (a
-    // reopen-off drag leaves it faded-hidden until the next open).
-    setAssetDraggingUnder(false);
-  };
-
   const handleOpenCreate3dModal = () => {
     editor?.adapter.navigateToImageTo3D();
   };
@@ -132,7 +123,10 @@ export const Controls3D = ({
     }
     switch (action) {
       case "presets":
-        handleOpenModal();
+        openAssetModal();
+        break;
+      case "animations":
+        openAnimationsModal();
         break;
       case "library":
         handleOpenGalleryModal();
@@ -154,19 +148,19 @@ export const Controls3D = ({
   const modes = [
     {
       value: "move",
-      icon: faArrowsUpDownLeftRight,
+      icon: MoveIcon,
       text: "Move",
       tooltip: "Move (T)",
     },
     {
       value: "rotate",
-      icon: faArrowsRotate,
+      icon: RefreshCwIcon,
       text: "Rotate",
       tooltip: "Rotate (R)",
     },
     {
       value: "scale",
-      icon: faUpRightAndDownLeftFromCenter,
+      icon: Maximize2Icon,
       text: "Scale",
       tooltip: "Scale (G)",
     },
@@ -205,67 +199,49 @@ export const Controls3D = ({
                       {
                         label: "ArtCraft Presets (B)",
                         selected: false,
-                        icon: (
-                          <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
-                        ),
+                        icon: <BoxIcon className="h-4 w-4" />,
                         action: "presets",
+                      },
+                      {
+                        label: "Animations",
+                        selected: false,
+                        icon: <FilmIcon className="h-4 w-4" />,
+                        action: "animations",
                       },
                       {
                         label: "My Library",
                         selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faImages}
-                            className="h-4 w-4"
-                          />
-                        ),
+                        icon: <ImagesIcon className="h-4 w-4" />,
                         action: "library",
                         divider: true,
                       },
                       {
                         label: "Upload 3D Model",
                         selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faArrowUpFromBracket}
-                            className="h-4 w-4"
-                          />
-                        ),
+                        icon: <UploadIcon className="h-4 w-4" />,
                         action: "upload-3d",
                       },
                       {
                         label: "Upload Image",
                         selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faArrowUpFromBracket}
-                            className="h-4 w-4"
-                          />
-                        ),
+                        icon: <UploadIcon className="h-4 w-4" />,
                         action: "upload-image",
                       },
                       {
                         label: "Upload Splat",
                         selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faArrowUpFromBracket}
-                            className="h-4 w-4"
-                          />
-                        ),
+                        icon: <UploadIcon className="h-4 w-4" />,
                         action: "upload-splat",
                       },
                     ]}
                     onPanelAction={handleAddAssetAction}
                     showIconsInList
-                    buttonClassName={`h-9 w-9 rounded-xl text-lg ${
+                    buttonClassName={`h-9 w-9 p-2 rounded-xl text-lg ${
                       showEmptySceneTooltip
                         ? "bg-primary/90 hover:bg-primary/70"
                         : "border-transparent bg-primary/90 hover:bg-primary/70"
                     }`}
-                    triggerIcon={
-                      <FontAwesomeIcon icon={faPlus} className="text-xl" />
-                    }
+                    triggerIcon={<PlusIcon className="text-xl" />}
                   />
                 </Tooltip>
               </div>
@@ -277,7 +253,7 @@ export const Controls3D = ({
                   closeOnClick
                 >
                   <Button
-                    icon={faMagicWandSparkles}
+                    icon={WandSparklesIcon}
                     className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
                     variant="secondary"
                     onClick={handleOpenCreate3dModal}
@@ -303,10 +279,7 @@ export const Controls3D = ({
                   disabled
                   className="flex min-w-[92px] cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-base-fg opacity-40 transition-colors duration-150"
                 >
-                  <FontAwesomeIcon
-                    icon={faCube}
-                    className="h-3 w-3 text-base-fg/60"
-                  />
+                  <BoxIcon className="h-3 w-3 text-base-fg/60" />
                   Local
                 </button>
               </Tooltip>
@@ -320,8 +293,8 @@ export const Controls3D = ({
                   className="flex min-w-[92px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-base-fg transition-colors duration-150 hover:bg-white/[0.08]"
                   onClick={() => editor?.gizmo.toggleTransformSpace()}
                 >
-                  <FontAwesomeIcon
-                    icon={transformSpace === "world" ? faGlobe : faCube}
+                  <DynamicIcon
+                    icon={transformSpace === "world" ? GlobeIcon : BoxIcon}
                     className="h-3 w-3 text-base-fg/60"
                   />
                   {transformSpace === "world" ? "World" : "Local"}
@@ -333,6 +306,7 @@ export const Controls3D = ({
       </div>
 
       <AssetModal />
+      <AnimationsModal />
 
       {editor &&
         editor.adapter.renderAssetUploader({
@@ -340,7 +314,7 @@ export const Controls3D = ({
           onClose: () => setUpload3DIsShowing(false),
           onSuccess: () => setUpload3DIsShowing(false),
           title: "Upload a 3D Model",
-          titleIcon: faCube,
+          titleIcon: BoxIcon,
         })}
 
       {editor &&
@@ -349,7 +323,7 @@ export const Controls3D = ({
           onClose: () => setUploadImageIsShowing(false),
           onSuccess: () => setUploadImageIsShowing(false),
           title: "Upload an Image",
-          titleIcon: faImages,
+          titleIcon: ImagesIcon,
         })}
 
       {editor &&
@@ -358,7 +332,7 @@ export const Controls3D = ({
           onClose: () => setUploadSplatIsShowing(false),
           onSuccess: () => setUploadSplatIsShowing(false),
           title: "Upload an spz file",
-          titleIcon: faCube,
+          titleIcon: BoxIcon,
         })}
     </>
   );

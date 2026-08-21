@@ -1,10 +1,8 @@
 import { ButtonHTMLAttributes, Fragment, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import {
-  IconDefinition,
-  faChevronDown,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDownIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import { Button, ButtonProps } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
@@ -13,13 +11,13 @@ type UnionedButtonProps = { label?: string } & ButtonProps;
 
 interface ButtonDropdownProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
-  icon?: IconDefinition;
+  icon?: LucideIcon;
   align?: "left" | "right";
   showSelected?: boolean;
   options: Array<{
     label: string;
     className?: string;
-    icon?: IconDefinition;
+    icon?: LucideIcon;
     selected?: boolean;
     description?: string;
     onClick?: () => void;
@@ -83,11 +81,11 @@ export const ButtonDropdown = ({
         <Menu.Button as="div">
           <Button
             className={className}
-            icon={faChevronDown}
+            icon={ChevronDownIcon}
             iconFlip={true}
             variant="secondary"
           >
-            {icon ? <FontAwesomeIcon icon={icon} /> : null}
+            {icon ? <DynamicIcon icon={icon} /> : null}
             {label}
           </Button>
         </Menu.Button>
@@ -130,7 +128,7 @@ export const ButtonDropdown = ({
                       >
                         <div className="flex w-full items-center">
                           {option.icon && (
-                            <FontAwesomeIcon
+                            <DynamicIcon
                               icon={option.icon}
                               className="mr-2"
                             />

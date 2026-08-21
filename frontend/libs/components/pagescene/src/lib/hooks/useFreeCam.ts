@@ -155,6 +155,8 @@ export const useFreeCam = (
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      // Record mode locks the viewport — no right-drag panning.
+      if (editor.cameraController.locked) return;
       if (e.button !== 2) return;
       // The modal transform owns the pointer (right-click cancels it).
       if (usePageSceneStore.getState().modalTransformActive) return;
@@ -179,6 +181,7 @@ export const useFreeCam = (
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      if (editor.cameraController.locked) return;
       const drag = dragRef.current;
       const camera = editor.cameraController.camera;
       if (!drag || !camera) return;
@@ -196,6 +199,8 @@ export const useFreeCam = (
     };
 
     const onWheel = (e: WheelEvent) => {
+      // Record mode locks the viewport — no wheel zoom.
+      if (editor.cameraController.locked) return;
       const camera = editor.cameraController.camera;
       if (!camera) return;
       const z = zoomFromWheel(e.deltaY);

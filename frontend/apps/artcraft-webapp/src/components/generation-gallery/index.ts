@@ -1,8 +1,9 @@
 export { GenerationGallery } from "./GenerationGallery";
 export { GenerationGalleryGrid } from "./GenerationGalleryGrid";
 export { GenerationGalleryList } from "./GenerationGalleryList";
-export { GalleryViewToggle } from "./GalleryViewToggle";
+export { GalleryViewToggle, GalleryAutoplayToggle } from "./GalleryViewToggle";
 export { useGalleryData, type GalleryItem } from "./useGalleryData";
+export { useSessionMediaByClass } from "@storyteller/ui-generation-list";
 export {
   useGenerationJobs,
   type InProgressJob,

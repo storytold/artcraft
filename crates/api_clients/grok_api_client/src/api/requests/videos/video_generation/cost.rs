@@ -10,15 +10,15 @@ use crate::api::types::video_types::video_resolution::VideoResolution;
 //     Output:  480p $0.05/sec, 720p $0.07/sec
 //     Input:   $0.01/sec (source video) + $0.002/img (source images)
 //
-//   grok-imagine-video-1.5-preview (v1.5)
-//     Output:  480p $0.08/sec, 720p $0.14/sec
+//   grok-imagine-video-1.5 (v1.5)
+//     Output:  480p $0.08/sec, 720p $0.14/sec, 1080p $0.25/sec
 //     Input:   $0.01/img (source images)
 //
 // In mills (1¢ = 10 mills):
 //
 //   v1   output: 480p 50 mills/sec, 720p 70 mills/sec
 //   v1   input:  10 mills/sec (video), 2 mills/img
-//   v1.5 output: 480p 80 mills/sec, 720p 140 mills/sec
+//   v1.5 output: 480p 80 mills/sec, 720p 140 mills/sec, 1080p 250 mills/sec
 //   v1.5 input:  10 mills/img
 //
 // video_generation has NO input video — only optional input images. xAI
@@ -78,17 +78,20 @@ fn output_mills_per_second_for_tier(
   tier: VideoModelPricingTier,
 ) -> UsdMills {
   match (tier, resolution) {
-    (VideoModelPricingTier::V1,          VideoResolution::FourEightyP)  =>  50,
-    (VideoModelPricingTier::V1,          VideoResolution::SevenTwentyP) =>  70,
-    (VideoModelPricingTier::V1p5Preview, VideoResolution::FourEightyP)  =>  80,
-    (VideoModelPricingTier::V1p5Preview, VideoResolution::SevenTwentyP) => 140,
+    (VideoModelPricingTier::V1,   VideoResolution::FourEightyP)  =>  50,
+    (VideoModelPricingTier::V1,   VideoResolution::SevenTwentyP) =>  70,
+    // v1 doesn't produce 1080p output (it downsizes to 720p); price at 720p.
+    (VideoModelPricingTier::V1,   VideoResolution::TenEightyP)   =>  70,
+    (VideoModelPricingTier::V1p5, VideoResolution::FourEightyP)  =>  80,
+    (VideoModelPricingTier::V1p5, VideoResolution::SevenTwentyP) => 140,
+    (VideoModelPricingTier::V1p5, VideoResolution::TenEightyP)   => 250,
   }
 }
 
 fn input_mills_per_image(tier: VideoModelPricingTier) -> UsdMills {
   match tier {
     VideoModelPricingTier::V1          => INPUT_MILLS_PER_IMAGE,
-    VideoModelPricingTier::V1p5Preview => INPUT_MILLS_PER_IMAGE_V1P5,
+    VideoModelPricingTier::V1p5 => INPUT_MILLS_PER_IMAGE_V1P5,
   }
 }
 
@@ -303,7 +306,7 @@ mod tests {
       reference_images: Option<Vec<VideoImageSource>>,
     ) -> VideoGenerationRequest {
       let mut req = make_request(duration, resolution, image, reference_images);
-      req.model = Some(VideoModel::GrokImagineVideo1p5Preview);
+      req.model = Some(VideoModel::GrokImagineVideo1p5);
       req
     }
 
@@ -321,6 +324,22 @@ mod tests {
       let req = make_v1p5_request(Some(5), Some(VideoResolution::SevenTwentyP), None, None);
       assert_eq!(req.calculate_cost_in_mills(), 700);
       assert_eq!(req.calculate_cost_in_cents(), 70);
+    }
+
+    #[test]
+    fn five_seconds_1080p_text_only() {
+      // 250 × 5 = 1250 mills = $1.25
+      let req = make_v1p5_request(Some(5), Some(VideoResolution::TenEightyP), None, None);
+      assert_eq!(req.calculate_cost_in_mills(), 1250);
+      assert_eq!(req.calculate_cost_in_cents(), 125);
+    }
+
+    #[test]
+    fn five_seconds_1080p_one_source_image() {
+      // 250 × 5 + 10 = 1260 mills = $1.26
+      let req = make_v1p5_request(Some(5), Some(VideoResolution::TenEightyP), Some(url_source()), None);
+      assert_eq!(req.calculate_cost_in_mills(), 1260);
+      assert_eq!(req.calculate_cost_in_cents(), 126);
     }
 
     #[test]
@@ -348,7 +367,7 @@ mod tests {
       // canonical 1.5 variant exactly.
       let canonical = {
         let mut req = make_v1p5_request(Some(5), Some(VideoResolution::SevenTwentyP), Some(url_source()), None);
-        req.model = Some(VideoModel::GrokImagineVideo1p5Preview);
+        req.model = Some(VideoModel::GrokImagineVideo1p5);
         req.calculate_cost_in_mills()
       };
       let via_alias = {
@@ -396,6 +415,12 @@ mod tests {
       // 720p with reference images
       ( 5, VideoResolution::SevenTwentyP, false, 2,  720),
       ( 5, VideoResolution::SevenTwentyP, false, 3,  730),
+      // 1080p (250 mills/sec)
+      ( 1, VideoResolution::TenEightyP,   false, 0,  250),
+      ( 5, VideoResolution::TenEightyP,   false, 0, 1250),
+      (15, VideoResolution::TenEightyP,   false, 0, 3750),
+      ( 5, VideoResolution::TenEightyP,   true,  0, 1260),
+      ( 5, VideoResolution::TenEightyP,   false, 2, 1270),
     ];
 
     #[test]

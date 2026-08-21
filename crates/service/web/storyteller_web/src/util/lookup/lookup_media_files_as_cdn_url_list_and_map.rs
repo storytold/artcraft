@@ -27,6 +27,7 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
+  maybe_media_cdn_override_url: Option<&str>,
   tokens: &[MediaFileToken],
 ) -> Result<MediaFilesAsCdnUrlListAndMap, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
@@ -38,9 +39,19 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
     });
   }
 
+  // The same media file can be referenced more than once in a request (e.g.
+  // the same video as @video1 and @video2), so fetch each unique token once
+  // and expand back over the requested order below.
+  let mut unique_tokens: Vec<MediaFileToken> = Vec::new();
+  for token in tokens {
+    if !unique_tokens.contains(token) {
+      unique_tokens.push(token.clone());
+    }
+  }
+
   let result = batch_get_media_files_by_tokens_with_connection(
     mysql_connection,
-    tokens,
+    &unique_tokens,
     CAN_SEE_DELETED,
   ).await;
 
@@ -52,10 +63,10 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
     }
   };
 
-  if media_files.len() != tokens.len() {
-    warn!("Wrong number of media files returned for tokens: {} found for {} tokens", media_files.len(), tokens.len());
+  if media_files.len() != unique_tokens.len() {
+    warn!("Wrong number of media files returned for tokens: {} found for {} unique tokens", media_files.len(), unique_tokens.len());
 
-    let requested: HashSet<&MediaFileToken> = HashSet::from_iter(tokens.iter());
+    let requested: HashSet<&MediaFileToken> = HashSet::from_iter(unique_tokens.iter());
     let returned: HashSet<&MediaFileToken> = HashSet::from_iter(media_files.iter().map(|m| &m.token));
 
     let diff = requested.difference(&returned)
@@ -63,13 +74,12 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
         .collect::<Vec<&MediaFileToken>>();
 
     return Err(CommonWebError::BadInputWithSimpleMessage(
-      format!("Not all media files could be found. Media files found: {}, tokens provided: {}, in original: {:?}, req {:?}, ret {:?}",
-        media_files.len(), tokens.len(), diff, requested, returned)));
+      format!("Not all media files could be found. Media files found: {}, unique tokens provided: {}, in original: {:?}, req {:?}, ret {:?}",
+        media_files.len(), unique_tokens.len(), diff, requested, returned)));
   }
 
   let media_domain = get_media_domain(http_request);
 
-  let mut ordered_url_list = Vec::with_capacity(media_files.len());
   let mut token_to_url_map = HashMap::with_capacity(media_files.len());
 
   for file in media_files {
@@ -83,14 +93,53 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
       server_environment,
       &public_bucket_path);
 
-    let url = media_links.cdn_url.to_string();
-
-    ordered_url_list.push(url.clone());
-    token_to_url_map.insert(file.token, url);
+    token_to_url_map.insert(
+      file.token,
+      apply_media_cdn_override(&media_links.cdn_url, maybe_media_cdn_override_url),
+    );
   }
+
+  // In requested order, with duplicates preserved.
+  let ordered_url_list = tokens
+      .iter()
+      .filter_map(|token| token_to_url_map.get(token).cloned())
+      .collect();
 
   Ok(MediaFilesAsCdnUrlListAndMap {
     ordered_url_list,
     token_to_url_map,
   })
+}
+
+/// Rewrite a CDN URL onto the override base (keeping the path) when an
+/// override is configured; otherwise pass the URL through unchanged.
+pub fn apply_media_cdn_override(cdn_url: &url::Url, maybe_override_base: Option<&str>) -> String {
+  match maybe_override_base {
+    Some(base) => format!("{}{}", base.trim_end_matches('/'), cdn_url.path()),
+    None => cdn_url.to_string(),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::apply_media_cdn_override;
+
+  #[test]
+  fn no_override_passes_the_url_through() {
+    let url = url::Url::parse("https://cdn.example/media/a/b.mp4").unwrap();
+    assert_eq!(apply_media_cdn_override(&url, None), "https://cdn.example/media/a/b.mp4");
+  }
+
+  #[test]
+  fn override_replaces_scheme_and_host_and_keeps_the_path() {
+    let url = url::Url::parse("https://cdn.example/media/a/b.mp4").unwrap();
+    assert_eq!(
+      apply_media_cdn_override(&url, Some("http://127.0.0.1:5555")),
+      "http://127.0.0.1:5555/media/a/b.mp4",
+    );
+    assert_eq!(
+      apply_media_cdn_override(&url, Some("http://127.0.0.1:5555/")),
+      "http://127.0.0.1:5555/media/a/b.mp4",
+    );
+  }
 }

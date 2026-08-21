@@ -1,14 +1,11 @@
-import {
-  faCheckCircle,
-  faDownload,
-  faDesktop,
-  faRocket,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CircleCheckIcon, DownloadIcon, MonitorIcon, RocketIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { Link } from "react-router-dom";
 import { isMobile, isMacOs } from "react-device-detect";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 import Seo from "../../components/seo";
 import { PricingTable } from "@storyteller/ui-pricing-table";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
@@ -34,10 +31,9 @@ const Welcome = () => {
         {/* Success Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-full px-6 py-3 mb-6">
-            <FontAwesomeIcon
-              icon={faCheckCircle}
-              className="text-xl text-primary"
-            />
+            <CircleCheckIcon
+              
+              className="text-xl text-primary" />
             <span className="text-white font-medium">
               Account created successfully!
             </span>
@@ -66,17 +62,17 @@ const Welcome = () => {
           <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faRocket}
-                  className="text-primary text-lg"
-                />
+                <RocketIcon
+                  
+                  className="text-primary text-lg" />
               </div>
               <h2 className="text-2xl font-medium text-white">Getting Started</h2>
             </div>
 
             <p className="text-white/60 mb-6">
-              Your download should have started automatically. Follow these
-              steps to begin creating:
+              {DOWNLOADS_ENABLED
+                ? "Your download should have started automatically. Follow these steps to begin creating:"
+                : "Follow these steps to begin creating:"}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -99,7 +95,7 @@ const Welcome = () => {
             </div>
 
             {/* Download Contingency */}
-            {!isMobile && (
+            {!isMobile && DOWNLOADS_ENABLED && (
               <div className="pt-6 border-t border-white/10">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <span className="text-white/50 text-sm">
@@ -111,7 +107,7 @@ const Welcome = () => {
                       href={downloadUrl}
                       className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold rounded-xl"
                     >
-                      <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                      <DownloadIcon  className="mr-2" />
                       Download for {isMacOs ? "Mac" : "Windows"}
                     </Button>
                     <div className="flex gap-4 text-sm font-medium text-white/30">
@@ -138,7 +134,7 @@ const Welcome = () => {
             {isMobile && (
               <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
-                  <FontAwesomeIcon icon={faDesktop} className="text-2xl" />
+                  <MonitorIcon  className="text-2xl" />
                 </div>
                 ArtCraft is a powerful desktop experience. <br />
                 Please head to your computer to download and install.

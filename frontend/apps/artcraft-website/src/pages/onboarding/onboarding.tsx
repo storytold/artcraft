@@ -2,12 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheckCircle,
-  faInfoCircle,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CircleCheckIcon, InfoIcon, LoaderCircleIcon } from "lucide-react";
 import Seo from "../../components/seo";
 import { UsersApi, BillingApi } from "@storyteller/api";
 
@@ -311,10 +306,9 @@ const Onboarding = () => {
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-5xl text-green-400"
-                />
+                <CircleCheckIcon
+                  
+                  className="text-5xl text-green-400" />
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-medium mb-4 text-white">
@@ -342,10 +336,9 @@ const Onboarding = () => {
         <div className="max-w-md w-full">
           {isNewAccount && (
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6 flex items-start gap-3 animate-fade-in shadow-lg shadow-blue-900/10">
-              <FontAwesomeIcon
-                icon={faInfoCircle}
-                className="text-blue-400 mt-1 flex-shrink-0 text-lg"
-              />
+              <InfoIcon
+                
+                className="text-blue-400 mt-1 flex-shrink-0 text-lg" />
               <div>
                 <h3 className="text-blue-200 font-medium mb-1">
                   Account Created
@@ -463,10 +456,9 @@ const Onboarding = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <FontAwesomeIcon
-                      icon={faSpinnerThird}
-                      className="animate-spin"
-                    />
+                    <LoaderCircleIcon
+                      
+                      className="animate-spin" />
                   ) : (
                     "Continue"
                   )}

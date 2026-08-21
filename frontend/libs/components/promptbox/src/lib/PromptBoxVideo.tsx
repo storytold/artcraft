@@ -1,24 +1,17 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType } from "@storyteller/common";
-import { downloadFileFromUrl } from "@storyteller/api";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { ToggleButton, GenerateButton } from "@storyteller/ui-button";
-import { Modal } from "@storyteller/ui-modal";
+import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest } from "@storyteller/tauri-api";
-import {
-  faWaveformLines,
-  faClock,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
+import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
+import { arrayMove } from "@dnd-kit/sortable";
 import {
   CommonResolution,
+  effectivePromptMaxLength,
   SizeIconOption,
   SizeOption,
   VideoModel,
@@ -32,8 +25,16 @@ import {
   useEnterToGenerateStore,
 } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
-import { ImagePromptRow } from "./ImagePromptRow";
 import type { UploadImageFn } from "./ImagePromptRow";
+import { ReferenceDeck } from "./deck/ReferenceDeck";
+import { KeyframeCards } from "./deck/KeyframeCards";
+import { useDeckMedia } from "./deck/useDeckMedia";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./deck/usePromptBoxDrop";
+import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker";
 import { twMerge } from "tailwind-merge";
@@ -43,6 +44,12 @@ import { CharactersModal } from "./CharactersModal";
 import { CharactersApi } from "@storyteller/api";
 import { MentionTextarea } from "./MentionTextarea";
 import type { MentionItem } from "./MentionTextarea";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 
 declare global {
   interface Window {
@@ -121,7 +128,6 @@ export const PromptBoxVideo = ({
   selectedProvider,
   imageMediaId,
   url,
-  onImageRowVisibilityChange,
   uploadImage,
   uploadVideo,
   uploadAudio,
@@ -143,8 +149,6 @@ export const PromptBoxVideo = ({
     }
   }, [imageMediaId, url]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [content, setContent] = useState<React.ReactNode>(null);
   const prompt = usePromptVideoStore((s) => s.prompt);
   const setPrompt = usePromptVideoStore((s) => s.setPrompt);
   const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
@@ -165,7 +169,16 @@ export const PromptBoxVideo = ({
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
+
+  // Mentions are plain text: with several characters sharing a name,
+  // "@Robot" alone can't identify one. Records which token the user actually
+  // picked (dropdown, modal, or chip-menu replace), keyed by name.
+  const [mentionSelections, setMentionSelections] = useState<
+    Record<string, string>
+  >({});
 
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
@@ -186,6 +199,7 @@ export const PromptBoxVideo = ({
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
+              full_image_url: c.maybe_full_image?.cdn_url,
             })),
           );
         }
@@ -231,9 +245,6 @@ export const PromptBoxVideo = ({
     });
   };
 
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    [],
-  );
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
   const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
@@ -242,14 +253,6 @@ export const PromptBoxVideo = ({
   const setReferenceVideos = usePromptVideoStore((s) => s.setReferenceVideos);
   const referenceAudios = usePromptVideoStore((s) => s.referenceAudios);
   const setReferenceAudios = usePromptVideoStore((s) => s.setReferenceAudios);
-  const [uploadingImages, _setUploadingImages] = useState<
-    { id: string; file: File }[]
-  >([]);
-  const [showImagePrompts, _setShowImagePrompts] = useState(true);
-  const isImageRowVisible =
-    showImagePrompts ||
-    referenceImages.length > 0 ||
-    uploadingImages.length > 0;
 
   // TODO: Get rid of default resolutions. Just disable it if not present.
   let aspectRatioOptions: PopoverItem[];
@@ -274,8 +277,7 @@ export const PromptBoxVideo = ({
     aspectRatioOptions = buildAspectRatioOptions(DEFAULT_RESOLUTIONS);
   }
 
-  const [, setAspectRatioList] =
-    useState<PopoverItem[]>(aspectRatioOptions);
+  const [, setAspectRatioList] = useState<PopoverItem[]>(aspectRatioOptions);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionEditorRef = useRef<HTMLDivElement>(null);
@@ -347,10 +349,6 @@ export const PromptBoxVideo = ({
       setReferenceImages([referenceImage]);
     }
   }, [imageMediaId, url]);
-
-  useEffect(() => {
-    onImageRowVisibilityChange?.(isImageRowVisible);
-  }, [isImageRowVisible, onImageRowVisibilityChange]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     setAspectRatio(selectedItem.label);
@@ -459,7 +457,7 @@ export const PromptBoxVideo = ({
             selected: inputMode === "keyframe",
           },
           {
-            label: "Reference",
+            label: "Omni Reference",
             description: "Multi-media ref",
             selected: inputMode === "reference",
           },
@@ -468,7 +466,7 @@ export const PromptBoxVideo = ({
 
   const handleInputModeSelect = (selectedItem: PopoverItem) => {
     const mode: VideoInputMode =
-      selectedItem.label === "Reference" ? "reference" : "keyframe";
+      selectedItem.label === "Omni Reference" ? "reference" : "keyframe";
     setInputMode(mode);
     // Clear images/videos when switching modes to avoid stale state
     if (mode === "reference") {
@@ -484,6 +482,326 @@ export const PromptBoxVideo = ({
   const maxImageCount = isReferenceMode
     ? (selectedModel?.maxReferenceImages ?? 3)
     : 1;
+
+  const maxVideoCount = selectedModel?.maxReferenceVideos ?? 3;
+  const maxAudioCount = selectedModel?.maxReferenceAudios ?? 2;
+
+  const deck = useDeckMedia({
+    referenceImages,
+    setReferenceImages,
+    maxImages: maxImageCount,
+    endFrameImage,
+    setEndFrameImage,
+    referenceVideos,
+    setReferenceVideos,
+    maxVideos: maxVideoCount,
+    maxVideoTotalSec: selectedModel?.maxVideoRefDuration ?? 15,
+    referenceAudios,
+    setReferenceAudios,
+    maxAudios: maxAudioCount,
+    maxAudioTotalSec: selectedModel?.maxAudioRefDuration ?? 15,
+    uploadImage,
+    uploadVideo,
+    uploadAudio,
+    ownGalleryModal: true,
+  });
+
+  // Drag & drop / paste onto the box bounds: files route to the reference
+  // kind their MIME matches, gated on what the model supports. Keyframe mode
+  // renders no video/audio deck, so those kinds only land in reference mode
+  // where the user can see (and remove) them.
+  const dropAcceptsVideos = isReferenceMode && maxVideoCount > 0;
+  const dropAcceptsAudio = isReferenceMode && maxAudioCount > 0;
+
+  const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
+    if (images.length > 0) {
+      if (!isReferenceMode) {
+        // Fill the empty keyframe slots in order: first frame, then last.
+        const queue = [...images];
+        const firstOpen =
+          referenceImages.length === 0 && deck.uploadingImages.length === 0;
+        const lastOpen =
+          !!selectedModel?.endFrame && !endFrameImage && !deck.uploadingEnd;
+        if (firstOpen) deck.processImageFiles([queue.shift()!], "start");
+        if (lastOpen && queue.length > 0) {
+          deck.processImageFiles([queue.shift()!], "end");
+        }
+        if (!firstOpen && !lastOpen) {
+          toast.error(
+            selectedModel?.endFrame
+              ? "First and last frames are already set"
+              : "The first frame is already set",
+          );
+        }
+      } else if (deck.availableImageSlots <= 0) {
+        toast.error(
+          `Max ${maxImageCount} image reference${maxImageCount === 1 ? "" : "s"}`,
+        );
+      } else {
+        deck.processImageFiles(images, "start");
+      }
+    }
+    if (videos.length > 0) void deck.processVideoFiles(videos);
+    if (audios.length > 0) void deck.processAudioFiles(audios);
+  };
+
+  const drop = usePromptBoxDrop({
+    acceptsImages: maxImageCount > 0,
+    acceptsVideos: dropAcceptsVideos,
+    acceptsAudio: dropAcceptsAudio,
+    onDropFiles: handleDroppedFiles,
+  });
+
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={maxImageCount > 0}
+      acceptsVideos={dropAcceptsVideos}
+      acceptsAudio={dropAcceptsAudio}
+      keyframeMode={!isReferenceMode}
+    />
+  );
+
+  // Mixed deck items ordered images → videos → audios: the @ImageN/@VideoN/
+  // @AudioN mention labels are index-derived per type, so this ordering (and
+  // image-only reordering) is load-bearing.
+  const deckItems: DeckItem[] = useMemo(
+    () => [
+      ...referenceImages.map((img, i) => ({
+        id: img.id,
+        kind: "image" as const,
+        url: img.url,
+        previewUrl: img.fullUrl ?? img.url,
+        name: `Image ${i + 1}`,
+      })),
+      ...deck.uploadingImages.map((entry, i) => ({
+        id: entry.id,
+        kind: "image" as const,
+        url: entry.previewUrl,
+        name: `Image ${referenceImages.length + i + 1}`,
+        uploading: true,
+      })),
+      ...referenceVideos.map((video, i) => ({
+        id: video.id,
+        kind: "video" as const,
+        url: video.url,
+        name: `Video ${i + 1}`,
+        duration: video.duration,
+      })),
+      ...(deck.uploadingVideo
+        ? [
+            {
+              id: deck.uploadingVideo.id,
+              kind: "video" as const,
+              url: deck.uploadingVideo.previewUrl,
+              name: `Video ${referenceVideos.length + 1}`,
+              uploading: true,
+            },
+          ]
+        : []),
+      ...referenceAudios.map((audio, i) => ({
+        id: audio.id,
+        kind: "audio" as const,
+        url: audio.url,
+        name: `Audio ${i + 1}`,
+        duration: audio.duration,
+      })),
+      ...(deck.uploadingAudio
+        ? [
+            {
+              id: deck.uploadingAudio.id,
+              kind: "audio" as const,
+              name: `Audio ${referenceAudios.length + 1}`,
+              uploading: true,
+            },
+          ]
+        : []),
+    ],
+    [
+      referenceImages,
+      referenceVideos,
+      referenceAudios,
+      deck.uploadingImages,
+      deck.uploadingVideo,
+      deck.uploadingAudio,
+    ],
+  );
+
+  const refDeckAddActions: DeckAddAction[] = [];
+  if (referenceImages.length + deck.uploadingImages.length < maxImageCount) {
+    refDeckAddActions.push(
+      {
+        key: "upload-image",
+        label: "Upload",
+        group: "image",
+        onSelect: deck.openImageUpload,
+      },
+      {
+        key: "library-image",
+        label: "From library",
+        group: "image",
+        onSelect: () => deck.openGallery("start"),
+      },
+    );
+  }
+  if (referenceVideos.length < maxVideoCount && !deck.uploadingVideo) {
+    refDeckAddActions.push(
+      {
+        key: "upload-video",
+        label: "Upload",
+        group: "video",
+        onSelect: deck.openVideoUpload,
+      },
+      {
+        key: "library-video",
+        label: "From library",
+        group: "video",
+        onSelect: () => deck.openGallery("video"),
+      },
+    );
+  }
+  if (referenceAudios.length < maxAudioCount && !deck.uploadingAudio) {
+    refDeckAddActions.push(
+      {
+        key: "upload-audio",
+        label: "Upload",
+        group: "audio",
+        onSelect: deck.openAudioUpload,
+      },
+      {
+        key: "library-audio",
+        label: "From library",
+        group: "audio",
+        onSelect: () => deck.openGallery("audio"),
+      },
+    );
+  }
+
+  const handleRemoveDeckItem = (id: string) => {
+    if (referenceImages.some((img) => img.id === id)) {
+      setReferenceImages(referenceImages.filter((img) => img.id !== id));
+    } else if (referenceVideos.some((video) => video.id === id)) {
+      setReferenceVideos(referenceVideos.filter((video) => video.id !== id));
+    } else if (referenceAudios.some((audio) => audio.id === id)) {
+      setReferenceAudios(referenceAudios.filter((audio) => audio.id !== id));
+    }
+  };
+
+  const maxVideoTotalSec = selectedModel?.maxVideoRefDuration ?? 15;
+  const maxAudioTotalSec = selectedModel?.maxAudioRefDuration ?? 15;
+  const totalVideoRefSeconds = referenceVideos.reduce(
+    (sum, video) => sum + video.duration,
+    0,
+  );
+  const totalAudioRefSeconds = referenceAudios.reduce(
+    (sum, audio) => sum + audio.duration,
+    0,
+  );
+
+  const refDeckGroupHints = {
+    image: `${referenceImages.length}/${maxImageCount}`,
+    video: `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}/${maxVideoTotalSec}s`,
+    audio: `${referenceAudios.length}/${maxAudioCount} · ${totalAudioRefSeconds}/${maxAudioTotalSec}s`,
+  };
+
+  const renderReferenceDeck = (alwaysExpanded?: boolean) => (
+    <ReferenceDeck
+      items={deckItems}
+      canAdd={refDeckAddActions.length > 0}
+      addActions={refDeckAddActions}
+      addMenuGroupHints={refDeckGroupHints}
+      onAddClick={deck.openAnyUpload}
+      onRemove={handleRemoveDeckItem}
+      onReorderImages={(from, to) =>
+        setReferenceImages(arrayMove(referenceImages, from, to))
+      }
+      onClearAll={() => {
+        setReferenceImages([]);
+        setReferenceVideos([]);
+        setReferenceAudios([]);
+      }}
+      alwaysExpanded={alwaysExpanded}
+    />
+  );
+
+  const firstFrameItem: DeckItem | undefined = referenceImages[0]
+    ? {
+        id: referenceImages[0].id,
+        kind: "image",
+        url: referenceImages[0].url,
+        previewUrl: referenceImages[0].fullUrl ?? referenceImages[0].url,
+        name: "First frame",
+      }
+    : deck.uploadingImages[0]
+      ? {
+          id: deck.uploadingImages[0].id,
+          kind: "image",
+          url: deck.uploadingImages[0].previewUrl,
+          name: "First frame",
+          uploading: true,
+        }
+      : undefined;
+
+  const lastFrameItem: DeckItem | undefined = endFrameImage
+    ? {
+        id: endFrameImage.id,
+        kind: "image",
+        url: endFrameImage.url,
+        previewUrl: endFrameImage.fullUrl ?? endFrameImage.url,
+        name: "Last frame",
+      }
+    : deck.uploadingEnd
+      ? {
+          id: deck.uploadingEnd.id,
+          kind: "image",
+          url: deck.uploadingEnd.previewUrl,
+          name: "Last frame",
+          uploading: true,
+        }
+      : undefined;
+
+  const handleSwapFrames = () => {
+    const first = referenceImages[0];
+    if (!first || !endFrameImage) return;
+    setReferenceImages([endFrameImage]);
+    setEndFrameImage(first);
+  };
+
+  const renderKeyframeCards = () => (
+    <KeyframeCards
+      firstFrame={firstFrameItem}
+      lastFrame={lastFrameItem}
+      showLastFrame={!!selectedModel?.endFrame}
+      onFirstAddActions={[
+        {
+          key: "upload-first",
+          label: "Upload",
+          onSelect: deck.openImageUpload,
+        },
+        {
+          key: "library-first",
+          label: "Pick from library",
+          onSelect: () => deck.openGallery("start"),
+        },
+      ]}
+      onLastAddActions={[
+        {
+          key: "upload-last",
+          label: "Upload",
+          onSelect: deck.openEndUpload,
+        },
+        {
+          key: "library-last",
+          label: "Pick from library",
+          onSelect: () => deck.openGallery("end"),
+        },
+      ]}
+      onRemoveFirst={() => setReferenceImages([])}
+      onRemoveLast={() => setEndFrameImage(undefined)}
+      onSwap={handleSwapFrames}
+    />
+  );
 
   // Color palettes for @-mention highlights
   const IMAGE_COLORS = [
@@ -587,6 +905,8 @@ export const PromptBoxVideo = ({
         label: `@${char.name}`,
         type: "character" as const,
         preview: char.avatar_image_url,
+        token: char.character_token,
+        fullPreview: char.full_image_url ?? char.avatar_image_url,
       })),
     ],
     [
@@ -597,6 +917,14 @@ export const PromptBoxVideo = ({
       activeCharacters,
     ],
   );
+
+  // Record which token a mention name refers to when the user picks a
+  // character explicitly (dropdown pick or chip-menu replace).
+  const handleMentionSelect = useCallback((item: MentionItem) => {
+    if (item.type !== "character" || !item.token) return;
+    const name = item.label.replace(/^@/, "");
+    setMentionSelections((prev) => ({ ...prev, [name]: item.token! }));
+  }, []);
 
   // Build label → color map for inline mention highlighting
   const mentionColorMap = useMemo(() => {
@@ -690,7 +1018,27 @@ export const PromptBoxVideo = ({
     mentionAnchorRef.current = null;
   };
 
-  const maxLen = selectedModel?.maxPromptLength ?? 1000;
+  const hasAttachedRefs =
+    referenceImages.length > 0 ||
+    !!endFrameImage ||
+    referenceVideos.length > 0 ||
+    referenceAudios.length > 0;
+  const hasClearableContent = prompt.length > 0 || hasAttachedRefs;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+    setEndFrameImage(undefined);
+    setReferenceVideos([]);
+    setReferenceAudios([]);
+  };
+
+  const maxLen =
+    effectivePromptMaxLength(
+      selectedModel?.tauriId ?? "",
+      selectedModel?.maxPromptLength,
+      prompt,
+    ) ?? 1000;
 
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
@@ -781,25 +1129,33 @@ export const PromptBoxVideo = ({
         );
       }
 
-      // Extract character tokens from @-mentions in prompt.
+      // Extract character tokens from @-mentions in prompt, resolving to
+      // exactly one token per mentioned name. Several characters can share a
+      // name; prefer the user's explicit pick (mentionSelections), else the
+      // newest (store is newest-first).
       // Use a word-boundary regex so `@Bob` doesn't match inside `@Bob2`.
-      const mentionedCharacters = (() => {
+      const mentionedTokens = (() => {
         if (activeCharacters.length === 0) return [];
-        const sorted = [...activeCharacters].sort(
-          (a, b) => b.name.length - a.name.length,
-        );
-        const matched = new Set<string>();
-        for (const c of sorted) {
-          const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const regex = new RegExp(`@${escaped}(?!\\w)`);
-          if (regex.test(prompt)) matched.add(c.character_token);
+        const byName = new Map<string, StoredCharacter[]>();
+        for (const c of activeCharacters) {
+          byName.set(c.name, [...(byName.get(c.name) ?? []), c]);
         }
-        return activeCharacters.filter((c) => matched.has(c.character_token));
+        const names = [...byName.keys()].sort((a, b) => b.length - a.length);
+        const tokens: string[] = [];
+        for (const name of names) {
+          const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          if (!new RegExp(`@${escaped}(?!\\w)`).test(prompt)) continue;
+          const candidates = byName.get(name)!;
+          const chosen =
+            candidates.find(
+              (c) => c.character_token === mentionSelections[name],
+            ) ?? candidates[0];
+          tokens.push(chosen.character_token);
+        }
+        return tokens;
       })();
-      if (mentionedCharacters.length > 0) {
-        request.reference_character_tokens = mentionedCharacters.map(
-          (c) => c.character_token,
-        );
+      if (mentionedTokens.length > 0) {
+        request.reference_character_tokens = mentionedTokens;
       }
 
       // Pass duration if model supports it
@@ -819,7 +1175,8 @@ export const PromptBoxVideo = ({
       }
 
       switch (selectedModel?.tauriId) {
-        case "grok_video":
+        case "grok_video": // Legacy id
+        case "grok_imagine_video":
           request.grok_aspect_ratio = getGrokAspectRatio();
           break;
 
@@ -948,8 +1305,6 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-
   const modelNeedsAnImageButNoneAreSelected =
     selectedModel?.requiresImage && referenceImages.length === 0;
 
@@ -960,81 +1315,58 @@ export const PromptBoxVideo = ({
     }
   }, [selectedModel, endFrameImage, setEndFrameImage]);
 
+  // Character button (seedance_2p0 only), reused in the fullscreen footer.
+  const characterButtonEl =
+    selectedModel?.id === "seedance_2p0" ? (
+      <button
+        type="button"
+        onClick={() => setIsCharactersModalOpen(true)}
+        className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+      >
+        @Characters
+      </button>
+    ) : null;
+
+  // Input-mode (keyframe/reference) picker, reused in the fullscreen footer.
+  const inputModeEl = inputModeOptions ? (
+    <Tooltip content="Input Mode" position="top" className="z-50" closeOnClick>
+      <PopoverMenu
+        items={inputModeOptions}
+        onSelect={handleInputModeSelect}
+        mode="toggle"
+        panelTitle="Input Mode"
+      />
+    </Tooltip>
+  ) : null;
+
   return (
     <>
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setContent(null);
-        }}
-      >
-        {content}
-      </Modal>
+      {deck.fileInputs}
+      {deck.galleryModal}
       <div className="relative z-20 flex flex-col gap-3">
-        {isImageRowVisible && (
-          <ImagePromptRow
-            visible={true}
-            isVideo={true}
-            isReferenceMode={isReferenceMode}
-            maxImagePromptCount={maxImageCount}
-            allowUpload={true}
-            referenceImages={referenceImages}
-            setReferenceImages={setReferenceImages}
-            onImageClick={(image) => {
-              setContent(
-                <img
-                  src={image.url}
-                  alt="Reference preview"
-                  className="h-full w-full object-contain"
-                />,
-              );
-              setIsModalOpen(true);
-            }}
-            uploadImage={uploadImage}
-            endFrameImage={isReferenceMode ? undefined : endFrameImage}
-            setEndFrameImage={isReferenceMode ? undefined : setEndFrameImage}
-            allowUploadEnd={!isReferenceMode && !!selectedModel?.endFrame}
-            showEndFrameSection={!isReferenceMode && !!selectedModel?.endFrame}
-            referenceVideos={isReferenceMode ? referenceVideos : undefined}
-            setReferenceVideos={
-              isReferenceMode ? setReferenceVideos : undefined
-            }
-            maxVideoCount={selectedModel?.maxReferenceVideos ?? 3}
-            maxVideoRefDuration={selectedModel?.maxVideoRefDuration ?? 15}
-            showVideoReferenceSection={isReferenceMode}
-            uploadVideo={uploadVideo}
-            referenceAudios={isReferenceMode ? referenceAudios : undefined}
-            setReferenceAudios={
-              isReferenceMode ? setReferenceAudios : undefined
-            }
-            maxAudioCount={selectedModel?.maxReferenceAudios ?? 2}
-            maxAudioRefDuration={selectedModel?.maxAudioRefDuration ?? 15}
-            uploadAudio={uploadAudio}
-          />
-        )}
         <div
           className={twMerge(
             "glass relative w-full rounded-2xl p-4",
-            isImageRowVisible && "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
+          {...drop.dropZoneProps}
         >
+          {dropOverlay}
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
-              <FontAwesomeIcon
-                icon={faCircleInfo}
-                className="h-3 w-3 shrink-0"
-              />
+              <InfoIcon
+                
+                className="h-3 w-3 shrink-0" />
               <span>
                 This model can&apos;t generate from text alone - add a starting
                 frame to animate your prompt.
               </span>
             </div>
           )}
-          <div className="relative flex justify-center gap-2">
+          <div className="relative flex justify-center gap-3">
+            {isReferenceMode ? renderReferenceDeck() : renderKeyframeCards()}
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
                 <MentionTextarea
@@ -1043,12 +1375,14 @@ export const PromptBoxVideo = ({
                   onChange={setPrompt}
                   mentionItems={allMentionItems}
                   colorMap={mentionColorMap}
+                  onMentionSelect={handleMentionSelect}
+                  selectedTokens={mentionSelections}
                   placeholder={
                     isReferenceMode
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                       : "Describe what you want to happen in the video..."
                   }
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg"
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
                     const isSubmitCombo = enterToGenerate && !e.shiftKey;
@@ -1071,7 +1405,7 @@ export const PromptBoxVideo = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Describe what you want to happen in the video..."
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -1080,6 +1414,7 @@ export const PromptBoxVideo = ({
                   onBlur={() => setIsFocused(false)}
                 />
               )}
+              <PromptFullscreenButton onClick={openFullscreen} />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -1130,7 +1465,7 @@ export const PromptBoxVideo = ({
                     mode="default"
                     panelTitle="Duration"
                     triggerIcon={
-                      <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                      <ClockIcon  className="h-3.5 w-3.5" />
                     }
                     triggerLabel={`${effectiveDuration}s`}
                   >
@@ -1169,46 +1504,29 @@ export const PromptBoxVideo = ({
                 >
                   <ToggleButton
                     isActive={generateWithSound}
-                    icon={faWaveformLines}
-                    activeIcon={faWaveformLines}
+                    icon={AudioLinesIcon}
+                    activeIcon={AudioLinesIcon}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
                   />
                 </Tooltip>
               )}
 
-              {inputModeOptions && (
-                <Tooltip
-                  content="Input Mode"
-                  position="top"
-                  className="z-50"
-                  closeOnClick={true}
-                >
-                  <PopoverMenu
-                    items={inputModeOptions}
-                    onSelect={handleInputModeSelect}
-                    mode="toggle"
-                    panelTitle="Input Mode"
-                  />
-                </Tooltip>
-              )}
+              {inputModeEl}
 
-              {selectedModel?.id === "seedance_2p0" && (
-                <button
-                  type="button"
-                  onClick={() => setIsCharactersModalOpen(true)}
-                  className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
-                >
-                  @Characters
-                </button>
-              )}
+              {characterButtonEl}
             </div>
             <div className="flex items-center gap-2">
               {modelNeedsAnImageButNoneAreSelected && (
                 <span className="flex items-center gap-1.5 text-xs text-red-500 font-medium animate-pulse">
-                  <FontAwesomeIcon icon={faCircleInfo} />
+                  <InfoIcon />
                   Starting frame required
                 </span>
               )}
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={hasAttachedRefs}
+              />
               {selectedModel?.id === "seedance_2p0" && (
                 <VideoGenerationCountPicker
                   maxCount={4}
@@ -1224,18 +1542,14 @@ export const PromptBoxVideo = ({
                 disabled={!modelNeedsAnImageButNoneAreSelected}
               >
                 <div>
-                  <GenerateButton
-                    className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    icon={undefined}
+                  <GenerateIconButton
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
                     credits={
                       credits != null ? credits * generationCount : credits
                     }
-                  >
-                    Generate
-                  </GenerateButton>
+                  />
                 </div>
               </Tooltip>
             </div>
@@ -1251,8 +1565,8 @@ export const PromptBoxVideo = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -1261,10 +1575,7 @@ export const PromptBoxVideo = ({
         </div>
         {/* {selectedModel?.id === "seedance_2p0" && (
           <div className="flex items-start gap-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3.5 py-2.5 text-xs text-yellow-200">
-            <FontAwesomeIcon
-              icon={faTriangleExclamation}
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400"
-            />
+            <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
             <span>
               Seedance 2.0 is in Early Alpha. Generations may be slow, and may
               experience outages. Seedance may reject safe inputs unexpectedly.
@@ -1281,6 +1592,10 @@ export const PromptBoxVideo = ({
           const spaceBefore =
             prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
           setPrompt(prompt + spaceBefore + mention + " ");
+          setMentionSelections((prev) => ({
+            ...prev,
+            [character.name]: character.token,
+          }));
           setIsCharactersModalOpen(false);
           requestAnimationFrame(() => {
             const el = mentionEditorRef.current;
@@ -1295,34 +1610,58 @@ export const PromptBoxVideo = ({
           });
         }}
       />
-      <GalleryModal
-        isOpen={!!isGalleryModalOpen}
-        onClose={() => {
-          setIsGalleryModalOpen(false);
-          setSelectedGalleryImages([]);
-        }}
-        mode="select"
-        selectedItemIds={selectedGalleryImages}
-        onSelectItem={(id) => {
-          setSelectedGalleryImages((prev) => (prev.includes(id) ? [] : [id]));
-        }}
-        maxSelections={1}
-        onUseSelected={(selectedItems: GalleryItem[]) => {
-          const item = selectedItems[0];
-          if (!item || !item.fullImage) return;
-          const referenceImage: RefImage = {
-            id: Math.random().toString(36).substring(7),
-            url: item.fullImage,
-            file: new File([], "library-image"),
-            mediaToken: item.id,
-          };
-          setReferenceImages([referenceImage]);
-          setIsGalleryModalOpen(false);
-          setSelectedGalleryImages([]);
-        }}
-        onDownloadClicked={downloadFileFromUrl}
-        forceFilter="image"
-      />
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={hasAttachedRefs}
+          />
+        }
+        footerControls={
+          <>
+            {modelSelector}
+            {inputModeEl}
+            {characterButtonEl}
+          </>
+        }
+        imagePromptRow={
+          isReferenceMode ? renderReferenceDeck(true) : renderKeyframeCards()
+        }
+      >
+        {hasAnyMentionables ? (
+          <MentionTextarea
+            value={prompt}
+            onChange={setPrompt}
+            mentionItems={allMentionItems}
+            colorMap={mentionColorMap}
+            onMentionSelect={handleMentionSelect}
+            selectedTokens={mentionSelections}
+            placeholder={
+              isReferenceMode
+                ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
+                : "Describe what you want to happen in the video..."
+            }
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            style={{ resize: "none" }}
+          />
+        ) : (
+          <textarea
+            placeholder="Describe what you want to happen in the video..."
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            value={prompt}
+            onChange={handleChange}
+            onPaste={handlePaste}
+            onKeyDown={handleKeyDown}
+          />
+        )}
+      </PromptFullscreenModal>
     </>
   );
 };

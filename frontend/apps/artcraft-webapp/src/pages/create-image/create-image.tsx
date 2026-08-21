@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -47,20 +52,30 @@ import {
 } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  galleryItemToRefImage,
+  mergeRefImages,
+  toastMergeRefImagesOutcome,
+} from "../../lib/send-to-prompt";
+import {
   resolveModelOption,
   resolveModelCount,
 } from "../../lib/resolve-model-setting";
 import {
   useOmniGenImageModels,
-  getModelCreatorIconPath,
-  getModelDescription,
-  getModelInfo,
   OMNI_GENERATE_OUTAGE_MESSAGE,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/omni-gen";
+import {
+  getCreatorIconPathForModelId,
+  getCreatorIconSourceForModelId,
+  getModelDescription,
+  getModelFamilyName,
+  getModelInfo,
+  modelCreatorFromBackend,
+} from "@storyteller/model-list";
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
-import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
+import { SparklesIcon } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -76,20 +91,25 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  return models.map((model) => ({
-    label: model.full_name || model.model,
-    selected: model.model === selectedId,
-    description: getModelDescription(model.model, model.extra_info_short),
-    info: getModelInfo(model.model, model.extra_info) || undefined,
-    icon: (
-      <img
-        src={getModelCreatorIconPath(model.model)}
-        alt={`${model.model} logo`}
-        className="h-4 w-4 icon-auto-contrast"
-      />
-    ),
-    action: model.model, // use action to carry the model id
-  }));
+  return models.map((model) => {
+    const iconSource = getCreatorIconSourceForModelId(model.model);
+    return {
+      label: model.full_name || model.model,
+      selected: model.model === selectedId,
+      description: getModelDescription(model.model, model.extra_info_short),
+      info: getModelInfo(model.model, model.extra_info) || undefined,
+      icon: (
+        <img
+          src={iconSource.src}
+          alt={`${model.model} logo`}
+          className={
+            iconSource.isColor ? "h-4 w-4" : "h-4 w-4 icon-auto-contrast"
+          }
+        />
+      ),
+      action: model.model, // use action to carry the model id
+    };
+  });
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -118,6 +138,9 @@ export default function CreateImage() {
     }
     return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
   }, [apiModels, ui.selectedModelId]);
+
+  // Soft prompt limit from the API; undefined (no model / unset) = unlimited.
+  const maxPromptLength = selectedModel?.text_prompt_max_length ?? undefined;
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -264,6 +287,25 @@ export default function CreateImage() {
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
     [apiModels, selectedModel?.model],
   );
+  // Family-grouped variant for the desktop picker. The mobile bottom sheet
+  // keeps the flat `modelItems` (no flyouts on touch).
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const groupedModelItems = useMemo(
+    () =>
+      modelPickerStyle === "grouped"
+        ? groupModelItems(modelItems, (item) =>
+            getModelFamilyName(
+              item.action,
+              modelCreatorFromBackend(
+                item.action
+                  ? _modelLookup.get(item.action)?.model_creator
+                  : undefined,
+              ),
+            ),
+          )
+        : modelItems,
+    [modelItems, modelPickerStyle],
+  );
 
   const hasContent =
     jobs.inProgress.length > 0 ||
@@ -277,6 +319,24 @@ export default function CreateImage() {
   // Consume a pending recreate payload (set by the lightbox Recreate button)
   // and populate the promptbox fields. Does NOT trigger generation. Subscribes
   // to the store so it fires even when the user is already on this route.
+  // Warn when a recreated generation's model is missing from the current
+  // model list: selectedModel silently falls back to the default model, and
+  // the restored prompt/settings may not be valid for it. Verified in its own
+  // effect because the model list may still be loading when the recreate
+  // payload is consumed.
+  const [recreateModelIdToVerify, setRecreateModelIdToVerify] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!recreateModelIdToVerify || apiModels.length === 0) return;
+    if (!apiModels.some((m) => m.model === recreateModelIdToVerify)) {
+      toast.error(
+        "The model used for this generation isn't available anymore. Using the default model instead.",
+      );
+    }
+    setRecreateModelIdToVerify(null);
+  }, [recreateModelIdToVerify, apiModels]);
+
   const pendingRecreate = useCreateImageStore((s) => s.pendingRecreate);
   useEffect(() => {
     if (!pendingRecreate) return;
@@ -289,7 +349,27 @@ export default function CreateImage() {
       ...(payload.resolution ? { resolution: payload.resolution } : {}),
       ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
     });
+    if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
   }, [pendingRecreate, setUi]);
+
+  // Consume reference images sent from the library ("Send to prompt").
+  // Waits for the model list so the merge applies the real per-model cap —
+  // the sender doesn't know which model is selected here.
+  const pendingRefImages = useCreateImageStore((s) => s.pendingRefImages);
+  useEffect(() => {
+    if (!pendingRefImages || apiModels.length === 0) return;
+    const incoming = useCreateImageStore.getState().consumePendingRefImages();
+    if (!incoming || incoming.length === 0) return;
+    const result = mergeRefImages(referenceImages, incoming, maxImageRefs);
+    if (result.added > 0) setReferenceImages(result.next);
+    toastMergeRefImagesOutcome(result, maxImageRefs);
+  }, [
+    pendingRefImages,
+    apiModels,
+    referenceImages,
+    maxImageRefs,
+    setReferenceImages,
+  ]);
 
   // Resume polling for pending batches
   useEffect(() => {
@@ -341,17 +421,21 @@ export default function CreateImage() {
       const availableSlots = Math.max(0, maxImageRefs - referenceImages.length);
       const newImages: RefImage[] = items
         .slice(0, availableSlots)
-        .map((item) => ({
-          id: Math.random().toString(36).substring(7),
-          url: item.thumbnail || item.fullImage || "",
-          fullUrl: item.fullImage || undefined,
-          file: new File([], "library-image"),
-          mediaToken: item.id,
-        }));
+        .map(galleryItemToRefImage);
       setReferenceImages([...referenceImages, ...newImages]);
       setIsImagePickerOpen(false);
     },
     [maxImageRefs, referenceImages, setReferenceImages],
+  );
+
+  // Refs already in the deck, greyed out in the picker so the same media file
+  // can't be added twice to the reference list.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
   );
 
   const handleGenerate = useCallback(async () => {
@@ -359,7 +443,20 @@ export default function CreateImage() {
       openSignupCta();
       return;
     }
-    if (!prompt.trim() || isGenerating || !selectedModel) return;
+    if (!prompt.trim() || isGenerating) return;
+    if (!selectedModel) {
+      // Models come from an API fetch; without one the submit would be a
+      // silent no-op, which reads as a dead button.
+      toast.error("Models are still loading. Try again in a moment.");
+      return;
+    }
+
+    if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
+      toast.error(
+        `Prompt exceeds the ${maxPromptLength} character limit for this model`,
+      );
+      return;
+    }
 
     setIsGenerating(true);
     const batchId = startBatch(
@@ -394,8 +491,13 @@ export default function CreateImage() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          // Always toast: batches that fail at enqueue never got a job token,
+          // so the gallery's failed-card rendering never shows them, and a
+          // silent failBatch here looks like the button did nothing.
           if (result.errorCode != null && result.errorCode >= 500) {
             toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          } else {
+            toast.error(result.error ?? "Failed to start generation");
           }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
@@ -422,6 +524,7 @@ export default function CreateImage() {
       );
       pollingCleanupsRef.current.set(batchId, stopPolling);
     } catch {
+      toast.error("Network error - please try again");
       failBatch(batchId, "Network error - please try again");
     } finally {
       setIsGenerating(false);
@@ -433,6 +536,7 @@ export default function CreateImage() {
     prompt,
     isGenerating,
     selectedModel,
+    maxPromptLength,
     numImages,
     aspectRatio,
     resolution,
@@ -567,6 +671,7 @@ export default function CreateImage() {
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
+      showSelectToggle
       emptyStateTitle="Create Image"
       emptyStateSubtitle="Describe anything. See it in seconds."
       emptyStateCta={
@@ -574,7 +679,7 @@ export default function CreateImage() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -599,12 +704,14 @@ export default function CreateImage() {
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
           enableMakeVideo
+          selectable
+          selectionBarBottomOffset={promptHeight + 24}
         />
       }
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -616,6 +723,7 @@ export default function CreateImage() {
             onSubmit={handleGenerate}
             isSubmitting={isGenerating}
             credits={estimatedCredits}
+            maxPromptLength={maxPromptLength}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
             maxImagePromptCount={maxImageRefs}
@@ -630,15 +738,17 @@ export default function CreateImage() {
                 closeOnClick
               >
                 <PopoverMenu
-                  items={modelItems}
+                  items={groupedModelItems}
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-[360px]"
+                  panelClassName="w-[280px]"
                   richList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />
@@ -698,6 +808,7 @@ export default function CreateImage() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}

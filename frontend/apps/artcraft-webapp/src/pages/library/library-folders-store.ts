@@ -1,18 +1,14 @@
 import { create } from "zustand";
-import {
-  FoldersApi,
-  MediaFilesApi,
-  type FolderInfo,
-  type FolderMediaFileListItem,
-} from "@storyteller/api";
+import { FoldersApi, MediaFilesApi, type FolderInfo } from "@storyteller/api";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   mapFolderInfo,
   galleryItemToCollageUrl,
   mergeCollageUrls,
 } from "@storyteller/ui-gallery-modal";
-import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { toast } from "../../components/toast/toast";
+import { errMsg, mapLeanListItemToGalleryItem } from "./library-media-map";
+import { useLibraryTagsStore } from "./library-tags-store";
 
 // ── Bulk selection store ────────────────────────────────────────────────────
 // Kept in its own module store (not page state) so each gallery tile can
@@ -133,73 +129,12 @@ const FOLDER_PAGE_SIZE = 60;
 const folderCursors: Record<string, string | undefined> = {};
 const folderInFlight: Record<string, boolean> = {};
 
-const getLabel = (item: any): string => {
-  if (item.maybe_title) return item.maybe_title;
-  switch (item.media_class) {
-    case "image":
-      return "Image Generation";
-    case "video":
-      return "Video Generation";
-    case "dimensional":
-      return "3D Mesh";
-    default:
-      return "Generation";
-  }
-};
-
-/** Map a raw user-media list row (origin_category shape) → GalleryItem (root library). */
-export function mapRawToGalleryItem(item: any): GalleryItem {
-  const thumbnail =
-    item.media_class === "dimensional"
-      ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
-      : getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.LARGE,
-        });
-  return {
-    id: item.token,
-    label: getLabel(item),
-    thumbnail,
-    thumbnailUrlTemplate: item.media_links?.maybe_thumbnail_template,
-    fullImage: item.media_links?.cdn_url ?? null,
-    createdAt: item.created_at,
-    mediaClass: item.media_class || "image",
-    isUpload: item.origin_category === "upload",
-    batchImageToken: item.maybe_batch_token,
-  };
-}
-
-/** Map a `FolderMediaFileListItem` → GalleryItem (folder view; carries media_links inline). */
-function mapFolderListItemToGalleryItem(
-  item: FolderMediaFileListItem,
-): GalleryItem {
-  const thumbnail =
-    item.media_class === "dimensional"
-      ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
-      : getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.LARGE,
-        });
-  return {
-    id: item.token,
-    label: getLabel(item),
-    thumbnail,
-    thumbnailUrlTemplate: item.media_links?.maybe_thumbnail_template ?? undefined,
-    fullImage: item.media_links?.cdn_url ?? null,
-    createdAt: item.created_at,
-    mediaClass: item.media_class || "image",
-    isUpload: !!item.is_user_upload,
-    batchImageToken: item.maybe_batch_token ?? undefined,
-  };
-}
-
 // Shared API-folder → UI-folder mapper (UiFolder ≡ GalleryFolder; coalesce
 // parentId so the optional GalleryFolder field satisfies UiFolder).
 const mapFolder = (f: FolderInfo): UiFolder => {
   const g = mapFolderInfo(f);
   return { ...g, parentId: g.parentId ?? null };
 };
-
-const errMsg = (err: unknown) =>
-  err instanceof Error ? err.message : String(err);
 
 // NB: only `collageUrls` is touched — `coverUrl` is the user's *custom* cover
 // (`maybe_custom_cover_thumbnail`) and must never be derived from the collage,
@@ -305,7 +240,7 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
         const nextCursor = listRes.pagination?.maybe_cursor ?? undefined;
         folderCursors[folderId] = nextCursor;
         // The list item carries media_links/cover, so map directly — no batch-get.
-        const ordered = listRes.data.map(mapFolderListItemToGalleryItem);
+        const ordered = listRes.data.map(mapLeanListItemToGalleryItem);
         set((s) => {
           const existing = reset ? [] : (s.folderMediaItems[folderId] ?? []);
           const seen = new Set(existing.map((i) => i.id));
@@ -567,7 +502,7 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
   }),
 );
 
-/** Delete a media file and drop it from any cached folder views. */
+/** Delete a media file and drop it from any cached folder / tag views. */
 export async function deleteLibraryMedia(mediaToken: string): Promise<boolean> {
   try {
     const res = await mediaFilesApi.DeleteMediaFileByToken({
@@ -581,6 +516,13 @@ export async function deleteLibraryMedia(mediaToken: string): Promise<boolean> {
           next[k] = items.filter((it) => it.id !== mediaToken);
         }
         return { folderMediaItems: next };
+      });
+      useLibraryTagsStore.setState((s) => {
+        const next: Record<string, GalleryItem[]> = {};
+        for (const [k, items] of Object.entries(s.tagMediaItems)) {
+          next[k] = items.filter((it) => it.id !== mediaToken);
+        }
+        return { tagMediaItems: next };
       });
     }
     return res.success;

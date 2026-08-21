@@ -4,36 +4,20 @@ import { Button } from "@storyteller/ui-button";
 import { toast } from "../toast/toast";
 import { Gravatar } from "@storyteller/ui-gravatar";
 import type { UserInfo } from "@storyteller/api";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faCircleInfo,
-  faCopy,
-  faImage,
-  faLink,
-  faPause,
-  faPencil,
-  faPlay,
-  faSpinnerThird,
-  faTrashCan,
-  faUser,
-  faVideo,
-  faWaveformLines,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, CheckIcon, CopyIcon, ImageIcon, ImagesIcon, InfoIcon, LinkIcon, LoaderCircleIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, Trash2Icon, UserIcon, VideoIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import {
   getContextImageThumbnail,
   THUMBNAIL_SIZES,
 } from "@storyteller/common";
 import {
-  getModelCreatorIcon,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
 } from "@storyteller/model-list";
 import { downloadMediaFile } from "../../lib/download-media";
+import { TagsSection } from "../tags/TagsSection";
 import {
   formatAspectRatio,
   formatDuration,
@@ -76,6 +60,7 @@ export interface LightboxDetailsProps {
   onRecreate?: () => void;
   onMakeVideo?: () => void;
   onEditOnCanvas?: () => void;
+  onExtractFrames?: () => void;
   onDelete?: () => void;
   showDownloadAppCta?: boolean;
 }
@@ -92,6 +77,7 @@ export function LightboxDetails({
   onRecreate,
   onMakeVideo,
   onEditOnCanvas,
+  onExtractFrames,
   onDelete,
   showDownloadAppCta,
 }: LightboxDetailsProps) {
@@ -195,7 +181,7 @@ export function LightboxDetails({
           className="absolute top-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
           aria-label="Close"
         >
-          <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+          <XIcon  className="h-4 w-4" />
         </button>
       )}
 
@@ -231,7 +217,7 @@ export function LightboxDetails({
                   />
                 ) : (
                   <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/10 text-white/50 border border-white/5">
-                    <FontAwesomeIcon icon={faUser} />
+                    <UserIcon />
                   </div>
                 )}
                 <div className="flex flex-col gap-1">
@@ -249,7 +235,7 @@ export function LightboxDetails({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-                    <FontAwesomeIcon icon={faPencil} />
+                    <PencilIcon />
                     <span>Prompt</span>
                   </div>
                   {promptData.text && (
@@ -257,8 +243,8 @@ export function LightboxDetails({
                       onClick={handleCopyPrompt}
                       className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
                     >
-                      <FontAwesomeIcon
-                        icon={promptCopy.copied ? faCheck : faCopy}
+                      <DynamicIcon
+                        icon={promptCopy.copied ? CheckIcon : CopyIcon}
                         className="h-3 w-3"
                       />
                       <span>{promptCopy.copied ? "Copied" : "Copy"}</span>
@@ -291,7 +277,7 @@ export function LightboxDetails({
             {promptData.contextImages && promptData.contextImages.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-                  <FontAwesomeIcon icon={faImage} />
+                  <ImageIcon />
                   <span>Reference Media</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
@@ -312,8 +298,8 @@ export function LightboxDetails({
                           onClick={() => handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url)}
                           className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/40 transition-colors flex items-center justify-center bg-white/5"
                         >
-                          <FontAwesomeIcon
-                            icon={isPlayingThis ? faPause : faPlay}
+                          <DynamicIcon
+                            icon={isPlayingThis ? PauseIcon : PlayIcon}
                             className="text-white/70 text-lg"
                           />
                         </button>
@@ -335,10 +321,9 @@ export function LightboxDetails({
                         />
                         {isVideoRef && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <FontAwesomeIcon
-                              icon={faVideo}
-                              className="text-white/80 text-sm drop-shadow-lg"
-                            />
+                            <VideoIcon
+                              
+                              className="text-white/80 text-sm drop-shadow-lg" />
                           </div>
                         )}
                       </a>
@@ -351,7 +336,7 @@ export function LightboxDetails({
             {hasInfoSection && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-                  <FontAwesomeIcon icon={faCircleInfo} />
+                  <InfoIcon />
                   <span>Information</span>
                 </div>
 
@@ -361,7 +346,13 @@ export function LightboxDetails({
                       label="Model"
                       value={
                         <>
-                          {getModelCreatorIcon(promptData.modelType)}
+                          <img
+                            src={getCreatorIconPathForModelId(
+                              promptData.modelType,
+                            )}
+                            alt="Model creator logo"
+                            className="h-4 w-4 invert"
+                          />
                           <span>
                             {getModelDisplayName(promptData.modelType)}
                           </span>
@@ -424,6 +415,8 @@ export function LightboxDetails({
                 </div>
               </div>
             )}
+
+            <TagsSection mediaToken={mediaToken} creator={creator} />
           </>
         )}
       </div>
@@ -432,7 +425,7 @@ export function LightboxDetails({
         <div className="grid grid-cols-2 gap-2">
           <Button
             className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
-            icon={shareCopy.copied ? faCheck : faLink}
+            icon={shareCopy.copied ? CheckIcon : LinkIcon}
             variant="secondary"
             onClick={handleCopyShareLink}
           >
@@ -459,8 +452,8 @@ export function LightboxDetails({
                 : "bg-ui-controls/20 text-white/60 cursor-not-allowed"
             }`}
           >
-            <FontAwesomeIcon
-              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+            <DynamicIcon
+              icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
               className={isDownloading ? "animate-spin" : ""}
             />
             {isDownloading ? "Downloading…" : "Download"}
@@ -468,7 +461,7 @@ export function LightboxDetails({
         </div>
         {onMakeVideo && (
           <Button
-            icon={faVideo}
+            icon={VideoIcon}
             className="w-full shadow-lg shadow-brand-primary/20"
             variant="primary"
             onClick={onMakeVideo}
@@ -478,7 +471,7 @@ export function LightboxDetails({
         )}
         {onEditOnCanvas && (
           <Button
-            icon={faPencil}
+            icon={PencilIcon}
             className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
             variant="secondary"
             onClick={onEditOnCanvas}
@@ -486,9 +479,19 @@ export function LightboxDetails({
             Edit on Canvas
           </Button>
         )}
+        {onExtractFrames && (
+          <Button
+            icon={ImagesIcon}
+            className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
+            variant="secondary"
+            onClick={onExtractFrames}
+          >
+            Extract Frames
+          </Button>
+        )}
         {onRecreate && promptData.hasToken && (
           <Button
-            icon={faArrowRotateRight}
+            icon={RotateCwIcon}
             className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
             variant="secondary"
             onClick={onRecreate}
@@ -498,7 +501,7 @@ export function LightboxDetails({
         )}
         {onDelete && mediaToken && (
           <Button
-            icon={faTrashCan}
+            icon={Trash2Icon}
             className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
             variant="destructive"
             onClick={onDelete}
@@ -508,7 +511,7 @@ export function LightboxDetails({
         )}
         {showDownloadAppCta && (
           <Button
-            icon={faArrowDownToLine}
+            icon={ArrowDownToLineIcon}
             className="w-full shadow-lg shadow-brand-primary/20"
             variant="primary"
             onClick={() => {

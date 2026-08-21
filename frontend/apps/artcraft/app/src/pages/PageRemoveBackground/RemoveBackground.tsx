@@ -1,13 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faWandMagicSparkles,
-  faImages,
-  faPlus,
-  faEye,
-  faDownload,
-  faUpload,
-} from "@fortawesome/pro-solid-svg-icons";
+import { DownloadIcon, EyeIcon, ImagesIcon, PlusIcon, UploadIcon, WandSparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
@@ -172,13 +164,13 @@ export const RemoveBackground = () => {
       {
         label: "Upload Image",
         selected: false,
-        icon: <FontAwesomeIcon icon={faUpload} className="h-4 w-4" />,
+        icon: <UploadIcon  className="h-4 w-4" />,
         action: "upload",
       },
       {
         label: "Choose from Library",
         selected: false,
-        icon: <FontAwesomeIcon icon={faImages} className="h-4 w-4" />,
+        icon: <ImagesIcon  className="h-4 w-4" />,
         action: "library",
       },
     ],
@@ -558,7 +550,7 @@ export const RemoveBackground = () => {
               <div className="w-full max-w-5xl">
                 <div className="relative aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <UploadEntryCard
-                    icon={faWandMagicSparkles}
+                    icon={WandSparklesIcon}
                     title="Remove Background"
                     description="Instantly remove backgrounds from your images with AI-powered precision."
                     accentBackgroundClass="bg-violet-500/40"
@@ -567,7 +559,7 @@ export const RemoveBackground = () => {
                     onFilesSelected={handleLocalImageSelect}
                     primaryLabel="Select Image"
                     secondaryLabel="Pick from Library"
-                    secondaryIcon={faImages}
+                    secondaryIcon={ImagesIcon}
                     onSecondaryClick={handleOpenGallery}
                     disabled={isLoadingImage}
                   />
@@ -584,7 +576,7 @@ export const RemoveBackground = () => {
                   <div className="flex shrink-0 gap-3 pb-4">
                     <Button
                       variant="action"
-                      icon={faEye}
+                      icon={EyeIcon}
                       onMouseDown={handleCompareMouseDown}
                       disabled={!activeImage || isProcessing}
                       className={twMerge(
@@ -602,7 +594,7 @@ export const RemoveBackground = () => {
                     </Button>
                     <Button
                       variant="primary"
-                      icon={faDownload}
+                      icon={DownloadIcon}
                       onClick={handleDownload}
                       disabled={!activeImage || isProcessing}
                       className={twMerge(
@@ -633,10 +625,9 @@ export const RemoveBackground = () => {
                         <div className="relative z-10 flex flex-col items-center gap-4">
                           <div className="relative">
                             <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary-500/30 border-t-primary-500" />
-                            <FontAwesomeIcon
-                              icon={faWandMagicSparkles}
-                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-primary-400"
-                            />
+                            <WandSparklesIcon
+                              
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-primary-400" />
                           </div>
                           <span className="text-lg font-semibold text-white">
                             Removing Background...
@@ -724,7 +715,7 @@ export const RemoveBackground = () => {
                       isProcessing && "cursor-not-allowed opacity-50",
                     )}
                     triggerIcon={
-                      <FontAwesomeIcon icon={faPlus} className="text-xl" />
+                      <PlusIcon  className="text-xl" />
                     }
                   />
 

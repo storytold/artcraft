@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7::{
+use kinovi_web_client::generate::image::generate_midjourney_v7::{
   GenerateMidjourneyV7AspectRatio, GenerateMidjourneyV7Request, KinoviMidjourneyBatchCount,
 };
 
@@ -171,7 +171,7 @@ mod tests {
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Midjourney7,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("test".to_string()),
       image_inputs: None,
       resolution: None,

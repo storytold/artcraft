@@ -9,7 +9,7 @@
 // host wrapper and passed to <PageScene adapter={adapter} />.
 
 import type { ReactNode } from "react";
-import type { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import type { LucideIcon } from "lucide-react";
 import type {
   CommonAspectRatio,
   CommonResolution,
@@ -64,6 +64,27 @@ export interface ListFeaturedMediaFilesResult {
   errorMessage?: string;
 }
 
+// One saved scene as returned by the host's scene listing (see
+// PageSceneAdapter.listUserSceneProjects). Just what the scene picker
+// renders — hosts map their richer API rows down to this.
+export interface SceneProjectListItem {
+  token: string;
+  maybe_title?: string | null;
+  updated_at: string;
+  /**
+   * Cover thumbnail: either a CDN bucket path (legacy media rows) or an
+   * absolute URL (project rows expose full cover links, not bucket paths).
+   * SceneCard handles both.
+   */
+  maybe_thumbnail?: string | null;
+}
+
+export interface ListUserSceneProjectsResult {
+  success: boolean;
+  data?: SceneProjectListItem[];
+  errorMessage?: string;
+}
+
 // ─── Scene I/O ─────────────────────────────────────────────────────────
 
 export interface PageSceneSavePayload {
@@ -74,6 +95,16 @@ export interface PageSceneSavePayload {
 }
 
 // ─── Adapter ───────────────────────────────────────────────────────────
+
+// A still (Capture) or video (Record) produced by Record mode, cached
+// locally (object URL) — handed to the 2D/video editor or uploaded on demand.
+export interface PageSceneArtifact {
+  kind: "image" | "video";
+  blob: Blob;
+  objectUrl: string;
+  fileName: string;
+  mimeType: string;
+}
 
 export interface PageSceneAdapter {
   // Generation enqueue. Same shape as PageDrawAdapter.enqueueEditImage.
@@ -122,6 +153,14 @@ export interface PageSceneAdapter {
     query: ListMediaFilesQuery,
   ): Promise<ListFeaturedMediaFilesResult>;
 
+  // Optional: list the user's saved 3D scenes for the scene picker.
+  // Hosts that have migrated scene persistence to the project endpoints
+  // (`/v1/media_files/upload/project/scene_3d/*`) implement this with the
+  // project list (merged with any legacy engine_category=scene rows).
+  // When absent, the picker falls back to
+  // listUserMediaFiles(engine_category=scene) — the pre-split flow.
+  listUserSceneProjects?(): Promise<ListUserSceneProjectsResult>;
+
   // Toast notifications. Wraps the host's addToast / react-hot-toast
   // pipeline; the lib stays free of toast-library imports.
   showToast(level: ToastTypes, message: string): void;
@@ -161,15 +200,22 @@ export interface PageSceneAdapter {
   }): ReactNode;
 
   // "Upload your own model" host modal. Rendered from inside the lib's
-  // AssetModal — the lib owns the trigger button + modal control state,
-  // the host owns the actual upload UI (file picker, validation,
-  // progress, splat conversion, etc.).
+  // AssetModal / AnimationsModal — the lib owns the trigger button + modal
+  // control state, the host owns the actual upload UI (file picker,
+  // validation, progress, splat conversion, etc.).
   renderAssetUploader(props: {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: (category: FilterEngineCategories) => void;
     title: string;
-    titleIcon: IconDefinition;
+    titleIcon: LucideIcon;
+    // Preselect the uploader's "Upload as ..." category toggle when opened
+    // from a scoped library (the animations panel passes "animation"); a
+    // scoped open also keeps the host's My Library from popping over that
+    // panel on success. Literal strings rather than FilterEngineCategories:
+    // the upload-modal lib declares its own copy of that enum, and the two
+    // enum types aren't assignable across package boundaries.
+    initialCategory?: "animation" | "character";
   }): ReactNode;
 
   // Image upload modal — distinct from renderAssetUploader because
@@ -180,7 +226,7 @@ export interface PageSceneAdapter {
     onClose: () => void;
     onSuccess: () => void;
     title: string;
-    titleIcon: IconDefinition;
+    titleIcon: LucideIcon;
   }): ReactNode;
 
   // Splat (.spz) upload modal — triggered from Controls3D for the
@@ -190,7 +236,7 @@ export interface PageSceneAdapter {
     onClose: () => void;
     onSuccess: () => void;
     title: string;
-    titleIcon: IconDefinition;
+    titleIcon: LucideIcon;
   }): ReactNode;
 
   // Upload an image File and emit upload-progress states. Wraps the
@@ -214,6 +260,22 @@ export interface PageSceneAdapter {
   // named action; add more as the lib grows page-aware UI. Tauri host
   // implements via useTabStore.setActiveTab; web host via router push.
   navigateToImageTo3D(): void;
+
+  // Persist a produced still/video to the user's media library and return its
+  // media token. Images auto-upload after Capture; videos upload on demand
+  // (they're large). Host: MediaUploadApi via uploadByKind.
+  uploadMedia?(args: {
+    kind: "image" | "video";
+    blob: Blob;
+    fileName: string;
+    title?: string;
+  }): Promise<string>;
+
+  // Open the app's media Lightbox on an uploaded token — the shared modal that
+  // offers every destination for the media type (Edit-on-Canvas, Make-Video,
+  // Recreate, Share, Download). Host resolves the CDN URL from the token and
+  // renders <Lightbox>. Replaces bespoke per-destination handoffs.
+  openMediaLightbox?(token: string, kind: "image" | "video"): void;
 
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.

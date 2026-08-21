@@ -7,15 +7,12 @@ import { createRoot } from "react-dom/client";
 import "./styles/normalize.css";
 import "./styles/tailwind.css";
 import "./styles/base.css";
-import "@fortawesome/fontawesome-svg-core/styles.css";
-import { config } from "@fortawesome/fontawesome-svg-core";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { pageHeight, pageWidth, persistLogin } from "~/signals";
 import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
-
-config.autoAddCss = false; /* eslint-disable import/first */
+import { useModelsStore } from "@storyteller/tauri-api";
 
 // TODO(bt,2025-04-19): Make these configurable
 const ENV = {
@@ -87,6 +84,13 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
 
   useEffect(() => {
     SoundManager.install();
+  }, []);
+
+  // Reconcile the model dropdowns against the backend omni listing once on boot.
+  // The store is already seeded with the static overlay, so a failure here is a
+  // no-op (the UI keeps the overlay models).
+  useEffect(() => {
+    void useModelsStore.getState().loadModelsFromBackend();
   }, []);
 
   return null;

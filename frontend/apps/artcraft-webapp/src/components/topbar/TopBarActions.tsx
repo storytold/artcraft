@@ -14,15 +14,8 @@ import {
   Transition,
 } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCoins,
-  faGem,
-  faCog,
-  faLifeRing,
-  faGift,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { CoinsIcon, GemIcon, GiftIcon, ImagesIcon, LifeBuoyIcon, SettingsIcon } from "lucide-react";
+import { DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import {
@@ -98,7 +91,7 @@ export function TopBarActions({ className }: { className?: string }) {
   return (
     <div
       className={twMerge(
-        "flex items-center gap-1 sm:gap-2 shrink-0",
+        "flex items-center gap-1 sm:gap-1.5 shrink-0",
         className,
       )}
     >
@@ -108,7 +101,7 @@ export function TopBarActions({ className }: { className?: string }) {
             to="/pricing"
             className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
           >
-            <FontAwesomeIcon icon={faGem} className="text-[11px]" />
+            <GemIcon  className="text-[11px]" />
             Pricing
           </Link>
 
@@ -123,7 +116,7 @@ export function TopBarActions({ className }: { className?: string }) {
           {hasPaidPlan === false && (
             <Button
               variant="primary"
-              icon={faGem}
+              icon={GemIcon}
               onClick={() => navigate("/pricing")}
               className="h-8 px-3 text-sm font-semibold rounded-lg"
             >
@@ -132,6 +125,14 @@ export function TopBarActions({ className }: { className?: string }) {
           )}
 
           <TaskQueue />
+
+          <Link
+            to="/library"
+            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-sm font-medium text-white/80 transition-colors"
+          >
+            <ImagesIcon  className="text-[11px]" />
+            My Library
+          </Link>
 
           <Menu as="div" className="relative ml-1">
             <MenuButton className="flex h-8 w-8 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/40 ring-offset-2 ring-offset-[#121212]">
@@ -169,10 +170,9 @@ export function TopBarActions({ className }: { className?: string }) {
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
-                      <FontAwesomeIcon
-                        icon={faCog}
-                        className="text-[11px] text-white/50"
-                      />
+                      <SettingsIcon
+                        
+                        className="text-[11px] text-white/50" />
                       Settings
                     </button>
                   )}
@@ -186,10 +186,9 @@ export function TopBarActions({ className }: { className?: string }) {
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
-                      <FontAwesomeIcon
-                        icon={faLifeRing}
-                        className="text-[11px] text-white/50"
-                      />
+                      <LifeBuoyIcon
+                        
+                        className="text-[11px] text-white/50" />
                       Support
                     </button>
                   )}
@@ -206,10 +205,9 @@ export function TopBarActions({ className }: { className?: string }) {
                           "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                         )}
                       >
-                        <FontAwesomeIcon
-                          icon={faGift}
-                          className="text-[11px] text-white/50"
-                        />
+                        <GiftIcon
+                          
+                          className="text-[11px] text-white/50" />
                         Referrals
                       </button>
                     )}
@@ -226,10 +224,9 @@ export function TopBarActions({ className }: { className?: string }) {
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
-                      <FontAwesomeIcon
-                        icon={faDiscord}
-                        className="text-[11px] text-white/50"
-                      />
+                      <DiscordIcon
+                        
+                        className="text-[11px] text-white/50" />
                       Join Discord
                     </a>
                   )}
@@ -257,7 +254,7 @@ export function TopBarActions({ className }: { className?: string }) {
             to="/pricing"
             className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
           >
-            <FontAwesomeIcon icon={faGem} className="text-[11px]" />
+            <GemIcon  className="text-[11px]" />
             Pricing
           </Link>
           <Link
@@ -301,7 +298,7 @@ function CreditsChip({
       position="bottom"
       align="end"
       triggerIcon={
-        <FontAwesomeIcon icon={faCoins} className="text-primary text-[11px]" />
+        <CoinsIcon  className="text-primary text-[11px]" />
       }
       triggerLabel={
         <span className="whitespace-nowrap text-sm font-medium">
@@ -328,7 +325,7 @@ function CreditsChip({
             </button>
           </div>
           <div className="flex items-center gap-2 text-3xl font-semibold text-white tracking-tight">
-            <FontAwesomeIcon icon={faCoins} className="text-xl text-primary" />
+            <CoinsIcon  className="text-xl text-primary" />
             {credits.toLocaleString()}
           </div>
           <div className="mt-3 flex gap-2">
@@ -339,7 +336,7 @@ function CreditsChip({
                 close();
                 onUpgrade();
               }}
-              icon={faGem}
+              icon={GemIcon}
             >
               Upgrade
             </Button>

@@ -85,10 +85,11 @@ redis_caching = { path = "../../../lib/caching/redis_caching" }
 redis_common = { path = "../../../schema/database/redis_common" }
 redis_schema = { path = "../../../schema/database/redis_schema" }
 reusable_types = { path = "../../../schema/public/reusable_types" }
-seedance2pro_client.workspace = true
+kinovi_web_client.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 thumbnail_generator = { path = "../../../api_clients/thumbnail_generator" }
 tokens.workspace = true
+trace_id.workspace = true
 tts_common = { path = "../../../lib/deprecated/tts_common" }
 url_config = { path = "../../../lib/url_config" }
 url_utils = { path = "../../../lib/url_utils" }
@@ -199,8 +200,19 @@ zip = "0.6.6"
 # NB: Only using diesel for migrations support
 diesel = { version = "2.2.4", features = ["mysql"] }
 
+[features]
+# Database fixture tests (guarded MySQL test database + in-process stub
+# providers) RUN BY DEFAULT with `cargo test`. On machines/CI without a local
+# MySQL, skip them with:
+#   SQLX_OFFLINE=true cargo test -p storyteller-web --features skip_database_tests
+skip_database_tests = []
+
 [dev-dependencies]
 # Testing/Dev Deps: Internal
+mysql_testing = { path = "../../../schema/database/mysql_testing" }
+# The test dependency graph enables both rustls crypto backends, so tests
+# must install one explicitly before anything builds a TLS config.
+rustls = { version = "0.23", features = ["aws-lc-rs"] }
 test_utils = { path = "../../../testing/test_utils" }
 
 # Testing/Dev Deps: External

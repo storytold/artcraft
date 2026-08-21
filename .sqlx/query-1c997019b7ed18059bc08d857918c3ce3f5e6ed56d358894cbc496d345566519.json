@@ -1,0 +1,58 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  payment_occurred_at AS `payment_occurred_at!: DateTime<Utc>`,\n  amount_usd_cents,\n  event_type AS `event_type!: PaymentEventType`,\n  maybe_credits_granted AS `maybe_credits_granted: u32`\nFROM user_spend_events\nWHERE maybe_user_token = ?\n  AND payments_namespace = ?\n  AND is_production = TRUE\nORDER BY payment_occurred_at ASC\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "payment_occurred_at!: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "amount_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "event_type!: PaymentEventType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_credits_granted: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "1c997019b7ed18059bc08d857918c3ce3f5e6ed56d358894cbc496d345566519"
+}

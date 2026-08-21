@@ -19,7 +19,6 @@ use chrono::{DateTime, Utc};
 use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::by_table::model_weights::weights_types::WeightsType;
@@ -68,11 +67,6 @@ pub struct MediaFileInfo {
   /// be animated with either (or both) skeletal or blend shape animations,
   /// this describes the animation regime used or supported.
   pub maybe_animation_type: Option<MediaFileAnimationType>,
-
-  /// If the media file has a subtype, we'll report it.
-  /// This is mostly used for Bevy engine files.
-  #[deprecated(note="This was for the Bevy engine. Do not use.")]
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   /// Extension for the engine to load over remote:// URLs.
   #[deprecated(note="This was for the Bevy engine. Do not use.")]
@@ -226,15 +220,11 @@ pub async fn get_media_file_handler(
       .await?;
 
   let mut show_deleted_results = false;
-  let mut is_moderator = false;
 
   if let Some(user_session) = maybe_user_session {
     // NB: Moderators can see deleted results.
     // Original creators cannot see them (unless they're moderators!)
     show_deleted_results = user_session.can_delete_other_users_tts_results;
-    // Moderators get to see all the fields.
-    is_moderator = user_session.can_delete_other_users_tts_results
-        || user_session.can_edit_other_users_tts_models;
   }
 
   let media_domain = get_media_domain(&http_request);
@@ -321,8 +311,6 @@ async fn modern_media_file_lookup(
       media_type: result.media_type,
       maybe_engine_category: result.maybe_engine_category,
       maybe_animation_type: result.maybe_animation_type,
-      // maybe_media_subtype: result.maybe_media_subtype,
-      maybe_media_subtype: None, // NB(bt,2024-07-25): Stop populating field for consumers.
       maybe_engine_extension,
       maybe_batch_token: result.maybe_batch_token,
       maybe_scene_source_media_file_token: result.maybe_scene_source_media_file_token,
@@ -460,7 +448,6 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
       media_type: MediaFileType::Audio, // NB: Always audio
       maybe_engine_category: None,
       maybe_animation_type: None,
-      maybe_media_subtype: None,
       maybe_engine_extension: None,
       maybe_batch_token: None,
       maybe_scene_source_media_file_token: None,

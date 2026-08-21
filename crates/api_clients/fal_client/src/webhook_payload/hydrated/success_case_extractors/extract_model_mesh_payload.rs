@@ -50,6 +50,33 @@ mod tests {
   }
 
   #[test]
+  fn triposplat_ply_splat_from_test_file() {
+    // TripoSplat sends its PLY gaussian splat under `model_mesh`.
+    let webhook = load_test_webhook("success/triposplat_splat_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    let mesh = contents.model_mesh.expect("model_mesh should be Some");
+    assert_eq!(mesh.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1b77c/hEzg5xn9A-1qrLsnywjN4_output.ply"));
+    assert_eq!(mesh.content_type.as_deref(), Some("application/octet-stream"));
+    assert_eq!(mesh.file_name.as_deref(), Some("output.ply"));
+    assert_eq!(mesh.file_size, Some(17826208));
+
+    // The segmented input image rides along as `preprocessed_image`.
+    assert!(contents.preprocessed_image.is_some());
+
+    assert!(contents.model_glb.is_none());
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.thumbnail.is_none());
+  }
+
+  #[test]
   fn synthetic_model_mesh_payload() {
     let obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(r#"{
       "model_mesh": {

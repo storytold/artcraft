@@ -61,6 +61,11 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::Seedance2p0 => Some(CommonModelType::Seedance2p0),
     RouterVideoModel::Seedance2p0Fast => Some(CommonModelType::Seedance2p0Fast),
     RouterVideoModel::HappyHorse1p0 => Some(CommonModelType::HappyHorse1p0),
+    RouterVideoModel::MinimaxH3 => Some(CommonModelType::MinimaxH3),
+    RouterVideoModel::MinimaxH3Turbo => Some(CommonModelType::MinimaxH3Turbo),
+    RouterVideoModel::MinimaxH3Ultra => Some(CommonModelType::MinimaxH3Ultra),
+    RouterVideoModel::Flux3 => Some(CommonModelType::Flux3),
+    RouterVideoModel::Flux3Draft => Some(CommonModelType::Flux3Draft),
     RouterVideoModel::Sora2 => Some(CommonModelType::Sora2),
     RouterVideoModel::Sora2Pro => Some(CommonModelType::Sora2Pro),
     RouterVideoModel::Veo2 => Some(CommonModelType::Veo2),
@@ -68,16 +73,23 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::Veo3Fast => Some(CommonModelType::Veo3Fast),
     RouterVideoModel::Veo3p1 => Some(CommonModelType::Veo3p1),
     RouterVideoModel::Veo3p1Fast => Some(CommonModelType::Veo3p1Fast),
+    RouterVideoModel::Veo3p1Lite => Some(CommonModelType::Veo3p1Lite),
+    RouterVideoModel::ViduQ3 => Some(CommonModelType::ViduQ3),
+    RouterVideoModel::ViduQ3Turbo => Some(CommonModelType::ViduQ3Turbo),
     RouterVideoModel::Seedance2p0BytePlus => Some(CommonModelType::Seedance2p0BytePlus),
     RouterVideoModel::Seedance2p0BytePlusFast => Some(CommonModelType::Seedance2p0BytePlusFast),
-    RouterVideoModel::Seedance2p0Ultra => Some(CommonModelType::Seedance2p0Ultra),
-    RouterVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
     RouterVideoModel::Seedance2p0BytePlusUltra => Some(CommonModelType::Seedance2p0BytePlusUltra),
     RouterVideoModel::Seedance2p0BytePlusUltraFast => Some(CommonModelType::Seedance2p0BytePlusUltraFast),
+    RouterVideoModel::Seedance2p0Mini => Some(CommonModelType::Seedance2p0Mini),
+    RouterVideoModel::Seedance2p0BytePlusMini => Some(CommonModelType::Seedance2p0BytePlusMini),
+    RouterVideoModel::Seedance2p0BytePlusUltraMini => Some(CommonModelType::Seedance2p0BytePlusUltraMini),
     RouterVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
     RouterVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
     RouterVideoModel::GrokImagineVideo => Some(CommonModelType::GrokImagineVideo),
     RouterVideoModel::GrokImagineVideo1p5 => Some(CommonModelType::GrokImagineVideo1p5),
+    RouterVideoModel::Seedance2p5Preview => Some(CommonModelType::Seedance2p5Preview),
+    RouterVideoModel::Seedance2p5 => Some(CommonModelType::Seedance2p5),
+    RouterVideoModel::Seedance2p5Ultra => Some(CommonModelType::Seedance2p5Ultra),
   }
 }
 
@@ -86,9 +98,10 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
     RouterProvider::Artcraft => GenerationProvider::Artcraft,
     RouterProvider::Fal => GenerationProvider::Fal,
     // Unused providers -> ArtCraft
-    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
+    RouterProvider::KinoviWeb => GenerationProvider::Artcraft ,
     RouterProvider::GmiCloud => GenerationProvider::Artcraft,
     RouterProvider::GrokApi => GenerationProvider::Artcraft,
+    RouterProvider::WorldLabs => GenerationProvider::Artcraft,
   }
 }
 
@@ -150,6 +163,7 @@ mod tests {
       duration_seconds: None,
       video_batch_count: None,
       generate_audio: None,
+      total_reference_video_input_seconds: None,
       request_mismatch_mitigation_strategy:
         artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,

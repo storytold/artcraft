@@ -99,14 +99,12 @@ CREATE TABLE media_files (
   -- The original filename of the media (if uploaded by a user)
   maybe_origin_filename VARCHAR(255) DEFAULT NULL,
 
-  -- TODO: Remove after `maybe_batch_token` gains use.
-  -- Whether this media file was generated as part of a batch
-  -- If so, we can look up the batch in a separate query/call to the `batch_generations` table.
-  -- We won't hold the batch token in this table since it'll be very sparsely populated.
-  is_batch_generated BOOLEAN NOT NULL DEFAULT FALSE,
-
   -- If the media file is generated as part of a batch, this designates the batch.
   maybe_batch_token VARCHAR(32) DEFAULT NULL,
+
+  -- The inference job ('jinf_...') whose completion produced this media file.
+  -- Only set for files written as job outputs; uploads and other origins stay NULL.
+  maybe_source_job_token VARCHAR(32) DEFAULT NULL,
 
   -- ========== METADATA ==========
 
@@ -138,9 +136,6 @@ CREATE TABLE media_files (
   -- The token is a media file token.
   maybe_scene_source_media_file_token VARCHAR(32) DEFAULT NULL,
 
-  -- A flag for NSFW status.
-  nsfw_status VARCHAR(32) NOT NULL DEFAULT "unknown",
-
   -- ========== MEDIA DETAILS ==========
 
   -- Type of media file:
@@ -166,20 +161,19 @@ CREATE TABLE media_files (
   -- This is especially helpful with engine types that map to specific semantics.
   --   * 'unknown' (TODO: This is the default until all records are backfilled.)
   --   * 'audio' for wav, mp3, etc.
-  --   * 'image' for a variety of video types.
+  --   * 'image' for a variety of image types.
   --   * 'video' for a variety of video types.
-  --   * 'dimensional' for a variety of 3d types
+  --   * 'dimensional' (DEPRECATED) split into 'mesh', 'splat', and 'project'; read-only until backfilled
+  --   * 'mesh' for 3d mesh assets (glb, gltf, fbx, obj, pmx, pmd, etc.)
+  --   * 'splat' for Gaussian splats (spz, etc.)
+  --   * 'project' for internal Artcraft project documents (see maybe_project_type)
   media_class VARCHAR(16) NOT NULL DEFAULT "unknown",
 
-  -- DEPRECATED / DO NOT USE. THIS FIELD IS NO LONGER RELEVANT.
-  -- A media file's possible subtype. Typically used for Storyteller Studio.
-  --   * 'mixamo' for mixamo animations (eg. for BVH, GLB, FBX, etc. files)
-  --   * 'mocap_net' for mocapnet animations (eg. for BVH files)
-  --   * 'scene'
-  --   * 'character'
-  --   * 'animation'
-  -- DO NOT USE THE `maybe_media_subtype` FIELD!
-  maybe_media_subtype VARCHAR(32) DEFAULT NULL,
+  -- Which kind of internal Artcraft project document this media file is
+  -- ('scene_3d', 'mood_board', 'workflow', 'video_timeline', ...).
+  -- Only set when media_class = 'project'. The file format lives in media_type;
+  -- the JSON payload carries its own schema version.
+  maybe_project_type VARCHAR(32) DEFAULT NULL,
 
   -- The file's mime type.
   maybe_mime_type VARCHAR(32) DEFAULT NULL,
@@ -227,10 +221,6 @@ CREATE TABLE media_files (
   -- and produces different lengths output depending on the choice of algorithm.
   checksum_sha2 CHAR(64) NOT NULL,
 
-  -- Whether the image or video has a visible watermark.
-  -- If so, we may not need to add a watermark downstream in further processing steps.
-  has_watermark BOOLEAN NOT NULL DEFAULT FALSE,
-
   -- Tracks the thumbnail algorithm/type used for this media file.
   -- NULL = no thumbnail generated yet.
   -- 1 = video thumbnail.
@@ -258,13 +248,6 @@ CREATE TABLE media_files (
   -- The bucket filename for the primary file (not including the directory path) is given by:
   -- `[{maybe_public_bucket_prefix}]{public_bucket_directory_hash}[{maybe_public_bucket_extension}]`
   maybe_public_bucket_extension VARCHAR(16) DEFAULT NULL,
-
-  -- This is a migration flag that denotes whether this media file is stored in AWS.
-  -- If not, it's stored in GCP.
-  is_in_aws BOOLEAN NOT NULL DEFAULT false,
-
-  -- This is a migration flag that denotes that weight is not stored in GCP.
-  is_not_in_gcp BOOLEAN NOT NULL DEFAULT false,
 
   -- NB: Removed, since this can be derived.
   -- The directory this media is uploaded to will be exclusive for this file.
@@ -348,22 +331,23 @@ CREATE TABLE media_files (
   KEY fk_maybe_origin_model_token (maybe_origin_model_token),
   KEY fk_maybe_origin_model_type_and_token (maybe_origin_model_type, maybe_origin_model_token),
   KEY index_maybe_batch_token (maybe_batch_token),
+  KEY index_maybe_source_job_token (maybe_source_job_token),
   KEY index_is_user_upload (is_user_upload),
   KEY index_is_intermediate_system_file (is_intermediate_system_file),
   KEY index_maybe_scene_source_media_file_token (maybe_scene_source_media_file_token),
-  KEY index_nsfw_status (nsfw_status),
   KEY index_media_type (media_type),
   KEY index_media_class (media_class),
+  KEY index_maybe_project_type (maybe_project_type),
   KEY index_maybe_engine_category (maybe_engine_category),
   KEY fk_maybe_prompt_token (maybe_prompt_token),
   KEY index_checksum_sha2 (checksum_sha2),
-  KEY index_is_in_aws (is_in_aws),
   KEY fk_maybe_creator_user_token (maybe_creator_user_token),
   KEY fk_maybe_mod_user_token (maybe_mod_user_token),
   KEY index_creator_ip_address (creator_ip_address),
   KEY index_user_deleted_at (user_deleted_at),
   KEY index_mod_deleted_at (mod_deleted_at),
   KEY index_media_files_created_at (created_at),
-  KEY index_media_files_updated_at (updated_at)
+  KEY index_media_files_updated_at (updated_at),
+  KEY idx_creator_created_at (maybe_creator_user_token, created_at)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

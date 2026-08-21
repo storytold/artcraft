@@ -4,5 +4,6 @@ pub mod cover_image_links_builder;
 pub mod media_domain;
 pub mod media_file_cover_image_details;
 pub mod media_file_cover_image_details_builder;
+pub mod media_file_list_conversion;
 pub mod media_links_builder;
 pub mod weights_cover_image_details;

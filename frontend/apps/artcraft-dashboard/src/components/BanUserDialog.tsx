@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   IconAlertCircle,
   IconBan,
@@ -127,17 +128,12 @@ export function BanUserDialog({
               <Label htmlFor="mod-notes" className="text-sm font-medium">
                 Moderator notes
               </Label>
-              <textarea
+              <Textarea
                 id="mod-notes"
                 rows={4}
                 placeholder="Reason for this action (required)"
                 value={modNotes}
                 onChange={(e) => setModNotes(e.target.value)}
-                className={cn(
-                  "w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none resize-none",
-                  "focus-visible:border-primary transition-colors",
-                  "placeholder:text-muted-foreground dark:bg-input/30",
-                )}
               />
               <p className="text-xs text-muted-foreground">
                 Recorded in the staff audit log.

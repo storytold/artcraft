@@ -120,6 +120,43 @@
   background-color: rgba(255, 255, 255, 0.35);
 }
 
+/* Hide the native resize grip (Chromium draws different grips for textareas
+   vs contenteditable divs) and draw one consistent grip on the wrapper so the
+   plain and @-mention prompt editors look identical. */
+.promptbox-scrollbar::-webkit-resizer {
+  background: transparent;
+  border: none;
+}
+
+.promptbox-resize-wrap {
+  position: relative;
+}
+
+.promptbox-resize-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 0.5) 45%,
+    transparent 45%,
+    transparent 55%,
+    rgba(255, 255, 255, 0.5) 55%,
+    rgba(255, 255, 255, 0.5) 60%,
+    transparent 60%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.5) 70%,
+    rgba(255, 255, 255, 0.5) 75%,
+    transparent 75%
+  );
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -252,4 +289,19 @@
   background: inherit;
   border-radius: inherit;
   z-index: -1;
+}
+
+/* Lucide icons ship with a fixed 24px default; size them relative to the
+   surrounding font so they scale with text like the previous icons did.
+   1.2em (not 1em) because Lucide draws glyphs on a 20px grid inside a 24px
+   viewBox — the extra 20% makes the visible mark fill a full 1em, matching
+   the old solid-glyph sizing. Explicit w-/h-/size- utilities still win
+   (the utilities layer is emitted later). */
+@layer base {
+  .lucide {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -0.2em;
+  }
 }

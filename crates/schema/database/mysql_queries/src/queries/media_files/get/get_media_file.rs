@@ -8,7 +8,6 @@ use chrono::{DateTime, Utc};
 use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::by_table::model_weights::weights_types::WeightsType;
@@ -38,8 +37,6 @@ pub struct MediaFile {
 
   pub maybe_engine_category: Option<MediaFileEngineCategory>,
   pub maybe_animation_type: Option<MediaFileAnimationType>,
-
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   pub maybe_mime_type: Option<String>,
 
@@ -133,8 +130,6 @@ pub struct MediaFileRaw {
 
   pub maybe_engine_category: Option<MediaFileEngineCategory>,
   pub maybe_animation_type: Option<MediaFileAnimationType>,
-
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   pub maybe_mime_type: Option<String>,
 
@@ -263,7 +258,6 @@ pub async fn get_media_file_with_transactor(
     maybe_engine_category: record.maybe_engine_category,
     maybe_animation_type: record.maybe_animation_type,
     media_class: record.media_class,
-    maybe_media_subtype: record.maybe_media_subtype,
     maybe_mime_type: record.maybe_mime_type,
     maybe_batch_token: record.maybe_batch_token,
     maybe_style_transfer_source_media_file_token: record.maybe_style_transfer_source_media_file_token,
@@ -326,8 +320,6 @@ SELECT
 
     m.maybe_engine_category as `maybe_engine_category: enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,
     m.maybe_animation_type as `maybe_animation_type: enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,
-
-    m.maybe_media_subtype as `maybe_media_subtype: enums::by_table::media_files::media_file_subtype::MediaFileSubtype`,
 
     m.maybe_mime_type,
 
@@ -449,8 +441,6 @@ SELECT
 
     m.maybe_engine_category as `maybe_engine_category: enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,
     m.maybe_animation_type as `maybe_animation_type: enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,
-
-    m.maybe_media_subtype as `maybe_media_subtype: enums::by_table::media_files::media_file_subtype::MediaFileSubtype`,
 
     m.maybe_mime_type,
 

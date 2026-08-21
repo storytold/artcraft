@@ -1,11 +1,10 @@
 import { Button } from "@storyteller/ui-button";
-import {
-  faApple,
-  faWindows,
-  faLinux,
-} from "@fortawesome/free-brands-svg-icons";
+import { AppleIcon, LinuxIcon, WindowsIcon } from "@storyteller/icons";
 import { isMobile, isWindows, isMacOs } from "react-device-detect";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 
 interface DownloadButtonProps {
   className?: string;
@@ -21,15 +20,17 @@ export const DownloadButton = ({ className = "" }: DownloadButtonProps) => {
   const getDownloadLink = () => {
     if (isWindows) return DOWNLOAD_LINKS.WINDOWS;
     if (isMacOs) return DOWNLOAD_LINKS.MACOS;
-    if (isLinux) return DOWNLOAD_LINKS.LINUX;
+    // No Linux build is published yet.
     return null;
   };
 
+  if (!DOWNLOADS_ENABLED) return null;
+
   const getIcon = () => {
     if (isMobile) return undefined;
-    if (isWindows) return faWindows;
-    if (isMacOs) return faApple;
-    if (isLinux) return faLinux;
+    if (isWindows) return WindowsIcon;
+    if (isMacOs) return AppleIcon;
+    if (isLinux) return LinuxIcon;
     return undefined;
   };
 

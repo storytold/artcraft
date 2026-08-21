@@ -1,7 +1,6 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCoins, faSpinner } from "@fortawesome/pro-solid-svg-icons";
+import { CoinsIcon, LoaderIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
 import {
   useCostBreakdownModalStore,
@@ -12,13 +11,13 @@ import {
   useSelectedModel,
   useSelectedProviderForModel,
   defaultModelForPage,
-  TEXT_TO_IMAGE_PAGE_MODEL_LIST,
-  IMAGE_TO_VIDEO_PAGE_MODEL_LIST,
-  CANVAS_2D_PAGE_MODEL_LIST,
-  STAGE_3D_PAGE_MODEL_LIST,
-  IMAGE_EDITOR_PAGE_MODEL_LIST,
+  useTextToImagePageModelList,
+  useImageToVideoPageModelList,
+  useCanvas2dPageModelList,
+  useStage3dPageModelList,
+  useImageEditorPageModelList,
+  useAnglesPageModelList,
   IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST,
-  ANGLES_PAGE_MODEL_LIST,
 } from "@storyteller/ui-model-selector";
 import {
   usePrompt2DStore,
@@ -49,41 +48,11 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   worldlabs: "World Labs",
 };
 
-// Get models list for a page
-const getModelsForPage = (page: ModelPage | null): Model[] => {
-  switch (page) {
-    case ModelPage.TextToImage:
-      return TEXT_TO_IMAGE_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    case ModelPage.ImageToVideo:
-      return IMAGE_TO_VIDEO_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    case ModelPage.Canvas2D:
-      return CANVAS_2D_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    case ModelPage.Stage3D:
-      return STAGE_3D_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    case ModelPage.ImageEditor:
-      return IMAGE_EDITOR_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    case ModelPage.ImageTo3DWorld:
-      return IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    case ModelPage.Angles:
-      return ANGLES_PAGE_MODEL_LIST.map((item) => item.model).filter(
-        (m): m is Model => m !== undefined,
-      );
-    default:
-      return [];
-  }
-};
+// Extract the concrete `Model` instances out of a page's selectable item list.
+const modelsFromList = (
+  list: { model?: Model }[],
+): Model[] =>
+  list.map((item) => item.model).filter((m): m is Model => m !== undefined);
 
 export interface CostBreakdownModalProps {
   /** The current active tab ID from the app (e.g. "IMAGE", "VIDEO", "2D", "3D") */
@@ -106,11 +75,47 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     return TAB_TO_MODEL_PAGE[activeTabId] ?? ModelPage.TextToImage;
   }, [activeTabId]);
 
+  // Backend-reconciled model lists per page (fall back to the overlay until the
+  // startup fetch completes).
+  const textToImageList = useTextToImagePageModelList();
+  const imageToVideoList = useImageToVideoPageModelList();
+  const canvas2dList = useCanvas2dPageModelList();
+  const stage3dList = useStage3dPageModelList();
+  const imageEditorList = useImageEditorPageModelList();
+  const anglesList = useAnglesPageModelList();
+
   // Get the selected model for the active page
   const selectedModelFromStore = useSelectedModel(activePage);
 
   // If no model selected in store, use the default for this page
-  const modelsForPage = getModelsForPage(activePage);
+  const modelsForPage = useMemo<Model[]>(() => {
+    switch (activePage) {
+      case ModelPage.TextToImage:
+        return modelsFromList(textToImageList);
+      case ModelPage.ImageToVideo:
+        return modelsFromList(imageToVideoList);
+      case ModelPage.Canvas2D:
+        return modelsFromList(canvas2dList);
+      case ModelPage.Stage3D:
+        return modelsFromList(stage3dList);
+      case ModelPage.ImageEditor:
+        return modelsFromList(imageEditorList);
+      case ModelPage.ImageTo3DWorld:
+        return modelsFromList(IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST);
+      case ModelPage.Angles:
+        return modelsFromList(anglesList);
+      default:
+        return [];
+    }
+  }, [
+    activePage,
+    textToImageList,
+    imageToVideoList,
+    canvas2dList,
+    stage3dList,
+    imageEditorList,
+    anglesList,
+  ]);
   const selectedModel =
     selectedModelFromStore ?? defaultModelForPage(modelsForPage, activePage);
 
@@ -273,8 +278,10 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const MODELS_WITH_COST_DATA = new Set([
     "flux_1_dev",
     "flux_1_schnell",
-    "flux_pro_11",
-    "flux_pro_11_ultra",
+    "flux_pro_11", // Legacy id
+    "flux_pro_1p1",
+    "flux_pro_11_ultra", // Legacy id
+    "flux_pro_1p1_ultra",
     "gpt_image_1p5",
     "gpt_image_2",
     "nano_banana",
@@ -312,7 +319,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       <DragHandle>
         <div className="flex items-center gap-2 pb-3 bg-ui-panel-header border-b border-ui-panel-border select-none">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-fg">
-            <FontAwesomeIcon icon={faCoins} className="text-white" />
+            <CoinsIcon  className="text-white" />
             Cost Breakdown
           </div>
         </div>
@@ -379,10 +386,9 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                 <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
                   {isEstimateLoading && isLiveEstimatePage ? (
                     <>
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        className="animate-spin text-base"
-                      />
+                      <LoaderIcon
+                        
+                        className="animate-spin text-base" />
                       <span className="text-base-fg/50 text-sm">
                         Calculating…
                       </span>

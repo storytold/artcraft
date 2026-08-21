@@ -9,6 +9,9 @@
       "path": "../../common"
     },
     {
+      "path": "../promptbox"
+    },
+    {
       "path": "../gallery-modal"
     },
     {
@@ -19,6 +22,9 @@
     },
     {
       "path": "../button"
+    },
+    {
+      "path": "../../icons"
     },
     {
       "path": "./tsconfig.lib.json"

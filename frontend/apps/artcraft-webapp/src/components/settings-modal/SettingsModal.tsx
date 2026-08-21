@@ -1,17 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCog,
-  faUser,
-  faKey,
-  faKeyboard,
-} from "@fortawesome/pro-solid-svg-icons";
+import { KeyIcon, KeyboardIcon, SettingsIcon, UserIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Switch } from "@storyteller/ui-switch";
 import { KeybindsSettings } from "@storyteller/keybinds";
-import { USER_FEATURE_FLAGS } from "@storyteller/api";
+import { useModelPickerStyleStore } from "@storyteller/ui-popover";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
+import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
 import { useSession } from "../../lib/session";
 import { AccountSection } from "./AccountSection";
 import { ApiKeySection } from "./ApiKeySection";
@@ -23,42 +19,21 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const BASE_TABS: { id: Tab; label: string; icon: typeof faCog }[] = [
-  { id: "general", label: "General", icon: faCog },
-  { id: "keybinds", label: "Keybinds", icon: faKeyboard },
-  { id: "account", label: "Account", icon: faUser },
+const TABS: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
+  { id: "general", label: "General", icon: SettingsIcon },
+  { id: "keybinds", label: "Keybinds", icon: KeyboardIcon },
+  { id: "account", label: "Account", icon: UserIcon },
+  { id: "apiKeys", label: "API Keys", icon: KeyIcon },
 ];
 
-const API_KEYS_TAB: { id: Tab; label: string; icon: typeof faCog } = {
-  id: "apiKeys",
-  label: "API Keys",
-  icon: faKey,
-};
-
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { user } = useSession();
   const [tab, setTab] = useState<Tab>("general");
-
-  const hasApiKeyFlag = !!user?.maybe_feature_flags?.includes(
-    USER_FEATURE_FLAGS.API_KEY,
-  );
-
-  const tabs = useMemo(
-    () => (hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
-    [hasApiKeyFlag],
-  );
 
   useEffect(() => {
     if (isOpen) setTab("general");
   }, [isOpen]);
 
-  // If the only-conditional tab disappears (e.g. flag revoked while open),
-  // fall back to a visible tab.
-  useEffect(() => {
-    if (!tabs.some((t) => t.id === tab)) setTab("general");
-  }, [tabs, tab]);
-
-  const activeLabel = tabs.find((t) => t.id === tab)?.label ?? "";
+  const activeLabel = TABS.find((t) => t.id === tab)?.label ?? "";
 
   return (
     <Modal
@@ -75,7 +50,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
             <hr className="my-2 hidden w-full border-ui-panel-border sm:block" />
             <div className="flex gap-2 overflow-x-auto pe-10 sm:block sm:space-y-1 sm:overflow-visible sm:pe-0">
-              {tabs.map((t) => (
+              {TABS.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
@@ -85,7 +60,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   )}
                 >
                   <div className="flex items-center gap-2.5 whitespace-nowrap text-sm">
-                    <FontAwesomeIcon icon={t.icon} />
+                    <DynamicIcon icon={t.icon} />
                     {t.label}
                   </div>
                 </button>
@@ -117,6 +92,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 function GeneralPanel() {
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
+  const lightboxSound = useLightboxSoundStore((s) => s.soundEnabled);
+  const setLightboxSound = useLightboxSoundStore((s) => s.setSoundEnabled);
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const setModelPickerStyle = useModelPickerStyleStore((s) => s.setStyle);
 
   return (
     <div className="space-y-4 text-base-fg">
@@ -132,6 +111,35 @@ function GeneralPanel() {
         <Switch
           enabled={enterToGenerate}
           setEnabled={setEnterToGenerate}
+          offClassName="bg-white/20"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Play videos with sound</p>
+          <p className="text-xs opacity-70">
+            When on (default), videos in the media viewer start unmuted so you
+            don't have to click unmute every time. When off, they start muted.
+          </p>
+        </div>
+        <Switch
+          enabled={lightboxSound}
+          setEnabled={setLightboxSound}
+          offClassName="bg-white/20"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Group models by family</p>
+          <p className="text-xs opacity-70">
+            When on (default), the model picker groups models into submenus by
+            family, like Seedance or Veo. When off, every model shows in one
+            flat list.
+          </p>
+        </div>
+        <Switch
+          enabled={modelPickerStyle === "grouped"}
+          setEnabled={(on) => setModelPickerStyle(on ? "grouped" : "flat")}
           offClassName="bg-white/20"
         />
       </div>

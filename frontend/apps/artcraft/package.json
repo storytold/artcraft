@@ -21,18 +21,11 @@
     "staging-build": "vite build",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint playground/* .",
     "typecheck": "tsc",
-    "update:icons": "npm update @awesome.me/kit-fde2be5eb0",
     "chromatic": "npx chromatic --project-token=chpt_0945f90d5d3626c",
     "prepare": "husky",
     "test": "jest"
   },
   "dependencies": {
-    "@awesome.me/kit-fde2be5eb0": "^1.0.7",
-    "@fortawesome/fontawesome-svg-core": "^6.5.1",
-    "@fortawesome/free-brands-svg-icons": "^6.5.2",
-    "@fortawesome/pro-regular-svg-icons": "^6.5.1",
-    "@fortawesome/pro-solid-svg-icons": "^6.5.1",
-    "@fortawesome/react-fontawesome": "^0.2.0",
     "@mediapipe/tasks-vision": "^0.10.20",
     "@preact/signals-react": "^2.0.1",
     "@radix-ui/react-tooltip": "^1.2.7",
@@ -75,7 +68,6 @@
     "tailwind-merge": "^2.2.2",
     "terser": "^5.30.3",
     "uuid": "^9.0.1",
-    "wavesurfer.js": "^7.7.11",
     "webm-writer": "^1.0.0"
   },
   "devDependencies": {

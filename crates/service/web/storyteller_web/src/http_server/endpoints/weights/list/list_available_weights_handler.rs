@@ -107,6 +107,7 @@ pub struct ModelWeightForList {
 
 #[derive(Debug,ToSchema)]
 pub enum ListWeightError {
+    BadInput,
     NotAuthorized,
     ServerError,
 }
@@ -120,6 +121,7 @@ impl std::fmt::Display for ListWeightError {
 impl ResponseError for ListWeightError {
     fn status_code(&self) -> StatusCode {
         match *self {
+            ListWeightError::BadInput => StatusCode::BAD_REQUEST,
             ListWeightError::NotAuthorized => StatusCode::UNAUTHORIZED,
             ListWeightError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -165,11 +167,10 @@ pub async fn list_available_weights_handler(
     let cursor_is_reversed = query.cursor_is_reversed.unwrap_or(false);
 
     let cursor = if let Some(cursor) = query.cursor.as_deref() {
+        // Cursors arrive from clients verbatim; garbage is bad input, not a
+        // server fault.
         let cursor = server_state.sort_key_crypto.decrypt_id(cursor)
-            .map_err(|e| {
-                warn!("crypto error: {:?}", e);
-                ListWeightError::ServerError
-            })?;
+            .map_err(|_| ListWeightError::BadInput)?;
         Some(cursor)
     } else {
         None

@@ -1,5 +1,4 @@
-import { faXmark } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 interface CloseButtonProps {
@@ -28,7 +27,7 @@ export const CloseButton = ({
         className
       )}
     >
-      <FontAwesomeIcon icon={faXmark} />
+      <XIcon />
     </button>
   );
 };

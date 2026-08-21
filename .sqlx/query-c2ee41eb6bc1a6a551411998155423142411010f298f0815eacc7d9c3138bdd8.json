@@ -1,0 +1,113 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  e.maybe_user_token AS `user_token!: UserToken`,\n  u.username AS `username!`,\n  u.display_name AS `display_name!`,\n  u.email_gravatar_hash AS `email_gravatar_hash!`,\n  CAST(SUM(CASE WHEN e.amount_usd_cents > 0 THEN e.amount_usd_cents ELSE 0 END) AS UNSIGNED) AS `gross_spend_usd_cents!: u64`,\n  CAST(SUM(CASE WHEN e.amount_usd_cents < 0 THEN -e.amount_usd_cents ELSE 0 END) AS UNSIGNED) AS `refund_usd_cents!: u64`,\n  CAST(SUM(e.amount_usd_cents) AS SIGNED) AS `net_spend_usd_cents!: i64`,\n  CAST(SUM(CASE WHEN e.amount_usd_cents > 0 THEN 1 ELSE 0 END) AS UNSIGNED) AS `payment_count!: u64`,\n  CAST(COALESCE(SUM(e.maybe_credits_granted), 0) AS UNSIGNED) AS `credits_granted!: u64`\nFROM user_spend_events e\nJOIN users u ON u.token = e.maybe_user_token\nWHERE e.maybe_user_token IS NOT NULL\n  AND e.is_production = TRUE\n  AND e.payment_occurred_at >= ?\n  AND (? IS NULL OR e.payments_namespace = ?)\nGROUP BY e.maybe_user_token, u.username, u.display_name, u.email_gravatar_hash\nORDER BY SUM(e.amount_usd_cents) DESC, e.maybe_user_token ASC\nLIMIT ? OFFSET ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "username!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "email_gravatar_hash!",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "gross_spend_usd_cents!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "refund_usd_cents!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "net_spend_usd_cents!: i64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "payment_count!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "credits_granted!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "c2ee41eb6bc1a6a551411998155423142411010f298f0815eacc7d9c3138bdd8"
+}

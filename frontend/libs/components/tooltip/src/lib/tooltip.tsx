@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useReducer } from "react";
+import { createPortal } from "react-dom";
 import { Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 
@@ -25,6 +26,16 @@ interface TooltipProps {
    * when the tooltip is inside an overflow-hidden / overflow-auto container.
    */
   strategy?: "absolute" | "fixed";
+  /**
+   * Render the tooltip in a document.body portal (implies fixed positioning).
+   * Use when the trigger sits inside its own stacking context (backdrop-blur
+   * "glass" surfaces, transformed ancestors) that would otherwise paint the
+   * tooltip below overlays like the sidebar — no zIndex can escape that from
+   * inside. Pair with a high `zIndex`; the portal root is marked
+   * `data-modal-outside-safe` so clicks in it don't count as outside clicks
+   * for the shared Modal.
+   */
+  portal?: boolean;
 }
 
 export const Tooltip = ({
@@ -41,6 +52,7 @@ export const Tooltip = ({
   zIndex = 10,
   disabled = false,
   strategy = "absolute",
+  portal = false,
 }: TooltipProps) => {
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -159,10 +171,16 @@ export const Tooltip = ({
     let current = triggerRef.current.parentElement;
     while (current && current !== document.body) {
       const cs = getComputedStyle(current);
+      // backdrop-filter also establishes a containing block for position:fixed
+      // in Chromium/WebKit (our glass surfaces use backdrop-blur), so a fixed
+      // tooltip inside one would otherwise be positioned/clipped incorrectly.
+      const backdropFilter =
+        cs.backdropFilter || (cs as unknown as Record<string, string>)["webkitBackdropFilter"];
       if (
         cs.transform !== "none" ||
         cs.willChange === "transform" ||
-        (cs.filter && cs.filter !== "none")
+        (cs.filter && cs.filter !== "none") ||
+        (backdropFilter && backdropFilter !== "none")
       ) {
         const r = current.getBoundingClientRect();
         return { x: r.left, y: r.top };
@@ -178,16 +196,29 @@ export const Tooltip = ({
     estWidth: number,
     padding: number,
   ): React.CSSProperties => {
-    const offset = getContainingBlockOffset();
+    // A body portal has no transformed/filtered ancestor to compensate for.
+    const offset = portal ? { x: 0, y: 0 } : getContainingBlockOffset();
     const GAP = 10;
 
     switch (position) {
-      case "top":
+      case "top": {
+        const centerX = rect.left + rect.width / 2;
+        const halfWidth = estWidth / 2;
+        let translateX = "-50%";
+
+        if (centerX - halfWidth < padding) {
+          const diff = padding - (centerX - halfWidth);
+          translateX = `calc(-50% + ${diff}px)`;
+        } else if (centerX + halfWidth > vw - padding) {
+          const diff = centerX + halfWidth - (vw - padding);
+          translateX = `calc(-50% - ${diff}px)`;
+        }
         return {
           top: rect.top - offset.y - GAP,
-          left: rect.left + rect.width / 2 - offset.x,
-          transform: "translate(-50%, -100%)",
+          left: centerX - offset.x,
+          transform: `translate(${translateX}, -100%)`,
         };
+      }
       case "bottom": {
         const centerX = rect.left + rect.width / 2;
         const halfWidth = estWidth / 2;
@@ -234,7 +265,7 @@ export const Tooltip = ({
       if (currentWidth > 0) estWidth = currentWidth;
     }
 
-    return strategy === "fixed"
+    return strategy === "fixed" || portal
       ? getFixedStyle(rect, vw, estWidth, padding)
       : getAbsoluteStyle(rect, vw, estWidth, padding);
   };
@@ -263,43 +294,59 @@ export const Tooltip = ({
     onOpenChange?.(isShowing);
   }, [isShowing, onOpenChange]);
 
-  const isFixed = strategy === "fixed";
+  // Force-dismiss when the trigger may have moved out from under the cursor
+  // without firing a pointerleave: window/focus loss (e.g. a tab/route change
+  // that re-renders the element under the pointer) and component unmount. Without
+  // this the tooltip stays stuck open until the user manually hovers + leaves.
+  useEffect(() => {
+    const forceClose = () => {
+      setIsHoveringTrigger(false);
+      setIsHoveringTooltip(false);
+      setIsShowing(false);
+    };
+    window.addEventListener("blur", forceClose);
+    document.addEventListener("visibilitychange", forceClose);
+    return () => {
+      window.removeEventListener("blur", forceClose);
+      document.removeEventListener("visibilitychange", forceClose);
+      forceClose();
+    };
+  }, []);
 
-  return (
-    <div
-      ref={triggerRef}
-      onMouseEnter={() => {
-        setIsHoveringTrigger(true);
-        if (!checkForOpenPopovers() && !disabled) {
-          setIsShowing(true);
-        }
-      }}
-      onMouseLeave={() => {
-        setIsHoveringTrigger(false);
-        if (!interactive) {
-          setIsShowing(false);
-        }
-      }}
-      onClick={handleClick}
-      className="relative"
+  const isFixed = strategy === "fixed" || portal;
+
+  // A portaled tooltip positions off a snapshot of the trigger's viewport
+  // rect — re-render on scroll/resize while showing so it tracks the trigger
+  // instead of floating where it used to be.
+  const [, bumpReposition] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!portal || !isShowing) return;
+    window.addEventListener("scroll", bumpReposition, true);
+    window.addEventListener("resize", bumpReposition);
+    return () => {
+      window.removeEventListener("scroll", bumpReposition, true);
+      window.removeEventListener("resize", bumpReposition);
+    };
+  }, [portal, isShowing]);
+
+  const tooltipPanel = (
+    <Transition
+      show={isShowing}
+      enter={twMerge(
+        "transition ease-out duration-200",
+        delay ? `delay-[${delay}ms]` : "delay-[300ms]",
+      )}
+      enterFrom="opacity-0"
+      enterTo="opacity-100"
+      leave="transition ease-in duration-150"
+      leaveFrom="opacity-100"
+      leaveTo="opacity-0"
     >
-      {children}
-      <Transition
-        show={isShowing}
-        enter={twMerge(
-          "transition ease-out duration-200",
-          delay ? `delay-[${delay}ms]` : "delay-[300ms]",
-        )}
-        enterFrom="opacity-0"
-        enterTo="opacity-100"
-        leave="transition ease-in duration-150"
-        leaveFrom="opacity-100"
-        leaveTo="opacity-0"
-      >
         <div
           ref={setTooltipRef}
-          onMouseEnter={() => interactive && setIsHoveringTooltip(true)}
-          onMouseLeave={() => interactive && setIsHoveringTooltip(false)}
+          {...(portal ? { "data-modal-outside-safe": "" } : {})}
+          onPointerEnter={() => interactive && setIsHoveringTooltip(true)}
+          onPointerLeave={() => interactive && setIsHoveringTooltip(false)}
           onClick={() => {
             if (closeOnClick) {
               setIsShowing(false);
@@ -343,7 +390,39 @@ export const Tooltip = ({
             </div>
           )}
         </div>
-      </Transition>
+    </Transition>
+  );
+
+  return (
+    <div
+      ref={triggerRef}
+      onPointerEnter={() => {
+        setIsHoveringTrigger(true);
+        if (!checkForOpenPopovers() && !disabled) {
+          setIsShowing(true);
+        }
+      }}
+      onPointerLeave={() => {
+        setIsHoveringTrigger(false);
+        if (!interactive) {
+          setIsShowing(false);
+        }
+      }}
+      onPointerCancel={() => {
+        setIsHoveringTrigger(false);
+        setIsHoveringTooltip(false);
+        setIsShowing(false);
+      }}
+      onBlur={() => {
+        setIsHoveringTrigger(false);
+        setIsHoveringTooltip(false);
+        setIsShowing(false);
+      }}
+      onClick={handleClick}
+      className="relative"
+    >
+      {children}
+      {portal ? createPortal(tooltipPanel, document.body) : tooltipPanel}
     </div>
   );
 };

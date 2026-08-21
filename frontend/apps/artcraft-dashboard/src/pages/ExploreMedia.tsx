@@ -26,7 +26,8 @@ const MEDIA_CLASS_OPTIONS = [
   { value: "", label: "All" },
   { value: "image", label: "Image" },
   { value: "video", label: "Video" },
-  { value: "dimensional", label: "3D" },
+  { value: "mesh", label: "Meshes" },
+  { value: "splat", label: "Splats" },
 ] as const;
 
 const PAGE_SIZE = 24;
@@ -74,7 +75,8 @@ export function ExploreMedia() {
         const resp = await api.ListMediaFiles({
           page_size: PAGE_SIZE,
           cursor,
-          filter_media_classes: filterMediaClasses || "image,video,dimensional",
+          filter_media_classes:
+            filterMediaClasses || "image,video,mesh,splat,dimensional",
           filter_media_type: filterMediaType || undefined,
           include_user_uploads: includeUserUploads || undefined,
         });

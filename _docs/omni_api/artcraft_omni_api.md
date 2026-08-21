@@ -1,5 +1,10 @@
 # ArtCraft Omni API
 
+> # 📚 Full API reference: **<https://storyteller-docs.netlify.app/>**
+>
+> **Every ArtCraft API endpoint is documented there.** This guide covers only the Omni API video
+> endpoints — for everything else, start at the link above.
+
 The **Omni API** is the API-key–authenticated surface for ArtCraft generation. It mirrors the
 in-app "Omni Gen" endpoints but is designed for programmatic use: you authenticate with an API key
 in the `Authorization` header instead of a browser session cookie.
@@ -25,43 +30,21 @@ All paths below are relative to the base URL (e.g. `POST /v1/omni_api/generate/v
 The examples in this guide use the **development** base URL. To run against production, swap
 `http://localhost:12345` for `https://api.storyteller.ai`.
 
+Note: Our APIs are hosted on "`api.storyteller.ai`", not "`api.getartcraft.com`". This is not a 
+typo. Our Cloudflare CDN URLs are `cdn-2.fakeyou.com`.
+
 ---
 
 ## Getting an API key
 
-API keys are created from a logged-in session. You only need to do this once; store the key
-somewhere safe.
+Create and manage API keys from the ArtCraft web app:
 
-1. **Log in** to obtain a session (browser, or the `/v1/login` endpoint).
-2. **Create a key** by calling `POST /v1/api_keys/create` with your session:
+1. Go to **<https://app.getartcraft.com/>**
+2. Click **Account → Settings → API Keys** (your account must have API keys enabled from our staff)
+3. Create a key and copy it. The secret is shown **once** — store it somewhere safe.
 
-   ```bash
-   curl -s -c /tmp/cookies.txt -X POST http://localhost:12345/v1/login \
-     -H "Content-Type: application/json" \
-     -d '{"username_or_email":"YOUR_USERNAME","password":"YOUR_PASSWORD"}'
-
-   curl -s -b /tmp/cookies.txt -X POST http://localhost:12345/v1/api_keys/create \
-     -H "Content-Type: application/json" \
-     -d '{"name":"my-integration","maybe_description":"server-to-server video gen"}'
-   ```
-
-   The response returns the secret **once** — it can never be retrieved again:
-
-   ```json
-   {
-     "success": true,
-     "api_key_token": "api_key_xxxxxxxxxxxxxxxxxxxxxxxxx",
-     "api_key": "artcraft_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   }
-   ```
-
-   - `api_key` — the **secret**. Store it now; treat it like a password. This is the value you put
-     in the `Authorization` header.
-   - `api_key_token` — a non-secret handle (prefix `api_key_`) used to manage the key later
-     (get / update / delete). Safe to log and store.
-
-> **403 Forbidden when creating a key?** API-key creation is gated per account. Contact the
-> Storyteller team to enable API access for your account.
+> **Don't see the API Keys section?** API access is gated per account. Contact the Artcraft team
+> to enable it.
 
 ### What an API key looks like
 
@@ -69,7 +52,7 @@ somewhere safe.
 - Followed by 40 random lowercase Crockford-base32 characters (`0-9 a-z`, excluding `i l o u`)
 - Total length: **53 characters**, e.g. `artcraft_api_3k7q9w0xv2hs5n8m4d6r1t8y0p2s4f6h8j0k2m4n6`
 
-Never commit a key to source control or paste it into logs.
+Treat the key like a password: never commit it to source control or paste it into logs.
 
 ---
 
@@ -408,6 +391,223 @@ const resp = await fetch(`${BASE_URL}/v1/omni_api/generate/video`, {
 });
 
 console.log(resp.status, await resp.json());
+```
+
+---
+
+## Checking job status
+
+Generation is asynchronous. The generate call returns an `inference_job_token`; poll the job-status
+endpoint until the job reaches a terminal state, then read the result URL.
+
+### Endpoints
+
+- **Single job:** `GET /v1/omni_api/job_status/job/{token}`
+- **Batch (many jobs):** `GET /v1/omni_api/job_status/batch?tokens=jinf_aaa&tokens=jinf_bbb`
+
+Both require the same `Authorization: Bearer …` header (no cookies).
+
+### Response shape
+
+```json
+{
+  "success": true,
+  "state": {
+    "job_token": "jinf_xxxxxxxxxxxxxxxxxxxxxxxxx",
+    "request": {
+      "inference_category": "video_generation",
+      "maybe_prompt_token": "prompt_xxxxxxxxxxxxxxxxxxxxxxxxx",
+      "maybe_model_type": "seedance_2p0",
+      "maybe_model_token": null
+    },
+    "status": {
+      "status": "pending",
+      "maybe_first_started_at": null,
+      "maybe_failure_category": null,
+      "progress_percentage": 0
+    },
+    "maybe_result": null,
+    "created_at": "2026-06-24T04:06:14Z",
+    "updated_at": "2026-06-24T04:06:14Z"
+  }
+}
+```
+
+- `state.status.status` — the job state. Keep polling while it's `pending`, `started`, or
+  `attempt_failed`. **Terminal** states are `complete_success`, `complete_failure`, `dead`,
+  `cancelled_by_user`, and `cancelled_by_system`.
+- `state.status.progress_percentage` — an integer 0–100.
+- `state.maybe_result` — `null` until the job succeeds. On `complete_success` it contains the
+  finished media; the playable/downloadable URL is **`state.maybe_result.media_links.cdn_url`**.
+  For video, `media_links.maybe_video_previews` also carries still/animated preview URLs.
+
+The batch endpoint returns `{ "success": true, "job_states": [ … ] }` where each entry is the same
+`state` payload as above.
+
+### Where the result video / image lives
+
+When `state.status.status` is `complete_success`, the finished media is under `state.maybe_result`:
+
+- **`state.maybe_result.media_links.cdn_url`** — the primary, playable/downloadable URL of the
+  finished asset. **This is the field you want.** For a video job it's the `.mp4`; for an image job
+  it's the image file (`.jpg` / `.png` / etc.).
+- `state.maybe_result.entity_token` — the `m_…` media-file token for the result.
+- `state.maybe_result.media_links.maybe_video_previews` — **video jobs only**. Contains a `still`
+  (poster `.jpg`) and an `animated` (`.gif`) preview URL, plus `{WIDTH}` thumbnail templates. This
+  is `null` for image jobs.
+- `state.maybe_result.media_links.maybe_thumbnail_template` — **image jobs only**. A URL template;
+  replace `{WIDTH}` with a pixel width to fetch a resized thumbnail. `null` for video jobs.
+
+**Example — completed video job:**
+
+```json
+{
+  "success": true,
+  "state": {
+    "job_token": "jinf_9fcn2qv4dv3vvbrrxbnmfgen06v",
+    "request": {
+      "inference_category": "video_generation",
+      "maybe_prompt_token": "prompt_q53tp4rh97qh8q159p21tazzt",
+      "maybe_model_type": "seedance_2p0",
+      "maybe_model_token": null
+    },
+    "status": {
+      "status": "complete_success",
+      "maybe_first_started_at": "2026-06-24T04:07:11Z",
+      "maybe_failure_category": null,
+      "progress_percentage": 100
+    },
+    "maybe_result": {
+      "entity_type": "media_file",
+      "entity_token": "m_ss682134tx19yhqs5y0nbnd0bd59a6",
+      "media_links": {
+        "cdn_url": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4",
+        "maybe_thumbnail_template": null,
+        "maybe_video_previews": {
+          "still": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb.jpg",
+          "animated": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb.gif",
+          "still_thumbnail_template": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb-{WIDTH}.jpg",
+          "animated_thumbnail_template": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb-{WIDTH}.gif"
+        }
+      },
+      "maybe_successfully_completed_at": "2026-06-24T04:17:30Z"
+    },
+    "created_at": "2026-06-24T04:06:14Z",
+    "updated_at": "2026-06-24T04:17:30Z"
+  }
+}
+```
+
+→ The video is at
+`https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4`
+(example, not a live URL).
+
+**Example — completed image job** (from `POST /v1/omni_api/generate/image`):
+
+```json
+{
+  "maybe_result": {
+    "entity_type": "media_file",
+    "entity_token": "m_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6",
+    "media_links": {
+      "cdn_url": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/3/k/q/9/w/3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6/artcraft_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6.jpg",
+      "maybe_thumbnail_template": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/3/k/q/9/w/3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6/artcraft_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6.jpg-thumb-{WIDTH}.jpg",
+      "maybe_video_previews": null
+    },
+    "maybe_successfully_completed_at": "2026-06-24T04:09:02Z"
+  }
+}
+```
+
+→ The image is at
+`https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/3/k/q/9/w/3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6/artcraft_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6.jpg`
+(example, not a live URL).
+
+### Poll until complete
+
+#### bash
+
+```bash
+JOB_TOKEN="jinf_xxxxxxxxxxxxxxxxxxxxxxxxx"
+
+while :; do
+  resp=$(curl -s "http://localhost:12345/v1/omni_api/job_status/job/$JOB_TOKEN" \
+    -H "Authorization: Bearer YOUR_API_KEY")
+  status=$(echo "$resp" | python3 -c "import sys,json;print(json.load(sys.stdin)['state']['status']['status'])")
+  echo "status=$status"
+  case "$status" in
+    complete_success)
+      echo "$resp" | python3 -c "import sys,json;print(json.load(sys.stdin)['state']['maybe_result']['media_links']['cdn_url'])"
+      break ;;
+    complete_failure|dead|cancelled_by_user|cancelled_by_system)
+      echo "job ended without a result: $status"; break ;;
+  esac
+  sleep 5
+done
+```
+
+#### python
+
+```python
+import time
+import requests
+
+BASE_URL = "http://localhost:12345"  # production: https://api.storyteller.ai
+API_KEY = "YOUR_API_KEY"
+JOB_TOKEN = "jinf_xxxxxxxxxxxxxxxxxxxxxxxxx"
+
+TERMINAL_FAILURES = {"complete_failure", "dead", "cancelled_by_user", "cancelled_by_system"}
+
+while True:
+    resp = requests.get(
+        f"{BASE_URL}/v1/omni_api/job_status/job/{JOB_TOKEN}",
+        headers={"Authorization": f"Bearer {API_KEY}"},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    state = resp.json()["state"]
+    status = state["status"]["status"]
+    print("status:", status, state["status"]["progress_percentage"], "%")
+
+    if status == "complete_success":
+        print("result URL:", state["maybe_result"]["media_links"]["cdn_url"])
+        break
+    if status in TERMINAL_FAILURES:
+        print("job ended without a result:", status)
+        break
+    time.sleep(5)
+```
+
+#### javascript
+
+```javascript
+const BASE_URL = "http://localhost:12345"; // production: https://api.storyteller.ai
+const API_KEY = "YOUR_API_KEY";
+const JOB_TOKEN = "jinf_xxxxxxxxxxxxxxxxxxxxxxxxx";
+
+const TERMINAL_FAILURES = new Set([
+  "complete_failure", "dead", "cancelled_by_user", "cancelled_by_system",
+]);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+while (true) {
+  const resp = await fetch(`${BASE_URL}/v1/omni_api/job_status/job/${JOB_TOKEN}`, {
+    headers: { Authorization: `Bearer ${API_KEY}` },
+  });
+  const { state } = await resp.json();
+  const status = state.status.status;
+  console.log("status:", status, state.status.progress_percentage, "%");
+
+  if (status === "complete_success") {
+    console.log("result URL:", state.maybe_result.media_links.cdn_url);
+    break;
+  }
+  if (TERMINAL_FAILURES.has(status)) {
+    console.log("job ended without a result:", status);
+    break;
+  }
+  await sleep(5000);
+}
 ```
 
 ---

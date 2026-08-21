@@ -1,6 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { CircleAlertIcon, XIcon } from "lucide-react";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 import { CopyPromptButton } from "./CopyPromptButton";
 
@@ -47,10 +46,9 @@ export const FailedRow = memo(function FailedRow({
             className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-10"
           />
         )}
-        <FontAwesomeIcon
-          icon={faCircleExclamation}
-          className="relative text-2xl text-red-400"
-        />
+        <CircleAlertIcon
+          
+          className="relative text-2xl text-red-400" />
       </div>
 
       {/* Reason + prompt + model */}
@@ -91,7 +89,7 @@ export const FailedRow = memo(function FailedRow({
         onClick={() => onDismiss(id)}
         className="flex shrink-0 items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
       >
-        <FontAwesomeIcon icon={faXmark} />
+        <XIcon />
         Dismiss
       </button>
     </div>

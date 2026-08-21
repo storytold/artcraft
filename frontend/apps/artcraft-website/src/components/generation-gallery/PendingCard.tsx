@@ -1,7 +1,6 @@
 import { memo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { LoaderCircleIcon } from "lucide-react";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 export interface PendingCardProps {
   id: string;
@@ -41,7 +40,7 @@ export const PendingCard = memo(function PendingCard({
       ? formatTimeLeft(estimatedTimeLeftMs)
       : null;
 
-  const iconPath = getModelCreatorIconPath(modelId);
+  const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]">
@@ -52,10 +51,9 @@ export const PendingCard = memo(function PendingCard({
         </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
-          className="animate-spin text-2xl text-white/20"
-        />
+        <LoaderCircleIcon
+          
+          className="animate-spin text-2xl text-white/20" />
         {progressPercent != null && (
           <span className="text-xs tabular-nums text-white/40">
             {progressPercent}%

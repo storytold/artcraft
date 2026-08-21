@@ -202,6 +202,7 @@ async fn upload_and_save_image(
       .maybe_creator_user(inference_job.user_details.maybe_creator_user_token.as_ref())
       .maybe_creator_anonymous_visitor(inference_job.user_details.maybe_creator_anonymous_visitor_token.as_ref())
       .creator_ip_address(&inference_job.user_details.creator_ip_address)
+      .maybe_source_job_token(Some(&inference_job.job_token))
       .public_bucket_directory_hash(&bucket_upload_path)
       .media_file_class(MediaFileClass::Image)
       .media_file_type(media_file_type)

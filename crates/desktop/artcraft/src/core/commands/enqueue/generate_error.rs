@@ -234,10 +234,11 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::ProviderBillingError(err) => {
         let provider = match err {
           ProviderError::Fal(_) => BillingProvider::Fal,
-          ProviderError::Seedance2Pro(_) => BillingProvider::Kinovi,
+          ProviderError::KinoviWeb(_) => BillingProvider::Kinovi,
           ProviderError::Storyteller(_) => BillingProvider::Artcraft,
           ProviderError::GmiCloud(_) => BillingProvider::Artcraft,
           ProviderError::Grok(_) => BillingProvider::Artcraft,
+          ProviderError::WorldLabs(_) => BillingProvider::Artcraft,
         };
         Self::BillingIssue(BillingIssueReason { provider })
       },
@@ -245,7 +246,10 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
       ArtcraftRouterError::Provider(ProviderError::GmiCloud(_)) => Self::ArtcraftRouterNotYetSupportedProvider("gmicloud"),
       ArtcraftRouterError::Provider(ProviderError::Grok(_)) => Self::ArtcraftRouterNotYetSupportedProvider("grok_api"),
-      ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(_)) => Self::ArtcraftRouterNotYetSupportedProvider("seedance2pro"),
+      ArtcraftRouterError::Provider(ProviderError::KinoviWeb(_)) => Self::ArtcraftRouterNotYetSupportedProvider("kinovi_web"),
+      // NB: the desktop app reaches World Labs through the Artcraft backend; the router's
+      // direct World Labs provider isn't used here.
+      ArtcraftRouterError::Provider(ProviderError::WorldLabs(_)) => Self::ArtcraftRouterNotYetSupportedProvider("world_labs"),
       ArtcraftRouterError::UnsupportedModel(model) => Self::NotYetImplemented(format!("Unsupported model: {}", model)),
       ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(message) => Self::ArtcraftRouterNotYetSupportedProvider("unsupported model for new router API"),
     }

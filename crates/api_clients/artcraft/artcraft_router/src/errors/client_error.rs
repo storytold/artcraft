@@ -9,7 +9,8 @@ pub enum ClientType {
   Fal,
   GmiCloud,
   GrokApi,
-  Seedance2Pro,
+  KinoviWeb,
+  WorldLabs,
 }
 
 impl Display for ClientType {
@@ -19,7 +20,8 @@ impl Display for ClientType {
       Self::Fal => write!(f, "Fal"),
       Self::GmiCloud => write!(f, "GmiCloud"),
       Self::GrokApi => write!(f, "GrokApi"),
-      Self::Seedance2Pro => write!(f, "Seedance2Pro"),
+      Self::KinoviWeb => write!(f, "KinoviWeb"),
+      Self::WorldLabs => write!(f, "WorldLabs"),
     }
   }
 }
@@ -45,8 +47,8 @@ pub enum ClientError {
   /// Fal only accepts image URLs for image inputs, not media tokens.
   FalOnlySupportsUrls,
 
-  /// Seedance2Pro only accepts URLs for media inputs, not media tokens.
-  Seedance2ProOnlySupportsUrls,
+  /// KinoviWeb only accepts URLs for media inputs, not media tokens.
+  KinoviWebOnlySupportsUrls,
 
   /// The Fal endpoint requires a webhook URL but the caller built the client
   /// in polling/queue mode (no webhook URL). Returned by webhook-only
@@ -89,8 +91,8 @@ impl Display for ClientError {
       Self::FalOnlySupportsUrls => {
         write!(f, "Fal only supports image URLs for image inputs, not media tokens")
       }
-      Self::Seedance2ProOnlySupportsUrls => {
-        write!(f, "Seedance2Pro only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
+      Self::KinoviWebOnlySupportsUrls => {
+        write!(f, "KinoviWeb only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
       }
       Self::WebhookUrlRequired => {
         write!(f, "This Fal endpoint only supports webhook dispatch; the caller built RouterFalClient in polling-only mode (no webhook URL)")

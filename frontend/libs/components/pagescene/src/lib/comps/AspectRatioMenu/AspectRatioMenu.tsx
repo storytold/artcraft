@@ -1,96 +1,60 @@
-import {
-  faRectangle,
-  faRectangleVertical,
-  faSquare,
-} from "@fortawesome/pro-solid-svg-icons";
 import { useContext } from "react";
+import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
+import { AspectRatioIcon } from "@storyteller/ui-promptbox";
 import { CameraAspectRatio } from "../../enums";
 import { setCameraAspect } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { EngineContext } from "../../contexts/EngineContext";
-import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 
-const ICON_BY_RATIO: Record<CameraAspectRatio, typeof faRectangle> = {
-  [CameraAspectRatio.HORIZONTAL_16_9]: faRectangle,
-  [CameraAspectRatio.VERTICAL_9_16]: faRectangleVertical,
-  [CameraAspectRatio.HORIZONTAL_3_2]: faRectangle,
-  [CameraAspectRatio.VERTICAL_2_3]: faRectangleVertical,
-  [CameraAspectRatio.SQUARE_1_1]: faSquare,
-};
+// Render-frame aspect ratio picker. Same popover pattern as the prompt
+// boxes' AspectRatioPicker, but driving the 3D editor's camera letterbox
+// (CameraAspectRatio) instead of a generation model's ratio list.
 
-const LABEL_BY_RATIO: Record<CameraAspectRatio, string> = {
-  [CameraAspectRatio.HORIZONTAL_16_9]: "16:9 Horizontal",
-  [CameraAspectRatio.VERTICAL_9_16]: "9:16 Vertical",
-  [CameraAspectRatio.HORIZONTAL_3_2]: "3:2 Horizontal",
-  [CameraAspectRatio.VERTICAL_2_3]: "2:3 Vertical",
-  [CameraAspectRatio.SQUARE_1_1]: "1:1 Squared",
-};
+interface RatioOption {
+  ratio: CameraAspectRatio;
+  label: string;
+  proportions: [number, number];
+}
+
+const RATIO_OPTIONS: RatioOption[] = [
+  { ratio: CameraAspectRatio.HORIZONTAL_16_9, label: "16:9", proportions: [16, 9] },
+  { ratio: CameraAspectRatio.HORIZONTAL_3_2, label: "3:2", proportions: [3, 2] },
+  { ratio: CameraAspectRatio.SQUARE_1_1, label: "1:1", proportions: [1, 1] },
+  { ratio: CameraAspectRatio.VERTICAL_2_3, label: "2:3", proportions: [2, 3] },
+  { ratio: CameraAspectRatio.VERTICAL_9_16, label: "9:16", proportions: [9, 16] },
+];
 
 export const AspectRatioMenu = () => {
   const aspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const editor = useContext(EngineContext);
 
-  const handleChangeAspectRatio = (newRatio: CameraAspectRatio) => {
-    if (!editor) return;
-    setCameraAspect(editor, newRatio);
+  const current =
+    RATIO_OPTIONS.find((o) => o.ratio === aspect) ?? RATIO_OPTIONS[0];
+
+  const items: PopoverItem[] = RATIO_OPTIONS.map((option) => ({
+    label: option.label,
+    selected: option.ratio === aspect,
+    icon: <AspectRatioIcon ratio={option.proportions} />,
+  }));
+
+  const handleSelect = (item: PopoverItem) => {
+    const option = RATIO_OPTIONS.find((o) => o.label === item.label);
+    if (option && editor) setCameraAspect(editor, option.ratio);
   };
 
   return (
-    <div className="absolute right-0 top-0 m-2 flex flex-col items-end">
-      <ButtonDropdown
-        label={LABEL_BY_RATIO[aspect]}
-        className="shadow-xl"
-        icon={ICON_BY_RATIO[aspect]}
-        align="right"
-        showSelected={true}
-        options={[
-          {
-            label: "16:9",
-            icon: faRectangle,
-            className: "pl-4",
-            description: "Horizontal",
-            selected: aspect === CameraAspectRatio.HORIZONTAL_16_9,
-            onClick: () =>
-              handleChangeAspectRatio(CameraAspectRatio.HORIZONTAL_16_9),
-          },
-          {
-            label: "3:2",
-            icon: faRectangle,
-            className: "pl-4",
-            description: "Horizontal",
-            selected: aspect === CameraAspectRatio.HORIZONTAL_3_2,
-            onClick: () =>
-              handleChangeAspectRatio(CameraAspectRatio.HORIZONTAL_3_2),
-          },
-          {
-            label: "2:3",
-            icon: faRectangleVertical,
-            className: "pl-4",
-            description: "Vertical",
-            selected: aspect === CameraAspectRatio.VERTICAL_2_3,
-            onClick: () =>
-              handleChangeAspectRatio(CameraAspectRatio.VERTICAL_2_3),
-          },
-          {
-            label: "9:16",
-            icon: faRectangleVertical,
-            className: "pl-4",
-            description: "Vertical",
-            selected: aspect === CameraAspectRatio.VERTICAL_9_16,
-            onClick: () =>
-              handleChangeAspectRatio(CameraAspectRatio.VERTICAL_9_16),
-          },
-          {
-            label: "1:1",
-            icon: faSquare,
-            className: "pl-4",
-            description: "Squared",
-            selected: aspect === CameraAspectRatio.SQUARE_1_1,
-            onClick: () =>
-              handleChangeAspectRatio(CameraAspectRatio.SQUARE_1_1),
-          },
-        ]}
+    <Tooltip content="Aspect ratio" position="bottom" delay={300} closeOnClick>
+      <PopoverMenu
+        items={items}
+        onSelect={handleSelect}
+        mode="toggle"
+        position="bottom"
+        panelTitle="Aspect Ratio"
+        showIconsInList
+        buttonClassName="glass glass-no-hover h-[34px] rounded-full px-3 text-xs font-medium shadow-xl"
+        triggerIcon={<AspectRatioIcon ratio={current.proportions} />}
       />
-    </div>
+    </Tooltip>
   );
 };

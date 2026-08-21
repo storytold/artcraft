@@ -5,20 +5,24 @@ use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
-use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use artcraft_router::client::router_kinovi_web_client::RouterKinoviWebClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_provider_request_debug_log, provider_request_debug_log_type, GenerationDebugLogContext,
+};
 use crate::http_server::endpoints::omni_api::generate::image::pipeline_result::ImagePipelineResult;
-use crate::http_server::endpoints::omni_api::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
+use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_api::shared_utils::map_kinovi_web_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
 
@@ -27,6 +31,12 @@ pub struct RunPipelineV2Args<'a> {
   pub server_state: &'a ServerState,
   pub user_token: &'a UserToken,
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
+  pub kinovi_account: KinoviAccount,
+  pub debug_log_context: &'a GenerationDebugLogContext<'a>,
+  /// The handler's open connection. The pipeline uses it for its remaining
+  /// pre-request DB writes (billing, outbound-request debug log) and releases
+  /// it BEFORE the external provider call.
+  pub mysql_connection: sqlx::pool::PoolConnection<sqlx::MySql>,
 }
 
 // NB: This pipeline does an external generation call (`finalize_and_generate`) that can take many
@@ -41,6 +51,9 @@ pub async fn run_pipeline_v2(
     server_state,
     user_token,
     resolved_media,
+    kinovi_account,
+    debug_log_context,
+    mut mysql_connection,
   } = args;
 
   let hydrated_builder = apply_hydrated_media_inputs(
@@ -57,25 +70,37 @@ pub async fn run_pipeline_v2(
   let apriori_job_token = InferenceJobToken::generate();
 
   let maybe_wallet_ledger_entry_token = if cost > 0 {
-    // NB: Short-lived connection — released before the external call below.
-    let mut billing_connection = server_state.mysql_pool.acquire().await
-      .map_err(|err| {
-        warn!("Failed to acquire MySQL connection for image billing: {:?}", err);
-        CommonWebError::from_error(err)
-      })?;
+    // Billed on the handler's connection (same pre-request DB phase).
     let deduction = attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
-      &mut billing_connection,
+      &mut mysql_connection,
     ).await?;
     Some(deduction.ledger_entry_token)
   } else {
     None
   };
 
-  // NB: No pooled DB connection is held across this external generation call.
-  let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
+  // Debug-log the outbound provider request BEFORE the send — still on the
+  // handler's connection — so the payload is captured even when the
+  // upload/enqueue fails.
+  if let Some(debug_log_type) = provider_request_debug_log_type(draft_or_request.get_provider()) {
+    insert_provider_request_debug_log(
+      debug_log_context,
+      debug_log_type,
+      &format!("{:#?}", draft_or_request),
+      &mut *mysql_connection,
+    ).await;
+  }
+
+  // NB: Done with pre-request DB writes. Release the pooled connection before
+  // the (slow, external) provider call — holding it across that call is what
+  // starves the pool and causes PoolTimedOut. No pooled DB connection is held
+  // across the external generation call below.
+  drop(mysql_connection);
+
+  let response = finalize_and_generate(draft_or_request, server_state, resolved_media, kinovi_account).await?;
 
   Ok(ImagePipelineResult {
     apriori_job_token,
@@ -96,14 +121,17 @@ fn build_execution_request(
   })
 }
 
-/// Route each image model to the provider that fulfils it. Midjourney is
-/// served via the Seedance2Pro/Kinovi (Volcengine) backend; everything else
-/// flows through Fal.
+/// Route each image model to the provider that fulfils it. Midjourney and
+/// Seedream 5.0 Pro (both variants) are served via the KinoviWeb/Kinovi
+/// backend; everything else flows through Fal. Which Kinovi account fulfils
+/// a Kinovi request is the handler's `kinovi_account` choice.
 fn provider_for_model(model: RouterImageModel) -> RouterProvider {
   match model {
     RouterImageModel::Midjourney7
     | RouterImageModel::Midjourney7Niji
-    | RouterImageModel::Midjourney8 => RouterProvider::Seedance2Pro,
+    | RouterImageModel::Midjourney8
+    | RouterImageModel::Seedream5p0Pro
+    | RouterImageModel::Seedream5p0ProUltra => RouterProvider::KinoviWeb,
     _ => RouterProvider::Fal,
   }
 }
@@ -149,9 +177,10 @@ async fn finalize_and_generate(
   draft_or_request: ImageGenerationDraftOrRequest,
   server_state: &ServerState,
   resolved_media: &MediaFilesAsCdnUrlListAndMap,
+  kinovi_account: KinoviAccount,
 ) -> Result<GenerateImageResponse, CommonWebError> {
   let provider = draft_or_request.get_provider();
-  let client = build_router_client(provider, server_state)?;
+  let client = build_router_client(provider, server_state, kinovi_account)?;
 
   // Inline the draft finalization so the draft context can borrow `client`.
   let request: ImageGenerationRequest = match draft_or_request {
@@ -181,6 +210,7 @@ async fn finalize_and_generate(
 fn build_router_client(
   provider: RouterProvider,
   server_state: &ServerState,
+  kinovi_account: KinoviAccount,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
     RouterProvider::Fal => {
@@ -190,14 +220,15 @@ fn build_router_client(
       );
       Ok(RouterClient::Fal(fal_client))
     },
-    RouterProvider::Seedance2Pro => {
-      // Midjourney image generation always uses the Volcengine account.
-      // Per-request account selection (like the video flow's
-      // `KinoviAccount` enum) isn't needed here yet — if it ever is, plumb
-      // a parallel knob through `RunPipelineV2Args`.
-      let cookies = server_state.inference_providers.seedance2pro.cookies_volcengine.clone();
-      let session = Seedance2ProSession::from_cookies_string(cookies);
-      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
+    RouterProvider::KinoviWeb => {
+      let kinovi_web = &server_state.inference_providers.kinovi_web;
+      let cookies = match kinovi_account {
+        KinoviAccount::Volcengine => kinovi_web.cookies_volcengine.clone(),
+        KinoviAccount::BytePlus => kinovi_web.cookies_byteplus.clone(),
+        KinoviAccount::BytePlusUltra => kinovi_web.cookies_byteplus_ultra.clone(),
+      };
+      let session = KinoviWebSession::from_cookies_string(cookies);
+      Ok(RouterClient::KinoviWeb(RouterKinoviWebClient::new(session)))
     },
     other => {
       Err(CommonWebError::server_error_with_message(

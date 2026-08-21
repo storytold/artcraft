@@ -8,9 +8,9 @@ use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
-use log::warn;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_router_cost_error::map_router_cost_error;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
 
@@ -33,18 +33,12 @@ pub async fn omni_gen_image_cost_handler(
 ) -> Result<Json<OmniGenImageCostResponse>, CommonWebError> {
   let mut builder = hydrate_to_router_request(&request)?;
 
-  builder.provider = RouterProvider::Artcraft; // NB: Explicitly spell this out.
+  builder.provider = RouterProvider::Artcraft; // NB: User is paying for ArtCraft credits / generation
 
   let estimate = builder.build2()
-      .map_err(|e| {
-        warn!("Failed to build cost estimate: {}", e);
-        CommonWebError::from_error(e)
-      })?
+      .map_err(map_router_cost_error)?
       .estimate_cost()
-      .map_err(|e| {
-        warn!("Failed to estimate cost: {}", e);
-        CommonWebError::from_error(e)
-      })?;
+      .map_err(map_router_cost_error)?;
 
   Ok(Json(OmniGenImageCostResponse {
     success: true,

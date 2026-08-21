@@ -111,5 +111,84 @@ mod tests {
     Ok(())
   }
 
+  // ── Wire-shape sanity (no API calls) ──
+
+  #[test]
+  fn raw_request_maps_all_fields() {
+    let request = Hunyuan3d3TextToMeshRequest {
+      prompt: "A red ceramic teapot".to_string(),
+      face_count: Some(100_000),
+      generate_type: Some(Hunyuan3d3TextToMeshGenerateType::LowPoly),
+      polygon_type: Some(Hunyuan3d3TextToMeshPolygonType::Quadrilateral),
+      enable_pbr: Some(true),
+    };
+    let json = serde_json::to_value(request.to_raw_request().unwrap()).unwrap();
+    assert_eq!(
+      json,
+      serde_json::json!({
+        "prompt": "A red ceramic teapot",
+        "face_count": 100_000,
+        "generate_type": "LowPoly",
+        "polygon_type": "quadrilateral",
+        "enable_pbr": true,
+      }),
+    );
+  }
+
+  #[test]
+  fn raw_request_omits_unset_optionals() {
+    let request = Hunyuan3d3TextToMeshRequest {
+      prompt: "minimal".to_string(),
+      face_count: None,
+      generate_type: None,
+      polygon_type: None,
+      enable_pbr: None,
+    };
+    let json = serde_json::to_value(request.to_raw_request().unwrap()).unwrap();
+    assert_eq!(json, serde_json::json!({ "prompt": "minimal" }));
+  }
+
+  #[test]
+  fn every_generate_type_maps_to_wire_string() {
+    for (variant, expected) in [
+      (Hunyuan3d3TextToMeshGenerateType::Normal, "Normal"),
+      (Hunyuan3d3TextToMeshGenerateType::LowPoly, "LowPoly"),
+      (Hunyuan3d3TextToMeshGenerateType::Geometry, "Geometry"),
+    ] {
+      let mut request = base_wire_request();
+      request.generate_type = Some(variant);
+      let raw = request.to_raw_request().unwrap();
+      assert_eq!(raw.generate_type.as_deref(), Some(expected));
+    }
+  }
+
+  #[test]
+  fn every_polygon_type_maps_to_wire_string() {
+    for (variant, expected) in [
+      (Hunyuan3d3TextToMeshPolygonType::Triangle, "triangle"),
+      (Hunyuan3d3TextToMeshPolygonType::Quadrilateral, "quadrilateral"),
+    ] {
+      let mut request = base_wire_request();
+      request.polygon_type = Some(variant);
+      let raw = request.to_raw_request().unwrap();
+      assert_eq!(raw.polygon_type.as_deref(), Some(expected));
+    }
+  }
+
+  #[test]
+  fn endpoint_path_is_canonical() {
+    assert_eq!(Hunyuan3d3TextToMeshRequest::ENDPOINT, "fal-ai/hunyuan3d-v3/text-to-3d");
+  }
+
   // NB: Pricing tests are in cost.rs
+
+  fn base_wire_request() -> Hunyuan3d3TextToMeshRequest {
+    Hunyuan3d3TextToMeshRequest {
+      prompt: "test".to_string(),
+      face_count: None,
+      generate_type: None,
+      polygon_type: None,
+      enable_pbr: None,
+    }
+  }
 }

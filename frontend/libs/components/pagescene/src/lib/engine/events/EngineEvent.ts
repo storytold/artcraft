@@ -21,6 +21,7 @@ import type {
   TransformSpace,
 } from "../../PageSceneStore";
 import type { Camera } from "@storyteller/common";
+import type { ClipLane, TimelineTrack } from "../timeline/types";
 
 export abstract class EngineEvent {
   readonly timestamp: number = performance.now();
@@ -177,6 +178,33 @@ export class CameraUpdatedEvent extends EngineEvent {
   constructor(
     readonly cameraId: string,
     readonly updates: Partial<Camera>,
+  ) {
+    super();
+  }
+}
+
+// Request to toggle "camera view" (look through / exit the render camera).
+// Emitted by the double-click intercept and the outliner/exit buttons;
+// editor.ts subscribes and calls cameraController.switchCameraView().
+export class CameraViewToggleRequestedEvent extends EngineEvent {}
+
+// ─── timeline ───────────────────────────────────────────────────────────
+
+export class TimelineChangedEvent extends EngineEvent {
+  constructor(
+    readonly exists: boolean,
+    readonly duration: number,
+    readonly tracks: TimelineTrack[],
+    readonly clipLanes: ClipLane[],
+  ) {
+    super();
+  }
+}
+
+export class TimelinePlayheadEvent extends EngineEvent {
+  constructor(
+    readonly playhead: number,
+    readonly isPlaying: boolean,
   ) {
     super();
   }

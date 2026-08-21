@@ -1,5 +1,5 @@
 use log::error;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_video_jobs::PendingKinoviWebJob;
 use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
@@ -9,7 +9,7 @@ pub fn alert_pager_and_return_err<T>(
   pager: &Pager,
   title: &str,
   err: anyhow::Error,
-  job: Option<&PendingSeedance2ProJob>,
+  job: Option<&PendingKinoviWebJob>,
 ) -> anyhow::Result<T> {
   let err_message = format!("{:#}", err);
 

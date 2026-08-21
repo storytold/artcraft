@@ -5,7 +5,11 @@ import {
   lookAtFromCamera,
   type FreeCamControlState,
 } from "../cameraMath";
-import { CameraAspectRatio, EditorStates } from "../../enums";
+import {
+  CameraAspectRatio,
+  DEFAULT_CAMERA_ASPECT_RATIO,
+  EditorStates,
+} from "../../enums";
 import type { Camera } from "@storyteller/common";
 import type { EngineEventBus } from "../events/EngineEventBus";
 import { CameraUpdatedEvent } from "../events/EngineEvent";
@@ -14,6 +18,20 @@ export type RenderDimensions = {
   width: number;
   height: number;
   aspectRatio: number;
+};
+
+// Where the camera-view framing overlay wants the render framing to land,
+// in canvas CSS pixels. While a rect is set (and we're in camera view) the
+// viewport camera's projection is offset so the exact render framing maps
+// into this rect instead of filling the whole canvas — the area outside the
+// rect shows the surrounding scene (dimmed by the overlay).
+export type CameraFrameRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  canvasWidth: number;
+  canvasHeight: number;
 };
 
 // Capabilities CameraController needs from outside its own state.
@@ -46,7 +64,7 @@ export class CameraController {
 
   camera: THREE.PerspectiveCamera | null = null;
   render_camera: THREE.PerspectiveCamera | null = null;
-  render_camera_aspect_ratio: CameraAspectRatio = CameraAspectRatio.HORIZONTAL_3_2;
+  render_camera_aspect_ratio: CameraAspectRatio = DEFAULT_CAMERA_ASPECT_RATIO;
 
   cam_obj: THREE.Object3D | undefined;
   camera_person_mode: boolean = false;
@@ -54,6 +72,15 @@ export class CameraController {
   lockControls: PointerLockControls | undefined;
 
   freeCamState: FreeCamControlState | null = null;
+  // When true, FreeCam input is ignored (record mode: read-only viewport).
+  locked = false;
+
+  // Camera-view framing rect set by the CameraFrame overlay; null = none.
+  private frameRect: CameraFrameRect | null = null;
+  // Canvas aspect captured when the frame projection is applied, so the
+  // viewport camera's aspect can be restored the moment the frame clears
+  // (the resize cascade only corrects it on the next actual resize).
+  private frameCanvasAspect: number | null = null;
 
   last_cam_pos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   last_cam_rot: THREE.Euler = new THREE.Euler(0, 0, 0);
@@ -83,69 +110,132 @@ export class CameraController {
   }
 
   // Toggles between free-camera (edit) mode and the active render
-  // camera's perspective. Lifted from SceneUtils.switchCameraView so
-  // the camera state stays in one place.
+  // camera's perspective. Split into idempotent enter/exit so callers
+  // (record mode) can force a specific state without double-toggling.
   switchCameraView() {
-    this.camera_person_mode = !this.camera_person_mode;
-    if (this.freeCamState) {
-      this.freeCamState.velocity.set(0, 0, 0);
+    if (this.camera_person_mode) this.exitCameraView();
+    else this.enterCameraView();
+  }
+
+  // Look through the render camera. No-op if already in camera view.
+  enterCameraView() {
+    // Require a live viewport camera: we MUST capture its pose before
+    // flipping state, or exit would restore the default (0,0,0) pose and
+    // leave the viewport pointed at empty space (looks like "everything
+    // disappeared").
+    if (this.camera_person_mode || !this.cam_obj || !this.camera) return;
+
+    this.last_cam_pos.copy(this.camera.position);
+    this.last_cam_rot.copy(this.camera.rotation);
+
+    this.camera_person_mode = true;
+    if (this.freeCamState) this.freeCamState.velocity.set(0, 0, 0);
+
+    this.camera.position.copy(this.cam_obj.position);
+    this.camera.rotation.copy(this.cam_obj.rotation);
+
+    if (this.lockControls) {
+      this.deps.getThreeScene().add(this.lockControls.getObject());
     }
-    if (!this.cam_obj) return;
+    this.cam_obj.scale.set(0, 0, 0);
 
-    if (this.camera_person_mode && this.camera) {
-      this.last_cam_pos.copy(this.camera.position);
-      this.last_cam_rot.copy(this.camera.rotation);
+    this.deps.removeTransformControls();
+    this.deps.setSelected(this.cam_obj);
+    this.deps.setEditorState(EditorStates.CAMERA_VIEW);
 
-      this.camera.position.copy(this.cam_obj.position);
-      this.camera.rotation.copy(this.cam_obj.rotation);
+    // Workaround: in camera mode, a right-click should pan rather than
+    // open the browser context menu. Defer until the letterbox settles.
+    setTimeout(
+      () =>
+        document
+          .getElementById("letterbox")
+          ?.addEventListener("contextmenu", function (event) {
+            event.preventDefault();
+          }),
+      250,
+    );
+  }
 
-      if (this.lockControls) {
-        this.deps.getThreeScene().add(this.lockControls.getObject());
-      }
-      // useFreeCam reads editorState from the store and enables
-      // itself when CAMERA_VIEW; nothing to do here.
-      this.cam_obj.scale.set(0, 0, 0);
+  // Return to the free editing camera. No-op if not in camera view.
+  exitCameraView() {
+    if (!this.camera_person_mode || !this.cam_obj) return;
+    this.camera_person_mode = false;
+    if (this.freeCamState) this.freeCamState.velocity.set(0, 0, 0);
 
-      this.deps.removeTransformControls();
-      this.deps.setSelected(this.cam_obj);
-      this.deps.setEditorState(EditorStates.CAMERA_VIEW);
-
-      const hot = this.deps.getHotItems();
-      if (hot) {
-        hot.forEach((element) => {
-          element.visible = false;
-        });
-      }
-
-      // Workaround: in camera mode, a right-click should pan rather
-      // than open the browser context menu. Defer the listener attach
-      // until after the letterbox swap settles.
-      setTimeout(
-        () =>
-          document
-            .getElementById("letterbox")
-            ?.addEventListener("contextmenu", function (event) {
-              event.preventDefault();
-            }),
-        250,
-      );
-    } else if (this.camera) {
+    if (this.camera) {
       this.camera.position.copy(this.last_cam_pos);
       this.camera.rotation.copy(this.last_cam_rot);
-      if (this.lockControls) {
-        this.deps.getThreeScene().remove(this.lockControls.getObject());
-      }
-      this.cam_obj.scale.set(1, 1, 1);
+      this.camera.updateProjectionMatrix();
+    }
+    // Drop the camera-view framing offset now that we're free-flying again.
+    this.applyFrameProjection();
+    if (this.lockControls) {
+      this.deps.getThreeScene().remove(this.lockControls.getObject());
+    }
+    this.cam_obj.scale.set(1, 1, 1);
 
-      const hot = this.deps.getHotItems();
-      if (hot) {
-        hot.forEach((element) => {
-          element.visible = true;
-        });
-      }
+    this.deps.hideObjectPanel();
+    this.deps.setEditorState(EditorStates.EDIT);
+  }
 
-      this.deps.hideObjectPanel();
-      this.deps.setEditorState(EditorStates.EDIT);
+  // Record mode locks the viewport: input is ignored so playback is
+  // strictly read-only. Gated in tickPerFrame's FreeCam integration.
+  setLocked(locked: boolean): void {
+    this.locked = locked;
+  }
+
+  // Set (or clear, with null) the camera-view framing rect. Applied
+  // immediately and kept in sync per-frame by tickPerFrame, so resizes and
+  // snapshot-time projection resets self-heal on the next tick.
+  setCameraFrameRect(rect: CameraFrameRect | null): void {
+    this.frameRect = rect;
+    this.applyFrameProjection();
+  }
+
+  // Reconcile the viewport camera's projection with the framing rect.
+  // While in camera view with a rect set: aspect = the render camera's
+  // aspect, and a view offset maps the full render framing into the rect
+  // (the canvas renders a wider surround around it). Otherwise: clear any
+  // offset and restore the full-canvas aspect. Cheap when nothing changed.
+  applyFrameProjection(): void {
+    const cam = this.camera;
+    if (!cam) return;
+    const rect = this.camera_person_mode ? this.frameRect : null;
+
+    if (rect) {
+      const renderAspect = this.getRenderDimensions().aspectRatio;
+      const view = cam.view;
+      const unchanged =
+        cam.aspect === renderAspect &&
+        view?.enabled === true &&
+        view.fullWidth === rect.width &&
+        view.fullHeight === rect.height &&
+        view.offsetX === -rect.x &&
+        view.offsetY === -rect.y &&
+        view.width === rect.canvasWidth &&
+        view.height === rect.canvasHeight;
+      if (unchanged) return;
+
+      this.frameCanvasAspect = rect.canvasWidth / rect.canvasHeight;
+      cam.aspect = renderAspect;
+      // Virtual "full view" = the framing rect; the canvas renders the
+      // larger region around it, so the rect shows the exact render frame.
+      cam.setViewOffset(
+        rect.width,
+        rect.height,
+        -rect.x,
+        -rect.y,
+        rect.canvasWidth,
+        rect.canvasHeight,
+      );
+      cam.updateProjectionMatrix();
+    } else if (cam.view?.enabled) {
+      cam.clearViewOffset();
+      if (this.frameCanvasAspect !== null) {
+        cam.aspect = this.frameCanvasAspect;
+        this.frameCanvasAspect = null;
+      }
+      cam.updateProjectionMatrix();
     }
   }
 
@@ -208,7 +298,11 @@ export class CameraController {
       }
     }
 
-    if (this.freeCamState && this.camera) {
+    // Keep the camera-view framing projection in sync (no-op when nothing
+    // changed; also heals resize/snapshot-time aspect resets).
+    this.applyFrameProjection();
+
+    if (this.freeCamState && this.camera && !this.locked) {
       const moved = freeCamFrameTick(
         this.camera,
         this.freeCamState,

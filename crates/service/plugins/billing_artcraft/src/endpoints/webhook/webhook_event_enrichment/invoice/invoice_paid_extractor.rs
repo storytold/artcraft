@@ -9,6 +9,8 @@ use crate::utils::expand_ids::expand_customer_id::expand_customer_id;
 use crate::utils::expand_ids::expand_subscription_id::expand_subscription_id;
 use crate::utils::metadata::get_metadata_user_token::get_metadata_user_token;
 use crate::utils::stripe_event_descriptor::StripeEventDescriptor;
+use chrono::{DateTime, Utc};
+use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
 use log::{error, info, warn};
 use server_environment::ServerEnvironment;
 use stripe::Client;
@@ -134,6 +136,13 @@ pub async fn invoice_paid_extractor(
       .map(|id| id.to_string())
       .unwrap_or_else(|| stripe_event_descriptor.stripe_event_id.clone());
 
+  // The first paid invoice of a new subscription is the "initial"; everything
+  // else that reaches here (subscription_cycle) is a renewal.
+  let payment_event_type = match invoice.billing_reason {
+    Some(InvoiceBillingReason::SubscriptionCreate) => PaymentEventType::SubscriptionInitial,
+    _ => PaymentEventType::SubscriptionRenewal,
+  };
+
   info!("{} : invoice paid is for subscription.", stripe_event_descriptor);
   
 
@@ -157,6 +166,10 @@ pub async fn invoice_paid_extractor(
       maybe_canceled_at: subscription.maybe_canceled_at,
       ledger_event_ref: Some(ledger_event_ref),
       customer_email: invoice.customer_email.clone(),
+      amount_usd_cents: invoice.amount_paid,
+      payment_event_type,
+      payment_occurred_at: DateTime::from_timestamp(invoice.created, 0).unwrap_or_else(Utc::now),
+      maybe_stripe_event_id: Some(stripe_event_descriptor.stripe_event_id.clone()),
     })),
     webhook_event_log_summary: event_log_summary,
   })

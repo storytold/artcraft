@@ -13,6 +13,7 @@ export const upload3DObjects = async ({
   engineCategory,
   thumbnailSnapshot,
   animationType,
+  durationMillis,
   progressCallback,
 }: {
   title: string;
@@ -20,6 +21,8 @@ export const upload3DObjects = async ({
   engineCategory: FilterEngineCategories;
   thumbnailSnapshot: Blob | undefined;
   animationType?: MediaFileAnimationType;
+  // Required by the backend when engineCategory is "animation".
+  durationMillis?: number;
   progressCallback: (newState: UploaderState) => void;
 }) => {
   progressCallback({ status: UploaderStates.uploadingAsset });
@@ -29,6 +32,7 @@ export const upload3DObjects = async ({
     title,
     engineCategory,
     animationType,
+    durationMillis,
   });
 
   if (!assetResponse.success || !assetResponse.data) {

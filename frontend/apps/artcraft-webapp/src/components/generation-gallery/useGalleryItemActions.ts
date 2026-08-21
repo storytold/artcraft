@@ -1,13 +1,14 @@
 import { useCallback, useState } from "react";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import { useNavigate } from "react-router-dom";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faCube, faImage, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
-  getModelCreatorIconPath,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
@@ -23,7 +24,8 @@ import type { GalleryItem } from "./useGalleryData";
 export interface GalleryItemActions {
   isVideo: boolean;
   is3D: boolean;
-  mediaIcon: IconDefinition;
+  isAudio: boolean;
+  mediaIcon: LucideIcon;
   mediaLabel: string;
   modelDisplayName: string | null;
   modelIconPath: string | null;
@@ -56,23 +58,31 @@ export function useGalleryItemActions(
   const [isDownloading, setIsDownloading] = useState(false);
 
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D = is3DMediaClass(item.mediaClass);
+  const isAudio = item.mediaClass === "audio";
+  // Audio v1: no recreate / make-video — download + share only.
   const recreateMediaClass: RecreateMediaClass | null = isVideo
     ? "video"
-    : is3D
+    : is3D || isAudio
       ? null
       : "image";
-  const canMakeVideo = enableMakeVideo && !isVideo && !is3D;
+  const canMakeVideo = enableMakeVideo && !isVideo && !is3D && !isAudio;
 
-  const mediaIcon = isVideo ? faVideo : is3D ? faCube : faImage;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : "Image";
+  const mediaIcon = isVideo
+    ? VideoIcon
+    : is3D
+      ? BoxIcon
+      : isAudio
+        ? MusicIcon
+        : ImageIcon;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
   const modelDisplayName = effectiveModelId
     ? getModelDisplayName(effectiveModelId)
     : null;
   const modelIconPath = effectiveModelId
-    ? getModelCreatorIconPath(effectiveModelId)
+    ? getCreatorIconPathForModelId(effectiveModelId)
     : null;
 
   const handleRecreate = useCallback(
@@ -135,6 +145,7 @@ export function useGalleryItemActions(
   return {
     isVideo,
     is3D,
+    isAudio,
     mediaIcon,
     mediaLabel,
     modelDisplayName,

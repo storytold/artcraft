@@ -1,7 +1,7 @@
 use crate::kinovi_version::KinoviVersion;
 use anyhow::anyhow;
 use log::info;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 
 // Configuration switch
 const ENV_SEEDANCE2PRO_VERSION: &str = "SEEDANCE2PRO_VERSION";
@@ -51,9 +51,9 @@ fn parse_kinovi_version(value: &str) -> anyhow::Result<KinoviVersion> {
   }
 }
 
-pub fn get_kinovi_session(version: KinoviVersion) -> anyhow::Result<Seedance2ProSession> {
+pub fn get_kinovi_session(version: KinoviVersion) -> anyhow::Result<KinoviWebSession> {
   let cookies = read_kinovi_cookies(version)?;
-  Ok(Seedance2ProSession::from_cookies_string(cookies))
+  Ok(KinoviWebSession::from_cookies_string(cookies))
 }
 
 fn read_kinovi_cookies(version: KinoviVersion) -> anyhow::Result<String> {
@@ -62,13 +62,13 @@ fn read_kinovi_cookies(version: KinoviVersion) -> anyhow::Result<String> {
       info!("Using Volcengine cookies from env var: {}", ENV_SEEDANCE2PRO_VOLCENGINE_COOKIES);
       easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_VOLCENGINE_COOKIES)
           .or_else(|| easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_LEGACY_COOKIES))
-          .ok_or_else(|| anyhow!("missing Seedance2Pro cookies in in env var {}", ENV_SEEDANCE2PRO_VOLCENGINE_COOKIES))
+          .ok_or_else(|| anyhow!("missing KinoviWeb cookies in in env var {}", ENV_SEEDANCE2PRO_VOLCENGINE_COOKIES))
     }
     KinoviVersion::BytePlus => {
       info!("Using BytePlus cookies from env var: {}", ENV_SEEDANCE2PRO_BYTEPLUS_COOKIES);
       easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_BYTEPLUS_COOKIES)
           .or_else(|| easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_LEGACY_ALT_COOKIES))
-          .ok_or_else(|| anyhow!("missing Seedance2Pro cookies in in env var {}", ENV_SEEDANCE2PRO_BYTEPLUS_COOKIES))
+          .ok_or_else(|| anyhow!("missing KinoviWeb cookies in in env var {}", ENV_SEEDANCE2PRO_BYTEPLUS_COOKIES))
     }
     KinoviVersion::BytePlusUltra => {
       info!("Using BytePlus Ultra cookies from env var: {}", ENV_SEEDANCE2PRO_BYTEPLUS_ULTRA_COOKIES);

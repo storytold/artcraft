@@ -7,6 +7,12 @@ use crate::generate::generate_video::providers::kinovi::seedance_2p0::cost::Kino
 use crate::generate::generate_video::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::cost::KinoviSeedance2p0FastCostState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::draft::KinoviSeedance2p0FastDraftState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::cost::KinoviSeedance2p0MiniCostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::draft::KinoviSeedance2p0MiniDraftState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5::cost::KinoviSeedance2p5CostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5::draft::KinoviSeedance2p5DraftState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::cost::KinoviSeedance2p5PreviewCostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::draft::KinoviSeedance2p5PreviewDraftState;
 use crate::generate::generate_video::video_generation_draft_context::VideoGenerationDraftContext;
 use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
@@ -18,15 +24,21 @@ pub enum VideoGenerationDraftRequest {
   KinoviHappyHorse1p0(KinoviHappyHorse1p0DraftState),
   KinoviSeedance2p0(KinoviSeedance2p0DraftState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastDraftState),
+  KinoviSeedance2p0Mini(KinoviSeedance2p0MiniDraftState),
+  KinoviSeedance2p5Preview(KinoviSeedance2p5PreviewDraftState),
+  KinoviSeedance2p5(KinoviSeedance2p5DraftState),
 }
 
 impl VideoGenerationDraftRequest {
 
   pub fn get_provider(&self) -> RouterProvider {
     match self {
-      Self::KinoviHappyHorse1p0(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0Fast(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviHappyHorse1p0(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0Fast(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0Mini(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p5Preview(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p5(_) => RouterProvider::KinoviWeb,
     }
   }
 
@@ -36,6 +48,9 @@ impl VideoGenerationDraftRequest {
       VideoGenerationDraftRequest::KinoviHappyHorse1p0(draft) => Ok(KinoviHappyHorse1p0CostState::from_draft(draft).estimate_cost()),
       VideoGenerationDraftRequest::KinoviSeedance2p0(draft) => Ok(KinoviSeedance2p0CostState::from_draft(draft).estimate_cost()),
       VideoGenerationDraftRequest::KinoviSeedance2p0Fast(draft) => Ok(KinoviSeedance2p0FastCostState::from_draft(draft).estimate_cost()),
+      VideoGenerationDraftRequest::KinoviSeedance2p0Mini(draft) => Ok(KinoviSeedance2p0MiniCostState::from_draft(draft).estimate_cost()),
+      VideoGenerationDraftRequest::KinoviSeedance2p5Preview(draft) => Ok(KinoviSeedance2p5PreviewCostState::from_draft(draft).estimate_cost()),
+      VideoGenerationDraftRequest::KinoviSeedance2p5(draft) => Ok(KinoviSeedance2p5CostState::from_draft(draft).estimate_cost()),
     }
   }
 
@@ -54,6 +69,18 @@ impl VideoGenerationDraftRequest {
       VideoGenerationDraftRequest::KinoviSeedance2p0Fast(mut draft) => {
         let result = draft.to_request(&draft_context).await?;
         Ok(VideoGenerationRequest::KinoviSeedance2p0Fast(result))
+      },
+      VideoGenerationDraftRequest::KinoviSeedance2p0Mini(mut draft) => {
+        let result = draft.to_request(&draft_context).await?;
+        Ok(VideoGenerationRequest::KinoviSeedance2p0Mini(result))
+      },
+      VideoGenerationDraftRequest::KinoviSeedance2p5Preview(mut draft) => {
+        let result = draft.to_request(&draft_context).await?;
+        Ok(VideoGenerationRequest::KinoviSeedance2p5Preview(result))
+      },
+      VideoGenerationDraftRequest::KinoviSeedance2p5(mut draft) => {
+        let result = draft.to_request(&draft_context).await?;
+        Ok(VideoGenerationRequest::KinoviSeedance2p5(result))
       },
     }
   }

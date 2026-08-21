@@ -1,3 +1,7 @@
+// The deprecated Seedance 2.0 Ultra variants must stay referenced by this
+// enum's own coders, variant lists, and tests; suppress the lint file-wide.
+#![allow(deprecated)]
+
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -127,6 +131,10 @@ pub enum InferenceModelType {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
   #[serde(rename = "midjourney")]
   Midjourney,
   #[serde(rename = "midjourney_v6")]
@@ -160,6 +168,10 @@ pub enum InferenceModelType {
   GrokImagineVideo,
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
+  #[serde(rename = "flux_3")]
+  Flux3,
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2p1_pro")]
@@ -176,6 +188,12 @@ pub enum InferenceModelType {
   Kling3p0Pro,
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -190,14 +208,28 @@ pub enum InferenceModelType {
   Seedance2p0BytePlus,
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u")]
   Seedance2p0Ultra,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
   #[serde(rename = "seedance_2p0_bpu")]
   Seedance2p0BytePlusUltra,
   #[serde(rename = "seedance_2p0_bpu_fast")]
   Seedance2p0BytePlusUltraFast,
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+  #[serde(rename = "seedance_2p0_bp_mini")]
+  Seedance2p0BytePlusMini,
+  #[serde(rename = "seedance_2p0_bpu_mini")]
+  Seedance2p0BytePlusUltraMini,
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -212,6 +244,25 @@ pub enum InferenceModelType {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
+
+  // Audio models
+  #[serde(rename = "suno_music")]
+  SunoMusic,
+  #[serde(rename = "suno_remix")]
+  SunoRemix,
+  #[serde(rename = "suno_sounds")]
+  SunoSounds,
+  #[serde(rename = "suno_sample")]
+  SunoSample,
+  #[serde(rename = "seed_audio_1p0")]
+  SeedAudio1p0,
+
   #[serde(rename = "preview_model")]
   PreviewModel,
   #[serde(rename = "preview_model_fast")]
@@ -226,12 +277,36 @@ pub enum InferenceModelType {
   Hunyuan3d2_1,
   #[serde(rename = "hunyuan_3d_3")]
   Hunyuan3d3,
+  #[serde(rename = "hunyuan_3d_3p1_pro")]
+  Hunyuan3d3_1Pro,
+  #[serde(rename = "hunyuan_3d_3p1_rapid")]
+  Hunyuan3d3_1Rapid,
+  #[serde(rename = "hunyuan_3d_3p1_part")]
+  Hunyuan3d3_1Part,
+  #[serde(rename = "hunyuan_3d_3p1_topology")]
+  Hunyuan3d3_1SmartTopology,
+  #[serde(rename = "tripo3d_h3p1")]
+  Tripo3dH3_1,
+  #[serde(rename = "meshy_v6")]
+  MeshyV6,
+  #[serde(rename = "rodin_2p5_fast")]
+  Rodin2_5Fast,
 
   // Splat generation models (World Labs)
   #[serde(rename = "marble_0p1_mini")]
   Marble0p1Mini,
   #[serde(rename = "marble_0p1_plus")]
   Marble0p1Plus,
+  #[serde(rename = "marble_1p0")]
+  Marble1p0,
+  #[serde(rename = "marble_1p0_draft")]
+  Marble1p0Draft,
+  #[serde(rename = "marble_1p1")]
+  Marble1p1,
+  #[serde(rename = "marble_1p1_plus")]
+  Marble1p1Plus,
+  #[serde(rename = "triposplat")]
+  TripoSplat,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -285,6 +360,8 @@ impl InferenceModelType {
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
+      Self::Seedream5p0Pro => "seedream_5p0_pro",
+      Self::Seedream5p0ProUltra => "seedream_5p0_pro_u",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -301,6 +378,8 @@ impl InferenceModelType {
       Self::GrokVideo => "grok_video",
       Self::GrokImagineVideo => "grok_imagine_video",
       Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
+      Self::Flux3 => "flux_3",
+      Self::Flux3Draft => "flux_3_draft",
       Self::Kling16Pro => "kling_1p6_pro",
       Self::Kling21Pro => "kling_2p1_pro",
       Self::Kling21Master => "kling_2p1_master",
@@ -309,6 +388,9 @@ impl InferenceModelType {
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::MinimaxH3 => "minimax_h3",
+      Self::MinimaxH3Turbo => "minimax_h3_turbo",
+      Self::MinimaxH3Ultra => "minimax_h3_ultra",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -320,6 +402,12 @@ impl InferenceModelType {
       Self::Seedance2p0UltraFast => "seedance_2p0_u_fast",
       Self::Seedance2p0BytePlusUltra => "seedance_2p0_bpu",
       Self::Seedance2p0BytePlusUltraFast => "seedance_2p0_bpu_fast",
+      Self::Seedance2p0Mini => "seedance_2p0_mini",
+      Self::Seedance2p0BytePlusMini => "seedance_2p0_bp_mini",
+      Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
+      Self::Seedance2p5Preview => "seedance_2p5_preview",
+      Self::Seedance2p5 => "seedance_2p5",
+      Self::Seedance2p5Ultra => "seedance_2p5_u",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -327,6 +415,17 @@ impl InferenceModelType {
       Self::Veo3Fast => "veo_3_fast",
       Self::Veo3p1 => "veo_3p1",
       Self::Veo3p1Fast => "veo_3p1_fast",
+      Self::Veo3p1Lite => "veo_3p1_lite",
+      Self::ViduQ3 => "vidu_q3",
+      Self::ViduQ3Turbo => "vidu_q3_turbo",
+
+      // Audio models
+      Self::SunoMusic => "suno_music",
+      Self::SunoRemix => "suno_remix",
+      Self::SunoSounds => "suno_sounds",
+      Self::SunoSample => "suno_sample",
+      Self::SeedAudio1p0 => "seed_audio_1p0",
+
       Self::PreviewModel => "preview_model",
       Self::PreviewModelFast => "preview_model_fast",
       Self::SwitchX => "switch_x",
@@ -335,10 +434,22 @@ impl InferenceModelType {
       Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
       Self::Hunyuan3d2_1 => "hunyuan_3d_2p1",
       Self::Hunyuan3d3 => "hunyuan_3d_3",
+      Self::Hunyuan3d3_1Pro => "hunyuan_3d_3p1_pro",
+      Self::Hunyuan3d3_1Rapid => "hunyuan_3d_3p1_rapid",
+      Self::Hunyuan3d3_1Part => "hunyuan_3d_3p1_part",
+      Self::Hunyuan3d3_1SmartTopology => "hunyuan_3d_3p1_topology",
+      Self::Tripo3dH3_1 => "tripo3d_h3p1",
+      Self::MeshyV6 => "meshy_v6",
+      Self::Rodin2_5Fast => "rodin_2p5_fast",
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => "marble_0p1_mini",
       Self::Marble0p1Plus => "marble_0p1_plus",
+      Self::Marble1p0 => "marble_1p0",
+      Self::Marble1p0Draft => "marble_1p0_draft",
+      Self::Marble1p1 => "marble_1p1",
+      Self::Marble1p1Plus => "marble_1p1_plus",
+      Self::TripoSplat => "triposplat",
     }
   }
 
@@ -387,6 +498,8 @@ impl InferenceModelType {
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
+      "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
+      "seedream_5p0_pro_u" => Ok(Self::Seedream5p0ProUltra),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -403,6 +516,8 @@ impl InferenceModelType {
       "grok_video" => Ok(Self::GrokVideo),
       "grok_imagine_video" => Ok(Self::GrokImagineVideo),
       "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
+      "flux_3" => Ok(Self::Flux3),
+      "flux_3_draft" => Ok(Self::Flux3Draft),
       "kling_1p6_pro" => Ok(Self::Kling16Pro),
       "kling_2p1_pro" => Ok(Self::Kling21Pro),
       "kling_2p1_master" => Ok(Self::Kling21Master),
@@ -411,6 +526,9 @@ impl InferenceModelType {
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "minimax_h3" => Ok(Self::MinimaxH3),
+      "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
+      "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -422,6 +540,12 @@ impl InferenceModelType {
       "seedance_2p0_u_fast" => Ok(Self::Seedance2p0UltraFast),
       "seedance_2p0_bpu" => Ok(Self::Seedance2p0BytePlusUltra),
       "seedance_2p0_bpu_fast" => Ok(Self::Seedance2p0BytePlusUltraFast),
+      "seedance_2p0_mini" => Ok(Self::Seedance2p0Mini),
+      "seedance_2p0_bp_mini" => Ok(Self::Seedance2p0BytePlusMini),
+      "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
+      "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
+      "seedance_2p5" => Ok(Self::Seedance2p5),
+      "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -429,6 +553,17 @@ impl InferenceModelType {
       "veo_3_fast" => Ok(Self::Veo3Fast),
       "veo_3p1" => Ok(Self::Veo3p1),
       "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
+      "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
+      "vidu_q3" => Ok(Self::ViduQ3),
+      "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
+
+      // Audio models
+      "suno_music" => Ok(Self::SunoMusic),
+      "suno_remix" => Ok(Self::SunoRemix),
+      "suno_sounds" => Ok(Self::SunoSounds),
+      "suno_sample" => Ok(Self::SunoSample),
+      "seed_audio_1p0" => Ok(Self::SeedAudio1p0),
+
       "preview_model" => Ok(Self::PreviewModel),
       "preview_model_fast" => Ok(Self::PreviewModelFast),
       "switch_x" => Ok(Self::SwitchX),
@@ -437,10 +572,22 @@ impl InferenceModelType {
       "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
       "hunyuan_3d_2p1" => Ok(Self::Hunyuan3d2_1),
       "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
+      "hunyuan_3d_3p1_pro" => Ok(Self::Hunyuan3d3_1Pro),
+      "hunyuan_3d_3p1_rapid" => Ok(Self::Hunyuan3d3_1Rapid),
+      "hunyuan_3d_3p1_part" => Ok(Self::Hunyuan3d3_1Part),
+      "hunyuan_3d_3p1_topology" => Ok(Self::Hunyuan3d3_1SmartTopology),
+      "tripo3d_h3p1" => Ok(Self::Tripo3dH3_1),
+      "meshy_v6" => Ok(Self::MeshyV6),
+      "rodin_2p5_fast" => Ok(Self::Rodin2_5Fast),
 
       // Splat generation models (World Labs)
       "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
       "marble_0p1_plus" => Ok(Self::Marble0p1Plus),
+      "marble_1p0" => Ok(Self::Marble1p0),
+      "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
+      "marble_1p1" => Ok(Self::Marble1p1),
+      "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
+      "triposplat" => Ok(Self::TripoSplat),
 
       _ => Err(format!("invalid value: {:?}", value)),
     }
@@ -493,6 +640,8 @@ impl InferenceModelType {
       Self::Seedream4,
       Self::Seedream4p5,
       Self::Seedream5Lite,
+      Self::Seedream5p0Pro,
+      Self::Seedream5p0ProUltra,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -509,6 +658,8 @@ impl InferenceModelType {
       Self::GrokVideo,
       Self::GrokImagineVideo,
       Self::GrokImagineVideo1p5,
+      Self::Flux3,
+      Self::Flux3Draft,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -517,6 +668,9 @@ impl InferenceModelType {
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
+      Self::MinimaxH3,
+      Self::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -528,6 +682,12 @@ impl InferenceModelType {
       Self::Seedance2p0UltraFast,
       Self::Seedance2p0BytePlusUltra,
       Self::Seedance2p0BytePlusUltraFast,
+      Self::Seedance2p0Mini,
+      Self::Seedance2p0BytePlusMini,
+      Self::Seedance2p0BytePlusUltraMini,
+      Self::Seedance2p5Preview,
+      Self::Seedance2p5,
+      Self::Seedance2p5Ultra,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -535,6 +695,17 @@ impl InferenceModelType {
       Self::Veo3Fast,
       Self::Veo3p1,
       Self::Veo3p1Fast,
+      Self::Veo3p1Lite,
+      Self::ViduQ3,
+      Self::ViduQ3Turbo,
+
+      // Audio models
+      Self::SunoMusic,
+      Self::SunoRemix,
+      Self::SunoSounds,
+      Self::SunoSample,
+      Self::SeedAudio1p0,
+
       Self::PreviewModel,
       Self::PreviewModelFast,
       Self::SwitchX,
@@ -543,10 +714,22 @@ impl InferenceModelType {
       Self::Hunyuan3d2_0,
       Self::Hunyuan3d2_1,
       Self::Hunyuan3d3,
+      Self::Hunyuan3d3_1Pro,
+      Self::Hunyuan3d3_1Rapid,
+      Self::Hunyuan3d3_1Part,
+      Self::Hunyuan3d3_1SmartTopology,
+      Self::Tripo3dH3_1,
+      Self::MeshyV6,
+      Self::Rodin2_5Fast,
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini,
       Self::Marble0p1Plus,
+      Self::Marble1p0,
+      Self::Marble1p0Draft,
+      Self::Marble1p1,
+      Self::Marble1p1Plus,
+      Self::TripoSplat,
     ])
   }
 
@@ -582,6 +765,8 @@ impl InferenceModelType {
       CommonModelType::Seedream4 => Self::Seedream4,
       CommonModelType::Seedream4p5 => Self::Seedream4p5,
       CommonModelType::Seedream5Lite => Self::Seedream5Lite,
+      CommonModelType::Seedream5p0Pro => Self::Seedream5p0Pro,
+      CommonModelType::Seedream5p0ProUltra => Self::Seedream5p0ProUltra,
       CommonModelType::Midjourney => Self::Midjourney,
       CommonModelType::MidjourneyV6 => Self::MidjourneyV6,
       CommonModelType::MidjourneyV6p1 => Self::MidjourneyV6p1,
@@ -598,6 +783,8 @@ impl InferenceModelType {
       CommonModelType::GrokVideo => Self::GrokVideo,
       CommonModelType::GrokImagineVideo => Self::GrokImagineVideo,
       CommonModelType::GrokImagineVideo1p5 => Self::GrokImagineVideo1p5,
+      CommonModelType::Flux3 => Self::Flux3,
+      CommonModelType::Flux3Draft => Self::Flux3Draft,
       CommonModelType::Kling16Pro => Self::Kling16Pro,
       CommonModelType::Kling21Pro => Self::Kling21Pro,
       CommonModelType::Kling21Master => Self::Kling21Master,
@@ -606,6 +793,9 @@ impl InferenceModelType {
       CommonModelType::Kling3p0Standard => Self::Kling3p0Standard,
       CommonModelType::Kling3p0Pro => Self::Kling3p0Pro,
       CommonModelType::HappyHorse1p0 => Self::HappyHorse1p0,
+      CommonModelType::MinimaxH3 => Self::MinimaxH3,
+      CommonModelType::MinimaxH3Turbo => Self::MinimaxH3Turbo,
+      CommonModelType::MinimaxH3Ultra => Self::MinimaxH3Ultra,
       CommonModelType::Seedance10Lite => Self::Seedance10Lite,
       CommonModelType::Seedance10Pro => Self::Seedance10Pro,
       CommonModelType::Seedance1p5Pro => Self::Seedance1p5Pro,
@@ -617,6 +807,12 @@ impl InferenceModelType {
       CommonModelType::Seedance2p0UltraFast => Self::Seedance2p0UltraFast,
       CommonModelType::Seedance2p0BytePlusUltra => Self::Seedance2p0BytePlusUltra,
       CommonModelType::Seedance2p0BytePlusUltraFast => Self::Seedance2p0BytePlusUltraFast,
+      CommonModelType::Seedance2p0Mini => Self::Seedance2p0Mini,
+      CommonModelType::Seedance2p0BytePlusMini => Self::Seedance2p0BytePlusMini,
+      CommonModelType::Seedance2p0BytePlusUltraMini => Self::Seedance2p0BytePlusUltraMini,
+      CommonModelType::Seedance2p5Preview => Self::Seedance2p5Preview,
+      CommonModelType::Seedance2p5 => Self::Seedance2p5,
+      CommonModelType::Seedance2p5Ultra => Self::Seedance2p5Ultra,
       CommonModelType::Sora2 => Self::Sora2,
       CommonModelType::Sora2Pro => Self::Sora2Pro,
       CommonModelType::Veo2 => Self::Veo2,
@@ -624,6 +820,17 @@ impl InferenceModelType {
       CommonModelType::Veo3Fast => Self::Veo3Fast,
       CommonModelType::Veo3p1 => Self::Veo3p1,
       CommonModelType::Veo3p1Fast => Self::Veo3p1Fast,
+      CommonModelType::Veo3p1Lite => Self::Veo3p1Lite,
+      CommonModelType::ViduQ3 => Self::ViduQ3,
+      CommonModelType::ViduQ3Turbo => Self::ViduQ3Turbo,
+
+      // Audio models
+      CommonModelType::SunoMusic => Self::SunoMusic,
+      CommonModelType::SunoRemix => Self::SunoRemix,
+      CommonModelType::SunoSounds => Self::SunoSounds,
+      CommonModelType::SunoSample => Self::SunoSample,
+      CommonModelType::SeedAudio1p0 => Self::SeedAudio1p0,
+
       CommonModelType::PreviewModel => Self::PreviewModel,
       CommonModelType::PreviewModelFast => Self::PreviewModelFast,
       CommonModelType::SwitchX => Self::SwitchX,
@@ -632,10 +839,22 @@ impl InferenceModelType {
       CommonModelType::Hunyuan3d2_0 => Self::Hunyuan3d2_0,
       CommonModelType::Hunyuan3d2_1 => Self::Hunyuan3d2_1,
       CommonModelType::Hunyuan3d3 => Self::Hunyuan3d3,
+      CommonModelType::Hunyuan3d3_1Pro => Self::Hunyuan3d3_1Pro,
+      CommonModelType::Hunyuan3d3_1Rapid => Self::Hunyuan3d3_1Rapid,
+      CommonModelType::Hunyuan3d3_1Part => Self::Hunyuan3d3_1Part,
+      CommonModelType::Hunyuan3d3_1SmartTopology => Self::Hunyuan3d3_1SmartTopology,
+      CommonModelType::Tripo3dH3_1 => Self::Tripo3dH3_1,
+      CommonModelType::MeshyV6 => Self::MeshyV6,
+      CommonModelType::Rodin2_5Fast => Self::Rodin2_5Fast,
 
       // Splat generation models (World Labs)
       CommonModelType::Marble0p1Mini => Self::Marble0p1Mini,
       CommonModelType::Marble0p1Plus => Self::Marble0p1Plus,
+      CommonModelType::Marble1p0 => Self::Marble1p0,
+      CommonModelType::Marble1p0Draft => Self::Marble1p0Draft,
+      CommonModelType::Marble1p1 => Self::Marble1p1,
+      CommonModelType::Marble1p1Plus => Self::Marble1p1Plus,
+      CommonModelType::TripoSplat => Self::TripoSplat,
     }
   }
 }
@@ -694,6 +913,7 @@ mod tests {
       assert_serialization(InferenceModelType::Seedream4, "seedream_4");
       assert_serialization(InferenceModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(InferenceModelType::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(InferenceModelType::Seedream5p0Pro, "seedream_5p0_pro");
       assert_serialization(InferenceModelType::Midjourney, "midjourney");
       assert_serialization(InferenceModelType::MidjourneyV6, "midjourney_v6");
       assert_serialization(InferenceModelType::MidjourneyV6p1, "midjourney_v6p1");
@@ -710,6 +930,8 @@ mod tests {
       assert_serialization(InferenceModelType::GrokVideo, "grok_video");
       assert_serialization(InferenceModelType::GrokImagineVideo, "grok_imagine_video");
       assert_serialization(InferenceModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+      assert_serialization(InferenceModelType::Flux3, "flux_3");
+      assert_serialization(InferenceModelType::Flux3Draft, "flux_3_draft");
       assert_serialization(InferenceModelType::Kling16Pro, "kling_1p6_pro");
       assert_serialization(InferenceModelType::Kling21Pro, "kling_2p1_pro");
       assert_serialization(InferenceModelType::Kling21Master, "kling_2p1_master");
@@ -718,6 +940,9 @@ mod tests {
       assert_serialization(InferenceModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(InferenceModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(InferenceModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(InferenceModelType::MinimaxH3, "minimax_h3");
+      assert_serialization(InferenceModelType::MinimaxH3Turbo, "minimax_h3_turbo");
+      assert_serialization(InferenceModelType::MinimaxH3Ultra, "minimax_h3_ultra");
       assert_serialization(InferenceModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(InferenceModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(InferenceModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -729,6 +954,12 @@ mod tests {
       assert_serialization(InferenceModelType::Seedance2p0UltraFast, "seedance_2p0_u_fast");
       assert_serialization(InferenceModelType::Seedance2p0BytePlusUltra, "seedance_2p0_bpu");
       assert_serialization(InferenceModelType::Seedance2p0BytePlusUltraFast, "seedance_2p0_bpu_fast");
+      assert_serialization(InferenceModelType::Seedance2p0Mini, "seedance_2p0_mini");
+      assert_serialization(InferenceModelType::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
+      assert_serialization(InferenceModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+      assert_serialization(InferenceModelType::Seedance2p5Preview, "seedance_2p5_preview");
+      assert_serialization(InferenceModelType::Seedance2p5, "seedance_2p5");
+      assert_serialization(InferenceModelType::Seedance2p5Ultra, "seedance_2p5_u");
       assert_serialization(InferenceModelType::Sora2, "sora_2");
       assert_serialization(InferenceModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(InferenceModelType::Veo2, "veo_2");
@@ -736,6 +967,15 @@ mod tests {
       assert_serialization(InferenceModelType::Veo3Fast, "veo_3_fast");
       assert_serialization(InferenceModelType::Veo3p1, "veo_3p1");
       assert_serialization(InferenceModelType::Veo3p1Fast, "veo_3p1_fast");
+      assert_serialization(InferenceModelType::Veo3p1Lite, "veo_3p1_lite");
+      assert_serialization(InferenceModelType::ViduQ3, "vidu_q3");
+      assert_serialization(InferenceModelType::ViduQ3Turbo, "vidu_q3_turbo");
+      // Audio models
+      assert_serialization(InferenceModelType::SunoMusic, "suno_music");
+      assert_serialization(InferenceModelType::SunoRemix, "suno_remix");
+      assert_serialization(InferenceModelType::SunoSounds, "suno_sounds");
+      assert_serialization(InferenceModelType::SunoSample, "suno_sample");
+      assert_serialization(InferenceModelType::SeedAudio1p0, "seed_audio_1p0");
       assert_serialization(InferenceModelType::PreviewModel, "preview_model");
       assert_serialization(InferenceModelType::PreviewModelFast, "preview_model_fast");
       assert_serialization(InferenceModelType::SwitchX, "switch_x");
@@ -744,10 +984,22 @@ mod tests {
       assert_serialization(InferenceModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
       assert_serialization(InferenceModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
       assert_serialization(InferenceModelType::Hunyuan3d3, "hunyuan_3d_3");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1Pro, "hunyuan_3d_3p1_pro");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1Rapid, "hunyuan_3d_3p1_rapid");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1Part, "hunyuan_3d_3p1_part");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1SmartTopology, "hunyuan_3d_3p1_topology");
+      assert_serialization(InferenceModelType::Tripo3dH3_1, "tripo3d_h3p1");
+      assert_serialization(InferenceModelType::MeshyV6, "meshy_v6");
+      assert_serialization(InferenceModelType::Rodin2_5Fast, "rodin_2p5_fast");
 
       // Splat generation models (World Labs)
       assert_serialization(InferenceModelType::Marble0p1Mini, "marble_0p1_mini");
       assert_serialization(InferenceModelType::Marble0p1Plus, "marble_0p1_plus");
+      assert_serialization(InferenceModelType::Marble1p0, "marble_1p0");
+      assert_serialization(InferenceModelType::Marble1p0Draft, "marble_1p0_draft");
+      assert_serialization(InferenceModelType::Marble1p1, "marble_1p1");
+      assert_serialization(InferenceModelType::Marble1p1Plus, "marble_1p1_plus");
+      assert_serialization(InferenceModelType::TripoSplat, "triposplat");
     }
 
     #[test]
@@ -795,6 +1047,7 @@ mod tests {
       assert_eq!(InferenceModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(InferenceModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(InferenceModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(InferenceModelType::Seedream5p0Pro.to_str(), "seedream_5p0_pro");
       assert_eq!(InferenceModelType::Midjourney.to_str(), "midjourney");
       assert_eq!(InferenceModelType::MidjourneyV6.to_str(), "midjourney_v6");
       assert_eq!(InferenceModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
@@ -811,6 +1064,8 @@ mod tests {
       assert_eq!(InferenceModelType::GrokVideo.to_str(), "grok_video");
       assert_eq!(InferenceModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
       assert_eq!(InferenceModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
+      assert_eq!(InferenceModelType::Flux3.to_str(), "flux_3");
+      assert_eq!(InferenceModelType::Flux3Draft.to_str(), "flux_3_draft");
       assert_eq!(InferenceModelType::Kling16Pro.to_str(), "kling_1p6_pro");
       assert_eq!(InferenceModelType::Kling21Pro.to_str(), "kling_2p1_pro");
       assert_eq!(InferenceModelType::Kling21Master.to_str(), "kling_2p1_master");
@@ -819,6 +1074,9 @@ mod tests {
       assert_eq!(InferenceModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(InferenceModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(InferenceModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(InferenceModelType::MinimaxH3.to_str(), "minimax_h3");
+      assert_eq!(InferenceModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
+      assert_eq!(InferenceModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
       assert_eq!(InferenceModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(InferenceModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(InferenceModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -830,6 +1088,12 @@ mod tests {
       assert_eq!(InferenceModelType::Seedance2p0UltraFast.to_str(), "seedance_2p0_u_fast");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusUltra.to_str(), "seedance_2p0_bpu");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusUltraFast.to_str(), "seedance_2p0_bpu_fast");
+      assert_eq!(InferenceModelType::Seedance2p0Mini.to_str(), "seedance_2p0_mini");
+      assert_eq!(InferenceModelType::Seedance2p0BytePlusMini.to_str(), "seedance_2p0_bp_mini");
+      assert_eq!(InferenceModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
+      assert_eq!(InferenceModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
+      assert_eq!(InferenceModelType::Seedance2p5.to_str(), "seedance_2p5");
+      assert_eq!(InferenceModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
       assert_eq!(InferenceModelType::Sora2.to_str(), "sora_2");
       assert_eq!(InferenceModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(InferenceModelType::Veo2.to_str(), "veo_2");
@@ -837,6 +1101,17 @@ mod tests {
       assert_eq!(InferenceModelType::Veo3Fast.to_str(), "veo_3_fast");
       assert_eq!(InferenceModelType::Veo3p1.to_str(), "veo_3p1");
       assert_eq!(InferenceModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(InferenceModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
+      assert_eq!(InferenceModelType::ViduQ3.to_str(), "vidu_q3");
+      assert_eq!(InferenceModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
+
+      // Audio models
+      assert_eq!(InferenceModelType::SunoMusic.to_str(), "suno_music");
+      assert_eq!(InferenceModelType::SunoRemix.to_str(), "suno_remix");
+      assert_eq!(InferenceModelType::SunoSounds.to_str(), "suno_sounds");
+      assert_eq!(InferenceModelType::SunoSample.to_str(), "suno_sample");
+      assert_eq!(InferenceModelType::SeedAudio1p0.to_str(), "seed_audio_1p0");
+
       assert_eq!(InferenceModelType::PreviewModel.to_str(), "preview_model");
       assert_eq!(InferenceModelType::PreviewModelFast.to_str(), "preview_model_fast");
       assert_eq!(InferenceModelType::SwitchX.to_str(), "switch_x");
@@ -845,10 +1120,22 @@ mod tests {
       assert_eq!(InferenceModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
       assert_eq!(InferenceModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
       assert_eq!(InferenceModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1Pro.to_str(), "hunyuan_3d_3p1_pro");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1Rapid.to_str(), "hunyuan_3d_3p1_rapid");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1Part.to_str(), "hunyuan_3d_3p1_part");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1SmartTopology.to_str(), "hunyuan_3d_3p1_topology");
+      assert_eq!(InferenceModelType::Tripo3dH3_1.to_str(), "tripo3d_h3p1");
+      assert_eq!(InferenceModelType::MeshyV6.to_str(), "meshy_v6");
+      assert_eq!(InferenceModelType::Rodin2_5Fast.to_str(), "rodin_2p5_fast");
 
       // Splat generation models (World Labs)
       assert_eq!(InferenceModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
       assert_eq!(InferenceModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
+      assert_eq!(InferenceModelType::Marble1p0.to_str(), "marble_1p0");
+      assert_eq!(InferenceModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
+      assert_eq!(InferenceModelType::Marble1p1.to_str(), "marble_1p1");
+      assert_eq!(InferenceModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
+      assert_eq!(InferenceModelType::TripoSplat.to_str(), "triposplat");
     }
 
     #[test]
@@ -896,6 +1183,7 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("seedream_4").unwrap(), InferenceModelType::Seedream4);
       assert_eq!(InferenceModelType::from_str("seedream_4p5").unwrap(), InferenceModelType::Seedream4p5);
       assert_eq!(InferenceModelType::from_str("seedream_5_lite").unwrap(), InferenceModelType::Seedream5Lite);
+      assert_eq!(InferenceModelType::from_str("seedream_5p0_pro").unwrap(), InferenceModelType::Seedream5p0Pro);
       assert_eq!(InferenceModelType::from_str("midjourney").unwrap(), InferenceModelType::Midjourney);
       assert_eq!(InferenceModelType::from_str("midjourney_v6").unwrap(), InferenceModelType::MidjourneyV6);
       assert_eq!(InferenceModelType::from_str("midjourney_v6p1").unwrap(), InferenceModelType::MidjourneyV6p1);
@@ -912,6 +1200,8 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("grok_video").unwrap(), InferenceModelType::GrokVideo);
       assert_eq!(InferenceModelType::from_str("grok_imagine_video").unwrap(), InferenceModelType::GrokImagineVideo);
       assert_eq!(InferenceModelType::from_str("grok_imagine_video_1p5").unwrap(), InferenceModelType::GrokImagineVideo1p5);
+      assert_eq!(InferenceModelType::from_str("flux_3").unwrap(), InferenceModelType::Flux3);
+      assert_eq!(InferenceModelType::from_str("flux_3_draft").unwrap(), InferenceModelType::Flux3Draft);
       assert_eq!(InferenceModelType::from_str("kling_1p6_pro").unwrap(), InferenceModelType::Kling16Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_pro").unwrap(), InferenceModelType::Kling21Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_master").unwrap(), InferenceModelType::Kling21Master);
@@ -920,6 +1210,9 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("kling_3p0_standard").unwrap(), InferenceModelType::Kling3p0Standard);
       assert_eq!(InferenceModelType::from_str("kling_3p0_pro").unwrap(), InferenceModelType::Kling3p0Pro);
       assert_eq!(InferenceModelType::from_str("happy_horse_1p0").unwrap(), InferenceModelType::HappyHorse1p0);
+      assert_eq!(InferenceModelType::from_str("minimax_h3").unwrap(), InferenceModelType::MinimaxH3);
+      assert_eq!(InferenceModelType::from_str("minimax_h3_turbo").unwrap(), InferenceModelType::MinimaxH3Turbo);
+      assert_eq!(InferenceModelType::from_str("minimax_h3_ultra").unwrap(), InferenceModelType::MinimaxH3Ultra);
       assert_eq!(InferenceModelType::from_str("seedance_1p0_lite").unwrap(), InferenceModelType::Seedance10Lite);
       assert_eq!(InferenceModelType::from_str("seedance_1p0_pro").unwrap(), InferenceModelType::Seedance10Pro);
       assert_eq!(InferenceModelType::from_str("seedance_1p5_pro").unwrap(), InferenceModelType::Seedance1p5Pro);
@@ -931,6 +1224,12 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("seedance_2p0_u_fast").unwrap(), InferenceModelType::Seedance2p0UltraFast);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu").unwrap(), InferenceModelType::Seedance2p0BytePlusUltra);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu_fast").unwrap(), InferenceModelType::Seedance2p0BytePlusUltraFast);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_mini").unwrap(), InferenceModelType::Seedance2p0Mini);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_bp_mini").unwrap(), InferenceModelType::Seedance2p0BytePlusMini);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu_mini").unwrap(), InferenceModelType::Seedance2p0BytePlusUltraMini);
+      assert_eq!(InferenceModelType::from_str("seedance_2p5_preview").unwrap(), InferenceModelType::Seedance2p5Preview);
+      assert_eq!(InferenceModelType::from_str("seedance_2p5").unwrap(), InferenceModelType::Seedance2p5);
+      assert_eq!(InferenceModelType::from_str("seedance_2p5_u").unwrap(), InferenceModelType::Seedance2p5Ultra);
       assert_eq!(InferenceModelType::from_str("sora_2").unwrap(), InferenceModelType::Sora2);
       assert_eq!(InferenceModelType::from_str("sora_2_pro").unwrap(), InferenceModelType::Sora2Pro);
       assert_eq!(InferenceModelType::from_str("veo_2").unwrap(), InferenceModelType::Veo2);
@@ -938,6 +1237,15 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("veo_3_fast").unwrap(), InferenceModelType::Veo3Fast);
       assert_eq!(InferenceModelType::from_str("veo_3p1").unwrap(), InferenceModelType::Veo3p1);
       assert_eq!(InferenceModelType::from_str("veo_3p1_fast").unwrap(), InferenceModelType::Veo3p1Fast);
+      assert_eq!(InferenceModelType::from_str("veo_3p1_lite").unwrap(), InferenceModelType::Veo3p1Lite);
+      assert_eq!(InferenceModelType::from_str("vidu_q3").unwrap(), InferenceModelType::ViduQ3);
+      assert_eq!(InferenceModelType::from_str("vidu_q3_turbo").unwrap(), InferenceModelType::ViduQ3Turbo);
+      // Audio models
+      assert_eq!(InferenceModelType::from_str("suno_music").unwrap(), InferenceModelType::SunoMusic);
+      assert_eq!(InferenceModelType::from_str("suno_remix").unwrap(), InferenceModelType::SunoRemix);
+      assert_eq!(InferenceModelType::from_str("suno_sounds").unwrap(), InferenceModelType::SunoSounds);
+      assert_eq!(InferenceModelType::from_str("suno_sample").unwrap(), InferenceModelType::SunoSample);
+      assert_eq!(InferenceModelType::from_str("seed_audio_1p0").unwrap(), InferenceModelType::SeedAudio1p0);
       assert_eq!(InferenceModelType::from_str("preview_model").unwrap(), InferenceModelType::PreviewModel);
       assert_eq!(InferenceModelType::from_str("preview_model_fast").unwrap(), InferenceModelType::PreviewModelFast);
       assert_eq!(InferenceModelType::from_str("switch_x").unwrap(), InferenceModelType::SwitchX);
@@ -946,10 +1254,22 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_2p0").unwrap(), InferenceModelType::Hunyuan3d2_0);
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_2p1").unwrap(), InferenceModelType::Hunyuan3d2_1);
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_3").unwrap(), InferenceModelType::Hunyuan3d3);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_pro").unwrap(), InferenceModelType::Hunyuan3d3_1Pro);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_rapid").unwrap(), InferenceModelType::Hunyuan3d3_1Rapid);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_part").unwrap(), InferenceModelType::Hunyuan3d3_1Part);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_topology").unwrap(), InferenceModelType::Hunyuan3d3_1SmartTopology);
+      assert_eq!(InferenceModelType::from_str("tripo3d_h3p1").unwrap(), InferenceModelType::Tripo3dH3_1);
+      assert_eq!(InferenceModelType::from_str("meshy_v6").unwrap(), InferenceModelType::MeshyV6);
+      assert_eq!(InferenceModelType::from_str("rodin_2p5_fast").unwrap(), InferenceModelType::Rodin2_5Fast);
 
       // Splat generation models (World Labs)
       assert_eq!(InferenceModelType::from_str("marble_0p1_mini").unwrap(), InferenceModelType::Marble0p1Mini);
       assert_eq!(InferenceModelType::from_str("marble_0p1_plus").unwrap(), InferenceModelType::Marble0p1Plus);
+      assert_eq!(InferenceModelType::from_str("marble_1p0").unwrap(), InferenceModelType::Marble1p0);
+      assert_eq!(InferenceModelType::from_str("marble_1p0_draft").unwrap(), InferenceModelType::Marble1p0Draft);
+      assert_eq!(InferenceModelType::from_str("marble_1p1").unwrap(), InferenceModelType::Marble1p1);
+      assert_eq!(InferenceModelType::from_str("marble_1p1_plus").unwrap(), InferenceModelType::Marble1p1Plus);
+      assert_eq!(InferenceModelType::from_str("triposplat").unwrap(), InferenceModelType::TripoSplat);
     }
 
     #[test]

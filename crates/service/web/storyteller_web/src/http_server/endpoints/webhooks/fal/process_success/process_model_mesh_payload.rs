@@ -1,24 +1,31 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
+use crate::http_server::endpoints::webhooks::fal::process_success::attach_cover_image::{attach_cover_image, AttachCoverImageArgs};
+use crate::http_server::endpoints::webhooks::fal::process_success::attach_prompt_imageref_cover::try_to_attach_prompt_imageref_cover;
+use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata_with_file_name;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::ModelMeshData;
+use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelMeshData, ModelObjData, PreprocessedImageData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
 use enums::common::generation_provider::GenerationProvider;
 use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
+use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 
+// NB: triposplat ply gaussian splat files also arrive via this payload handler.
+//  These are decidedly *not* "mesh" files!
 pub async fn process_model_mesh_payload(
   model_mesh_data: &ModelMeshData,
+  maybe_preprocessed_image: Option<&PreprocessedImageData>,
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> Result<MediaFileToken, CommonWebError> {
@@ -28,6 +35,95 @@ pub async fn process_model_mesh_payload(
         warn!("No `url` in model mesh payload");
         CommonWebError::server_error_with_message("no `url` in model mesh payload")
       })?;
+
+  let media_token = upload_mesh_file(UploadMeshFileArgs {
+    mesh_url,
+    maybe_content_type: model_mesh_data.content_type.as_deref(),
+    maybe_file_name: model_mesh_data.file_name.as_deref(),
+    maybe_batch_token: None,
+    job,
+    server_state,
+  }).await?;
+
+  // TripoSplat sends the segmented input image alongside the splat; attach it
+  // as the cover image. NB: Fail open — the result is usable without a cover.
+  if let Some(preprocessed_image) = maybe_preprocessed_image {
+    let result = try_to_attach_preprocessed_image(
+      preprocessed_image,
+      job,
+      server_state,
+      &media_token,
+    ).await;
+
+    if let Err(err) = result {
+      warn!("Could not attach preprocessed image as cover image to media file: {:?}", err);
+    }
+  } else {
+    // No image in the payload: fall back to the prompt's imageref as the
+    // cover image.
+    try_to_attach_prompt_imageref_cover(job, server_state, &media_token).await;
+  }
+
+  Ok(media_token)
+}
+
+/// `model_obj` payloads (e.g. Hunyuan 3D v3.1 Rapid's OBJ output) have the
+/// same file shape as `model_mesh` and get the same handling.
+pub async fn process_model_obj_payload(
+  model_obj_data: &ModelObjData,
+  job: &FalJobDetails,
+  server_state: &ServerState,
+) -> Result<MediaFileToken, CommonWebError> {
+  let mesh_url = model_obj_data.url
+      .as_deref()
+      .ok_or_else(|| {
+        warn!("No `url` in model obj payload");
+        CommonWebError::server_error_with_message("no `url` in model obj payload")
+      })?;
+
+  let media_token = upload_mesh_file(UploadMeshFileArgs {
+    mesh_url,
+    maybe_content_type: model_obj_data.content_type.as_deref(),
+    maybe_file_name: model_obj_data.file_name.as_deref(),
+    maybe_batch_token: None,
+    job,
+    server_state,
+  }).await?;
+
+  // `model_obj` payloads never carry a thumbnail: fall back to the prompt's
+  // imageref as the cover image.
+  try_to_attach_prompt_imageref_cover(job, server_state, &media_token).await;
+
+  Ok(media_token)
+}
+
+pub(crate) struct UploadMeshFileArgs<'a> {
+  pub mesh_url: &'a str,
+  pub maybe_content_type: Option<&'a str>,
+  /// Used as a last-resort extension hint when neither magic bytes nor the
+  /// fal content_type identify the file (common for FBX/OBJ meshes).
+  pub maybe_file_name: Option<&'a str>,
+  /// Set when the mesh is one of several files from a single generation
+  /// (e.g. part splitting).
+  pub maybe_batch_token: Option<&'a BatchGenerationToken>,
+  pub job: &'a FalJobDetails,
+  pub server_state: &'a ServerState,
+}
+
+/// Download a mesh file from fal, upload it to our public bucket, and insert
+/// a media file record. Shared by the single-mesh payload handlers
+/// (`model_mesh`, `model_obj`) and the multi-file `result_files` handler.
+pub(crate) async fn upload_mesh_file(
+  args: UploadMeshFileArgs<'_>,
+) -> Result<MediaFileToken, CommonWebError> {
+  let UploadMeshFileArgs {
+    mesh_url,
+    maybe_content_type,
+    maybe_file_name,
+    maybe_batch_token,
+    job,
+    server_state,
+  } = args;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
   let mut file_bytes = http_download_url_to_bytes(mesh_url)
@@ -51,17 +147,19 @@ pub async fn process_model_mesh_payload(
         })?;
   }
 
-  // Resolve mime type: magic bytes first, fal content_type as fallback.
-  let metadata = resolve_file_metadata(&file_bytes, model_mesh_data.content_type.as_deref())
+  // Resolve mime type: magic bytes first, fal content_type next, then the
+  // file name's extension as a last resort.
+  let metadata = resolve_file_metadata_with_file_name(&file_bytes, maybe_content_type, maybe_file_name)
       .ok_or_else(|| {
         warn!(
-          "Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
+          "Could not determine file type for mesh (bytes: {}, fal content_type: {:?}, file_name: {:?})",
           file_bytes.len(),
-          model_mesh_data.content_type,
+          maybe_content_type,
+          maybe_file_name,
         );
         CommonWebError::server_error_with_message(
           &format!("Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
-            file_bytes.len(), model_mesh_data.content_type))
+            file_bytes.len(), maybe_content_type))
       })?;
 
   let mime_type = metadata.mime_type.as_str();
@@ -84,6 +182,12 @@ pub async fn process_model_mesh_payload(
         CommonWebError::from_anyhow_error(err)
       })?;
 
+  // PLY results are Gaussian splats (e.g. TripoSplat), not meshes: store
+  // them the way the World Labs splat pipeline does — `Splat` media class,
+  // tagged as world generation, with no `Object` engine category. No fal
+  // mesh endpoint returns PLY, so the file type is a reliable discriminator.
+  let is_gaussian_splat = matches!(media_file_type, MediaFileType::Ply);
+
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
 
   info!("Uploading media to bucket path: {}", public_upload_path.get_full_object_path_str());
@@ -98,21 +202,33 @@ pub async fn process_model_mesh_payload(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  let media_token = MediaFileInsertBuilder::new()
+  let mut insert_builder = MediaFileInsertBuilder::new()
       .checksum_sha2(&file_hash)
       .creator_ip_address(&job.creator_ip_address)
       .file_size_bytes(file_size_bytes as u64)
+      .maybe_batch_generation_token(maybe_batch_token)
       .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
       .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_engine_category(Some(MediaFileEngineCategory::Object))
       .maybe_generation_provider(Some(GenerationProvider::Artcraft))
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .maybe_source_job_token(Some(&job.job_token))
       .maybe_platform_type(job.maybe_platform_type)
-      .media_file_class(MediaFileClass::Dimensional)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .media_file_type(media_file_type)
       .mime_type(mime_type)
-      .public_bucket_directory_hash(&public_upload_path)
+      .public_bucket_directory_hash(&public_upload_path);
+
+  if is_gaussian_splat {
+    insert_builder = insert_builder
+        .media_file_class(MediaFileClass::Splat)
+        .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration);
+  } else {
+    insert_builder = insert_builder
+        .media_file_class(MediaFileClass::Mesh)
+        .maybe_engine_category(Some(MediaFileEngineCategory::Object));
+  }
+
+  let media_token = insert_builder
       .insert_pool(&server_state.mysql_pool)
       .await
       .map_err(|err| {
@@ -123,4 +239,32 @@ pub async fn process_model_mesh_payload(
   info!("Mesh media file uploaded with token: {}", media_token);
 
   Ok(media_token)
+}
+
+/// Attach a TripoSplat `preprocessed_image` (the segmented input image) as
+/// the cover image of the uploaded splat, mirroring how `model_glb` results
+/// attach their `thumbnail`.
+async fn try_to_attach_preprocessed_image(
+  preprocessed_image: &PreprocessedImageData,
+  job: &FalJobDetails,
+  server_state: &ServerState,
+  splat_media_token: &MediaFileToken,
+) -> Result<(), CommonWebError> {
+  info!("Fal Preprocessed Image Data: {:?}", preprocessed_image);
+
+  let image_url = preprocessed_image.url
+      .as_deref()
+      .ok_or_else(|| {
+        warn!("No `url` in preprocessed image payload");
+        CommonWebError::server_error_with_message("no `url` in preprocessed image payload")
+      })?;
+
+  attach_cover_image(AttachCoverImageArgs {
+    image_url,
+    maybe_content_type: preprocessed_image.content_type.as_deref(),
+    maybe_origin_product_category: Some(MediaFileOriginProductCategory::WorldGeneration),
+    target_media_token: splat_media_token,
+    job,
+    server_state,
+  }).await
 }

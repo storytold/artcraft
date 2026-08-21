@@ -14,7 +14,13 @@ use artcraft_api_defs::media_file::delete_media_file::{DeleteMediaFilePathInfo, 
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::warn;
 use mysql_queries::queries::media_files::delete::delete_media_file::{delete_media_file_as_mod, delete_media_file_as_user, undelete_media_file_as_mod, undelete_media_file_as_user};
-use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
+use mysql_queries::queries::media_files::get::get_media_file::get_media_file_with_transactor;
+use mysql_queries::queries::tags::list_tag_tokens_for_media_file::{list_tag_tokens_for_media_file, ListTagTokensForMediaFileArgs};
+use mysql_queries::queries::tags::recount_tag_use_counts::{recount_tag_use_counts, RecountTagUseCountsArgs};
+use mysql_queries::utils::transactor::Transactor;
+use sqlx::pool::PoolConnection;
+use sqlx::MySql;
+use std::marker::PhantomData;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
@@ -42,9 +48,16 @@ pub async fn delete_media_file_handler(
     request: Json<DeleteMediaFileRequest>,
     server_state: web::Data<Arc<ServerState>>
 ) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
+    // One connection for the whole request — never hand helpers the raw
+    // pool, or each call self-acquires and adds pool pressure.
+    let mut conn = server_state.mysql_pool.acquire().await.map_err(|err| {
+        warn!("MySQL pool error: {:?}", err);
+        CommonWebError::from_error(err)
+    })?;
+
     let maybe_user_session = server_state
         .session_checker
-        .maybe_get_user_session(&http_request, &server_state.mysql_pool)
+        .maybe_get_user_session_from_connection(&http_request, &mut conn)
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
@@ -61,10 +74,10 @@ pub async fn delete_media_file_handler(
 
     let is_mod = user_session.can_ban_users;
 
-    let media_file_lookup_result = get_media_file(
+    let media_file_lookup_result = get_media_file_with_transactor(
         &path.token,
         is_mod,
-        &server_state.mysql_pool,
+        Transactor::for_connection(&mut *conn),
     ).await;
 
     let media_file = match media_file_lookup_result {
@@ -98,14 +111,14 @@ pub async fn delete_media_file_handler(
             DeleteRole::AsUser => {
                 delete_media_file_as_user(
                     &path.token,
-                    &server_state.mysql_pool
+                    &mut *conn,
                 ).await
             }
             DeleteRole::AsMod => {
                 delete_media_file_as_mod(
                     &path.token,
                     user_session.user_token.as_str(),
-                    &server_state.mysql_pool
+                    &mut *conn,
                 ).await
             }
         }
@@ -119,14 +132,14 @@ pub async fn delete_media_file_handler(
                 // NB: Technically only mods can see their own media_files
                 undelete_media_file_as_user(
                     &path.token,
-                    &server_state.mysql_pool
+                    &mut *conn,
                 ).await
             }
             DeleteRole::AsMod => {
                 undelete_media_file_as_mod(
                     &path.token,
                     user_session.user_token.as_str(),
-                    &server_state.mysql_pool
+                    &mut *conn,
                 ).await
             }
         }
@@ -140,7 +153,39 @@ pub async fn delete_media_file_handler(
         }
     };
 
+    // Tag links survive delete/undelete (so an undelete restores the
+    // user's tags), but `tags.use_count` only counts links to live
+    // files — refresh the affected tags' counts. Best-effort: the
+    // delete already succeeded, and a stale count self-heals on the
+    // tag's next recount.
+    recount_tags_for_media_file(&path.token, &mut conn).await;
+
     Ok(Json(SimpleGenericJsonSuccess{
         success: true
     }))
+}
+
+async fn recount_tags_for_media_file(
+    media_file_token: &MediaFileToken,
+    conn: &mut PoolConnection<MySql>,
+) {
+    let linked_tag_tokens = match list_tag_tokens_for_media_file(ListTagTokensForMediaFileArgs {
+        media_file_token,
+        mysql_executor: &mut **conn,
+        phantom: PhantomData,
+    }).await {
+        Ok(tokens) => tokens,
+        Err(err) => {
+            warn!("list_tag_tokens_for_media_file failed after delete/undelete: {:?}", err);
+            return;
+        }
+    };
+
+    if let Err(err) = recount_tag_use_counts(RecountTagUseCountsArgs {
+        tag_tokens: &linked_tag_tokens,
+        mysql_executor: &mut **conn,
+        phantom: PhantomData,
+    }).await {
+        warn!("recount_tag_use_counts failed after delete/undelete: {:?}", err);
+    }
 }

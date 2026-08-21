@@ -15,14 +15,7 @@ import {
 } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@storyteller/ui-button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faChevronUp,
-  faChevronDown,
-  faCircleCheck,
-  faCircleInfo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CircleCheckIcon, InfoIcon } from "lucide-react";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -101,8 +94,19 @@ function PortalTooltip({
   useEffect(() => {
     if (!isShowing) return;
     const handleScroll = () => checkVisibilityAndUpdatePosition();
+    // Escape dismisses the tooltip — required because the outside-safe marker
+    // below makes the enclosing Modal defer its own Escape handling to us.
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      setIsShowing(false);
+    };
     window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("keydown", handleKey);
+    };
   }, [isShowing, checkVisibilityAndUpdatePosition]);
 
   return (
@@ -119,6 +123,9 @@ function PortalTooltip({
         createPortal(
           <div
             ref={tooltipRef}
+            // Body-portaled, so inside a Radix modal (promptbox focus mode)
+            // clicks here must not count as outside clicks on the dialog.
+            data-modal-outside-safe=""
             onMouseEnter={() => setIsHoveringTooltip(true)}
             onMouseLeave={() => setIsHoveringTooltip(false)}
             style={{
@@ -230,11 +237,14 @@ function InfoHint({ content }: { content: ReactNode }) {
           if (!pinnedRef.current) setOpen(false);
         }}
       >
-        <FontAwesomeIcon icon={faCircleInfo} className="h-3.5 w-3.5" />
+        <InfoIcon  className="h-3.5 w-3.5" />
       </button>
       {open &&
         createPortal(
           <div
+            // Body-portaled, so inside a Radix modal (promptbox focus mode)
+            // taps here must not count as outside clicks on the dialog.
+            data-modal-outside-safe=""
             style={{
               position: "fixed",
               top: position.top,
@@ -307,6 +317,394 @@ export interface PopoverItem {
   tooltipDelayMs?: number;
   // Optional custom right-side node shown when item is selected
   selectedRight?: ReactNode;
+  // Renders this row as a group (e.g. a model family) whose children open in
+  // a right-side flyout submenu. Group rows never select themselves; clicking
+  // a child selects it and closes the whole popover. Only used in `richList`
+  // mode. Build model groups with `groupModelItems`.
+  subItems?: PopoverItem[];
+}
+
+interface RichListRowProps {
+  item: PopoverItem;
+  onClick?: () => void;
+  // Highlight the row while its flyout/tooltip is open.
+  active?: boolean;
+  // Overrides the default right-side selection check (e.g. a submenu chevron).
+  rightNode?: ReactNode;
+}
+
+// One rich-list row (icon tile, name, description, badges). Shared between the
+// main richList panel and the submenu flyout so group children render
+// identically to top-level rows.
+function RichListRow({
+  item,
+  onClick,
+  active = false,
+  rightNode,
+}: RichListRowProps) {
+  return (
+    <div
+      data-selected={item.selected ? "true" : undefined}
+      onClick={() => {
+        if (!item.disabled) onClick?.();
+      }}
+      className={twMerge(
+        "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
+        item.selected ? "bg-ui-controls/70" : "hover:bg-ui-controls/50",
+        !item.selected && active ? "bg-ui-controls/50" : "",
+        item.disabled ? "!cursor-not-allowed opacity-50" : "",
+      )}
+    >
+      <span
+        className={twMerge(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
+          item.selected
+            ? "border-primary bg-primary/20"
+            : "border-ui-controls-border bg-ui-controls/60",
+        )}
+      >
+        {item.icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 items-center gap-1">
+          <span
+            className={twMerge(
+              "truncate font-semibold",
+              item.selected ? "text-base-fg" : "text-base-fg/90",
+            )}
+          >
+            {item.label}
+          </span>
+          {item.info ? <InfoHint content={item.info} /> : null}
+        </div>
+        {item.description && (
+          <span className="truncate text-xs text-base-fg/55">
+            {item.description}
+          </span>
+        )}
+        {item.badges &&
+          Array.isArray(item.badges) &&
+          item.badges.length > 0 && (
+            <div className="mt-1 flex flex-row flex-wrap gap-1">
+              {item.badges.map((badge, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+                >
+                  {badge?.icon && <span>{badge.icon}</span>}
+                  {badge?.label || ""}
+                </span>
+              ))}
+            </div>
+          )}
+      </div>
+      {item.trailing && (
+        <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>
+      )}
+      {rightNode ??
+        (item.selected &&
+          (item.selectedRight ?? (
+            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
+              <CheckIcon
+                
+                className="text-[11px] font-bold text-white" />
+            </span>
+          )))}
+    </div>
+  );
+}
+
+interface SubmenuFlyoutProps {
+  children: React.ReactElement;
+  item: PopoverItem;
+  onSelectChild: (child: PopoverItem) => void;
+  // The enclosing popover's close, threaded into children's hoverTooltip
+  // render functions (e.g. the provider selector) so they can close everything.
+  popoverClose: () => void;
+  onOpenChange?: (open: boolean) => void;
+}
+
+// Right-side flyout submenu for grouped model rows. Portal-rendered so it
+// escapes the panel bounds, opens on hover or click (the click path doubles as
+// the touch fallback), and hides when its row scrolls out of the list.
+function SubmenuFlyout({
+  children,
+  item,
+  onSelectChild,
+  popoverClose,
+  onOpenChange,
+}: SubmenuFlyoutProps) {
+  const [isShowing, setIsShowingRaw] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [activeChildIdx, setActiveChildIdx] = useState<number | null>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const openTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateScrollIndicators = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    setCanScrollUp(scrollTop > 1);
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1);
+  }, []);
+
+  const setIsShowing = useCallback(
+    (show: boolean) => {
+      setIsShowingRaw(show);
+      onOpenChange?.(show);
+    },
+    [onOpenChange],
+  );
+
+  // Position the flyout beside the trigger row. Returns false (without
+  // positioning) when the row is scrolled out of its list.
+  const updatePosition = useCallback((): boolean => {
+    const trigger = triggerRef.current;
+    if (!trigger) return false;
+    const rect = trigger.getBoundingClientRect();
+    const scrollParent = trigger.closest("[data-scroll-container]");
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect();
+      const inView =
+        rect.top >= parentRect.top - 10 &&
+        rect.bottom <= parentRect.bottom + 10;
+      if (!inView) return false;
+    }
+    setPosition({ top: rect.top + rect.height / 2, left: rect.right + 10 });
+    return true;
+  }, []);
+
+  const cancelTimers = () => {
+    if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  const scheduleOpen = () => {
+    cancelTimers();
+    openTimerRef.current = setTimeout(() => {
+      if (updatePosition()) setIsShowing(true);
+    }, 100);
+  };
+
+  const scheduleClose = () => {
+    cancelTimers();
+    closeTimerRef.current = setTimeout(() => setIsShowing(false), 150);
+  };
+
+  const cancelClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  useEffect(() => cancelTimers, []);
+
+  // Open with the selected model centered in the flyout's own scroll list so
+  // the current choice is visible without scrolling.
+  useLayoutEffect(() => {
+    if (!isShowing) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const selected = container.querySelector(
+      "[data-selected='true']",
+    ) as HTMLElement | null;
+    if (selected) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = selected.getBoundingClientRect();
+      const relativeTop =
+        elementRect.top - containerRect.top + container.scrollTop;
+      container.scrollTop = Math.max(
+        0,
+        relativeTop - containerRect.height / 2 + elementRect.height / 2,
+      );
+    }
+    updateScrollIndicators();
+  }, [isShowing, updateScrollIndicators]);
+
+  // Keep the scroll fades in sync while the flyout is open.
+  useEffect(() => {
+    if (!isShowing) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    container.addEventListener("scroll", updateScrollIndicators);
+    const resizeObserver = new ResizeObserver(updateScrollIndicators);
+    resizeObserver.observe(container);
+    return () => {
+      container.removeEventListener("scroll", updateScrollIndicators);
+      resizeObserver.disconnect();
+    };
+  }, [isShowing, updateScrollIndicators]);
+
+  // The flyout is vertically centered on its row; clamp it into the viewport
+  // when a long list would run off the top or bottom edge.
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    if (!isShowing || !el) return;
+    el.style.transform = "translateY(-50%)";
+    const rect = el.getBoundingClientRect();
+    const margin = 8;
+    let dy = 0;
+    if (rect.bottom > window.innerHeight - margin) {
+      dy = window.innerHeight - margin - rect.bottom;
+    }
+    if (rect.top + dy < margin) dy = margin - rect.top;
+    if (dy !== 0) el.style.transform = `translateY(calc(-50% + ${dy}px))`;
+  }, [isShowing, position]);
+
+  // Track the row while scrolling; hide once it leaves the list viewport.
+  useEffect(() => {
+    if (!isShowing) return;
+    const handleScroll = () => {
+      if (!updatePosition()) setIsShowing(false);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isShowing, updatePosition, setIsShowing]);
+
+  // Dismiss on outside press — needed for the click/touch open path, where
+  // there is no hover-out to close the flyout. Escape also dismisses: the
+  // outside-safe marker on the panel makes the enclosing Modal defer its own
+  // Escape handling while the flyout is open.
+  useEffect(() => {
+    if (!isShowing) return;
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setIsShowing(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsShowing(false);
+    };
+    window.addEventListener("mousedown", onPointerDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isShowing, setIsShowing]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
+        onClick={() => {
+          cancelTimers();
+          if (isShowing) {
+            setIsShowing(false);
+          } else if (updatePosition()) {
+            setIsShowing(true);
+          }
+        }}
+      >
+        {children}
+      </div>
+      {isShowing &&
+        createPortal(
+          <div
+            ref={panelRef}
+            // Body-portaled: a modal Radix dialog (promptbox focus mode) sets
+            // pointer-events: none on <body>, so re-enable them explicitly or
+            // the flyout can never be hovered and closes on row mouse-leave.
+            // The outside-safe marker keeps clicks in here from counting as
+            // outside clicks that would close the dialog.
+            data-modal-outside-safe=""
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            // The focus-mode modal's scroll lock (react-remove-scroll) blocks
+            // any wheel/touch event that bubbles to document from outside the
+            // dialog — and this body-portaled panel counts as outside. Stop
+            // propagation so the list's native scrolling keeps working.
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              transform: "translateY(-50%)",
+              zIndex: 9999,
+            }}
+            className="pointer-events-auto w-[340px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
+          >
+            <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
+              {item.label}
+            </div>
+            <div className="relative">
+              {/* Top fade — appears only when there's content above, with a
+                  slow bouncing arrow hinting to scroll up. */}
+              <div
+                className={twMerge(
+                  "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-10 items-start justify-center bg-gradient-to-b from-ui-panel to-transparent pt-1 transition-opacity duration-200",
+                  canScrollUp ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <ChevronUpIcon
+                  
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+              </div>
+              <div
+                ref={scrollRef}
+                data-scroll-container
+                className="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto text-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              >
+                {item.subItems?.map((child, childIdx) => {
+                  const childRow = (
+                    <RichListRow
+                      item={child}
+                      onClick={() => onSelectChild(child)}
+                      active={activeChildIdx === childIdx}
+                    />
+                  );
+                  if (!child.hoverTooltip) {
+                    return <div key={childIdx}>{childRow}</div>;
+                  }
+                  const childTooltip =
+                    typeof child.hoverTooltip === "function"
+                      ? (
+                          child.hoverTooltip as (close: () => void) => ReactNode
+                        )(popoverClose)
+                      : child.hoverTooltip;
+                  return (
+                    <div key={childIdx}>
+                      <PortalTooltip
+                        content={childTooltip}
+                        delay={child.tooltipDelayMs ?? 300}
+                        className="min-w-48"
+                        onOpenChange={(open) =>
+                          setActiveChildIdx((prev) =>
+                            open ? childIdx : prev === childIdx ? null : prev,
+                          )
+                        }
+                      >
+                        {childRow}
+                      </PortalTooltip>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Bottom fade — appears only when there's more below, with a
+                  slow bouncing arrow hinting to scroll down. */}
+              <div
+                className={twMerge(
+                  "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-10 items-end justify-center bg-gradient-to-t from-ui-panel to-transparent pb-1 transition-opacity duration-200",
+                  canScrollDown ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <ChevronDownIcon
+                  
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
 }
 
 const ViewportClamp = ({
@@ -403,7 +801,11 @@ export const PopoverMenu = ({
   maxListHeight,
   richList = false,
 }: PopoverMenuProps) => {
-  const selectedItem = items.find((item) => item.selected);
+  // Search leaves so a grouped list resolves to the selected model, not its
+  // (also-selected) family group row.
+  const selectedItem = items
+    .flatMap((item) => item.subItems ?? [item])
+    .find((item) => item.selected);
   const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -650,10 +1052,9 @@ export const PopoverMenu = ({
                         <span className="opacity-70">{triggerLabel}</span>
                         <div className="flex items-center gap-2">
                           <span className="truncate">{selectedItem.label}</span>
-                          <FontAwesomeIcon
-                            icon={faChevronUp}
-                            className="text-sm"
-                          />
+                          <ChevronUpIcon
+                            
+                            className="text-sm" />
                         </div>
                       </div>
                     ) : null}
@@ -730,10 +1131,9 @@ export const PopoverMenu = ({
                             canScrollUp ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faChevronUp}
-                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
-                          />
+                          <ChevronUpIcon
+                            
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
                         </div>
                         <div
                           ref={scrollContainerRef}
@@ -742,6 +1142,42 @@ export const PopoverMenu = ({
                           style={{ maxHeight: maxListHeight ?? "60vh" }}
                         >
                           {items.map((item, index) => {
+                            if (item.subItems && item.subItems.length > 0) {
+                              return (
+                                <div key={index}>
+                                  <SubmenuFlyout
+                                    item={item}
+                                    popoverClose={close}
+                                    onSelectChild={(child) =>
+                                      handleItemClick(child, close)
+                                    }
+                                    onOpenChange={(open) =>
+                                      setOpenTooltipIdx((prev) =>
+                                        open
+                                          ? index
+                                          : prev === index
+                                            ? null
+                                            : prev,
+                                      )
+                                    }
+                                  >
+                                    <RichListRow
+                                      item={item}
+                                      active={openTooltipIdx === index}
+                                      rightNode={
+                                        <ChevronRightIcon
+                                          
+                                          className="ml-1 shrink-0 text-xs text-base-fg/50" />
+                                      }
+                                    />
+                                  </SubmenuFlyout>
+                                  {item.divider && (
+                                    <div className="my-1 border-t border-white/10" />
+                                  )}
+                                </div>
+                              );
+                            }
+
                             const tooltipContent =
                               typeof item.hoverTooltip === "function"
                                 ? (
@@ -752,91 +1188,11 @@ export const PopoverMenu = ({
                                 : item.hoverTooltip;
 
                             const itemRow = (
-                              <div
-                                data-selected={
-                                  item.selected ? "true" : undefined
-                                }
-                                onClick={() => {
-                                  if (!item.disabled)
-                                    handleItemClick(item, close);
-                                }}
-                                className={twMerge(
-                                  "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
-                                  item.selected
-                                    ? "bg-ui-controls/70"
-                                    : "hover:bg-ui-controls/50",
-                                  !item.selected && openTooltipIdx === index
-                                    ? "bg-ui-controls/50"
-                                    : "",
-                                  item.disabled
-                                    ? "!cursor-not-allowed opacity-50"
-                                    : "",
-                                )}
-                              >
-                                <span
-                                  className={twMerge(
-                                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
-                                    item.selected
-                                      ? "border-primary bg-primary/20"
-                                      : "border-ui-controls-border bg-ui-controls/60",
-                                  )}
-                                >
-                                  {item.icon}
-                                </span>
-                                <div className="flex min-w-0 flex-1 flex-col">
-                                  <div className="flex min-w-0 items-center gap-1">
-                                    <span
-                                      className={twMerge(
-                                        "truncate font-semibold",
-                                        item.selected
-                                          ? "text-base-fg"
-                                          : "text-base-fg/90",
-                                      )}
-                                    >
-                                      {item.label}
-                                    </span>
-                                    {item.info ? (
-                                      <InfoHint content={item.info} />
-                                    ) : null}
-                                  </div>
-                                  {item.description && (
-                                    <span className="truncate text-xs text-base-fg/55">
-                                      {item.description}
-                                    </span>
-                                  )}
-                                  {item.badges &&
-                                    Array.isArray(item.badges) &&
-                                    item.badges.length > 0 && (
-                                      <div className="mt-1 flex flex-row flex-wrap gap-1">
-                                        {item.badges.map((badge, i) => (
-                                          <span
-                                            key={i}
-                                            className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
-                                          >
-                                            {badge?.icon && (
-                                              <span>{badge.icon}</span>
-                                            )}
-                                            {badge?.label || ""}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                </div>
-                                {item.trailing && (
-                                  <div className="ml-1 flex shrink-0 items-center">
-                                    {item.trailing}
-                                  </div>
-                                )}
-                                {item.selected &&
-                                  (item.selectedRight ?? (
-                                    <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
-                                      <FontAwesomeIcon
-                                        icon={faCheck}
-                                        className="text-[11px] font-bold text-white"
-                                      />
-                                    </span>
-                                  ))}
-                              </div>
+                              <RichListRow
+                                item={item}
+                                onClick={() => handleItemClick(item, close)}
+                                active={openTooltipIdx === index}
+                              />
                             );
 
                             return (
@@ -876,20 +1232,18 @@ export const PopoverMenu = ({
                             canScrollDown ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faChevronDown}
-                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
-                          />
+                          <ChevronDownIcon
+                            
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
                         </div>
                       </div>
                     ) : mode === "hoverSelect" ? (
                       <div className="relative flex flex-col text-sm text-base-fg overflow-visible">
                         {maxListHeight && canScrollUp && (
                           <div className="absolute top-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-b from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
-                            <FontAwesomeIcon
-                              icon={faChevronUp}
-                              className="text-base-fg/60 text-xs animate-bounce"
-                            />
+                            <ChevronUpIcon
+                              
+                              className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
                         <div
@@ -989,7 +1343,7 @@ export const PopoverMenu = ({
                                   {item.selected &&
                                     (item.selectedRight ?? (
                                       <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
-                                        <FontAwesomeIcon icon={faCircleCheck} />
+                                        <CircleCheckIcon />
                                       </span>
                                     ))}
                                 </div>
@@ -1048,10 +1402,9 @@ export const PopoverMenu = ({
                         </div>
                         {maxListHeight && canScrollDown && (
                           <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-t from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
-                            <FontAwesomeIcon
-                              icon={faChevronDown}
-                              className="text-base-fg/60 text-xs animate-bounce"
-                            />
+                            <ChevronDownIcon
+                              
+                              className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
                         {showAddButton && onAdd && (
@@ -1159,10 +1512,9 @@ export const PopoverMenu = ({
                                       )}
                                     >
                                       {item.selected && (
-                                        <FontAwesomeIcon
-                                          icon={faCheck}
-                                          className="text-base-fg text-xs font-bold"
-                                        />
+                                        <CheckIcon
+                                          
+                                          className="text-base-fg text-xs font-bold" />
                                       )}
                                     </span>
                                   )}
@@ -1223,10 +1575,9 @@ export const PopoverMenu = ({
                                     )}
                                   >
                                     {item.selected && (
-                                      <FontAwesomeIcon
-                                        icon={faCheck}
-                                        className="text-base-fg text-xs font-bold"
-                                      />
+                                      <CheckIcon
+                                        
+                                        className="text-base-fg text-xs font-bold" />
                                     )}
                                   </span>
                                 )}

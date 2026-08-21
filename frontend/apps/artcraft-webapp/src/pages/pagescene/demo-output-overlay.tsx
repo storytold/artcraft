@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCompress,
-  faExpand,
-  faImage,
-  faVideo,
-  faWandMagicSparkles,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ImageIcon, MaximizeIcon, MinimizeIcon, VideoIcon, WandSparklesIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
@@ -218,7 +211,7 @@ function ShowOutputPill({ onClick }: { onClick: () => void }) {
       aria-label="Show rendered output"
       className="pointer-events-auto absolute right-2 top-16 z-30 flex items-center gap-2 rounded-xl border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-xl transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
     >
-      <FontAwesomeIcon icon={faImage} className="h-3 w-3 text-primary" />
+      <ImageIcon  className="h-3 w-3 text-primary" />
       Show output
     </button>
   );
@@ -249,14 +242,14 @@ function ViewToggle({ view, onChange }: ViewToggleProps) {
           transform: view === "image" ? "translateX(100%)" : "translateX(0%)",
         }}
       />
-      <ToggleIcon icon={faVideo} active={view === "video"} />
-      <ToggleIcon icon={faImage} active={view === "image"} />
+      <ToggleIcon icon={VideoIcon} active={view === "video"} />
+      <ToggleIcon icon={ImageIcon} active={view === "image"} />
     </button>
   );
 }
 
 interface ToggleIconProps {
-  icon: typeof faVideo;
+  icon: typeof VideoIcon;
   active: boolean;
 }
 
@@ -268,7 +261,7 @@ function ToggleIcon({ icon, active }: ToggleIconProps) {
         (active ? "text-white" : "text-base-fg/60")
       }
     >
-      <FontAwesomeIcon icon={icon} className="h-3 w-3" />
+      <DynamicIcon icon={icon} className="h-3 w-3" />
     </span>
   );
 }
@@ -307,10 +300,9 @@ function Card({
     <div className="glass pointer-events-auto overflow-hidden rounded-xl shadow-xl border-2 border-primary">
       <div className="flex items-center justify-between gap-3 border-b border-ui-controls-border/60 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <FontAwesomeIcon
-            icon={faWandMagicSparkles}
-            className="h-3 w-3 shrink-0 text-primary"
-          />
+          <WandSparklesIcon
+            
+            className="h-3 w-3 shrink-0 text-primary" />
           <div className="min-w-0 leading-tight">
             <div className="text-xs font-semibold uppercase tracking-wider text-base-fg">
               Rendered Output
@@ -332,7 +324,7 @@ function Card({
             }
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
           >
-            <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+            <XIcon  className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -360,8 +352,8 @@ function Card({
           aria-label={isExpanded ? "Collapse output view" : "Expand output view"}
           className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-black/60 text-white/80 shadow-lg backdrop-blur-md transition-colors duration-150 hover:bg-black/80 hover:text-white"
         >
-          <FontAwesomeIcon
-            icon={isExpanded ? faCompress : faExpand}
+          <DynamicIcon
+            icon={isExpanded ? MinimizeIcon : MaximizeIcon}
             className="h-3 w-3"
           />
         </button>

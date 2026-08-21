@@ -1,36 +1,34 @@
-use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook::EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds;
-use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_fast_image_to_video_webhook::EnqueueVeo3p1FastImageToVideoDurationSeconds;
-use fal_client::requests_old::webhook::video::text::enqueue_veo_3p1_fast_text_to_video_webhook::EnqueueVeo3p1FastTextToVideoDurationSeconds;
+use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 
-use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::veo_3p1_fast::request::{
   FalVeo3p1FastMode, FalVeo3p1FastRequestState,
 };
+use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 #[derive(Clone, Debug)]
 pub struct FalVeo3p1FastCostState {
-  pub duration_seconds: u64,
-  pub generate_audio: bool,
+  pub cost_in_usd_cents: u64,
 }
 
 impl FalVeo3p1FastCostState {
   pub fn from_request(request: &FalVeo3p1FastRequestState) -> Self {
-    let (duration_seconds, generate_audio) = match &request.mode {
-      FalVeo3p1FastMode::TextToVideo(req) => (t2v_duration_seconds(req.duration), req.generate_audio.unwrap_or(true)),
-      FalVeo3p1FastMode::ImageToVideo(req) => (i2v_duration_seconds(req.duration), req.generate_audio.unwrap_or(true)),
-      FalVeo3p1FastMode::FirstLastFrame(req) => (flf_duration_seconds(req.duration), req.generate_audio.unwrap_or(true)),
+    // Cost math is owned by fal_client's per-endpoint
+    // `FalRequestCostCalculator` implementations. The router state just
+    // forwards the result so router cost ≡ fal_client cost by construction.
+    let cost_in_usd_cents = match &request.mode {
+      FalVeo3p1FastMode::TextToVideo(req) => req.calculate_cost_in_cents(),
+      FalVeo3p1FastMode::ImageToVideo(req) => req.calculate_cost_in_cents(),
+      FalVeo3p1FastMode::FirstLastFrameToVideo(req) => req.calculate_cost_in_cents(),
+      FalVeo3p1FastMode::ReferenceToVideo(req) => req.calculate_cost_in_cents(),
+      FalVeo3p1FastMode::ExtendVideo(req) => req.calculate_cost_in_cents(),
     };
-    Self { duration_seconds, generate_audio }
+    Self { cost_in_usd_cents }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // $0.10/sec audio off, $0.15/sec audio on (720p/1080p).
-    let per_second_cents: u64 = if self.generate_audio { 15 } else { 10 };
-    let cost_in_usd_cents = per_second_cents * self.duration_seconds;
-
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_usd_cents),
-      cost_in_usd_cents: Some(cost_in_usd_cents),
+      cost_in_credits: Some(self.cost_in_usd_cents),
+      cost_in_usd_cents: Some(self.cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
       is_rate_limited: false,
@@ -40,90 +38,204 @@ impl FalVeo3p1FastCostState {
   }
 }
 
-fn t2v_duration_seconds(d: Option<EnqueueVeo3p1FastTextToVideoDurationSeconds>) -> u64 {
-  match d {
-    Some(EnqueueVeo3p1FastTextToVideoDurationSeconds::Four) => 4,
-    Some(EnqueueVeo3p1FastTextToVideoDurationSeconds::Six) => 6,
-    Some(EnqueueVeo3p1FastTextToVideoDurationSeconds::Eight) | None => 8,
-  }
-}
-
-fn i2v_duration_seconds(d: Option<EnqueueVeo3p1FastImageToVideoDurationSeconds>) -> u64 {
-  match d {
-    Some(EnqueueVeo3p1FastImageToVideoDurationSeconds::Four) => 4,
-    Some(EnqueueVeo3p1FastImageToVideoDurationSeconds::Six) => 6,
-    Some(EnqueueVeo3p1FastImageToVideoDurationSeconds::Eight) | None => 8,
-  }
-}
-
-fn flf_duration_seconds(d: Option<EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds>) -> u64 {
-  match d {
-    Some(EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds::Four) => 4,
-    Some(EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds::Six) => 6,
-    Some(EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds::Eight) | None => 8,
-  }
-}
-
 #[cfg(test)]
 mod tests {
-  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::router_provider::RouterProvider;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::video_list_ref::VideoListRef;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+  use crate::generate::generate_video::providers::fal::veo_3p1_fast::build::build_fal_veo_3p1_fast_state;
 
-  fn cost_cents(duration_seconds: Option<u16>, generate_audio: Option<bool>, frames: u8) -> u64 {
+  use super::*;
+
+  // Veo 3.1 Fast pricing:
+  //   720p / 1080p: $0.10/sec (audio off), $0.15/sec (audio on)
+  //   4k:           $0.30/sec (audio off), $0.35/sec (audio on)
+  // Extend-video has no 4k tier and defaults to 7s.
+
+  #[derive(Clone, Copy)]
+  enum Modality {
+    TextToVideo,
+    ImageToVideo,
+    FirstLastFrame,
+    Reference,
+    Extend,
+  }
+
+  mod text_to_video {
+    use super::*;
+
+    #[test]
+    fn t2v_4s_audio_on_is_60() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(4), None, Some(true)), 60);
+    }
+
+    #[test]
+    fn t2v_6s_audio_on_is_90() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(6), None, Some(true)), 90);
+    }
+
+    #[test]
+    fn t2v_8s_audio_on_is_120() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(8), None, Some(true)), 120);
+    }
+
+    #[test]
+    fn t2v_4s_audio_off_is_40() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(4), None, Some(false)), 40);
+    }
+
+    #[test]
+    fn t2v_8s_audio_off_is_80() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(8), None, Some(false)), 80);
+    }
+
+    #[test]
+    fn t2v_8s_audio_on_4k_is_280() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(8), Some(RouterResolution::FourK), Some(true)), 280);
+    }
+
+    #[test]
+    fn t2v_8s_audio_off_4k_is_240() {
+      assert_eq!(cost_cents(Modality::TextToVideo, Some(8), Some(RouterResolution::FourK), Some(false)), 240);
+    }
+
+    #[test]
+    fn t2v_defaults_are_8s_720p_audio_on_120() {
+      // duration=None→8s, resolution=None→720p, audio=None→on.
+      assert_eq!(cost_cents(Modality::TextToVideo, None, None, None), 120);
+    }
+
+    #[test]
+    fn t2v_1080p_bills_same_as_720p() {
+      assert_eq!(
+        cost_cents(Modality::TextToVideo, Some(8), Some(RouterResolution::TenEightyP), Some(true)),
+        cost_cents(Modality::TextToVideo, Some(8), Some(RouterResolution::SevenTwentyP), Some(true)),
+      );
+    }
+  }
+
+  mod image_to_video {
+    use super::*;
+
+    #[test]
+    fn i2v_6s_audio_on_is_90() {
+      assert_eq!(cost_cents(Modality::ImageToVideo, Some(6), None, Some(true)), 90);
+    }
+
+    #[test]
+    fn i2v_8s_audio_off_1080p_is_80() {
+      assert_eq!(cost_cents(Modality::ImageToVideo, Some(8), Some(RouterResolution::TenEightyP), Some(false)), 80);
+    }
+  }
+
+  mod first_last_frame_to_video {
+    use super::*;
+
+    #[test]
+    fn flf_6s_audio_on_is_90() {
+      assert_eq!(cost_cents(Modality::FirstLastFrame, Some(6), None, Some(true)), 90);
+    }
+
+    #[test]
+    fn flf_8s_audio_on_4k_is_280() {
+      assert_eq!(cost_cents(Modality::FirstLastFrame, Some(8), Some(RouterResolution::FourK), Some(true)), 280);
+    }
+  }
+
+  mod reference_to_video {
+    use super::*;
+
+    #[test]
+    fn reference_8s_audio_on_1080p_is_120() {
+      assert_eq!(cost_cents(Modality::Reference, Some(8), Some(RouterResolution::TenEightyP), Some(true)), 120);
+    }
+
+    #[test]
+    fn reference_4s_audio_off_720p_is_40() {
+      assert_eq!(cost_cents(Modality::Reference, Some(4), Some(RouterResolution::SevenTwentyP), Some(false)), 40);
+    }
+  }
+
+  mod extend_video {
+    use super::*;
+
+    #[test]
+    fn extend_7s_audio_on_is_105() {
+      assert_eq!(cost_cents(Modality::Extend, Some(7), None, Some(true)), 105);
+    }
+
+    #[test]
+    fn extend_7s_audio_off_is_70() {
+      assert_eq!(cost_cents(Modality::Extend, Some(7), None, Some(false)), 70);
+    }
+
+    #[test]
+    fn extend_8s_audio_on_is_120() {
+      assert_eq!(cost_cents(Modality::Extend, Some(8), None, Some(true)), 120);
+    }
+
+    #[test]
+    fn extend_defaults_are_7s_audio_on_105() {
+      // duration=None→7s (fal's extend default), audio=None→on.
+      assert_eq!(cost_cents(Modality::Extend, None, None, None), 105);
+    }
+  }
+
+  #[test]
+  fn t2v_i2v_flf_and_reference_price_identically() {
+    let expected = cost_cents(Modality::TextToVideo, Some(6), Some(RouterResolution::TenEightyP), Some(true));
+    for modality in [Modality::ImageToVideo, Modality::FirstLastFrame, Modality::Reference] {
+      assert_eq!(cost_cents(modality, Some(6), Some(RouterResolution::TenEightyP), Some(true)), expected);
+    }
+  }
+
+  #[test]
+  fn audio_costs_more_than_no_audio() {
+    assert!(
+      cost_cents(Modality::TextToVideo, Some(8), None, Some(false))
+        < cost_cents(Modality::TextToVideo, Some(8), None, Some(true))
+    );
+  }
+
+  fn cost_cents(
+    modality: Modality,
+    duration_seconds: Option<u16>,
+    resolution: Option<RouterResolution>,
+    generate_audio: Option<bool>,
+  ) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Veo3p1Fast,
       provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,
+      resolution,
       generate_audio,
       ..Default::default()
     };
-    if frames >= 1 {
-      b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+    match modality {
+      Modality::TextToVideo => {}
+      Modality::ImageToVideo => {
+        b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+      }
+      Modality::FirstLastFrame => {
+        b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+        b.end_frame = Some(ImageRef::Url("https://example.com/b.png".to_string()));
+      }
+      Modality::Reference => {
+        b.reference_images = Some(ImageListRef::Urls(vec!["https://example.com/ref.png".to_string()]));
+      }
+      Modality::Extend => {
+        b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/in.mp4".to_string()]));
+      }
     }
-    if frames == 2 {
-      b.end_frame = Some(ImageRef::Url("https://example.com/b.png".to_string()));
-    }
-    b.build2().expect("build2").estimate_cost().expect("estimate_cost").cost_in_usd_cents.expect("cost")
-  }
-
-  mod numeric_literal_pricing {
-    use super::*;
-
-    #[test]
-    fn audio_on_4s_is_60() { assert_eq!(cost_cents(Some(4), Some(true), 0), 60); }
-
-    #[test]
-    fn audio_on_6s_is_90() { assert_eq!(cost_cents(Some(6), Some(true), 0), 90); }
-
-    #[test]
-    fn audio_on_8s_is_120() { assert_eq!(cost_cents(Some(8), Some(true), 0), 120); }
-
-    #[test]
-    fn audio_off_4s_is_40() { assert_eq!(cost_cents(Some(4), Some(false), 0), 40); }
-
-    #[test]
-    fn audio_off_8s_is_80() { assert_eq!(cost_cents(Some(8), Some(false), 0), 80); }
-
-    #[test]
-    fn no_duration_defaults_to_8s() {
-      assert_eq!(cost_cents(None, Some(true), 0), 120);
-    }
-  }
-
-  #[test]
-  fn all_three_modes_price_identically() {
-    let t2v = cost_cents(Some(6), Some(true), 0);
-    let i2v = cost_cents(Some(6), Some(true), 1);
-    let flf = cost_cents(Some(6), Some(true), 2);
-    assert_eq!(t2v, i2v);
-    assert_eq!(i2v, flf);
-  }
-
-  #[test]
-  fn audio_costs_more_than_no_audio() {
-    assert!(cost_cents(Some(8), Some(false), 0) < cost_cents(Some(8), Some(true), 0));
+    let state = build_fal_veo_3p1_fast_state(b).expect("build state");
+    FalVeo3p1FastCostState::from_request(&state)
+      .estimate_cost()
+      .cost_in_usd_cents
+      .expect("cost")
   }
 }

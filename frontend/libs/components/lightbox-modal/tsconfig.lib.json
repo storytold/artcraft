@@ -65,6 +65,9 @@
       "path": "../../analytics/google-analytics/tsconfig.lib.json"
     },
     {
+      "path": "../audio-player/tsconfig.lib.json"
+    },
+    {
       "path": "../viewer-3d/tsconfig.lib.json"
     },
     {
@@ -72,6 +75,9 @@
     },
     {
       "path": "../../tauri-api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     },
     {
       "path": "../button/tsconfig.lib.json"

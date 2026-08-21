@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE generic_inference_jobs\nSET\n  status = ?,\n  assigned_worker = ?,\n  last_assigned_worker = ?,\n  assigned_cluster = ?,\n  first_started_at = NOW()\nWHERE token = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "258ac40d3fab39f110e1e82d50e73542423bfe9a21f8127e6cd83214c1726e25"
+}

@@ -74,10 +74,18 @@ pub enum GenerationModel {
   // Generic Midjourney model, version unknown.
   #[serde(rename = "midjourney")]
   Midjourney,
+  #[serde(rename = "midjourney_7")]
+  Midjourney7,
+  #[serde(rename = "midjourney_7_niji")]
+  Midjourney7Niji,
+  #[serde(rename = "midjourney_8")]
+  Midjourney8,
 
   // Generic Grok video model, version unknown.
   #[serde(rename = "grok_video")]
   GrokVideo,
+  #[serde(rename = "grok_imagine_video_1p5")]
+  GrokImagineVideo1p5,
   // TODO: Should be Kling16Pro
   #[serde(rename = "kling_1.6")]
   Kling1_6,

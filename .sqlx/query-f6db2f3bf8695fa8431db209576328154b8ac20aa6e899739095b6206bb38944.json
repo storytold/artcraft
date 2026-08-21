@@ -1,0 +1,157 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  s.user_token AS `user_token!: UserToken`,\n  u.username AS `username!`,\n  u.display_name AS `display_name!`,\n  u.email_gravatar_hash AS `email_gravatar_hash!`,\n  s.lifetime_net_spend_usd_cents,\n  s.net_spend_7d_usd_cents,\n  s.net_spend_14d_usd_cents,\n  s.net_spend_30d_usd_cents,\n  s.net_spend_60d_usd_cents,\n  s.net_spend_90d_usd_cents,\n  s.net_spend_this_year_usd_cents,\n  s.is_active_subscriber AS `is_active_subscriber: bool`,\n  s.maybe_reengagement_score AS `maybe_reengagement_score: u32`\nFROM user_spend_summaries s\nJOIN users u ON u.token = s.user_token\nWHERE s.payments_namespace = ?\nORDER BY\n  (CASE ?\n     WHEN '7d'  THEN s.net_spend_7d_usd_cents\n     WHEN '14d' THEN s.net_spend_14d_usd_cents\n     WHEN '30d' THEN s.net_spend_30d_usd_cents\n     WHEN '60d' THEN s.net_spend_60d_usd_cents\n     WHEN '90d' THEN s.net_spend_90d_usd_cents\n     WHEN '1y'  THEN s.net_spend_this_year_usd_cents\n     ELSE CAST(s.lifetime_net_spend_usd_cents AS SIGNED)\n   END) DESC,\n  s.id ASC\nLIMIT ? OFFSET ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "username!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "email_gravatar_hash!",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "lifetime_net_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "net_spend_7d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "net_spend_14d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "net_spend_30d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "net_spend_60d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "net_spend_90d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "net_spend_this_year_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "is_active_subscriber: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_reengagement_score: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "f6db2f3bf8695fa8431db209576328154b8ac20aa6e899739095b6206bb38944"
+}

@@ -1,10 +1,6 @@
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faSquare } from "@fortawesome/pro-regular-svg-icons";
-import {
-  faHighDefinition,
-  faStandardDefinition,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { SquareIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon, HighDefinitionIcon, StandardDefinitionIcon } from "@storyteller/icons";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -15,15 +11,15 @@ interface ResolutionPickerProps {
   handleResolutionSelect: (selected: string) => void;
 }
 
-const RESOLUTION_ICONS: Record<string, IconDefinition> = {
-  half_k: faStandardDefinition,
-  four_eighty_p: faStandardDefinition,
-  seven_twenty_p: faStandardDefinition,
-  one_k: faStandardDefinition,
-  ten_eighty_p: faHighDefinition,
-  two_k: faHighDefinition,
-  three_k: faHighDefinition,
-  four_k: faHighDefinition,
+const RESOLUTION_ICONS: Record<string, LucideIcon> = {
+  half_k: StandardDefinitionIcon,
+  four_eighty_p: StandardDefinitionIcon,
+  seven_twenty_p: StandardDefinitionIcon,
+  one_k: StandardDefinitionIcon,
+  ten_eighty_p: HighDefinitionIcon,
+  two_k: HighDefinitionIcon,
+  three_k: HighDefinitionIcon,
+  four_k: HighDefinitionIcon,
 };
 
 const RESOLUTION_LABELS: Record<string, string> = {
@@ -60,8 +56,8 @@ export const ResolutionPicker = ({
     label: RESOLUTION_LABELS[resolution] ?? resolution,
     selected: activeResolution === resolution,
     icon: (
-      <FontAwesomeIcon
-        icon={RESOLUTION_ICONS[resolution] ?? faStandardDefinition}
+      <DynamicIcon
+        icon={RESOLUTION_ICONS[resolution] ?? StandardDefinitionIcon}
         className="h-4 w-4"
       />
     ),
@@ -81,11 +77,11 @@ export const ResolutionPicker = ({
         panelTitle="Resolution"
         showIconsInList
         triggerIcon={
-          <FontAwesomeIcon
+          <DynamicIcon
             icon={
               activeResolution
-                ? (RESOLUTION_ICONS[activeResolution] ?? faSquare)
-                : faSquare
+                ? (RESOLUTION_ICONS[activeResolution] ?? SquareIcon)
+                : SquareIcon
             }
             className="h-4 w-4"
           />

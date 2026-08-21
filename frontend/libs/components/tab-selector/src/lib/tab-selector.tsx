@@ -18,6 +18,9 @@ interface TabSelectorProps {
   tabClassName?: string;
   indicatorClassName?: string;
   selectedTabClassName?: string;
+  /** Extra classes for the pill container (the TabList), e.g. to make the
+   *  whole selector fully rounded. */
+  listClassName?: string;
 }
 
 export const TabSelector: React.FC<TabSelectorProps> = ({
@@ -30,6 +33,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
   tabClassName,
   indicatorClassName,
   selectedTabClassName,
+  listClassName,
 }) => {
   // Find the index of the active tab
   const selectedIndex = tabs.findIndex((tab) => tab.id === activeTab);
@@ -66,7 +70,12 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
       )}
     >
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
-        <TabList className="glass glass-no-hover relative inline-flex min-w-fit overflow-x-auto rounded-xl p-0.5 py-1 !shadow-none">
+        <TabList
+          className={twMerge(
+            "glass glass-no-hover relative inline-flex min-w-fit overflow-x-auto rounded-xl p-0.5 py-1 !shadow-none",
+            listClassName,
+          )}
+        >
           {/* Animated indicator */}
           <div
             className={twMerge(

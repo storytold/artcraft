@@ -1,2 +1,1 @@
 pub mod fetch_and_build_tts_model_category_map;
-pub mod list_assigned_tts_categories_query_builder;

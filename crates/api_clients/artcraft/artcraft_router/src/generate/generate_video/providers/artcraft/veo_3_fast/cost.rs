@@ -1,24 +1,32 @@
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::veo_3_fast::request::ArtcraftVeo3FastRequestState;
 
+/// Per-second rates in hundredths of a US cent.
+const CENTI_CENTS_PER_SECOND_AUDIO_OFF: u64 = 1_150;
+const CENTI_CENTS_PER_SECOND_AUDIO_ON: u64 = 1_725;
+
 #[derive(Clone, Debug)]
 pub struct ArtcraftVeo3FastCostState {
+  pub duration_seconds: u64,
   pub generate_audio: bool,
 }
 
 impl ArtcraftVeo3FastCostState {
   pub fn from_request(request: &ArtcraftVeo3FastRequestState) -> Self {
     Self {
-      // v1 legacy Veo 3 Fast handler defaults generate_audio to false.
-      generate_audio: request.request.generate_audio.unwrap_or(false),
+      duration_seconds: duration_seconds_for_cost(request.request.duration_seconds),
+      // Unset defaults to audio on.
+      generate_audio: request.request.generate_audio.unwrap_or(true),
     }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client veo_3_fast: $0.10/sec audio off, $0.15/sec audio on.
-    // Legacy handler always bills 8s.
-    let per_second_cents: u64 = if self.generate_audio { 15 } else { 10 };
-    let cost_in_usd_cents = per_second_cents * 8;
+    let rate = if self.generate_audio {
+      CENTI_CENTS_PER_SECOND_AUDIO_ON
+    } else {
+      CENTI_CENTS_PER_SECOND_AUDIO_OFF
+    };
+    let cost_in_usd_cents = (rate * self.duration_seconds).div_ceil(100);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -29,6 +37,16 @@ impl ArtcraftVeo3FastCostState {
       has_watermark: false,
       failures_are_refunded: None,
     }
+  }
+}
+
+/// Mirrors Veo 3's `duration_seconds_for_cost`: s≤4 → 4, s≤6 → 6, else → 8
+/// (incl. None and 7+).
+fn duration_seconds_for_cost(d: Option<u16>) -> u64 {
+  match d {
+    Some(s) if s <= 4 => 4,
+    Some(s) if s <= 6 => 6,
+    _ => 8,
   }
 }
 
@@ -51,22 +69,34 @@ mod tests {
   }
 
   #[test]
-  fn audio_off_is_80() { assert_eq!(cost_cents(Some(8), Some(false)), 80); }
+  fn audio_off_4s_is_46() { assert_eq!(cost_cents(Some(4), Some(false)), 46); }
 
   #[test]
-  fn audio_on_is_120() { assert_eq!(cost_cents(Some(8), Some(true)), 120); }
+  fn audio_off_6s_is_69() { assert_eq!(cost_cents(Some(6), Some(false)), 69); }
 
   #[test]
-  fn audio_default_is_off() {
-    assert_eq!(cost_cents(Some(8), None), 80);
+  fn audio_off_8s_is_92() { assert_eq!(cost_cents(Some(8), Some(false)), 92); }
+
+  #[test]
+  fn audio_on_4s_is_69() { assert_eq!(cost_cents(Some(4), Some(true)), 69); }
+
+  #[test]
+  fn audio_on_6s_is_104() {
+    // 1725 × 6 = 10350 hundredth-cents → 104 cents (rounded up).
+    assert_eq!(cost_cents(Some(6), Some(true)), 104);
   }
 
   #[test]
-  fn duration_does_not_affect_cost() {
-    // v1 always bills 8s regardless of duration_seconds.
-    assert_eq!(cost_cents(Some(4), Some(false)), 80);
-    assert_eq!(cost_cents(Some(6), Some(false)), 80);
-    assert_eq!(cost_cents(Some(8), Some(false)), 80);
-    assert_eq!(cost_cents(None, Some(false)), 80);
+  fn audio_on_8s_is_138() { assert_eq!(cost_cents(Some(8), Some(true)), 138); }
+
+  #[test]
+  fn default_duration_is_8s() {
+    assert_eq!(cost_cents(None, Some(false)), cost_cents(Some(8), Some(false)));
   }
+
+  #[test]
+  fn audio_default_is_on() {
+    assert_eq!(cost_cents(Some(8), None), cost_cents(Some(8), Some(true)));
+  }
+
 }

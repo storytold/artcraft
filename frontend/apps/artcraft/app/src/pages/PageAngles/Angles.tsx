@@ -1,14 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faImages,
-  faDownload,
-  faCrosshairs,
-  faChevronUp,
-  faChevronDown,
-  faChevronLeft,
-  faChevronRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, CrosshairIcon, DownloadIcon, ImagesIcon } from "lucide-react";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
@@ -37,7 +28,7 @@ import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { GenerateImage } from "@storyteller/tauri-api";
 import {
   ClassyModelSelector,
-  ANGLES_PAGE_MODEL_LIST,
+  useAnglesPageModelList,
   ModelPage,
   useSelectedModel,
   useSelectedProviderForModel,
@@ -58,6 +49,7 @@ const ANGLES_MODEL_PAGE = ModelPage.Angles;
 // ─── Main Angles Component ─────────────────────────────────────────────────────
 
 export const Angles = () => {
+  const anglesModelList = useAnglesPageModelList();
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
@@ -492,7 +484,7 @@ export const Angles = () => {
             <div className="w-full max-w-5xl">
               <div className="relative aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-panel shadow-lg">
                 <UploadEntryCard
-                  icon={faCrosshairs}
+                  icon={CrosshairIcon}
                   title="Angles"
                   description="Generate new camera angles from a single photo. Upload an image to get started."
                   accentBackgroundClass="bg-lime-500/20"
@@ -501,7 +493,7 @@ export const Angles = () => {
                   onFilesSelected={handleLocalImageSelect}
                   primaryLabel="Upload media"
                   secondaryLabel="Pick from Library"
-                  secondaryIcon={faImages}
+                  secondaryIcon={ImagesIcon}
                   onSecondaryClick={handleOpenGallery}
                   disabled={isLoadingImage}
                 />
@@ -563,7 +555,7 @@ export const Angles = () => {
                 {activeAngle && (
                   <Button
                     variant="primary"
-                    icon={faDownload}
+                    icon={DownloadIcon}
                     onClick={handleDownload}
                     disabled={isProcessing}
                     className={twMerge(
@@ -599,37 +591,33 @@ export const Angles = () => {
                     onClick={() => handleTiltStep(1)}
                     className="absolute left-1/2 top-0 z-10 -translate-x-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
-                    <FontAwesomeIcon
-                      icon={faChevronUp}
-                      className="text-[10px]"
-                    />
+                    <ChevronUpIcon
+                      
+                      className="text-[10px]" />
                   </button>
                   <button
                     onClick={() => handleTiltStep(-1)}
                     className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
-                    <FontAwesomeIcon
-                      icon={faChevronDown}
-                      className="text-[10px]"
-                    />
+                    <ChevronDownIcon
+                      
+                      className="text-[10px]" />
                   </button>
                   <button
                     onClick={() => handleRotationStep(-1)}
                     className="absolute left-0 top-1/2 z-10 -translate-y-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
-                    <FontAwesomeIcon
-                      icon={faChevronLeft}
-                      className="text-[10px]"
-                    />
+                    <ChevronLeftIcon
+                      
+                      className="text-[10px]" />
                   </button>
                   <button
                     onClick={() => handleRotationStep(1)}
                     className="absolute right-0 top-1/2 z-10 -translate-y-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
-                    <FontAwesomeIcon
-                      icon={faChevronRight}
-                      className="text-[10px]"
-                    />
+                    <ChevronRightIcon
+                      
+                      className="text-[10px]" />
                   </button>
                   <OrbitSphere
                     rotation={angleConfig.rotation}
@@ -733,7 +721,7 @@ export const Angles = () => {
 
                   <ClassyModelSelector
                     variant="embedded"
-                    items={ANGLES_PAGE_MODEL_LIST}
+                    items={anglesModelList}
                     page={ANGLES_MODEL_PAGE}
                   />
                   <GenerateButton

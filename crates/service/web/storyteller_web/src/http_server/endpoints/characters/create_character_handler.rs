@@ -11,19 +11,20 @@ use enums::by_table::characters::character_type::CharacterType;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::characters::create_pending_character::{create_pending_character, CreatePendingCharacterArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token::{
-  insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token,
-  InsertGenericInferenceForSeedance2ProCharacterWithAprioriJobTokenArgs,
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_character_with_apriori_job_token::{
+  insert_generic_inference_job_for_kinovi_web_character_with_apriori_job_token,
+  InsertGenericInferenceForKinoviWebCharacterWithAprioriJobTokenArgs,
 };
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_character::generate_character::{generate_character, GenerateCharacterArgs};
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
+use kinovi_web_client::requests::generate_character::generate_character::{generate_character, GenerateCharacterArgs};
+use kinovi_web_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+use kinovi_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::require_api_or_web_session;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -58,19 +59,12 @@ pub async fn create_character_handler(
       .acquire()
       .await?;
 
-  let maybe_user_session = server_state
-      .session_checker
-      .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        CommonWebError::from(e)
-      })?;
-
-  let user_session = match maybe_user_session {
-    Some(session) => session,
-    None => return Err(CommonWebError::NotAuthorized),
-  };
+  let user_session = require_api_or_web_session(
+    &http_request,
+    &server_state.session_checker,
+    &server_state.avt_cookie_manager,
+    &mut *mysql_connection,
+  ).await?;
 
   let user_token = &user_session.user_token;
   let ip_address = get_request_ip(&http_request);
@@ -123,7 +117,7 @@ pub async fn create_character_handler(
   // --- Upload image to Kinovi CDN ---
 
   let seedance_image_url = upload_to_kinovi(
-    &server_state.inference_providers.seedance2pro.cookies_volcengine,
+    &server_state.inference_providers.kinovi_web.cookies_volcengine,
     image_cdn_url,
   ).await?;
 
@@ -131,8 +125,8 @@ pub async fn create_character_handler(
 
   // --- Call Kinovi generate_character ---
 
-  let session = Seedance2ProSession::from_cookies_string(
-    server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
+  let session = KinoviWebSession::from_cookies_string(
+    server_state.inference_providers.kinovi_web.cookies_volcengine.clone()
   );
 
   let gen_result = generate_character(GenerateCharacterArgs {
@@ -187,14 +181,14 @@ pub async fn create_character_handler(
 
   info!("Created pending character: {}", character_token);
 
-  insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token(
-    InsertGenericInferenceForSeedance2ProCharacterWithAprioriJobTokenArgs {
+  insert_generic_inference_job_for_kinovi_web_character_with_apriori_job_token(
+    InsertGenericInferenceForKinoviWebCharacterWithAprioriJobTokenArgs {
       uuid_idempotency_token: &request.uuid_idempotency_token,
       apriori_job_token: &apriori_job_token,
       kinovi_character_id: &gen_result.character_id,
       maybe_model_type: None,
       maybe_creator_user_token: Some(user_token),
-      maybe_avt_token: None,
+      maybe_avt_token: user_session.maybe_avt_token.as_ref(),
       creator_ip_address: &ip_address,
       creator_set_visibility: Visibility::Hidden,
       mysql_executor: &mut *transaction,
@@ -234,7 +228,7 @@ async fn upload_to_kinovi(
       .map(|ext| ext.without_period().to_string())
       .unwrap_or_else(|| "png".to_string());
 
-  let session = Seedance2ProSession::from_cookies_string(cookies.to_string());
+  let session = KinoviWebSession::from_cookies_string(cookies.to_string());
 
   let file_bytes = http_download_url_to_bytes(our_cdn_url.as_str())
       .await

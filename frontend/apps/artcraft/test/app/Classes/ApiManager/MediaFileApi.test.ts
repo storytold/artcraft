@@ -43,7 +43,6 @@ describe("MediaFilesApi", () => {
     },
     maybe_duration_millis: 0,
     maybe_engine_category: "scene",
-    maybe_media_subtype: "mixamo",
     maybe_model_weight_info: {
       maybe_cover_image_public_bucket_path: "string",
       maybe_weight_creator: {

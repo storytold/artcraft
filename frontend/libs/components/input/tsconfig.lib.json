@@ -47,6 +47,9 @@
       "path": "../label/tsconfig.lib.json"
     },
     {
+      "path": "../../icons/tsconfig.lib.json"
+    },
+    {
       "path": "../../common/tsconfig.lib.json"
     }
   ]

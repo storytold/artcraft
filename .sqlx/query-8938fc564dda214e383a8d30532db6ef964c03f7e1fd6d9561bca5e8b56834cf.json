@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE tags\nSET tag_value = ?,\n  tag_value_lowercase = ?\nWHERE token = ?\n  AND creator_user_token = ?\n  AND maybe_deleted_at IS NULL\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "8938fc564dda214e383a8d30532db6ef964c03f7e1fd6d9561bca5e8b56834cf"
+}

@@ -2,55 +2,20 @@ use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use chrono::{DateTime, Utc};
 use log::warn;
-use serde_derive::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToSchema};
 
-use enums::by_table::debug_logs::debug_log_type::DebugLogType;
+use artcraft_api_defs::moderation::debug_logs::debug_log_entry::{ModerationDebugLogEntry, ModerationDebugLogUser};
+use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_token::{
+  ModerationListDebugLogsForTokenPathInfo, ModerationListDebugLogsForTokenQueryParams,
+  ModerationListDebugLogsForTokenSuccessResponse,
+};
 use mysql_queries::queries::debug_logs::list_debug_logs_for_token::{
   list_debug_logs_for_token, ListDebugLogsForTokenArgs,
 };
-use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
-use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
-
-// ── Path params ──
-
-#[derive(Deserialize, ToSchema)]
-pub struct ListDebugLogsPathInfo {
-  pub token: DebugLogEventToken,
-}
-
-// ── Query params ──
-
-#[derive(Deserialize, IntoParams, ToSchema)]
-pub struct ListDebugLogsQueryParams {
-  pub limit: Option<u32>,
-}
-
-// ── Response ──
-
-#[derive(Serialize, ToSchema)]
-pub struct ListDebugLogsSuccessResponse {
-  pub success: bool,
-  pub debug_logs: Vec<DebugLogEntry>,
-}
-
-#[derive(Serialize, ToSchema)]
-pub struct DebugLogEntry {
-  pub id: u64,
-  pub event_token: DebugLogEventToken,
-  pub debug_log_type: DebugLogType,
-  pub maybe_creator_user_token: Option<UserToken>,
-  pub message: String,
-  pub created_at: DateTime<Utc>,
-}
-
-// ── Handler ──
 
 #[utoipa::path(
   get,
@@ -58,23 +23,23 @@ pub struct DebugLogEntry {
   path = "/v1/moderation/debug_logs/list/{token}",
   params(
     ("token" = String, Path, description = "Debug log event token"),
-    ListDebugLogsQueryParams,
+    ModerationListDebugLogsForTokenQueryParams,
   ),
   responses(
-    (status = 200, description = "Success", body = ListDebugLogsSuccessResponse),
+    (status = 200, description = "Success", body = ModerationListDebugLogsForTokenSuccessResponse),
     (status = 401, description = "Unauthorized"),
     (status = 500, description = "Server error"),
   ),
 )]
 pub async fn moderation_list_debug_logs_for_token_handler(
   http_request: HttpRequest,
-  path: web::Path<ListDebugLogsPathInfo>,
-  query: web::Query<ListDebugLogsQueryParams>,
+  path: web::Path<ModerationListDebugLogsForTokenPathInfo>,
+  query: web::Query<ModerationListDebugLogsForTokenQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListDebugLogsSuccessResponse>, CommonWebError> {
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
-
+) -> Result<Json<ModerationListDebugLogsForTokenSuccessResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
+
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &mut *mysql_connection).await?;
 
   let rows = list_debug_logs_for_token(ListDebugLogsForTokenArgs {
     event_token: &path.token,
@@ -86,18 +51,35 @@ pub async fn moderation_list_debug_logs_for_token_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let debug_logs: Vec<DebugLogEntry> = rows.into_iter().map(|row| {
-    DebugLogEntry {
+  let debug_logs: Vec<ModerationDebugLogEntry> = rows.into_iter().map(|row| {
+    // The join only yields user fields when the creator user exists.
+    let maybe_user = match (row.maybe_creator_user_token.clone(), row.maybe_user_display_name, row.maybe_user_username, row.maybe_user_gravatar_hash) {
+      (Some(user_token), Some(display_name), Some(username), Some(gravatar_hash)) => {
+        Some(ModerationDebugLogUser {
+          user_token,
+          display_name,
+          username,
+          gravatar_hash,
+        })
+      }
+      _ => None,
+    };
+
+    ModerationDebugLogEntry {
       id: row.id,
       event_token: row.event_token,
       debug_log_type: row.debug_log_type,
+      maybe_log_level: row.maybe_log_level,
       maybe_creator_user_token: row.maybe_creator_user_token,
+      maybe_ip_address: row.maybe_ip_address,
+      maybe_url: row.maybe_url,
       message: row.message,
       created_at: row.created_at,
+      maybe_user,
     }
   }).collect();
 
-  Ok(Json(ListDebugLogsSuccessResponse {
+  Ok(Json(ModerationListDebugLogsForTokenSuccessResponse {
     success: true,
     debug_logs,
   }))

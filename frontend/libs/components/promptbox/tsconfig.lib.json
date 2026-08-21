@@ -47,7 +47,7 @@
       "path": "../slider-v2/tsconfig.lib.json"
     },
     {
-      "path": "../button-icon-select/tsconfig.lib.json"
+      "path": "../../omni-gen/tsconfig.lib.json"
     },
     {
       "path": "../../analytics/google-analytics/tsconfig.lib.json"
@@ -57,6 +57,9 @@
     },
     {
       "path": "../camera-settings-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../button-icon-select/tsconfig.lib.json"
     },
     {
       "path": "../../tauri-utils/tsconfig.lib.json"
@@ -96,6 +99,9 @@
     },
     {
       "path": "../../api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     },
     {
       "path": "../modal/tsconfig.lib.json"

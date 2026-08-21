@@ -1,19 +1,7 @@
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faListCheck,
-  faSpinnerThird,
-  faXmark,
-  faTrashAlt,
-  faTasks,
-  faBroom,
-  faBomb,
-  faCircleExclamation,
-  faTriangleExclamation,
-  faCopy,
-  faCheck,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import {
   galleryModalLightboxMediaId,
@@ -179,8 +167,8 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
           setTimeout(() => setCopied(false), 3000);
         }}
       >
-        <FontAwesomeIcon
-          icon={copied ? faCheck : faCopy}
+        <DynamicIcon
+          icon={copied ? CheckIcon : CopyIcon}
           className={copied ? "text-green-400" : ""}
         />
       </button>
@@ -217,11 +205,10 @@ const InProgressCard = ({
       />
       <div className="absolute inset-0 bg-black/30" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
+        <LoaderCircleIcon
+          
           className="animate-spin text-white/80"
-          size="lg"
-        />
+          size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
         <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
@@ -231,11 +218,10 @@ const InProgressCard = ({
     </div>
   ) : (
     <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
-      <FontAwesomeIcon
-        icon={faSpinnerThird}
+      <LoaderCircleIcon
+        
         className="animate-spin text-base-fg/60"
-        size="lg"
-      />
+        size="lg" />
     </div>
   );
 
@@ -256,10 +242,9 @@ const InProgressCard = ({
                   zIndex={50}
                   delay={100}
                 >
-                  <FontAwesomeIcon
-                    icon={faTriangleExclamation}
-                    className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400"
-                  />
+                  <TriangleAlertIcon
+                    
+                    className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400" />
                 </Tooltip>
               )}
             </div>
@@ -298,7 +283,7 @@ const InProgressCard = ({
                 onDismiss();
               }}
             >
-              <FontAwesomeIcon icon={faXmark} />
+              <XIcon />
             </button>
           )}
         </div>
@@ -372,7 +357,7 @@ const CompletedCard = ({
               onDismiss();
             }}
           >
-            <FontAwesomeIcon icon={faXmark} />
+            <XIcon />
           </button>
         )}
       </div>
@@ -423,11 +408,10 @@ const FailedCard = ({
       />
       <div className="absolute inset-0 bg-red-900/40" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <FontAwesomeIcon
-          icon={faCircleExclamation}
+        <CircleAlertIcon
+          
           className="text-red-400"
-          size="lg"
-        />
+          size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
         <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
@@ -437,11 +421,10 @@ const FailedCard = ({
     </div>
   ) : (
     <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
-      <FontAwesomeIcon
-        icon={faCircleExclamation}
+      <CircleAlertIcon
+        
         className="text-red-400"
-        size="lg"
-      />
+        size="lg" />
     </div>
   );
 
@@ -507,7 +490,7 @@ const FailedCard = ({
                 onDismiss();
               }}
             >
-              <FontAwesomeIcon icon={faXmark} />
+              <XIcon />
             </button>
           )}
         </div>
@@ -530,6 +513,10 @@ export const TaskQueue = () => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  // Failed-task ids already seen by the poll — seeded on first load so
+  // failures from previous sessions don't trigger a credits refresh.
+  const prevFailedIdsRef = useRef<Set<string>>(new Set());
+  const failedSeenInitializedRef = useRef(false);
   // Confirmation state
   const [confirmationConfig, setConfirmationConfig] = useState<{
     isOpen: boolean;
@@ -544,7 +531,7 @@ export const TaskQueue = () => {
     title: "",
     message: null,
     primaryActionText: "",
-    primaryActionIcon: faTrashAlt,
+    primaryActionIcon: Trash2Icon,
     primaryActionBtnClassName: "",
     onConfirm: async () => {},
   });
@@ -559,7 +546,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Clear completed",
-      primaryActionIcon: faBroom,
+      primaryActionIcon: BrushIcon,
       primaryActionBtnClassName:
         "bg-green-500/10 hover:bg-green-500/20 text-green-500",
       onConfirm: async () => {
@@ -579,7 +566,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Clear stale",
-      primaryActionIcon: faTrashAlt,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName:
         "bg-orange-500/10 hover:bg-orange-500/20 text-orange-500",
       onConfirm: async () => {
@@ -598,7 +585,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Clear failed",
-      primaryActionIcon: faTrashAlt,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName:
         "bg-red-500/10 hover:bg-red-500/20 text-red-500",
       onConfirm: async () => {
@@ -618,7 +605,7 @@ export const TaskQueue = () => {
         </span>
       ),
       primaryActionText: "Nuke all",
-      primaryActionIcon: faBomb,
+      primaryActionIcon: BombIcon,
       primaryActionBtnClassName:
         "bg-red-500/10 hover:bg-red-500/20 text-red-500",
       onConfirm: async () => {
@@ -838,6 +825,21 @@ export const TaskQueue = () => {
         setCompleted(done);
         setFailed(failedTasks);
 
+        // Refresh credits when a task newly enters a failed status via the
+        // poll — the "generation-failed-event" push below can be missed.
+        const newFailedIdSet = new Set(failedTasks.map((t) => t.id));
+        if (!failedSeenInitializedRef.current) {
+          failedSeenInitializedRef.current = true;
+        } else if (
+          failedTasks.some((t) => !prevFailedIdsRef.current.has(t.id))
+        ) {
+          // Refunded credits may take a moment to settle in the database
+          setTimeout(() => {
+            useCreditsState.getState().fetchFromServer();
+          }, 2000);
+        }
+        prevFailedIdsRef.current = newFailedIdSet;
+
         // Track newly completed IDs when popover is closed
         const newCompletedIdSet = new Set(done.map((d) => d.id));
         const newlyCompletedIds: string[] = [];
@@ -1009,12 +1011,11 @@ export const TaskQueue = () => {
             align="end"
             triggerIcon={
               inProgressCount > 0 ? (
-                <FontAwesomeIcon
-                  icon={faSpinnerThird}
-                  className="animate-spin"
-                />
+                <LoaderCircleIcon
+                  
+                  className="animate-spin" />
               ) : (
-                <FontAwesomeIcon icon={faListCheck} />
+                <ListChecksIcon />
               )
             }
             onOpenChange={handleOpenChange}
@@ -1026,7 +1027,7 @@ export const TaskQueue = () => {
                     {hasNothing ? (
                       <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                         <div className="flex items-center gap-2.5 text-sm opacity-60">
-                          <FontAwesomeIcon icon={faTasks} /> No tasks yet
+                          <ListChecksIcon /> No tasks yet
                         </div>
                       </div>
                     ) : (
@@ -1059,10 +1060,9 @@ export const TaskQueue = () => {
                                 className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
                                 onClick={() => handleClearFailed()}
                               >
-                                <FontAwesomeIcon
-                                  icon={faXmark}
-                                  className="mr-1"
-                                />
+                                <XIcon
+                                  
+                                  className="mr-1" />
                                 Clear failed
                               </button>
                             </div>
@@ -1085,10 +1085,9 @@ export const TaskQueue = () => {
                                 className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
                                 onClick={() => handleClearCompleted()}
                               >
-                                <FontAwesomeIcon
-                                  icon={faXmark}
-                                  className="mr-1"
-                                />
+                                <XIcon
+                                  
+                                  className="mr-1" />
                                 Clear completed
                               </button>
                             </div>
@@ -1165,28 +1164,28 @@ export const TaskQueue = () => {
                   className="flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
-                  <FontAwesomeIcon icon={faBroom} className="mr-1.5" />
+                  <BrushIcon  className="mr-1.5" />
                   Clear completed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
-                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  <Trash2Icon  className="mr-1.5" />
                   Clear stale
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
-                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  <Trash2Icon  className="mr-1.5" />
                   Clear failed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
-                  <FontAwesomeIcon icon={faBomb} className="mr-1.5" />
+                  <BombIcon  className="mr-1.5" />
                   Remove all
                 </Button>
                 <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />
@@ -1198,7 +1197,7 @@ export const TaskQueue = () => {
             {hasNothing ? (
               <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                 <div className="flex items-center gap-2.5 text-sm opacity-60">
-                  <FontAwesomeIcon icon={faTasks} /> No tasks yet
+                  <ListChecksIcon /> No tasks yet
                 </div>
               </div>
             ) : (

@@ -81,6 +81,9 @@
       "path": "../tooltip/tsconfig.lib.json"
     },
     {
+      "path": "../../icons/tsconfig.lib.json"
+    },
+    {
       "path": "../button/tsconfig.lib.json"
     },
     {

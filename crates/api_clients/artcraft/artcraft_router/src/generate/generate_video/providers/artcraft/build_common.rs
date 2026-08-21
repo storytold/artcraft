@@ -21,6 +21,8 @@ use crate::generate::generate_video::providers::artcraft::resolve::{
 pub enum SupportedResolutions {
   /// 480p, 720p, 1080p
   Full,
+  /// 480p, 720p, 1080p, 4K
+  FullWith4k,
   /// 480p, 720p only (1080p downgrades to 720p)
   Fast,
   /// 720p, 1080p only (480p upgrades)
@@ -80,6 +82,7 @@ pub fn build_artcraft_omni_video_request(
     negative_prompt: None,
     generate_audio: None,
     quality: None,
+    estimate_only: None,
   })
 }
 
@@ -157,7 +160,7 @@ fn plan_output_resolution(
     None => Ok(None),
 
     Some(RouterResolution::FourEightyP) => match supported {
-      SupportedResolutions::Full | SupportedResolutions::Fast => {
+      SupportedResolutions::Full | SupportedResolutions::FullWith4k | SupportedResolutions::Fast => {
         Ok(Some(CommonResolutionEnum::FourEightyP))
       }
       SupportedResolutions::NoFourEightyP => match strategy {
@@ -175,7 +178,7 @@ fn plan_output_resolution(
     Some(RouterResolution::SevenTwentyP) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
 
     Some(RouterResolution::TenEightyP) => match supported {
-      SupportedResolutions::Full | SupportedResolutions::NoFourEightyP => {
+      SupportedResolutions::Full | SupportedResolutions::FullWith4k | SupportedResolutions::NoFourEightyP => {
         Ok(Some(CommonResolutionEnum::TenEightyP))
       }
       SupportedResolutions::Fast => match strategy {
@@ -187,6 +190,20 @@ fn plan_output_resolution(
         }
         _ => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
       },
+    },
+
+    // 4K is only available on models flagged `FullWith4k` (the non-Fast Seedance
+    // 2.0 family). Other models error out or fall back to their best resolution.
+    Some(RouterResolution::FourK) => match (supported, strategy) {
+      (SupportedResolutions::FullWith4k, _) => Ok(Some(CommonResolutionEnum::FourK)),
+      (_, RequestMismatchMitigationStrategy::ErrorOut) => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "resolution",
+          value: format!("{:?}", RouterResolution::FourK),
+        }))
+      }
+      (SupportedResolutions::Fast, _) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
+      (_, _) => Ok(Some(CommonResolutionEnum::TenEightyP)),
     },
 
     Some(unsupported) => match strategy {
@@ -214,7 +231,7 @@ fn plan_output_resolution(
   }
 }
 
-/// Batch counts: 1, 2, 4.
+/// Batch counts: 1 through 4.
 pub fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -222,7 +239,8 @@ pub fn plan_batch_count(
   let count = video_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1 | 2 | 4 => Ok(count),
+    1..=4 => Ok(count),
+    // 5 and above:
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -231,9 +249,31 @@ pub fn plan_batch_count(
         }))
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(4),
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { 2 } else { 4 })
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(4),
+    },
+  }
+}
+
+/// Batch counts for the Seedance 2.0 Mini family: 1-8 are all valid
+/// (wider than the shared 1/2/4 planning); higher counts clamp to 8 per the
+/// mitigation strategy.
+pub fn plan_mini_batch_count(
+  video_batch_count: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<u16, ArtcraftRouterError> {
+  let count = video_batch_count.unwrap_or(1);
+  match count {
+    0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
+    1..=8 => Ok(count),
+    _ => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "video_batch_count",
+          value: format!("{}", count),
+        }))
       }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade
+      | RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(8),
     },
   }
 }

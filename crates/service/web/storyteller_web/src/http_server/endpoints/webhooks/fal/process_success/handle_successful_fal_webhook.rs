@@ -1,4 +1,5 @@
 use actix_web::web::Json;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::WebhookSuccessData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
@@ -12,10 +13,12 @@ use sqlx::MySql;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
+use super::process_audio_payload::process_audio_payload;
 use super::process_image_payload::process_image_payload;
 use super::process_images_payload::process_images_payload;
 use super::process_model_glb_payload::process_model_glb_payload;
-use super::process_model_mesh_payload::process_model_mesh_payload;
+use super::process_model_mesh_payload::{process_model_mesh_payload, process_model_obj_payload};
+use super::process_result_files_payload::process_result_files_payload;
 use super::process_video_payload::process_video_payload;
 
 pub async fn handle_successful_fal_webhook(
@@ -52,6 +55,9 @@ pub async fn handle_successful_fal_webhook(
       apriori_debug_log_event_token: Some(debug_log_event_token),
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::FalWebhook,
+      maybe_log_level: Some(DebugLogLevel::Info),
+      maybe_ip_address: None,
+      maybe_url: None,
       message: raw_body,
       mysql_executor: &mut **mysql_connection,
       phantom: Default::default(),
@@ -91,17 +97,66 @@ pub async fn handle_successful_fal_webhook(
       }
     }
 
-    if let Some(ref model_glb_data) = extracted.model_glb {
-      info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_glb_payload(model_glb_data, extracted.thumbnail.as_ref(), &job, server_state).await?;
+    if let Some(ref audio_data) = extracted.audio {
+      info!("Handling audio payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_audio_payload(audio_data, &job, server_state).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
       }
-    } else if let Some(ref model_mesh_data) = extracted.model_mesh {
-      info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_mesh_payload(model_mesh_data, &job, server_state).await?;
+    }
+
+    // NB: GLBs take priority over `model_mesh`. Hunyuan 3D 2.1 sends both,
+    // where `model_mesh` is a zip archive of the whole generation that we
+    // skip in favor of the GLBs (standard + optional PBR variant). The
+    // primary GLB is `model_glb`, falling back to `model_urls.glb` when the
+    // top-level key is absent (Hunyuan 3D 3.0 sends both, usually the same
+    // file).
+    let maybe_primary_glb = extracted.model_glb.as_ref()
+        .or_else(|| extracted.model_urls.as_ref().and_then(|urls| urls.glb.as_ref()));
+
+    if let Some(model_glb_data) = maybe_primary_glb {
+      info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
+      // The cover image arrives as `thumbnail` (Hunyuan) or `rendered_image`
+      // (Tripo 3D); both have the same shape.
+      let maybe_cover_image = extracted.thumbnail.as_ref()
+          .or(extracted.rendered_image.as_ref());
+      let (token, batch_token) = process_model_glb_payload(
+        model_glb_data,
+        extracted.model_glb_pbr.as_ref(),
+        extracted.model_urls.as_ref(),
+        maybe_cover_image,
+        &job,
+        server_state,
+        pager,
+      ).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
+      }
+      if maybe_batch_token.is_none() {
+        maybe_batch_token = batch_token;
+      }
+    } else if let Some(ref model_mesh_data) = extracted.model_mesh {
+      // NB: triposplat ply gaussian splat files also arrive via this payload handler.
+      //  These are decidedly *not* "mesh" files!
+      info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_model_mesh_payload(model_mesh_data, extracted.preprocessed_image.as_ref(), &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
+      }
+    } else if let Some(ref model_obj_data) = extracted.model_obj {
+      info!("Handling model_obj payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_model_obj_payload(model_obj_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
+      }
+    } else if let Some(ref result_files) = extracted.result_files {
+      info!("Handling result_files payload ({} files) for request_id {} / job {:?}", result_files.len(), request_id, job.job_token);
+      let (media_token, batch_token) = process_result_files_payload(result_files, &job, server_state, pager).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = media_token;
+      }
+      if maybe_batch_token.is_none() {
+        maybe_batch_token = batch_token;
       }
     }
   }

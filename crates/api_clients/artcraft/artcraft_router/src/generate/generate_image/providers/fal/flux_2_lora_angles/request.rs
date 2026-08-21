@@ -1,45 +1,67 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
-  enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs,
-  EnqueueFlux2LoraEditImageAngleRequest,
-};
+use fal_client::requests::api::image::angle::flux_2_lora_edit_image_angle::api::Flux2LoraEditImageAngleRequest;
+use fal_client::requests::traits::fal_endpoint_trait::FalEndpoint;
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
-use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
   FalImageResponsePayload, GenerateImageResponse,
 };
 
 #[derive(Clone, Debug)]
 pub struct FalFlux2LoraAnglesRequestState {
-  pub request: EnqueueFlux2LoraEditImageAngleRequest,
+  pub request: Flux2LoraEditImageAngleRequest,
 }
 
 impl FalFlux2LoraAnglesRequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-    let webhook_url = client.webhook_url.as_deref()
-      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(self.request.clone());
-    let args = EnqueueFlux2LoraEditImageAngleArgs {
-      request: self.request.clone(),
-      webhook_url,
-      api_key: &client.api_key,
-    };
-    let webhook_response = enqueue_flux_2_lora_edit_image_angle_webhook(args)
-      .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
-
+    let payload = send_fal_request(&self.request, client).await?;
     Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
-      request_id: webhook_response.request_id,
-      gateway_request_id: webhook_response.gateway_request_id,
-      maybe_status_url: None,
-      maybe_response_url: None,
+      request_id: payload.request_id,
+      gateway_request_id: payload.gateway_request_id,
+      maybe_status_url: payload.status_url,
+      maybe_response_url: payload.response_url,
       maybe_outbound_request: Some(outbound),
     }))
+  }
+}
+
+// ── Helpers ──
+
+struct FalResponseIds {
+  request_id: Option<String>,
+  gateway_request_id: Option<String>,
+  status_url: Option<String>,
+  response_url: Option<String>,
+}
+
+async fn send_fal_request<T: FalEndpoint>(
+  request: &T,
+  client: &RouterFalClient,
+) -> Result<FalResponseIds, ArtcraftRouterError> {
+  if let Some(webhook_url) = &client.webhook_url {
+    let response = request
+      .send_webhook_request(&client.api_key, webhook_url)
+      .await?;
+    Ok(FalResponseIds {
+      request_id: response.request_id,
+      gateway_request_id: response.gateway_request_id,
+      status_url: None,
+      response_url: None,
+    })
+  } else {
+    let response = request
+      .send_queue_request(&client.api_key)
+      .await?;
+    Ok(FalResponseIds {
+      request_id: Some(response.request_id),
+      gateway_request_id: None,
+      status_url: Some(response.status_url),
+      response_url: Some(response.response_url),
+    })
   }
 }
 
@@ -47,9 +69,32 @@ impl FalFlux2LoraAnglesRequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
-    EnqueueFlux2LoraAngleImageSize, EnqueueFlux2LoraAngleNumImages,
+  use fal_client::requests::api::image::angle::flux_2_lora_edit_image_angle::api::{
+    Flux2LoraAngleImageSize, Flux2LoraAngleNumImages,
   };
+  use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs cost
+  async fn send_via_webhook() {
+    let client = client_with_webhook();
+    let state = FalFlux2LoraAnglesRequestState {
+      request: Flux2LoraEditImageAngleRequest {
+        image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+        horizontal_angle: Some(45.0),
+        vertical_angle: Some(15.0),
+        zoom: Some(2.0),
+        num_images: Some(Flux2LoraAngleNumImages::One),
+        image_size: Some(Flux2LoraAngleImageSize::SquareHd),
+        lora_scale: None,
+        guidance_scale: None,
+        num_inference_steps: None,
+      },
+    };
+    let response = state.send(&client).await.expect("send should succeed");
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    assert!(payload.request_id.is_some() || payload.gateway_request_id.is_some());
+  }
 
   fn read_fal_api_key() -> FalApiKey {
     let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")
@@ -62,27 +107,5 @@ mod tests {
       read_fal_api_key(),
       "https://example.com/fal-webhook-test".to_string(),
     )
-  }
-
-  #[tokio::test]
-  #[ignore] // requires real API key, incurs cost
-  async fn send_via_webhook() {
-    let client = client_with_webhook();
-    let state = FalFlux2LoraAnglesRequestState {
-      request: EnqueueFlux2LoraEditImageAngleRequest {
-        image_urls: vec!["https://example.com/test.jpg".to_string()],
-        horizontal_angle: Some(45.0),
-        vertical_angle: Some(-15.0),
-        zoom: Some(2.0),
-        num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
-        image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
-        lora_scale: None,
-        guidance_scale: None,
-        num_inference_steps: None,
-      },
-    };
-    let response = state.send(&client).await.expect("send should succeed");
-    let payload = response.get_fal_payload().expect("expected Fal payload");
-    assert!(payload.request_id.is_some() || payload.gateway_request_id.is_some());
   }
 }

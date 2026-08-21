@@ -19,3 +19,5 @@ pub(crate) mod request_common;
 pub mod seedream_4;
 pub mod seedream_4p5;
 pub mod seedream_5_lite;
+pub mod seedream_5p0_pro;
+pub mod seedream_5p0_pro_ultra;

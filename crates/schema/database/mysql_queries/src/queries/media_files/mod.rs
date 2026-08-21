@@ -4,4 +4,3 @@ pub mod edit;
 pub mod get;
 pub mod thumbnails;
 pub mod list;
-pub mod upsert;

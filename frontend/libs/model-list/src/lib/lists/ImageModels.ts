@@ -11,7 +11,7 @@ import { CommonQuality } from "../classes/properties/CommonQuality.js";
 export const IMAGE_MODELS: ImageModel[] = [
   new ImageModel({
     id: "grok_image",
-    tauriId: "grok_image",
+    tauriId: "grok_imagine_image",
     fullName: "Grok",
     category: "image",
     creator: ModelCreator.Grok,
@@ -58,7 +58,7 @@ export const IMAGE_MODELS: ImageModel[] = [
   }),
   new ImageModel({
     id: "flux_pro_1_1_ultra",
-    tauriId: "flux_pro_11_ultra",
+    tauriId: "flux_pro_1p1_ultra",
     fullName: "Flux Pro 1.1 Ultra",
     category: "image",
     creator: ModelCreator.BlackForestLabs,
@@ -87,7 +87,7 @@ export const IMAGE_MODELS: ImageModel[] = [
   }),
   new ImageModel({
     id: "flux_pro_1_1",
-    tauriId: "flux_pro_11",
+    tauriId: "flux_pro_1p1",
     fullName: "Flux Pro 1.1",
     category: "image",
     creator: ModelCreator.BlackForestLabs,

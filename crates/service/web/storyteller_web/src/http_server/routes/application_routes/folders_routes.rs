@@ -15,6 +15,7 @@ use crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_f
 use crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::bulk_move_folder_media_files_handler;
 use crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler;
 use crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::list_folder_media_files_handler;
+use crate::http_server::endpoints::folders::media_files::list_media_files_without_folder_handler::list_media_files_without_folder_handler;
 use crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::bulk_add_subfolders_handler;
 use crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::bulk_remove_subfolders_handler;
 use crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::list_subfolders_handler;
@@ -92,6 +93,11 @@ where
           ),
       )
       // Media-file membership
+      .service(
+        web::resource("/media_files_without_folder")
+          .route(web::get().to(list_media_files_without_folder_handler))
+          .route(web::head().to(|| HttpResponse::Ok())),
+      )
       .service(
         web::scope("/media_files")
           .service(

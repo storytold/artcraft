@@ -1,9 +1,5 @@
-import {
-  faEye,
-  faEyeSlash,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
@@ -30,10 +26,9 @@ const SetPassword = () => {
   if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#101014]">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
-          className="animate-spin text-4xl text-primary/80"
-        />
+        <LoaderCircleIcon
+          
+          className="animate-spin text-4xl text-primary/80" />
       </div>
     );
   }
@@ -134,7 +129,7 @@ const SetPassword = () => {
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                   tabIndex={-1}
                 >
-                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+                  <DynamicIcon icon={showPassword ? EyeOffIcon : EyeIcon} />
                 </button>
               </div>
             </div>
@@ -157,8 +152,8 @@ const SetPassword = () => {
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                   tabIndex={-1}
                 >
-                  <FontAwesomeIcon
-                    icon={showConfirmPassword ? faEyeSlash : faEye}
+                  <DynamicIcon
+                    icon={showConfirmPassword ? EyeOffIcon : EyeIcon}
                   />
                 </button>
               </div>
@@ -171,10 +166,9 @@ const SetPassword = () => {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="animate-spin" />
                 ) : (
                   "Set password"
                 )}

@@ -1,6 +1,5 @@
 use anyhow::anyhow;
-use sqlx;
-use sqlx::MySqlPool;
+use sqlx::{Acquire, MySql};
 
 use enums::by_table::generic_synthetic_ids::id_category::IdCategory;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
@@ -15,6 +14,7 @@ use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::prompts::PromptToken;
@@ -22,9 +22,15 @@ use tokens::tokens::users::UserToken;
 
 use crate::payloads::media_file_extra_info::media_file_extra_info::MediaFileExtraInfo;
 use crate::queries::generic_synthetic_ids::transactional_increment_generic_synthetic_id::transactional_increment_generic_synthetic_id;
+use crate::queries::media_files::create::generic_insert::insert_media_file_generic_executor::{insert_media_file_generic_executor, InsertMediaFileGenericExecutorArgs};
 
-pub struct InsertArgs<'a> {
-    pub pool: &'a MySqlPool,
+pub struct InsertArgs<'a, A>
+where
+    A: Acquire<'a, Database = MySql>,
+{
+    /// Where to get the connection: a `&MySqlPool` (acquires one) or an
+    /// already-acquired `&mut PoolConnection` (reuses it).
+    pub pool: A,
 
     // Creator info
     pub maybe_creator_user_token: Option<&'a UserToken>,
@@ -54,7 +60,7 @@ pub struct InsertArgs<'a> {
     pub maybe_frame_width: Option<u32>,
     pub maybe_frame_height: Option<u32>,
     pub checksum_sha2: &'a str,
-    
+
     // Media info for certain product areas
     pub maybe_engine_category: Option<MediaFileEngineCategory>, // TODO: Deprecate
 
@@ -70,6 +76,9 @@ pub struct InsertArgs<'a> {
 
     // If batch generated, this is the batch token.
     pub maybe_batch_token: Option<&'a BatchGenerationToken>,
+
+    // If produced by an inference job, the job that generated this file.
+    pub maybe_source_job_token: Option<&'a InferenceJobToken>,
 
     // Storage details
     pub public_bucket_directory_hash: &'a str,
@@ -104,12 +113,16 @@ pub struct InsertArgs<'a> {
     pub maybe_mod_user_token: Option<&'a UserToken>,
 }
 
-pub async fn insert_media_file_generic(
-    args: InsertArgs<'_>
+/// Insert a media file record, allocating the creator's synthetic IDs in the
+/// same transaction. Wraps [`insert_media_file_generic_executor`], which runs
+/// the actual INSERT.
+pub async fn insert_media_file_generic<'a, A>(
+    args: InsertArgs<'a, A>
 ) -> AnyhowResult<(MediaFileToken, u64)>
+where
+    A: Acquire<'a, Database = MySql> + Send,
+    <A as Acquire<'a>>::Connection: Send,
 {
-    let result_token = MediaFileToken::generate();
-
     let extra_file_modification_info = args
         .maybe_extra_media_info.map(|extra| extra.to_json_string())
         .transpose()?;
@@ -117,26 +130,8 @@ pub async fn insert_media_file_generic(
     let mut maybe_creator_file_synthetic_id : Option<u64> = None;
     let mut maybe_creator_category_synthetic_id : Option<u64> = None;
 
-    let is_batch_generated = args.maybe_batch_token.is_some();
-
-    let mut maybe_generation_provider_str = None;
-    let mut is_intermediate_system_file = args.is_intermediate_system_file;
-    let mut is_user_upload = args.is_user_upload;
-    let mut origin_category = args.origin_category;
-
-    if let Some(generation_provider) = args.maybe_generation_provider {
-        // Overrides if we're using a generation provider
-        maybe_generation_provider_str = Some(generation_provider.to_str());
-        is_intermediate_system_file = false;
-        is_user_upload = false;
-        if generation_provider != GenerationProvider::Artcraft {
-            origin_category = MediaFileOriginCategory::ThirdPartyInference;
-        }
-    }
-
-
     let mut transaction = args.pool.begin().await?;
-    
+
     if let Some(user_token) = args.maybe_creator_user_token.as_deref() {
         let next_media_file_id = transactional_increment_generic_synthetic_id(
             user_token,
@@ -154,133 +149,54 @@ pub async fn insert_media_file_generic(
         maybe_creator_category_synthetic_id = Some(category_id);
     }
 
-    let query_result = sqlx::query!(
-        r#"
-        INSERT INTO media_files
-        SET
-            token = ?,
-
-            media_class = ?,
-            media_type = ?,
-
-            is_user_upload = ?,
-            is_intermediate_system_file = ?,
-
-            origin_category = ?, 
-            origin_product_category = ?, 
-            maybe_origin_model_type = ?, 
-            maybe_origin_model_token = ?, 
-            maybe_origin_filename = ?,
-
-            is_batch_generated = ?,
-            maybe_batch_token = ?,
-
-            maybe_mime_type = ?,
-            file_size_bytes = ?,
-            maybe_duration_millis = ?,
-            maybe_audio_encoding = ?, 
-            maybe_video_encoding = ?, 
-            maybe_frame_width = ?, 
-            maybe_frame_height = ?,
-            maybe_prompt_token = ?,
-            checksum_sha2 = ?,
-            
-            maybe_engine_category = ?,
-
-            maybe_title = ?,
-            maybe_text_transcript = ?,
-
-            maybe_scene_source_media_file_token = ?,
-
-            public_bucket_directory_hash = ?, 
-            maybe_public_bucket_prefix = ?, 
-            maybe_public_bucket_extension = ?, 
-
-            maybe_creator_user_token = ?, 
-            maybe_creator_anonymous_visitor_token = ?, 
-
-            creator_ip_address = ?, 
-            creator_set_visibility = ?, 
-
-            maybe_creator_file_synthetic_id = ?, 
-            maybe_creator_category_synthetic_id = ?,
-
-            extra_file_modification_info = ?,
-
-            maybe_generation_provider = ?,
-
-            platform_type = ?,
-
-            maybe_cover_image_media_file_token = ?,
-
-            maybe_mod_user_token = ?,
-            is_generated_on_prem = ?,
-            generated_by_worker = ?,
-            generated_by_cluster = ?
-        "#,
-        result_token,
-
-        args.media_class.to_str(),
-        args.media_type.to_str(),
-
-        is_user_upload,
-        is_intermediate_system_file,
-
-        origin_category.to_str(),
-        args.origin_product_category.to_str(),
-        args.maybe_origin_model_type.map(|e| e.to_str()),
-        args.maybe_origin_model_token.map(|t| t.to_string()),
-        args.maybe_origin_filename,
-
-        is_batch_generated,
-        args.maybe_batch_token.map(|t| t.as_str()),
-
-        args.maybe_mime_type,
-        args.file_size_bytes, 
-        args.maybe_duration_millis,
-        args.maybe_audio_encoding,
-        args.maybe_video_encoding,
-        args.maybe_frame_width, 
-        args.maybe_frame_height,
-        args.maybe_prompt_token.map(|t| t.as_str()),
-        args.checksum_sha2,
-
-        args.maybe_engine_category.map(|e| e.to_str()),
-
-        args.maybe_title,
-        args.maybe_text_transcript,
-
-        args.maybe_scene_source_media_file_token.map(|t| t.as_str()),
-
-        args.public_bucket_directory_hash,
-        args.maybe_public_bucket_prefix,
-        args.maybe_public_bucket_extension,
-
-        args.maybe_creator_user_token.map(|t| t.as_str()),
-        args.maybe_creator_anonymous_visitor_token.map(|t| t.as_str()),
-
-        args.creator_ip_address,
-        args.creator_set_visibility.to_str(),
-
+    let query_result = insert_media_file_generic_executor(InsertMediaFileGenericExecutorArgs {
+        maybe_creator_user_token: args.maybe_creator_user_token,
+        maybe_creator_anonymous_visitor_token: args.maybe_creator_anonymous_visitor_token,
+        creator_ip_address: args.creator_ip_address,
+        creator_set_visibility: args.creator_set_visibility,
+        media_class: args.media_class,
+        media_type: args.media_type,
+        is_user_upload: args.is_user_upload,
+        is_intermediate_system_file: args.is_intermediate_system_file,
+        origin_category: args.origin_category,
+        origin_product_category: args.origin_product_category,
+        maybe_origin_model_type: args.maybe_origin_model_type,
+        maybe_origin_model_token: args.maybe_origin_model_token,
+        maybe_origin_filename: args.maybe_origin_filename,
+        maybe_mime_type: args.maybe_mime_type,
+        file_size_bytes: args.file_size_bytes,
+        maybe_duration_millis: args.maybe_duration_millis,
+        maybe_audio_encoding: args.maybe_audio_encoding,
+        maybe_video_encoding: args.maybe_video_encoding,
+        maybe_frame_width: args.maybe_frame_width,
+        maybe_frame_height: args.maybe_frame_height,
+        checksum_sha2: args.checksum_sha2,
+        maybe_engine_category: args.maybe_engine_category,
+        maybe_title: args.maybe_title,
+        maybe_text_transcript: args.maybe_text_transcript,
+        maybe_scene_source_media_file_token: args.maybe_scene_source_media_file_token,
+        maybe_prompt_token: args.maybe_prompt_token,
+        maybe_batch_token: args.maybe_batch_token,
+        maybe_source_job_token: args.maybe_source_job_token,
+        public_bucket_directory_hash: args.public_bucket_directory_hash,
+        maybe_public_bucket_prefix: args.maybe_public_bucket_prefix,
+        maybe_public_bucket_extension: args.maybe_public_bucket_extension,
         maybe_creator_file_synthetic_id,
         maybe_creator_category_synthetic_id,
+        maybe_extra_file_modification_info: extra_file_modification_info,
+        is_generated_on_prem: args.is_generated_on_prem,
+        generated_by_worker: args.generated_by_worker,
+        generated_by_cluster: args.generated_by_cluster,
+        maybe_generation_provider: args.maybe_generation_provider,
+        maybe_platform_type: args.maybe_platform_type,
+        maybe_cover_image_media_file_token: args.maybe_cover_image_media_file_token,
+        maybe_mod_user_token: args.maybe_mod_user_token,
+        mysql_executor: &mut *transaction,
+        phantom: Default::default(),
+    }).await;
 
-        extra_file_modification_info,
-
-        maybe_generation_provider_str,
-
-        args.maybe_platform_type.map(|p| p.to_str()),
-
-        args.maybe_cover_image_media_file_token.map(|t| t.as_str()),
-
-        args.maybe_mod_user_token,
-        args.is_generated_on_prem,
-        args.generated_by_worker,
-        args.generated_by_cluster
-    ).execute(&mut *transaction).await;
-
-    let record_id = match query_result {
-        Ok(res) => res.last_insert_id(),
+    let (result_token, record_id) = match query_result {
+        Ok(result) => result,
         Err(err) => {
             // TODO: handle better
             //transaction.rollback().await?;

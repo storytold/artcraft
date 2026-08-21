@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../viewer-3d"
+    },
+    {
       "path": "../gallery-modal"
     },
     {
@@ -16,6 +19,9 @@
     },
     {
       "path": "../file-uploader"
+    },
+    {
+      "path": "../select"
     },
     {
       "path": "../list-dropdown"

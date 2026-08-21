@@ -271,6 +271,43 @@
   background-color: rgba(255, 255, 255, 0.35);
 }
 
+/* Hide the native resize grip (Chromium draws different grips for textareas
+   vs contenteditable divs) and draw one consistent grip on the wrapper so the
+   plain and @-mention prompt editors look identical. */
+.promptbox-scrollbar::-webkit-resizer {
+  background: transparent;
+  border: none;
+}
+
+.promptbox-resize-wrap {
+  position: relative;
+}
+
+.promptbox-resize-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 0.5) 45%,
+    transparent 45%,
+    transparent 55%,
+    rgba(255, 255, 255, 0.5) 55%,
+    rgba(255, 255, 255, 0.5) 60%,
+    transparent 60%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.5) 70%,
+    rgba(255, 255, 255, 0.5) 75%,
+    transparent 75%
+  );
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -302,6 +339,39 @@
 
 .animate-toast-in {
   animation: toast-in 0.2s ease-out both;
+}
+
+/* Prompt box drag & drop overlay */
+@keyframes promptbox-drop-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.promptbox-drop-overlay {
+  animation: promptbox-drop-overlay-in 0.15s ease-out both;
+}
+
+@keyframes promptbox-drop-chip-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.9;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+.promptbox-drop-chip {
+  animation: promptbox-drop-chip-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes marquee {
@@ -405,9 +475,12 @@
   }
 }
 
+/* --ac-drawer-drag-y: set inline by SettingsDrawer when a pull-down gesture
+   dismisses the sheet, so the slide-down starts from where the finger let go
+   instead of snapping back to the top first. Fresh mounts default to 0. */
 @keyframes ac-drawer-down {
   from {
-    transform: translateY(0);
+    transform: translateY(var(--ac-drawer-drag-y, 0px));
   }
   to {
     transform: translateY(100%);
@@ -437,4 +510,19 @@
 
 .ac-sheet-overlay[data-state="closed"] {
   animation: ac-sheet-fade 0.2s ease-in reverse forwards;
+}
+
+/* Lucide icons ship with a fixed 24px default; size them relative to the
+   surrounding font so they scale with text like the previous icons did.
+   1.2em (not 1em) because Lucide draws glyphs on a 20px grid inside a 24px
+   viewBox — the extra 20% makes the visible mark fill a full 1em, matching
+   the old solid-glyph sizing. Explicit w-/h-/size- utilities still win
+   (the utilities layer is emitted later). */
+@layer base {
+  .lucide {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -0.2em;
+  }
 }

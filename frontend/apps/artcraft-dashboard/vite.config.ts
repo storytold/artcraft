@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    port: 4202,
     proxy: {
       "/api": {
         target: "https://api.storyteller.ai",

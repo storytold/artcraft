@@ -37,6 +37,11 @@ impl GenerateSplatRequest {
     match self.model {
       RouterSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
       RouterSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
+      // The marble 1.x models are only supported by the new
+      // `GenerateSplatRequestBuilder::build2()` pipeline.
+      _ => Err(ArtcraftRouterError::UnsupportedModel(
+        format!("Splat generation for model `{:?}` is not supported by the legacy plan API; use GenerateSplatRequestBuilder::build2()", self.model)
+      )),
     }
   }
 

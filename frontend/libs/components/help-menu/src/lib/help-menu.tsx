@@ -1,22 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  faBook,
-  faChevronLeft,
-  faCircleQuestion,
-  faNewspaper,
-  faArrowRight,
-} from "@fortawesome/pro-solid-svg-icons";
-import {
-  faDiscord,
-  faGithub,
-  faYoutube,
-} from "@fortawesome/free-brands-svg-icons";
+import { ArrowRightIcon, BookIcon, ChevronLeftIcon, CircleHelpIcon, NewspaperIcon } from "lucide-react";
+import { DiscordIcon, GithubIcon, YoutubeIcon } from "@storyteller/icons";
 import { OpenUrl } from "@storyteller/tauri-api";
 import { Modal } from "@storyteller/ui-modal";
 import { defaultTutorials, TutorialItem } from "./tutorials.js";
 import { useTutorialModalStore } from "./help-menu-store";
 import { Button } from "@storyteller/ui-button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { getNewsPosts, markdownToHtml } from "@storyteller/markdown-content";
 
@@ -73,7 +62,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
           onClick={() => setSelectedSlug(null)}
           className="self-start mb-4 text-sm flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
-          <FontAwesomeIcon icon={faChevronLeft} /> Back to News
+          <ChevronLeftIcon /> Back to News
         </button>
 
         <div className="article-content">
@@ -127,11 +116,10 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-semibold group-hover:text-blue-300 transition-colors flex items-center gap-2">
               {item.title}
-              <FontAwesomeIcon
-                icon={faArrowRight}
+              <ArrowRightIcon
+                
                 size="xs"
-                className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-blue-400"
-              />
+                className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-blue-400" />
             </h3>
             {item.date && (
               <span className="text-xs text-white/40 font-mono whitespace-nowrap ml-2">
@@ -191,31 +179,31 @@ export function HelpMenuButton({
     {
       label: "Tutorials",
       selected: false,
-      icon: <FontAwesomeIcon icon={faBook} className="text-base" />,
+      icon: <BookIcon  className="text-base" />,
       action: "tutorials",
     },
     {
       label: "News & Updates",
       selected: false,
-      icon: <FontAwesomeIcon icon={faNewspaper} className="text-base" />,
+      icon: <NewspaperIcon  className="text-base" />,
       action: "news",
     },
     {
       label: "Discord",
       selected: false,
-      icon: <FontAwesomeIcon icon={faDiscord} className="text-base" />,
+      icon: <DiscordIcon  className="text-base" />,
       action: "discord",
     },
     {
       label: "GitHub",
       selected: false,
-      icon: <FontAwesomeIcon icon={faGithub} className="text-base" />,
+      icon: <GithubIcon  className="text-base" />,
       action: "github",
     },
     {
       label: "ArtCraft Studios",
       selected: false,
-      icon: <FontAwesomeIcon icon={faYoutube} className="text-base" />,
+      icon: <YoutubeIcon  className="text-base" />,
       action: "artcraft",
     },
   ];
@@ -355,7 +343,7 @@ export function HelpMenuButton({
         position="top"
         align="end"
         triggerIcon={
-          <FontAwesomeIcon icon={faCircleQuestion} className="text-base-fg" />
+          <CircleHelpIcon  className="text-base-fg" />
         }
         triggerLabel="Help"
         buttonClassName="h-9"
@@ -365,7 +353,7 @@ export function HelpMenuButton({
         isOpen={open}
         onClose={handleClose}
         title={modalTitle}
-        titleIcon={view === "news" ? faNewspaper : faBook}
+        titleIcon={view === "news" ? NewspaperIcon : BookIcon}
         accessibleTitle={modalTitle}
         className={view === "news" ? "max-w-3xl" : "max-w-5xl"}
       >
@@ -410,7 +398,7 @@ export function HelpMenuButton({
                 onClick={setGrid}
                 className="w-fit text-base-fg opacity-80 hover:opacity-100 font-medium"
                 variant="action"
-                icon={faChevronLeft}
+                icon={ChevronLeftIcon}
               >
                 Back
               </Button>

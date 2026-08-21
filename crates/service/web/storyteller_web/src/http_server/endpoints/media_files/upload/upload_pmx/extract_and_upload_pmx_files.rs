@@ -244,20 +244,16 @@ fn keep_only_largest_pmx_file(mut entries: Vec<PmxZipEntryDetail>) -> Result<Vec
 
 // Some zip files have entries with useless leading directories. This will remove them.
 fn remove_useless_leading_directories(mut entries: Vec<PmxZipEntryDetail>) -> Result<Vec<PmxZipEntryDetail>, PmxError> {
-  let mut maybe_parent_directory_to_remove = None;
-
-  {
+  let maybe_parent_directory_to_remove = {
     let pmx_entries = entries.iter()
         .filter(|entry| entry.is_pmx)
         .collect::<Vec<&PmxZipEntryDetail>>();
 
     match pmx_entries.get(0) {
       None => return Err(PmxError::NoPmxFile),
-      Some(pmx_file) => {
-        maybe_parent_directory_to_remove = pmx_file.enclosed_name.parent().map(|p| p.to_path_buf());
-      }
+      Some(pmx_file) => pmx_file.enclosed_name.parent().map(|p| p.to_path_buf()),
     }
-  }
+  };
 
   if let Some(parent) = maybe_parent_directory_to_remove {
     info!("Common parent: {:?}", parent);

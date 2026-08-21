@@ -44,6 +44,9 @@
   ],
   "references": [
     {
+      "path": "../../markdown-content/tsconfig.lib.json"
+    },
+    {
       "path": "../popover/tsconfig.lib.json"
     },
     {
@@ -56,7 +59,7 @@
       "path": "../../tauri-api/tsconfig.lib.json"
     },
     {
-      "path": "../../markdown-content/tsconfig.lib.json"
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

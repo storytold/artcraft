@@ -1,5 +1,6 @@
 import { ApiManager, type ApiResponse } from "./ApiManager";
 import type {
+  AllDebugLog,
   Wallet,
   WalletWithOwner,
   WalletLedgerEntry,
@@ -56,6 +57,12 @@ export interface UserReferralListItem {
   maybe_referral_code_token: string | null;
 }
 
+/** A Databox datawall configured server-side for the admin home page. */
+export interface DataboxDashboard {
+  name: string;
+  id: string;
+}
+
 /** Which table the customer id was found in. */
 export type ModeratorStripeCustomerIdSource = "customer_link" | "subscription";
 
@@ -84,7 +91,271 @@ export interface ModeratorUserLookupResponse {
   username_is_not_customized: boolean;
 }
 
+export interface TopSpender {
+  user_token: string;
+  username: string;
+  display_name: string;
+  email_gravatar_hash: string;
+  gross_spend_usd_cents: number;
+  refund_usd_cents: number;
+  net_spend_usd_cents: number;
+  payment_count: number;
+  credits_granted: number;
+}
+
+export interface UserSpendEvent {
+  token: string;
+  payments_namespace: string;
+  maybe_user_token: string | null;
+  maybe_username: string | null;
+  maybe_display_name: string | null;
+  maybe_email_gravatar_hash: string | null;
+  event_type: string;
+  amount_usd_cents: number;
+  maybe_credits_granted: number | null;
+  payment_source: string;
+  maybe_source_object_id: string | null;
+  maybe_stripe_invoice_id: string | null;
+  maybe_stripe_payment_intent_id: string | null;
+  maybe_stripe_charge_id: string | null;
+  maybe_stripe_customer_id: string | null;
+  is_production: boolean;
+  payment_occurred_at: string;
+  created_at: string;
+}
+
+export interface UserSpendSummary {
+  payments_namespace: string;
+  user_token: string;
+  lifetime_gross_spend_usd_cents: number;
+  lifetime_subscription_spend_usd_cents: number;
+  lifetime_credits_spend_usd_cents: number;
+  lifetime_refund_usd_cents: number;
+  lifetime_net_spend_usd_cents: number;
+  lifetime_payment_count: number;
+  lifetime_refund_count: number;
+  maybe_first_payment_at: string | null;
+  first_spend_usd_cents: number;
+  maybe_last_payment_at: string | null;
+  last_spend_usd_cents: number;
+  maybe_days_since_first_payment: number | null;
+  maybe_days_since_last_payment: number | null;
+  net_spend_7d_usd_cents: number;
+  net_spend_prev_7d_usd_cents: number;
+  net_spend_14d_usd_cents: number;
+  net_spend_prev_14d_usd_cents: number;
+  net_spend_30d_usd_cents: number;
+  net_spend_prev_30d_usd_cents: number;
+  net_spend_60d_usd_cents: number;
+  net_spend_90d_usd_cents: number;
+  net_spend_this_year_usd_cents: number;
+  avg_weekly_net_spend_4w_usd_cents: number;
+  avg_weekly_net_spend_12w_usd_cents: number;
+  active_weeks_in_last_4: number;
+  active_weeks_in_last_8: number;
+  active_weeks_in_last_12: number;
+  active_weeks_in_last_24: number;
+  active_weeks_in_last_52: number;
+  consecutive_active_weeks: number;
+  consecutive_inactive_weeks: number;
+  maybe_weeks_since_last_spend: number | null;
+  is_active_subscriber: boolean;
+  maybe_subscription_interval: string | null;
+  maybe_reengagement_score: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserDailySpend {
+  payments_namespace: string;
+  spend_date: string;
+  subscription_spend_usd_cents: number;
+  credits_spend_usd_cents: number;
+  gross_spend_usd_cents: number;
+  refund_usd_cents: number;
+  net_spend_usd_cents: number;
+  payment_count: number;
+  credits_granted: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReengagementCandidate {
+  user_token: string;
+  username: string;
+  display_name: string;
+  email_gravatar_hash: string;
+  reengagement_score: number;
+  lifetime_net_spend_usd_cents: number;
+  maybe_last_payment_at: string | null;
+  maybe_days_since_last_payment: number | null;
+  maybe_weeks_since_last_spend: number | null;
+  is_active_subscriber: boolean;
+}
+
 export class ModerationApi extends ApiManager {
+  // Users to re-engage (lapsed spenders), highest re-engagement score first.
+  public async ListReengagementCandidates(
+    offset?: number | null,
+    payments_namespace?: string,
+  ): Promise<
+    ApiResponse<{
+      candidates: ReengagementCandidate[];
+      next_offset: number | null;
+    }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/user_spend_summaries/reengagement_list`;
+    return await this.get<{
+      success: boolean;
+      candidates: ReengagementCandidate[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        offset: offset ?? undefined,
+        payments_namespace: payments_namespace ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          candidates: response.candidates || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
+  // Full spend summary for one user.
+  public async GetUserSpendSummary(
+    user_token: string,
+    payments_namespace?: string,
+  ): Promise<ApiResponse<{ summary: UserSpendSummary | null }>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/user_spend_summaries/summary/${encodeURIComponent(user_token)}`;
+    return await this.get<{
+      success: boolean;
+      maybe_summary: UserSpendSummary | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: { payments_namespace: payments_namespace ?? undefined },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: { summary: response.maybe_summary ?? null },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
+  // One page of a user's daily spend rows (offset-paginated, newest date first).
+  public async ListUserDailySpends(
+    user_token: string,
+    offset?: number | null,
+    limit?: number,
+    payments_namespace?: string,
+  ): Promise<ApiResponse<{ records: UserDailySpend[]; next_offset: number | null }>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/user_daily_spends/user/${encodeURIComponent(user_token)}`;
+    return await this.get<{
+      success: boolean;
+      records: UserDailySpend[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        offset: offset ?? undefined,
+        limit,
+        payments_namespace: payments_namespace ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          records: response.records || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
+  // Top spenders over a rolling window (offset-paginated, biggest net spend first).
+  public async ListTopSpenders(
+    window: string,
+    offset?: number | null,
+  ): Promise<
+    ApiResponse<{
+      spenders: TopSpender[];
+      next_offset: number | null;
+    }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/top_spenders/list`;
+    return await this.get<{
+      success: boolean;
+      spenders: TopSpender[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        window,
+        offset: offset ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          spenders: response.spenders || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
+  // Spend events list (offset-paginated, newest payment first).
+  public async ListUserSpendEvents(
+    offset?: number | null,
+    payments_namespace?: string,
+  ): Promise<
+    ApiResponse<{
+      events: UserSpendEvent[];
+      next_offset: number | null;
+    }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/user_spend_events/list`;
+    return await this.get<{
+      success: boolean;
+      events: UserSpendEvent[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        offset: offset ?? undefined,
+        payments_namespace: payments_namespace ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          events: response.events || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
   public async UserLookup(
     search: string,
   ): Promise<ApiResponse<{ maybe_user?: ModeratorUserLookupResponse }>> {
@@ -208,6 +479,25 @@ export class ModerationApi extends ApiManager {
         success: false,
         errorMessage: err.message,
       }));
+  }
+
+  // Databox metrics dashboards configured server-side, in display order.
+  // Dashboards without a configured id are omitted by the server.
+  public async ListDataboxDashboards(): Promise<
+    ApiResponse<DataboxDashboard[]>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/dashboards/databox`;
+    return await this.get<{
+      success: boolean;
+      databoards: DataboxDashboard[];
+      error_message?: string;
+    }>({ endpoint })
+      .then((response) => ({
+        success: response.success,
+        data: response.databoards || [],
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
   }
 
   public async SendAlert(params: {
@@ -516,6 +806,74 @@ export class ModerationApi extends ApiManager {
       .then((response) => ({
         success: response.success,
         data: { debug_logs: response.debug_logs || [] },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
+  public async ListAllDebugLogs(params: {
+    severities?: string[];
+    cursor?: number;
+    limit?: number;
+  }): Promise<
+    ApiResponse<{ debug_logs: AllDebugLog[]; next_cursor: number | null }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/debug_logs/list_all`;
+    return await this.get<{
+      success: boolean;
+      debug_logs: AllDebugLog[];
+      next_cursor: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        severities: params.severities?.length
+          ? params.severities.join(",")
+          : undefined,
+        cursor: params.cursor,
+        limit: params.limit,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          debug_logs: response.debug_logs || [],
+          next_cursor: response.next_cursor ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
+  public async ListUserDebugLogs(
+    user_token: string,
+    cursor?: number,
+    limit?: number,
+  ): Promise<
+    ApiResponse<{ debug_logs: DebugLog[]; next_cursor: number | null }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/debug_logs/user_list/${encodeURIComponent(user_token)}`;
+    return await this.get<{
+      success: boolean;
+      debug_logs: DebugLog[];
+      next_cursor: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: { cursor, limit },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          debug_logs: response.debug_logs || [],
+          next_cursor: response.next_cursor ?? null,
+        },
         errorMessage: response.error_message,
       }))
       .catch((err) => ({

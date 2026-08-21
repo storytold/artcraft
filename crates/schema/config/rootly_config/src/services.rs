@@ -1,3 +1,5 @@
 pub const ROOTLY_SERVICE_ID_STORYTELLER_WEB: &str = "9ebebb09-0c56-4c8a-8f57-d5f0f85f3f16";
 pub const ROOTLY_SERVICE_ID_SEEDANCE2_PRO_JOB: &str = "2a78f884-c42c-4745-b826-b7a572780ea0";
 pub const ROOTLY_SERVICE_ID_VIDEO_THUMBNAIL_JOB: &str = "9d22997c-4474-47cb-af7b-53119eed1a88";
+// TODO: create the Rootly service for this job and replace this placeholder id.
+pub const ROOTLY_SERVICE_ID_USER_SPEND_ANALYTICS_JOB: &str = "00000000-0000-0000-0000-000000000000";

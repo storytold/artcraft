@@ -14,11 +14,15 @@ pub fn classify_grok_http_error(status_code: StatusCode, maybe_body: Option<&str
     return Ok(());
   }
 
+  // Owned copy of the raw response body, attached to every error variant so
+  // downstream logging/alerting/pages have the full upstream context.
+  let raw_body = || maybe_body.map(|b| b.to_string());
+
   match status_code {
-    StatusCode::UNAUTHORIZED   => return Err(GrokSpecificApiError::Unauthorized.into()),
-    StatusCode::PAYMENT_REQUIRED => return Err(GrokSpecificApiError::InsufficientCredits.into()),
-    StatusCode::NOT_FOUND      => return Err(GrokSpecificApiError::NotFound.into()),
-    StatusCode::TOO_MANY_REQUESTS => return Err(GrokSpecificApiError::RateLimited.into()),
+    StatusCode::UNAUTHORIZED   => return Err(GrokSpecificApiError::Unauthorized { raw_http_body: raw_body() }.into()),
+    StatusCode::PAYMENT_REQUIRED => return Err(GrokSpecificApiError::InsufficientCredits { raw_http_body: raw_body() }.into()),
+    StatusCode::NOT_FOUND      => return Err(GrokSpecificApiError::NotFound { raw_http_body: raw_body() }.into()),
+    StatusCode::TOO_MANY_REQUESTS => return Err(GrokSpecificApiError::RateLimited { raw_http_body: raw_body() }.into()),
     _ => {}
   }
 
@@ -27,10 +31,10 @@ pub fn classify_grok_http_error(status_code: StatusCode, maybe_body: Option<&str
     if let Some(body) = maybe_body {
       if body_indicates_moderation(body) {
         let message = extract_xai_error_message(body).unwrap_or_else(|| body.to_string());
-        return Err(GrokSpecificApiError::PromptModerated(message).into());
+        return Err(GrokSpecificApiError::PromptModerated { reason: message, raw_http_body: raw_body() }.into());
       }
     }
-    return Err(GrokSpecificApiError::Forbidden.into());
+    return Err(GrokSpecificApiError::Forbidden { raw_http_body: raw_body() }.into());
   }
 
   // 400 Bad Request is usually a malformed body or moderation rejection.
@@ -38,12 +42,12 @@ pub fn classify_grok_http_error(status_code: StatusCode, maybe_body: Option<&str
     if let Some(body) = maybe_body {
       if body_indicates_moderation(body) {
         let message = extract_xai_error_message(body).unwrap_or_else(|| body.to_string());
-        return Err(GrokSpecificApiError::PromptModerated(message).into());
+        return Err(GrokSpecificApiError::PromptModerated { reason: message, raw_http_body: raw_body() }.into());
       }
       let message = extract_xai_error_message(body).unwrap_or_else(|| body.to_string());
-      return Err(GrokSpecificApiError::BadRequest(message).into());
+      return Err(GrokSpecificApiError::BadRequest { reason: message, raw_http_body: raw_body() }.into());
     }
-    return Err(GrokSpecificApiError::BadRequest(String::new()).into());
+    return Err(GrokSpecificApiError::BadRequest { reason: String::new(), raw_http_body: None }.into());
   }
 
   // Everything else falls through to the generic catch-all.
@@ -99,25 +103,25 @@ mod tests {
   #[test]
   fn unauthorized_401() {
     let err = classify_grok_http_error(StatusCode::UNAUTHORIZED, None).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::Unauthorized)));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::Unauthorized { .. })));
   }
 
   #[test]
   fn payment_required_402() {
     let err = classify_grok_http_error(StatusCode::PAYMENT_REQUIRED, None).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::InsufficientCredits)));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::InsufficientCredits { .. })));
   }
 
   #[test]
   fn not_found_404() {
     let err = classify_grok_http_error(StatusCode::NOT_FOUND, None).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound)));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound { .. })));
   }
 
   #[test]
   fn rate_limited_429() {
     let err = classify_grok_http_error(StatusCode::TOO_MANY_REQUESTS, None).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::RateLimited)));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::RateLimited { .. })));
   }
 
   // ── 403 Forbidden ──
@@ -125,14 +129,14 @@ mod tests {
   #[test]
   fn plain_403_is_forbidden() {
     let err = classify_grok_http_error(StatusCode::FORBIDDEN, Some(r#"{"error":{"message":"Forbidden"}}"#)).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::Forbidden)));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::Forbidden { .. })));
   }
 
   #[test]
   fn moderation_403_is_prompt_moderated() {
     let body = r#"{"error":{"message":"Content moderation blocked this prompt","code":"content_policy"}}"#;
     let err = classify_grok_http_error(StatusCode::FORBIDDEN, Some(body)).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::PromptModerated(_))));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::PromptModerated { .. })));
   }
 
   // ── 400 Bad Request ──
@@ -142,7 +146,7 @@ mod tests {
     let body = r#"{"error":{"code":"invalid_argument","message":"unknown field 'foo'"}}"#;
     let err = classify_grok_http_error(StatusCode::BAD_REQUEST, Some(body)).unwrap_err();
     match err {
-      GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(msg)) => {
+      GrokError::ApiSpecific(GrokSpecificApiError::BadRequest { reason: msg, .. }) => {
         assert_eq!(msg, "unknown field 'foo'");
       }
       other => panic!("expected BadRequest, got: {:?}", other),
@@ -154,7 +158,7 @@ mod tests {
     let body = "definitely not json";
     let err = classify_grok_http_error(StatusCode::BAD_REQUEST, Some(body)).unwrap_err();
     match err {
-      GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(msg)) => {
+      GrokError::ApiSpecific(GrokSpecificApiError::BadRequest { reason: msg, .. }) => {
         assert_eq!(msg, "definitely not json");
       }
       other => panic!("expected BadRequest, got: {:?}", other),
@@ -165,7 +169,7 @@ mod tests {
   fn bad_request_400_no_body_is_empty_string() {
     let err = classify_grok_http_error(StatusCode::BAD_REQUEST, None).unwrap_err();
     match err {
-      GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(msg)) => {
+      GrokError::ApiSpecific(GrokSpecificApiError::BadRequest { reason: msg, .. }) => {
         assert!(msg.is_empty());
       }
       other => panic!("expected BadRequest, got: {:?}", other),
@@ -177,7 +181,7 @@ mod tests {
     // Some APIs return moderation as 400 rather than 403.
     let body = r#"{"error":{"message":"Safety filter blocked this request"}}"#;
     let err = classify_grok_http_error(StatusCode::BAD_REQUEST, Some(body)).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::PromptModerated(_))));
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::PromptModerated { .. })));
   }
 
   // ── Generic fallback ──

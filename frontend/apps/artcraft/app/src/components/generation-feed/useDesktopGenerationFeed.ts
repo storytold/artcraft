@@ -8,6 +8,7 @@ import {
 } from "@storyteller/tauri-events";
 import { MediaFilesApi } from "@storyteller/api";
 import {
+  getMediaStillThumbnail,
   getMediaThumbnail,
   getThumbnailUrl,
   THUMBNAIL_SIZES,
@@ -410,6 +411,12 @@ async function taskToGalleryItems(
           id: batchFile.token,
           label,
           thumbnail: thumbnail || cdnUrl,
+          stillThumbnail:
+            mediaType === "video"
+              ? getMediaStillThumbnail(batchFile.media_links, {
+                  size: THUMBNAIL_SIZES.LARGE,
+                })
+              : null,
           fullImage: cdnUrl,
           createdAt,
           mediaClass: mediaType,

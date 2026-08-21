@@ -10,7 +10,7 @@ pub struct ArtcraftVideoResponsePayload {
 }
 
 #[derive(Clone, Debug)]
-pub struct Seedance2proVideoResponsePayload {
+pub struct KinoviWebVideoResponsePayload {
   pub order_id: String,
   pub task_id: String,
   pub maybe_order_ids: Option<Vec<String>>,
@@ -58,7 +58,7 @@ pub enum GenerateVideoResponse {
   Artcraft(ArtcraftVideoResponsePayload),
   GmiCloud(GmiCloudVideoResponsePayload),
   Grok(GrokVideoResponsePayload),
-  Seedance2Pro(Seedance2proVideoResponsePayload),
+  KinoviWeb(KinoviWebVideoResponsePayload),
   Fal(FalVideoResponsePayload),
 }
 
@@ -70,9 +70,9 @@ impl GenerateVideoResponse {
     }
   }
 
-  pub fn get_seedance2pro_payload(&self) -> Option<Seedance2proVideoResponsePayload> {
+  pub fn get_kinovi_web_payload(&self) -> Option<KinoviWebVideoResponsePayload> {
     match self {
-      Self::Seedance2Pro(p) => Some(p.clone()),
+      Self::KinoviWeb(p) => Some(p.clone()),
       _ => None,
     }
   }

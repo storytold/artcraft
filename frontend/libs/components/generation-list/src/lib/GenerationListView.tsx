@@ -9,7 +9,12 @@ import {
 } from "./useGalleryEntries";
 import { usePrompts } from "./prompts-cache";
 import { useMediaPromptTokens } from "./media-prompt-token-cache";
-import type { FailedJob, GalleryItem, InProgressJob } from "./types";
+import type {
+  FailedJob,
+  GalleryItem,
+  GenerationMediaClass,
+  InProgressJob,
+} from "./types";
 
 // Constrains the feed to the promptbox width (max-w-5xl) and stacks one row
 // per generation: a single time-sorted merge of the in-progress / failed /
@@ -19,7 +24,7 @@ import type { FailedJob, GalleryItem, InProgressJob } from "./types";
 
 export interface RecreateSlotContext {
   promptToken: string;
-  mediaClass: "image" | "video";
+  mediaClass: GenerationMediaClass;
   kind: "pending" | "failed";
 }
 
@@ -46,6 +51,13 @@ export interface GenerationListViewProps {
   ) => ReactNode;
   /** Copy-prompt feedback (e.g. host toast). */
   onCopyPromptResult?: (success: boolean) => void;
+  /** Multi-select mode for completed rows (pending/failed rows are never
+   *  selectable). See useGallerySelectionStore for the shared state. */
+  selectionMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelect?: (item: GalleryItem) => void;
+  /** Marks the row the user most recently viewed in the lightbox. */
+  lastViewedId?: string | null;
 }
 
 export function GenerationListView({
@@ -62,6 +74,10 @@ export function GenerationListView({
   renderRecreate,
   renderGalleryActions,
   onCopyPromptResult,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
+  lastViewedId,
 }: GenerationListViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -195,6 +211,10 @@ export function GenerationListView({
                 promptToken: promptToken || undefined,
               })}
               onCopyPromptResult={onCopyPromptResult}
+              selectMode={selectionMode}
+              selected={selectionMode && selectedIds?.has(entry.item.id)}
+              onToggleSelect={onToggleSelect}
+              lastViewed={!!lastViewedId && entry.item.id === lastViewedId}
             />
           );
         })}

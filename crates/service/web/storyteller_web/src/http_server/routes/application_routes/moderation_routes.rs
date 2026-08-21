@@ -35,8 +35,11 @@ use crate::http_server::endpoints::moderation::user::moderator_list_users_by_sig
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
 use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
+use crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::moderator_list_databox_dashboards_handler;
 use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler;
+use crate::http_server::endpoints::moderation::debug_logs::moderation_list_all_debug_logs_handler::moderation_list_all_debug_logs_handler;
 use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::moderation_list_debug_logs_for_token_handler;
+use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_user_handler::moderation_list_debug_logs_for_user_handler;
 use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::moderation_get_job_by_token_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler;
@@ -47,6 +50,12 @@ use crate::http_server::endpoints::moderation::user_referrals::moderator_list_us
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler;
 use crate::http_server::endpoints::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids_handler::moderator_get_user_stripe_customer_ids_handler;
+use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_get_user_spend_summary_handler::moderator_get_user_spend_summary_handler;
+use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_reengagement_list_handler::moderator_reengagement_list_handler;
+use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_top_users_list_handler::moderator_top_users_list_handler;
+use crate::http_server::endpoints::moderation::user_daily_spends::moderator_user_daily_spends_handler::moderator_user_daily_spends_handler;
+use crate::http_server::endpoints::moderation::top_spenders::moderator_list_top_spenders_handler::moderator_list_top_spenders_handler;
+use crate::http_server::endpoints::moderation::user_spend_events::moderator_list_user_spend_events_handler::moderator_list_user_spend_events_handler;
 
 pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
   where
@@ -60,15 +69,61 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
       >,
 {
   app.service(web::scope("/v1/moderation")
+        .service(web::scope("/user_spend_summaries")
+            .service(web::resource("/summary/{user_token}")
+                .route(web::get().to(moderator_get_user_spend_summary_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/reengagement_list")
+                .route(web::get().to(moderator_reengagement_list_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/top_users_list")
+                .route(web::get().to(moderator_top_users_list_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/top_spenders")
+            .service(web::resource("/list")
+                .route(web::get().to(moderator_list_top_spenders_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/user_spend_events")
+            .service(web::resource("/list")
+                .route(web::get().to(moderator_list_user_spend_events_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/user_daily_spends")
+            .service(web::resource("/user/{user_token}")
+                .route(web::get().to(moderator_user_daily_spends_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
         .service(web::scope("/alerts")
             .service(web::resource("/send")
                 .route(web::post().to(moderation_send_alert_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
+        .service(web::scope("/dashboards")
+            .service(web::resource("/databox")
+                .route(web::get().to(moderator_list_databox_dashboards_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
         .service(web::scope("/debug_logs")
             .service(web::resource("/list/{token}")
                 .route(web::get().to(moderation_list_debug_logs_for_token_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/list_all")
+                .route(web::get().to(moderation_list_all_debug_logs_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/user_list/{user_token}")
+                .route(web::get().to(moderation_list_debug_logs_for_user_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )

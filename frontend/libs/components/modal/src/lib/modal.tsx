@@ -1,16 +1,13 @@
 import { ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconDefinition } from "@fortawesome/pro-solid-svg-icons";
+import { Maximize2Icon, Minimize2Icon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { useRef, useState, useEffect, useContext, createContext } from "react";
 import { cloneElement, isValidElement } from "react";
 import { useTransition, useSpring, to, animated } from "@react-spring/web";
-import {
-  faUpRightAndDownLeftFromCenter,
-  faDownLeftAndUpRightToCenter,
-} from "@fortawesome/pro-solid-svg-icons";
 import { DomLevels } from "@storyteller/common";
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
@@ -66,6 +63,8 @@ if (typeof window !== "undefined" && !window.__modalEscListenerInstalled) {
   window.__modalEscListenerInstalled = true;
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key !== "Escape" && e.key !== "Esc") return;
+    // An open outside-safe panel (mention autocomplete etc.) claims Escape.
+    if (document.querySelector(OUTSIDE_SAFE_SELECTOR)) return;
     const top = getTopEscapableModal();
     if (top) {
       e.preventDefault();
@@ -76,6 +75,12 @@ if (typeof window !== "undefined" && !window.__modalEscListenerInstalled) {
 
 // Simple global z-index tracker for stacked modals
 let modalZCounter = 70;
+
+// Body-portaled companions of modal content (e.g. the prompt box's mention
+// autocomplete, which portals to <body> for fixed positioning) mark their
+// root with this attribute. Pointer-downs inside them must not count as
+// outside clicks, and while one is open it claims Escape before the modal.
+const OUTSIDE_SAFE_SELECTOR = "[data-modal-outside-safe]";
 
 const AnimatedBackdrop = ({
   styles,
@@ -149,11 +154,11 @@ const ExpandButton = ({ className, size = "md" }: ExpandButtonProps) => {
         className,
       )}
     >
-      <FontAwesomeIcon
+      <DynamicIcon
         icon={
           expanded
-            ? faDownLeftAndUpRightToCenter
-            : faUpRightAndDownLeftFromCenter
+            ? Minimize2Icon
+            : Maximize2Icon
         }
       />
     </button>
@@ -192,7 +197,7 @@ export const Modal = ({
 }: {
   isOpen: boolean;
   title?: ReactNode;
-  titleIcon?: IconDefinition;
+  titleIcon?: LucideIcon;
   onTitleIconClick?: () => void;
   titleIconClassName?: string;
   onClose: () => void;
@@ -1004,12 +1009,23 @@ export const Modal = ({
                       ? {}
                       : ({ "aria-describedby": undefined } as any))}
                     onPointerDownOutside={(e) => {
-                      if (!closeOnOutsideClick || allowBackgroundInteraction) {
+                      const target = e.target as HTMLElement | null;
+                      if (
+                        !closeOnOutsideClick ||
+                        allowBackgroundInteraction ||
+                        target?.closest?.(OUTSIDE_SAFE_SELECTOR)
+                      ) {
                         e.preventDefault();
                       }
                     }}
                     onEscapeKeyDown={(e) => {
-                      if (!closeOnEsc) {
+                      // Radix listens on document in the capture phase, so an
+                      // open outside-safe panel must be checked here too — its
+                      // own Escape handling runs later in the bubble phase.
+                      if (
+                        !closeOnEsc ||
+                        document.querySelector(OUTSIDE_SAFE_SELECTOR)
+                      ) {
                         e.preventDefault();
                       }
                     }}
@@ -1042,7 +1058,8 @@ export const Modal = ({
                         ),
                         transform: to(
                           [styles.transform, dimSpring.factor],
-                          (tr, f) => `${tr} scale(${0.93 + 0.07 * (f as number)})`,
+                          (tr, f) =>
+                            `${tr} scale(${0.93 + 0.07 * (f as number)})`,
                         ),
                         transformOrigin: "center center",
                         willChange: "transform, opacity", // Optimize for animations
@@ -1080,7 +1097,7 @@ export const Modal = ({
                                   onClick={onTitleIconClick}
                                 >
                                   {titleIcon && (
-                                    <FontAwesomeIcon
+                                    <DynamicIcon
                                       icon={titleIcon}
                                       className={titleIconClassName}
                                     />
@@ -1090,7 +1107,7 @@ export const Modal = ({
                               ) : (
                                 <div className="flex items-center gap-3">
                                   {titleIcon && (
-                                    <FontAwesomeIcon
+                                    <DynamicIcon
                                       icon={titleIcon}
                                       className={titleIconClassName}
                                     />

@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpload, faImages, faTrash } from "@fortawesome/pro-solid-svg-icons";
+import { ImagesIcon, TrashIcon, UploadIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export interface ImageFile {
@@ -176,7 +175,7 @@ export function ImageInput({
           </div>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
-            <FontAwesomeIcon icon={faImages} className="text-2xl mb-2" />
+            <ImagesIcon  className="text-2xl mb-2" />
             <p>{placeholderText}</p>
 
             <div className="flex items-center justify-center gap-2 my-4 w-full">
@@ -192,7 +191,7 @@ export function ImageInput({
                   variant="secondary"
                   className="flex items-center gap-2 px-2.5 py-1.5 text-sm bg-white/15"
                 >
-                  <FontAwesomeIcon icon={faImages} />
+                  <ImagesIcon />
                   Choose from Library
                 </Button>
               )}
@@ -202,7 +201,7 @@ export function ImageInput({
                 variant="secondary"
                 className="flex items-center gap-2 px-2.5 py-1.5 text-sm bg-white/15"
               >
-                <FontAwesomeIcon icon={faUpload} />
+                <UploadIcon />
                 Upload Image
               </Button>
             </div>
@@ -227,7 +226,7 @@ export function ImageInput({
               onClick={onGalleryOpen}
               variant="secondary"
               className="flex items-center gap-2 px-2.5 py-1.5 text-sm"
-              icon={faImages}
+              icon={ImagesIcon}
             >
               Choose Different Image
             </Button>
@@ -237,7 +236,7 @@ export function ImageInput({
             onClick={handleUploadClick}
             variant="secondary"
             className="flex items-center gap-2 px-2.5 py-1.5 text-sm"
-            icon={faUpload}
+            icon={UploadIcon}
           >
             Upload Different Image
           </Button>
@@ -252,7 +251,7 @@ export function ImageInput({
             }}
             variant="destructive"
             className="flex items-center gap-2 px-2.5 py-1.5 text-sm"
-            icon={faTrash}
+            icon={TrashIcon}
           >
             Remove Image
           </Button>

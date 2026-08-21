@@ -1,21 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  faSpinnerThird,
-  faVideo,
-  faImage,
-  faXmark,
-  faSparkles,
-  faPlus,
-  faImages,
-  faPenToSquare,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ImageIcon, ImagesIcon, LoaderCircleIcon, PlusIcon, SparklesIcon, SquarePenIcon, VideoIcon, XIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
+import { PromptClearAllButton } from "@storyteller/ui-promptbox";
 import { UploaderStates, type UploaderState } from "@storyteller/common";
 import { useVFXStore } from "./store";
 import {
@@ -54,6 +46,7 @@ export const PromptBoxVFX = ({
   hideResolution = false,
 }: PromptBoxVFXProps) => {
   const source = useVFXStore((s) => s.source);
+  const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
   const prompt = useVFXStore((s) => s.prompt);
   const resolution = useVFXStore((s) => s.resolution);
@@ -248,6 +241,16 @@ export const PromptBoxVFX = ({
 
   const hasPrompt = prompt.trim().length > 0;
 
+  const hasAttachedRefs = !!source || !!mask || !!reference;
+  const hasClearableContent = hasAttachedRefs || prompt.length > 0;
+
+  const handleClearAll = useCallback(() => {
+    setSource(undefined);
+    setMask(undefined);
+    setReference(undefined);
+    setPrompt("");
+  }, [setSource, setMask, setReference, setPrompt]);
+
   return (
     <div className="relative w-full">
       {showPromptPopover && (
@@ -263,7 +266,7 @@ export const PromptBoxVFX = ({
                 className="flex h-5 w-5 items-center justify-center rounded-full text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
                 aria-label="Close prompt"
               >
-                <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
+                <XIcon  className="h-3 w-3" />
               </button>
             </div>
             <textarea
@@ -319,7 +322,7 @@ export const PromptBoxVFX = ({
         <div className="flex items-end justify-center gap-3">
           <UploadTile
             label="Source Video"
-            icon={faVideo}
+            icon={VideoIcon}
             previewUrl={source?.url}
             isVideo
             uploading={sourceUploading}
@@ -332,7 +335,7 @@ export const PromptBoxVFX = ({
           {/* Mask is hidden for now — backend endpoint doesn't accept it yet. */}
           <UploadTile
             label="Reference Image"
-            icon={faImage}
+            icon={ImageIcon}
             previewUrl={reference?.url}
             uploading={referenceUploading}
             onUpload={() => triggerUpload("reference")}
@@ -353,7 +356,7 @@ export const PromptBoxVFX = ({
               mode="toggle"
               panelTitle="Model"
               triggerIcon={
-                <FontAwesomeIcon icon={faSparkles} className="h-3 w-3" />
+                <SparklesIcon  className="h-3 w-3" />
               }
               triggerLabel={selectedModel.label}
             />
@@ -384,8 +387,8 @@ export const PromptBoxVFX = ({
                   "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
               )}
             >
-              <FontAwesomeIcon
-                icon={hasPrompt ? faPenToSquare : faPlus}
+              <DynamicIcon
+                icon={hasPrompt ? SquarePenIcon : PlusIcon}
                 className="hidden h-3 w-3 sm:inline-block"
               />
               <span className="truncate">
@@ -397,7 +400,12 @@ export const PromptBoxVFX = ({
             </button>
           </Tooltip>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <PromptClearAllButton
+              onClick={handleClearAll}
+              disabled={!hasClearableContent}
+              confirmClear={hasAttachedRefs}
+            />
             <GenerateButton
               onClick={onSubmit}
               disabled={!canSubmit}
@@ -431,7 +439,7 @@ export const PromptBoxVFX = ({
 
 interface UploadTileProps {
   label: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   previewUrl?: string;
   isVideo?: boolean;
   uploading?: boolean;
@@ -482,7 +490,7 @@ const UploadTile = ({
               <Button
                 variant="primary"
                 onClick={onUpload}
-                icon={faPlus}
+                icon={PlusIcon}
                 className="w-full"
               >
                 Upload
@@ -490,7 +498,7 @@ const UploadTile = ({
               <Button
                 variant="action"
                 onClick={onPickFromLibrary}
-                icon={faImages}
+                icon={ImagesIcon}
                 className="w-full bg-base-fg/10 hover:bg-base-fg/20"
               >
                 Pick from library
@@ -506,7 +514,7 @@ const UploadTile = ({
             )}
             onClick={onUpload}
           >
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={icon}
               className="text-2xl opacity-80 text-base-fg"
             />
@@ -521,10 +529,9 @@ const UploadTile = ({
           )}
         >
           {uploading ? (
-            <FontAwesomeIcon
-              icon={faSpinnerThird}
-              className="h-6 w-6 animate-spin text-base-fg"
-            />
+            <LoaderCircleIcon
+              
+              className="h-6 w-6 animate-spin text-base-fg" />
           ) : (
             <>
               {isVideo ? (
@@ -546,7 +553,7 @@ const UploadTile = ({
                 onClick={onClear}
                 className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
               >
-                <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                <XIcon  className="h-2.5 w-2.5" />
               </button>
             </>
           )}

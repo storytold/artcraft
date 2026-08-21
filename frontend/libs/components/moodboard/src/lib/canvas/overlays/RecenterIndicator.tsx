@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCompress } from "@fortawesome/pro-solid-svg-icons";
+import { MinimizeIcon } from "lucide-react";
 import { useMoodboardStore } from "../MoodboardStore";
 import { anyContentVisible } from "../layout/geometry";
 
@@ -25,7 +24,7 @@ export const RecenterIndicator = () => {
       title="Zoom to fit (Shift+1)"
       className="pointer-events-auto absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-3 py-2 text-sm text-white/90 shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80"
     >
-      <FontAwesomeIcon icon={faCompress} />
+      <MinimizeIcon />
       <span>Content off-screen — recenter</span>
     </button>
   );

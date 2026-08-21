@@ -359,6 +359,7 @@ async fn old_dispatch(
         anyhow!("invalid job category for dispatch: {:?}", job.inference_category)))
     }
     InferenceCategory::VideoGeneration 
+      | InferenceCategory::AudioGeneration
       | InferenceCategory::BackgroundRemoval 
       | InferenceCategory::ObjectGeneration
       | InferenceCategory::SplatGeneration

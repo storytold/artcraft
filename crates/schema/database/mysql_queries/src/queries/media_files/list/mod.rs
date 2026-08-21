@@ -4,3 +4,6 @@ pub mod list_media_files;
 pub mod list_media_files_by_batch_token;
 pub mod list_media_files_for_elastic_search_backfill_using_cursor;
 pub mod list_media_files_for_user;
+pub mod list_session_media_files_by_class;
+pub mod list_session_project_media_files;
+pub mod media_file_list_row;

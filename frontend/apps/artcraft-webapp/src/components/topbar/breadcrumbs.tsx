@@ -7,10 +7,22 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
   "/": [{ label: "Home" }],
   "/create-image": [{ label: "Create", href: "/" }, { label: "Image" }],
   "/create-video": [{ label: "Create", href: "/" }, { label: "Video" }],
+  "/create-audio": [{ label: "Create", href: "/" }, { label: "Audio" }],
+  "/create-object": [{ label: "Create", href: "/" }, { label: "3D Object" }],
+  "/create-world": [{ label: "Create", href: "/" }, { label: "3D World" }],
   "/background-change": [
-    { label: "Create", href: "/" },
+    { label: "Studio", href: "/" },
     { label: "Background Change" },
   ],
+  "/edit-image": [{ label: "Studio", href: "/" }, { label: "Edit Image" }],
+  "/edit-3d": [{ label: "Studio", href: "/" }, { label: "Edit 3D" }],
+  "/video-editor": [{ label: "Studio", href: "/" }, { label: "Edit Video" }],
+  "/moodboard": [{ label: "Studio", href: "/" }, { label: "Moodboard" }],
+  "/frame-extractor": [
+    { label: "Studio", href: "/" },
+    { label: "Frame Extractor" },
+  ],
+  "/referrals": [{ label: "Referrals" }],
   "/media": [{ label: "Library", href: "/library" }, { label: "Media" }],
   "/pricing": [{ label: "Pricing" }],
   "/support": [{ label: "Support" }],
@@ -30,15 +42,26 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
 };
 
 function resolveCrumbs(pathname: string): Crumb[] {
-  // Library has sub-tabs (Unsorted / Folders) that live under /library/* rather
-  // than being separate top-level pages.
+  // Library has sub-tabs (Unsorted / Folders / Tags) that live under /library/*
+  // rather than being separate top-level pages.
   if (pathname === "/library" || pathname.startsWith("/library/")) {
     const onFolders =
       pathname === "/library/folders" ||
       pathname.startsWith("/library/folder_");
+    const onFolderless = pathname === "/library/folderless";
+    const onTags =
+      pathname === "/library/tags" || pathname.startsWith("/library/tag_");
     return [
       { label: "Library", href: "/library" },
-      { label: onFolders ? "Folders" : "All Assets" },
+      {
+        label: onFolders
+          ? "Folders"
+          : onFolderless
+            ? "Unfoldered"
+            : onTags
+              ? "Tags"
+              : "All Assets",
+      },
     ];
   }
   if (ROUTE_CRUMBS[pathname]) return ROUTE_CRUMBS[pathname];

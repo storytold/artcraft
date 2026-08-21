@@ -1,14 +1,14 @@
 import { memo, useCallback, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCube, faImage, faPlay, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
 } from "@storyteller/model-list";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { CopyPromptButton } from "./CopyPromptButton";
 import { formatTimeAgo } from "./format-time-ago";
-import type { GalleryItem } from "./types";
+import { is3DMediaClass, type GalleryItem } from "./types";
 
 export interface GalleryRowProps {
   item: GalleryItem;
@@ -22,6 +22,13 @@ export interface GalleryRowProps {
   /** Hover-revealed quick-action cluster (recreate / share / download …). */
   actionsSlot?: ReactNode;
   onCopyPromptResult?: (success: boolean) => void;
+  /** Multi-select mode: clicking toggles selection instead of opening the
+   *  item, a leading checkbox is shown, and the actions cluster is hidden. */
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (item: GalleryItem) => void;
+  /** Persistent badge marking the item most recently viewed in the lightbox. */
+  lastViewed?: boolean;
 }
 
 export const GalleryRow = memo(function GalleryRow({
@@ -32,11 +39,22 @@ export const GalleryRow = memo(function GalleryRow({
   loading = false,
   actionsSlot,
   onCopyPromptResult,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+  lastViewed = false,
 }: GalleryRowProps) {
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
-  const mediaIcon = isVideo ? faVideo : is3D ? faCube : faImage;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : "Image";
+  const is3D = is3DMediaClass(item.mediaClass);
+  const isAudio = item.mediaClass === "audio";
+  const mediaIcon = isVideo
+    ? VideoIcon
+    : is3D
+      ? BoxIcon
+      : isAudio
+        ? MusicIcon
+        : ImageIcon;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
   const modelDisplayName = effectiveModelId
@@ -46,15 +64,22 @@ export const GalleryRow = memo(function GalleryRow({
     ? getCreatorIconPathForModelId(effectiveModelId)
     : null;
 
-  const handleRowClick = useCallback(() => onClick(item), [item, onClick]);
+  const handleRowClick = useCallback(() => {
+    if (selectMode) {
+      // Only downloadable (completed, URL-bearing) items are selectable.
+      if (item.fullImage) onToggleSelect?.(item);
+      return;
+    }
+    onClick(item);
+  }, [item, onClick, selectMode, onToggleSelect]);
   const handleRowKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        onClick(item);
+        handleRowClick();
       }
     },
-    [item, onClick],
+    [handleRowClick],
   );
 
   const timeAgo = formatTimeAgo(item.createdAt);
@@ -65,12 +90,26 @@ export const GalleryRow = memo(function GalleryRow({
       tabIndex={0}
       onClick={handleRowClick}
       onKeyDown={handleRowKeyDown}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
+      className={`group flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60 ${selected ? "bg-primary-400/10" : ""}`}
     >
+      {/* Selection checkbox (select mode only) */}
+      {selectMode && (
+        <div
+          className={`pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+            selected
+              ? "border-primary-400 bg-primary-400 text-white"
+              : "border-white/60 bg-black/40 text-transparent"
+          } ${item.fullImage ? "" : "invisible"}`}
+        >
+          <CheckIcon  className="text-[10px]" />
+        </div>
+      )}
+
       {/* Thumbnail */}
-      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none">
+      <div className={`relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none ${lastViewed ? "ring-2 ring-primary-400/50" : ""}`}>
         <GalleryThumbnail
           thumbnail={item.thumbnail}
+          stillThumbnail={item.stillThumbnail}
           alt={item.label}
           isVideo={isVideo}
           fallbackIcon={mediaIcon}
@@ -80,11 +119,18 @@ export const GalleryRow = memo(function GalleryRow({
         {isVideo && item.thumbnail && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-              <FontAwesomeIcon
-                icon={faPlay}
-                className="ml-0.5 text-[9px] text-white/90"
-              />
+              <PlayIcon
+                
+                className="ml-0.5 text-[9px] text-white/90" />
             </span>
+          </div>
+        )}
+        {/* Persistent "Last viewed" badge (stays until another item is
+            opened in the lightbox). */}
+        {lastViewed && (
+          <div className="pointer-events-none absolute left-1 top-1 z-10 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/80">
+            <EyeIcon />
+            Last viewed
           </div>
         )}
       </div>
@@ -108,6 +154,15 @@ export const GalleryRow = memo(function GalleryRow({
             )}
           </div>
         )}
+        {isAudio && item.fullImage && (
+          <div className="mt-1.5 max-w-md rounded-md bg-white/[0.04]">
+            <WaveformAudioPlayer
+              src={item.fullImage}
+              durationMillis={item.durationMillis}
+              compact
+            />
+          </div>
+        )}
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-white/45">
           {modelIconPath && (
             <img
@@ -129,7 +184,7 @@ export const GalleryRow = memo(function GalleryRow({
           {/* Quick actions, right after the media type. Always visible on
               mobile (no hover); hover-revealed on desktop. The prompt above
               spans the full row width either way. */}
-          {actionsSlot && (
+          {actionsSlot && !selectMode && (
             <div className="flex shrink-0 items-center gap-0.5 sm:ms-1.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
               {actionsSlot}
             </div>

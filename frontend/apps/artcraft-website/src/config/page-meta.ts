@@ -19,7 +19,7 @@
 export const SITE_ORIGIN = "https://getartcraft.com";
 
 // Default share image, served from /public. Pages may override per-route.
-export const DEFAULT_OG_IMAGE = "/images/3d-interface-preview.jpg";
+export const DEFAULT_OG_IMAGE = "/images/og-image.png";
 
 export interface PageMeta {
   title: string;
@@ -60,10 +60,23 @@ export const PAGE_META: Record<string, PageMeta> = {
     description:
       "Seedance 2.5 is ByteDance's anticipated next-generation AI video model — reports point to 4K, real-time generation, longer clips, and persistent characters. See what's expected, and create with Seedance in ArtCraft today.",
   },
+  "/minimax-h3": {
+    title:
+      "MiniMax H3 Free in ArtCraft. AI Video with Native Sound. Try It Now.",
+    ogTitle: "MiniMax H3, Free in ArtCraft",
+    description:
+      "Generate MiniMax H3 videos for free in ArtCraft. Up to 15 seconds of 2K AI video with native stereo sound. Type a prompt and try MiniMax's new multimodal model right on the page.",
+  },
   "/pricing": {
     title: "Pricing - ArtCraft. AI Video and Images.",
     description:
       "Simple pricing for ArtCraft. Generate AI video and images with every model in one open desktop app. No subscriptions needed — you own ArtCraft.",
+  },
+  "/beta": {
+    title: "Beta Signup - ArtCraft. AI Video and Images.",
+    ogTitle: "Join the ArtCraft Beta",
+    description:
+      "Apply for early access to new ArtCraft features. Test unreleased models and tools before anyone else, and help shape the fastest open desktop app for AI video and images.",
   },
 };
 

@@ -20,6 +20,12 @@ export interface MediaLinks {
  * placeholders.
  */
 export interface MediaFileCoverImageDetails {
+  /** Modern CDN links for the cover image; prefer `maybe_links.cdn_url`. */
+  maybe_links?: {
+    cdn_url: string;
+    thumbnail_template?: string | null;
+  } | null;
+  /** @deprecated Points at the bucket; use `maybe_links` instead. */
   maybe_cover_image_public_bucket_url?: string | null;
   maybe_cover_image_public_bucket_path?: string | null;
   default_cover?: {

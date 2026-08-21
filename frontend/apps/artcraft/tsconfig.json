@@ -38,6 +38,9 @@
       "path": "../../libs/components/vfx"
     },
     {
+      "path": "../../libs/omni-gen"
+    },
+    {
       "path": "../../libs/components/slider-v2"
     },
     {
@@ -113,9 +116,6 @@
       "path": "../../libs/tauri-events"
     },
     {
-      "path": "../../libs/components/promptbox"
-    },
-    {
       "path": "../../libs/components/generation-list"
     },
     {
@@ -149,7 +149,13 @@
       "path": "../../libs/components/button"
     },
     {
+      "path": "../../libs/components/promptbox"
+    },
+    {
       "path": "../../libs/components/upload-modal"
+    },
+    {
+      "path": "../../libs/icons"
     },
     {
       "path": "../../libs/tauri-api"

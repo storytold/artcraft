@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMinus, faPlus } from "@fortawesome/pro-solid-svg-icons";
+import { MinusIcon, PlusIcon } from "lucide-react";
 
 interface MobileCountStepperProps {
   value: number;
@@ -41,7 +40,7 @@ export function MobileCountStepper({
         disabled={index <= 0}
         className="flex h-9 w-8 items-center justify-center rounded-lg text-base-fg/80 transition-colors hover:bg-white/10 disabled:opacity-30"
       >
-        <FontAwesomeIcon icon={faMinus} className="h-3 w-3" />
+        <MinusIcon  className="h-3 w-3" />
       </button>
       <span className="min-w-10 text-center text-sm font-semibold tabular-nums text-base-fg">
         {value}/{maxValue}
@@ -52,7 +51,7 @@ export function MobileCountStepper({
         disabled={index === allowed.length - 1}
         className="flex h-9 w-8 items-center justify-center rounded-lg text-base-fg/80 transition-colors hover:bg-white/10 disabled:opacity-30"
       >
-        <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+        <PlusIcon  className="h-3 w-3" />
       </button>
     </div>
   );

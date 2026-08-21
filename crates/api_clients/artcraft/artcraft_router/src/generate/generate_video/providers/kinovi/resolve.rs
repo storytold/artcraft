@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::api::audio_list_ref::AudioListRef;
@@ -10,7 +11,7 @@ use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::providers::kinovi::upload::upload_to_seedance2pro;
+use crate::generate::generate_video::providers::kinovi::upload::upload_to_kinovi_web;
 use crate::generate::generate_video::video_generation_draft_context::VideoGenerationDraftContext;
 
 /// Either resolved URLs or unresolved media file tokens.
@@ -40,26 +41,29 @@ pub(crate) fn audio_list_ref_into_urls_or_tokens(list: AudioListRef) -> UrlsOrTo
   }
 }
 
-/// Resolve a single ImageRef and upload to Seedance2Pro CDN.
+/// Resolve a single ImageRef and upload to KinoviWeb CDN.
 pub(crate) async fn resolve_and_upload_single(
-  session: &Seedance2ProSession,
+  session: &KinoviWebSession,
   image_ref: Option<ImageRef>,
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
+  maybe_predownloaded: Option<&HashMap<String, PathBuf>>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   let source_url = match image_ref {
     None => return Ok(None),
     Some(ImageRef::Url(url)) => url,
     Some(ImageRef::MediaFileToken(token)) => resolve_token(maybe_map, &token)?,
   };
-  Ok(Some(upload_to_seedance2pro(session, &source_url).await?))
+  let local_path = predownloaded_path(maybe_predownloaded, &source_url);
+  Ok(Some(upload_to_kinovi_web(session, &source_url, local_path).await?))
 }
 
-/// Resolve a list of refs to URLs and upload each to Seedance2Pro CDN.
+/// Resolve a list of refs to URLs and upload each to KinoviWeb CDN.
 /// Order is preserved.
 pub(crate) async fn resolve_and_upload_list(
-  session: &Seedance2ProSession,
+  session: &KinoviWebSession,
   urls_or_tokens: Option<UrlsOrTokens>,
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
+  maybe_predownloaded: Option<&HashMap<String, PathBuf>>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
   let source_urls = match urls_or_tokens {
     None => return Ok(None),
@@ -71,9 +75,21 @@ pub(crate) async fn resolve_and_upload_list(
 
   let mut uploaded = Vec::with_capacity(source_urls.len());
   for url in &source_urls {
-    uploaded.push(upload_to_seedance2pro(session, url).await?);
+    let local_path = predownloaded_path(maybe_predownloaded, url);
+    uploaded.push(upload_to_kinovi_web(session, url, local_path).await?);
   }
   Ok(Some(uploaded))
+}
+
+/// Look up a caller-predownloaded local copy of the source file (see
+/// `VideoGenerationDraftContext::predownloaded_media_paths`).
+fn predownloaded_path<'a>(
+  maybe_predownloaded: Option<&'a HashMap<String, PathBuf>>,
+  source_url: &str,
+) -> Option<&'a Path> {
+  maybe_predownloaded
+    .and_then(|paths| paths.get(source_url))
+    .map(PathBuf::as_path)
 }
 
 /// Map character tokens to their Kinovi character IDs, preserving order.

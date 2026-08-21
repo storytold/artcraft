@@ -274,7 +274,7 @@ export class WeightsApi extends ApiManager {
     weightToken: string;
     coverImageMediaFileToken: string;
   }): Promise<ApiResponse<undefined>> {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/${weightToken}/cover_image`;
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/weight/${weightToken}/cover_image`;
 
     const body = {
       cover_image_media_file_token: coverImageMediaFileToken,

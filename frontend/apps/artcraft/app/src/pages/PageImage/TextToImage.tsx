@@ -4,7 +4,7 @@ import { PromptBoxImage } from "@storyteller/ui-promptbox";
 import { UploadImageMedia, FilterMediaClasses } from "@storyteller/api";
 import BackgroundGallery from "./BackgroundGallery";
 import {
-  TEXT_TO_IMAGE_PAGE_MODEL_LIST,
+  useTextToImagePageModelList,
   ModelPage,
   ClassyModelSelector,
   useSelectedImageModel,
@@ -27,6 +27,7 @@ import {
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   useGalleryData,
+  useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
@@ -44,6 +45,7 @@ interface TextToImageProps {
 }
 
 const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
+  const textToImageModelList = useTextToImagePageModelList();
   const startBatch = useTextToImageStore((s) => s.startBatch);
   const promptContentRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState<number>(138);
@@ -127,7 +129,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
   // Open a completed row in the global lightbox (rendered by TopBar's
   // gallery modal); prev/next walk the merged feed order.
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
+
   const openInLightbox = useCallback((item: GalleryItem) => {
+    useLastViewedGenerationStore.getState().setId(item.id);
     const list = flatCompletedRef.current;
     const index = list.findIndex((i) => i.id === item.id);
     galleryModalLightboxNavPrev.value =
@@ -168,7 +173,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
+          lastViewedId={lastViewedId}
           enableMakeVideo
+          selectable
+          selectionBarBottomOffset={promptHeight + 32}
         />
       }
       promptBox={
@@ -187,7 +195,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               modelSelector={
                 <ClassyModelSelector
                   variant="embedded"
-                  items={TEXT_TO_IMAGE_PAGE_MODEL_LIST}
+                  items={textToImageModelList}
                   page={PAGE_ID}
                 />
               }

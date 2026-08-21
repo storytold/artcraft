@@ -1,9 +1,5 @@
-import {
-  faEye,
-  faEyeSlash,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
@@ -142,7 +138,7 @@ const Login = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                   >
-                    <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+                    <DynamicIcon icon={showPassword ? EyeOffIcon : EyeIcon} />
                   </button>
                 </div>
               </div>
@@ -154,10 +150,9 @@ const Login = () => {
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <FontAwesomeIcon
-                      icon={faSpinnerThird}
-                      className="animate-spin"
-                    />
+                    <LoaderCircleIcon
+                      
+                      className="animate-spin" />
                   ) : (
                     "Log in"
                   )}

@@ -21,10 +21,13 @@
       "path": "../../libs/components/slider-v2"
     },
     {
-      "path": "../../libs/components/pricing-modal"
+      "path": "../../libs/components/toaster"
     },
     {
-      "path": "../../libs/components/promptbox"
+      "path": "../../libs/omni-gen"
+    },
+    {
+      "path": "../../libs/components/pricing-modal"
     },
     {
       "path": "../../libs/components/model-selector"
@@ -36,6 +39,9 @@
       "path": "../../libs/components/pagescene"
     },
     {
+      "path": "../../libs/components/lightbox-modal"
+    },
+    {
       "path": "../../libs/components/gallery-modal"
     },
     {
@@ -43,6 +49,12 @@
     },
     {
       "path": "../../libs/components/switch"
+    },
+    {
+      "path": "../../libs/components/promptbox"
+    },
+    {
+      "path": "../../libs/components/audio-player"
     },
     {
       "path": "../../libs/components/viewer-3d"
@@ -88,6 +100,9 @@
     },
     {
       "path": "../../libs/api"
+    },
+    {
+      "path": "../../libs/icons"
     },
     {
       "path": "./tsconfig.app.json"

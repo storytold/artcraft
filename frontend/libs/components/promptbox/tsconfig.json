@@ -6,7 +6,7 @@
       "path": "../slider-v2"
     },
     {
-      "path": "../button-icon-select"
+      "path": "../../omni-gen"
     },
     {
       "path": "../../analytics/google-analytics"
@@ -16,6 +16,9 @@
     },
     {
       "path": "../camera-settings-modal"
+    },
+    {
+      "path": "../button-icon-select"
     },
     {
       "path": "../../tauri-utils"
@@ -55,6 +58,9 @@
     },
     {
       "path": "../../api"
+    },
+    {
+      "path": "../../icons"
     },
     {
       "path": "../modal"
