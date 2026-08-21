@@ -24,6 +24,8 @@ const CODE_LABELS: Record<string, string> = {
   Backslash: "\\",
   Minus: "-",
   Equal: "=",
+  NumpadAdd: "+",
+  NumpadSubtract: "-",
 };
 
 export function formatBindingTokens(binding: Binding): string[] {

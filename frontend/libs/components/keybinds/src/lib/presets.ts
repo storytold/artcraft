@@ -62,6 +62,20 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.record.cancelEncode": [b("Escape")],
 
   // PageDraw (2D) — preset-independent.
+  "pagedraw.tools.select": [b("Digit1")],
+  "pagedraw.tools.shape": [b("Digit2")],
+  "pagedraw.tools.brush": [b("Digit3")],
+  "pagedraw.tools.mask": [b("Digit4")],
+  "pagedraw.tools.eraser": [b("Digit5")],
+  // MS-Paint-style size keys; numpad variants included.
+  "pagedraw.tools.brushSizeUp": [
+    b("Equal", { ctrl: true }),
+    b("NumpadAdd", { ctrl: true }),
+  ],
+  "pagedraw.tools.brushSizeDown": [
+    b("Minus", { ctrl: true }),
+    b("NumpadSubtract", { ctrl: true }),
+  ],
   "pagedraw.edit.delete": [b("Delete"), b("Backspace")],
   "pagedraw.edit.copy": [b("KeyC", { ctrl: true })],
   "pagedraw.edit.paste": [b("KeyV", { ctrl: true })],

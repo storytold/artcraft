@@ -19,9 +19,6 @@ export type { BaseSelectorImage, ImageBundle, DragState } from "./lib/types";
 export { Node } from "./lib/Node";
 
 // Hooks (used by PageEdit)
-export { useCopyPasteHotkeys } from "./lib/hooks/useCopyPasteHotkeys";
-export { useDeleteHotkeys } from "./lib/hooks/useDeleteHotkeys";
-export { useUndoRedoHotkeys } from "./lib/hooks/useUndoRedoHotkeys";
 export { useGlobalMouseUp } from "./lib/hooks/useGlobalMouseUp";
 export { useStageCentering } from "./lib/hooks/useCenteredStage";
 export { useRightPanelLayoutManagement } from "./lib/hooks/useRightPanelLayoutManagement";

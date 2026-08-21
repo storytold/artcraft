@@ -157,6 +157,20 @@ const defs: ActionDef[] = [
   }),
 
   // ── PageDraw (2D editor) ──────────────────────────────────────────────────
+  // Tool switching mirrors the SideToolbar's visual order; the toolbar shows
+  // each tool's resolved key as a corner badge. Size up/down adjusts whichever
+  // size the active tool uses (brush/eraser share one, mask has its own).
+  act("pagedraw.tools.select", "Select tool", "Tools", { important: true }),
+  act("pagedraw.tools.shape", "Shape tool", "Tools", { important: true }),
+  act("pagedraw.tools.brush", "Brush tool", "Tools", { important: true }),
+  act("pagedraw.tools.mask", "Mask tool", "Tools", { important: true }),
+  act("pagedraw.tools.eraser", "Eraser tool", "Tools", { important: true }),
+  act("pagedraw.tools.brushSizeUp", "Increase brush size", "Tools", {
+    preventDefault: true, // Ctrl+= is browser zoom
+  }),
+  act("pagedraw.tools.brushSizeDown", "Decrease brush size", "Tools", {
+    preventDefault: true, // Ctrl+- is browser zoom
+  }),
   act("pagedraw.edit.delete", "Delete selected", "Edit", { important: true }),
   act("pagedraw.edit.copy", "Copy", "Edit", { important: true, preventDefault: true }),
   act("pagedraw.edit.paste", "Paste", "Edit", { important: true, preventDefault: true }),

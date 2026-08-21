@@ -427,12 +427,68 @@ const PageDraw = ({
   const supportsMaskedInpainting =
     selectedImageModel?.usesInpaintingMask ?? false;
 
+  // Keyboard tool switching mirrors the SideToolbar buttons; size up/down
+  // adjusts whichever size the active tool draws with (brush and eraser share
+  // store.brushSize, the mask tool has its own). Handlers read the store via
+  // getState so they stay referentially stable.
+  const handleShapeToolKey = useCallback(() => {
+    const scene = useSceneStore.getState();
+    scene.selectNode(null);
+    if (!scene.currentShape) scene.setCurrentShape("rectangle");
+    scene.setActiveTool("shape");
+  }, []);
+
+  const handleMaskToolKey = useCallback(() => {
+    if (!supportsMaskedInpainting) return;
+    useSceneStore.getState().setActiveTool("inpaint");
+  }, [supportsMaskedInpainting]);
+
+  const adjustBrushSize = useCallback((direction: 1 | -1) => {
+    const scene = useSceneStore.getState();
+    const step = 2 * direction;
+    if (scene.activeTool === "inpaint") {
+      scene.setInpaintBrushSize(
+        Math.min(100, Math.max(1, scene.inpaintBrushSize + step)),
+      );
+    } else if (scene.activeTool === "draw" || scene.activeTool === "eraser") {
+      scene.setBrushSize(Math.min(64, Math.max(1, scene.brushSize + step)));
+    }
+  }, []);
+
+  const handleBrushSizeUp = useCallback(
+    () => adjustBrushSize(1),
+    [adjustBrushSize],
+  );
+  const handleBrushSizeDown = useCallback(
+    () => adjustBrushSize(-1),
+    [adjustBrushSize],
+  );
+  const handleSelectToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("select"),
+    [],
+  );
+  const handleBrushToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("draw"),
+    [],
+  );
+  const handleEraserToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("eraser"),
+    [],
+  );
+
   usePagedrawKeybinds({
     undo,
     redo,
     onCopy: copySelectedItems,
     onPaste: pasteItems,
     onDelete: deleteSelectedItems,
+    onSelectTool: handleSelectToolKey,
+    onShapeTool: handleShapeToolKey,
+    onBrushTool: handleBrushToolKey,
+    onMaskTool: handleMaskToolKey,
+    onEraserTool: handleEraserToolKey,
+    onBrushSizeUp: handleBrushSizeUp,
+    onBrushSizeDown: handleBrushSizeDown,
   });
   const cheatsheetVisible = useCheatsheetVisibility();
 
