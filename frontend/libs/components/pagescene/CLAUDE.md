@@ -12,6 +12,35 @@ components that host these canvases** (`SceneContainer`, `EditorCanvas`, `Previe
 for mode/chrome gating — hide them with CSS (`hidden`) instead. (Regression fixed: record mode
 had gated `PreviewEngineCamera` behind `!isRecord`, wiping the scene on record→build toggle.)
 
+## Keybinds (unified registry)
+
+Every viewport shortcut is a remappable action in `@storyteller/keybinds`
+(`frontend/libs/components/keybinds`): the registry owns *which key* (preset +
+user overrides, Settings → Keybinds), `engine/keymap.ts` owns *what it does*
+(action id → handler), and `useViewportKeyboard` dispatches with a per-event
+`KeybindContext` (sceneMode / encoding / timelineExpanded / timelineSelection /
+modalTransformActive). Rules:
+
+- **Availability is declared, not implied.** An `ActionDef.when(ctx)` gate
+  decides if a binding is live; an unavailable binding falls through without
+  consuming the event. Default rule: available unless encoding. Two actions may
+  share a key ONLY if their gates are mutually exclusive (`actionsCoAvailable`
+  enforces this in tests and in the settings conflict UI). Examples: Space =
+  timeline play/pause in playback contexts, camera-view toggle otherwise;
+  Del/Backspace = valid timeline selection → keyframe/strip delete, else scene
+  object; Escape = cancel-render mid-encode, clear-selection otherwise.
+- **Do NOT add raw keydown listeners for editor operations** — register an
+  action + handler + `when` gate instead. Capture-phase component listeners
+  (the old TimelineEditor delete path) are exactly the pattern this replaced.
+- **Record mode** gates all scene-mutating actions off (`inBuild`); the encode
+  is abortable (overlay Cancel / Escape via `encodeCancelSignal`), and
+  Capture/Record always `enterCameraView()` first so output comes from the
+  render camera even after peeking at the scene view.
+- Camera movement (held WASD/QE/arrows) stays in `useFreeCam`, which resolves
+  its codes from the same store; its imperative guards (ctrl-chords,
+  timeline-expanded arrows, record lock) must stay in sync with the registry's
+  `cameraMove`/`cameraLook` gates.
+
 ## Behavior notes (fixes)
 
 - **Record mode is fully immutable.** The viewport lock (`CameraController.locked`, set by the
