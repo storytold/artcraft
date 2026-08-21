@@ -15,6 +15,17 @@ import {
   TransformModeChangedEvent,
 } from "./events/EngineEvent";
 import { usePageSceneStore, type PoseMode } from "../PageSceneStore";
+import {
+  addKeyframe,
+  deleteKeyframe,
+  moveClipLane,
+  moveKeyframe,
+  pauseTimeline,
+  playTimeline,
+  removeClipLane,
+  seekTimeline,
+} from "../actions/timeline";
+import { captureStill, recordVideo } from "../actions/recordOutput";
 
 // One declarative table mapping viewport actions to their handlers. The actual
 // key bindings now come from the unified @storyteller/keybinds registry (preset
@@ -129,6 +140,82 @@ const toggleStats = (editor: Editor) => {
   editor.toggle_stats();
 };
 
+// ── timeline / record handlers ───────────────────────────────────────────────
+// Availability (which contexts these fire in) lives on the registry defs;
+// handlers only implement the action itself.
+
+const timelinePlayPause = (editor: Editor) => {
+  if (usePageSceneStore.getState().timelineIsPlaying) pauseTimeline(editor);
+  else playTimeline(editor);
+};
+
+const timelineStep = (editor: Editor, direction: 1 | -1) => {
+  const timeline = editor.timelineController.getTimeline();
+  if (!timeline) return;
+  const fps = timeline.fps || 30;
+  const next =
+    editor.timelineController.getPlayhead() + direction / fps;
+  seekTimeline(editor, Math.min(timeline.duration, Math.max(0, next)));
+};
+
+// Move the selected keyframe (or clip strip) one frame in time. The registry
+// gates this on a valid selection; the id lookups below are just resolution,
+// not availability checks.
+const timelineNudge = (editor: Editor, direction: 1 | -1) => {
+  const store = usePageSceneStore.getState();
+  const timeline = editor.timelineController.getTimeline();
+  if (!timeline) return;
+  const delta = direction / (timeline.fps || 30);
+  const keyframeId = store.timelineSelectedKeyframeId;
+  if (keyframeId) {
+    for (const track of timeline.tracks) {
+      const keyframe = track.keyframes.find((k) => k.id === keyframeId);
+      if (keyframe) {
+        const time = Math.min(
+          timeline.duration,
+          Math.max(0, keyframe.time + delta),
+        );
+        moveKeyframe(editor, keyframeId, time);
+        return;
+      }
+    }
+    return;
+  }
+  const laneId = store.timelineSelectedClipLaneId;
+  if (!laneId) return;
+  const lane = editor.timelineController.getClipLane(laneId);
+  if (!lane) return;
+  moveClipLane(editor, laneId, Math.max(0, lane.strip.startTime + delta));
+};
+
+const timelineAddKeyframe = (editor: Editor) => {
+  const uuid = editor.mouse_controls?.selected?.[0]?.uuid;
+  if (!uuid) return;
+  addKeyframe(editor, uuid);
+};
+
+// Registry-gated complement of deleteSelected (scene object): fires only for
+// a VALID keyframe/strip selection, so a stale id can never eat the key. The
+// selection is re-resolved here in case it changed since the ctx snapshot.
+const timelineDeleteSelected = (editor: Editor) => {
+  const store = usePageSceneStore.getState();
+  const keyframeId = store.timelineSelectedKeyframeId;
+  if (keyframeId) {
+    const exists = editor.timelineController
+      .getTimeline()
+      ?.tracks.some((t) => t.keyframes.some((k) => k.id === keyframeId));
+    if (exists) deleteKeyframe(editor, keyframeId);
+    store.setTimelineSelectedKeyframe(null);
+    return;
+  }
+  const laneId = store.timelineSelectedClipLaneId;
+  if (!laneId) return;
+  if (editor.timelineController.getClipLane(laneId)) {
+    removeClipLane(editor, laneId);
+  }
+  store.setTimelineSelectedClipLane(null);
+};
+
 // Action id → handler. Bindings live in the keybinds registry; this maps each
 // registered PageScene action to what it actually does.
 const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
@@ -152,6 +239,28 @@ const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
   "pagescene.edit.redo": redo,
   "pagescene.edit.copy": copy,
   "pagescene.edit.paste": paste,
+  "pagescene.timeline.playPause": timelinePlayPause,
+  "pagescene.timeline.stepBack": (e) => timelineStep(e, -1),
+  "pagescene.timeline.stepForward": (e) => timelineStep(e, 1),
+  "pagescene.timeline.nudgeLeft": (e) => timelineNudge(e, -1),
+  "pagescene.timeline.nudgeRight": (e) => timelineNudge(e, 1),
+  "pagescene.timeline.goToStart": (e) => seekTimeline(e, 0),
+  "pagescene.timeline.goToEnd": (e) => {
+    const timeline = e.timelineController.getTimeline();
+    if (timeline) seekTimeline(e, timeline.duration);
+  },
+  "pagescene.timeline.addKeyframe": timelineAddKeyframe,
+  "pagescene.timeline.deleteSelected": timelineDeleteSelected,
+  "pagescene.timeline.toggleExpanded": () => {
+    const store = usePageSceneStore.getState();
+    store.setTimelineExpanded(!store.timelineExpanded);
+  },
+  "pagescene.record.toggleMode": () => {
+    const store = usePageSceneStore.getState();
+    store.setSceneMode(store.sceneMode === "record" ? "build" : "record");
+  },
+  "pagescene.record.captureStill": captureStill,
+  "pagescene.record.recordVideo": recordVideo,
   "pagescene.record.cancelEncode": () =>
     usePageSceneStore.getState().requestEncodeCancel(),
 };

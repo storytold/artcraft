@@ -16,18 +16,31 @@ import { ActionDef, ActionId, KeybindContext, Surface } from "./types";
 const inBuild = (ctx: KeybindContext) =>
   ctx.sceneMode !== "record" && !ctx.encoding;
 
+// Camera-look arrows yield to the timeline while it's open (arrows mean
+// frame stepping / keyframe nudging there); camera MOVE keys stay live so
+// shots can still be framed with the timeline expanded. useFreeCam enforces
+// these same rules imperatively — keep the two in sync.
+const cameraMove = inBuild;
+const cameraLook = (ctx: KeybindContext) =>
+  inBuild(ctx) && !ctx.timelineExpanded;
+
+// Timeline transport is live wherever playback exists: the expanded editor
+// in build mode, and all of record mode (read-only playback bar).
+const inPlayback = (ctx: KeybindContext) =>
+  !ctx.encoding && (!!ctx.timelineExpanded || ctx.sceneMode === "record");
+
 const defs: ActionDef[] = [
   // ── PageScene: camera (continuous, held) ──────────────────────────────────
-  cam("pagescene.camera.forward", "Camera forward"),
-  cam("pagescene.camera.back", "Camera back"),
-  cam("pagescene.camera.left", "Camera left"),
-  cam("pagescene.camera.right", "Camera right"),
-  cam("pagescene.camera.up", "Camera up"),
-  cam("pagescene.camera.down", "Camera down"),
-  cam("pagescene.camera.pitchUp", "Look up"),
-  cam("pagescene.camera.pitchDown", "Look down"),
-  cam("pagescene.camera.yawLeft", "Look left"),
-  cam("pagescene.camera.yawRight", "Look right"),
+  cam("pagescene.camera.forward", "Camera forward", cameraMove),
+  cam("pagescene.camera.back", "Camera back", cameraMove),
+  cam("pagescene.camera.left", "Camera left", cameraMove),
+  cam("pagescene.camera.right", "Camera right", cameraMove),
+  cam("pagescene.camera.up", "Camera up", cameraMove),
+  cam("pagescene.camera.down", "Camera down", cameraMove),
+  cam("pagescene.camera.pitchUp", "Look up", cameraLook),
+  cam("pagescene.camera.pitchDown", "Look down", cameraLook),
+  cam("pagescene.camera.yawLeft", "Look left", cameraLook),
+  cam("pagescene.camera.yawRight", "Look right", cameraLook),
 
   // ── PageScene: transform ──────────────────────────────────────────────────
   act("pagescene.transform.grab", "Grab / move (modal)", "Transform", { important: true, when: inBuild }),
@@ -43,10 +56,10 @@ const defs: ActionDef[] = [
   act("pagescene.view.toggleCameraView", "Toggle camera view", "View", {
     important: true,
     preventDefault: true,
-    // With the timeline editor open, Space belongs to playback (the timeline
-    // play/pause action), not the camera toggle. View switching stays live in
-    // record mode — recording renders through the render camera regardless.
-    when: (ctx) => !ctx.encoding && !ctx.timelineExpanded,
+    // Space belongs to timeline playback whenever playback UI is up (the
+    // expanded editor, or all of record mode) — the camera toggle takes the
+    // complement. In record mode, view peeking is double-click only.
+    when: (ctx) => !inPlayback(ctx) && !ctx.encoding,
   }),
   act("pagescene.view.toggleStats", "Toggle perf stats", "View"),
 
@@ -57,7 +70,15 @@ const defs: ActionDef[] = [
   act("pagescene.selection.deselectAll", "Deselect all", "Selection", { when: inBuild }),
 
   // ── PageScene: edit ───────────────────────────────────────────────────────
-  act("pagescene.edit.delete", "Delete selected", "Edit", { important: true, when: inBuild }),
+  // Scene-object delete owns Del/Backspace EXCEPT when the expanded timeline
+  // holds a valid keyframe/strip selection — then timeline.deleteSelected
+  // takes the key. The two predicates are exact complements; consumption
+  // order is decided here, not by listener phase or registration order.
+  act("pagescene.edit.delete", "Delete selected", "Edit", {
+    important: true,
+    when: (ctx) =>
+      inBuild(ctx) && !(ctx.timelineExpanded && ctx.timelineSelection),
+  }),
   act("pagescene.edit.duplicate", "Duplicate selected", "Edit", { important: true, when: inBuild }),
   act("pagescene.edit.toggleSnapping", "Toggle grid snapping", "Edit", { when: inBuild }),
   act("pagescene.view.toggleGrid", "Toggle grid", "View"),
@@ -66,7 +87,70 @@ const defs: ActionDef[] = [
   act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true, when: inBuild }),
   act("pagescene.edit.paste", "Paste", "Edit", { preventDefault: true, when: inBuild }),
 
+  // ── PageScene: timeline ───────────────────────────────────────────────────
+  // Transport works wherever playback exists (expanded editor, record mode).
+  // Arrows are context-split: a valid keyframe/strip selection makes them
+  // NUDGE the selection; otherwise they STEP the playhead — complements, so
+  // sharing ←/→ is deliberate, not a conflict.
+  act("pagescene.timeline.playPause", "Play / pause", "Timeline", {
+    important: true,
+    preventDefault: true,
+    when: inPlayback,
+  }),
+  act("pagescene.timeline.stepBack", "Step one frame back", "Timeline", {
+    preventDefault: true,
+    when: (ctx) => inPlayback(ctx) && !ctx.timelineSelection,
+  }),
+  act("pagescene.timeline.stepForward", "Step one frame forward", "Timeline", {
+    preventDefault: true,
+    when: (ctx) => inPlayback(ctx) && !ctx.timelineSelection,
+  }),
+  act("pagescene.timeline.nudgeLeft", "Nudge selection back", "Timeline", {
+    preventDefault: true,
+    when: (ctx) =>
+      inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+  }),
+  act("pagescene.timeline.nudgeRight", "Nudge selection forward", "Timeline", {
+    preventDefault: true,
+    when: (ctx) =>
+      inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+  }),
+  act("pagescene.timeline.goToStart", "Go to start", "Timeline", {
+    preventDefault: true,
+    when: inPlayback,
+  }),
+  act("pagescene.timeline.goToEnd", "Go to end", "Timeline", {
+    preventDefault: true,
+    when: inPlayback,
+  }),
+  act("pagescene.timeline.addKeyframe", "Add keyframe (selected object)", "Timeline", {
+    important: true,
+    when: (ctx) => inBuild(ctx) && !!ctx.timelineExpanded,
+  }),
+  // Exact complement of pagescene.edit.delete (see its note above).
+  act("pagescene.timeline.deleteSelected", "Delete keyframe / clip", "Timeline", {
+    preventDefault: true,
+    when: (ctx) =>
+      inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+  }),
+  act("pagescene.timeline.toggleExpanded", "Expand / collapse timeline", "Timeline", {
+    when: inBuild,
+  }),
+
   // ── PageScene: record ─────────────────────────────────────────────────────
+  act("pagescene.record.toggleMode", "Toggle build / record mode", "Record", {
+    important: true,
+    preventDefault: true,
+    when: (ctx) => !ctx.encoding,
+  }),
+  act("pagescene.record.captureStill", "Capture still", "Record", {
+    preventDefault: true,
+    when: (ctx) => ctx.sceneMode === "record" && !ctx.encoding,
+  }),
+  act("pagescene.record.recordVideo", "Record timeline to video", "Record", {
+    preventDefault: true,
+    when: (ctx) => ctx.sceneMode === "record" && !ctx.encoding,
+  }),
   // Live ONLY mid-encode — the one action allowed through while rendering.
   act("pagescene.record.cancelEncode", "Cancel render", "Record", {
     when: (ctx) => !!ctx.encoding,
@@ -133,11 +217,14 @@ export function actionAvailable(def: ActionDef, ctx: KeybindContext): boolean {
 const SAMPLE_CONTEXTS: KeybindContext[] = (["build", "record"] as const).flatMap(
   (sceneMode) =>
     [false, true].flatMap((encoding) =>
-      [false, true].map((timelineExpanded) => ({
-        sceneMode,
-        encoding,
-        timelineExpanded,
-      })),
+      [false, true].flatMap((timelineExpanded) =>
+        [false, true].map((timelineSelection) => ({
+          sceneMode,
+          encoding,
+          timelineExpanded,
+          timelineSelection,
+        })),
+      ),
     ),
 );
 
@@ -161,7 +248,11 @@ function act(
   return { id, label, group, surface: surfaceOf(id), ...extra };
 }
 
-function cam(id: ActionId, label: string): ActionDef {
+function cam(
+  id: ActionId,
+  label: string,
+  when?: (ctx: KeybindContext) => boolean,
+): ActionDef {
   return {
     id,
     label,
@@ -169,6 +260,7 @@ function cam(id: ActionId, label: string): ActionDef {
     surface: "pagescene",
     continuous: true,
     important: true,
+    when,
   };
 }
 

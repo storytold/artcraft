@@ -9,7 +9,6 @@ import {
   deleteKeyframe,
   pauseTimeline,
   playTimeline,
-  removeClipLane,
   saveTimeline,
   seekTimeline,
   setClipTransitionEasing,
@@ -150,40 +149,14 @@ export const TimelineEditor = () => {
     };
   })();
 
-  // Selected keyframe: Delete/Backspace removes it (capture phase, so the
-  // engine's document-level Delete — which deletes the selected scene
-  // object — never sees the key), and clicking anywhere that isn't a
-  // keyframe or the Delete button deselects it.
+  // Deleting the selected keyframe / clip strip via Del/Backspace is NOT
+  // handled here — it's the registry action pagescene.timeline.deleteSelected
+  // (see engine/keymap.ts), whose `when` gate is the exact complement of the
+  // scene-object delete's, so consumption order is decided declaratively
+  // rather than by listener phase. This component only owns click-away
+  // deselection.
   useEffect(() => {
     if (!selectedKeyframeId) return undefined;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-      // The selection can be stale (Cancel / undo of a Save replace the
-      // timeline wholesale). Never swallow the key for a target that no
-      // longer exists — clear the selection and let the engine's own
-      // Delete handler (selected scene object) see the event.
-      const keyframeExists = editor?.timelineController
-        .getTimeline()
-        ?.tracks.some((t) =>
-          t.keyframes.some((k) => k.id === selectedKeyframeId),
-        );
-      if (!editor || !keyframeExists) {
-        usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      deleteKeyframe(editor, selectedKeyframeId);
-      usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
-    };
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (
@@ -194,59 +167,22 @@ export const TimelineEditor = () => {
       }
       usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
     };
-    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
+    return () =>
       document.removeEventListener("pointerdown", onPointerDown, true);
-    };
-  }, [selectedKeyframeId, editor]);
+  }, [selectedKeyframeId]);
 
-  // Selected clip strip: Del/Backspace removes it (undoable via
-  // RemoveClipLaneAction), and clicking anything that isn't a strip
-  // deselects. Mirrors the keyframe selection handlers above; both keydown
-  // listeners can coexist since strip-selection clears keyframe-selection
-  // (a strip isn't [data-keyframe]) and vice versa — the guard below is
-  // belt-and-braces for the impossible both-selected case.
   useEffect(() => {
     if (!selectedClipLaneId) return undefined;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-      if (usePageSceneStore.getState().timelineSelectedKeyframeId) return;
-      // Same staleness rule as the keyframe handler above: a dead id must
-      // not eat the key meant for the engine's scene-object Delete.
-      if (
-        !editor ||
-        !editor.timelineController.getClipLane(selectedClipLaneId)
-      ) {
-        usePageSceneStore.getState().setTimelineSelectedClipLane(null);
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      removeClipLane(editor, selectedClipLaneId);
-      usePageSceneStore.getState().setTimelineSelectedClipLane(null);
-    };
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (target?.closest("[data-clip-strip]")) return;
       usePageSceneStore.getState().setTimelineSelectedClipLane(null);
     };
-    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
+    return () =>
       document.removeEventListener("pointerdown", onPointerDown, true);
-    };
-  }, [selectedClipLaneId, editor]);
+  }, [selectedClipLaneId]);
 
   // Scroll the row list to the object whose clip was just added
   // (addClipToCharacter sets the uuid alongside timelineExpanded). A store

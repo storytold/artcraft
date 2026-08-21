@@ -41,6 +41,24 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.edit.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
   "pagescene.edit.copy": [b("KeyC", { ctrl: true })],
   "pagescene.edit.paste": [b("KeyV", { ctrl: true })],
+
+  // Timeline (context-gated; Space/arrows are shared with camera actions via
+  // mutually exclusive `when` predicates — see the registry).
+  "pagescene.timeline.playPause": [b("Space")],
+  "pagescene.timeline.stepBack": [b("ArrowLeft")],
+  "pagescene.timeline.stepForward": [b("ArrowRight")],
+  "pagescene.timeline.nudgeLeft": [b("ArrowLeft")],
+  "pagescene.timeline.nudgeRight": [b("ArrowRight")],
+  "pagescene.timeline.goToStart": [b("Home")],
+  "pagescene.timeline.goToEnd": [b("End")],
+  "pagescene.timeline.addKeyframe": [b("KeyI")], // Blender parity
+  "pagescene.timeline.deleteSelected": [b("Delete"), b("Backspace")],
+  "pagescene.timeline.toggleExpanded": [b("KeyT", { shift: true })],
+
+  // Record
+  "pagescene.record.toggleMode": [b("Tab")],
+  "pagescene.record.captureStill": [b("KeyS", { ctrl: true, shift: true })],
+  "pagescene.record.recordVideo": [b("KeyE", { ctrl: true, shift: true })],
   "pagescene.record.cancelEncode": [b("Escape")],
 
   // PageDraw (2D) — preset-independent.

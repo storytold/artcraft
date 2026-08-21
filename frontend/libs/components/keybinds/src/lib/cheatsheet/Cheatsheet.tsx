@@ -11,6 +11,7 @@ const GROUP_ORDER: KeyGroup[] = [
   "Selection",
   "Edit",
   "View",
+  "Timeline",
   "Record",
   "History",
 ];

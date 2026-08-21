@@ -23,6 +23,7 @@ export type KeyGroup =
   | "Edit"
   | "View"
   | "Tools"
+  | "Timeline"
   | "Record"
   | "History";
 
@@ -39,6 +40,10 @@ export interface KeybindContext {
   encoding?: boolean;
   /** The expanded timeline editor is open. */
   timelineExpanded?: boolean;
+  /** A VALID timeline selection (keyframe or clip strip) exists — the
+   *  supplier must verify the selected id still resolves, so a stale
+   *  selection lets Delete fall through to the scene-object action. */
+  timelineSelection?: boolean;
   /** A Blender-style modal transform owns input. */
   modalTransformActive?: boolean;
 }

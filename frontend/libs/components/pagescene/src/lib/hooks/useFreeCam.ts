@@ -138,6 +138,10 @@ export const useFreeCam = (
       state.movementSpeed = movementSpeedForEvent(e);
       const moveSlot = moveSlotForKeyCode(e.code, moveMap);
       if (moveSlot) state.moveKeys[moveSlot] = 1;
+      // Camera-look keys yield to the timeline while it's open (arrows mean
+      // frame stepping / nudging there) — mirrors the registry's cameraLook
+      // gate; keep the two in sync.
+      if (usePageSceneStore.getState().timelineExpanded) return;
       const rotateSlot = rotateSlotForKeyCode(e.code, rotateMap);
       if (rotateSlot) state.rotateKeys[rotateSlot] = 1;
     };

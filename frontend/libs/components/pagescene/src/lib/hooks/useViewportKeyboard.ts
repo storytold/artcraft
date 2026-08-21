@@ -59,10 +59,23 @@ export const useViewportKeyboard = (editor: Editor | null) => {
       if (store.modalTransformActive) return;
       // Availability context for the registry's `when` gates. Read fresh per
       // event so mode flips apply without re-binding the listener.
+      // `timelineSelection` must be a VALIDATED selection — a stale id (e.g.
+      // after Cancel / undo-of-Save replaced the timeline wholesale) reports
+      // false, so Delete falls through to the scene-object action.
+      const keyframeId = store.timelineSelectedKeyframeId;
+      const laneId = store.timelineSelectedClipLaneId;
+      const timelineSelection =
+        (keyframeId !== null &&
+          store.timelineTracks.some((t) =>
+            t.keyframes.some((k) => k.id === keyframeId),
+          )) ||
+        (laneId !== null &&
+          store.timelineClipLanes.some((l) => l.id === laneId));
       const ctx: KeybindContext = {
         sceneMode: store.sceneMode,
         encoding: store.recordingProgress !== null,
         timelineExpanded: store.timelineExpanded,
+        timelineSelection,
         modalTransformActive: store.modalTransformActive,
       };
       dispatchBinding(bindings, event, editor, ctx);
