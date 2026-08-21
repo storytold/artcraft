@@ -238,19 +238,24 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       },
       popout: (
         <div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5 shadow-lg">
-          {[SquareIcon, CircleIcon, TriangleIcon].map((ShapeIcon, i) => (
-            <button
-              key={i}
-              className={shapeIconBtn}
-              onClick={() => {
-                const shapes = ["rectangle", "circle", "triangle"] as const;
-                onActivateShapeTool(shapes[i]);
-                setOpen(null);
-              }}
-            >
-              <ShapeIcon className="h-5 w-5 text-white" />
-            </button>
-          ))}
+          {[SquareIcon, CircleIcon, TriangleIcon].map((ShapeIcon, i) => {
+            const shapes = ["rectangle", "circle", "triangle"] as const;
+            const isCurrent = currentShape === shapes[i];
+            return (
+              <button
+                key={i}
+                className={`${shapeIconBtn} ${
+                  isCurrent ? "bg-primary/30 ring-1 ring-primary" : ""
+                }`}
+                onClick={() => {
+                  onActivateShapeTool(shapes[i]);
+                  setOpen(null);
+                }}
+              >
+                <ShapeIcon className="h-5 w-5 text-white" />
+              </button>
+            );
+          })}
         </div>
       ),
     },
@@ -438,7 +443,12 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
           );
         }
 
-        const tooltipLabel = (id === "inpaint" && !supportsMaskTool) ? label + " (Model unsupported)" : label;
+        const tooltipLabel =
+          id === "inpaint" && !supportsMaskTool
+            ? label + " (Model unsupported)"
+            : id === "add-shape" && toolBinding
+              ? `${label} — ${formatBinding(toolBinding)} cycles shapes`
+              : label;
 
         return (
           <div key={id} className="relative">

@@ -53,6 +53,9 @@ import type { PageDrawAdapter } from "./adapter";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
+// Order the shape hotkey cycles through (matches the submenu's visual order).
+const SHAPE_CYCLE = ["rectangle", "circle", "triangle"] as const;
+
 export const DecodeBase64ToImage = async (
   base64String: string,
 ): Promise<ImageBitmap> => {
@@ -431,8 +434,17 @@ const PageDraw = ({
   // adjusts whichever size the active tool draws with (brush and eraser share
   // store.brushSize, the mask tool has its own). Handlers read the store via
   // getState so they stay referentially stable.
+  // The shape tool isn't a single tool — it has a rectangle/circle/triangle
+  // submenu. The hotkey uses press-again-to-cycle (Adobe/Figma convention):
+  // first press activates with the current shape, further presses cycle.
   const handleShapeToolKey = useCallback(() => {
     const scene = useSceneStore.getState();
+    if (scene.activeTool === "shape") {
+      const current = scene.currentShape ?? "rectangle";
+      const index = SHAPE_CYCLE.indexOf(current);
+      scene.setCurrentShape(SHAPE_CYCLE[(index + 1) % SHAPE_CYCLE.length]);
+      return;
+    }
     scene.selectNode(null);
     if (!scene.currentShape) scene.setCurrentShape("rectangle");
     scene.setActiveTool("shape");

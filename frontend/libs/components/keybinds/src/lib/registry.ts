@@ -161,7 +161,11 @@ const defs: ActionDef[] = [
   // each tool's resolved key as a corner badge. Size up/down adjusts whichever
   // size the active tool uses (brush/eraser share one, mask has its own).
   act("pagedraw.tools.select", "Select tool", "Tools", { important: true }),
-  act("pagedraw.tools.shape", "Shape tool", "Tools", { important: true }),
+  // Not a single tool — first press activates, pressing again cycles the
+  // rectangle/circle/triangle submenu (Adobe/Figma same-key convention).
+  act("pagedraw.tools.shape", "Shape tool (cycle shapes)", "Tools", {
+    important: true,
+  }),
   act("pagedraw.tools.brush", "Brush tool", "Tools", { important: true }),
   act("pagedraw.tools.mask", "Mask tool", "Tools", { important: true }),
   act("pagedraw.tools.eraser", "Eraser tool", "Tools", { important: true }),
