@@ -66,6 +66,12 @@ const defs: ActionDef[] = [
   act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true, when: inBuild }),
   act("pagescene.edit.paste", "Paste", "Edit", { preventDefault: true, when: inBuild }),
 
+  // ── PageScene: record ─────────────────────────────────────────────────────
+  // Live ONLY mid-encode — the one action allowed through while rendering.
+  act("pagescene.record.cancelEncode", "Cancel render", "Record", {
+    when: (ctx) => !!ctx.encoding,
+  }),
+
   // ── PageDraw (2D editor) ──────────────────────────────────────────────────
   act("pagedraw.edit.delete", "Delete selected", "Edit", { important: true }),
   act("pagedraw.edit.copy", "Copy", "Edit", { important: true, preventDefault: true }),
@@ -111,6 +117,37 @@ export const ACTIONS_BY_SURFACE: Record<Surface, ActionDef[]> = {
 
 export function getAction(id: ActionId): ActionDef | undefined {
   return ACTIONS[id];
+}
+
+// ── availability ─────────────────────────────────────────────────────────────
+
+/** The dispatch-time availability rule: `when` has full control; without one,
+ *  an action is available unless an encode is running. */
+export function actionAvailable(def: ActionDef, ctx: KeybindContext): boolean {
+  return def.when ? def.when(ctx) : !ctx.encoding;
+}
+
+// Representative context grid for co-availability checks. Covers every field
+// the registry's `when` gates read — extend it when a new KeybindContext
+// field gains a gate, or exclusivity checks will silently miss it.
+const SAMPLE_CONTEXTS: KeybindContext[] = (["build", "record"] as const).flatMap(
+  (sceneMode) =>
+    [false, true].flatMap((encoding) =>
+      [false, true].map((timelineExpanded) => ({
+        sceneMode,
+        encoding,
+        timelineExpanded,
+      })),
+    ),
+);
+
+/** Whether two actions can ever be live in the same context. Actions that are
+ *  context-exclusive (e.g. cancel-render vs clear-selection, both Escape) may
+ *  deliberately share a binding — the dispatcher picks whichever is available. */
+export function actionsCoAvailable(a: ActionDef, b: ActionDef): boolean {
+  return SAMPLE_CONTEXTS.some(
+    (ctx) => actionAvailable(a, ctx) && actionAvailable(b, ctx),
+  );
 }
 
 // ── builders ─────────────────────────────────────────────────────────────────

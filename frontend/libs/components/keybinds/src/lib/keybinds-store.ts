@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ActionId, Binding, PresetId } from "./types";
 import { BASE_BINDINGS, DEFAULT_PRESET, PRESETS } from "./presets";
-import { ACTIONS } from "./registry";
+import { ACTIONS, actionsCoAvailable } from "./registry";
 import { bindingsEqual } from "./matcher";
 
 // Persisted, app-wide keybinds state. Resolution layers, highest priority first:
@@ -75,6 +75,9 @@ export const useKeybindsStore = create<KeybindsState>()(
         const conflicts: ActionId[] = [];
         for (const other of Object.values(ACTIONS)) {
           if (other.id === id || other.surface !== action.surface) continue;
+          // Context-exclusive actions (their `when` gates never hold at the
+          // same time) may share a key on purpose — not a conflict.
+          if (!actionsCoAvailable(action, other)) continue;
           const bindings = resolveFrom(overrides, selectedPreset, other.id);
           if (bindings.some((bd) => bindingsEqual(bd, candidate))) {
             conflicts.push(other.id);

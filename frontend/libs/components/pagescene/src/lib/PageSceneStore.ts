@@ -225,6 +225,10 @@ interface PageSceneState {
   // record output
   producedArtifact: ProducedArtifact | null;
   recordingProgress: RecordingProgress | null;
+  // Mutable abort flag for the in-flight encode (recordTimeline polls
+  // `cancelled` between frames). Held here so the Escape keybind and the
+  // overlay's Cancel button can reach it; null when no encode is running.
+  encodeCancelSignal: { cancelled: boolean } | null;
 
   // layout / panels
   assetModalVisible: boolean;
@@ -344,6 +348,9 @@ interface PageSceneState {
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
   clearProducedArtifact: () => void;
   setRecordingProgress: (progress: RecordingProgress | null) => void;
+  setEncodeCancelSignal: (signal: { cancelled: boolean } | null) => void;
+  // Flip the in-flight encode's abort flag (no-op when nothing is encoding).
+  requestEncodeCancel: () => void;
   toggleStats: () => void;
   setIgnoreKeyDelete: (ignore: boolean) => void;
   disableHotkeyInput: (level: DomLevels) => void;
@@ -446,6 +453,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineFocusSelected: false,
   producedArtifact: null,
   recordingProgress: null,
+  encodeCancelSignal: null,
   ignoreKeyDelete: false,
   hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE },
   isPromptBoxFocused: false,
@@ -567,6 +575,11 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       return { producedArtifact: null };
     }),
   setRecordingProgress: (progress) => set({ recordingProgress: progress }),
+  setEncodeCancelSignal: (signal) => set({ encodeCancelSignal: signal }),
+  requestEncodeCancel: () => {
+    const signal = get().encodeCancelSignal;
+    if (signal) signal.cancelled = true;
+  },
   toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
   setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
   disableHotkeyInput: (level) => {

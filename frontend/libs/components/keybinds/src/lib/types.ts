@@ -23,6 +23,7 @@ export type KeyGroup =
   | "Edit"
   | "View"
   | "Tools"
+  | "Record"
   | "History";
 
 export type ActionId = string; // surface-namespaced, e.g. "pagescene.transform.translate"

@@ -18,6 +18,9 @@ export const RecordControls = () => {
   const recordingProgress = usePageSceneStore((s) => s.recordingProgress);
   const setProducedArtifact = usePageSceneStore((s) => s.setProducedArtifact);
   const setRecordingProgress = usePageSceneStore((s) => s.setRecordingProgress);
+  const setEncodeCancelSignal = usePageSceneStore(
+    (s) => s.setEncodeCancelSignal,
+  );
 
   const busy = recordingProgress !== null;
 
@@ -25,6 +28,10 @@ export const RecordControls = () => {
   // immediately and auto-uploads to the gallery (with status) → app Lightbox.
   const handleCapture = () => {
     if (!editor || busy) return;
+    // Output always comes from the render camera. Record mode lets the user
+    // peek at the scene view, so re-enter camera view (idempotent) before
+    // snapshotting.
+    editor.cameraController.enterCameraView();
     setRecordingProgress({ phase: "capturing", pct: 0 });
     // Defer so the overlay paints before the (sync) snapshot work.
     requestAnimationFrame(() => {
@@ -50,9 +57,17 @@ export const RecordControls = () => {
   // upload (videos are large, so we don't auto-upload).
   const handleRecord = async () => {
     if (!editor || busy || !timelineExists) return;
+    // See handleCapture — the encode reads the viewport camera, so it must be
+    // sitting at the render camera.
+    editor.cameraController.enterCameraView();
     setRecordingProgress({ phase: "encoding", pct: 0 });
+    // Abort flag reachable from the overlay's Cancel button and the Escape
+    // keybind; recordTimeline polls it between frames.
+    const cancelSignal = { cancelled: false };
+    setEncodeCancelSignal(cancelSignal);
     try {
       const result = await recordTimeline(editor, {
+        signal: cancelSignal,
         onProgress: (pct) => setRecordingProgress({ phase: "encoding", pct }),
       });
       if (result) {
@@ -66,6 +81,7 @@ export const RecordControls = () => {
         });
       }
     } finally {
+      setEncodeCancelSignal(null);
       setRecordingProgress(null);
     }
   };

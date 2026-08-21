@@ -14,7 +14,7 @@ import {
   SelectedModeChangedEvent,
   TransformModeChangedEvent,
 } from "./events/EngineEvent";
-import type { PoseMode } from "../PageSceneStore";
+import { usePageSceneStore, type PoseMode } from "../PageSceneStore";
 
 // One declarative table mapping viewport actions to their handlers. The actual
 // key bindings now come from the unified @storyteller/keybinds registry (preset
@@ -152,6 +152,8 @@ const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
   "pagescene.edit.redo": redo,
   "pagescene.edit.copy": copy,
   "pagescene.edit.paste": paste,
+  "pagescene.record.cancelEncode": () =>
+    usePageSceneStore.getState().requestEncodeCancel(),
 };
 
 // Expand the handler table into concrete KeyBindings using the resolved bindings

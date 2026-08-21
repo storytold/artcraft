@@ -41,6 +41,7 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.edit.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
   "pagescene.edit.copy": [b("KeyC", { ctrl: true })],
   "pagescene.edit.paste": [b("KeyV", { ctrl: true })],
+  "pagescene.record.cancelEncode": [b("Escape")],
 
   // PageDraw (2D) — preset-independent.
   "pagedraw.edit.delete": [b("Delete"), b("Backspace")],
