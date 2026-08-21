@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useResolvedKeybinds } from "@storyteller/keybinds";
+import { useResolvedKeybinds, type KeybindContext } from "@storyteller/keybinds";
 import type Editor from "../engine/editor";
 import { buildKeymap, dispatchBinding } from "../engine/keymap";
 import { usePageSceneStore } from "../PageSceneStore";
@@ -52,11 +52,20 @@ export const useViewportKeyboard = (editor: Editor | null) => {
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEventFromEditableElement(event)) return;
-      if (usePageSceneStore.getState().hotkeyStatus.disabled) return;
+      const store = usePageSceneStore.getState();
+      if (store.hotkeyStatus.disabled) return;
       // While a modal transform owns input (axis-lock keys, confirm/cancel),
       // don't also fire normal viewport shortcuts.
-      if (usePageSceneStore.getState().modalTransformActive) return;
-      dispatchBinding(bindings, event, editor);
+      if (store.modalTransformActive) return;
+      // Availability context for the registry's `when` gates. Read fresh per
+      // event so mode flips apply without re-binding the listener.
+      const ctx: KeybindContext = {
+        sceneMode: store.sceneMode,
+        encoding: store.recordingProgress !== null,
+        timelineExpanded: store.timelineExpanded,
+        modalTransformActive: store.modalTransformActive,
+      };
+      dispatchBinding(bindings, event, editor, ctx);
     };
 
     document.addEventListener("keydown", onKeyDown);

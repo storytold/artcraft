@@ -1,4 +1,4 @@
-import { ActionDef, ActionId, Surface } from "./types";
+import { ActionDef, ActionId, KeybindContext, Surface } from "./types";
 
 // The registry is the single source of truth for every remappable action.
 // Presets and overrides supply bindings keyed by these ids; engine hooks resolve
@@ -7,6 +7,14 @@ import { ActionDef, ActionId, Surface } from "./types";
 // Grows per phase: this set covers the 3D PageScene's existing operations.
 // New 3D binds (duplicate, select-all, grid/snapping, modal axis-lock) and the
 // 2D/moodboard surfaces are added as their wiring lands.
+
+// Record mode is immutable: every action that edits the scene, moves the
+// camera intentionally, or opens build chrome is gated to build mode. View
+// toggles that merely change what the viewport shows (camera view, grid,
+// stats) stay live in record — the encode always renders through the render
+// camera regardless of the viewport view.
+const inBuild = (ctx: KeybindContext) =>
+  ctx.sceneMode !== "record" && !ctx.encoding;
 
 const defs: ActionDef[] = [
   // ── PageScene: camera (continuous, held) ──────────────────────────────────
@@ -22,19 +30,23 @@ const defs: ActionDef[] = [
   cam("pagescene.camera.yawRight", "Look right"),
 
   // ── PageScene: transform ──────────────────────────────────────────────────
-  act("pagescene.transform.grab", "Grab / move (modal)", "Transform", { important: true }),
-  act("pagescene.transform.translate", "Move (translate)", "Transform", { important: true }),
-  act("pagescene.transform.rotate", "Rotate", "Transform", { important: true }),
-  act("pagescene.transform.scale", "Scale", "Transform", { important: true }),
-  act("pagescene.transform.toggleSpace", "Toggle local / world", "Transform"),
-  act("pagescene.transform.poseFK", "Toggle pose (FK)", "Transform"),
+  act("pagescene.transform.grab", "Grab / move (modal)", "Transform", { important: true, when: inBuild }),
+  act("pagescene.transform.translate", "Move (translate)", "Transform", { important: true, when: inBuild }),
+  act("pagescene.transform.rotate", "Rotate", "Transform", { important: true, when: inBuild }),
+  act("pagescene.transform.scale", "Scale", "Transform", { important: true, when: inBuild }),
+  act("pagescene.transform.toggleSpace", "Toggle local / world", "Transform", { when: inBuild }),
+  act("pagescene.transform.poseFK", "Toggle pose (FK)", "Transform", { when: inBuild }),
 
   // ── PageScene: view ───────────────────────────────────────────────────────
-  act("pagescene.view.focus", "Focus selection", "View", { important: true }),
-  act("pagescene.view.assetMenu", "Open asset menu", "View", { important: true }),
+  act("pagescene.view.focus", "Focus selection", "View", { important: true, when: inBuild }),
+  act("pagescene.view.assetMenu", "Open asset menu", "View", { important: true, when: inBuild }),
   act("pagescene.view.toggleCameraView", "Toggle camera view", "View", {
     important: true,
     preventDefault: true,
+    // With the timeline editor open, Space belongs to playback (the timeline
+    // play/pause action), not the camera toggle. View switching stays live in
+    // record mode — recording renders through the render camera regardless.
+    when: (ctx) => !ctx.encoding && !ctx.timelineExpanded,
   }),
   act("pagescene.view.toggleStats", "Toggle perf stats", "View"),
 
@@ -42,17 +54,17 @@ const defs: ActionDef[] = [
   act("pagescene.selection.clearOrExit", "Clear selection / exit pose", "Selection", {
     important: true,
   }),
-  act("pagescene.selection.deselectAll", "Deselect all", "Selection"),
+  act("pagescene.selection.deselectAll", "Deselect all", "Selection", { when: inBuild }),
 
   // ── PageScene: edit ───────────────────────────────────────────────────────
-  act("pagescene.edit.delete", "Delete selected", "Edit", { important: true }),
-  act("pagescene.edit.duplicate", "Duplicate selected", "Edit", { important: true }),
-  act("pagescene.edit.toggleSnapping", "Toggle grid snapping", "Edit"),
+  act("pagescene.edit.delete", "Delete selected", "Edit", { important: true, when: inBuild }),
+  act("pagescene.edit.duplicate", "Duplicate selected", "Edit", { important: true, when: inBuild }),
+  act("pagescene.edit.toggleSnapping", "Toggle grid snapping", "Edit", { when: inBuild }),
   act("pagescene.view.toggleGrid", "Toggle grid", "View"),
-  act("pagescene.edit.undo", "Undo", "History", { important: true, preventDefault: true }),
-  act("pagescene.edit.redo", "Redo", "History", { important: true, preventDefault: true }),
-  act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true }),
-  act("pagescene.edit.paste", "Paste", "Edit", { preventDefault: true }),
+  act("pagescene.edit.undo", "Undo", "History", { important: true, preventDefault: true, when: inBuild }),
+  act("pagescene.edit.redo", "Redo", "History", { important: true, preventDefault: true, when: inBuild }),
+  act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true, when: inBuild }),
+  act("pagescene.edit.paste", "Paste", "Edit", { preventDefault: true, when: inBuild }),
 
   // ── PageDraw (2D editor) ──────────────────────────────────────────────────
   act("pagedraw.edit.delete", "Delete selected", "Edit", { important: true }),

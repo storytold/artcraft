@@ -3,6 +3,7 @@ import {
   useKeybindsStore,
   type ActionId,
   type Binding,
+  type KeybindContext,
   type KeyGroup as KeybindsKeyGroup,
 } from "@storyteller/keybinds";
 import type Editor from "./editor";
@@ -32,6 +33,9 @@ export interface KeyBinding {
   // Whether the binding should preventDefault + stopPropagation when
   // matched. Used for browser shortcut conflicts (Ctrl+Z, Ctrl+C, etc).
   preventDefault?: boolean;
+  // Availability gate from the registry ActionDef. Absent = the default
+  // rule (available unless an encode is running).
+  when?: (ctx: KeybindContext) => boolean;
 }
 
 // The TransformControls gizmo uses "translate" / "rotate" / "scale";
@@ -170,6 +174,7 @@ export const buildKeymap = (
         group: def.group,
         run,
         preventDefault: def.preventDefault,
+        when: def.when,
       });
     }
   }
@@ -187,13 +192,21 @@ const matches = (binding: KeyBinding, e: KeyboardEvent): boolean => {
   return true;
 };
 
+// Availability: an action's `when` predicate has full control; without one,
+// the default rule is "available unless an encode is running". An unavailable
+// binding is skipped WITHOUT consuming the event, so the same key can serve
+// different actions in different contexts (e.g. Space = camera toggle in
+// build, playback in the timeline) and unrelated listeners still see the key.
 export const dispatchBinding = (
   bindings: KeyBinding[],
   event: KeyboardEvent,
   editor: Editor,
+  ctx: KeybindContext = {},
 ): boolean => {
   for (const binding of bindings) {
     if (!matches(binding, event)) continue;
+    const available = binding.when ? binding.when(ctx) : !ctx.encoding;
+    if (!available) continue;
     if (binding.preventDefault) {
       event.preventDefault();
       event.stopPropagation();
