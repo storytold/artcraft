@@ -2,6 +2,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
 import { PanelLeft } from "lucide-react";
+import { useGlobalAction } from "@storyteller/keybinds";
 
 import { cn } from "./utils";
 import { useIsMobile } from "./use-mobile";
@@ -24,7 +25,6 @@ const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
-const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -88,19 +88,10 @@ const SidebarProvider = React.forwardRef<
       return isMobile ? setOpenMobile((o) => !o) : setOpen((o) => !o);
     }, [isMobile, setOpen, setOpenMobile]);
 
-    React.useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (
-          event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-          (event.metaKey || event.ctrlKey)
-        ) {
-          event.preventDefault();
-          toggleSidebar();
-        }
-      };
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [toggleSidebar]);
+    // The Ctrl/Cmd+B binding lives in the shared keybinds registry
+    // (global.ui.toggleSidebar, remappable in Settings → Keybinds); this
+    // only registers the behavior while the provider is mounted.
+    useGlobalAction("global.ui.toggleSidebar", toggleSidebar);
 
     const state = open ? "expanded" : "collapsed";
 

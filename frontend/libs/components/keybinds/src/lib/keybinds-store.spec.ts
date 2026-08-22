@@ -102,6 +102,20 @@ describe("keybinds-store", () => {
         store().findConflicts("pagescene.transform.scale", { code: "KeyM" }),
       ).toEqual([]);
     });
+
+    it("global bindings conflict with every surface, both directions", () => {
+      // A per-surface action stealing the global sidebar chord conflicts…
+      expect(
+        store().findConflicts("pagescene.transform.scale", {
+          code: "KeyB",
+          ctrl: true,
+        }),
+      ).toContain("global.ui.toggleSidebar");
+      // …and a global action landing on a per-surface key conflicts back.
+      expect(
+        store().findConflicts("global.ui.toggleSidebar", { code: "KeyR" }),
+      ).toContain("pagescene.transform.rotate");
+    });
   });
 
   describe("preset integrity", () => {

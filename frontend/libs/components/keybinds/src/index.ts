@@ -4,6 +4,11 @@ export * from "./lib/presets";
 export * from "./lib/matcher";
 export * from "./lib/format";
 export { useKeybindsStore } from "./lib/keybinds-store";
+export {
+  registerGlobalAction,
+  useGlobalAction,
+  useGlobalKeybinds,
+} from "./lib/global-actions";
 export { useResolvedKeybinds } from "./lib/useResolvedKeybinds";
 export type { ResolvedKeybinds } from "./lib/useResolvedKeybinds";
 export { useKeybindCapture } from "./lib/useKeybindCapture";

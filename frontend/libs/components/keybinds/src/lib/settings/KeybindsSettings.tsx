@@ -20,12 +20,14 @@ type SearchMode = "name" | "key";
 const PRESET_ORDER: PresetId[] = ["gamer", "blender"];
 
 const SURFACE_TITLES: Record<Surface, string> = {
+  global: "Global",
   pagescene: "3D Editor",
   pagedraw: "2D Editor",
   moodboard: "Moodboard",
 };
 
 const SURFACE_HINTS: Record<Surface, string> = {
+  global: "App-wide — works on every page",
   pagescene: "Viewport camera, transforms & selection",
   pagedraw: "Vector canvas editing",
   moodboard: "Figma-style board tools",
@@ -60,6 +62,7 @@ export function KeybindsSettings({
   const [listening, setListening] = useState(false); // key-mode capture armed
   const [pending, setPending] = useState<PendingConflict | null>(null);
   const [openSurfaces, setOpenSurfaces] = useState<Record<Surface, boolean>>({
+    global: true,
     pagescene: true,
     pagedraw: false,
     moodboard: false,

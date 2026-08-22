@@ -74,7 +74,13 @@ export const useKeybindsStore = create<KeybindsState>()(
         const { overrides, selectedPreset } = get();
         const conflicts: ActionId[] = [];
         for (const other of Object.values(ACTIONS)) {
-          if (other.id === id || other.surface !== action.surface) continue;
+          if (other.id === id) continue;
+          // Same-surface bindings conflict; global bindings fire on EVERY
+          // surface, so they conflict across the board in both directions.
+          const sameSurface = other.surface === action.surface;
+          const involvesGlobal =
+            action.surface === "global" || other.surface === "global";
+          if (!sameSurface && !involvesGlobal) continue;
           // Context-exclusive actions (their `when` gates never hold at the
           // same time) may share a key on purpose — not a conflict.
           if (!actionsCoAvailable(action, other)) continue;

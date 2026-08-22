@@ -30,6 +30,21 @@ const inPlayback = (ctx: KeybindContext) =>
   !ctx.encoding && (!!ctx.timelineExpanded || ctx.sceneMode === "record");
 
 const defs: ActionDef[] = [
+  // ── Global (app-wide) ─────────────────────────────────────────────────────
+  // Global keybinds are a TRIGGER layer only: the behavior belongs to the
+  // feature that owns it, which registers a handler by id via
+  // registerGlobalAction / useGlobalAction (global-actions.ts). A binding
+  // with no registered handler is inert on that host — so e.g. the desktop
+  // app, which has no webapp sidebar, just never registers it. A future
+  // privacy-blur toggle follows the same recipe: def + default binding here,
+  // and the store that owns the blur state registers its toggle handler
+  // (likely with allowInEditable so it works mid-typing).
+  act("global.ui.toggleSidebar", "Toggle sidebar", "View", {
+    important: true,
+    preventDefault: true,
+    allowInEditable: true, // modifier chord; keeps working while typing
+  }),
+
   // ── PageScene: camera (continuous, held) ──────────────────────────────────
   cam("pagescene.camera.forward", "Camera forward", cameraMove),
   cam("pagescene.camera.back", "Camera back", cameraMove),
@@ -212,6 +227,7 @@ export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(
 );
 
 export const ACTIONS_BY_SURFACE: Record<Surface, ActionDef[]> = {
+  global: defs.filter((d) => d.surface === "global"),
   pagescene: defs.filter((d) => d.surface === "pagescene"),
   pagedraw: defs.filter((d) => d.surface === "pagedraw"),
   moodboard: defs.filter((d) => d.surface === "moodboard"),
@@ -284,6 +300,7 @@ function cam(
 
 function surfaceOf(id: ActionId): Surface {
   const head = id.split(".")[0];
+  if (head === "global") return "global";
   if (head === "pagedraw") return "pagedraw";
   if (head === "moodboard") return "moodboard";
   return "pagescene";

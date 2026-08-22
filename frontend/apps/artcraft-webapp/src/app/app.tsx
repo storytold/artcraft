@@ -8,6 +8,7 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import { LoaderCircleIcon } from "lucide-react";
+import { useGlobalKeybinds } from "@storyteller/keybinds";
 import Home from "../pages/home";
 import Media from "../pages/media";
 import { ToastContainer } from "../components/toast/toast";
@@ -134,6 +135,11 @@ function ProtectedLayout() {
 }
 
 export function App() {
+  // App-shell mount of the global keybind dispatcher (window capture phase,
+  // so global actions like Ctrl+B keep working over open modals). Features
+  // register their behavior via useGlobalAction — see @storyteller/keybinds.
+  useGlobalKeybinds();
+
   return (
     <>
       <ScrollToTop />

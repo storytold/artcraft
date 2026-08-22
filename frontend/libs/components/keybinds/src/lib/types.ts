@@ -14,7 +14,7 @@ export interface Binding {
   alt?: boolean;
 }
 
-export type Surface = "pagescene" | "pagedraw" | "moodboard";
+export type Surface = "global" | "pagescene" | "pagedraw" | "moodboard";
 
 export type KeyGroup =
   | "Camera"
@@ -62,6 +62,10 @@ export interface ActionDef {
   preventDefault?: boolean;
   /** Only active inside a Blender-style modal transform (axis lock). */
   modalOnly?: boolean;
+  /** Fire even while an input/textarea/contenteditable has focus. For global
+   *  modifier chords (Ctrl+B) and panic keys (a future privacy blur) that
+   *  must never be dead just because the user was typing. */
+  allowInEditable?: boolean;
   /** Availability gate, evaluated at dispatch time. Omitted = the default
    *  rule "available unless an encode is running". Supplying `when` takes
    *  FULL control of availability — re-check `ctx.encoding` yourself unless

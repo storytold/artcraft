@@ -9,6 +9,9 @@ import { ActionId, Binding, Preset, PresetId } from "./types";
 const b = (code: string, mods: Omit<Binding, "code"> = {}): Binding => ({ code, ...mods });
 
 export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
+  // Global — app-wide trigger layer, preset-independent.
+  "global.ui.toggleSidebar": [b("KeyB", { ctrl: true })],
+
   // Camera (held) — WASD + QE + arrows, matching cameraMath.ts today.
   "pagescene.camera.forward": [b("KeyW")],
   "pagescene.camera.back": [b("KeyS")],
