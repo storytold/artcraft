@@ -2,10 +2,17 @@
 // forward to editor.timelineController (mirrors the other files in this
 // folder). Pure-UI state (expanded, selected keyframe) is set directly on
 // the store by components and has no dispatcher here.
+//
+// Undo: every DISCRETE edit here records one undo step via
+// TimelineController.recordEdit. Continuous gestures (keyframe/strip drags,
+// the easing popover) intentionally call the raw move/resize/easing
+// dispatchers per event and coalesce into a single step through
+// beginTimelineEdit / commitTimelineEdit at the gesture boundaries.
 
 import type Editor from "../engine/editor";
 import type { EasingSpec } from "../engine/timeline/types";
-import { RemoveClipLaneAction } from "../engine/editor/actions/RemoveClipLaneAction";
+import type { TimelineUndoSnapshot } from "../engine/editor/TimelineController";
+import { DEFAULT_EASING } from "../engine/timeline/types";
 import { usePageSceneStore } from "../PageSceneStore";
 
 // The clip source only needs an id + label — both a full MediaItem (drawer
@@ -38,7 +45,24 @@ export function seekTimeline(editor: Editor, time: number): void {
 }
 
 export function setTimelineDuration(editor: Editor, seconds: number): void {
-  editor.timelineController.setDuration(seconds);
+  editor.timelineController.recordEdit("Set Timeline Duration", () =>
+    editor.timelineController.setDuration(seconds),
+  );
+}
+
+// Gesture-boundary hooks for continuous edits: capture at pointer-down /
+// popover-open, commit at pointer-up / popover-close so the whole gesture
+// is ONE undo step (an unchanged timeline records nothing).
+export function beginTimelineEdit(editor: Editor): TimelineUndoSnapshot {
+  return editor.timelineController.snapshotForUndo();
+}
+
+export function commitTimelineEdit(
+  editor: Editor,
+  label: string,
+  before: TimelineUndoSnapshot,
+): void {
+  editor.timelineController.recordEditSince(label, before);
 }
 
 export function addKeyframe(
@@ -46,13 +70,20 @@ export function addKeyframe(
   objectUuid: string,
   atTime?: number,
 ): void {
-  editor.timelineController.addKeyframe(objectUuid, atTime);
+  editor.timelineController.recordEdit("Add Keyframe", () =>
+    editor.timelineController.addKeyframe(objectUuid, atTime),
+  );
 }
 
 export function deleteKeyframe(editor: Editor, keyframeId: string): void {
-  editor.timelineController.deleteKeyframe(keyframeId);
+  editor.timelineController.recordEdit("Delete Keyframe", () =>
+    editor.timelineController.deleteKeyframe(keyframeId),
+  );
 }
 
+// Raw (unrecorded) — drag live-preview. Discrete callers wrap it: drags
+// commit via commitTimelineEdit at pointer-up, keyboard nudges via
+// nudgeKeyframe below.
 export function moveKeyframe(
   editor: Editor,
   keyframeId: string,
@@ -61,6 +92,18 @@ export function moveKeyframe(
   editor.timelineController.moveKeyframe(keyframeId, time);
 }
 
+export function nudgeKeyframe(
+  editor: Editor,
+  keyframeId: string,
+  time: number,
+): void {
+  editor.timelineController.recordEdit("Move Keyframe", () =>
+    editor.timelineController.moveKeyframe(keyframeId, time),
+  );
+}
+
+// Raw (unrecorded) — the Motion popover fires this per curve-drag event;
+// TimelineEditor coalesces one popover session into one undo step.
 export function setKeyframeEasing(
   editor: Editor,
   keyframeId: string,
@@ -91,14 +134,16 @@ export function addClipToCharacter(
 ): string | null {
   if (!item.media_id) return null;
   const startTime = atTime ?? editor.timelineController.getPlayhead();
-  const laneId = editor.timelineController.addClipLane(characterUuid, {
-    sourceMediaId: item.media_id,
-    name: item.name ?? "Animation",
-    startTime,
-    duration: DEFAULT_CLIP_DURATION,
-    loop: true,
-    autoDuration: true,
-  });
+  const laneId = editor.timelineController.recordEdit("Add Animation Clip", () =>
+    editor.timelineController.addClipLane(characterUuid, {
+      sourceMediaId: item.media_id,
+      name: item.name ?? "Animation",
+      startTime,
+      duration: DEFAULT_CLIP_DURATION,
+      loop: true,
+      autoDuration: true,
+    }),
+  );
   if (laneId) {
     const store = usePageSceneStore.getState();
     store.setTimelineRevealObjectUuid(characterUuid);
@@ -123,17 +168,21 @@ export function addBakedClipToObject(
   );
   const clip = object?.animations?.[clipIndex];
   if (!clip) return null;
-  return editor.timelineController.addClipLane(objectUuid, {
-    sourceMediaId: "",
-    bakedClipIndex: clipIndex,
-    name: clip.name || `Clip ${clipIndex + 1}`,
-    startTime: atTime,
-    duration: Math.min(clip.duration || DEFAULT_CLIP_DURATION, DEFAULT_CLIP_DURATION),
-    // Loop by default, same as library strips (see addClipToCharacter).
-    loop: true,
-  });
+  return editor.timelineController.recordEdit("Add Animation Clip", () =>
+    editor.timelineController.addClipLane(objectUuid, {
+      sourceMediaId: "",
+      bakedClipIndex: clipIndex,
+      name: clip.name || `Clip ${clipIndex + 1}`,
+      startTime: atTime,
+      duration: Math.min(clip.duration || DEFAULT_CLIP_DURATION, DEFAULT_CLIP_DURATION),
+      // Loop by default, same as library strips (see addClipToCharacter).
+      loop: true,
+    }),
+  );
 }
 
+// Raw (unrecorded) — strip-drag live-preview; the drag commits one undo step
+// via commitTimelineEdit at pointer-up. Keyboard nudges use nudgeClipLane.
 export function moveClipLane(
   editor: Editor,
   laneId: string,
@@ -142,6 +191,17 @@ export function moveClipLane(
   editor.timelineController.moveClipLane(laneId, startTime);
 }
 
+export function nudgeClipLane(
+  editor: Editor,
+  laneId: string,
+  startTime: number,
+): void {
+  editor.timelineController.recordEdit("Move Animation Clip", () =>
+    editor.timelineController.moveClipLane(laneId, startTime),
+  );
+}
+
+// Raw (unrecorded) — trim-drag live-preview, committed at pointer-up.
 export function resizeClipLane(
   editor: Editor,
   laneId: string,
@@ -155,11 +215,14 @@ export function setClipLoop(
   laneId: string,
   loop: boolean,
 ): void {
-  editor.timelineController.setClipLoop(laneId, loop);
+  editor.timelineController.recordEdit("Toggle Clip Loop", () =>
+    editor.timelineController.setClipLoop(laneId, loop),
+  );
 }
 
-// Set (or clear, with null) the opt-in pose transition from `laneId`'s strip
-// into the next strip on its row.
+// Raw (unrecorded) — the Motion popover fires this per curve-drag event;
+// TimelineEditor coalesces one popover session (including "Remove
+// transition") into one undo step.
 export function setClipTransitionEasing(
   editor: Editor,
   laneId: string,
@@ -168,24 +231,25 @@ export function setClipTransitionEasing(
   editor.timelineController.setClipTransitionEasing(laneId, easing);
 }
 
-// Open a gap after `laneId`'s strip for a transition to play in, when its
-// boundary with the next strip is flush/too tight. Returns false when the
-// row is too packed to make room (callers toast).
-export function ensureClipTransitionGap(
-  editor: Editor,
-  laneId: string,
-): boolean {
-  return editor.timelineController.ensureTransitionGap(laneId);
+// Enable the pose transition out of `laneId`'s strip: open a gap for it to
+// play in when the boundary is flush (a too-packed row returns false and
+// mutates nothing — callers toast) and set the default curve. One undo step.
+export function enableClipTransition(editor: Editor, laneId: string): boolean {
+  const before = editor.timelineController.snapshotForUndo();
+  if (!editor.timelineController.ensureTransitionGap(laneId)) return false;
+  editor.timelineController.setClipTransitionEasing(laneId, DEFAULT_EASING);
+  editor.timelineController.recordEditSince("Enable Transition", before);
+  return true;
 }
 
-// Individually undoable (RemoveClipLaneAction) — both the strip's × button
-// and Del/Backspace route through here.
+// Individually undoable — both the strip's × button and Del/Backspace route
+// through here. removeClipLane also mirrors the removal into the Cancel
+// baseline (see TimelineController), and the snapshot captures both worlds.
 export function removeClipLane(editor: Editor, laneId: string): void {
-  const lane = editor.timelineController.getClipLane(laneId);
-  if (!lane) return;
-  const action = new RemoveClipLaneAction(editor.timelineController, lane);
-  action.apply();
-  editor.history.record(action);
+  if (!editor.timelineController.getClipLane(laneId)) return;
+  editor.timelineController.recordEdit("Remove Animation Clip", () =>
+    editor.timelineController.removeClipLane(laneId),
+  );
 }
 
 export function saveTimeline(editor: Editor): void {

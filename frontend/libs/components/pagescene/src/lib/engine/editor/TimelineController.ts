@@ -9,7 +9,7 @@
 import * as THREE from "three";
 import type Editor from "../editor";
 import { snapshotTransform, writeTransform } from "./actions/snapshots";
-import { SaveTimelineAction } from "./actions/SaveTimelineAction";
+import { TimelineEditAction } from "./actions/TimelineEditAction";
 import { sampleTrackAt } from "../timeline/interpolation";
 import {
   cloneTimeline,
@@ -29,6 +29,14 @@ import {
   TimelinePlayheadEvent,
 } from "../events/EngineEvent";
 
+// Whole-timeline state pair for undo/redo: the live timeline plus the
+// last-saved baseline (which Cancel reverts to). TimelineEditAction restores
+// both, so undoing past a Save also restores the older baseline.
+export interface TimelineUndoSnapshot {
+  live: TimelineData | null;
+  saved: TimelineData | null;
+}
+
 export class TimelineController {
   private timeline: TimelineData | null = null;
   private saved: TimelineData | null = null;
@@ -36,6 +44,48 @@ export class TimelineController {
   private isPlaying = false;
 
   constructor(private readonly editor: Editor) {}
+
+  // ─── per-edit undo ────────────────────────────────────────────────────
+  //
+  // Every user-facing timeline edit is one undo step (TimelineEditAction).
+  // Discrete edits wrap in recordEdit(); continuous gestures capture
+  // snapshotForUndo() at gesture start and call recordEditSince() at the
+  // end so the whole drag is a single step. Engine-internal mutations
+  // (autoKeyIfTracked riding a gizmo transform) bypass recording on purpose.
+
+  snapshotForUndo(): TimelineUndoSnapshot {
+    return {
+      live: this.timeline ? cloneTimeline(this.timeline) : null,
+      saved: this.saved ? cloneTimeline(this.saved) : null,
+    };
+  }
+
+  restoreSnapshot(snap: TimelineUndoSnapshot): void {
+    this.timeline = snap.live ? cloneTimeline(snap.live) : null;
+    this.saved = snap.saved ? cloneTimeline(snap.saved) : null;
+    if (this.timeline) {
+      this.playhead = Math.min(this.playhead, this.timeline.duration);
+    }
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+    this.emitPlayhead();
+  }
+
+  recordEdit<T>(label: string, mutate: () => T): T {
+    const before = this.snapshotForUndo();
+    const result = mutate();
+    this.recordEditSince(label, before);
+    return result;
+  }
+
+  recordEditSince(label: string, before: TimelineUndoSnapshot): void {
+    const after = this.snapshotForUndo();
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    this.editor.history.record(
+      new TimelineEditAction(this, label, before, after),
+    );
+  }
 
   // ─── queries ──────────────────────────────────────────────────────────
 
@@ -452,11 +502,10 @@ export class TimelineController {
     this.emitChanged();
   }
 
-  // Removal is SESSION-INDEPENDENT (it carries its own undo step via
-  // RemoveClipLaneAction), so it is mirrored into the `saved` snapshot too:
-  // otherwise Cancel would resurrect the deleted strip and the next Save
-  // would double-record the removal (its before-state still holding the
-  // strip costs the user a phantom undo step).
+  // Removal is SESSION-INDEPENDENT (its own undo step, recorded by the
+  // actions/timeline.ts wrapper), so it is mirrored into the `saved`
+  // snapshot too: otherwise Cancel would resurrect the deleted strip. The
+  // undo snapshot captures both worlds, so undo restores them exactly.
   removeClipLane(laneId: string): void {
     if (!this.timeline) return;
     this.timeline.clipLanes = this.timeline.clipLanes.filter(
@@ -476,38 +525,6 @@ export class TimelineController {
     return this.timeline?.clipLanes.find((l) => l.id === laneId) ?? null;
   }
 
-  // The lane's entry in the `saved` snapshot (which may hold an older
-  // placement than the live one, or none if the strip was added after the
-  // last save). RemoveClipLaneAction captures it so undo can restore BOTH
-  // worlds exactly.
-  getSavedClipLane(laneId: string): ClipLane | null {
-    const lane = this.saved?.clipLanes.find((l) => l.id === laneId);
-    return lane ? JSON.parse(JSON.stringify(lane)) : null;
-  }
-
-  // Re-insert a previously removed lane verbatim (undo of a removal). The
-  // strip returns to its exact prior slot; in the rare case another clip was
-  // moved onto that slot after the delete, the strips can momentarily
-  // overlap — the overlap guard re-applies on the next add/move.
-  // `savedLane` (when the strip existed in the last-saved snapshot) undoes
-  // the removal's `saved` mirroring at its saved-time placement, so a later
-  // Cancel restores exactly the pre-removal saved state.
-  restoreClipLane(lane: ClipLane, savedLane?: ClipLane): void {
-    if (!this.timeline) return;
-    if (this.timeline.clipLanes.some((l) => l.id === lane.id)) return;
-    this.timeline.clipLanes.push(JSON.parse(JSON.stringify(lane)));
-    if (
-      savedLane &&
-      this.saved &&
-      !this.saved.clipLanes.some((l) => l.id === savedLane.id)
-    ) {
-      this.saved.clipLanes.push(JSON.parse(JSON.stringify(savedLane)));
-    }
-    this.syncClipLanes();
-    this.evaluate();
-    this.emitChanged();
-  }
-
   // All clip lanes for one character (stacked lanes, drop order).
   clipLanesFor(objectUuid: string): ClipLane[] {
     if (!this.timeline) return [];
@@ -515,21 +532,26 @@ export class TimelineController {
   }
 
   // ─── save / cancel ──────────────────────────────────────────────────────
+  //
+  // Individual edits carry their own undo steps (see recordEdit), so Save
+  // only moves the Cancel baseline — its undo restores the OLD baseline
+  // without jumping the live timeline (Ctrl+Z right after Save still undoes
+  // the last edit, not the whole session). Cancel is itself one undo step,
+  // so a mis-click can be undone.
 
   save(): void {
     if (!this.timeline) return;
-    const before = this.saved
-      ? cloneTimeline(this.saved)
-      : cloneTimeline(this.timeline);
-    const action = new SaveTimelineAction(this, before);
-    this.saved = cloneTimeline(this.timeline);
-    if (action.commit()) this.editor.history.record(action);
+    this.recordEdit("Save Timeline", () => {
+      this.saved = cloneTimeline(this.timeline!);
+    });
     this.emitChanged();
   }
 
   cancel(): void {
     if (!this.saved) return;
-    this.timeline = cloneTimeline(this.saved);
+    this.recordEdit("Cancel Timeline Edits", () => {
+      this.timeline = cloneTimeline(this.saved!);
+    });
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();

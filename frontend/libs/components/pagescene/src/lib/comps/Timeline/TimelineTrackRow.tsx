@@ -1,7 +1,14 @@
 import { useContext, useRef } from "react";
 import { DynamicIcon } from "@storyteller/icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { addKeyframe, moveKeyframe, seekTimeline } from "../../actions";
+import {
+  addKeyframe,
+  beginTimelineEdit,
+  commitTimelineEdit,
+  moveKeyframe,
+  seekTimeline,
+} from "../../actions";
+import type { TimelineUndoSnapshot } from "../../engine/editor/TimelineController";
 import {
   usePageSceneStore,
   type OutlinerItem,
@@ -28,6 +35,9 @@ export const TimelineTrackRow = ({
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const draggingId = useRef<string | null>(null);
+  // Snapshot at drag start; the whole drag commits as ONE undo step at
+  // pointer-up (moveKeyframe during the drag is a raw live-preview).
+  const dragUndo = useRef<TimelineUndoSnapshot | null>(null);
 
   const selectedKeyframeId = usePageSceneStore(
     (s) => s.timelineSelectedKeyframeId,
@@ -60,6 +70,14 @@ export const TimelineTrackRow = ({
     if (editor) seekTimeline(editor, time);
   };
 
+  const endDrag = () => {
+    if (draggingId.current && dragUndo.current && editor) {
+      commitTimelineEdit(editor, "Move Keyframe", dragUndo.current);
+    }
+    draggingId.current = null;
+    dragUndo.current = null;
+  };
+
   return (
     <div className="flex items-center gap-3 py-1">
       {/* Keep this column exactly w-32: the ruler row and playhead overlay
@@ -81,12 +99,8 @@ export const TimelineTrackRow = ({
             laneTimeFromEvent(e.clientX),
           );
         }}
-        onPointerUp={() => {
-          draggingId.current = null;
-        }}
-        onPointerLeave={() => {
-          draggingId.current = null;
-        }}
+        onPointerUp={endDrag}
+        onPointerLeave={endDrag}
       >
         {/* connecting line between the first and last keyframe */}
         {sorted.length >= 2 && (
@@ -152,6 +166,7 @@ export const TimelineTrackRow = ({
               onPointerDown={(e) => {
                 e.currentTarget.setPointerCapture(e.pointerId);
                 draggingId.current = kf.id;
+                if (editor) dragUndo.current = beginTimelineEdit(editor);
                 // Selecting a keyframe never opens the Motion popover —
                 // that's the easing chip's job.
                 setEasingKeyframe(null);

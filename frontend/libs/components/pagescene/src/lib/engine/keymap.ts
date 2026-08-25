@@ -18,8 +18,8 @@ import { usePageSceneStore, type PoseMode } from "../PageSceneStore";
 import {
   addKeyframe,
   deleteKeyframe,
-  moveClipLane,
-  moveKeyframe,
+  nudgeClipLane,
+  nudgeKeyframe,
   pauseTimeline,
   playTimeline,
   removeClipLane,
@@ -175,7 +175,7 @@ const timelineNudge = (editor: Editor, direction: 1 | -1) => {
           timeline.duration,
           Math.max(0, keyframe.time + delta),
         );
-        moveKeyframe(editor, keyframeId, time);
+        nudgeKeyframe(editor, keyframeId, time);
         return;
       }
     }
@@ -185,7 +185,7 @@ const timelineNudge = (editor: Editor, direction: 1 | -1) => {
   if (!laneId) return;
   const lane = editor.timelineController.getClipLane(laneId);
   if (!lane) return;
-  moveClipLane(editor, laneId, Math.max(0, lane.strip.startTime + delta));
+  nudgeClipLane(editor, laneId, Math.max(0, lane.strip.startTime + delta));
 };
 
 const timelineAddKeyframe = (editor: Editor) => {

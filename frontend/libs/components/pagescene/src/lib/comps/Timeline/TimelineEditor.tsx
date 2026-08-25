@@ -5,7 +5,9 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
+  beginTimelineEdit,
   cancelTimeline,
+  commitTimelineEdit,
   deleteKeyframe,
   pauseTimeline,
   playTimeline,
@@ -14,6 +16,7 @@ import {
   setClipTransitionEasing,
   setKeyframeEasing,
 } from "../../actions";
+import type { TimelineUndoSnapshot } from "../../engine/editor/TimelineController";
 import { usePageSceneStore } from "../../PageSceneStore";
 import {
   DEFAULT_EASING,
@@ -101,6 +104,42 @@ export const TimelineEditor = () => {
   // The Motion popover edits the easing of the segment BETWEEN two
   // keyframes (stored on the left one) and anchors at the segment midpoint.
   const easingKeyframeId = usePageSceneStore((s) => s.timelineEasingKeyframeId);
+  const easingClipLaneIdForUndo = usePageSceneStore(
+    (s) => s.timelineEasingClipLaneId,
+  );
+
+  // One popover session = ONE undo step. The popover's onChange fires per
+  // curve-drag event (raw setKeyframeEasing / setClipTransitionEasing);
+  // snapshot when a popover opens, commit when it closes or retargets —
+  // "Remove transition" rides this same session, so it isn't double-recorded.
+  const easingTarget = easingKeyframeId ?? easingClipLaneIdForUndo ?? null;
+  const easingUndo = useRef<{
+    target: string;
+    before: TimelineUndoSnapshot;
+  } | null>(null);
+  useEffect(() => {
+    if (!editor) return;
+    if (easingUndo.current && easingUndo.current.target !== easingTarget) {
+      commitTimelineEdit(editor, "Edit Easing", easingUndo.current.before);
+      easingUndo.current = null;
+    }
+    if (easingTarget && !easingUndo.current) {
+      easingUndo.current = {
+        target: easingTarget,
+        before: beginTimelineEdit(editor),
+      };
+    }
+  }, [easingTarget, editor]);
+  // Collapse/unmount with a popover open still commits the session.
+  useEffect(
+    () => () => {
+      if (easingUndo.current && editor) {
+        commitTimelineEdit(editor, "Edit Easing", easingUndo.current.before);
+        easingUndo.current = null;
+      }
+    },
+    [editor],
+  );
   let easingAnchor: {
     keyframe: (typeof tracks)[number]["keyframes"][number];
     leftPercent: number;
