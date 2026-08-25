@@ -1,48 +1,35 @@
-import type { Hono } from "hono";
-
-import { createApp } from "./app";
-import { ConfigError, loadConfig } from "./config";
+import { createOAuthProvider } from "./auth/oauth";
+import { ConfigError } from "./config";
+import { mcpApiHandler } from "./mcp/handler";
+import { getRuntime } from "./runtime";
 
 /**
- * Worker entry point. The app is built once per isolate from the bindings. If the bindings
- * violate the environment invariant, every request fails with a 500 that names the problem —
- * a misconfigured deploy must be impossible to miss.
+ * Worker entry point. Every request first passes the environment invariant (a misconfigured
+ * deploy fails everything, including the OAuth endpoints), then the OAuth provider routes it:
+ * protected MCP routes require a valid access token; everything else reaches the Hono app.
  */
-let cachedApp: Hono | undefined;
-let cachedFailure: ConfigError | undefined;
-
-function getApp(env: unknown): Hono {
-  if (cachedApp) return cachedApp;
-  if (cachedFailure) throw cachedFailure;
-  try {
-    cachedApp = createApp(loadConfig(env));
-    return cachedApp;
-  } catch (error) {
-    if (error instanceof ConfigError) {
-      cachedFailure = error;
-    }
-    throw error;
-  }
-}
+const provider = createOAuthProvider({
+  defaultHandler: {
+    fetch: (request, env, ctx) => getRuntime(env).app.fetch(request, env, ctx),
+  },
+  apiHandler: mcpApiHandler,
+});
 
 export default {
-  fetch(
-    request: Request,
-    env: Cloudflare.Env,
-    ctx: ExecutionContext,
-  ): Response | Promise<Response> {
-    let app: Hono;
+  fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext): Promise<Response> {
     try {
-      app = getApp(env);
+      getRuntime(env);
     } catch (error) {
       if (error instanceof ConfigError) {
-        return new Response(`Worker misconfigured: ${error.message}`, {
-          status: 500,
-          headers: { "content-type": "text/plain; charset=utf-8" },
-        });
+        return Promise.resolve(
+          new Response(`Worker misconfigured: ${error.message}`, {
+            status: 500,
+            headers: { "content-type": "text/plain; charset=utf-8" },
+          }),
+        );
       }
       throw error;
     }
-    return app.fetch(request, env, ctx);
+    return provider.fetch(request, env, ctx);
   },
 } satisfies ExportedHandler<Cloudflare.Env>;

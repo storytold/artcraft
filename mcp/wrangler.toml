@@ -8,7 +8,8 @@
 name = "artcraft-mcp"
 main = "src/index.ts"
 compatibility_date = "2026-08-01"
-compatibility_flags = ["nodejs_compat"]
+# global_fetch_strictly_public: required by workers-oauth-provider for CIMD fetches (SSRF protection).
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 # ---------------------------------------------------------------------------------------------
 # local — `wrangler dev`. Talks to the fake upstream on localhost. `.dev.vars` may override.
@@ -40,6 +41,7 @@ id = "REPLACE_WITH_PREVIEW_KV_ID"  # from docs/infra-request.md §1
 # ---------------------------------------------------------------------------------------------
 [env.production]
 name = "artcraft-mcp"
+workers_dev = false  # one canonical public URL: the custom domain. The OAuth `resource` must match it exactly.
 # Enable once the getartcraft.com zone is on Cloudflare (docs/infra-request.md §1):
 # routes = [{ pattern = "mcp.getartcraft.com", custom_domain = true }]
 

@@ -23,6 +23,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm format && pnpm test"
   },
   "dependencies": {
+    "@cloudflare/workers-oauth-provider": "0.10.3",
     "hono": "4.13.4",
     "openapi-fetch": "0.17.0",
     "zod": "4.4.3"
