@@ -336,7 +336,6 @@ export const ControlsTopButtons = () => {
                   {
                     disabled: !currentUserToken || !sceneMeta.token,
                     label: "Save scene as copy",
-                    description: "Ctrl+Shift+S",
                     onDialogOpen: bumpCopyCountInTitle,
                     dialogProps: saveAsCopyDialogProps,
                   },

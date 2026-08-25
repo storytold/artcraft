@@ -58,10 +58,13 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.timeline.deleteSelected": [b("Delete"), b("Backspace")],
   "pagescene.timeline.toggleExpanded": [b("KeyT", { shift: true })],
 
-  // Record
+  // Record. Capture/record are bare letters on purpose: they're gated to
+  // record mode (where the build-mode letters are dead, so no conflicts) and
+  // browser-reserved chords like Ctrl+Shift+S/E (Firefox screenshot / dev
+  // tools) can't be preventDefault'ed away.
   "pagescene.record.toggleMode": [b("Tab")],
-  "pagescene.record.captureStill": [b("KeyS", { ctrl: true, shift: true })],
-  "pagescene.record.recordVideo": [b("KeyE", { ctrl: true, shift: true })],
+  "pagescene.record.captureStill": [b("KeyC")],
+  "pagescene.record.recordVideo": [b("KeyR")],
   "pagescene.record.cancelEncode": [b("Escape")],
 
   // PageDraw (2D) — preset-independent.
