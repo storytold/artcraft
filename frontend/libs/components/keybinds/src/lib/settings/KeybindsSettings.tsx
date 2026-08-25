@@ -286,6 +286,7 @@ export function KeybindsSettings({
             confirmLabel={`Confirm — reset ${overriddenCount}`}
             title={`Reset all ${overriddenCount} customized bindings to the preset defaults`}
             prominent
+            confirmDelayMs={2000}
             onConfirm={resetAll}
           />
         </div>
@@ -669,37 +670,49 @@ function CollapsibleSurface({
 // click within the window commits. Blur, Escape, or a 4s timeout disarm it —
 // a nested confirm dialog inside the settings modal would be heavier than the
 // action warrants, but a bare one-click wipe is how overrides get lost.
+// `confirmDelayMs` adds a post-arm lockout during which clicks are swallowed,
+// so a double-click can't arm-and-confirm in one motion; the 4s auto-disarm
+// window starts after the lockout ends.
 function ConfirmResetButton({
   idleLabel,
   confirmLabel,
   title,
   prominent,
+  confirmDelayMs = 0,
   onConfirm,
 }: {
   idleLabel: string;
   confirmLabel: string;
   title: string;
   prominent?: boolean;
+  confirmDelayMs?: number;
   onConfirm: () => void;
 }) {
   const [armed, setArmed] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [ready, setReady] = useState(false); // lockout elapsed, click confirms
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const disarm = () => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
+    for (const t of timers.current) clearTimeout(t);
+    timers.current = [];
     setArmed(false);
+    setReady(false);
   };
 
-  useEffect(() => disarm, []); // clear the pending timeout on unmount
+  useEffect(() => disarm, []); // clear the pending timeouts on unmount
 
   const handleClick = () => {
+    if (armed && !ready) return; // inside the lockout — swallow the click
     if (armed) {
       disarm();
       onConfirm();
     } else {
       setArmed(true);
-      timer.current = setTimeout(() => setArmed(false), 4000);
+      setReady(confirmDelayMs === 0);
+      timers.current = [
+        setTimeout(() => setReady(true), confirmDelayMs),
+        setTimeout(disarm, confirmDelayMs + 4000),
+      ];
     }
   };
 
@@ -724,7 +737,9 @@ function ConfirmResetButton({
           ? "h-9 px-4 text-[13px]"
           : "h-7 px-2.5 text-[12px]",
         armed
-          ? "bg-red text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)] hover:bg-red/85"
+          ? ready
+            ? "bg-red text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)] hover:bg-red/85"
+            : "cursor-wait bg-red/60 text-white/80 shadow-[0_0_0_3px_rgba(0,0,0,0.15)]"
           : prominent
             ? "bg-red/10 text-red ring-1 ring-red/30 hover:bg-red/[0.18]"
             : "text-base-fg/45 hover:bg-red/10 hover:text-red",
