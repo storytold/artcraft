@@ -9,8 +9,8 @@ describe("fake upstream", () => {
     expect(await response.json()).toEqual({ success: true, fake: true });
   });
 
-  it("knows nothing else yet", async () => {
-    const response = await createFakeUpstream().request("/v1/session");
+  it("does not fake routes outside the MCP allowlist", async () => {
+    const response = await createFakeUpstream().request("/v1/media_files/list");
     expect(response.status).toBe(404);
   });
 });
