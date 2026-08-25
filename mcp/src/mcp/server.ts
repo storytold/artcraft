@@ -10,6 +10,7 @@ import type { z } from "zod";
 
 import { hasScope, type Principal } from "../tokens/principal";
 import type { UpstreamClient } from "../upstream/client";
+import { getAccount } from "./tools/get-account";
 import { getCreditBalance } from "./tools/get-credit-balance";
 import { type ToolDefinition, ToolFailure, UpstreamSessionInvalid } from "./tools/types";
 
@@ -21,7 +22,10 @@ import { type ToolDefinition, ToolFailure, UpstreamSessionInvalid } from "./tool
 
 export const SERVER_INFO = { name: "artcraft", version: "0.0.0" } as const;
 
-export const TOOLS: readonly ToolDefinition<z.ZodRawShape, z.ZodRawShape>[] = [getCreditBalance];
+export const TOOLS: readonly ToolDefinition<z.ZodRawShape, z.ZodRawShape>[] = [
+  getAccount,
+  getCreditBalance,
+];
 
 export interface McpServerDeps {
   readonly principal: Principal;

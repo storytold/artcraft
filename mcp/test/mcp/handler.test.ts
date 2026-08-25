@@ -135,7 +135,7 @@ describe("the protected MCP route", () => {
     expect(client.getServerVersion()?.name).toBe("artcraft");
 
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(["get_credit_balance"]);
+    expect(tools.map((t) => t.name).sort()).toEqual(["get_account", "get_credit_balance"]);
 
     const result = await client.callTool({ name: "get_credit_balance", arguments: {} });
     expect(result.isError).toBeFalsy();

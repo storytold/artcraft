@@ -71,12 +71,12 @@ async function connect(scopes: string[], status = 200) {
 }
 
 describe("MCP server", () => {
-  it("identifies itself and lists get_credit_balance with its schema and annotations", async () => {
+  it("identifies itself and lists the read:account tools with schemas and annotations", async () => {
     const { client } = await connect(["read:account"]);
     expect(client.getServerVersion()).toMatchObject(SERVER_INFO);
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(["get_credit_balance"]);
-    const tool = tools[0];
+    expect(tools.map((t) => t.name).sort()).toEqual(["get_account", "get_credit_balance"]);
+    const tool = tools.find((t) => t.name === "get_credit_balance");
     expect(tool?.annotations).toMatchObject({ readOnlyHint: true, destructiveHint: false });
     expect(tool?.outputSchema).toBeDefined();
     expect(tool?.description).toMatch(/credit balance/);
