@@ -2,9 +2,12 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
 
+import { PLAN_GENERATION_PROMPT } from "../../src/mcp/prompts";
+import { MODELS_RESOURCE_TEMPLATE } from "../../src/mcp/resources";
 import { createMcpServer, SERVER_INFO } from "../../src/mcp/server";
 import { principalFromProps } from "../../src/tokens/principal";
 import { createUpstreamClient } from "../../src/upstream/client";
+import { modelsResponse } from "../../fake-upstream/src/catalogue";
 import { fixture } from "../helpers/contract";
 
 /** Drives the server the way a real MCP client does — over the protocol, in memory. */
@@ -43,7 +46,12 @@ async function connect(scopes: string[], status = 200) {
     credential: principal.credential,
     fetch: (input) => {
       const path = new URL(new Request(input).url).pathname;
-      const body = path.startsWith("/v1/credits") ? CREDITS : NO_SUBSCRIPTION;
+      const modelsKind = /^\/v1\/omni_gen\/models\/(\w+)$/.exec(path)?.[1];
+      const body = modelsKind
+        ? modelsResponse(modelsKind as Parameters<typeof modelsResponse>[0], "all")
+        : path.startsWith("/v1/credits")
+          ? CREDITS
+          : NO_SUBSCRIPTION;
       return Promise.resolve(
         new Response(
           JSON.stringify(status === 200 ? body : { success: false, error_code: status }),
@@ -113,6 +121,50 @@ describe("MCP server", () => {
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result.content)).toMatch(/no longer valid/);
     expect(invalidated()).toBe(1);
+  });
+
+  it("offers the catalogue resource to read:catalog principals and serves it as JSON", async () => {
+    const { client } = await connect(["read:catalog"]);
+    const { resourceTemplates } = await client.listResourceTemplates();
+    expect(resourceTemplates.map((t) => t.uriTemplate)).toEqual([MODELS_RESOURCE_TEMPLATE]);
+    const { resources } = await client.listResources();
+    expect(resources.map((r) => r.uri).sort()).toEqual([
+      "artcraft://models/audio",
+      "artcraft://models/image",
+      "artcraft://models/mesh",
+      "artcraft://models/splat",
+      "artcraft://models/video",
+    ]);
+    const read = await client.readResource({ uri: "artcraft://models/mesh" });
+    const content = read.contents[0];
+    expect(content?.mimeType).toBe("application/json");
+    const text = content && "text" in content ? content.text : "";
+    const parsed = JSON.parse(text) as { kind: string; models: unknown[] };
+    expect(parsed.kind).toBe("mesh");
+    expect(parsed.models.length).toBeGreaterThan(0);
+    await expect(client.readResource({ uri: "artcraft://models/nope" })).rejects.toThrow(
+      /Unknown catalogue/,
+    );
+  });
+
+  it("withholds the catalogue resource without read:catalog", async () => {
+    const { client } = await connect(["read:account"]);
+    expect(client.getServerCapabilities()?.resources).toBeUndefined();
+  });
+
+  it("serves the plan_generation prompt", async () => {
+    const { client } = await connect(["read:account"]);
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name)).toEqual([PLAN_GENERATION_PROMPT]);
+    const prompt = await client.getPrompt({
+      name: PLAN_GENERATION_PROMPT,
+      arguments: { brief: "a corgi surfing at sunset", kind: "video" },
+    });
+    const text = prompt.messages[0]?.content.type === "text" ? prompt.messages[0].content.text : "";
+    expect(text).toContain('"a corgi surfing at sunset"');
+    expect(text).toContain("The kind of output is video.");
+    expect(text).toMatch(/list_models.*estimate_cost.*get_credit_balance/s);
+    expect(text).toContain("Do not generate anything");
   });
 
   it("reports an unavailable upstream as a tool error without notifying", async () => {

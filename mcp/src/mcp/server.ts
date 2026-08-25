@@ -10,6 +10,8 @@ import type { z } from "zod";
 
 import { hasScope, type Principal } from "../tokens/principal";
 import type { UpstreamClient } from "../upstream/client";
+import { registerPlanGenerationPrompt } from "./prompts";
+import { registerCatalogueResource } from "./resources";
 import { estimateCost } from "./tools/estimate-cost";
 import { getAccount } from "./tools/get-account";
 import { getCreditBalance } from "./tools/get-credit-balance";
@@ -84,6 +86,9 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   // principal whose scopes leave nothing to register must still get an empty list, not
   // "method not found" — so in that case declare the capability and answer ourselves.
   if (registered === 0) installEmptyToolHandlers(server);
+
+  registerCatalogueResource(server, context);
+  registerPlanGenerationPrompt(server);
 
   return server;
 }
