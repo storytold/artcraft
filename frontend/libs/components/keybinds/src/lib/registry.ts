@@ -79,8 +79,12 @@ const defs: ActionDef[] = [
   act("pagescene.view.toggleStats", "Toggle perf stats", "View"),
 
   // ── PageScene: selection ──────────────────────────────────────────────────
+  // Build-only: its first branch leaves camera view, which in record mode
+  // would break the render-cam lock (record forces camera view). Mid-encode
+  // Escape belongs to record.cancelEncode instead.
   act("pagescene.selection.clearOrExit", "Clear selection / exit pose", "Selection", {
     important: true,
+    when: inBuild,
   }),
   act("pagescene.selection.deselectAll", "Deselect all", "Selection", { when: inBuild }),
 
