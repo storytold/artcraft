@@ -51,6 +51,7 @@ artcraft/
 │       │   ├── artcraft/                # ArtCraft the Tauri app's frontend. Used in conjunction with `artcraft` the Rust crate.
 │       │   └── artcraft-website/        # The website for https://getartcraft.com
 │       └── libs/                        # Support libraries, reusable React components, etc.
+├── mcp/                                 # Artcraft MCP server (Cloudflare Workers, TypeScript). Standalone; see mcp/CLAUDE.md
 └── Cargo.toml                           # Rust monorepo workspace
 ```
 
