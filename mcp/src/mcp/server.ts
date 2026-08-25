@@ -10,6 +10,7 @@ import type { z } from "zod";
 
 import { hasScope, type Principal } from "../tokens/principal";
 import type { UpstreamClient } from "../upstream/client";
+import { estimateCost } from "./tools/estimate-cost";
 import { getAccount } from "./tools/get-account";
 import { getCreditBalance } from "./tools/get-credit-balance";
 import { listModels } from "./tools/list-models";
@@ -27,6 +28,7 @@ export const TOOLS: readonly ToolDefinition<z.ZodRawShape, z.ZodRawShape>[] = [
   getAccount,
   getCreditBalance,
   listModels,
+  estimateCost,
 ];
 
 export interface McpServerDeps {

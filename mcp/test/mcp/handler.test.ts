@@ -136,6 +136,7 @@ describe("the protected MCP route", () => {
 
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
+      "estimate_cost",
       "get_account",
       "get_credit_balance",
       "list_models",
@@ -160,7 +161,10 @@ describe("the protected MCP route", () => {
   it("lists only catalogue tools for a read:catalog grant", async () => {
     const { accessToken } = await connectAsSeededUser("read:catalog");
     const client = await mcpClient(accessToken);
-    expect((await client.listTools()).tools.map((t) => t.name)).toEqual(["list_models"]);
+    expect((await client.listTools()).tools.map((t) => t.name).sort()).toEqual([
+      "estimate_cost",
+      "list_models",
+    ]);
     const result = await client.callTool({ name: "list_models", arguments: { kind: "mesh" } });
     expect(result.isError).toBeFalsy();
     expect((result.structuredContent as { models: unknown[] }).models.length).toBeGreaterThan(0);
