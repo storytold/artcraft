@@ -4,12 +4,21 @@
  * isolate restarts, which is the point.
  */
 
+export interface FakeSubscription {
+  readonly subscriptionToken: string;
+  readonly productSlug: string;
+  readonly nextBillAt: string;
+}
+
 export interface FakeUser {
   readonly userToken: string;
   readonly username: string;
   readonly displayName: string;
   readonly email: string;
   readonly password: string;
+  readonly monthlyCredits: number;
+  readonly bankedCredits: number;
+  readonly subscription: FakeSubscription | null;
 }
 
 export interface FakeStore {
@@ -24,6 +33,13 @@ export const SEEDED_USER: FakeUser = {
   displayName: "Local Dev",
   email: "localdev1@example.test",
   password: "localdev1pass",
+  monthlyCredits: 500,
+  bankedCredits: 120,
+  subscription: {
+    subscriptionToken: "usub_localdev1",
+    productSlug: "artcraft_creator_monthly",
+    nextBillAt: "2026-09-24T00:00:00Z",
+  },
 };
 
 export function createStore(): FakeStore {
