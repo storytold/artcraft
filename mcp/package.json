@@ -13,6 +13,7 @@
     "deploy:preview": "wrangler deploy --env preview",
     "deploy:production": "wrangler deploy --env production",
     "gen:api": "node scripts/gen-api.mjs",
+    "smoke": "node scripts/smoke.mjs",
     "types": "wrangler types",
     "typecheck": "pnpm types && tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",

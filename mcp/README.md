@@ -34,6 +34,18 @@ pnpm deploy:preview       # workers.dev, talks to the deployed fake
 pnpm deploy:production    # mcp.getartcraft.com, talks to api.storyteller.ai
 ```
 
+## Smoke against a real deployment
+
+The only thing here that touches a real Artcraft backend. Read-only; uses the demo account.
+
+```sh
+SMOKE_BASE_URL=https://mcp.getartcraft.com SMOKE_USERNAME=… SMOKE_PASSWORD=… pnpm smoke
+```
+
+Runs after every production deploy and weekly (`.github/workflows/mcp-smoke.yml`) once the
+`SMOKE_USERNAME` / `SMOKE_PASSWORD` repo secrets exist. Locally it also works against
+`wrangler dev` + the fake (`SMOKE_BASE_URL=http://localhost:8787`, `localdev1` / `localdev1pass`).
+
 ## Layout
 
 See `CLAUDE.md` → Layout.

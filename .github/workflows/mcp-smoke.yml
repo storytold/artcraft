@@ -1,0 +1,43 @@
+name: mcp smoke
+
+# The only place this project touches the real Artcraft backend: a read-only pass with the
+# demo account against production (docs/infra-request.md §2 and §4). Weekly, so a change on
+# the Claude/ChatGPT side or upstream shows up as a red badge rather than a support ticket.
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "MCP server origin to smoke (defaults to production)"
+        required: false
+        default: "https://mcp.getartcraft.com"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: creds
+        run: |
+          if [ -n "$SMOKE_USERNAME" ] && [ -n "$SMOKE_PASSWORD" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::SMOKE_USERNAME / SMOKE_PASSWORD not configured; skipping."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          SMOKE_USERNAME: ${{ secrets.SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
+      - if: steps.creds.outputs.present == 'true'
+        run: node scripts/smoke.mjs
+        env:
+          SMOKE_BASE_URL: ${{ inputs.base_url || 'https://mcp.getartcraft.com' }}
+          SMOKE_USERNAME: ${{ secrets.SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}

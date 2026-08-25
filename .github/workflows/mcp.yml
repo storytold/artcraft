@@ -69,3 +69,11 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Read-only smoke with the demo account, right after the deploy (skipped until the
+      # demo-account secrets exist; docs/infra-request.md §2 and §4).
+      - if: steps.creds.outputs.present == 'true' && env.SMOKE_USERNAME != ''
+        run: node scripts/smoke.mjs
+        env:
+          SMOKE_BASE_URL: https://mcp.getartcraft.com
+          SMOKE_USERNAME: ${{ secrets.SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}

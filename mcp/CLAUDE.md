@@ -356,8 +356,18 @@ Four layers; all run offline in CI (`pnpm test`), inside the Workers runtime via
 4. **End-to-end** — the real `@modelcontextprotocol/sdk` client with an `OAuthClientProvider`
    that completes our consent page, against the Worker in miniflare.
 
-Manual: MCP Inspector against `wrangler dev`. Post-deploy: `pnpm smoke` with a dedicated test
-account against production. Weekly scheduled e2e run against production.
+Manual: MCP Inspector against `wrangler dev`.
+
+**Smoke (`scripts/smoke.mjs`, `pnpm smoke`)** — the one thing that touches a real backend.
+Dependency-free Node script that does exactly what a client does: PRM → AS metadata (CIMD flag)
+→ DCR → consent page + CSRF → password sign-in → code → PKCE exchange → initialize → tools/list
+(must equal the 7 tool names) → one call per read-only tool → revoke → revoked token is 401.
+Prints step outcomes only, never tokens/bodies/credentials; exit 1 on the first failure. Runs
+after every production deploy (`mcp.yml`) and weekly (`mcp-smoke.yml`, Mondays 09:00 UTC, also
+`workflow_dispatch` with a `base_url`), both skipped with a notice until `SMOKE_USERNAME` /
+`SMOKE_PASSWORD` exist. It is verified locally against `wrangler dev` + the fake
+(`SMOKE_BASE_URL=http://localhost:8787`, `localdev1` / `localdev1pass`) — add a step there when a
+tool or flow changes, and keep the fake honest so the local run stays a real rehearsal.
 
 ## Code style
 
@@ -403,11 +413,12 @@ mcp/
 │   └── src/ state.ts (seeded localdev1, credits, jobs), session.ts, catalogue.ts (real model ids),
 │            pricing.ts, jobs.ts, routes/{session,billing,omni_gen,jobs}.ts — all spec-validated in tests
 ├── scripts/gen-api.mjs     # fetch api.json → trim to allowlist → test/fixtures/api.json + src/upstream/schema.d.ts
+├── scripts/smoke.mjs       # read-only smoke of a deployment with the demo account (see Testing); post-deploy + weekly
 ├── src/
 │   ├── index.ts            # Worker entry: environment invariant first, then the OAuthProvider
 │   ├── runtime.ts          # memoized Config + Hono app per isolate (failure memoized too)
 │   ├── oauth-env.d.ts      # adds env.OAUTH_PROVIDER (OAuthHelpers) to the generated Env
-│   ├── app.ts              # unprotected Hono routes: /healthz, /authorize, pages
+│   ├── app.ts              # unprotected Hono routes: /healthz, / (landing), /authorize, /connections, /sse (405 pointer)
 │   ├── auth/
 │   │   ├── oauth.ts        # provider options: endpoints, scopes, TTLs, CIMD+DCR, error logging
 │   │   ├── authorize.ts    # /authorize GET (render) + POST (CSRF → re-validate → deny | sign in → finish)
@@ -432,6 +443,7 @@ mcp/
 │   │   └── tools/          # types.ts (ToolDefinition, unwrapUpstream); get-account, get-credit-balance,
 │   │                       #   list-models, estimate-cost, jobs (get_job_status, get_jobs_status, list_recent_jobs)
 │   └── pages/
+│       ├── landing.tsx          # / — what this is, how to connect (per-client URLs), link to /connections
 │       ├── connections.ts       # /connections routes: sign-in → KV page session → list/revoke grants
 │       ├── connections-page.tsx # pure render
 │       └── ui-session.ts        # 15-min page session in KV (`mcpui:session:` prefix), no credential held

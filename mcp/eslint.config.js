@@ -62,7 +62,17 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
     languageOptions: {
       ...tseslint.configs.disableTypeChecked.languageOptions,
-      globals: { console: "readonly", fetch: "readonly", process: "readonly", URL: "readonly" },
+      globals: {
+        AbortController: "readonly",
+        Buffer: "readonly",
+        clearTimeout: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+        setTimeout: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+      },
     },
   },
   { files: ["src/**/*.ts", "src/**/*.tsx"], rules: SERVER_MUST_NOT_IMPORT_FAKE },
