@@ -187,7 +187,7 @@ type Principal = {
 
 An Artcraft session cannot be refreshed — there is no endpoint — only held or deleted. So:
 access tokens 1 h; refresh tokens rotate, 30 days idle, **90 days absolute**, then re-consent.
-Personal tokens (M2) inherit the same 90-day ceiling. On expiry or revoke, always call the
+Personal tokens inherit the same 90-day ceiling. On expiry or revoke, always call the
 credential's `revoke()`. The 90-day window is also the runway for swapping `UpstreamCredential`
 to a stronger backend token system if one appears: grants naturally roll over.
 
@@ -280,6 +280,31 @@ Cite these; re-verify if the file references stop matching.
   (the repo's Unknown(String) pattern) — normalisers must accept the object form.
 - `/v1/jobs/batch` takes repeated `tokens=` params (openapi-fetch's default serialisation).
 
+## Personal tokens (built 2026-08-25)
+
+For the two integrations that cannot run OAuth and take a fixed token instead: the OpenAI
+Responses API `mcp` tool (`authorization`) and the Anthropic Messages API connector
+(`authorization_token`, beta `mcp-client-2025-11-20`). Gemini CLI does its own OAuth
+discovery, so it does not need one. Both APIs say "obtain and refresh the access token
+yourself", which our 1 h access / rotating refresh makes hostile — hence a long-lived secret.
+
+- Format `artcraft_pat_` + 43 base64url chars (32 random bytes). The provider routes any
+  bearer that is not `a:b:c`-shaped straight to `resolveExternalToken` (verified in 0.10.3's
+  `dist`), so the hook's first move is the prefix check and every foreign bearer is a cheap
+  `null` → standard `401 invalid_token` challenge.
+- At rest: `mcppat:token:<sha256(secret)>` holds the record AES-GCM-sealed with an HKDF key
+  derived from the secret; `mcppat:user:<userToken>` is the index (labels, hints, dates,
+  record keys). KV alone yields no session. Record TTL = token lifetime.
+- The hook returns the same `GrantProps` shape as consent (`grantIssuedAt` = createdAt) with
+  `audience` = this origin + `/mcp`, so handler, `Principal`, and tools are unchanged.
+- Created on `/connections` only, after a fresh password/Google confirmation that must be the
+  page's account; that sign-in becomes the token's own upstream session (never the browser's,
+  never the page's). Secret rendered once in the POST response — never in a redirect URL.
+  Fixed read-only scopes, lifetime 30 or 90 days, at most 10 live tokens per account.
+- When upstream stops accepting the token's session the handler revokes the token, as it
+  does a grant. Revoke from the page cannot log the session out upstream (same limitation as
+  grants, `docs/backend-handoff.md`).
+
 ## Client requirements that bite
 
 - Unauthenticated `/mcp` → **401** with
@@ -362,6 +387,8 @@ Manual: MCP Inspector against `wrangler dev`.
 Dependency-free Node script that does exactly what a client does: PRM → AS metadata (CIMD flag)
 → DCR → consent page + CSRF → password sign-in → code → PKCE exchange → initialize → tools/list
 (must equal the 7 tool names) → one call per read-only tool → revoke → revoked token is 401.
+Then the header-only leg: sign in on `/connections`, create a personal token, initialize and
+call a tool with it, revoke it from the page, confirm the 401, sign out of the page.
 Prints step outcomes only, never tokens/bodies/credentials; exit 1 on the first failure. Runs
 after every production deploy (`mcp.yml`) and weekly (`mcp-smoke.yml`, Mondays 09:00 UTC, also
 `workflow_dispatch` with a `base_url`), both skipped with a notice until `SMOKE_USERNAME` /
@@ -389,9 +416,6 @@ tool or flow changes, and keep the fake honest so the local run stays a real reh
 
 Keep these possible; do not build them in M1.
 
-- Personal tokens for header-based clients (Gemini API/Vertex, OpenAI Responses API,
-  Anthropic Messages API connector): `resolveExternalToken` + `/connections` UI. Read-only
-  scopes only, 90-day max, shown once, hashed at rest.
 - `WebappRedirectAuthenticator` (`app.getartcraft.com/connect`) replacing the password form.
   Investigated 2026-08-25: without a backend hand-off code endpoint the only credential a
   webapp page can pass is the user's own browser session, which breaks per-grant disconnect —
@@ -421,23 +445,27 @@ mcp/
 │   ├── index.ts            # Worker entry: environment invariant first, then the OAuthProvider
 │   ├── runtime.ts          # memoized Config + Hono app per isolate (failure memoized too)
 │   ├── oauth-env.d.ts      # adds env.OAUTH_PROVIDER (OAuthHelpers) to the generated Env
+│   ├── encoding.ts         # base64url helpers shared by ids, secrets, and sealed records
 │   ├── app.ts              # unprotected Hono routes: /healthz, / (landing), /authorize, /connections, /sse (405 pointer)
 │   ├── auth/
-│   │   ├── oauth.ts        # provider options: endpoints, scopes, TTLs, CIMD+DCR, error logging
+│   │   ├── resource.ts     # MCP_ROUTES, SCOPES, RESOURCE_NAME — importable without the provider wiring
+│   │   ├── oauth.ts        # provider options: endpoints, TTLs, CIMD+DCR, resolveExternalToken, error logging
 │   │   ├── authorize.ts    # /authorize GET (render) + POST (CSRF → re-validate → deny | sign in → finish)
 │   │   ├── authenticator.ts    # Authenticator seam (swap point 1); Artcraft impl proxies /v1/login, google_sso
 │   │   ├── consent-page.tsx    # pure render of the sign-in + consent page (Hono JSX; everything escaped)
 │   │   ├── csrf.ts         # double-submit token: cookie + hidden field, constant-time compare
 │   │   ├── finish-authorization.ts  # requested ∩ supported scopes, completeAuthorization, grant props
 │   │   └── grant-age.ts    # 90-day absolute grant lifetime, enforced in tokenExchangeCallback
-│   ├── tokens/             # TokenResolver, Principal, GrantStore adapter
+│   ├── tokens/
+│   │   ├── principal.ts    # Principal: the one shape every token resolves to (from grant props)
+│   │   ├── personal-token-store.ts   # artcraft_pat_ secrets: hash-keyed, secret-sealed records, per-user index
+│   │   └── resolve-personal-token.ts # the provider's resolveExternalToken hook → GrantProps + audience
 │   ├── upstream/
 │   │   ├── allowlist.json  # the ONLY upstream routes, with `use: auth | read`; also drives the generator
 │   │   ├── allowlist.ts    # validation + lookups by template path and by concrete pathname
 │   │   ├── credential.ts   # UpstreamCredential interface; session implementation (swap point 2)
 │   │   ├── client.ts       # openapi-fetch client; middleware enforces allowlist, use, origin, credential
 │   │   └── schema.d.ts     # GENERATED from the spec snapshot by `pnpm gen:api`; do not edit
-│   ├── tokens/principal.ts # Principal: the one shape every token resolves to (from grant props)
 │   ├── mcp/
 │   │   ├── handler.ts      # protected route: props → Principal → per-request McpServer + Streamable HTTP
 │   │   ├── server.ts       # registers tools the principal's scopes allow; error → isError results

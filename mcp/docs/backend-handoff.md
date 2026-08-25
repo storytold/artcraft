@@ -41,7 +41,9 @@ but we cannot call `POST /v1/logout` for it — the props can no longer be decry
 `user_sessions` row therefore lives until its (unchecked) one-year expiry.
 
 **Our side.** Documented on the page; sessions that fail upstream are logged out from the
-handler path whenever a token is still live.
+handler path whenever a token is still live. Personal tokens (`/connections` → Personal
+tokens) have the same shape: revoking one deletes its sealed record, and the session inside
+is unreachable but not logged out.
 
 **Backend fix.** A session-scoped endpoint to end *other* sessions of the same user (or a
 "revoke all sessions created via API key/MCP" action) would let the connections page finish

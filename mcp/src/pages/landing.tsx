@@ -127,6 +127,21 @@ function LandingPage({ view }: { view: LandingView }) {
           </section>
 
           <section>
+            <h2>Integrations that take a token</h2>
+            <p>
+              The OpenAI Responses API and the Anthropic Messages API connector cannot sign you in;
+              they take a fixed token. Create a personal token at{" "}
+              <a href={CONNECTIONS_PATHS.page}>
+                {view.origin}
+                {CONNECTIONS_PATHS.page}
+              </a>{" "}
+              and pass it where the API expects an OAuth access token — Responses API{" "}
+              <code>authorization</code>, Messages API <code>authorization_token</code>. Personal
+              tokens are read-only and expire after at most 90 days.
+            </p>
+          </section>
+
+          <section>
             <h2>Manage connections</h2>
             <p>
               See which apps are connected and disconnect any of them at{" "}

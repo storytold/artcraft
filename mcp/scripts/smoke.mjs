@@ -1,6 +1,7 @@
 // Read-only smoke test against a deployed MCP server — the one place this project touches a
 // real Artcraft backend. Drives exactly what a client does: register, consent (password),
-// exchange the code, initialize, list tools, call every read-only tool, then revoke the grant.
+// exchange the code, initialize, list tools, call every read-only tool; then the header-only
+// path — a personal token created on /connections, used, and revoked; then revoke the grant.
 //
 //   SMOKE_BASE_URL=https://mcp.getartcraft.com SMOKE_USERNAME=… SMOKE_PASSWORD=… node scripts/smoke.mjs
 //
@@ -137,6 +138,8 @@ async function main() {
     Array.isArray(s.jobs),
   );
 
+  await smokePersonalToken();
+
   const revoke = await fetchWithTimeout(new URL(as.revocation_endpoint, BASE_URL).href, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -150,6 +153,98 @@ async function main() {
   check(after.status === 401, "revoked token is refused");
 
   console.log("smoke: OK");
+}
+
+/**
+ * The header-only path (Responses API, Messages API connector): sign in on /connections,
+ * create a personal token, use it at /mcp, revoke it from the page, sign out of the page.
+ */
+async function smokePersonalToken() {
+  const page = await fetchWithTimeout(`${BASE_URL}/connections`);
+  check(page.status === 200, "connections page renders");
+  let csrf = consentCsrf(page);
+  check(csrf.length === 43, "connections CSRF issued");
+
+  const signIn = await fetchWithTimeout(`${BASE_URL}/connections/sign-in`, {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      cookie: `artcraft_consent=${csrf}`,
+    },
+    body: new URLSearchParams({
+      csrf,
+      method: "password",
+      username_or_email: USERNAME,
+      password: PASSWORD,
+    }).toString(),
+  });
+  check(signIn.status === 303, `connections sign-in redirects (got ${signIn.status})`);
+  const uiSession =
+    /artcraft_connections=([^;]+)/.exec(signIn.headers.get("set-cookie") ?? "")?.[1] ?? "";
+  check(uiSession.length === 43, "connections page session issued");
+  const cookies = () => `artcraft_consent=${csrf}; artcraft_connections=${uiSession}`;
+
+  const created = await fetchWithTimeout(`${BASE_URL}/connections/tokens/create`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", cookie: cookies() },
+    body: new URLSearchParams({
+      csrf,
+      method: "password",
+      password: PASSWORD,
+      token_label: "smoke",
+      token_lifetime: "30",
+    }).toString(),
+  });
+  check(created.status === 200, `personal token created (got ${created.status})`);
+  const pat = /artcraft_pat_[A-Za-z0-9_-]{43}/.exec(await created.text())?.[0] ?? "";
+  check(pat.length > 0, "personal token issued");
+  csrf = consentCsrf(created) || csrf;
+
+  const init = await rpc(pat, 20, "initialize", {
+    protocolVersion: "2025-06-18",
+    capabilities: {},
+    clientInfo: { name: "artcraft-mcp-smoke", version: "0" },
+  });
+  check(init.result?.serverInfo?.name === "artcraft", "personal token initializes");
+  await tool(pat, 21, "get_credit_balance", {}, (s) => Number.isInteger(s.total_credits));
+
+  const listed = await fetchWithTimeout(`${BASE_URL}/connections`, {
+    headers: { cookie: cookies() },
+  });
+  csrf = consentCsrf(listed) || csrf;
+  const item =
+    (await listed.text())
+      .split("<li>")
+      .find((chunk) => chunk.includes(`artcraft_pat_\u2026${pat.slice(-4)}`)) ?? "";
+  const tokenId = /name="token_id" value="([^"]+)"/.exec(item)?.[1] ?? "";
+  check(tokenId.length > 0, "personal token listed by its hint");
+
+  const revoked = await fetchWithTimeout(`${BASE_URL}/connections/tokens/revoke`, {
+    method: "POST",
+    redirect: "manual",
+    headers: { "content-type": "application/x-www-form-urlencoded", cookie: cookies() },
+    body: new URLSearchParams({ csrf, token_id: tokenId }).toString(),
+  });
+  check(revoked.status === 303, `personal token revoked (got ${revoked.status})`);
+  const after = await fetchWithTimeout(`${BASE_URL}/mcp`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${pat}` },
+  });
+  check(after.status === 401, "revoked personal token is refused");
+
+  const signOut = await fetchWithTimeout(`${BASE_URL}/connections/sign-out`, {
+    method: "POST",
+    redirect: "manual",
+    headers: { "content-type": "application/x-www-form-urlencoded", cookie: cookies() },
+    body: new URLSearchParams({ csrf }).toString(),
+  });
+  check(signOut.status === 303, "signed out of the connections page");
+}
+
+/** The CSRF cookie a page response (re)issues; empty when it did not set one. */
+function consentCsrf(response) {
+  return /artcraft_consent=([^;]+)/.exec(response.headers.get("set-cookie") ?? "")?.[1] ?? "";
 }
 
 async function tool(bearer, id, name, args, predicate) {
