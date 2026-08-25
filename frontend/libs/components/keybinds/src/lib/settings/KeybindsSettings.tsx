@@ -667,12 +667,16 @@ function CollapsibleSurface({
 }
 
 // Two-step destructive button: first click arms it (turns solid red), second
-// click within the window commits. Blur, Escape, or a 4s timeout disarm it —
+// click within the window commits. Blur, Escape, or a timeout disarm it —
 // a nested confirm dialog inside the settings modal would be heavier than the
 // action warrants, but a bare one-click wipe is how overrides get lost.
 // `confirmDelayMs` adds a post-arm lockout during which clicks are swallowed,
-// so a double-click can't arm-and-confirm in one motion; the 4s auto-disarm
-// window starts after the lockout ends.
+// so a double-click can't arm-and-confirm in one motion; the auto-disarm
+// window starts after the lockout ends. Both timers are made visible as
+// background fills: the lockout charges red left→right, then the armed red
+// drains right→left as the disarm clock runs out.
+const DISARM_MS = 5000;
+
 function ConfirmResetButton({
   idleLabel,
   confirmLabel,
@@ -711,7 +715,7 @@ function ConfirmResetButton({
       setReady(confirmDelayMs === 0);
       timers.current = [
         setTimeout(() => setReady(true), confirmDelayMs),
-        setTimeout(disarm, confirmDelayMs + 4000),
+        setTimeout(disarm, confirmDelayMs + DISARM_MS),
       ];
     }
   };
@@ -731,22 +735,72 @@ function ConfirmResetButton({
       title={title}
       aria-label={armed ? `${title} — click again to confirm` : title}
       className={twMerge(
-        "shrink-0 whitespace-nowrap rounded-full font-medium transition-all active:scale-[0.97]",
+        "relative shrink-0 overflow-hidden whitespace-nowrap rounded-full font-medium transition-all active:scale-[0.97]",
         EASE,
         prominent
           ? "h-9 px-4 text-[13px]"
           : "h-7 px-2.5 text-[12px]",
         armed
           ? ready
-            ? "bg-red text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)] hover:bg-red/85"
-            : "cursor-wait bg-red/60 text-white/80 shadow-[0_0_0_3px_rgba(0,0,0,0.15)]"
+            ? "bg-red/25 text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)]"
+            : "cursor-wait bg-white/[0.06] text-base-fg/55 ring-1 ring-white/[0.08]"
           : prominent
             ? "bg-red/10 text-red ring-1 ring-red/30 hover:bg-red/[0.18]"
             : "text-base-fg/45 hover:bg-red/10 hover:text-red",
       )}
     >
-      {armed ? confirmLabel : idleLabel}
+      {/* Timer made visible: lockout charges toward armed, then the armed red
+          drains as the auto-disarm clock runs out. Keyed so each phase gets a
+          fresh transition. */}
+      {armed &&
+        (ready ? (
+          <TimedFill key="drain" from={1} to={0} durationMs={DISARM_MS} className="bg-red" />
+        ) : (
+          <TimedFill key="charge" from={0} to={1} durationMs={confirmDelayMs} className="bg-red/40" />
+        ))}
+      <span className="relative">{armed ? confirmLabel : idleLabel}</span>
     </button>
+  );
+}
+
+// A full-bleed background layer that linearly scales between two widths —
+// progress-bar duty for ConfirmResetButton's lockout/disarm clocks. The
+// double-rAF ensures the browser paints the `from` state before the
+// transition to `to` engages.
+function TimedFill({
+  from,
+  to,
+  durationMs,
+  className,
+}: {
+  from: number;
+  to: number;
+  durationMs: number;
+  className?: string;
+}) {
+  const [engaged, setEngaged] = useState(false);
+  useEffect(() => {
+    let inner: number | undefined;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setEngaged(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner !== undefined) cancelAnimationFrame(inner);
+    };
+  }, []);
+  return (
+    <span
+      aria-hidden="true"
+      className={twMerge(
+        "pointer-events-none absolute inset-0 origin-left",
+        className,
+      )}
+      style={{
+        transform: `scaleX(${engaged ? to : from})`,
+        transition: `transform ${durationMs}ms linear`,
+      }}
+    />
   );
 }
 
