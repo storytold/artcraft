@@ -31,6 +31,10 @@ name = "artcraft-mcp-preview"
 [env.preview.vars]
 MCP_ENVIRONMENT = "preview"
 UPSTREAM_API_HOST = "https://artcraft-api-fake.workers.dev"  # replace with the real workers.dev host once deployed
+# The public Google OAuth client id storyteller-web already verifies (check_claims.rs). The
+# "Continue with Google" button works once this origin is authorised in the Google console
+# (docs/infra-request.md §3); until then users see a Google error and can use the password form.
+GOOGLE_CLIENT_ID = "788843034237-uqcg8tbgofrcf1to37e1bqphd924jaf6.apps.googleusercontent.com"
 
 [[env.preview.kv_namespaces]]
 binding = "OAUTH_KV"
@@ -48,6 +52,7 @@ workers_dev = false  # one canonical public URL: the custom domain. The OAuth `r
 [env.production.vars]
 MCP_ENVIRONMENT = "production"
 UPSTREAM_API_HOST = "https://api.storyteller.ai"
+GOOGLE_CLIENT_ID = "788843034237-uqcg8tbgofrcf1to37e1bqphd924jaf6.apps.googleusercontent.com"
 
 [[env.production.kv_namespaces]]
 binding = "OAUTH_KV"

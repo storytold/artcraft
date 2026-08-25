@@ -66,7 +66,7 @@ function ConsentPage({ view }: { view: ConsentView }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex" />
         <title>Connect {view.clientName} to Artcraft</title>
-        <style>{STYLES}</style>
+        <style nonce={view.scriptNonce}>{STYLES}</style>
       </head>
       <body>
         <main class="card">

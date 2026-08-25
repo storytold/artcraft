@@ -84,7 +84,7 @@ describe("authorization server metadata (RFC 8414)", () => {
   });
 });
 
-describe("the authorization endpoint before sign-in exists", () => {
+describe("the authorization endpoint", () => {
   it("renders a malformed request locally as 400", async () => {
     const response = await call(`${OAUTH_ENDPOINTS.authorize}?response_type=code`);
     expect(response.status).toBe(400);
@@ -105,7 +105,7 @@ describe("the authorization endpoint before sign-in exists", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
-  it("validates a registered client's request and then stops with 501 — never auto-approves", async () => {
+  it("validates a registered client's request and renders the consent page — never auto-approves", async () => {
     const registration = await call(OAUTH_ENDPOINTS.register, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -131,7 +131,8 @@ describe("the authorization endpoint before sign-in exists", () => {
       resource: `${ORIGIN}/mcp`,
     });
     const response = await call(`${OAUTH_ENDPOINTS.authorize}?${params.toString()}`);
-    expect(response.status).toBe(501);
+    expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+    expect(await response.text()).toContain("Allow <strong>Test client</strong>");
   });
 });

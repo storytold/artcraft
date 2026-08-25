@@ -19,6 +19,8 @@ export interface Config {
   readonly environment: McpEnvironment;
   /** Origin only, no trailing slash, e.g. `https://api.storyteller.ai`. */
   readonly upstreamApiHost: string;
+  /** Public Google OAuth client id for "Continue with Google"; absent → password sign-in only. */
+  readonly googleClientId?: string;
 }
 
 export class ConfigError extends Error {
@@ -28,6 +30,10 @@ export class ConfigError extends Error {
 const RawEnvSchema = z.object({
   MCP_ENVIRONMENT: z.enum(["local", "preview", "production"]),
   UPSTREAM_API_HOST: z.url({ protocol: /^https?$/ }),
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .regex(/\.apps\.googleusercontent\.com$/)
+    .optional(),
 });
 
 /**
@@ -45,7 +51,8 @@ export function loadConfig(rawEnv: unknown): Config {
   const upstreamApiHost = normalizeHost(parsed.data.UPSTREAM_API_HOST);
   assertUpstreamHostMatchesEnvironment(environment, upstreamApiHost);
 
-  return { environment, upstreamApiHost };
+  const googleClientId = parsed.data.GOOGLE_CLIENT_ID;
+  return { environment, upstreamApiHost, ...(googleClientId ? { googleClientId } : {}) };
 }
 
 function assertUpstreamHostMatchesEnvironment(
