@@ -1,4 +1,4 @@
-import { OAuthProvider, type OAuthProviderOptions } from "@cloudflare/workers-oauth-provider";
+import type { OAuthProviderOptions } from "@cloudflare/workers-oauth-provider";
 
 /**
  * Configuration of the OAuth 2.1 authorization server that fronts the MCP endpoint. The
@@ -48,7 +48,7 @@ export interface OAuthHandlers {
   readonly apiHandler: FetchHandler;
 }
 
-/** Exported separately so tests can call `getOAuthApi(options, env)` with the same options. */
+/** The entry point constructs the provider from these; tests use them with `getOAuthApi`. */
 export function createOAuthProviderOptions(handlers: OAuthHandlers): OAuthProviderOptions {
   return {
     apiRoute: [...MCP_ROUTES],
@@ -87,8 +87,4 @@ export function createOAuthProviderOptions(handlers: OAuthHandlers): OAuthProvid
       );
     },
   };
-}
-
-export function createOAuthProvider(handlers: OAuthHandlers): OAuthProvider {
-  return new OAuthProvider(createOAuthProviderOptions(handlers));
 }

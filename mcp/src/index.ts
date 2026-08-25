@@ -1,4 +1,6 @@
-import { createOAuthProvider } from "./auth/oauth";
+import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
+
+import { createOAuthProviderOptions } from "./auth/oauth";
 import { ConfigError } from "./config";
 import { mcpApiHandler } from "./mcp/handler";
 import { getRuntime } from "./runtime";
@@ -8,12 +10,14 @@ import { getRuntime } from "./runtime";
  * deploy fails everything, including the OAuth endpoints), then the OAuth provider routes it:
  * protected MCP routes require a valid access token; everything else reaches the Hono app.
  */
-const provider = createOAuthProvider({
+export const oauthProviderOptions = createOAuthProviderOptions({
   defaultHandler: {
     fetch: (request, env, ctx) => getRuntime(env).app.fetch(request, env, ctx),
   },
   apiHandler: mcpApiHandler,
 });
+
+const provider = new OAuthProvider(oauthProviderOptions);
 
 export default {
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext): Promise<Response> {
