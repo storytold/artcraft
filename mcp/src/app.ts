@@ -25,6 +25,17 @@ export function createApp(
 
   app.route("/", authorizeRoutes(deps));
 
+  // The legacy HTTP+SSE transport is not offered; some clients still try it first.
+  app.all("/sse", (c) =>
+    c.json(
+      {
+        error: "The legacy SSE transport is not offered. Connect with Streamable HTTP at /mcp.",
+        mcp_endpoint: `${new URL(c.req.url).origin}/mcp`,
+      },
+      405,
+    ),
+  );
+
   return app;
 }
 

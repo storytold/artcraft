@@ -11,8 +11,8 @@ import { createSessionCredential } from "../../src/upstream/credential";
 import {
   authorizeUrl,
   call,
-  callMcp,
   exchangeCode,
+  mcpInitialize,
   ORIGIN,
   pkce,
   type TokenResponse,
@@ -97,11 +97,7 @@ describe("finishAuthorization", () => {
     const tokens = await exchanged.json<TokenResponse>();
     expect(tokens.scope).toBe("read:jobs");
 
-    const mcp = await callMcp(tokens.access_token);
-    expect(await mcp.json()).toMatchObject({
-      authenticated: true,
-      credential: "session credential",
-    });
+    expect((await mcpInitialize(tokens.access_token)).status).toBe(200);
 
     // The props round-tripped through the provider's encryption: the token unwraps to them.
     const unwrapped = await helpers.unwrapToken(tokens.access_token);

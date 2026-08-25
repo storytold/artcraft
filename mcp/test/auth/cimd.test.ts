@@ -8,8 +8,9 @@ import { createSessionCredential } from "../../src/upstream/credential";
 import {
   authorizeUrl,
   call,
-  callMcp,
   exchangeCode,
+  grantProps,
+  mcpInitialize,
   ORIGIN,
   pkce,
   type TokenResponse,
@@ -88,10 +89,7 @@ async function consentAs(clientId: string, redirectUri: string, challenge: strin
     userId: "user_cimd",
     metadata: { clientName: "Claude (test)" },
     scope: [...SCOPES],
-    props: {
-      credential: createSessionCredential(SIGNED_SESSION).toProps(),
-      grantIssuedAt: Date.now(),
-    },
+    props: grantProps(createSessionCredential(SIGNED_SESSION).toProps(), SCOPES),
   });
   return new URL(redirectTo);
 }
@@ -119,7 +117,7 @@ describe("CIMD clients", () => {
     );
     expect(exchanged.status).toBe(200);
     const tokens = await exchanged.json<TokenResponse>();
-    expect((await callMcp(tokens.access_token)).status).toBe(501);
+    expect((await mcpInitialize(tokens.access_token)).status).toBe(200);
   });
 
   it("accepts Claude Code's loopback redirect on any port (RFC 8252)", async () => {

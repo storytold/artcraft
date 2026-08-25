@@ -11,8 +11,8 @@ import { SEEDED_USER } from "../../fake-upstream/src/state";
 import {
   authorizeUrl,
   call,
-  callMcp,
   exchangeCode,
+  mcpInitialize,
   ORIGIN,
   pkce,
   type TokenResponse,
@@ -238,11 +238,7 @@ describe("POST /authorize", () => {
     const tokens = await exchanged.json<TokenResponse>();
     expect(tokens.scope?.split(" ").sort()).toEqual(["read:account", "read:jobs"]);
 
-    const mcp = await callMcp(tokens.access_token);
-    expect(await mcp.json()).toMatchObject({
-      authenticated: true,
-      credential: "session credential",
-    });
+    expect((await mcpInitialize(tokens.access_token)).status).toBe(200);
 
     const helpers = getOAuthApi(oauthProviderOptions, env);
     const grants = await helpers.listUserGrants(SEEDED_USER.userToken);

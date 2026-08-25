@@ -18,8 +18,8 @@ export const OAUTH_ENDPOINTS = {
   register: "/register",
 } as const;
 
-/** Protected route prefixes. `/sse` is the legacy transport some clients still default to. */
-export const MCP_ROUTES = ["/mcp", "/sse"] as const;
+/** Protected route prefixes. Tokens are audience-bound to `/mcp`; nothing else is protected. */
+export const MCP_ROUTES = ["/mcp"] as const;
 
 /** Scopes a grant may carry in M1. `generate` is deliberately absent until it has a design. */
 export const SCOPES = ["read:account", "read:jobs", "read:catalog"] as const;

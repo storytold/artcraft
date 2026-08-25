@@ -10,6 +10,8 @@ import {
   call,
   callMcp,
   exchangeCode as exchangeCodeAt,
+  grantProps,
+  mcpInitialize,
   ORIGIN,
   pkce,
   refresh,
@@ -78,8 +80,8 @@ async function consent(
     metadata: { clientName: "Token flow test client" },
     scope: [...scope],
     props: {
-      credential: createSessionCredential(SIGNED_SESSION).toProps(),
-      ...(grantIssuedAt === null ? {} : { grantIssuedAt }),
+      ...grantProps(createSessionCredential(SIGNED_SESSION).toProps(), scope),
+      ...(grantIssuedAt === null ? { grantIssuedAt: undefined } : { grantIssuedAt }),
     },
   });
   return new URL(redirectTo);
@@ -115,16 +117,12 @@ describe("authorization code + PKCE", () => {
     expect(tokens.scope?.split(" ").sort()).toEqual([...SCOPES].sort());
   });
 
-  it("lets the bearer reach the protected route with the grant props decrypted", async () => {
+  it("lets the bearer reach the protected route, which answers an MCP initialize", async () => {
     const { tokens } = await connect();
-    const response = await callMcp(tokens.access_token);
-    expect(response.status).toBe(501);
+    const response = await mcpInitialize(tokens.access_token);
+    expect(response.status).toBe(200);
     const body = await response.text();
-    expect(JSON.parse(body)).toEqual({
-      error: "MCP transport not available yet",
-      authenticated: true,
-      credential: "session credential",
-    });
+    expect(JSON.parse(body)).toMatchObject({ result: { serverInfo: { name: "artcraft" } } });
     expect(body).not.toContain(SIGNED_SESSION);
   });
 
@@ -171,7 +169,7 @@ describe("refresh rotation", () => {
     const rotated = await (
       await refresh(clientId, tokens.refresh_token ?? "")
     ).json<TokenResponse>();
-    expect((await callMcp(rotated.access_token)).status).toBe(501);
+    expect((await mcpInitialize(rotated.access_token)).status).toBe(200);
   });
 });
 

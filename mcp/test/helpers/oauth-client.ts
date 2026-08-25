@@ -73,8 +73,43 @@ export async function refresh(clientId: string, refreshToken: string): Promise<R
   });
 }
 
+/** A bare POST with the bearer: enough to see whether the transport lets the token through. */
 export async function callMcp(accessToken: string): Promise<Response> {
   return call("/mcp", { method: "POST", headers: { authorization: `Bearer ${accessToken}` } });
+}
+
+/** A JSON-RPC `initialize` over the protected route; 200 with serverInfo proves the token works. */
+export async function mcpInitialize(accessToken: string): Promise<Response> {
+  return call("/mcp", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "test", version: "0.0.0" },
+      },
+    }),
+  });
+}
+
+/** Grant props as consent records them (mirrors finishAuthorization). */
+export function grantProps(credentialProps: unknown, scopes: readonly string[]) {
+  return {
+    credential: credentialProps,
+    grantIssuedAt: Date.now(),
+    userToken: "user_test",
+    username: "tester",
+    displayName: "Tester",
+    scopes: [...scopes],
+  };
 }
 
 export function authorizeUrl(params: Record<string, string>): string {
