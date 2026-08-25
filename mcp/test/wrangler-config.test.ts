@@ -3,67 +3,114 @@ import { describe, expect, it } from "vitest";
 
 import { PRODUCTION_UPSTREAM_API_HOST } from "../src/config";
 import wranglerToml from "../wrangler.toml?raw";
+import {
+  environmentMappingViolations,
+  type EnvBlock,
+  type WranglerConfig,
+} from "./helpers/environment-mapping";
 
 /**
  * The deployment configuration is part of the security boundary: it decides which upstream
- * each environment may reach. These tests pin the mapping so a wrangler.toml edit that points
- * preview at production (or production anywhere else) fails CI before it can deploy.
+ * each environment may reach. The first block pins the real file; the second proves the
+ * checks actually fire, by mutating a copy the way a careless edit would.
  */
 
-interface EnvBlock {
-  vars?: Record<string, unknown>;
-  kv_namespaces?: { binding: string; id: string }[];
+const REAL_CONFIG = parse(wranglerToml) as unknown as WranglerConfig;
+
+function mutated(mutate: (config: WranglerConfig) => void): WranglerConfig {
+  const copy = structuredClone(REAL_CONFIG);
+  mutate(copy);
+  return copy;
 }
 
-interface WranglerConfig extends EnvBlock {
-  name: string;
-  main: string;
-  env?: Record<string, EnvBlock>;
+function setVar(block: EnvBlock, key: string, value: string): void {
+  block.vars = { ...block.vars, [key]: value };
 }
 
-const config = parse(wranglerToml) as unknown as WranglerConfig;
-const envs = {
-  local: config,
-  preview: config.env?.preview,
-  production: config.env?.production,
-};
+function envBlock(config: WranglerConfig, name: "preview" | "production"): EnvBlock {
+  const block = config.env?.[name];
+  if (!block) throw new Error(`wrangler.toml has no [env.${name}] block`);
+  return block;
+}
 
 describe("wrangler.toml environment mapping", () => {
-  it("declares exactly the three environments", () => {
-    expect(Object.keys(config.env ?? {}).sort()).toEqual(["preview", "production"]);
-    expect(envs.preview).toBeDefined();
-    expect(envs.production).toBeDefined();
+  it("is sound as committed", () => {
+    expect(environmentMappingViolations(REAL_CONFIG)).toEqual([]);
   });
 
-  it("names each environment in MCP_ENVIRONMENT", () => {
-    expect(envs.local.vars?.MCP_ENVIRONMENT).toBe("local");
-    expect(envs.preview?.vars?.MCP_ENVIRONMENT).toBe("preview");
-    expect(envs.production?.vars?.MCP_ENVIRONMENT).toBe("production");
+  it("commits the expected literal hosts", () => {
+    expect(REAL_CONFIG.env?.production?.vars?.UPSTREAM_API_HOST).toBe(PRODUCTION_UPSTREAM_API_HOST);
+    expect(REAL_CONFIG.env?.preview?.vars?.UPSTREAM_API_HOST).toMatch(/\.workers\.dev$/);
+    expect(REAL_CONFIG.vars?.UPSTREAM_API_HOST).toMatch(/^http:\/\/localhost/);
+  });
+});
+
+describe("wrangler.toml checks fire on a broken mapping", () => {
+  it("catches preview pointed at production", () => {
+    const config = mutated((c) => {
+      setVar(envBlock(c, "preview"), "UPSTREAM_API_HOST", PRODUCTION_UPSTREAM_API_HOST);
+    });
+    expect(environmentMappingViolations(config)).toEqual([
+      "preview: must never point at the production API",
+      `preview: must use a workers.dev fake upstream, got ${PRODUCTION_UPSTREAM_API_HOST}`,
+    ]);
   });
 
-  it("points production at the real API, and nothing else at it", () => {
-    expect(envs.production?.vars?.UPSTREAM_API_HOST).toBe(PRODUCTION_UPSTREAM_API_HOST);
-    expect(envs.preview?.vars?.UPSTREAM_API_HOST).not.toBe(PRODUCTION_UPSTREAM_API_HOST);
-    expect(envs.local.vars?.UPSTREAM_API_HOST).not.toBe(PRODUCTION_UPSTREAM_API_HOST);
+  it("catches production pointed at a fake", () => {
+    const config = mutated((c) => {
+      setVar(
+        envBlock(c, "production"),
+        "UPSTREAM_API_HOST",
+        "https://artcraft-api-fake.workers.dev",
+      );
+    });
+    expect(environmentMappingViolations(config)).toEqual([
+      "production: must use https://api.storyteller.ai, got https://artcraft-api-fake.workers.dev",
+    ]);
   });
 
-  it("points preview at a workers.dev fake and local at localhost", () => {
-    expect(envs.preview?.vars?.UPSTREAM_API_HOST).toMatch(/^https:\/\/[a-z0-9.-]+\.workers\.dev$/);
-    expect(envs.local.vars?.UPSTREAM_API_HOST).toMatch(
-      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+  it("catches local pointed at production", () => {
+    const config = mutated((c) => {
+      setVar(c, "UPSTREAM_API_HOST", PRODUCTION_UPSTREAM_API_HOST);
+    });
+    expect(environmentMappingViolations(config)).toContain(
+      "local: must never point at the production API",
     );
   });
 
-  it("gives every environment its own OAUTH_KV namespace", () => {
-    const ids = [envs.local, envs.preview, envs.production].map((block) => {
-      const kv = block?.kv_namespaces?.find((namespace) => namespace.binding === "OAUTH_KV");
-      expect(kv).toBeDefined();
-      return kv?.id;
+  it("catches a mislabelled environment", () => {
+    const config = mutated((c) => {
+      setVar(envBlock(c, "preview"), "MCP_ENVIRONMENT", "production");
     });
-    expect(new Set(ids).size).toBe(ids.length);
+    expect(environmentMappingViolations(config)).toEqual([
+      'preview: MCP_ENVIRONMENT must be "preview"',
+    ]);
   });
 
-  it("uses the same entry point for every environment", () => {
-    expect(config.main).toBe("src/index.ts");
+  it("catches a shared KV namespace", () => {
+    const config = mutated((c) => {
+      envBlock(c, "preview").kv_namespaces = structuredClone(
+        envBlock(c, "production").kv_namespaces ?? [],
+      );
+    });
+    expect(environmentMappingViolations(config)).toEqual([
+      "OAUTH_KV namespace ids must differ between environments",
+    ]);
+  });
+
+  it("catches an extra environment such as staging", () => {
+    const config = mutated((c) => {
+      c.env = { ...c.env, staging: structuredClone(envBlock(c, "preview")) };
+    });
+    expect(environmentMappingViolations(config)[0]).toMatch(/expected exactly the environments/);
+  });
+
+  it("catches a changed entry point", () => {
+    const config = mutated((c) => {
+      c.main = "src/other.ts";
+    });
+    expect(environmentMappingViolations(config)).toEqual([
+      "main must be src/index.ts, got src/other.ts",
+    ]);
   });
 });

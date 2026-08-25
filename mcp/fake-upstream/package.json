@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --port 12345",
-    "deploy:preview": "wrangler deploy --env preview"
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "hono": "4.13.4"

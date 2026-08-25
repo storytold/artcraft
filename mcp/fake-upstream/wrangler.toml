@@ -1,10 +1,9 @@
 # Fake of the allowlisted Artcraft API routes. A separate Worker that the MCP server never
 # imports; it exists so local and preview environments never touch api.storyteller.ai.
 # See mcp/CLAUDE.md → "fake-upstream — a fake of the API, not of this server".
+#
+# One deploy target only (workers.dev, used by preview), so no [env.*] blocks.
 
 name = "artcraft-api-fake"
 main = "src/index.ts"
 compatibility_date = "2026-08-01"
-
-[env.preview]
-name = "artcraft-api-fake"

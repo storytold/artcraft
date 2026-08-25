@@ -107,11 +107,19 @@ must never arrive in bulk.
    more than one paragraph to describe, split it.
 4. **Do a broader debug pass after the feature is assembled** — run the full suite, the e2e
    client test, and MCP Inspector against `wrangler dev`. This pass is *in addition to*
-   step 1, never a replacement for it.
-5. **Verify claims about the upstream API against the spec or the Rust source, not memory.**
+   step 1, never a replacement for it. It must include things unit tests cannot show: boot
+   the Worker for real (`wrangler dev` + curl), `wrangler deploy --dry-run` for every target,
+   and `pnpm install --frozen-lockfile` (what CI runs).
+5. **A guardrail test must prove it fires.** Any test that exists to catch a bad edit (config
+   invariants, import boundaries, environment-name isolation) needs a case that feeds it the
+   bad edit and asserts the failure. A guardrail that has only ever passed is unproven —
+   express the check as a pure function and test it against mutated input.
+6. **"Small unit" means one thing, then run.** One module and its test, then the checks; not
+   five files and then the checks. If a batch passes first time, that was luck, not method.
+7. **Verify claims about the upstream API against the spec or the Rust source, not memory.**
    The published spec is https://storyteller-docs.netlify.app/api.json; the handlers are under
    `crates/service/web/storyteller_web/src/http_server/`. Read-only reference — see constraints.
-6. **When something is uncertain, say so in the PR description** and pin it with a test that
+8. **When something is uncertain, say so in the PR description** and pin it with a test that
    documents the assumed behaviour, so a wrong assumption fails loudly later instead of silently.
 
 ## Architecture

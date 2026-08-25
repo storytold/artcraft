@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { environmentNameOffenders } from "./helpers/environment-name-offenders";
+
 /**
  * `MCP_ENVIRONMENT` exists so the Worker can assert its configuration at startup. It must not
  * become a behaviour switch. The only file allowed to mention it is src/config.ts; anything
@@ -20,21 +22,36 @@ describe("environment-name isolation", () => {
     expect(Object.keys(sources)).toContain("../src/config.ts");
   });
 
-  it("references MCP_ENVIRONMENT only in src/config.ts", () => {
-    const offenders = Object.entries(sources)
-      .filter(([path]) => !ALLOWED_FILES.includes(path))
-      .filter(([, source]) => source.includes("MCP_ENVIRONMENT"))
-      .map(([path]) => path);
-    expect(offenders).toEqual([]);
+  it("finds no offenders in the committed tree", () => {
+    expect(environmentNameOffenders(sources, ALLOWED_FILES)).toEqual({
+      readsBinding: [],
+      branches: [],
+    });
+  });
+});
+
+describe("environment-name checks fire on an offender", () => {
+  it("catches a file that reads the binding", () => {
+    const result = environmentNameOffenders(
+      { "../src/leak.ts": 'const isProd = env.MCP_ENVIRONMENT === "production";' },
+      ALLOWED_FILES,
+    );
+    expect(result.readsBinding).toEqual(["../src/leak.ts"]);
   });
 
-  it("never branches on the environment name outside src/config.ts", () => {
-    const offenders = Object.entries(sources)
-      .filter(([path]) => !ALLOWED_FILES.includes(path))
-      .filter(([, source]) =>
-        /environment\s*(===|!==|==|!=)\s*["'](local|preview|production)["']/.test(source),
-      )
-      .map(([path]) => path);
-    expect(offenders).toEqual([]);
+  it("catches a file that branches on the environment name", () => {
+    const result = environmentNameOffenders(
+      { "../src/leak.ts": 'if (config.environment !== "production") { grantFreeCredits(); }' },
+      ALLOWED_FILES,
+    );
+    expect(result.branches).toEqual(["../src/leak.ts"]);
+  });
+
+  it("still allows config.ts itself", () => {
+    const result = environmentNameOffenders(
+      { "../src/config.ts": "MCP_ENVIRONMENT: z.enum([...])" },
+      ALLOWED_FILES,
+    );
+    expect(result).toEqual({ readsBinding: [], branches: [] });
   });
 });
