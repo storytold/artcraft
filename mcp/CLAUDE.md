@@ -231,6 +231,26 @@ Cite these; re-verify if the file references stop matching.
 - This pool-workers release exports no `fetchMock`; stub `globalThis.fetch` in tests (tests and
   the Worker share an isolate).
 
+## MCP transport facts (verified against @modelcontextprotocol/sdk 1.30.0)
+
+- `WebStandardStreamableHTTPServerTransport` (server/webStandardStreamableHttp.js) takes a
+  `Request` and returns a `Response`; no Hono adapter needed. Omit `sessionIdGenerator` for
+  stateless; `enableJsonResponse: true` answers with JSON instead of SSE. A fresh McpServer +
+  transport per request is the Workers pattern.
+- `McpServer.registerTool(name, { title, description, inputSchema, outputSchema, annotations },
+  cb)`; the SDK validates `structuredContent` against `outputSchema`.
+- The SDK installs `tools/list` / `tools/call` lazily on the first `registerTool`; with zero
+  tools they must be installed through `server.server` (public low-level API) or a client gets
+  "method not found" — `setToolRequestHandlers` is private.
+- Access tokens are audience-bound to `/mcp`; a token can never reach `/sse`, so `/sse` lives on
+  the unprotected app as a 405 pointer. Claude and ChatGPT use Streamable HTTP.
+- The provider gives the API handler only `ctx.props`; everything a Principal needs (userToken,
+  scopes, credential, issue time) is therefore written into props at consent.
+- Grant revocation from inside a tool call: `unwrapToken(bearer)` → `{ grantId, userId }` →
+  `revokeGrant`, run in `ctx.waitUntil` after the response.
+- Tests drive the real `Client` + `StreamableHTTPClientTransport` with `fetch: workerFetch`;
+  the client transport needs a cast to `Transport` under `exactOptionalPropertyTypes`.
+
 ## Consent flow facts
 
 - GET and POST /authorize share no server state: the original query is echoed in a hidden
@@ -390,7 +410,11 @@ mcp/
 │   │   ├── credential.ts   # UpstreamCredential interface; session implementation (swap point 2)
 │   │   ├── client.ts       # openapi-fetch client; middleware enforces allowlist, use, origin, credential
 │   │   └── schema.d.ts     # GENERATED from the spec snapshot by `pnpm gen:api`; do not edit
-│   ├── mcp/                # handler.ts (protected route; 501 stub until the transport lands), tools/
+│   ├── tokens/principal.ts # Principal: the one shape every token resolves to (from grant props)
+│   ├── mcp/
+│   │   ├── handler.ts      # protected route: props → Principal → per-request McpServer + Streamable HTTP
+│   │   ├── server.ts       # registers tools the principal's scopes allow; error → isError results
+│   │   └── tools/          # types.ts (ToolDefinition, unwrapUpstream), one file per tool
 │   └── pages/              # landing, connections
 └── test/
     ├── fixtures/api.json   # GENERATED spec snapshot (trimmed); the contract tests' reference
