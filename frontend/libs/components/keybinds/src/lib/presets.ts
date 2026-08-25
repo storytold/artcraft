@@ -100,6 +100,20 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "moodboard.view.fitToContent": [b("Digit1", { shift: true })],
   "moodboard.history.undo": [b("KeyZ", { ctrl: true })],
   "moodboard.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
+  "moodboard.view.resetViewport": [b("Digit0", { ctrl: true })],
+
+  // Moodboard grid — Lightroom triage row + viewer navigation.
+  "moodboard-grid.selection.clearOrClose": [b("Escape")],
+  "moodboard-grid.edit.delete": [b("Delete"), b("Backspace")],
+  "moodboard-grid.rate.pick": [b("KeyP")],
+  "moodboard-grid.rate.0": [b("Digit0"), b("Numpad0")],
+  "moodboard-grid.rate.1": [b("Digit1"), b("Numpad1")],
+  "moodboard-grid.rate.2": [b("Digit2"), b("Numpad2")],
+  "moodboard-grid.rate.3": [b("Digit3"), b("Numpad3")],
+  "moodboard-grid.rate.4": [b("Digit4"), b("Numpad4")],
+  "moodboard-grid.rate.5": [b("Digit5"), b("Numpad5")],
+  "moodboard-grid.nav.prev": [b("ArrowLeft")],
+  "moodboard-grid.nav.next": [b("ArrowRight"), b("Space")],
 };
 
 export const PRESETS: Record<PresetId, Preset> = {

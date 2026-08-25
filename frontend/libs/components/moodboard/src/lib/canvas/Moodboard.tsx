@@ -8,7 +8,6 @@ import { useGalleryDropEvent } from "./interactions/useGalleryDropEvent";
 import { useMoodboardKeybinds } from "./interactions/useMoodboardKeybinds";
 import { useMoodboardImageEntry } from "./useMoodboardImageEntry";
 import { RecenterIndicator } from "./overlays/RecenterIndicator";
-import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import type { MoodboardAdapter } from "../adapter";
 // import { EmptyMoodboardCTA } from "./EmptyMoodboardCTA";
 
@@ -26,7 +25,6 @@ export const Moodboard = ({ adapter }: Props) => {
   // All discrete moodboard shortcuts (tools, selection, group/ungroup, delete,
   // fit, undo/redo) now resolve from the unified keybinds store.
   useMoodboardKeybinds(true);
-  const cheatsheetVisible = useCheatsheetVisibility();
   const { triggerUpload, triggerGallery, modals } = useMoodboardImageEntry(
     adapter,
     stageRef,
@@ -40,7 +38,6 @@ export const Moodboard = ({ adapter }: Props) => {
       <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
       <TextEditOverlay containerRef={containerRef} />
       <RecenterIndicator />
-      <Cheatsheet surface="moodboard" visible={cheatsheetVisible} />
       {/* {isEmpty && (
         <EmptyMoodboardCTA
           onUploadClick={triggerUpload}

@@ -16,6 +16,8 @@ const GROUP_ORDER: KeyGroup[] = [
   "Timeline",
   "Record",
   "History",
+  "Rating",
+  "Navigation",
 ];
 
 // Translucent overlay listing a surface's important shortcuts, resolved live

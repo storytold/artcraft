@@ -23,7 +23,8 @@ const SURFACE_TITLES: Record<Surface, string> = {
   global: "Global",
   pagescene: "3D Editor",
   pagedraw: "2D Editor",
-  moodboard: "Moodboard",
+  moodboard: "Moodboard canvas",
+  "moodboard-grid": "Moodboard grid",
 };
 
 const SURFACE_HINTS: Record<Surface, string> = {
@@ -31,6 +32,7 @@ const SURFACE_HINTS: Record<Surface, string> = {
   pagescene: "Viewport camera, transforms & selection",
   pagedraw: "Vector canvas editing",
   moodboard: "Figma-style board tools",
+  "moodboard-grid": "Board library, item viewer & presentation",
 };
 
 interface PendingConflict {
@@ -67,6 +69,7 @@ export function KeybindsSettings({
     pagescene: true,
     pagedraw: false,
     moodboard: false,
+    "moodboard-grid": false,
   });
 
   // Key-mode search listens for a literal shortcut, since "⇧D" can't be typed.

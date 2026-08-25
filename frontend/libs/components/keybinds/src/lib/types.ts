@@ -14,7 +14,15 @@ export interface Binding {
   alt?: boolean;
 }
 
-export type Surface = "global" | "pagescene" | "pagedraw" | "moodboard";
+// "moodboard" is the freeform canvas; "moodboard-grid" is the board library
+// (grid + item inspector + presentation deck) — a different view of the same
+// page, never active at the same time, so the two surfaces never conflict.
+export type Surface =
+  | "global"
+  | "pagescene"
+  | "pagedraw"
+  | "moodboard"
+  | "moodboard-grid";
 
 export type KeyGroup =
   | "Camera"
@@ -25,7 +33,9 @@ export type KeyGroup =
   | "Tools"
   | "Timeline"
   | "Record"
-  | "History";
+  | "History"
+  | "Navigation"
+  | "Rating";
 
 export type ActionId = string; // surface-namespaced, e.g. "pagescene.transform.translate"
 

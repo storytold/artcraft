@@ -17,6 +17,7 @@ export const useMoodboardKeybinds = (active: boolean) => {
   const group = useMoodboardStore((s) => s.group);
   const ungroup = useMoodboardStore((s) => s.ungroup);
   const fitToContent = useMoodboardStore((s) => s.fitToContent);
+  const resetViewport = useMoodboardStore((s) => s.resetViewport);
   const deleteSelected = useMoodboardStore((s) => s.deleteSelected);
   const undo = useMoodboardStore((s) => s.undo);
   const redo = useMoodboardStore((s) => s.redo);
@@ -61,6 +62,9 @@ export const useMoodboardKeybinds = (active: boolean) => {
         case "moodboard.view.fitToContent":
           fitToContent();
           break;
+        case "moodboard.view.resetViewport":
+          resetViewport();
+          break;
         case "moodboard.history.undo":
           undo();
           break;
@@ -81,6 +85,7 @@ export const useMoodboardKeybinds = (active: boolean) => {
     group,
     ungroup,
     fitToContent,
+    resetViewport,
     deleteSelected,
     undo,
     redo,

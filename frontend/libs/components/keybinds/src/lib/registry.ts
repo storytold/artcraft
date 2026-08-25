@@ -224,6 +224,34 @@ const defs: ActionDef[] = [
   }),
   act("moodboard.history.undo", "Undo", "History", { important: true, preventDefault: true }),
   act("moodboard.history.redo", "Redo", "History", { important: true, preventDefault: true }),
+  act("moodboard.view.resetViewport", "Reset zoom & pan", "View", {
+    important: true,
+    preventDefault: true,
+  }),
+
+  // ── Moodboard grid (board library, item inspector, presentation) ─────────
+  // Lightroom-style triage on the grid selection, plus prev/next that the
+  // inspector and the presentation deck both answer to. Escape is one
+  // contextual action: clear the grid selection, or close whichever viewer
+  // is open. The grid's own arrow-key roving focus is a11y navigation, not a
+  // shortcut — nav.prev/next are ignored (not consumed) when no viewer is up.
+  act("moodboard-grid.selection.clearOrClose", "Clear selection / close viewer", "Selection", {
+    important: true,
+  }),
+  act("moodboard-grid.edit.delete", "Delete selected items", "Edit", { important: true }),
+  act("moodboard-grid.rate.pick", "Pick (rate 5)", "Rating", { important: true }),
+  act("moodboard-grid.rate.0", "Rate 0 (clear rating)", "Rating", { important: true }),
+  act("moodboard-grid.rate.1", "Rate 1", "Rating"),
+  act("moodboard-grid.rate.2", "Rate 2", "Rating"),
+  act("moodboard-grid.rate.3", "Rate 3", "Rating"),
+  act("moodboard-grid.rate.4", "Rate 4", "Rating"),
+  act("moodboard-grid.rate.5", "Rate 5", "Rating", { important: true }),
+  act("moodboard-grid.nav.prev", "Previous item (viewer / presentation)", "Navigation", {
+    important: true,
+  }),
+  act("moodboard-grid.nav.next", "Next item (viewer / presentation)", "Navigation", {
+    important: true,
+  }),
 ];
 
 export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(
@@ -235,6 +263,7 @@ export const ACTIONS_BY_SURFACE: Record<Surface, ActionDef[]> = {
   pagescene: defs.filter((d) => d.surface === "pagescene"),
   pagedraw: defs.filter((d) => d.surface === "pagedraw"),
   moodboard: defs.filter((d) => d.surface === "moodboard"),
+  "moodboard-grid": defs.filter((d) => d.surface === "moodboard-grid"),
 };
 
 export function getAction(id: ActionId): ActionDef | undefined {
@@ -306,6 +335,7 @@ function surfaceOf(id: ActionId): Surface {
   const head = id.split(".")[0];
   if (head === "global") return "global";
   if (head === "pagedraw") return "pagedraw";
+  if (head === "moodboard-grid") return "moodboard-grid";
   if (head === "moodboard") return "moodboard";
   return "pagescene";
 }
