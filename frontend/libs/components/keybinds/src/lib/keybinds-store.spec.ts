@@ -71,6 +71,16 @@ describe("keybinds-store", () => {
       ]);
     });
 
+    it("resetSurface clears only that surface's overrides", () => {
+      store().setBinding("pagescene.transform.translate", [{ code: "KeyM" }]);
+      store().setBinding("pagedraw.tools.brush", [{ code: "KeyN" }]);
+      store().resetSurface("pagescene");
+      expect(store().overrides["pagescene.transform.translate"]).toBeUndefined();
+      expect(store().overrides["pagedraw.tools.brush"]).toEqual([
+        { code: "KeyN" },
+      ]);
+    });
+
     it("resetAll clears overrides but keeps the preset", () => {
       store().setPreset("blender");
       store().setBinding("pagescene.transform.rotate", [{ code: "KeyM" }]);

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ActionId, Binding, PresetId } from "./types";
+import { ActionId, Binding, PresetId, Surface } from "./types";
 import { BASE_BINDINGS, DEFAULT_PRESET, PRESETS } from "./presets";
 import { ACTIONS, actionsCoAvailable } from "./registry";
 import { bindingsEqual } from "./matcher";
@@ -20,6 +20,7 @@ interface KeybindsState {
   setPreset: (preset: PresetId) => void;
   setBinding: (id: ActionId, bindings: Binding[]) => void;
   resetAction: (id: ActionId) => void; // drop override → back to preset/base
+  resetSurface: (surface: Surface) => void; // clear one surface's overrides
   resetAll: () => void; // clear all overrides, keep preset
   resetToPresetDefault: () => void; // clear overrides AND return to default preset
   setIsRecording: (v: boolean) => void;
@@ -55,6 +56,15 @@ export const useKeybindsStore = create<KeybindsState>()(
           delete next[id];
           return { overrides: next };
         }),
+
+      resetSurface: (surface) =>
+        set((s) => ({
+          overrides: Object.fromEntries(
+            Object.entries(s.overrides).filter(
+              ([id]) => ACTIONS[id as ActionId]?.surface !== surface,
+            ),
+          ) as Record<ActionId, Binding[]>,
+        })),
 
       resetAll: () => set({ overrides: {} }),
 

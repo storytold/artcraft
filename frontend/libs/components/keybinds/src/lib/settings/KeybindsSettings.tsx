@@ -52,6 +52,7 @@ export function KeybindsSettings({
   const setPreset = useKeybindsStore((s) => s.setPreset);
   const setBinding = useKeybindsStore((s) => s.setBinding);
   const resetAction = useKeybindsStore((s) => s.resetAction);
+  const resetSurface = useKeybindsStore((s) => s.resetSurface);
   const resetAll = useKeybindsStore((s) => s.resetAll);
   const findConflicts = useKeybindsStore((s) => s.findConflicts);
   const { forAction } = useResolvedKeybinds();
@@ -104,6 +105,14 @@ export function KeybindsSettings({
 
   const totalMatches = filtered.reduce((n, s) => n + s.count, 0);
   const overriddenCount = Object.keys(overrides).length;
+  const overriddenBySurface = useMemo(() => {
+    const counts = {} as Record<Surface, number>;
+    for (const id of Object.keys(overrides) as ActionId[]) {
+      const surface = ACTIONS[id]?.surface;
+      if (surface) counts[surface] = (counts[surface] ?? 0) + 1;
+    }
+    return counts;
+  }, [overrides]);
   const allOpen = surfaces.every((s) => openSurfaces[s]);
 
   const switchMode = (mode: SearchMode) => {
@@ -160,7 +169,10 @@ export function KeybindsSettings({
         <LayeringNote preset={selectedPreset} />
       </section>
 
-      {/* ── Sticky control bar: search (name|key) + reset, conflict alert ──── */}
+      {/* ── Sticky control bar: search (name|key), conflict alert ─────────────
+          Deliberately reset-free: destructive actions live with their scope
+          (section headers) or in the danger row at the bottom, never beside
+          the search field where a stray click can nuke every override. */}
       <div className="sticky top-0 z-10 -mt-2 flex flex-col gap-3 border-b border-white/[0.06] bg-ui-modal/80 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-1.5 rounded-2xl bg-white/[0.04] p-1.5 ring-1 ring-white/[0.06]">
           <ModeToggle mode={searchMode} onChange={switchMode} />
@@ -174,17 +186,6 @@ export function KeybindsSettings({
               onClear={clearKeyQuery}
             />
           )}
-          <button
-            type="button"
-            onClick={resetAll}
-            disabled={overriddenCount === 0}
-            className={twMerge(
-              "h-10 shrink-0 rounded-[0.625rem] px-4 text-[13px] font-medium text-base-fg/70 transition-all hover:bg-white/[0.05] hover:text-base-fg active:scale-[0.97] disabled:pointer-events-none disabled:opacity-30",
-              EASE,
-            )}
-          >
-            Reset all
-          </button>
         </div>
 
         {pending && (
@@ -231,11 +232,13 @@ export function KeybindsSettings({
                 title={SURFACE_TITLES[surface]}
                 hint={SURFACE_HINTS[surface]}
                 count={count}
+                overriddenCount={overriddenBySurface[surface] ?? 0}
                 open={open}
                 locked={locked}
                 onToggle={() =>
                   setOpenSurfaces((s) => ({ ...s, [surface]: !s[surface] }))
                 }
+                onReset={() => resetSurface(surface)}
               >
                 {groups.map(({ group, actions }) => (
                   <div key={group}>
@@ -259,6 +262,32 @@ export function KeybindsSettings({
               </CollapsibleSurface>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Danger zone: the global reset lives at the very bottom, spatially
+          separated from search and the everyday controls, styled destructive,
+          and gated behind a two-step confirm. Hidden when there is nothing to
+          destroy. ─────────────────────────────────────────────────────────── */}
+      {overriddenCount > 0 && (
+        <div className="flex items-center justify-between gap-4 rounded-2xl bg-red/[0.04] p-4 ring-1 ring-red/20">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[13px] font-medium text-base-fg/90">
+              Reset all customizations
+            </span>
+            <span className="text-xs leading-relaxed text-base-fg/50">
+              Removes {overriddenCount === 1 ? "your 1 custom binding" : `all ${overriddenCount} custom bindings`}{" "}
+              on every surface. Your preset stays selected. This can’t be
+              undone.
+            </span>
+          </div>
+          <ConfirmResetButton
+            idleLabel="Reset all"
+            confirmLabel={`Confirm — reset ${overriddenCount}`}
+            title={`Reset all ${overriddenCount} customized bindings to the preset defaults`}
+            prominent
+            onConfirm={resetAll}
+          />
         </div>
       )}
 
@@ -554,51 +583,70 @@ function CollapsibleSurface({
   title,
   hint,
   count,
+  overriddenCount,
   open,
   locked,
   onToggle,
+  onReset,
   children,
 }: {
   title: string;
   hint: string;
   count: number;
+  overriddenCount: number;
   open: boolean;
   locked: boolean;
   onToggle: () => void;
+  onReset: () => void;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
       <div className="overflow-hidden rounded-[0.625rem] bg-ui-modal/40">
-        <button
-          type="button"
-          onClick={locked ? undefined : onToggle}
-          aria-expanded={open}
-          disabled={locked}
-          className={twMerge(
-            "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-            EASE,
-            locked ? "cursor-default" : "hover:bg-white/[0.03]",
-          )}
-        >
-          <ChevronIcon
+        {/* The toggle and the (destructive) section reset are sibling buttons —
+            a nested button is invalid HTML and a mis-click on "reset" must
+            never also collapse the section. */}
+        <div className="flex w-full items-center gap-3 pr-4">
+          <button
+            type="button"
+            onClick={locked ? undefined : onToggle}
+            aria-expanded={open}
+            disabled={locked}
             className={twMerge(
-              "h-4 w-4 shrink-0 text-base-fg/40 transition-transform duration-500",
+              "flex min-w-0 grow items-center gap-3 py-3 pl-4 text-left transition-colors",
               EASE,
-              open && "rotate-90",
-              locked && "opacity-40",
+              locked ? "cursor-default" : "hover:bg-white/[0.03]",
             )}
-          />
-          <div className="flex min-w-0 grow flex-col">
-            <span className="truncate text-sm font-medium text-base-fg">
-              {title}
-            </span>
-            <span className="truncate text-xs text-base-fg/40">{hint}</span>
-          </div>
+          >
+            <ChevronIcon
+              className={twMerge(
+                "h-4 w-4 shrink-0 text-base-fg/40 transition-transform duration-500",
+                EASE,
+                open && "rotate-90",
+                locked && "opacity-40",
+              )}
+            />
+            <div className="flex min-w-0 grow flex-col">
+              <span className="truncate text-sm font-medium text-base-fg">
+                {title}
+              </span>
+              <span className="truncate text-xs text-base-fg/40">{hint}</span>
+            </div>
+          </button>
+          {overriddenCount > 0 && (
+            <ConfirmResetButton
+              idleLabel={`Reset ${overriddenCount}`}
+              confirmLabel="Confirm?"
+              title={`Reset ${title}'s ${overriddenCount} customized ${
+                overriddenCount === 1 ? "binding" : "bindings"
+              } to the preset defaults`}
+              onConfirm={onReset}
+            />
+          )}
           <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs tabular-nums text-base-fg/55">
             {count}
           </span>
-        </button>
+        </div>
 
         {/* grid-rows 0fr→1fr gives a buttery height reveal without measuring. */}
         <div
@@ -614,6 +662,76 @@ function CollapsibleSurface({
         </div>
       </div>
     </div>
+  );
+}
+
+// Two-step destructive button: first click arms it (turns solid red), second
+// click within the window commits. Blur, Escape, or a 4s timeout disarm it —
+// a nested confirm dialog inside the settings modal would be heavier than the
+// action warrants, but a bare one-click wipe is how overrides get lost.
+function ConfirmResetButton({
+  idleLabel,
+  confirmLabel,
+  title,
+  prominent,
+  onConfirm,
+}: {
+  idleLabel: string;
+  confirmLabel: string;
+  title: string;
+  prominent?: boolean;
+  onConfirm: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const disarm = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    setArmed(false);
+  };
+
+  useEffect(() => disarm, []); // clear the pending timeout on unmount
+
+  const handleClick = () => {
+    if (armed) {
+      disarm();
+      onConfirm();
+    } else {
+      setArmed(true);
+      timer.current = setTimeout(() => setArmed(false), 4000);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      onBlur={disarm}
+      onKeyDown={(e) => {
+        // While armed, Escape cancels the confirm instead of closing the modal.
+        if (e.key === "Escape" && armed) {
+          e.stopPropagation();
+          disarm();
+        }
+      }}
+      title={title}
+      aria-label={armed ? `${title} — click again to confirm` : title}
+      className={twMerge(
+        "shrink-0 whitespace-nowrap rounded-full font-medium transition-all active:scale-[0.97]",
+        EASE,
+        prominent
+          ? "h-9 px-4 text-[13px]"
+          : "h-7 px-2.5 text-[12px]",
+        armed
+          ? "bg-red text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)] hover:bg-red/85"
+          : prominent
+            ? "bg-red/10 text-red ring-1 ring-red/30 hover:bg-red/[0.18]"
+            : "text-base-fg/45 hover:bg-red/10 hover:text-red",
+      )}
+    >
+      {armed ? confirmLabel : idleLabel}
+    </button>
   );
 }
 
