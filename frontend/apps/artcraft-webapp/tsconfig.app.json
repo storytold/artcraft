@@ -80,10 +80,10 @@
       "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/keybinds/tsconfig.lib.json"
+      "path": "../../libs/components/switch/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/switch/tsconfig.lib.json"
+      "path": "../../libs/state/subscription/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/promptbox/tsconfig.lib.json"
@@ -128,6 +128,9 @@
       "path": "../../libs/components/button/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/icons/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/vfx/tsconfig.lib.json"
     },
     {
@@ -137,7 +140,7 @@
       "path": "../../libs/api/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/icons/tsconfig.lib.json"
+      "path": "../../libs/components/keybinds/tsconfig.lib.json"
     }
   ]
 }
