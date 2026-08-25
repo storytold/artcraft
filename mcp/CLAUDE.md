@@ -324,14 +324,22 @@ mcp/
 ├── docs/backend-handoff.md # findings for the storyteller-web owner; not our work
 ├── docs/infra-request.md   # one-time batched asks for the backend team (Cloudflare, secrets, Google)
 ├── fake-upstream/          # separate Worker faking the allowlisted API routes; never imported by src/
-├── scripts/gen-api.ts      # fetch api.json → openapi-typescript
+├── scripts/gen-api.mjs     # fetch api.json → trim to allowlist → test/fixtures/api.json + src/upstream/schema.d.ts
 ├── src/
 │   ├── index.ts            # Worker entry: OAuthProvider wrapping the Hono app
 │   ├── app.ts              # Hono routes
 │   ├── auth/               # provider config, Authenticator impls, consent page (Hono JSX)
 │   ├── tokens/             # TokenResolver, Principal, GrantStore adapter
-│   ├── upstream/           # UpstreamClient, UpstreamCredential, allowlist, generated schema
+│   ├── upstream/
+│   │   ├── allowlist.json  # the ONLY upstream routes, with `use: auth | read`; also drives the generator
+│   │   ├── allowlist.ts    # validation + lookups by template path and by concrete pathname
+│   │   ├── credential.ts   # UpstreamCredential interface; session implementation (swap point 2)
+│   │   ├── client.ts       # openapi-fetch client; middleware enforces allowlist, use, origin, credential
+│   │   └── schema.d.ts     # GENERATED from the spec snapshot by `pnpm gen:api`; do not edit
 │   ├── mcp/                # McpServer factory, tools/, resources, prompts
 │   └── pages/              # landing, connections
-└── test/                   # unit/, contract/, oauth/, e2e/, fixtures/
+└── test/
+    ├── fixtures/api.json   # GENERATED spec snapshot (trimmed); the contract tests' reference
+    ├── helpers/            # pure check functions so guardrail tests can prove they fire
+    └── upstream/, oauth/, e2e/, *.test.ts
 ```
