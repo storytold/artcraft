@@ -16,8 +16,12 @@ interface KeybindsState {
   selectedPreset: PresetId;
   overrides: Record<ActionId, Binding[]>;
   isRecording: boolean;
+  /** Hold-to-peek cheatsheet stays open after the modifier is released,
+   *  until Esc or a click outside dismisses it. */
+  cheatsheetSticky: boolean;
 
   setPreset: (preset: PresetId) => void;
+  setCheatsheetSticky: (v: boolean) => void;
   setBinding: (id: ActionId, bindings: Binding[]) => void;
   resetAction: (id: ActionId) => void; // drop override → back to preset/base
   resetSurface: (surface: Surface) => void; // clear one surface's overrides
@@ -44,8 +48,11 @@ export const useKeybindsStore = create<KeybindsState>()(
       selectedPreset: DEFAULT_PRESET,
       overrides: {},
       isRecording: false,
+      cheatsheetSticky: false,
 
       setPreset: (preset) => set({ selectedPreset: preset }),
+
+      setCheatsheetSticky: (cheatsheetSticky) => set({ cheatsheetSticky }),
 
       setBinding: (id, bindings) =>
         set((s) => ({ overrides: { ...s.overrides, [id]: bindings } })),
@@ -108,6 +115,7 @@ export const useKeybindsStore = create<KeybindsState>()(
       partialize: (s) => ({
         selectedPreset: s.selectedPreset,
         overrides: s.overrides,
+        cheatsheetSticky: s.cheatsheetSticky,
       }),
     },
   ),

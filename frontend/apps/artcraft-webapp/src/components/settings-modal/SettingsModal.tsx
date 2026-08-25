@@ -3,7 +3,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { KeyIcon, KeyboardIcon, SettingsIcon, UserIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Switch } from "@storyteller/ui-switch";
-import { KeybindsSettings } from "@storyteller/keybinds";
+import { KeybindsSettings, useKeybindsStore } from "@storyteller/keybinds";
 import { useModelPickerStyleStore } from "@storyteller/ui-popover";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
@@ -96,6 +96,8 @@ function GeneralPanel() {
   const setLightboxSound = useLightboxSoundStore((s) => s.setSoundEnabled);
   const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
   const setModelPickerStyle = useModelPickerStyleStore((s) => s.setStyle);
+  const cheatsheetSticky = useKeybindsStore((s) => s.cheatsheetSticky);
+  const setCheatsheetSticky = useKeybindsStore((s) => s.setCheatsheetSticky);
 
   return (
     <div className="space-y-4 text-base-fg">
@@ -140,6 +142,23 @@ function GeneralPanel() {
         <Switch
           enabled={modelPickerStyle === "grouped"}
           setEnabled={(on) => setModelPickerStyle(on ? "grouped" : "flat")}
+          offClassName="bg-white/20"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Keep shortcut cheatsheet open</p>
+          <p className="text-xs opacity-70">
+            In the editors, holding Ctrl (⌘ on Mac) alone for a few seconds
+            shows a cheatsheet of the keyboard shortcuts. When on, it stays on
+            screen after you release the key until you press Esc or click
+            outside it. When off (default), it disappears as soon as you let
+            go.
+          </p>
+        </div>
+        <Switch
+          enabled={cheatsheetSticky}
+          setEnabled={setCheatsheetSticky}
           offClassName="bg-white/20"
         />
       </div>

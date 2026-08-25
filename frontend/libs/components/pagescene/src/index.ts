@@ -211,14 +211,6 @@ export type { PreviewBoxProps } from "./lib/comps/PreviewBox";
 export { PreviewEngineCamera } from "./lib/comps/PreviewEngineCamera";
 export { PreviewImages } from "./lib/comps/PreviewImages";
 export { EditorLoadingBar } from "./lib/comps/EditorLoadingBar";
-export {
-  Help,
-  Key,
-  KeyGroup,
-  Mouse,
-  Plus,
-  ShortcutsGroup,
-} from "./lib/comps/ControlsTopButtons/Help/Help";
 
 // Viewport-size hook (also useful to host code that wants the same
 // reactivity contract the lib comps use).

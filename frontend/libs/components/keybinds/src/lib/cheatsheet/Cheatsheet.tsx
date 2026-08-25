@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import { twMerge } from "tailwind-merge";
 import { useResolvedKeybinds } from "../useResolvedKeybinds";
+import { useCheatsheetPin } from "./useCheatsheetVisibility";
 import { ACTIONS_BY_SURFACE } from "../registry";
 import { KbdBindings } from "../components/Kbd";
 import { ActionDef, KeyGroup, Surface } from "../types";
@@ -16,10 +18,12 @@ const GROUP_ORDER: KeyGroup[] = [
   "History",
 ];
 
-// Translucent, non-interactive overlay listing a surface's important shortcuts,
-// resolved live from the keybinds store (so it reflects the active preset and
-// any overrides). Shown while the user holds Ctrl/Cmd alone for 3s. Render it
-// inside a positioned (relative) container — it fills `inset-0`.
+// Translucent overlay listing a surface's important shortcuts, resolved live
+// from the keybinds store (so it reflects the active preset and any
+// overrides). Shown while the user holds Ctrl/Cmd alone for 3s, or pinned
+// open via useCheatsheetPin (then Esc / click outside dismisses; the panel
+// becomes interactive so it can scroll). Render it inside a positioned
+// (relative) container — it fills `inset-0`.
 export function Cheatsheet({
   surface,
   visible,
@@ -28,6 +32,7 @@ export function Cheatsheet({
   visible: boolean;
 }) {
   const { forAction, selectedPreset } = useResolvedKeybinds();
+  const pinned = useCheatsheetPin((s) => s.pinned);
 
   const byGroup = useMemo(() => {
     const map = new Map<KeyGroup, ActionDef[]>();
@@ -44,10 +49,16 @@ export function Cheatsheet({
 
   return (
     <div
-      aria-hidden
+      aria-hidden={!pinned}
       className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
     >
-      <div className="max-h-[80%] w-[min(680px,90%)] overflow-auto rounded-xl border border-white/15 bg-black/70 p-6 text-white/90 shadow-2xl backdrop-blur-sm">
+      <div
+        data-keybinds-cheatsheet
+        className={twMerge(
+          "max-h-[80%] w-[min(680px,90%)] overflow-auto rounded-xl border border-white/15 bg-black/70 p-6 text-white/90 shadow-2xl backdrop-blur-sm",
+          pinned && "pointer-events-auto",
+        )}
+      >
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xs uppercase tracking-widest text-white/50">
             Keyboard shortcuts
@@ -80,6 +91,11 @@ export function Cheatsheet({
             );
           })}
         </div>
+        {pinned && (
+          <div className="mt-5 border-t border-white/10 pt-3 text-center text-xs text-white/40">
+            Press Esc or click outside to close
+          </div>
+        )}
       </div>
     </div>
   );
