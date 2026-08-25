@@ -1,5 +1,6 @@
 packages:
   - fake-upstream
+saveExact: true
 allowBuilds:
   esbuild: true
   workerd: true
