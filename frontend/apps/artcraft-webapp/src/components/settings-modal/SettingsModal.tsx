@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { KeyIcon, KeyboardIcon, SettingsIcon, UserIcon } from "lucide-react";
+import {
+  CreditCardIcon,
+  KeyIcon,
+  KeyboardIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Switch } from "@storyteller/ui-switch";
 import { KeybindsSettings, useKeybindsStore } from "@storyteller/keybinds";
@@ -11,8 +17,9 @@ import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
 import { useSession } from "../../lib/session";
 import { AccountSection } from "./AccountSection";
 import { ApiKeySection } from "./ApiKeySection";
+import { BillingSection } from "./BillingSection";
 
-type Tab = "general" | "keybinds" | "account" | "apiKeys";
+type Tab = "general" | "keybinds" | "account" | "billing" | "apiKeys";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -23,6 +30,7 @@ const TABS: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { id: "general", label: "General", icon: SettingsIcon },
   { id: "keybinds", label: "Keybinds", icon: KeyboardIcon },
   { id: "account", label: "Account", icon: UserIcon },
+  { id: "billing", label: "Billing", icon: CreditCardIcon },
   { id: "apiKeys", label: "API Keys", icon: KeyIcon },
 ];
 
@@ -80,6 +88,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               )}
               {tab === "account" && <AccountPanel />}
+              {tab === "billing" && <BillingPanel onCloseModal={onClose} />}
               {tab === "apiKeys" && <ApiKeysPanel />}
             </div>
           </div>
@@ -186,6 +195,30 @@ function AccountPanel() {
   return (
     <div className="pt-3">
       <AccountSection user={user} passwordNotSet={passwordNotSet} />
+    </div>
+  );
+}
+
+function BillingPanel({ onCloseModal }: { onCloseModal: () => void }) {
+  const { user, authChecked } = useSession();
+
+  if (!authChecked) {
+    return (
+      <div className="pt-3 text-xs opacity-60">Loading billing details...</div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="pt-3 text-xs opacity-60">
+        You need to be signed in to manage billing.
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-3">
+      <BillingSection onCloseModal={onCloseModal} />
     </div>
   );
 }
