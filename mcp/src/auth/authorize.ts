@@ -1,4 +1,8 @@
-import { AuthorizationError, type AuthRequest } from "@cloudflare/workers-oauth-provider";
+import {
+  AuthorizationError,
+  type AuthRequest,
+  CimdFetchError,
+} from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
 
 import { OAUTH_ENDPOINTS } from "./oauth";
@@ -17,6 +21,14 @@ authorizeRoutes.get(OAUTH_ENDPOINTS.authorize, async (c) => {
   try {
     authRequest = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
   } catch (error) {
+    // A CIMD client whose metadata document cannot be fetched or validated: nothing to
+    // redirect to yet, so say so locally. Not our fault, not a crash.
+    if (error instanceof CimdFetchError) {
+      return c.text(
+        "Could not fetch this client's metadata document. Try again, or contact the client's developer.",
+        502,
+      );
+    }
     if (!(error instanceof AuthorizationError)) throw error;
     // Only once the client and its exact registered redirect URI are validated may an error
     // be sent back to the client; otherwise it is rendered locally.

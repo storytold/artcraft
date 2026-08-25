@@ -1,11 +1,21 @@
 import { getOAuthApi } from "@cloudflare/workers-oauth-provider";
-import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { ACCESS_TOKEN_TTL_SECONDS, OAUTH_ENDPOINTS, SCOPES } from "../../src/auth/oauth";
-import worker, { oauthProviderOptions } from "../../src/index";
+import { oauthProviderOptions } from "../../src/index";
 import { createSessionCredential } from "../../src/upstream/credential";
+import {
+  authorizeUrl,
+  call,
+  callMcp,
+  exchangeCode as exchangeCodeAt,
+  ORIGIN,
+  pkce,
+  refresh,
+  type TokenError,
+  type TokenResponse,
+} from "../helpers/oauth-client";
 
 /**
  * The full OAuth loop as Claude, ChatGPT, or Claude Code drive it — with the consent step
@@ -13,44 +23,10 @@ import { createSessionCredential } from "../../src/upstream/credential";
  * consent page will do in the next PR.
  */
 
-const ORIGIN = "https://mcp.test";
 const REDIRECT_URI = "https://client.example/callback";
 const USER_ID = "user_test";
 const SIGNED_SESSION =
   "eyJhbGciOiJIUzI1NiJ9.eyJzZXNzaW9uX3Rva2VuIjoic2Vzc2lvbl90ZXN0In0.c2lnbmF0dXJl";
-
-interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-  scope?: string;
-}
-
-interface TokenError {
-  error: string;
-  error_description?: string;
-}
-
-async function call(path: string, init?: RequestInit): Promise<Response> {
-  const ctx = createExecutionContext();
-  const response = await worker.fetch(new Request(`${ORIGIN}${path}`, init), env, ctx);
-  await waitOnExecutionContext(ctx);
-  return response;
-}
-
-async function pkce(): Promise<{ verifier: string; challenge: string }> {
-  const verifier = base64Url(crypto.getRandomValues(new Uint8Array(32)));
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
-  return { verifier, challenge: base64Url(new Uint8Array(digest)) };
-}
-
-function base64Url(bytes: Uint8Array): string {
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
 
 async function registerClient(): Promise<string> {
   const response = await call(OAUTH_ENDPOINTS.register, {
@@ -69,6 +45,10 @@ async function registerClient(): Promise<string> {
   return client.client_id;
 }
 
+function exchangeCode(clientId: string, code: string, verifier: string): Promise<Response> {
+  return exchangeCodeAt(clientId, code, verifier, REDIRECT_URI);
+}
+
 /** What the consent page will do once the user has signed in: complete the authorization. */
 async function consent(
   clientId: string,
@@ -77,19 +57,20 @@ async function consent(
   /** `null` omits the timestamp entirely (a legacy or hand-made grant). */
   grantIssuedAt: number | null = Date.now(),
 ): Promise<URL> {
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: clientId,
-    redirect_uri: REDIRECT_URI,
-    scope: scope.join(" "),
-    state: "state-123",
-    code_challenge: challenge,
-    code_challenge_method: "S256",
-    resource: `${ORIGIN}/mcp`,
-  });
   const helpers = getOAuthApi(oauthProviderOptions, env);
   const authRequest = await helpers.parseAuthRequest(
-    new Request(`${ORIGIN}${OAUTH_ENDPOINTS.authorize}?${params.toString()}`),
+    new Request(
+      authorizeUrl({
+        response_type: "code",
+        client_id: clientId,
+        redirect_uri: REDIRECT_URI,
+        scope: scope.join(" "),
+        state: "state-123",
+        code_challenge: challenge,
+        code_challenge_method: "S256",
+        resource: `${ORIGIN}/mcp`,
+      }),
+    ),
   );
   const { redirectTo } = await helpers.completeAuthorization({
     request: authRequest,
@@ -102,37 +83,6 @@ async function consent(
     },
   });
   return new URL(redirectTo);
-}
-
-async function tokenRequest(form: Record<string, string>): Promise<Response> {
-  return call(OAUTH_ENDPOINTS.token, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(form).toString(),
-  });
-}
-
-async function exchangeCode(clientId: string, code: string, verifier: string): Promise<Response> {
-  return tokenRequest({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: REDIRECT_URI,
-    client_id: clientId,
-    code_verifier: verifier,
-    resource: `${ORIGIN}/mcp`,
-  });
-}
-
-async function refresh(clientId: string, refreshToken: string): Promise<Response> {
-  return tokenRequest({
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-    client_id: clientId,
-  });
-}
-
-async function callMcp(accessToken: string): Promise<Response> {
-  return call("/mcp", { method: "POST", headers: { authorization: `Bearer ${accessToken}` } });
 }
 
 /** Register → consent → exchange, returning everything a client would hold afterwards. */
