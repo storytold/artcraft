@@ -12,6 +12,7 @@ import { hasScope, type Principal } from "../tokens/principal";
 import type { UpstreamClient } from "../upstream/client";
 import { getAccount } from "./tools/get-account";
 import { getCreditBalance } from "./tools/get-credit-balance";
+import { listModels } from "./tools/list-models";
 import { type ToolDefinition, ToolFailure, UpstreamSessionInvalid } from "./tools/types";
 
 /**
@@ -25,6 +26,7 @@ export const SERVER_INFO = { name: "artcraft", version: "0.0.0" } as const;
 export const TOOLS: readonly ToolDefinition<z.ZodRawShape, z.ZodRawShape>[] = [
   getAccount,
   getCreditBalance,
+  listModels,
 ];
 
 export interface McpServerDeps {

@@ -85,6 +85,12 @@ describe("MCP server", () => {
   it("hides tools the principal's scopes do not cover", async () => {
     const { client } = await connect(["read:catalog"]);
     const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toEqual(["list_models"]);
+  });
+
+  it("lists nothing at all for scopes that cover no tool", async () => {
+    const { client } = await connect([]);
+    const { tools } = await client.listTools();
     expect(tools).toEqual([]);
   });
 
