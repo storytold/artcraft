@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { createArtcraftAuthenticator } from "./auth/authenticator";
 import { type AuthorizeDeps, authorizeRoutes } from "./auth/authorize";
 import type { Config } from "./config";
+import { connectionsRoutes } from "./pages/connections";
 
 /**
  * The unprotected HTTP surface: health, the authorization endpoint, and (later) the pages.
@@ -24,6 +25,7 @@ export function createApp(
   );
 
   app.route("/", authorizeRoutes(deps));
+  app.route("/", connectionsRoutes({ ...deps, upstreamApiHost: config.upstreamApiHost }));
 
   // The legacy HTTP+SSE transport is not offered; some clients still try it first.
   app.all("/sse", (c) =>

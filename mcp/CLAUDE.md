@@ -431,7 +431,10 @@ mcp/
 │   │   ├── prompts.ts      # plan_generation
 │   │   └── tools/          # types.ts (ToolDefinition, unwrapUpstream); get-account, get-credit-balance,
 │   │                       #   list-models, estimate-cost, jobs (get_job_status, get_jobs_status, list_recent_jobs)
-│   └── pages/              # landing, connections
+│   └── pages/
+│       ├── connections.ts       # /connections routes: sign-in → KV page session → list/revoke grants
+│       ├── connections-page.tsx # pure render
+│       └── ui-session.ts        # 15-min page session in KV (`mcpui:session:` prefix), no credential held
 └── test/
     ├── fixtures/api.json   # GENERATED spec snapshot (trimmed); the contract tests' reference
     ├── helpers/            # guardrail check functions; oauth-client.ts = an MCP client's moves; contract.ts = Ajv vs api.json

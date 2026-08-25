@@ -5,6 +5,21 @@ around but cannot fix (this project never changes Rust — `mcp/CLAUDE.md`). Eac
 we observed, what we did about it on our side, and what a backend change would unlock. Newest
 first. Add an entry whenever a PR description surfaces a discrepancy.
 
+## Disconnecting an MCP grant cannot end its upstream session
+
+**Observed.** The MCP holds each grant's Artcraft session encrypted with key material wrapped
+by that grant's tokens. When a user disconnects an app on `mcp.getartcraft.com/connections`
+we revoke the grant (its tokens die and the session becomes cryptographically unreachable),
+but we cannot call `POST /v1/logout` for it — the props can no longer be decrypted. The
+`user_sessions` row therefore lives until its (unchecked) one-year expiry.
+
+**Our side.** Documented on the page; sessions that fail upstream are logged out from the
+handler path whenever a token is still live.
+
+**Backend fix.** A session-scoped endpoint to end *other* sessions of the same user (or a
+"revoke all sessions created via API key/MCP" action) would let the connections page finish
+the job. Checking `expires_at` on read would bound the exposure regardless.
+
 ## Path parameters are declared as one object-typed parameter
 
 **Observed (api.json, 2026-08-24).** Every operation with path parameters declares a single
