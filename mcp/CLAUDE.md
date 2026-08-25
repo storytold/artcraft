@@ -268,6 +268,18 @@ Cite these; re-verify if the file references stop matching.
 - Fixtures and fake responses are validated against `test/fixtures/api.json` with Ajv
   (`test/helpers/contract.ts`) — declare fixtures with `fixture(schema, value)`.
 
+## Upstream facts learned while building the tools
+
+- `GET /v1/omni_gen/models/{image,video}` take `provider` = `artcraft` (default: only models
+  Artcraft routes itself) or `all`; audio, mesh and splat declare no filter and list
+  everything. `list_models` always asks for `all` and filters by GenerationProvider itself.
+- `POST /v1/omni_gen/cost/*` bodies are the generate bodies; unknown model → 400 with a
+  message. Estimates are anonymous → labelled public pricing.
+- `/v1/jobs/session` alone carries `maybe_failure_category_updated` and `maybe_failure_message`;
+  the newer category is a forward-compatible enum whose catch-all is `{ unknown: raw }`
+  (the repo's Unknown(String) pattern) — normalisers must accept the object form.
+- `/v1/jobs/batch` takes repeated `tokens=` params (openapi-fetch's default serialisation).
+
 ## Client requirements that bite
 
 - Unauthenticated `/mcp` → **401** with
@@ -388,7 +400,8 @@ mcp/
 ├── docs/backend-handoff.md # findings for the storyteller-web owner; not our work
 ├── docs/infra-request.md   # one-time batched asks for the backend team (Cloudflare, secrets, Google)
 ├── fake-upstream/          # separate Worker faking the allowlisted API routes; never imported by src/
-│   └── src/ state.ts (seeded localdev1), session.ts (HS256 sessions, cookie or header), routes/session.ts
+│   └── src/ state.ts (seeded localdev1, credits, jobs), session.ts, catalogue.ts (real model ids),
+│            pricing.ts, jobs.ts, routes/{session,billing,omni_gen,jobs}.ts — all spec-validated in tests
 ├── scripts/gen-api.mjs     # fetch api.json → trim to allowlist → test/fixtures/api.json + src/upstream/schema.d.ts
 ├── src/
 │   ├── index.ts            # Worker entry: environment invariant first, then the OAuthProvider
@@ -414,7 +427,10 @@ mcp/
 │   ├── mcp/
 │   │   ├── handler.ts      # protected route: props → Principal → per-request McpServer + Streamable HTTP
 │   │   ├── server.ts       # registers tools the principal's scopes allow; error → isError results
-│   │   └── tools/          # types.ts (ToolDefinition, unwrapUpstream), one file per tool
+│   │   ├── resources.ts    # artcraft://models/{kind} (read:catalog), served via list_models
+│   │   ├── prompts.ts      # plan_generation
+│   │   └── tools/          # types.ts (ToolDefinition, unwrapUpstream); get-account, get-credit-balance,
+│   │                       #   list-models, estimate-cost, jobs (get_job_status, get_jobs_status, list_recent_jobs)
 │   └── pages/              # landing, connections
 └── test/
     ├── fixtures/api.json   # GENERATED spec snapshot (trimmed); the contract tests' reference
