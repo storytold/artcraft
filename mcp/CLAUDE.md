@@ -114,8 +114,16 @@ must never arrive in bulk.
    invariants, import boundaries, environment-name isolation) needs a case that feeds it the
    bad edit and asserts the failure. A guardrail that has only ever passed is unproven —
    express the check as a pure function and test it against mutated input.
-6. **"Small unit" means one thing, then run.** One module and its test, then the checks; not
-   five files and then the checks. If a batch passes first time, that was luck, not method.
+6. **"Small unit" means one thing, then run — and pick the grain by blast radius.** Ask how
+   far a wrong assumption would travel before something else caught it. Function-level
+   wherever an assumption about the outside world enters the code (the spec, a library's
+   contract, a header format, a tool's behaviour) — that is where verification is worth the
+   most and reading is worth the least. File-level where the file *is* the contract (the
+   allowlist, the config invariant). Module-level for glue with no external assumption.
+   A verification cycle costs seconds; the only cost of fine grain is momentum, which is the
+   thing this rule exists to interrupt. If a batch passes first time, that was luck.
+   Reading a library's installed `.d.ts` before writing against it counts as verification —
+   it is the cheapest kind and has caught real contract drift.
 7. **Verify claims about the upstream API against the spec or the Rust source, not memory.**
    The published spec is https://storyteller-docs.netlify.app/api.json; the handlers are under
    `crates/service/web/storyteller_web/src/http_server/`. Read-only reference — see constraints.
