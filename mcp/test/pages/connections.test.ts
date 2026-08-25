@@ -215,6 +215,7 @@ describe("/connections", () => {
     const page = await openPage(sessionCookie);
     // Other tests connect the same seeded user concurrently, so find this grant by its client
     // name rather than by position on the page, then check the page offers it for disconnect.
+    const helpers = getOAuthApi(oauthProviderOptions, env);
     const grants = await helpers.listUserGrants(SEEDED_USER.userToken, { limit: 100 });
     const id = grants.items.find((g) => g.clientId === clientId)?.id ?? "";
     expect(id).toMatch(/.+/);
