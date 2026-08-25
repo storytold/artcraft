@@ -74,6 +74,8 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   // so keyboard changes show up here too.
   const brushSize = store.brushSize;
   const setBrushSize = store.setBrushSize;
+  const eraserSize = store.eraserSize;
+  const setEraserSize = store.setEraserSize;
   const [brushHsva, setBrushHsva] = useState<HsvaColor>({
     h: 120,
     s: 100,
@@ -212,6 +214,20 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const BgPopout = makePicker(bgHsva, setBgHsva, sendBg);
   const ShapePopout = makePicker(shapeHsva, setShapeHsva, sendShapeColor);
 
+  // Size-only popout — the eraser has no color, just its own size, kept
+  // separate from the brush so switching tools doesn't clobber either.
+  const EraserPopout = (
+    <div className="glass relative w-56 rounded-2xl p-4 shadow-lg">
+      <p className="mb-2 text-sm font-medium text-white">Eraser Size</p>
+      <SliderWithIndicator
+        value={eraserSize}
+        onChange={setEraserSize}
+        min={1}
+        max={64}
+      />
+    </div>
+  );
+
   // Tools
   const tools = [
     {
@@ -293,6 +309,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       onClick: () => {
         store.setActiveTool("eraser");
       },
+      popout: EraserPopout,
     },
     { id: "separator-3", type: "separator" },
     {
@@ -399,9 +416,11 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         }
 
         const { id, icon, onClick, popout, label } = tool;
+        // Two item ids don't match their ActiveTool value 1:1.
         const active =
           id === activeToolId ||
-          (id === "add-shape" && activeToolId === "shape");
+          (id === "add-shape" && activeToolId === "shape") ||
+          (id === "erase" && activeToolId === "eraser");
 
         // Resolved shortcut badge in the button corner (switchable tools only).
         const toolActionId = TOOL_ACTION_IDS[id];

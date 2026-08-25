@@ -311,6 +311,7 @@ const PageDraw = ({
       fillColor: state.fillColor,
       brushColor: state.brushColor,
       brushSize: state.brushSize,
+      eraserSize: state.eraserSize,
       inpaintOperation: state.inpaintOperation,
       inpaintBrushSize: state.inpaintBrushSize,
       setInpaintOperation: state.setInpaintOperation,
@@ -365,6 +366,7 @@ const PageDraw = ({
     fillColor,
     brushColor,
     brushSize,
+    eraserSize,
     inpaintOperation,
     inpaintBrushSize,
     setInpaintOperation,
@@ -431,9 +433,9 @@ const PageDraw = ({
     selectedImageModel?.usesInpaintingMask ?? false;
 
   // Keyboard tool switching mirrors the SideToolbar buttons; size up/down
-  // adjusts whichever size the active tool draws with (brush and eraser share
-  // store.brushSize, the mask tool has its own). Handlers read the store via
-  // getState so they stay referentially stable.
+  // adjusts whichever size the active tool draws with (brush, eraser, and the
+  // mask tool each own their size). Handlers read the store via getState so
+  // they stay referentially stable.
   // The shape tool isn't a single tool — it has a rectangle/circle/triangle
   // submenu. The hotkey uses press-again-to-cycle (Adobe/Figma convention):
   // first press activates with the current shape, further presses cycle.
@@ -462,7 +464,9 @@ const PageDraw = ({
       scene.setInpaintBrushSize(
         Math.min(100, Math.max(1, scene.inpaintBrushSize + step)),
       );
-    } else if (scene.activeTool === "draw" || scene.activeTool === "eraser") {
+    } else if (scene.activeTool === "eraser") {
+      scene.setEraserSize(Math.min(64, Math.max(1, scene.eraserSize + step)));
+    } else if (scene.activeTool === "draw") {
       scene.setBrushSize(Math.min(64, Math.max(1, scene.brushSize + step)));
     }
   }, []);
@@ -1334,6 +1338,7 @@ const PageDraw = ({
             activeTool={activeTool}
             brushColor={brushColor}
             brushSize={brushSize}
+            eraserSize={eraserSize}
             inpaintOperation={inpaintOperation}
             inpaintBrushSize={inpaintBrushSize}
             onSelectionChange={setIsSelecting}
