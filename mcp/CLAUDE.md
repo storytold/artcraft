@@ -212,6 +212,25 @@ Cite these; re-verify if the file references stop matching.
 - Job tokens are `jinf_…`; batch status accepts mixed prefixes (`jinf_`, `batch_g_`).
 - Error bodies: `{ success: false, error_code, error_code_str, message? }`.
 
+## OAuth provider facts (verified against @cloudflare/workers-oauth-provider 0.10.3)
+
+- `resource` and `authorization_servers` are derived from the request origin when
+  `resourceMetadata.resource` is omitted — that is why one build serves every environment and
+  why production has `workers_dev = false` (exactly one public origin).
+- CIMD needs `clientIdMetadataDocumentEnabled: true` AND `global_fetch_strictly_public` in
+  `compatibility_flags`; the metadata flag is advertised only when both are present.
+- The 401 challenge the library emits: `Bearer realm="OAuth",
+  resource_metadata="<origin>/.well-known/oauth-protected-resource/mcp", scope="…"`.
+- Refresh tokens rotate; the previous one stays valid until its replacement is first used.
+- Grant props are AES-GCM encrypted with token-wrapped keys; `userId` and `metadata` are not.
+- `tokenExchangeCallback` runs on code exchange and refresh and may throw `OAuthError`;
+  it receives props but not the grant's creation time — hence `grantIssuedAt` in props.
+- `getOAuthApi(options, env)` gives the helpers outside a fetch handler (tests use it).
+- `CimdFetchError` from `parseAuthRequest` means the client's document could not be fetched
+  or validated: render locally (we answer 502), never redirect.
+- This pool-workers release exports no `fetchMock`; stub `globalThis.fetch` in tests (tests and
+  the Worker share an isolate).
+
 ## Client requirements that bite
 
 - Unauthenticated `/mcp` → **401** with
@@ -334,9 +353,14 @@ mcp/
 ├── fake-upstream/          # separate Worker faking the allowlisted API routes; never imported by src/
 ├── scripts/gen-api.mjs     # fetch api.json → trim to allowlist → test/fixtures/api.json + src/upstream/schema.d.ts
 ├── src/
-│   ├── index.ts            # Worker entry: OAuthProvider wrapping the Hono app
-│   ├── app.ts              # Hono routes
-│   ├── auth/               # provider config, Authenticator impls, consent page (Hono JSX)
+│   ├── index.ts            # Worker entry: environment invariant first, then the OAuthProvider
+│   ├── runtime.ts          # memoized Config + Hono app per isolate (failure memoized too)
+│   ├── oauth-env.d.ts      # adds env.OAUTH_PROVIDER (OAuthHelpers) to the generated Env
+│   ├── app.ts              # unprotected Hono routes: /healthz, /authorize, pages
+│   ├── auth/
+│   │   ├── oauth.ts        # provider options: endpoints, scopes, TTLs, CIMD+DCR, error logging
+│   │   ├── authorize.ts    # /authorize: parseAuthRequest → (Authenticator, next PR) → completeAuthorization
+│   │   └── grant-age.ts    # 90-day absolute grant lifetime, enforced in tokenExchangeCallback
 │   ├── tokens/             # TokenResolver, Principal, GrantStore adapter
 │   ├── upstream/
 │   │   ├── allowlist.json  # the ONLY upstream routes, with `use: auth | read`; also drives the generator
@@ -344,10 +368,10 @@ mcp/
 │   │   ├── credential.ts   # UpstreamCredential interface; session implementation (swap point 2)
 │   │   ├── client.ts       # openapi-fetch client; middleware enforces allowlist, use, origin, credential
 │   │   └── schema.d.ts     # GENERATED from the spec snapshot by `pnpm gen:api`; do not edit
-│   ├── mcp/                # McpServer factory, tools/, resources, prompts
+│   ├── mcp/                # handler.ts (protected route; 501 stub until the transport lands), tools/
 │   └── pages/              # landing, connections
 └── test/
     ├── fixtures/api.json   # GENERATED spec snapshot (trimmed); the contract tests' reference
-    ├── helpers/            # pure check functions so guardrail tests can prove they fire
+    ├── helpers/            # pure check functions for guardrail tests; oauth-client.ts = an MCP client's moves
     └── upstream/, oauth/, e2e/, *.test.ts
 ```
