@@ -208,16 +208,17 @@ describe("/connections", () => {
   });
 
   it("disconnects a grant: its token stops working and it leaves the list", async () => {
-    const { accessToken } = await connectClient("Disconnect me");
+    const { accessToken, clientId } = await connectClient("Disconnect me");
     expect((await callMcp(accessToken)).status).not.toBe(401);
 
     const sessionCookie = await signIn();
     const page = await openPage(sessionCookie);
-    const grantId = new RegExp(
-      `name="${CONNECTIONS_FORM_FIELDS.grantId}" value="([^"]+)"[^]*?Disconnect me|Disconnect me[^]*?name="${CONNECTIONS_FORM_FIELDS.grantId}" value="([^"]+)"`,
-    ).exec(page.html);
-    const id = grantId?.[1] ?? grantId?.[2] ?? "";
+    // Other tests connect the same seeded user concurrently, so find this grant by its client
+    // name rather than by position on the page, then check the page offers it for disconnect.
+    const grants = await helpers.listUserGrants(SEEDED_USER.userToken, { limit: 100 });
+    const id = grants.items.find((g) => g.clientId === clientId)?.id ?? "";
     expect(id).toMatch(/.+/);
+    expect(page.html).toContain(`name="${CONNECTIONS_FORM_FIELDS.grantId}" value="${id}"`);
 
     const revoked = await post(
       CONNECTIONS_PATHS.revoke,

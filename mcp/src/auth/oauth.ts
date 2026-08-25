@@ -1,6 +1,10 @@
 import type { OAuthProviderOptions } from "@cloudflare/workers-oauth-provider";
 
+import { resolvePersonalToken } from "../tokens/resolve-personal-token";
 import { assertGrantWithinMaxAge } from "./grant-age";
+import { MCP_ROUTES, RESOURCE_NAME, SCOPES } from "./resource";
+
+export { MCP_ROUTES, RESOURCE_NAME, SCOPES, type Scope } from "./resource";
 
 /**
  * Configuration of the OAuth 2.1 authorization server that fronts the MCP endpoint. The
@@ -18,18 +22,9 @@ export const OAUTH_ENDPOINTS = {
   register: "/register",
 } as const;
 
-/** Protected route prefixes. Tokens are audience-bound to `/mcp`; nothing else is protected. */
-export const MCP_ROUTES = ["/mcp"] as const;
-
-/** Scopes a grant may carry in M1. `generate` is deliberately absent until it has a design. */
-export const SCOPES = ["read:account", "read:jobs", "read:catalog"] as const;
-export type Scope = (typeof SCOPES)[number];
-
 /** Access tokens are short-lived; refresh tokens rotate and expire after this much idle time. */
 export const ACCESS_TOKEN_TTL_SECONDS = 60 * 60;
 export const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
-
-export const RESOURCE_NAME = "Artcraft";
 
 /** An ExportedHandler that definitely has `fetch` — what the provider accepts for handlers. */
 export type FetchHandler = ExportedHandler<Cloudflare.Env> & {
@@ -75,6 +70,10 @@ export function createOAuthProviderOptions(handlers: OAuthHandlers): OAuthProvid
     tokenExchangeCallback(options) {
       assertGrantWithinMaxAge(options.props, Date.now());
     },
+
+    // Bearers that are not the provider's own access tokens: personal tokens resolve to the
+    // same props a grant carries; everything else is a 401.
+    resolveExternalToken: (input) => resolvePersonalToken(input),
 
     onError(error) {
       // Codes and categories only: descriptions can echo client-supplied input.

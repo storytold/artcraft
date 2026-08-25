@@ -3,6 +3,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 
 import type { FetchHandler } from "../auth/oauth";
 import { getRuntime } from "../runtime";
+import { createPersonalTokenStore, isPersonalTokenSecret } from "../tokens/personal-token-store";
 import { principalFromProps, PrincipalError } from "../tokens/principal";
 import { createUpstreamClient } from "../upstream/client";
 import { createMcpServer } from "./server";
@@ -15,8 +16,9 @@ import { createMcpServer } from "./server";
  * 2. a read-use upstream client bound to the principal's credential;
  * 3. a fresh McpServer + web-standard Streamable HTTP transport per request — stateless, JSON
  *    responses — which is what lets this run on Workers with no session affinity;
- * 4. if a tool learns the upstream no longer accepts the credential, the grant is revoked
- *    after the response, so the client's next request meets a 401 and re-authorizes.
+ * 4. if a tool learns the upstream no longer accepts the credential, the grant (or personal
+ *    token) behind the request is revoked after the response, so the client's next request
+ *    meets a 401 and re-authorizes.
  *
  * Only /mcp is protected: access tokens are audience-bound to it, so a legacy /sse route could
  * never be reached with one; the unprotected app answers /sse with a pointer instead.
@@ -58,19 +60,27 @@ export const mcpApiHandler: FetchHandler = {
     } finally {
       ctx.waitUntil(server.close());
       if (state.upstreamSessionInvalid) {
-        ctx.waitUntil(revokeGrantForRequest(env.OAUTH_PROVIDER, request));
+        ctx.waitUntil(revokeTokenForRequest(env, request));
       }
     }
   },
 };
 
-/** Revoke the grant behind this request's bearer token; best effort, never throws. */
-async function revokeGrantForRequest(helpers: OAuthHelpers, request: Request): Promise<void> {
+/** Revoke the grant or personal token behind this request's bearer; best effort, never throws. */
+async function revokeTokenForRequest(env: Cloudflare.Env, request: Request): Promise<void> {
   try {
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-    const summary = await helpers.unwrapToken(token);
-    if (summary) await helpers.revokeGrant(summary.grantId, summary.userId);
+    if (isPersonalTokenSecret(token)) {
+      await createPersonalTokenStore(env.OAUTH_KV).revokeBySecret(token, Date.now());
+      return;
+    }
+    await revokeGrant(env.OAUTH_PROVIDER, token);
   } catch (error) {
-    console.warn(JSON.stringify({ event: "grant_revoke_failed", reason: String(error) }));
+    console.warn(JSON.stringify({ event: "token_revoke_failed", reason: String(error) }));
   }
+}
+
+async function revokeGrant(helpers: OAuthHelpers, token: string): Promise<void> {
+  const summary = await helpers.unwrapToken(token);
+  if (summary) await helpers.revokeGrant(summary.grantId, summary.userId);
 }

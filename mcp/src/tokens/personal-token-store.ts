@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { GRANT_MAX_AGE_SECONDS } from "../auth/grant-age";
-import { type Scope, SCOPES } from "../auth/oauth";
+import { type Scope, SCOPES } from "../auth/resource";
 import { base64Url, fromBase64Url } from "../encoding";
 import type { CredentialProps } from "../upstream/credential";
 
@@ -88,6 +88,8 @@ export interface PersonalTokenStore {
   list(userToken: string, nowMs: number): Promise<PersonalTokenSummary[]>;
   /** Scoped to the user: another user's id is a no-op. Returns whether a token was removed. */
   revoke(userToken: string, id: string): Promise<boolean>;
+  /** Revoke by the secret itself — for the handler, which holds nothing else about the token. */
+  revokeBySecret(secret: string, nowMs: number): Promise<boolean>;
 }
 
 export type PersonalTokenErrorReason = "label" | "ttl" | "limit";
@@ -182,6 +184,12 @@ export function createPersonalTokenStore(kv: KVNamespace): PersonalTokenStore {
         index.filter((entry) => entry.id !== id),
       );
       return true;
+    },
+
+    async revokeBySecret(secret, nowMs) {
+      const record = await this.resolve(secret, nowMs);
+      if (!record) return false;
+      return this.revoke(record.userToken, record.id);
     },
   };
 }
