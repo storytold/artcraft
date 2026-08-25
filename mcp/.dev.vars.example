@@ -1,0 +1,9 @@
+# Copy to .dev.vars for `wrangler dev`. Never commit .dev.vars.
+#
+# Local development talks to the fake upstream only. To run the production smoke
+# suite locally you also need the demo account; get it from the team, never from git.
+
+UPSTREAM_API_HOST=http://localhost:12345
+
+# SMOKE_USERNAME=
+# SMOKE_PASSWORD=

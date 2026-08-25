@@ -1,0 +1,20 @@
+packages:
+  - fake-upstream
+allowBuilds:
+  esbuild: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - "@cloudflare/workers-types@5.20260825.1"
+  - "@typescript-eslint/eslint-plugin@8.68.0"
+  - "@typescript-eslint/parser@8.68.0"
+  - "@typescript-eslint/project-service@8.68.0"
+  - "@typescript-eslint/scope-manager@8.68.0"
+  - "@typescript-eslint/tsconfig-utils@8.68.0"
+  - "@typescript-eslint/type-utils@8.68.0"
+  - "@typescript-eslint/types@8.68.0"
+  - "@typescript-eslint/typescript-estree@8.68.0"
+  - "@typescript-eslint/utils@8.68.0"
+  - "@typescript-eslint/visitor-keys@8.68.0"
+  - eslint@10.9.1
+  - hono@4.13.4
+  - typescript-eslint@8.68.0

@@ -1,0 +1,52 @@
+# Artcraft MCP server. One code path; everything environment-specific is a binding here.
+# See mcp/CLAUDE.md → "Environments — one code path, bindings not branches".
+#
+# `MCP_ENVIRONMENT` exists only so the Worker can assert at startup that the upstream host it
+# was given is the one its environment expects. It is read in src/config.ts and nowhere else
+# (a test enforces that). It is not a behaviour switch.
+
+name = "artcraft-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------------------------
+# local — `wrangler dev`. Talks to the fake upstream on localhost. `.dev.vars` may override.
+# ---------------------------------------------------------------------------------------------
+[vars]
+MCP_ENVIRONMENT = "local"
+UPSTREAM_API_HOST = "http://localhost:12345"
+
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "local"  # wrangler dev stores KV locally; this id is never used against Cloudflare
+
+# ---------------------------------------------------------------------------------------------
+# preview — PR deploys on workers.dev. Talks to the DEPLOYED fake upstream, never production.
+# ---------------------------------------------------------------------------------------------
+[env.preview]
+name = "artcraft-mcp-preview"
+
+[env.preview.vars]
+MCP_ENVIRONMENT = "preview"
+UPSTREAM_API_HOST = "https://artcraft-api-fake.workers.dev"  # replace with the real workers.dev host once deployed
+
+[[env.preview.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "REPLACE_WITH_PREVIEW_KV_ID"  # from docs/infra-request.md §1
+
+# ---------------------------------------------------------------------------------------------
+# production — mcp.getartcraft.com. The only environment that talks to api.storyteller.ai.
+# ---------------------------------------------------------------------------------------------
+[env.production]
+name = "artcraft-mcp"
+# Enable once the getartcraft.com zone is on Cloudflare (docs/infra-request.md §1):
+# routes = [{ pattern = "mcp.getartcraft.com", custom_domain = true }]
+
+[env.production.vars]
+MCP_ENVIRONMENT = "production"
+UPSTREAM_API_HOST = "https://api.storyteller.ai"
+
+[[env.production.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "REPLACE_WITH_PRODUCTION_KV_ID"  # from docs/infra-request.md §1

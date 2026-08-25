@@ -1,0 +1,17 @@
+{
+  "name": "@artcraft/mcp-fake-upstream",
+  "version": "0.0.0",
+  "private": true,
+  "description": "In-memory fake of the allowlisted Artcraft API routes. Never imported by the MCP server.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 12345",
+    "deploy:preview": "wrangler deploy --env preview"
+  },
+  "dependencies": {
+    "hono": "4.13.4"
+  },
+  "devDependencies": {
+    "wrangler": "4.125.0"
+  }
+}

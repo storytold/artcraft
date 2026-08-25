@@ -1,0 +1,71 @@
+name: mcp
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mcp/**"
+      - ".github/workflows/mcp.yml"
+  pull_request:
+    paths:
+      - "mcp/**"
+      - ".github/workflows/mcp.yml"
+
+defaults:
+  run:
+    working-directory: mcp
+
+jobs:
+  check:
+    name: typecheck · lint · format · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: mcp/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: mcp/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format
+      - run: pnpm test
+
+  deploy-production:
+    name: deploy · production
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: mcp/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: mcp/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # Deploys are skipped, not failed, until the Cloudflare secrets exist (docs/infra-request.md §2).
+      - id: creds
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Cloudflare secrets not configured; skipping deploy."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - if: steps.creds.outputs.present == 'true'
+        run: pnpm exec wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
