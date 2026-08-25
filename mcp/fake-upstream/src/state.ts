@@ -1,3 +1,5 @@
+import { type FakeJob, seededJobs } from "./jobs";
+
 /**
  * In-memory state for the fake. Seeded the same way as `infra/fake-storyteller-web` so anyone
  * who has used that fake finds the same account here. Everything resets when the Worker
@@ -25,6 +27,7 @@ export interface FakeStore {
   readonly usersByToken: Map<string, FakeUser>;
   /** signed session → user token */
   readonly sessions: Map<string, string>;
+  readonly jobsByToken: Map<string, FakeJob>;
 }
 
 export const SEEDED_USER: FakeUser = {
@@ -46,6 +49,7 @@ export function createStore(): FakeStore {
   return {
     usersByToken: new Map([[SEEDED_USER.userToken, SEEDED_USER]]),
     sessions: new Map(),
+    jobsByToken: new Map(seededJobs(SEEDED_USER.userToken).map((job) => [job.jobToken, job])),
   };
 }
 

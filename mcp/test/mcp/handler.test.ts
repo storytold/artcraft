@@ -139,7 +139,10 @@ describe("the protected MCP route", () => {
       "estimate_cost",
       "get_account",
       "get_credit_balance",
+      "get_job_status",
+      "get_jobs_status",
       "list_models",
+      "list_recent_jobs",
     ]);
 
     const result = await client.callTool({ name: "get_credit_balance", arguments: {} });

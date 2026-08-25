@@ -13,6 +13,7 @@ import type { UpstreamClient } from "../upstream/client";
 import { estimateCost } from "./tools/estimate-cost";
 import { getAccount } from "./tools/get-account";
 import { getCreditBalance } from "./tools/get-credit-balance";
+import { getJobsStatus, getJobStatus, listRecentJobs } from "./tools/jobs";
 import { listModels } from "./tools/list-models";
 import { type ToolDefinition, ToolFailure, UpstreamSessionInvalid } from "./tools/types";
 
@@ -29,6 +30,9 @@ export const TOOLS: readonly ToolDefinition<z.ZodRawShape, z.ZodRawShape>[] = [
   getCreditBalance,
   listModels,
   estimateCost,
+  getJobStatus,
+  getJobsStatus,
+  listRecentJobs,
 ];
 
 export interface McpServerDeps {

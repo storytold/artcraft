@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
 import { billingRoutes } from "./routes/billing";
+import { jobRoutes } from "./routes/jobs";
 import { omniGenRoutes } from "./routes/omni_gen";
 import { sessionRoutes } from "./routes/session";
 import { createStore, type FakeStore } from "./state";
@@ -20,6 +21,7 @@ export function createFakeUpstream(store: FakeStore = createStore()): Hono {
   app.route("/", sessionRoutes(store));
   app.route("/", billingRoutes(store));
   app.route("/", omniGenRoutes());
+  app.route("/", jobRoutes(store));
 
   return app;
 }
