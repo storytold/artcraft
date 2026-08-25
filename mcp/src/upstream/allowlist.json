@@ -1,0 +1,24 @@
+{
+  "$comment": "The ONLY upstream routes this service may call. `use` is who may call it: `auth` = the credential/consent module only; `read` = tool handlers. Adding a route is a reviewed change with a test. scripts/gen-api.mjs trims the spec snapshot and the generated types to this list.",
+  "routes": [
+    { "method": "post", "path": "/v1/login", "use": "auth" },
+    { "method": "post", "path": "/v1/accounts/google_sso", "use": "auth" },
+    { "method": "post", "path": "/v1/logout", "use": "auth" },
+    { "method": "get", "path": "/v1/session", "use": "read" },
+    { "method": "get", "path": "/v1/credits/namespace/{namespace}", "use": "read" },
+    { "method": "get", "path": "/v1/subscriptions/namespace/{namespace}", "use": "read" },
+    { "method": "get", "path": "/v1/jobs/job/{token}", "use": "read" },
+    { "method": "get", "path": "/v1/jobs/batch", "use": "read" },
+    { "method": "get", "path": "/v1/jobs/session", "use": "read" },
+    { "method": "get", "path": "/v1/omni_gen/models/image", "use": "read" },
+    { "method": "get", "path": "/v1/omni_gen/models/video", "use": "read" },
+    { "method": "get", "path": "/v1/omni_gen/models/audio", "use": "read" },
+    { "method": "get", "path": "/v1/omni_gen/models/mesh", "use": "read" },
+    { "method": "get", "path": "/v1/omni_gen/models/splat", "use": "read" },
+    { "method": "post", "path": "/v1/omni_gen/cost/image", "use": "read" },
+    { "method": "post", "path": "/v1/omni_gen/cost/video", "use": "read" },
+    { "method": "post", "path": "/v1/omni_gen/cost/audio", "use": "read" },
+    { "method": "post", "path": "/v1/omni_gen/cost/mesh", "use": "read" },
+    { "method": "post", "path": "/v1/omni_gen/cost/splat", "use": "read" }
+  ]
+}

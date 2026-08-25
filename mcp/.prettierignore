@@ -5,3 +5,5 @@ coverage/
 pnpm-lock.yaml
 CLAUDE.md
 docs/
+src/upstream/schema.d.ts
+test/fixtures/api.json

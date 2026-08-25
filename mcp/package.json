@@ -12,6 +12,7 @@
     "dev": "wrangler dev",
     "deploy:preview": "wrangler deploy --env preview",
     "deploy:production": "wrangler deploy --env production",
+    "gen:api": "node scripts/gen-api.mjs",
     "types": "wrangler types",
     "typecheck": "pnpm types && tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
@@ -23,12 +24,14 @@
   },
   "dependencies": {
     "hono": "4.13.4",
+    "openapi-fetch": "0.17.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
     "@eslint/js": "10.0.1",
     "eslint": "10.9.1",
+    "openapi-typescript": "7.13.0",
     "prettier": "3.9.6",
     "smol-toml": "1.8.0",
     "typescript": "5.9.3",

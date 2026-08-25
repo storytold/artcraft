@@ -1,0 +1,4881 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "storyteller-web",
+    "description": "",
+    "contact": {
+      "name": "Brandon Thomas",
+      "email": "bt@brand.io"
+    },
+    "license": {
+      "name": ""
+    },
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/v1/accounts/google_sso": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Sign in or sign up with \"Sign in with Google\" credentials.\nThis supports both sign up for new users and sign in for existing users.",
+        "operationId": "google_sso_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleCreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCreateAccountSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonWebError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonWebError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonWebError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/credits/namespace/{namespace}": {
+      "get": {
+        "tags": [
+          "Credits"
+        ],
+        "operationId": "get_session_credits_handler",
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaymentsNamespace"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSessionCreditsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/batch": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get job statuses for a batch of multiple job tokens.",
+        "operationId": "batch_get_inference_job_status_handler",
+        "parameters": [
+          {
+            "name": "tokens",
+            "in": "query",
+            "description": "A grab bag of tokens of various types.\nTechnically we should pair with token types, as that's the unique index.\nBut since each token family generally has its own prefix, this should be fine.\n\nNB: We're using actix_web_lab's Query<T>, because the default actix_web Query<T> doesn't support URL\ndecoding sequences yet.\nSee https://github.com/actix/actix-web/issues/1301\n",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchGetInferenceJobStatusSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/jobs/job/{token}": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get the status for a single job.",
+        "operationId": "get_inference_job_status_handler",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/InferenceJobToken"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetInferenceJobStatusSuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "500": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/jobs/session": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "List job statuses for jobs that are associated with the user's session.",
+        "description": "The user must be logged in. This endpoint will only show the last 36 hours\nof jobs. Any jobs \"dismissed\" by the user will not be returned.\n\nThis returns jobs of all states: pending, started, attempt_failed,\ncomplete_success, dead, etc.",
+        "operationId": "list_session_jobs_handler",
+        "parameters": [
+          {
+            "name": "include_states",
+            "in": "query",
+            "description": "NB: This can be one (or more comma-separated values) from `JobStatusPlus`.\n?include_states=pending or ?include_states=pending,started,complete_success (etc.)",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "exclude_states",
+            "in": "query",
+            "description": "The opposite of include_states, this filters out states from view.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSessionJobsSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "login_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/logout": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "logout_handler",
+        "responses": {
+          "200": {
+            "description": "Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonWebError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/cost/audio": {
+      "post": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "Estimate the cost of an audio generation.",
+        "operationId": "omni_gen_audio_cost_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniGenAudioCostAndGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenAudioCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad input"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/cost/image": {
+      "post": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "Estimate the cost of an image generation.",
+        "operationId": "omni_gen_image_cost_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniGenImageCostAndGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenImageCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad input"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/cost/mesh": {
+      "post": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "Estimate the cost of a mesh (3D object) generation.",
+        "operationId": "omni_gen_mesh_cost_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniGenMeshCostAndGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenMeshCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad input"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/cost/splat": {
+      "post": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "Estimate the cost of a splat (3D world) generation.",
+        "operationId": "omni_gen_splat_cost_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniGenSplatCostAndGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenSplatCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad input"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/cost/video": {
+      "post": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "Estimate the cost of a video generation.",
+        "operationId": "omni_gen_video_cost_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniGenVideoCostAndGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenVideoCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad input"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/models/audio": {
+      "get": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "List available audio models.",
+        "operationId": "omni_gen_audio_models_handler",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenAudioModelsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/models/image": {
+      "get": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "List available image models.",
+        "operationId": "omni_gen_image_models_handler",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "Which provider's models to list. Defaults to \"artcraft\" if absent.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OmniGenImageModelsProvider"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenImageModelsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/models/mesh": {
+      "get": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "List available mesh (3D object) models.",
+        "operationId": "omni_gen_mesh_models_handler",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenMeshModelsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/models/splat": {
+      "get": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "List available splat (3D world) models.",
+        "operationId": "omni_gen_splat_models_handler",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenSplatModelsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/omni_gen/models/video": {
+      "get": {
+        "tags": [
+          "Omni Gen"
+        ],
+        "summary": "List available video models.",
+        "operationId": "omni_gen_video_models_handler",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "Which provider's models to list. Defaults to \"artcraft\" if absent.",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/OmniGenVideoModelsProvider"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmniGenVideoModelsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/session": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "session_info_handler",
+        "responses": {
+          "200": {
+            "description": "Get profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfoSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/v1/subscriptions/namespace/{namespace}": {
+      "get": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Get subscription for the payment namespace.",
+        "description": "Use this instead of the older endpoints,\n\n - GET /v1/billing/active_subscription (legacy, for FakeYou)\n - GET /v1/app_state (quite a lot of FakeYou state)\n\n",
+        "operationId": "get_session_subscription_handler",
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PaymentsNamespace"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSessionSubscriptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BatchGenerationToken": {
+        "type": "string",
+        "description": "The primary key for Audit Logs."
+      },
+      "BatchGetInferenceJobStatusSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "job_states"
+        ],
+        "properties": {
+          "job_states": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchInferenceJobStatusResponsePayload"
+            }
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BatchInferenceJobStatusResponsePayload": {
+        "type": "object",
+        "required": [
+          "job_token",
+          "request",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "job_token": {
+            "$ref": "#/components/schemas/InferenceJobToken"
+          },
+          "maybe_result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BatchResultDetailsResponse"
+              }
+            ]
+          },
+          "request": {
+            "$ref": "#/components/schemas/BatchRequestDetailsResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BatchStatusDetailsResponse"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BatchRequestDetailsResponse": {
+        "type": "object",
+        "description": "Details about what the user requested for generation",
+        "required": [
+          "inference_category"
+        ],
+        "properties": {
+          "inference_category": {
+            "$ref": "#/components/schemas/InferenceCategory"
+          },
+          "maybe_lipsync_details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobDetailsLipsyncRequest",
+                "description": "OPTIONAL. For lipsync jobs (face fusion and sad talker), this is additional\ninformation on the request."
+              }
+            ]
+          },
+          "maybe_live_portrait_details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobDetailsLivePortraitRequest",
+                "description": "OPTIONAL. For Live Portrait jobs, this is additional information on the request."
+              }
+            ]
+          },
+          "maybe_model_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OPTIONAL. Title of the model, if it has one"
+          },
+          "maybe_model_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_model_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_prompt_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PromptToken"
+              }
+            ]
+          },
+          "maybe_raw_inference_text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OPTIONAL. If the result was TTS, this is the raw inference text."
+          },
+          "maybe_style_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StyleTransferName",
+                "description": "OPTIONAL. For Comfy / Video Style Transfer jobs, this might include\nthe name of the selected style."
+              }
+            ]
+          }
+        }
+      },
+      "BatchResultDetailsResponse": {
+        "type": "object",
+        "description": "Details about the completed result (if any)",
+        "required": [
+          "entity_type",
+          "entity_token",
+          "media_links"
+        ],
+        "properties": {
+          "entity_token": {
+            "type": "string"
+          },
+          "entity_type": {
+            "type": "string"
+          },
+          "maybe_public_bucket_media_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "(DEPRECATED) URL path to the media file",
+            "deprecated": true
+          },
+          "maybe_successfully_completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "media_links": {
+            "$ref": "#/components/schemas/MediaLinks",
+            "description": "Rich CDN links to the media, including thumbnails, previews, and more."
+          }
+        }
+      },
+      "BatchStatusDetailsResponse": {
+        "type": "object",
+        "description": "Details about the ongoing job status",
+        "required": [
+          "status",
+          "attempt_count",
+          "requires_keepalive",
+          "progress_percentage"
+        ],
+        "properties": {
+          "attempt_count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "maybe_assigned_cluster": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_assigned_worker": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_extra_status_description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Extra, temporary status from Redis.\nThis can denote inference progress, and the Python code can write to it."
+          },
+          "maybe_failure_category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FrontendFailureCategory",
+                "description": "An enum the frontend can use to display localized/I18N error\nmessages. These pertain to both transient and permanent failures."
+              }
+            ]
+          },
+          "maybe_first_started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "progress_percentage": {
+            "type": "integer",
+            "format": "int32",
+            "description": "This is an integer number between 0 and 100 (both inclusive) that\nreports the completeness.",
+            "minimum": 0
+          },
+          "requires_keepalive": {
+            "type": "boolean",
+            "description": "Whether the frontend needs to maintain a keepalive check.\nThis is typically only for non-premium users."
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatusPlus",
+            "description": "Primary status from the database (a state machine)."
+          }
+        }
+      },
+      "CharacterToken": {
+        "type": "string",
+        "description": "The primary key for Characters"
+      },
+      "CommonAspectRatio": {
+        "type": "string",
+        "description": "Common aspect ratios for image and video generation.\n\nNB: Keep the max serialized length to 24 characters.",
+        "enum": [
+          "auto",
+          "square",
+          "wide_three_by_two",
+          "wide_four_by_three",
+          "wide_five_by_four",
+          "wide_sixteen_by_nine",
+          "wide_twenty_one_by_nine",
+          "tall_two_by_three",
+          "tall_three_by_four",
+          "tall_four_by_five",
+          "tall_nine_by_sixteen",
+          "tall_nine_by_twenty_one",
+          "wide",
+          "tall",
+          "auto_2k",
+          "auto_3k",
+          "auto_4k",
+          "square_hd"
+        ]
+      },
+      "CommonAudioModel": {
+        "type": "string",
+        "description": "Audio models available for generation.",
+        "enum": [
+          "suno_music",
+          "suno_remix",
+          "suno_sounds",
+          "suno_sample",
+          "seed_audio_1p0"
+        ]
+      },
+      "CommonBitrate": {
+        "type": "string",
+        "description": "Common output bitrate levels for generation.\n\nMost models default to `Normal`; `High` requests a higher bitrate where the\nmodel supports it. Models that don't support it simply ignore the value.\n\nNB: Keep the max serialized length to 16 characters.",
+        "enum": [
+          "normal",
+          "high"
+        ]
+      },
+      "CommonImageModel": {
+        "type": "string",
+        "description": "Image models available for generation.\nMirrors artcraft_router::api::router_image_model::RouterImageModel.",
+        "enum": [
+          "flux_1_dev",
+          "flux_1_schnell",
+          "flux_pro_1p1",
+          "flux_pro_1p1_ultra",
+          "gpt_image_1",
+          "gpt_image_1p5",
+          "gpt_image_2",
+          "grok_imagine_image",
+          "grok_imagine_image_q",
+          "midjourney_7",
+          "midjourney_7_niji",
+          "midjourney_8",
+          "nano_banana",
+          "nano_banana_2",
+          "nano_banana_pro",
+          "seedream_4",
+          "seedream_4p5",
+          "seedream_5_lite",
+          "seedream_5p0_pro",
+          "seedream_5p0_pro_u",
+          "qwen_edit_2511_angles",
+          "flux_2_lora_angles"
+        ]
+      },
+      "CommonMeshModel": {
+        "type": "string",
+        "description": "Mesh (3D object) models available for generation.",
+        "enum": [
+          "hunyuan_3d_2p0",
+          "hunyuan_3d_2p1",
+          "hunyuan_3d_3",
+          "hunyuan_3d_3_sketch",
+          "hunyuan_3d_3p1_pro",
+          "hunyuan_3d_3p1_rapid",
+          "hunyuan_3d_3p1_part",
+          "hunyuan_3d_3p1_topology",
+          "tripo3d_h3p1",
+          "meshy_v6",
+          "rodin_2p5_fast"
+        ]
+      },
+      "CommonMeshOutputType": {
+        "type": "string",
+        "description": "Mesh output types for 3D object generation.",
+        "enum": [
+          "normal",
+          "low_poly",
+          "geometry"
+        ]
+      },
+      "CommonMeshQuality": {
+        "type": "string",
+        "description": "Quality level for a mesh generation sub-feature (e.g. texture quality or\ngeometry quality). Some models charge extra for `Detailed`.",
+        "enum": [
+          "standard",
+          "detailed"
+        ]
+      },
+      "CommonMusicalKey": {
+        "type": "string",
+        "description": "Musical keys available for audio generation (eg. Suno Sounds).\n\nNB: There are intentionally no E keys, per product spec.",
+        "enum": [
+          "auto",
+          "c_major",
+          "c_minor",
+          "d_major",
+          "d_minor",
+          "f_major",
+          "f_minor",
+          "g_major",
+          "g_minor",
+          "a_major",
+          "a_minor",
+          "b_major",
+          "b_minor"
+        ]
+      },
+      "CommonPolygonType": {
+        "type": "string",
+        "description": "Polygon types for generated meshes.",
+        "enum": [
+          "triangle",
+          "quad"
+        ]
+      },
+      "CommonQuality": {
+        "type": "string",
+        "description": "Common quality levels for generation.\n\nNB: Keep the max serialized length to 16 characters.",
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "CommonResolution": {
+        "type": "string",
+        "description": "Common resolutions for generation.\n\nNB: Keep the max serialized length to 16 characters.",
+        "enum": [
+          "one_k",
+          "two_k",
+          "three_k",
+          "four_k",
+          "half_k",
+          "four_eighty_p",
+          "seven_twenty_p",
+          "ten_eighty_p"
+        ]
+      },
+      "CommonSplatModel": {
+        "type": "string",
+        "description": "Splat models available for generation.",
+        "enum": [
+          "marble_0p1_mini",
+          "marble_0p1_plus",
+          "marble_1p0",
+          "marble_1p0_draft",
+          "marble_1p1",
+          "marble_1p1_plus",
+          "triposplat"
+        ]
+      },
+      "CommonVideoModel": {
+        "type": "string",
+        "description": "Video models available for generation.\nMirrors artcraft_router::api::router_video_model::RouterVideoModel.",
+        "enum": [
+          "grok_video",
+          "grok_imagine_video",
+          "grok_imagine_video_1p5",
+          "flux_3",
+          "flux_3_draft",
+          "kling_1p6_pro",
+          "kling_2p1_pro",
+          "kling_2p1_master",
+          "kling_2p5_turbo_pro",
+          "kling_2p6_pro",
+          "kling_3p0_standard",
+          "kling_3p0_pro",
+          "happy_horse_1p0",
+          "minimax_h3",
+          "minimax_h3_turbo",
+          "minimax_h3_ultra",
+          "seedance_1p0_lite",
+          "seedance_1p5_pro",
+          "seedance_2p0",
+          "seedance_2p0_fast",
+          "seedance_2p0_bp",
+          "seedance_2p0_bp_fast",
+          "seedance_2p0_u",
+          "seedance_2p0_u_fast",
+          "seedance_2p0_bpu",
+          "seedance_2p0_bpu_fast",
+          "seedance_2p0_mini",
+          "seedance_2p0_bp_mini",
+          "seedance_2p0_bpu_mini",
+          "seedance_2p5_preview",
+          "seedance_2p5",
+          "seedance_2p5_u",
+          "sora_2",
+          "sora_2_pro",
+          "veo_2",
+          "veo_3",
+          "veo_3_fast",
+          "veo_3p1",
+          "veo_3p1_fast",
+          "veo_3p1_lite",
+          "vidu_q3",
+          "vidu_q3_turbo",
+          "preview_model",
+          "preview_model_fast"
+        ]
+      },
+      "CommonWebError": {
+        "type": "object",
+        "required": [
+          "success",
+          "error_code"
+        ],
+        "properties": {
+          "error_code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "error_code_str": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "description": "User-facing error message (present only for bad input errors)"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EstimateFields": {
+        "type": "object",
+        "description": "These fields are ignored by generation. They're only used by the frontend\nto aid in cost estimation (e.g. Seedance 2.5 bills reference-video input\nseconds, so the cost quote needs the combined input duration without the\nserver downloading and probing the files on every poll).",
+        "properties": {
+          "total_input_audio_duration_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Combined duration of all reference audio inputs, in milliseconds.\n(No model bills audio input seconds yet; accepted for future models.)",
+            "minimum": 0
+          },
+          "total_input_video_duration_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Combined duration of all reference video inputs, in milliseconds.",
+            "minimum": 0
+          }
+        }
+      },
+      "FakeYouPlan": {
+        "type": "string",
+        "enum": [
+          "free",
+          "basic",
+          "standard",
+          "pro"
+        ]
+      },
+      "FrontendFailureCategory": {
+        "type": "string",
+        "description": "Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `frontend_failure_category`.\n\nWhen jobs fail (permanently or transiently), we need to inform the frontend of the reason,\nbecause perhaps there's something the user can do to change their input.\n\nThe previous \"VARCHAR(32) failure_reason\" column was a text-based message that could not be\nlocalized or made user friendly. This `frontend_failure_category` exists to provide well-defined\nfailure categories to the frontend that can easily be localized and indicated consistently in\nthe UI.\n\nAnother benefit is that we'll surface all of the various types of failure and perhaps eventually\ncome to handle some in a cross-cutting way.\n\nYOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.",
+        "enum": [
+          "face_not_detected",
+          "no_foreground_subject_detected",
+          "format_not_supported",
+          "keep_alive_elapsed",
+          "not_yet_implemented",
+          "retryable_worker_error",
+          "model_rules_violation",
+          "rule_bans_user_image",
+          "rule_bans_user_image_with_faces",
+          "rule_bans_user_text_prompt",
+          "rule_bans_user_content",
+          "rule_bans_generated_video",
+          "rule_bans_generated_audio",
+          "rule_bans_generated_content",
+          "filesize_too_large",
+          "image_dimensions_too_small",
+          "image_dimensions_too_large",
+          "generation_failed"
+        ]
+      },
+      "FrontendFailureCategoryForApiClients": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "face_not_detected"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "no_foreground_subject_detected"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "format_not_supported"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "keep_alive_elapsed"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "not_yet_implemented"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "retryable_worker_error"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "model_rules_violation"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_user_image"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_user_image_with_faces"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_user_text_prompt"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_user_content"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_generated_video"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_generated_audio"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "rule_bans_generated_content"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "filesize_too_large"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "image_dimensions_too_small"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "image_dimensions_too_large"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "generation_failed"
+            ]
+          },
+          {
+            "type": "object",
+            "description": "Catch-all for values the client doesn't yet know about.\nThe contained string is the raw serialized value from the server.",
+            "required": [
+              "unknown"
+            ],
+            "properties": {
+              "unknown": {
+                "type": "string",
+                "description": "Catch-all for values the client doesn't yet know about.\nThe contained string is the raw serialized value from the server."
+              }
+            }
+          }
+        ],
+        "description": "A forward-compatible version of `FrontendFailureCategory` for API clients.\n\nContains all known variants plus an `Unknown(String)` catch-all so that\nnewer server-side values never cause deserialization failures on the client."
+      },
+      "FrontendFailureCategoryForOldClients": {
+        "type": "string",
+        "description": "A restricted subset of `FrontendFailureCategory` that only includes values\nknown to old deployed clients. New failure categories are omitted so that\nold clients never receive an enum value they cannot deserialize.",
+        "enum": [
+          "face_not_detected",
+          "keep_alive_elapsed",
+          "not_yet_implemented",
+          "retryable_worker_error"
+        ]
+      },
+      "GenerationProvider": {
+        "type": "string",
+        "description": "NB: This will be used by a variety of tables (MySQL and sqlite)!\nKeep the max length to 16 characters.",
+        "enum": [
+          "artcraft",
+          "fal",
+          "grok",
+          "midjourney",
+          "sora",
+          "world_labs"
+        ]
+      },
+      "GetInferenceJobStatusPathInfo": {
+        "type": "object",
+        "description": "For the URL PathInfo",
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/InferenceJobToken"
+          }
+        }
+      },
+      "GetInferenceJobStatusSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "state"
+        ],
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/InferenceJobStatusResponsePayload"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GetSessionCreditsPathInfo": {
+        "type": "object",
+        "description": "For the URL PathInfo",
+        "required": [
+          "namespace"
+        ],
+        "properties": {
+          "namespace": {
+            "$ref": "#/components/schemas/PaymentsNamespace"
+          }
+        }
+      },
+      "GetSessionCreditsResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "free_credits",
+          "monthly_credits",
+          "banked_credits",
+          "sum_total_credits"
+        ],
+        "properties": {
+          "banked_credits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Any banked credits the user might have.",
+            "minimum": 0
+          },
+          "free_credits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Any free credits the user might have\nWe might support daily free credits.",
+            "minimum": 0
+          },
+          "monthly_credits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Any monthly refilling credits the user might have",
+            "minimum": 0
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "sum_total_credits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "All the credit amounts added together.",
+            "minimum": 0
+          }
+        }
+      },
+      "GetSessionSubscriptionPathInfo": {
+        "type": "object",
+        "description": "For the URL PathInfo",
+        "required": [
+          "namespace"
+        ],
+        "properties": {
+          "namespace": {
+            "$ref": "#/components/schemas/PaymentsNamespace"
+          }
+        }
+      },
+      "GetSessionSubscriptionResponse": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "active_subscription": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SubscriptionInfo",
+                "description": "Information about the user's subscription, if any."
+              }
+            ]
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GoogleCreateAccountRequest": {
+        "type": "object",
+        "required": [
+          "google_credential"
+        ],
+        "properties": {
+          "google_credential": {
+            "type": "string"
+          },
+          "maybe_landing_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional: The URL where the user landed when they first arrived.\nThe browser can send `window.location.href`."
+          },
+          "maybe_referral_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional: A referral code created by another user. If present, takes priority over\n`maybe_referral_username` for resolving the referring user."
+          },
+          "maybe_referral_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional: The referral URL the user arrived from when first hitting the site.\nThe browser can send `document.referrer` to the backend.\nIf not provided, we'll try the `referer` header."
+          },
+          "maybe_referral_username": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional: A referral username or code from a referring user."
+          }
+        }
+      },
+      "GoogleCreateAccountSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "signed_session",
+          "username_not_yet_customized"
+        ],
+        "properties": {
+          "maybe_user_display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The user's display username. If we want to present a username\ncustomization flow, we can use this to prevent another round trip."
+          },
+          "signed_session": {
+            "type": "string",
+            "description": "A signed session that can be sent as a header, bypassing cookies.\nThis is useful for API clients that don't support cookies or Google\nbrowsers killing cross-domain cookies."
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "username_not_yet_customized": {
+            "type": "boolean",
+            "description": "If the username was automatically generated and not yet customized,\nthis will report true. We should show the user a dialogue to change\ntheir username."
+          }
+        }
+      },
+      "InferenceCategory": {
+        "type": "string",
+        "description": "Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `inference_category`.\n\nOur \"generic inference\" pipeline supports a wide variety of ML models and other media.\nEach \"category\" of inference is identified by the following enum variants.\nThese types are present in the HTTP API and database columns as serialized here.\n\nYOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.",
+        "enum": [
+          "deprecated_field",
+          "lipsync_animation",
+          "text_to_speech",
+          "voice_conversion",
+          "image_generation",
+          "video_generation",
+          "audio_generation",
+          "object_generation",
+          "splat_generation",
+          "character_generation",
+          "background_removal",
+          "mocap",
+          "workflow",
+          "format_conversion",
+          "live_portrait",
+          "seed_vc",
+          "video_filter",
+          "convert_bvh_to_workflow",
+          "f5_tts"
+        ]
+      },
+      "InferenceJobStatusResponsePayload": {
+        "type": "object",
+        "required": [
+          "job_token",
+          "request",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "job_token": {
+            "$ref": "#/components/schemas/InferenceJobToken"
+          },
+          "maybe_result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ResultDetailsResponse"
+              }
+            ]
+          },
+          "request": {
+            "$ref": "#/components/schemas/RequestDetailsResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusDetailsResponse"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "InferenceJobToken": {
+        "type": "string",
+        "description": "The primary key for \"generic\" inference jobs."
+      },
+      "JobDetailsLipsyncRequest": {
+        "type": "object",
+        "description": "Details about submitted lipsync jobs (request arguments only)",
+        "required": [
+          "audio_source_token",
+          "image_or_video_source_token"
+        ],
+        "properties": {
+          "audio_source_token": {
+            "$ref": "#/components/schemas/MediaFileToken",
+            "description": "Media file token for the source audio.\nThis is probably an audio file, but in the future we might pull audio from video."
+          },
+          "image_or_video_source_token": {
+            "$ref": "#/components/schemas/MediaFileToken",
+            "description": "Media file token for the source visuals.\nThis is either an image or video."
+          }
+        }
+      },
+      "JobDetailsLivePortraitRequest": {
+        "type": "object",
+        "description": "Details about submitted live portrait jobs (request arguments only)",
+        "required": [
+          "source_media_file_token",
+          "face_driver_media_file_token"
+        ],
+        "properties": {
+          "face_driver_media_file_token": {
+            "$ref": "#/components/schemas/MediaFileToken",
+            "description": "Driving media token\nThis must be a video media file token.\nThis drives the animation of the face, but the actor will disappear\nand their facial expressions will be transferred to the source.\nThis video must contain a face."
+          },
+          "source_media_file_token": {
+            "$ref": "#/components/schemas/MediaFileToken",
+            "description": "Source media token\nThis can be an image or a video media file token\nThis is what constitutes the \"portrait\" or the overall final video.\nThis video or image must contain a face."
+          }
+        }
+      },
+      "JobStatusPlus": {
+        "type": "string",
+        "description": "This is used in newer jobs (that add additional enum states)\n\n - generic_inference_job\n - (no other jobs yet)\n\nSee the documentation on the table for usage.\n\nDO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.",
+        "enum": [
+          "pending",
+          "started",
+          "complete_success",
+          "complete_failure",
+          "attempt_failed",
+          "dead",
+          "cancelled_by_user",
+          "cancelled_by_system"
+        ]
+      },
+      "ListSessionJobsItem": {
+        "type": "object",
+        "required": [
+          "job_token",
+          "request",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "job_token": {
+            "$ref": "#/components/schemas/InferenceJobToken"
+          },
+          "maybe_result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ListSessionResultDetailsResponse"
+              }
+            ]
+          },
+          "request": {
+            "$ref": "#/components/schemas/ListSessionRequestDetailsResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ListSessionStatusDetailsResponse"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ListSessionJobsSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "jobs"
+        ],
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListSessionJobsItem"
+            },
+            "description": "This is not paginated and is limited to showing 100 jobs."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ListSessionRequestDetailsResponse": {
+        "type": "object",
+        "description": "Details about what the user requested for generation",
+        "required": [
+          "inference_category"
+        ],
+        "properties": {
+          "inference_category": {
+            "$ref": "#/components/schemas/InferenceCategory"
+          },
+          "maybe_lipsync_details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobDetailsLipsyncRequest",
+                "description": "OPTIONAL. For lipsync jobs (face fusion and sad talker), this is additional\ninformation on the request."
+              }
+            ]
+          },
+          "maybe_live_portrait_details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobDetailsLivePortraitRequest",
+                "description": "OPTIONAL. For Live Portrait jobs, this is additional information on the request."
+              }
+            ]
+          },
+          "maybe_model_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OPTIONAL. Title of the model, if it has one"
+          },
+          "maybe_model_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_model_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_prompt_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PromptToken"
+              }
+            ]
+          },
+          "maybe_raw_inference_text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OPTIONAL. If the result was TTS, this is the raw inference text."
+          },
+          "maybe_style_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StyleTransferName",
+                "description": "OPTIONAL. For Comfy / Video Style Transfer jobs, this might include\nthe name of the selected style."
+              }
+            ]
+          }
+        }
+      },
+      "ListSessionResultDetailsResponse": {
+        "type": "object",
+        "description": "Details about the completed result (if any)",
+        "required": [
+          "entity_type",
+          "entity_token",
+          "media_links"
+        ],
+        "properties": {
+          "entity_token": {
+            "type": "string"
+          },
+          "entity_type": {
+            "type": "string"
+          },
+          "maybe_batch_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BatchGenerationToken",
+                "description": "If generated as part of a batch, the batch token."
+              }
+            ]
+          },
+          "maybe_public_bucket_media_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "(DEPRECATED) URL path to the media file",
+            "deprecated": true
+          },
+          "maybe_successfully_completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "media_links": {
+            "$ref": "#/components/schemas/MediaLinks",
+            "description": "Rich CDN links to the media, including thumbnails, previews, and more."
+          }
+        }
+      },
+      "ListSessionStatusDetailsResponse": {
+        "type": "object",
+        "description": "Details about the ongoing job status",
+        "required": [
+          "status",
+          "attempt_count",
+          "requires_keepalive",
+          "progress_percentage"
+        ],
+        "properties": {
+          "attempt_count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "maybe_assigned_cluster": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_assigned_worker": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_current_execution_duration_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "If the job is currently running, this is how long it has been running in seconds.\nThis is heuristic estimate since we don't record the precise start time across runs.",
+            "minimum": 0
+          },
+          "maybe_extra_status_description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Extra, temporary status from Redis.\nThis can denote inference progress, and the Python code can write to it."
+          },
+          "maybe_failure_category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FrontendFailureCategoryForOldClients",
+                "description": "NB: DO NOT CHANGE: Old clients can't read the new enum payload values as they are introduced.\n\nAn enum the frontend can use to display localized/I18N error\nmessages. These pertain to both transient and permanent failures."
+              }
+            ]
+          },
+          "maybe_failure_category_updated": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FrontendFailureCategoryForApiClients",
+                "description": "An enum the frontend can use to display localized/I18N error\nmessages. These pertain to both transient and permanent failures."
+              }
+            ]
+          },
+          "maybe_failure_message": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "User-facing failure messages"
+          },
+          "maybe_first_started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "progress_percentage": {
+            "type": "integer",
+            "format": "int32",
+            "description": "This is an integer number between 0 and 100 (both inclusive) that\nreports the completeness.",
+            "minimum": 0
+          },
+          "requires_keepalive": {
+            "type": "boolean",
+            "description": "Whether the frontend needs to maintain a keepalive check.\nThis is typically only for non-premium users."
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatusPlus",
+            "description": "Primary status from the database (a state machine)."
+          }
+        }
+      },
+      "LoginErrorResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "error_type",
+          "error_message"
+        ],
+        "properties": {
+          "error_message": {
+            "type": "string"
+          },
+          "error_type": {
+            "$ref": "#/components/schemas/LoginErrorType"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoginErrorType": {
+        "type": "string",
+        "enum": [
+          "AccountNeedsPassword",
+          "InvalidCredentials",
+          "ServerError"
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "username_or_email",
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "username_or_email": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "signed_session"
+        ],
+        "properties": {
+          "signed_session": {
+            "type": "string",
+            "description": "A signed session that can be sent as a header, bypassing cookies.\nThis is useful for API clients that don't support cookies or Google\nbrowsers killing cross-domain cookies."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LogoutSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MediaFileToken": {
+        "type": "string",
+        "description": "The primary key for Media Files"
+      },
+      "MediaLinks": {
+        "type": "object",
+        "description": "Links to media file locations (bucket, CDN, etc.)",
+        "required": [
+          "cdn_url"
+        ],
+        "properties": {
+          "cdn_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Primary link to the asset via the CDN."
+          },
+          "maybe_thumbnail_template": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Template to construct thumbnail URLs.\nReplace the string `{WIDTH}` with the desired width.\nOnly relevant for image media files. (Video media files instead have\nvideo previews, which, in turn, have their own thumbnail templates.)"
+          },
+          "maybe_video_previews": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VideoPreviews",
+                "description": "Video preview images (still and animated gif) for mp4 video files.\nThese are only set for video media files.\nThese are not set for \"cover images\" that are gif or webms, but rather video files."
+              }
+            ]
+          }
+        }
+      },
+      "ModelCreator": {
+        "type": "string",
+        "description": "The company or organization that created a model.",
+        "enum": [
+          "alibaba",
+          "artcraft",
+          "black_forest_labs",
+          "bytedance",
+          "deemos",
+          "fal",
+          "google",
+          "grok",
+          "hailuo",
+          "higgsfield",
+          "kling",
+          "krea",
+          "meshy",
+          "midjourney",
+          "open_ai",
+          "open_art",
+          "recraft",
+          "replicate",
+          "runway",
+          "stability",
+          "suno",
+          "tencent",
+          "tensor_art",
+          "tripo",
+          "vidu",
+          "world_labs"
+        ]
+      },
+      "OmniGenAudioCostAndGenerateRequest": {
+        "type": "object",
+        "description": "Shared request body for both the audio cost estimate and audio generation endpoints.",
+        "properties": {
+          "audio_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference audio (optional).\nThe remix/sample source, or Seed Audio @Audio references (up to 3)."
+          },
+          "bpm": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Beats per minute (Suno Sounds).",
+            "minimum": 0
+          },
+          "idempotency_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "REQUIRED (even if marked optional)\nIdempotency token to prevent duplicate requests."
+          },
+          "image_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference image (optional).\nSeed Audio supports a single reference image; cannot be combined with audio references."
+          },
+          "is_instrumental": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether to generate instrumental-only audio (Suno Music / Sample)."
+          },
+          "is_loopable": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the sound should loop vs a single hit (Suno Sounds)."
+          },
+          "keep_lyrics": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether to keep the original lyrics (Suno Remix)."
+          },
+          "model": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonAudioModel",
+                "description": "REQUIRED (even if marked optional)\nWhich model to use."
+              }
+            ]
+          },
+          "musical_key": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonMusicalKey",
+                "description": "The musical key to use (Suno Sounds)."
+              }
+            ]
+          },
+          "pitch": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Pitch shift in semitones (Seed Audio: -12..=12)."
+          },
+          "prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text prompt for the audio generation."
+          },
+          "sample_rate_hz": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Output sample rate in Hz (Seed Audio: 8000/16000/24000/32000/44100/48000).",
+            "minimum": 0
+          },
+          "speed": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Playback speed multiplier (Seed Audio: 0.5–2.0)."
+          },
+          "style_prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Style/genre direction (Suno's \"tags\")."
+          },
+          "volume": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Volume multiplier (Seed Audio: 0.5–2.0)."
+          }
+        }
+      },
+      "OmniGenAudioCostResponse": {
+        "type": "object",
+        "description": "Response body for the omni-gen audio cost estimate endpoint.",
+        "required": [
+          "success",
+          "is_free",
+          "is_unlimited",
+          "is_rate_limited",
+          "has_watermark"
+        ],
+        "properties": {
+          "cost_in_credits": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in credits.",
+            "minimum": 0
+          },
+          "cost_in_usd_cents": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in USD cents.",
+            "minimum": 0
+          },
+          "failures_are_refunded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether failures are refunded.\nTrue: 100% yes\nFalse: 100% no\nNone: Unknown or variable"
+          },
+          "has_watermark": {
+            "type": "boolean",
+            "description": "Whether the output will have a watermark."
+          },
+          "is_free": {
+            "type": "boolean",
+            "description": "Whether the generation is free for this user/plan."
+          },
+          "is_rate_limited": {
+            "type": "boolean",
+            "description": "Whether the user is rate-limited."
+          },
+          "is_unlimited": {
+            "type": "boolean",
+            "description": "Whether the user has unlimited generations."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenAudioModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "audio_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "audio_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "bpm_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "extra_info": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model."
+          },
+          "extra_info_short": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model. (Brief; only a few words.)"
+          },
+          "full_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "image_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "instrumental_toggle_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the instrumental-only toggle is supported (Suno Music / Sample)."
+          },
+          "is_disabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "keep_lyrics_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the \"keep lyrics\" toggle is supported (Suno Remix)."
+          },
+          "loopable_toggle_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the loop vs single-hit toggle is supported (Suno Sounds)."
+          },
+          "model": {
+            "$ref": "#/components/schemas/CommonAudioModel"
+          },
+          "model_creator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCreator"
+              }
+            ]
+          },
+          "musical_key_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "pitch_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "sample_rate_hz_default": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "sample_rate_hz_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "speed_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "style_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a style/genre prompt (Suno's \"tags\") is supported."
+          },
+          "text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "volume_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "OmniGenAudioModelProviderDetails": {
+        "type": "object",
+        "required": [
+          "provider",
+          "models"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenAudioProviderModelDetails"
+            }
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GenerationProvider"
+          }
+        }
+      },
+      "OmniGenAudioModelsResponse": {
+        "type": "object",
+        "description": "Response body for the audio models endpoint.",
+        "required": [
+          "success",
+          "models",
+          "providers"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenAudioModelDetails"
+            },
+            "description": "A list of all models: details, features, and capabilities"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenAudioModelProviderDetails"
+            },
+            "description": "Provider-by-provider model offering and capability list,\nwith possible capability overrides (future)"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenAudioProviderModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/CommonAudioModel"
+          },
+          "overrides": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OmniGenAudioModelDetails"
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenImageCostAndGenerateRequest": {
+        "type": "object",
+        "description": "Shared request body for both the image cost estimate and image generation endpoints.",
+        "properties": {
+          "adjust_horizontal_angle": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Only for angle manipulation models."
+          },
+          "adjust_vertical_angle": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Only for angle manipulation models."
+          },
+          "adjust_zoom": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Only for angle manipulation models."
+          },
+          "aspect_ratio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonAspectRatio",
+                "description": "The aspect ratio to use."
+              }
+            ]
+          },
+          "idempotency_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "REQUIRED (even if marked optional)\nIdempotency token to prevent duplicate requests.\nIf not supplied, we'll generate one for the required providers."
+          },
+          "image_batch_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How many images to generate.",
+            "minimum": 0
+          },
+          "image_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Input images for image editing.\nIf present, we're doing image editing (image-to-image).\nIf absent, we're doing text-to-image."
+          },
+          "model": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonImageModel",
+                "description": "REQUIRED (even if marked optional)\nWhich model to use."
+              }
+            ]
+          },
+          "prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The prompt for the image generation."
+          },
+          "quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonQuality",
+                "description": "The quality to use."
+              }
+            ]
+          },
+          "resolution": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonResolution",
+                "description": "The resolution to use."
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenImageCostResponse": {
+        "type": "object",
+        "description": "Response body for the omni-gen image cost estimate endpoint.",
+        "required": [
+          "success",
+          "is_free",
+          "is_unlimited",
+          "is_rate_limited",
+          "has_watermark"
+        ],
+        "properties": {
+          "cost_in_credits": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in credits.",
+            "minimum": 0
+          },
+          "cost_in_usd_cents": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in USD cents.",
+            "minimum": 0
+          },
+          "failures_are_refunded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether failures are refunded.\nTrue: 100% yes\nFalse: 100% no\nNone: Unknown or variable"
+          },
+          "has_watermark": {
+            "type": "boolean",
+            "description": "Whether the output will have a watermark."
+          },
+          "is_free": {
+            "type": "boolean",
+            "description": "Whether the generation is free for this user/plan."
+          },
+          "is_rate_limited": {
+            "type": "boolean",
+            "description": "Whether the user is rate limited."
+          },
+          "is_unlimited": {
+            "type": "boolean",
+            "description": "Whether the user has unlimited generations."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenImageModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "aspect_ratio_default": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonAspectRatio"
+              }
+            ]
+          },
+          "aspect_ratio_default_when_editing": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonAspectRatio"
+              }
+            ]
+          },
+          "aspect_ratio_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonAspectRatio"
+            }
+          },
+          "batch_size_default": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "batch_size_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "batch_size_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "batch_size_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "default_quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonQuality"
+              }
+            ]
+          },
+          "full_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "has_fixed_editing_aspect_ratio": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "image_refs_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "image_refs_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "is_disabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "model": {
+            "$ref": "#/components/schemas/CommonImageModel"
+          },
+          "model_creator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCreator"
+              }
+            ]
+          },
+          "negative_text_prompt_max_length": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "negative_text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "quality_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonQuality"
+            }
+          },
+          "resolution_default": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonResolution"
+              }
+            ]
+          },
+          "resolution_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonResolution"
+            }
+          },
+          "text_prompt_max_length": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "OmniGenImageModelProviderDetails": {
+        "type": "object",
+        "required": [
+          "provider",
+          "models"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenImageProviderModelDetails"
+            }
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GenerationProvider"
+          }
+        }
+      },
+      "OmniGenImageModelsProvider": {
+        "type": "string",
+        "description": "The provider filter for the models endpoint.",
+        "enum": [
+          "artcraft",
+          "all"
+        ]
+      },
+      "OmniGenImageModelsResponse": {
+        "type": "object",
+        "description": "Response body for the image models endpoint.\nTBD — fields will be added later.",
+        "required": [
+          "success",
+          "models",
+          "providers"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenImageModelDetails"
+            }
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenImageModelProviderDetails"
+            }
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenImageProviderModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/CommonImageModel"
+          },
+          "overrides": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OmniGenImageModelDetails"
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenMeshCostAndGenerateRequest": {
+        "type": "object",
+        "description": "Shared request body for both the mesh cost estimate and mesh generation endpoints.",
+        "properties": {
+          "back_image_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Back view image (optional; multi-view input)."
+              }
+            ]
+          },
+          "enable_pbr": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether to generate PBR (physically based rendering) materials."
+          },
+          "enable_texture": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether to generate textures. Some models (Tripo3D) can skip texturing\nfor a cheaper, faster generation."
+          },
+          "face_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Target face count for the generated mesh.",
+            "minimum": 0
+          },
+          "front_image_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Front view image (optional; multi-view input).\nCan be used instead of `reference_image_media_tokens[0]` when the other\nside views are supplied."
+              }
+            ]
+          },
+          "geometry_quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonMeshQuality",
+                "description": "Geometry quality. `Detailed` costs extra on some models (Tripo3D)."
+              }
+            ]
+          },
+          "idempotency_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "REQUIRED (even if marked optional)\nIdempotency token to prevent duplicate requests."
+          },
+          "input_mesh_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Input mesh file for mesh-to-mesh models (part splitting, retopology).\nRequired by `hunyuan_3d_3p1_part` (FBX) and\n`hunyuan_3d_3p1_topology` (GLB/OBJ)."
+              }
+            ]
+          },
+          "left_image_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Left view image (optional; multi-view input)."
+              }
+            ]
+          },
+          "mesh_output_type": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonMeshOutputType",
+                "description": "The mesh output type to generate (normal, low-poly, or geometry-only)."
+              }
+            ]
+          },
+          "model": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonMeshModel",
+                "description": "REQUIRED (even if marked optional)\nWhich model to use."
+              }
+            ]
+          },
+          "polygon_type": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonPolygonType",
+                "description": "The polygon type to use for the generated mesh (triangle or quad)."
+              }
+            ]
+          },
+          "prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text prompt for the mesh generation (text-to-3D)."
+          },
+          "reference_image_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference images (optional).\nThe primary/front input image, or the sketch image for sketch-to-3D."
+          },
+          "right_image_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Right view image (optional; multi-view input)."
+              }
+            ]
+          },
+          "texture_quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonMeshQuality",
+                "description": "Texture quality. `Detailed` costs extra on some models (Tripo3D's HD\ntexture tier)."
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenMeshCostResponse": {
+        "type": "object",
+        "description": "Response body for the omni-gen mesh cost estimate endpoint.",
+        "required": [
+          "success",
+          "is_free",
+          "is_unlimited",
+          "is_rate_limited",
+          "has_watermark"
+        ],
+        "properties": {
+          "cost_in_credits": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in credits.",
+            "minimum": 0
+          },
+          "cost_in_usd_cents": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in USD cents.",
+            "minimum": 0
+          },
+          "failures_are_refunded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether failures are refunded.\nTrue: 100% yes\nFalse: 100% no\nNone: Unknown or variable"
+          },
+          "has_watermark": {
+            "type": "boolean",
+            "description": "Whether the output will have a watermark."
+          },
+          "is_free": {
+            "type": "boolean",
+            "description": "Whether the generation is free for this user/plan."
+          },
+          "is_rate_limited": {
+            "type": "boolean",
+            "description": "Whether the user is rate-limited."
+          },
+          "is_unlimited": {
+            "type": "boolean",
+            "description": "Whether the user has unlimited generations."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenMeshModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "extra_info": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model."
+          },
+          "extra_info_short": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model. (Brief; only a few words.)"
+          },
+          "face_count_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a target face count can be specified."
+          },
+          "full_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "geometry_quality_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a geometry quality level (standard/detailed) can be selected."
+          },
+          "image_input_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether image-to-3D input is supported."
+          },
+          "is_disabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "mesh_input_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the model takes an existing mesh file as input\n(mesh-to-mesh models like part splitting and retopology)."
+          },
+          "mesh_output_types": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonMeshOutputType"
+            },
+            "description": "The mesh output types the model supports."
+          },
+          "model": {
+            "$ref": "#/components/schemas/CommonMeshModel"
+          },
+          "model_creator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCreator"
+              }
+            ]
+          },
+          "multi_view_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether multi-view (front/back/left/right) image input is supported."
+          },
+          "pbr_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether PBR (physically based rendering) material generation is supported."
+          },
+          "polygon_types": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonPolygonType"
+            },
+            "description": "The polygon types the model supports."
+          },
+          "sketch_input_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether sketch-to-3D input is supported."
+          },
+          "text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether text-to-3D prompting is supported."
+          },
+          "texture_quality_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a texture quality level (standard/detailed) can be selected."
+          },
+          "texture_toggle_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether texture generation can be toggled off (untextured output)."
+          }
+        }
+      },
+      "OmniGenMeshModelProviderDetails": {
+        "type": "object",
+        "required": [
+          "provider",
+          "models"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenMeshProviderModelDetails"
+            }
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GenerationProvider"
+          }
+        }
+      },
+      "OmniGenMeshModelsResponse": {
+        "type": "object",
+        "description": "Response body for the mesh models endpoint.",
+        "required": [
+          "success",
+          "models",
+          "providers"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenMeshModelDetails"
+            },
+            "description": "A list of all models: details, features, and capabilities"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenMeshModelProviderDetails"
+            },
+            "description": "Provider-by-provider model offering and capability list,\nwith possible capability overrides (future)"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenMeshProviderModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/CommonMeshModel"
+          },
+          "overrides": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OmniGenMeshModelDetails"
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenSplatCostAndGenerateRequest": {
+        "type": "object",
+        "description": "Shared request body for both the splat cost estimate and splat generation endpoints.",
+        "properties": {
+          "disable_recaption": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether to disable prompt recaptioning."
+          },
+          "idempotency_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "REQUIRED (even if marked optional)\nIdempotency token to prevent duplicate requests."
+          },
+          "is_panoramic": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the single reference image is a 360-degree panorama."
+          },
+          "model": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonSplatModel",
+                "description": "REQUIRED (even if marked optional)\nWhich model to use."
+              }
+            ]
+          },
+          "prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text prompt for the splat generation."
+          },
+          "reference_image_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference images (optional).\nNOTE: Spherical/panorama coordinates are not yet supported per-image;\nmultiple images are treated as multi-view input of the same world."
+          },
+          "reference_video_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Reference video (optional)."
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenSplatCostResponse": {
+        "type": "object",
+        "description": "Response body for the omni-gen splat cost estimate endpoint.",
+        "required": [
+          "success",
+          "is_free",
+          "is_unlimited",
+          "is_rate_limited",
+          "has_watermark"
+        ],
+        "properties": {
+          "cost_in_credits": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in credits.",
+            "minimum": 0
+          },
+          "cost_in_usd_cents": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in USD cents.",
+            "minimum": 0
+          },
+          "failures_are_refunded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether failures are refunded.\nTrue: 100% yes\nFalse: 100% no\nNone: Unknown or variable"
+          },
+          "has_watermark": {
+            "type": "boolean",
+            "description": "Whether the output will have a watermark."
+          },
+          "is_free": {
+            "type": "boolean",
+            "description": "Whether the generation is free for this user/plan."
+          },
+          "is_rate_limited": {
+            "type": "boolean",
+            "description": "Whether the user is rate-limited."
+          },
+          "is_unlimited": {
+            "type": "boolean",
+            "description": "Whether the user has unlimited generations."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenSplatModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "disable_recaption_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the \"disable recaption\" toggle is supported."
+          },
+          "extra_info": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model."
+          },
+          "extra_info_short": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model. (Brief; only a few words.)"
+          },
+          "full_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "image_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "is_disabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "model": {
+            "$ref": "#/components/schemas/CommonSplatModel"
+          },
+          "model_creator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCreator"
+              }
+            ]
+          },
+          "panorama_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a 360-degree panorama reference image is supported."
+          },
+          "text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "video_reference_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a reference video input is supported."
+          }
+        }
+      },
+      "OmniGenSplatModelProviderDetails": {
+        "type": "object",
+        "required": [
+          "provider",
+          "models"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenSplatProviderModelDetails"
+            }
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GenerationProvider"
+          }
+        }
+      },
+      "OmniGenSplatModelsResponse": {
+        "type": "object",
+        "description": "Response body for the splat models endpoint.",
+        "required": [
+          "success",
+          "models",
+          "providers"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenSplatModelDetails"
+            },
+            "description": "A list of all models: details, features, and capabilities"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenSplatModelProviderDetails"
+            },
+            "description": "Provider-by-provider model offering and capability list,\nwith possible capability overrides (future)"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenSplatProviderModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/CommonSplatModel"
+          },
+          "overrides": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OmniGenSplatModelDetails"
+              }
+            ]
+          }
+        }
+      },
+      "OmniGenVideoCostAndGenerateRequest": {
+        "type": "object",
+        "description": "Shared request body for both the video cost estimate and video generation endpoints.",
+        "properties": {
+          "aspect_ratio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonAspectRatio",
+                "description": "The aspect ratio to use."
+              }
+            ]
+          },
+          "bitrate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonBitrate",
+                "description": "The output bitrate to use.\nNot all models support this; models that don't simply ignore it."
+              }
+            ]
+          },
+          "duration_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How many seconds to generate.",
+            "minimum": 0
+          },
+          "end_frame_image_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Ending keyframe (optional)."
+              }
+            ]
+          },
+          "estimate_only": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EstimateFields",
+                "description": "Frontend-supplied hints for cost estimation only. IGNORED by\ngeneration — the generate endpoints measure inputs themselves (e.g.\nffprobing reference videos) and bill from those measurements."
+              }
+            ]
+          },
+          "generate_audio": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether to turn on/off audio.\nNot all models support audio, not all models have a choice.\nSome models will default this to true, others will default it to false,\nso it's best to be explicit."
+          },
+          "idempotency_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "REQUIRED (even if marked optional)\nIdempotency token to prevent duplicate requests."
+          },
+          "model": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonVideoModel",
+                "description": "REQUIRED (even if marked optional)\nWhich model to use."
+              }
+            ]
+          },
+          "negative_prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Some models support negative text prompts."
+          },
+          "prompt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text prompt for the video generation."
+          },
+          "quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonQuality",
+                "description": "The quality to use."
+              }
+            ]
+          },
+          "reference_audio_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference audio (optional)."
+          },
+          "reference_character_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CharacterToken"
+            },
+            "description": "Optional character tokens to reference in the prompt.\nCharacters are referenced in prompts as @CharacterName."
+          },
+          "reference_image_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference images (optional)."
+          },
+          "reference_video_media_tokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Reference videos (optional)."
+          },
+          "resolution": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonResolution",
+                "description": "The resolution to use."
+              }
+            ]
+          },
+          "start_frame_image_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Starting keyframe (optional)."
+              }
+            ]
+          },
+          "video_batch_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How many videos to generate.",
+            "minimum": 0
+          }
+        }
+      },
+      "OmniGenVideoCostResponse": {
+        "type": "object",
+        "description": "Response body for the omni-gen video cost estimate endpoint.",
+        "required": [
+          "success",
+          "is_free",
+          "is_unlimited",
+          "is_rate_limited",
+          "has_watermark"
+        ],
+        "properties": {
+          "cost_in_credits": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in credits.",
+            "minimum": 0
+          },
+          "cost_in_usd_cents": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Estimated cost in USD cents.",
+            "minimum": 0
+          },
+          "failures_are_refunded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether failures are refunded.\nTrue: 100% yes\nFalse: 100% no\nNone: Unknown or variable"
+          },
+          "has_watermark": {
+            "type": "boolean",
+            "description": "Whether the output will have a watermark."
+          },
+          "is_free": {
+            "type": "boolean",
+            "description": "Whether the generation is free for this user/plan."
+          },
+          "is_rate_limited": {
+            "type": "boolean",
+            "description": "Whether the user is rate-limited."
+          },
+          "is_unlimited": {
+            "type": "boolean",
+            "description": "Whether the user has unlimited generations."
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenVideoModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "aspect_ratio_default": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonAspectRatio"
+              }
+            ]
+          },
+          "aspect_ratio_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonAspectRatio"
+            }
+          },
+          "audio_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "audio_references_max_total_duration_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "audio_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "batch_size_default": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "batch_size_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "batch_size_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "batch_size_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "bitrate_default": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonBitrate"
+              }
+            ]
+          },
+          "bitrate_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonBitrate"
+            }
+          },
+          "character_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "character_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "default_quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonQuality"
+              }
+            ]
+          },
+          "duration_seconds_default": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "duration_seconds_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "duration_seconds_max_with_image_references": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Specific maximum when image references are used,\neg. Grok limits to 10 seconds in this mode.",
+            "minimum": 0
+          },
+          "duration_seconds_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "duration_seconds_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "ending_keyframe_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "extra_info": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model."
+          },
+          "extra_info_short": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional details about the model. (Brief; only a few words.)"
+          },
+          "full_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "image_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "is_disabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "model": {
+            "$ref": "#/components/schemas/CommonVideoModel"
+          },
+          "model_creator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCreator"
+              }
+            ]
+          },
+          "negative_text_prompt_max_length": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "negative_text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "quality_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonQuality"
+            }
+          },
+          "resolution_default": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommonResolution"
+              }
+            ]
+          },
+          "resolution_options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommonResolution"
+            }
+          },
+          "show_generate_with_sound_toggle": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "starting_keyframe_required": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "starting_keyframe_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "text_prompt_max_length": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "text_prompt_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "text_to_video_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a pure text-to-video modality is supported"
+          },
+          "video_references_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "video_references_max_total_duration_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "video_references_supported": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "OmniGenVideoModelProviderDetails": {
+        "type": "object",
+        "required": [
+          "provider",
+          "models"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenVideoProviderModelDetails"
+            }
+          },
+          "provider": {
+            "$ref": "#/components/schemas/GenerationProvider"
+          }
+        }
+      },
+      "OmniGenVideoModelsProvider": {
+        "type": "string",
+        "description": "The provider filter for the models endpoint.",
+        "enum": [
+          "artcraft",
+          "all"
+        ]
+      },
+      "OmniGenVideoModelsResponse": {
+        "type": "object",
+        "description": "Response body for the video models endpoint.\nTBD — fields will be added later.",
+        "required": [
+          "success",
+          "models",
+          "providers"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenVideoModelDetails"
+            },
+            "description": "A list of all models: details, features, and capabilities"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniGenVideoModelProviderDetails"
+            },
+            "description": "Provider-by-provider model offering and capability list,\nwith possible capability overrides (future)"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OmniGenVideoProviderModelDetails": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/CommonVideoModel"
+          },
+          "overrides": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OmniGenVideoModelDetails"
+              }
+            ]
+          }
+        }
+      },
+      "PaymentsNamespace": {
+        "type": "string",
+        "description": "NB: This will be used by a variety of tables (MySQL and sqlite)!\nKeep the max length to 16 characters.",
+        "enum": [
+          "artcraft",
+          "fakeyou"
+        ]
+      },
+      "PromptToken": {
+        "type": "string",
+        "description": "The primary key for Prompts"
+      },
+      "RequestDetailsResponse": {
+        "type": "object",
+        "description": "Details about what the user requested for generation",
+        "required": [
+          "inference_category"
+        ],
+        "properties": {
+          "inference_category": {
+            "$ref": "#/components/schemas/InferenceCategory"
+          },
+          "maybe_lipsync_details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobDetailsLipsyncRequest",
+                "description": "OPTIONAL. For lipsync jobs (face fusion and sad talker), this is additional\ninformation on the request."
+              }
+            ]
+          },
+          "maybe_live_portrait_details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobDetailsLivePortraitRequest",
+                "description": "OPTIONAL. For Live Portrait jobs, this is additional information on the request."
+              }
+            ]
+          },
+          "maybe_model_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OPTIONAL. Title of the model, if it has one"
+          },
+          "maybe_model_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_model_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_prompt_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PromptToken"
+              }
+            ]
+          },
+          "maybe_raw_inference_text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OPTIONAL. If the result was TTS, this is the raw inference text."
+          },
+          "maybe_style_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StyleTransferName",
+                "description": "OPTIONAL. For Comfy / Video Style Transfer jobs, this might include\nthe name of the selected style."
+              }
+            ]
+          }
+        }
+      },
+      "ResultDetailsResponse": {
+        "type": "object",
+        "description": "Details about the completed result (if any)",
+        "required": [
+          "entity_type",
+          "entity_token",
+          "media_links"
+        ],
+        "properties": {
+          "entity_token": {
+            "type": "string"
+          },
+          "entity_type": {
+            "type": "string"
+          },
+          "maybe_public_bucket_media_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "(DEPRECATED) URL path to the media file",
+            "deprecated": true
+          },
+          "maybe_successfully_completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "media_links": {
+            "$ref": "#/components/schemas/MediaLinks",
+            "description": "Rich CDN links to the media, including thumbnails, previews, and more."
+          }
+        }
+      },
+      "SessionInfoSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "logged_in"
+        ],
+        "properties": {
+          "logged_in": {
+            "type": "boolean"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "user": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SessionUserInfo"
+              }
+            ]
+          }
+        }
+      },
+      "SessionOnboardingState": {
+        "type": "object",
+        "required": [
+          "email_not_set",
+          "email_not_confirmed",
+          "password_not_set",
+          "username_not_customized"
+        ],
+        "properties": {
+          "email_not_confirmed": {
+            "type": "boolean",
+            "description": "If true, the user hasn't confirmed their email."
+          },
+          "email_not_set": {
+            "type": "boolean",
+            "description": "If true, the user hasn't set their email."
+          },
+          "password_not_set": {
+            "type": "boolean",
+            "description": "If true, the user hasn't set their password."
+          },
+          "username_not_customized": {
+            "type": "boolean",
+            "description": "If true, the user hasn't set their username (the username they have is random)."
+          }
+        }
+      },
+      "SessionUserInfo": {
+        "type": "object",
+        "required": [
+          "core_info",
+          "user_token",
+          "username",
+          "display_name",
+          "email_gravatar_hash",
+          "onboarding",
+          "can_access_studio",
+          "maybe_feature_flags",
+          "fakeyou_plan",
+          "storyteller_stream_plan",
+          "can_use_tts",
+          "can_use_w2l",
+          "can_delete_own_tts_results",
+          "can_delete_own_w2l_results",
+          "can_delete_own_account",
+          "can_upload_tts_models",
+          "can_upload_w2l_templates",
+          "can_delete_own_tts_models",
+          "can_delete_own_w2l_templates",
+          "can_approve_w2l_templates",
+          "can_edit_other_users_profiles",
+          "can_edit_other_users_tts_models",
+          "can_edit_other_users_w2l_templates",
+          "can_delete_other_users_tts_models",
+          "can_delete_other_users_tts_results",
+          "can_delete_other_users_w2l_templates",
+          "can_delete_other_users_w2l_results",
+          "can_ban_users",
+          "can_delete_users"
+        ],
+        "properties": {
+          "can_access_studio": {
+            "type": "boolean",
+            "deprecated": true
+          },
+          "can_approve_w2l_templates": {
+            "type": "boolean"
+          },
+          "can_ban_users": {
+            "type": "boolean"
+          },
+          "can_delete_other_users_tts_models": {
+            "type": "boolean"
+          },
+          "can_delete_other_users_tts_results": {
+            "type": "boolean"
+          },
+          "can_delete_other_users_w2l_results": {
+            "type": "boolean"
+          },
+          "can_delete_other_users_w2l_templates": {
+            "type": "boolean"
+          },
+          "can_delete_own_account": {
+            "type": "boolean"
+          },
+          "can_delete_own_tts_models": {
+            "type": "boolean"
+          },
+          "can_delete_own_tts_results": {
+            "type": "boolean"
+          },
+          "can_delete_own_w2l_results": {
+            "type": "boolean"
+          },
+          "can_delete_own_w2l_templates": {
+            "type": "boolean"
+          },
+          "can_delete_users": {
+            "type": "boolean"
+          },
+          "can_edit_other_users_profiles": {
+            "type": "boolean"
+          },
+          "can_edit_other_users_tts_models": {
+            "type": "boolean"
+          },
+          "can_edit_other_users_w2l_templates": {
+            "type": "boolean"
+          },
+          "can_upload_tts_models": {
+            "type": "boolean"
+          },
+          "can_upload_w2l_templates": {
+            "type": "boolean"
+          },
+          "can_use_tts": {
+            "type": "boolean"
+          },
+          "can_use_w2l": {
+            "type": "boolean"
+          },
+          "core_info": {
+            "$ref": "#/components/schemas/UserDetailsLight"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "email_gravatar_hash": {
+            "type": "string"
+          },
+          "fakeyou_plan": {
+            "$ref": "#/components/schemas/FakeYouPlan"
+          },
+          "maybe_feature_flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserFeatureFlag"
+            },
+            "description": "Collection of feature / rollout flags\nThis is the proper place to detect if a user has access to some rollout (non-paywall) feature.\nNB: The BTreeSet maintains order so React doesn't introduce re-render state bugs when order changes",
+            "uniqueItems": true
+          },
+          "onboarding": {
+            "$ref": "#/components/schemas/SessionOnboardingState"
+          },
+          "storyteller_stream_plan": {
+            "$ref": "#/components/schemas/StorytellerStreamPlan"
+          },
+          "user_token": {
+            "$ref": "#/components/schemas/UserToken"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "StatusDetailsResponse": {
+        "type": "object",
+        "description": "Details about the ongoing job status",
+        "required": [
+          "status",
+          "attempt_count",
+          "requires_keepalive",
+          "progress_percentage"
+        ],
+        "properties": {
+          "attempt_count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "maybe_assigned_cluster": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_assigned_worker": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maybe_extra_status_description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Extra, temporary status from Redis.\nThis can denote inference progress, and the Python code can write to it."
+          },
+          "maybe_failure_category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FrontendFailureCategory",
+                "description": "An enum the frontend can use to display localized/I18N error\nmessages. These pertain to both transient and permanent failures."
+              }
+            ]
+          },
+          "maybe_first_started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "progress_percentage": {
+            "type": "integer",
+            "format": "int32",
+            "description": "This is an integer number between 0 and 100 (both inclusive) that\nreports the completeness.",
+            "minimum": 0
+          },
+          "requires_keepalive": {
+            "type": "boolean",
+            "description": "Whether the frontend needs to maintain a keepalive check.\nThis is typically only for non-premium users."
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatusPlus",
+            "description": "Primary status from the database (a state machine)."
+          }
+        }
+      },
+      "StorytellerStreamPlan": {
+        "type": "string",
+        "enum": [
+          "free",
+          "basic",
+          "standard",
+          "pro"
+        ]
+      },
+      "StyleTransferName": {
+        "type": "string",
+        "description": "This enum is not backed by a particular database table.\nIt's used in APIs and Jobs to agree upon ComfyUI style transfer style configurations.\n\nDO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.",
+        "enum": [
+          "anime_2_5d",
+          "anime_2d_flat",
+          "cartoon_3d",
+          "comic_book",
+          "anime_ghibli",
+          "ink_punk",
+          "ink_splash",
+          "ink_bw_style",
+          "jojo_style",
+          "paper_origami",
+          "pixel_art",
+          "pop_art",
+          "realistic_1",
+          "realistic_2",
+          "anime_retro_neon",
+          "anime_standard",
+          "hr_giger",
+          "simpsons",
+          "carnage",
+          "pastel_cute_anime",
+          "bloom_lighting",
+          "25d_horror",
+          "creepy",
+          "creepy_vhs",
+          "trail_cam_footage",
+          "old_black_white_movie",
+          "horror_noir_black_white",
+          "techno_noir_black_white",
+          "black_white_20s",
+          "cyberpunk_anime",
+          "dragonball",
+          "realistic_matrix",
+          "realistic_cyberpunk",
+          "dreamer"
+        ]
+      },
+      "SubscriptionInfo": {
+        "type": "object",
+        "required": [
+          "subscription_token",
+          "namespace",
+          "product_slug"
+        ],
+        "properties": {
+          "namespace": {
+            "$ref": "#/components/schemas/PaymentsNamespace",
+            "description": "Namespace for the subscription."
+          },
+          "next_bill_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "If the subscription is currently active, this is the next billing date."
+          },
+          "product_slug": {
+            "type": "string",
+            "description": "Local key for the subscription."
+          },
+          "subscription_end_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "If the subscription is set to cancel, this is the end date of the subscription."
+          },
+          "subscription_token": {
+            "$ref": "#/components/schemas/UserSubscriptionToken",
+            "description": "Unique token for the subscription."
+          }
+        }
+      },
+      "UserDefaultAvatarInfo": {
+        "type": "object",
+        "required": [
+          "image_index",
+          "color_index"
+        ],
+        "properties": {
+          "color_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "image_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "UserDetailsLight": {
+        "type": "object",
+        "description": "Everything we need to refer to a user on the public web interface.",
+        "required": [
+          "user_token",
+          "username",
+          "display_name",
+          "gravatar_hash",
+          "default_avatar"
+        ],
+        "properties": {
+          "default_avatar": {
+            "$ref": "#/components/schemas/UserDefaultAvatarInfo",
+            "description": "For users without a gravatar, we show one of our own avatars."
+          },
+          "display_name": {
+            "type": "string",
+            "description": "As of 2023-08-23, this is the username with capitalization\n(In the future, a display name can be customized by the user.)"
+          },
+          "gravatar_hash": {
+            "type": "string",
+            "description": "Email hash for Gravatar\nAlways set for now since login is email/username+password.\nIn the future this will need to become an optional *OR* be filled with a bogus hash."
+          },
+          "user_token": {
+            "$ref": "#/components/schemas/UserToken",
+            "description": "The token for the user"
+          },
+          "username": {
+            "type": "string",
+            "description": "The unique username someone logs in with\nAs of 2023-08-23, this is always lowercase"
+          }
+        }
+      },
+      "UserFeatureFlag": {
+        "type": "string",
+        "description": "Used in the `users` table in a `VARCHAR` field (stored as comma separated set).\n\nDO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.",
+        "enum": [
+          "explore_media",
+          "studio",
+          "upload_3d",
+          "video_style_transfer",
+          "sd_wl",
+          "hh",
+          "hh_rl",
+          "referrals",
+          "api_key",
+          "minimax",
+          "minimax_p"
+        ]
+      },
+      "UserSubscriptionToken": {
+        "type": "string",
+        "description": "Primary key for the `user_subscriptions` table."
+      },
+      "UserToken": {
+        "type": "string",
+        "description": "The primary key for users."
+      },
+      "VideoPreviews": {
+        "type": "object",
+        "required": [
+          "still",
+          "animated",
+          "still_thumbnail_template",
+          "animated_thumbnail_template"
+        ],
+        "properties": {
+          "animated": {
+            "type": "string",
+            "format": "uri",
+            "description": "An animated gif preview of the video."
+          },
+          "animated_thumbnail_template": {
+            "type": "string",
+            "description": "A template used to construct the animated thumbnail URL.\nReplace the string `{WIDTH}` with the desired width."
+          },
+          "still": {
+            "type": "string",
+            "format": "uri",
+            "description": "A static single frame preview image of the video."
+          },
+          "still_thumbnail_template": {
+            "type": "string",
+            "description": "A template used to construct the still thumbnail URL.\nReplace the string `{WIDTH}` with the desired width."
+          }
+        }
+      }
+    }
+  }
+}
