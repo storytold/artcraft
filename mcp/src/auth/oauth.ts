@@ -1,5 +1,7 @@
 import type { OAuthProviderOptions } from "@cloudflare/workers-oauth-provider";
 
+import { assertGrantWithinMaxAge } from "./grant-age";
+
 /**
  * Configuration of the OAuth 2.1 authorization server that fronts the MCP endpoint. The
  * library (`@cloudflare/workers-oauth-provider`) owns discovery metadata, client registration
@@ -26,13 +28,6 @@ export type Scope = (typeof SCOPES)[number];
 /** Access tokens are short-lived; refresh tokens rotate and expire after this much idle time. */
 export const ACCESS_TOKEN_TTL_SECONDS = 60 * 60;
 export const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
-
-/**
- * Absolute lifetime of a grant regardless of refresh activity. The upstream session cannot
- * be refreshed, only held or deleted, so grants must re-consent eventually; this is also the
- * runway for swapping the upstream credential later (mcp/CLAUDE.md → Lifetimes).
- */
-export const GRANT_MAX_AGE_SECONDS = 90 * 24 * 60 * 60;
 
 export const RESOURCE_NAME = "Artcraft";
 
@@ -74,6 +69,12 @@ export function createOAuthProviderOptions(handlers: OAuthHandlers): OAuthProvid
 
     accessTokenTTL: ACCESS_TOKEN_TTL_SECONDS,
     refreshTokenTTL: REFRESH_TOKEN_TTL_SECONDS,
+
+    // Runs on every code exchange and refresh: enforces the absolute grant lifetime
+    // (grant-age.ts) by failing closed with invalid_grant.
+    tokenExchangeCallback(options) {
+      assertGrantWithinMaxAge(options.props, Date.now());
+    },
 
     onError(error) {
       // Codes and categories only: descriptions can echo client-supplied input.

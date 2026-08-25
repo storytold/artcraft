@@ -74,6 +74,8 @@ async function consent(
   clientId: string,
   challenge: string,
   scope: readonly string[] = SCOPES,
+  /** `null` omits the timestamp entirely (a legacy or hand-made grant). */
+  grantIssuedAt: number | null = Date.now(),
 ): Promise<URL> {
   const params = new URLSearchParams({
     response_type: "code",
@@ -96,7 +98,7 @@ async function consent(
     scope: [...scope],
     props: {
       credential: createSessionCredential(SIGNED_SESSION).toProps(),
-      grantIssuedAt: Date.now(),
+      ...(grantIssuedAt === null ? {} : { grantIssuedAt }),
     },
   });
   return new URL(redirectTo);
@@ -259,5 +261,35 @@ describe("storage", () => {
       const value = (await env.OAUTH_KV.get(key.name)) ?? "";
       expect(value).not.toContain(SIGNED_SESSION);
     }
+  });
+});
+
+describe("absolute grant lifetime", () => {
+  const NINETY_ONE_DAYS_MS = 91 * 24 * 60 * 60 * 1000;
+
+  it("refuses to exchange a code for a grant older than 90 days", async () => {
+    const clientId = await registerClient();
+    const { verifier, challenge } = await pkce();
+    const redirect = await consent(clientId, challenge, SCOPES, Date.now() - NINETY_ONE_DAYS_MS);
+    const response = await exchangeCode(
+      clientId,
+      redirect.searchParams.get("code") ?? "",
+      verifier,
+    );
+    expect(response.status).toBe(400);
+    expect((await response.json<TokenError>()).error).toBe("invalid_grant");
+  });
+
+  it("refuses a grant that carries no issue time (fail closed)", async () => {
+    const clientId = await registerClient();
+    const { verifier, challenge } = await pkce();
+    const redirect = await consent(clientId, challenge, SCOPES, null);
+    const response = await exchangeCode(
+      clientId,
+      redirect.searchParams.get("code") ?? "",
+      verifier,
+    );
+    expect(response.status).toBe(400);
+    expect((await response.json<TokenError>()).error).toBe("invalid_grant");
   });
 });
