@@ -17,10 +17,10 @@ export function generateCsrfToken(): string {
   return base64Url(bytes);
 }
 
-export function csrfCookieHeader(token: string, secure: boolean): string {
+export function csrfCookieHeader(token: string, secure: boolean, path = "/authorize"): string {
   const attributes = [
     `${CSRF_COOKIE_NAME}=${token}`,
-    "Path=/authorize",
+    `Path=${path}`,
     `Max-Age=${String(COOKIE_MAX_AGE_SECONDS)}`,
     "HttpOnly",
     "SameSite=Lax",
