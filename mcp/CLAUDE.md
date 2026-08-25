@@ -393,6 +393,9 @@ Keep these possible; do not build them in M1.
   Anthropic Messages API connector): `resolveExternalToken` + `/connections` UI. Read-only
   scopes only, 90-day max, shown once, hashed at rest.
 - `WebappRedirectAuthenticator` (`app.getartcraft.com/connect`) replacing the password form.
+  Investigated 2026-08-25: without a backend hand-off code endpoint the only credential a
+  webapp page can pass is the user's own browser session, which breaks per-grant disconnect —
+  see `docs/backend-handoff.md`. Blocked on the backend ask, not on webapp work.
 - `generate` scope and generation tools with cost confirmation via elicitation.
 - Swapping `UpstreamCredential` to a backend-issued token if the backend ever offers one.
 - Directory submissions (Claude connector directory, ChatGPT apps) — keep annotations and

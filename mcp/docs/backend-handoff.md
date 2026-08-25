@@ -5,6 +5,33 @@ around but cannot fix (this project never changes Rust — `mcp/CLAUDE.md`). Eac
 we observed, what we did about it on our side, and what a backend change would unlock. Newest
 first. Add an entry whenever a PR description surfaces a discrepancy.
 
+## A signed-in webapp user cannot be handed to the MCP without exporting their browser session
+
+**Observed (2026-08-25).** The industry-standard consent shape is "redirect to the product's own
+sign-in, come back with a credential" (`app.getartcraft.com/connect`). The webapp holds the
+signed session JWT in `localStorage["artcraft_signed_session"]` (`frontend/libs/api/src/lib/ApiManager.ts`),
+so such a page *could* post it to the MCP — but that is the user's long-lived browser session,
+not a purpose-made one. The only other route to it is `GET /v1/session_token`, which the handler
+itself marks as a security hole. There is no endpoint that lets a logged-in user mint a second,
+independently revocable session, and `/v1/api_keys/*` keys are accepted only by the
+`omni_api`/`omni_gen` generate, upload and `job_status` routes — none of the session-only reads
+below.
+
+**Our side.** Not built. The MCP keeps its own consent page, which signs the user in with
+`/v1/login` or Google SSO and therefore holds a session created *for that grant*; `/v1/logout`
+on disconnect ends exactly that session and nothing else. A grant that carried the browser
+session would make "disconnect" unable to end upstream access without logging the user out of
+the webapp, and would make the 90-day grant cap cosmetic upstream.
+
+**What a backend change would unlock.** One endpoint pair, e.g.
+`POST /v1/sessions/handoff` (session-authenticated; returns a single-use code with a ~60 s TTL,
+bound to an `audience` string) and `POST /v1/sessions/redeem` (anonymous; returns a fresh
+`signed_session` for that user, recorded with the audience so it can be listed/revoked
+separately). With that, `/connect` becomes a ~80-line webapp page and the MCP's
+`WebappRedirectAuthenticator` replaces the password form with no credential ever leaving the
+user's own sign-in. Until then the password/Google consent page is the safer design, not a
+compromise.
+
 ## Disconnecting an MCP grant cannot end its upstream session
 
 **Observed.** The MCP holds each grant's Artcraft session encrypted with key material wrapped
