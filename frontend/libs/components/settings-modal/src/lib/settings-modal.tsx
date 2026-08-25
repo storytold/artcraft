@@ -1,8 +1,9 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useState } from "react";
-import { CreditCardIcon, FlaskConicalIcon, InfoIcon, KeyIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
+import { CreditCardIcon, FlaskConicalIcon, InfoIcon, KeyIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
+import { KeybindsSettings } from "@storyteller/keybinds";
 import { MiscSettingsPane } from "./panes/MiscSettingsPane";
 import { AudioSettingsPane } from "./panes/AudioSettingsPane";
 import { AccountSettingsPane } from "./panes/AccountSettings/AccountSettingsPane";
@@ -28,6 +29,7 @@ interface SettingsModalProps {
 type SettingsSection =
   | "general"
   | "appearance"
+  | "keybinds"
   | "accounts"
   | "api_keys"
   | "alerts"
@@ -77,6 +79,7 @@ export const SettingsModal = ({
       icon: RouteIcon,
     }, */
     { id: "appearance" as const, label: "Appearance", icon: PaletteIcon },
+    { id: "keybinds" as const, label: "Keybinds", icon: KeyboardIcon },
     { id: "alerts" as const, label: "Alerts", icon: Volume2Icon },
     { id: "about" as const, label: "About", icon: InfoIcon },
     //{ id: "video" as const, label: "Video", icon: VideoIcon },
@@ -90,6 +93,8 @@ export const SettingsModal = ({
     switch (selectedSection) {
       case "appearance":
         return <AppearanceSettingsPane />;
+      case "keybinds":
+        return <KeybindsSettings />;
       case "alerts":
         return <AudioSettingsPane />;
       case "general":

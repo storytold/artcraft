@@ -8,6 +8,10 @@ import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
 import { extractPalette } from "../boards/palette";
 import { Favicon } from "./Favicon";
+import {
+  isEventFromEditableElement,
+  useResolvedKeybinds,
+} from "@storyteller/keybinds";
 
 interface Props {
   item: BoardItem;
@@ -53,14 +57,22 @@ export const ItemInspector = ({
   const [palette, setPalette] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
 
+  // Viewer keys resolve from the "moodboard-grid" surface (rebindable):
+  // prev/next item, Escape closes. Inert while typing in the tag field.
+  const { matchAction } = useResolvedKeybinds();
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" && hasPrev) onPrev();
-      else if (e.key === "ArrowRight" && hasNext) onNext();
+      if (isEventFromEditableElement(e)) return;
+      const action = matchAction(e, "moodboard-grid");
+      if (action === "moodboard-grid.nav.prev" && hasPrev) onPrev();
+      else if (action === "moodboard-grid.nav.next" && hasNext) onNext();
+      else if (action === "moodboard-grid.selection.clearOrClose") onClose();
+      else return;
+      e.preventDefault();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onPrev, onNext, hasPrev, hasNext]);
+  }, [matchAction, onPrev, onNext, onClose, hasPrev, hasNext]);
 
   // Pull a palette for images, keyed on the image src — NOT the whole item, so
   // editing tags/rating (which produce a new item object) doesn't re-decode the

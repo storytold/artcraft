@@ -5,6 +5,11 @@ import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
 import { hsvaToHex } from "@uiw/color-convert";
 import SliderWithIndicator from "./SliderWithIndicator";
+import {
+  formatBinding,
+  useResolvedKeybinds,
+  type ActionId,
+} from "@storyteller/keybinds";
 import { ActiveTool, useSceneStore } from "../../stores/SceneState";
 import { Node } from "../../Node";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -15,6 +20,16 @@ import {
 
 const shapeIconBtn =
   "flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/10";
+
+// Toolbar entry → registry action whose resolved key renders as the button's
+// corner badge (updates live when the user remaps in Settings → Keybinds).
+const TOOL_ACTION_IDS: Record<string, ActionId> = {
+  select: "pagedraw.tools.select",
+  "add-shape": "pagedraw.tools.shape",
+  draw: "pagedraw.tools.brush",
+  inpaint: "pagedraw.tools.mask",
+  erase: "pagedraw.tools.eraser",
+};
 
 // Debounce function
 function useDebounced<T extends (...args: A) => void, A extends unknown[]>(
@@ -52,8 +67,15 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   className = "",
 }) => {
   const store = useSceneStore();
+  const { forAction } = useResolvedKeybinds();
   const [open, setOpen] = useState<string | null>(null);
-  const [brushSize, setBrushSize] = useState(16);
+  // Canonical brush/eraser size lives in the store (PaintSurface draws with
+  // it, the Ctrl+± keybinds adjust it) — the slider reads/writes it directly
+  // so keyboard changes show up here too.
+  const brushSize = store.brushSize;
+  const setBrushSize = store.setBrushSize;
+  const eraserSize = store.eraserSize;
+  const setEraserSize = store.setEraserSize;
   const [brushHsva, setBrushHsva] = useState<HsvaColor>({
     h: 120,
     s: 100,
@@ -192,6 +214,20 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const BgPopout = makePicker(bgHsva, setBgHsva, sendBg);
   const ShapePopout = makePicker(shapeHsva, setShapeHsva, sendShapeColor);
 
+  // Size-only popout — the eraser has no color, just its own size, kept
+  // separate from the brush so switching tools doesn't clobber either.
+  const EraserPopout = (
+    <div className="glass relative w-56 rounded-2xl p-4 shadow-lg">
+      <p className="mb-2 text-sm font-medium text-white">Eraser Size</p>
+      <SliderWithIndicator
+        value={eraserSize}
+        onChange={setEraserSize}
+        min={1}
+        max={64}
+      />
+    </div>
+  );
+
   // Tools
   const tools = [
     {
@@ -218,19 +254,24 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       },
       popout: (
         <div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5 shadow-lg">
-          {[SquareIcon, CircleIcon, TriangleIcon].map((ShapeIcon, i) => (
-            <button
-              key={i}
-              className={shapeIconBtn}
-              onClick={() => {
-                const shapes = ["rectangle", "circle", "triangle"] as const;
-                onActivateShapeTool(shapes[i]);
-                setOpen(null);
-              }}
-            >
-              <ShapeIcon className="h-5 w-5 text-white" />
-            </button>
-          ))}
+          {[SquareIcon, CircleIcon, TriangleIcon].map((ShapeIcon, i) => {
+            const shapes = ["rectangle", "circle", "triangle"] as const;
+            const isCurrent = currentShape === shapes[i];
+            return (
+              <button
+                key={i}
+                className={`${shapeIconBtn} ${
+                  isCurrent ? "bg-primary/30 ring-1 ring-primary" : ""
+                }`}
+                onClick={() => {
+                  onActivateShapeTool(shapes[i]);
+                  setOpen(null);
+                }}
+              >
+                <ShapeIcon className="h-5 w-5 text-white" />
+              </button>
+            );
+          })}
         </div>
       ),
     },
@@ -268,6 +309,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       onClick: () => {
         store.setActiveTool("eraser");
       },
+      popout: EraserPopout,
     },
     { id: "separator-3", type: "separator" },
     {
@@ -374,9 +416,20 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         }
 
         const { id, icon, onClick, popout, label } = tool;
+        // Two item ids don't match their ActiveTool value 1:1.
         const active =
           id === activeToolId ||
-          (id === "add-shape" && activeToolId === "shape");
+          (id === "add-shape" && activeToolId === "shape") ||
+          (id === "erase" && activeToolId === "eraser");
+
+        // Resolved shortcut badge in the button corner (switchable tools only).
+        const toolActionId = TOOL_ACTION_IDS[id];
+        const toolBinding = toolActionId ? forAction(toolActionId)[0] : undefined;
+        const keyBadge = toolBinding ? (
+          <span className="pointer-events-none absolute bottom-0 right-0 min-w-[13px] rounded-[4px] bg-black/60 px-0.5 text-center text-[9px] font-medium leading-[13px] text-white/80">
+            {formatBinding(toolBinding)}
+          </span>
+        ) : null;
         const btnStyle = active
           ? "bg-primary/30 border-2 !border-primary text-white"
           : (id === "inpaint" && !supportsMaskTool)
@@ -409,7 +462,12 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
           );
         }
 
-        const tooltipLabel = (id === "inpaint" && !supportsMaskTool) ? label + " (Model unsupported)" : label;
+        const tooltipLabel =
+          id === "inpaint" && !supportsMaskTool
+            ? label + " (Model unsupported)"
+            : id === "add-shape" && toolBinding
+              ? `${label} — ${formatBinding(toolBinding)} cycles shapes`
+              : label;
 
         return (
           <div key={id} className="relative">
@@ -453,6 +511,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     className={`${baseBtn} ${btnStyle}`}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 ) : (
                   <button
@@ -463,6 +522,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     disabled={id === "inpaint" && !supportsMaskTool}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 )}
               </Tooltip>
@@ -502,6 +562,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     className={`${baseBtn} ${btnStyle}`}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 ) : (
                   <button
@@ -511,6 +572,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     className={`${baseBtn} ${btnStyle}`}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 )}
               </>

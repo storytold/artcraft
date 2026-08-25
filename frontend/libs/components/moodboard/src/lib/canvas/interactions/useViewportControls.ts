@@ -24,7 +24,6 @@ export const useViewportControls = (
 ) => {
   const setZoom = useMoodboardStore((s) => s.setZoom);
   const setPan = useMoodboardStore((s) => s.setPan);
-  const resetViewport = useMoodboardStore((s) => s.resetViewport);
   const setIsPanning = useMoodboardStore((s) => s.setIsPanning);
 
   // Track spacebar so any subsequent mousedown becomes a pan, not a select.
@@ -143,13 +142,8 @@ export const useViewportControls = (
         // Prevent page from scrolling on spacebar.
         e.preventDefault();
       }
-      // Cmd/Ctrl+0 → reset zoom + pan.
-      const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-      const mod = isMac ? e.metaKey : e.ctrlKey;
-      if (mod && e.key === "0") {
-        e.preventDefault();
-        resetViewport();
-      }
+      // Reset zoom + pan (Ctrl+0 by default) is a registry action handled in
+      // useMoodboardKeybinds; only the held-Space pan gesture lives here.
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -177,5 +171,5 @@ export const useViewportControls = (
       document.removeEventListener("keyup", handleKeyUp);
       container.style.cursor = "";
     };
-  }, [stageRef, setPan, resetViewport, setIsPanning]);
+  }, [stageRef, setPan, setIsPanning]);
 };

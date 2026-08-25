@@ -189,6 +189,9 @@ interface PageSceneState {
   ignoreKeyDelete: boolean;
   hotkeyStatus: HotkeyStatus;
   isPromptBoxFocused: boolean;
+  // True while a Blender-style modal transform (grab/move) is in progress, so
+  // free-cam and the normal keymap stand down and let the modal own input.
+  modalTransformActive: boolean;
 
   // timeline (mirrors TimelineController; see engine/editor/TimelineController.ts)
   timelineExists: boolean;
@@ -222,6 +225,10 @@ interface PageSceneState {
   // record output
   producedArtifact: ProducedArtifact | null;
   recordingProgress: RecordingProgress | null;
+  // Mutable abort flag for the in-flight encode (recordTimeline polls
+  // `cancelled` between frames). Held here so the Escape keybind and the
+  // overlay's Cancel button can reach it; null when no encode is running.
+  encodeCancelSignal: { cancelled: boolean } | null;
 
   // layout / panels
   assetModalVisible: boolean;
@@ -341,11 +348,15 @@ interface PageSceneState {
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
   clearProducedArtifact: () => void;
   setRecordingProgress: (progress: RecordingProgress | null) => void;
+  setEncodeCancelSignal: (signal: { cancelled: boolean } | null) => void;
+  // Flip the in-flight encode's abort flag (no-op when nothing is encoding).
+  requestEncodeCancel: () => void;
   toggleStats: () => void;
   setIgnoreKeyDelete: (ignore: boolean) => void;
   disableHotkeyInput: (level: DomLevels) => void;
   enableHotkeyInput: (level: DomLevels) => void;
   setIsPromptBoxFocused: (focused: boolean) => void;
+  setModalTransformActive: (active: boolean) => void;
 
   // layout
   setAssetModalVisible: (visible: boolean) => void;
@@ -442,9 +453,11 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineFocusSelected: false,
   producedArtifact: null,
   recordingProgress: null,
+  encodeCancelSignal: null,
   ignoreKeyDelete: false,
   hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE },
   isPromptBoxFocused: false,
+  modalTransformActive: false,
 
   assetModalVisible: false,
   animationsModalVisible: false,
@@ -562,6 +575,11 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       return { producedArtifact: null };
     }),
   setRecordingProgress: (progress) => set({ recordingProgress: progress }),
+  setEncodeCancelSignal: (signal) => set({ encodeCancelSignal: signal }),
+  requestEncodeCancel: () => {
+    const signal = get().encodeCancelSignal;
+    if (signal) signal.cancelled = true;
+  },
   toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
   setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
   disableHotkeyInput: (level) => {
@@ -581,6 +599,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     }
   },
   setIsPromptBoxFocused: (focused) => set({ isPromptBoxFocused: focused }),
+  setModalTransformActive: (active) => set({ modalTransformActive: active }),
 
   // layout actions
   setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),

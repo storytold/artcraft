@@ -80,6 +80,9 @@
       "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/keybinds/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/switch/tsconfig.lib.json"
     },
     {

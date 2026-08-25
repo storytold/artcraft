@@ -12,47 +12,12 @@ import { FKHelper } from "./KinHelpers/FKHelper";
 import { Euler } from "three";
 import type { EngineEventBus } from "./events/EngineEventBus";
 import {
-  AssetModalVisibilityChangedEvent,
   InspectorPanelChangedEvent,
   OutlinerSelectedItemChangedEvent,
   PoseControlsVisibilityChangedEvent,
   PoseModeChangedEvent,
-  SelectedModeChangedEvent,
-  TransformSpaceChangedEvent,
 } from "./events/EngineEvent";
 import type { PoseMode, TransformSpace } from "../PageSceneStore";
-
-const EDITABLE_INPUT_TYPES = new Set([
-  "text",
-  "search",
-  "email",
-  "password",
-  "number",
-  "url",
-  "tel",
-]);
-
-const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
-  const target = event.target;
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  if (target instanceof HTMLInputElement) {
-    if (target.disabled || target.readOnly) {
-      return false;
-    }
-
-    const type = target.type?.toLowerCase() ?? "";
-    return type === "" || EDITABLE_INPUT_TYPES.has(type);
-  }
-
-  if (target instanceof HTMLTextAreaElement) {
-    return !(target.disabled || target.readOnly);
-  }
-
-  return target.isContentEditable;
-};
 
 export enum KinMode {
   FK,
@@ -345,150 +310,10 @@ export class MouseControls {
     return;
   }
 
-  async onkeydown(event: KeyboardEvent) {
-    if (isEventFromEditableElement(event)) {
-      return;
-    }
-
-    if (this.deps.isHotkeyDisabled()) {
-      return;
-    } else if (event.key === "f" && this.selected && this.lockControls) {
-      this.focus();
-      return;
-    } else if (event.key === "Backspace" || event.key === "Delete") {
-      if (this.selected) {
-        this.selected.forEach((selected) => {
-          this.deleteObject(selected.uuid);
-          this.selected = [];
-          if (this.kinMode === KinMode.FK) {
-            this.toggleFKMode();
-          }
-          this.removeTransformControls();
-          this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(false));
-        });
-      }
-      return;
-    } else if (event.key === "t") {
-      // transform
-      this.control?.setMode("translate");
-      const ts = this.deps.getTransformSpace();
-      if (this.control) this.control.space = ts;
-      this.deps.bus.emit(new SelectedModeChangedEvent("move"));
-      return;
-    } else if (event.key === "x") {
-      // toggle world/local space (blocked in scale mode)
-      if (this.control?.mode === "scale") return;
-      const next: TransformSpace =
-        this.deps.getTransformSpace() === "world" ? "local" : "world";
-      this.deps.bus.emit(new TransformSpaceChangedEvent(next));
-      if (this.control) this.control.space = next;
-      return;
-    } else if (event.key === "r" && !event.ctrlKey) {
-      // rotate
-      this.control?.setMode("rotate");
-      if (this.control) this.control.space = this.deps.getTransformSpace();
-      this.deps.bus.emit(new SelectedModeChangedEvent("rotate"));
-      return;
-    } else if (event.key === "g") {
-      // scale
-      this.control?.setMode("scale");
-      if (this.control) this.control.space = this.deps.getTransformSpace();
-      this.deps.bus.emit(new SelectedModeChangedEvent("scale"));
-      return;
-    } else if (event.key === "k") {
-      this.toggleFKMode();
-      return;
-    } else if (event.key === "b") {
-      // Open asset modal
-      this.deps.bus.emit(new AssetModalVisibilityChangedEvent(true, true));
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && !this.isProcessing) {
-      const keyLower = event.key.toLowerCase();
-      if (keyLower === "z" && !event.shiftKey) {
-        // undo
-        event.preventDefault();
-        this.isProcessing = true;
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (this.sceneManager as any)?.undo();
-        } finally {
-          this.isProcessing = false;
-        }
-      } else if (keyLower === "z" && event.shiftKey) {
-        // redo (Ctrl+Shift+Z / Cmd+Shift+Z)
-        event.preventDefault();
-        this.isProcessing = true;
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (this.sceneManager as any)?.redo();
-        } finally {
-          this.isProcessing = false;
-        }
-      } else if (keyLower === "y") {
-        // redo (Ctrl+Y on Windows/Linux, Cmd+Y on macOS)
-        event.preventDefault();
-        this.isProcessing = true;
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (this.sceneManager as any)?.redo();
-        } finally {
-          this.isProcessing = false;
-        }
-      } else if (keyLower === "c") {
-        // Copy
-        event.preventDefault();
-        event.stopPropagation();
-        this.isProcessing = true;
-        try {
-          await this.sceneManager?.copy();
-        } finally {
-          this.isProcessing = false;
-        }
-      } else if (keyLower === "v") {
-        // Paste
-        event.preventDefault();
-        event.stopPropagation();
-        this.isProcessing = true;
-        try {
-          await this.sceneManager?.paste();
-        } finally {
-          this.isProcessing = false;
-        }
-      }
-    }
-
-    // Prevent browser shortcuts for Alt combinations
-    if (
-      event.altKey &&
-      (event.key === "Alt" || event.key.toLowerCase() === "d")
-    ) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    if (this.cameraViewControls) {
-      if (event.shiftKey) {
-        this.cameraViewControls.movementSpeed = 3;
-      } else if (event.altKey) {
-        this.cameraViewControls.movementSpeed = 0.1;
-      } else {
-        this.cameraViewControls.movementSpeed = 0.75;
-      }
-    }
-
-    if (event.key === "Escape") {
-      if (this.deps.getPoseMode() === "pose") {
-        this.toggleFKMode();
-        return;
-      } else if (this.selected && this.selected.length > 0) {
-        this.removeTransformControls();
-        this.deps.bus.emit(new InspectorPanelChangedEvent(null));
-        this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(false));
-      }
-    }
-  }
+  // NOTE: keyboard shortcuts are NOT handled here. The legacy onkeydown
+  // method (never attached to any listener) was removed — every viewport
+  // shortcut is dispatched by useViewportKeyboard against the
+  // @storyteller/keybinds registry via engine/keymap.ts.
 
   handleMousePointerLock() {
     if (this.isMouseClicked && this.lockControls) {

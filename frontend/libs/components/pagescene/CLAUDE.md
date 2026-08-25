@@ -12,6 +12,35 @@ components that host these canvases** (`SceneContainer`, `EditorCanvas`, `Previe
 for mode/chrome gating — hide them with CSS (`hidden`) instead. (Regression fixed: record mode
 had gated `PreviewEngineCamera` behind `!isRecord`, wiping the scene on record→build toggle.)
 
+## Keybinds (unified registry)
+
+Every viewport shortcut is a remappable action in `@storyteller/keybinds`
+(`frontend/libs/components/keybinds`): the registry owns *which key* (preset +
+user overrides, Settings → Keybinds), `engine/keymap.ts` owns *what it does*
+(action id → handler), and `useViewportKeyboard` dispatches with a per-event
+`KeybindContext` (sceneMode / encoding / timelineExpanded / timelineSelection /
+modalTransformActive). Rules:
+
+- **Availability is declared, not implied.** An `ActionDef.when(ctx)` gate
+  decides if a binding is live; an unavailable binding falls through without
+  consuming the event. Default rule: available unless encoding. Two actions may
+  share a key ONLY if their gates are mutually exclusive (`actionsCoAvailable`
+  enforces this in tests and in the settings conflict UI). Examples: Space =
+  timeline play/pause in playback contexts, camera-view toggle otherwise;
+  Del/Backspace = valid timeline selection → keyframe/strip delete, else scene
+  object; Escape = cancel-render mid-encode, clear-selection otherwise.
+- **Do NOT add raw keydown listeners for editor operations** — register an
+  action + handler + `when` gate instead. Capture-phase component listeners
+  (the old TimelineEditor delete path) are exactly the pattern this replaced.
+- **Record mode** gates all scene-mutating actions off (`inBuild`); the encode
+  is abortable (overlay Cancel / Escape via `encodeCancelSignal`), and
+  Capture/Record always `enterCameraView()` first so output comes from the
+  render camera even after peeking at the scene view.
+- Camera movement (held WASD/QE/arrows) stays in `useFreeCam`, which resolves
+  its codes from the same store; its imperative guards (ctrl-chords,
+  timeline-expanded arrows, record lock) must stay in sync with the registry's
+  `cameraMove`/`cameraLook` gates.
+
 ## Behavior notes (fixes)
 
 - **Record mode is fully immutable.** The viewport lock (`CameraController.locked`, set by the
@@ -129,11 +158,18 @@ auto-import; audio in recordings; `snapShotOfCurrentFrame` render-camera reconci
   `loadFromJson` calls `recreateCameraObject()` (→ `Scene._create_camera_obj()`, now idempotent)
   AFTER `CamerasReplacedEvent`, so the frustum lands at the restored transform. This also fixes the
   standalone "load loses the render camera" bug.
-- **Undo/redo**: timeline is **transactional** — `Save` is one undo step (`SaveTimelineAction`;
-  `loadTimeline` re-seeks + emits on undo/redo); `Cancel` reverts to last saved (not history).
+- **Undo/redo (PER-EDIT)**: every user-facing timeline edit is ONE undo step via
+  `TimelineEditAction` — whole-timeline `{live, saved}` before/after snapshots, recorded through
+  `TimelineController.recordEdit` (discrete edits) or `beginTimelineEdit`/`commitTimelineEdit`
+  (continuous gestures: keyframe/strip drags coalesce at pointer-up, a Motion-popover session
+  commits on close). Raw dispatchers (`moveKeyframe`, `resizeClipLane`, `setKeyframeEasing`,
+  `setClipTransitionEasing`) are deliberately UNRECORDED live-previews — never call them for a
+  discrete edit without wrapping. `Save` now only moves the Cancel baseline (its undo restores
+  the old baseline without jumping live state); `Cancel` still reverts to last saved and is
+  itself undoable. `autoKeyIfTracked` bypasses recording on purpose (it rides the gizmo's
+  `TransformAction`). The old `SaveTimelineAction`/`RemoveClipLaneAction` classes are retired.
   Render-camera gizmo moves were already undoable (`TransformAction` on `::CAM::`, no special-casing);
   because save reads the live `cam_obj`, a save after an undo persists the undone position.
-  Per-edit timeline undo remains deferred.
 
 ### Implementation status (branch `feature/scene-builder`)
 

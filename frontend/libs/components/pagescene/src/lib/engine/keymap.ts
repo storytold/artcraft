@@ -1,3 +1,11 @@
+import {
+  ACTIONS,
+  useKeybindsStore,
+  type ActionId,
+  type Binding,
+  type KeybindContext,
+  type KeyGroup as KeybindsKeyGroup,
+} from "@storyteller/keybinds";
 import type Editor from "./editor";
 import { CreateAction } from "./editor/actions/CreateAction";
 import {
@@ -6,13 +14,26 @@ import {
   SelectedModeChangedEvent,
   TransformModeChangedEvent,
 } from "./events/EngineEvent";
-import type { PoseMode } from "../PageSceneStore";
+import { usePageSceneStore, type PoseMode } from "../PageSceneStore";
+import {
+  addKeyframe,
+  deleteKeyframe,
+  nudgeClipLane,
+  nudgeKeyframe,
+  pauseTimeline,
+  playTimeline,
+  removeClipLane,
+  seekTimeline,
+} from "../actions/timeline";
+import { captureStill, recordVideo } from "../actions/recordOutput";
 
-// One declarative table for every viewport keyboard shortcut.
-// useViewportKeyboard dispatches against this list; a future Ctrl-hold
-// cheatsheet overlay can render the same data without duplication.
+// One declarative table mapping viewport actions to their handlers. The actual
+// key bindings now come from the unified @storyteller/keybinds registry (preset
+// + per-user overrides), so this file owns *what each action does*, not *which
+// key triggers it*. useViewportKeyboard dispatches against the resolved list;
+// the cheatsheet overlay renders the same registry.
 
-export type KeyGroup = "Transform" | "Selection" | "Edit" | "View";
+export type KeyGroup = KeybindsKeyGroup;
 
 export interface KeyBinding {
   code: string; // matches event.code (e.g. "KeyT", "Backspace")
@@ -23,6 +44,9 @@ export interface KeyBinding {
   // Whether the binding should preventDefault + stopPropagation when
   // matched. Used for browser shortcut conflicts (Ctrl+Z, Ctrl+C, etc).
   preventDefault?: boolean;
+  // Availability gate from the registry ActionDef. Absent = the default
+  // rule (available unless an encode is running).
+  when?: (ctx: KeybindContext) => boolean;
 }
 
 // The TransformControls gizmo uses "translate" / "rotate" / "scale";
@@ -68,6 +92,14 @@ const onEscape = (editor: Editor) => {
   }
 };
 
+const deselectAll = (editor: Editor) => {
+  const mc = editor.mouse_controls;
+  if (!mc?.selected?.length) return;
+  mc.removeTransformControls();
+  mc.selected = [];
+  editor.bus.emit(new PoseControlsVisibilityChangedEvent(false));
+};
+
 const focusSelected = (editor: Editor) => {
   if (
     editor.mouse_controls?.selected?.length &&
@@ -108,47 +140,157 @@ const toggleStats = (editor: Editor) => {
   editor.toggle_stats();
 };
 
-export const buildKeymap = (): KeyBinding[] => [
-  // Transform
-  { code: "KeyT", label: "Translate", group: "Transform",
-    run: (e) => setGizmoMode(e, "translate", "move") },
-  { code: "KeyR", label: "Rotate", group: "Transform",
-    run: (e) => setGizmoMode(e, "rotate", "rotate") },
-  { code: "KeyG", label: "Scale", group: "Transform",
-    run: (e) => setGizmoMode(e, "scale", "scale") },
-  { code: "KeyX", label: "Toggle local/world", group: "Transform",
-    run: (e) => e.gizmo.toggleTransformSpace() },
-  { code: "KeyK", label: "Toggle pose (FK)", group: "Transform",
-    run: (e) => e.mouse_controls?.toggleFKMode() },
+// ── timeline / record handlers ───────────────────────────────────────────────
+// Availability (which contexts these fire in) lives on the registry defs;
+// handlers only implement the action itself.
 
-  // Selection / view
-  { code: "KeyF", label: "Focus selection", group: "View",
-    run: focusSelected },
-  { code: "KeyB", label: "Open asset menu", group: "View",
-    run: openAssetModal },
-  { code: "Space", label: "Toggle camera view", group: "View",
-    run: toggleCameraView, preventDefault: true },
-  { code: "Escape", label: "Clear selection / exit pose", group: "Selection",
-    run: onEscape },
-  { code: "Backquote", label: "Toggle perf stats", group: "View",
-    run: toggleStats },
+const timelinePlayPause = (editor: Editor) => {
+  if (usePageSceneStore.getState().timelineIsPlaying) pauseTimeline(editor);
+  else playTimeline(editor);
+};
 
-  // Edit
-  { code: "Backspace", label: "Delete selected", group: "Edit",
-    run: deleteSelected },
-  { code: "Delete", label: "Delete selected", group: "Edit",
-    run: deleteSelected },
-  { code: "KeyZ", modifiers: { ctrl: true }, label: "Undo", group: "Edit",
-    run: undo, preventDefault: true },
-  { code: "KeyZ", modifiers: { ctrl: true, shift: true }, label: "Redo",
-    group: "Edit", run: redo, preventDefault: true },
-  { code: "KeyY", modifiers: { ctrl: true }, label: "Redo", group: "Edit",
-    run: redo, preventDefault: true },
-  { code: "KeyC", modifiers: { ctrl: true }, label: "Copy", group: "Edit",
-    run: copy, preventDefault: true },
-  { code: "KeyV", modifiers: { ctrl: true }, label: "Paste", group: "Edit",
-    run: paste, preventDefault: true },
-];
+const timelineStep = (editor: Editor, direction: 1 | -1) => {
+  const timeline = editor.timelineController.getTimeline();
+  if (!timeline) return;
+  const fps = timeline.fps || 30;
+  const next =
+    editor.timelineController.getPlayhead() + direction / fps;
+  seekTimeline(editor, Math.min(timeline.duration, Math.max(0, next)));
+};
+
+// Move the selected keyframe (or clip strip) one frame in time. The registry
+// gates this on a valid selection; the id lookups below are just resolution,
+// not availability checks.
+const timelineNudge = (editor: Editor, direction: 1 | -1) => {
+  const store = usePageSceneStore.getState();
+  const timeline = editor.timelineController.getTimeline();
+  if (!timeline) return;
+  const delta = direction / (timeline.fps || 30);
+  const keyframeId = store.timelineSelectedKeyframeId;
+  if (keyframeId) {
+    for (const track of timeline.tracks) {
+      const keyframe = track.keyframes.find((k) => k.id === keyframeId);
+      if (keyframe) {
+        const time = Math.min(
+          timeline.duration,
+          Math.max(0, keyframe.time + delta),
+        );
+        nudgeKeyframe(editor, keyframeId, time);
+        return;
+      }
+    }
+    return;
+  }
+  const laneId = store.timelineSelectedClipLaneId;
+  if (!laneId) return;
+  const lane = editor.timelineController.getClipLane(laneId);
+  if (!lane) return;
+  nudgeClipLane(editor, laneId, Math.max(0, lane.strip.startTime + delta));
+};
+
+const timelineAddKeyframe = (editor: Editor) => {
+  const uuid = editor.mouse_controls?.selected?.[0]?.uuid;
+  if (!uuid) return;
+  addKeyframe(editor, uuid);
+};
+
+// Registry-gated complement of deleteSelected (scene object): fires only for
+// a VALID keyframe/strip selection, so a stale id can never eat the key. The
+// selection is re-resolved here in case it changed since the ctx snapshot.
+const timelineDeleteSelected = (editor: Editor) => {
+  const store = usePageSceneStore.getState();
+  const keyframeId = store.timelineSelectedKeyframeId;
+  if (keyframeId) {
+    const exists = editor.timelineController
+      .getTimeline()
+      ?.tracks.some((t) => t.keyframes.some((k) => k.id === keyframeId));
+    if (exists) deleteKeyframe(editor, keyframeId);
+    store.setTimelineSelectedKeyframe(null);
+    return;
+  }
+  const laneId = store.timelineSelectedClipLaneId;
+  if (!laneId) return;
+  if (editor.timelineController.getClipLane(laneId)) {
+    removeClipLane(editor, laneId);
+  }
+  store.setTimelineSelectedClipLane(null);
+};
+
+// Action id → handler. Bindings live in the keybinds registry; this maps each
+// registered PageScene action to what it actually does.
+const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
+  "pagescene.transform.grab": (e) => e.beginModalTransform("translate"),
+  "pagescene.transform.translate": (e) => setGizmoMode(e, "translate", "move"),
+  "pagescene.transform.rotate": (e) => setGizmoMode(e, "rotate", "rotate"),
+  "pagescene.transform.scale": (e) => setGizmoMode(e, "scale", "scale"),
+  "pagescene.transform.toggleSpace": (e) => e.gizmo.toggleTransformSpace(),
+  "pagescene.transform.poseFK": (e) => e.mouse_controls?.toggleFKMode(),
+  "pagescene.view.focus": focusSelected,
+  "pagescene.view.assetMenu": openAssetModal,
+  "pagescene.view.toggleCameraView": toggleCameraView,
+  "pagescene.view.toggleStats": toggleStats,
+  "pagescene.selection.clearOrExit": onEscape,
+  "pagescene.selection.deselectAll": deselectAll,
+  "pagescene.edit.delete": deleteSelected,
+  "pagescene.edit.duplicate": (e) => e.duplicateSelected(),
+  "pagescene.edit.toggleSnapping": (e) => e.toggleSnapping(),
+  "pagescene.view.toggleGrid": (e) => e.toggleGrid(),
+  "pagescene.edit.undo": undo,
+  "pagescene.edit.redo": redo,
+  "pagescene.edit.copy": copy,
+  "pagescene.edit.paste": paste,
+  "pagescene.timeline.playPause": timelinePlayPause,
+  "pagescene.timeline.stepBack": (e) => timelineStep(e, -1),
+  "pagescene.timeline.stepForward": (e) => timelineStep(e, 1),
+  "pagescene.timeline.nudgeLeft": (e) => timelineNudge(e, -1),
+  "pagescene.timeline.nudgeRight": (e) => timelineNudge(e, 1),
+  "pagescene.timeline.goToStart": (e) => seekTimeline(e, 0),
+  "pagescene.timeline.goToEnd": (e) => {
+    const timeline = e.timelineController.getTimeline();
+    if (timeline) seekTimeline(e, timeline.duration);
+  },
+  "pagescene.timeline.addKeyframe": timelineAddKeyframe,
+  "pagescene.timeline.deleteSelected": timelineDeleteSelected,
+  "pagescene.timeline.toggleExpanded": () => {
+    const store = usePageSceneStore.getState();
+    store.setTimelineExpanded(!store.timelineExpanded);
+  },
+  "pagescene.record.toggleMode": () => {
+    const store = usePageSceneStore.getState();
+    store.setSceneMode(store.sceneMode === "record" ? "build" : "record");
+  },
+  "pagescene.record.captureStill": captureStill,
+  "pagescene.record.recordVideo": recordVideo,
+  "pagescene.record.cancelEncode": () =>
+    usePageSceneStore.getState().requestEncodeCancel(),
+};
+
+// Expand the handler table into concrete KeyBindings using the resolved bindings
+// for each action (one KeyBinding per bound key — so Delete+Backspace and the
+// two Redo combos each stay live). `forAction` defaults to the store so non-React
+// callers keep working; useViewportKeyboard passes a reactive resolver.
+export const buildKeymap = (
+  forAction: (id: ActionId) => Binding[] = (id) =>
+    useKeybindsStore.getState().resolveBindings(id),
+): KeyBinding[] => {
+  const out: KeyBinding[] = [];
+  for (const [id, run] of Object.entries(HANDLERS)) {
+    const def = ACTIONS[id];
+    if (!def) continue;
+    for (const binding of forAction(id)) {
+      out.push({
+        code: binding.code,
+        modifiers: { ctrl: binding.ctrl, shift: binding.shift, alt: binding.alt },
+        label: def.label,
+        group: def.group,
+        run,
+        preventDefault: def.preventDefault,
+        when: def.when,
+      });
+    }
+  }
+  return out;
+};
 
 const matches = (binding: KeyBinding, e: KeyboardEvent): boolean => {
   if (binding.code !== e.code) return false;
@@ -161,13 +303,21 @@ const matches = (binding: KeyBinding, e: KeyboardEvent): boolean => {
   return true;
 };
 
+// Availability: an action's `when` predicate has full control; without one,
+// the default rule is "available unless an encode is running". An unavailable
+// binding is skipped WITHOUT consuming the event, so the same key can serve
+// different actions in different contexts (e.g. Space = camera toggle in
+// build, playback in the timeline) and unrelated listeners still see the key.
 export const dispatchBinding = (
   bindings: KeyBinding[],
   event: KeyboardEvent,
   editor: Editor,
+  ctx: KeybindContext = {},
 ): boolean => {
   for (const binding of bindings) {
     if (!matches(binding, event)) continue;
+    const available = binding.when ? binding.when(ctx) : !ctx.encoding;
+    if (!available) continue;
     if (binding.preventDefault) {
       event.preventDefault();
       event.stopPropagation();

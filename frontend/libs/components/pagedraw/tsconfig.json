@@ -27,6 +27,9 @@
       "path": "../../model-list"
     },
     {
+      "path": "../keybinds"
+    },
+    {
       "path": "../../common"
     },
     {

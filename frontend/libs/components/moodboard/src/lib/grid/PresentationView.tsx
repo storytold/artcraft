@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { BoardItem } from "../boards/boardTypes";
+import { useResolvedKeybinds } from "@storyteller/keybinds";
 
 interface Props {
   items: BoardItem[];
@@ -9,22 +10,27 @@ interface Props {
 }
 
 // Distraction-free, full-bleed review deck. One item at a time, keyboard-driven
-// (←/→ navigate, Esc exits). For client/team review and sharing-by-screen.
+// via the "moodboard-grid" keybinds surface (by default ←/→ or Space navigate,
+// Esc exits). For client/team review and sharing-by-screen.
 export const PresentationView = ({ items, onClose }: Props) => {
   const [index, setIndex] = useState(0);
   const count = items.length;
+  const { matchAction } = useResolvedKeybinds();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft")
+      const action = matchAction(e, "moodboard-grid");
+      if (action === "moodboard-grid.selection.clearOrClose") onClose();
+      else if (action === "moodboard-grid.nav.prev")
         setIndex((i) => (i - 1 + count) % Math.max(count, 1));
-      else if (e.key === "ArrowRight" || e.key === " ")
+      else if (action === "moodboard-grid.nav.next")
         setIndex((i) => (i + 1) % Math.max(count, 1));
+      else return;
+      e.preventDefault();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose, count]);
+  }, [matchAction, onClose, count]);
 
   const item = items[Math.min(index, count - 1)];
 

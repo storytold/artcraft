@@ -43,6 +43,7 @@ export type MiraiProps = {
     | "inpaint";
   brushColor?: string;
   brushSize?: number;
+  eraserSize?: number;
   inpaintOperation?: "add" | "minus";
   inpaintBrushSize?: number;
   onSelectionChange?: (isSelecting: boolean) => void;
@@ -69,6 +70,7 @@ export const PaintSurface = ({
   activeTool = "select",
   brushColor = "#000000",
   brushSize = 5,
+  eraserSize = 16,
   inpaintOperation = "add",
   inpaintBrushSize = 30,
   onSelectionChange,
@@ -374,9 +376,11 @@ export const PaintSurface = ({
               : InpaintingColor;
 
       const strokeWidth =
-        activeTool === "inpaint"
-          ? inpaintBrushSize / stage.scaleX()
-          : brushSize / stage.scaleX();
+        (activeTool === "inpaint"
+          ? inpaintBrushSize
+          : activeTool === "eraser"
+            ? eraserSize
+            : brushSize) / stage.scaleX();
 
       const newLineNode: LineNode = {
         id: lineId,
@@ -996,7 +1000,13 @@ export const PaintSurface = ({
 
       cursorNode.visible(true);
       cursorNode.position(cursorPositionRef.current);
-      cursorNode.radius((activeTool === "inpaint" ? inpaintBrushSize : brushSize) / 2);
+      cursorNode.radius(
+        (activeTool === "inpaint"
+          ? inpaintBrushSize
+          : activeTool === "eraser"
+            ? eraserSize
+            : brushSize) / 2,
+      );
 
       if (activeTool === "draw") {
         cursorNode.fill(brushColor);
@@ -1021,7 +1031,7 @@ export const PaintSurface = ({
     }
     cursorLayer.batchDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cursorVisibleLocal, activeTool, brushColor, brushSize, inpaintBrushSize, inpaintOperation]);
+  }, [cursorVisibleLocal, activeTool, brushColor, brushSize, eraserSize, inpaintBrushSize, inpaintOperation]);
 
   const renderNode = useCallback(
     (node: Node | LineNode) => {

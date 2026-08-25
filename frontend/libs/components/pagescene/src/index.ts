@@ -188,7 +188,7 @@ export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 // innerHeight when no host adapter is available.
 //
 // Host-coupled comps (AssetMenu, ControlsTopButtons, Controls3D,
-// EditorLoadingBar, OnboardingHelper) stay in the artcraft host
+// EditorLoadingBar) stay in the artcraft host
 // until their dependencies (UploadModal3D, MediaFilesApi,
 // signalScene, addToast, loadingBarData/IsShowing signals, etc.)
 // are either surfaced via adapter slots or replaced with
@@ -210,16 +210,7 @@ export { PreviewBox } from "./lib/comps/PreviewBox";
 export type { PreviewBoxProps } from "./lib/comps/PreviewBox";
 export { PreviewEngineCamera } from "./lib/comps/PreviewEngineCamera";
 export { PreviewImages } from "./lib/comps/PreviewImages";
-export { OnboardingHelper } from "./lib/comps/OnboardingHelper";
 export { EditorLoadingBar } from "./lib/comps/EditorLoadingBar";
-export {
-  Help,
-  Key,
-  KeyGroup,
-  Mouse,
-  Plus,
-  ShortcutsGroup,
-} from "./lib/comps/ControlsTopButtons/Help/Help";
 
 // Viewport-size hook (also useful to host code that wants the same
 // reactivity contract the lib comps use).

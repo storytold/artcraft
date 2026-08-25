@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { CheckIcon, CloudUploadIcon, Grid3x3Icon, LoaderCircleIcon, PlayIcon, SquareDashedIcon, TriangleAlertIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
+import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import { BoardGridView } from "./grid/BoardGridView";
 import { PresentationView } from "./grid/PresentationView";
 import { useBoardLibraryStore } from "./boards/BoardLibraryStore";
@@ -38,6 +39,8 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
   // Presentation is a transient overlay, not a persisted view mode — so a
   // reload never reopens straight into a slideshow.
   const [presenting, setPresenting] = useState(false);
+  // Hold-Ctrl / pinned cheatsheet, listing whichever view is active.
+  const cheatsheetVisible = useCheatsheetVisibility();
 
   const presentItems = board
     ? board.itemOrder.map((id) => board.items[id]).filter((it) => Boolean(it))
@@ -63,6 +66,10 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
         saveStatus={syncEnabled ? status : null}
         onSave={syncEnabled ? saveNow : undefined}
         endSlot={topBarEndSlot}
+      />
+      <Cheatsheet
+        surface={viewMode === "grid" ? "moodboard-grid" : "moodboard"}
+        visible={cheatsheetVisible}
       />
       {presenting && (
         <PresentationView

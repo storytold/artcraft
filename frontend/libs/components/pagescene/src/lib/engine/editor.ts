@@ -25,6 +25,8 @@ import { CharacterAnimationManager } from "./animation/CharacterAnimationManager
 import { SkeletonHelperController } from "./editor/SkeletonHelperController";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
+import { CreateAction } from "./editor/actions/CreateAction";
+import { ModalTransformController } from "./editor/ModalTransformController";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -124,6 +126,15 @@ class Editor {
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
   private activeTransform: TransformAction | null = null;
+
+  // Blender-style modal grab/move (keyboard axis-lock). Created up front; reads
+  // camera/renderer/selection at begin() time.
+  readonly modalTransform: ModalTransformController =
+    new ModalTransformController(this);
+
+  public beginModalTransform(mode: "translate") {
+    this.modalTransform.begin(mode);
+  }
 
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {
@@ -951,6 +962,28 @@ class Editor {
     this.mouse_controls?.removeTransformControls(true);
     this.utils.deleteObject(uuid);
     this.selection.refreshOutliner();
+  }
+
+  // Copy + paste the current selection in one step, recording history so the
+  // duplicate can be undone as a single action. Bound to the Duplicate keybind.
+  public async duplicateSelected() {
+    await this.sceneManager?.copy();
+    const obj = await this.sceneManager?.paste();
+    if (!obj) return;
+    this.history.record(new CreateAction(this, obj));
+    this.selection.refreshOutliner();
+  }
+
+  // Toggle the floor grid. One-way write: emit on the bus → bridge updates the
+  // store and the gridSubscription re-syncs the THREE gridHelper.
+  public toggleGrid() {
+    const visible = usePageSceneStore.getState().gridVisible;
+    this.bus.emit(new GridVisibleChangedEvent(!visible));
+  }
+
+  // Toggle gizmo grid-snapping (continuous vs 0.01 increments).
+  public toggleSnapping() {
+    this.gizmo.toggleSnapping();
   }
 
   // Render the scene to the camera, this is called in the update.

@@ -214,6 +214,9 @@
       "path": "./libs/components/moodboard"
     },
     {
+      "path": "./libs/components/keybinds"
+    },
+    {
       "path": "./libs/omni-gen"
     },
     {

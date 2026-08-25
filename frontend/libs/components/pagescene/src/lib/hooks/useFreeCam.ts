@@ -1,6 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { MathUtils } from "three";
+import { useResolvedKeybinds } from "@storyteller/keybinds";
 import {
+  CAMERA_MOVE_ACTION_SLOTS,
+  CAMERA_ROTATE_ACTION_SLOTS,
   createFreeCamControlState,
   emptyMoveKeys,
   emptyRotateKeys,
@@ -9,6 +12,8 @@ import {
   rotateSlotForKeyCode,
   zoomFromWheel,
   type FreeCamControlState,
+  type HeldMoveKeys,
+  type HeldRotateKeys,
 } from "../engine/cameraMath";
 import { usePageSceneStore } from "../PageSceneStore";
 import type Editor from "../engine/editor";
@@ -61,13 +66,6 @@ const PRECISE_MOVEMENT_SPEED = BASE_MOVEMENT_SPEED / 10;
 const isAltKey = (code: string) =>
   code === "AltLeft" || code === "AltRight";
 
-// WASD / QE movement codes. We only need this set for the Alt-modifier
-// preventDefault path; non-modified WASD doesn't collide with browser
-// shortcuts and shouldn't be intercepted.
-const MOVE_KEY_CODES = new Set([
-  "KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE",
-]);
-
 // Pick the camera speed based on the modifier state on this event.
 // Precise wins over boost — if both are somehow held the user is
 // almost certainly reaching for fine control, and "go max-fast while
@@ -87,6 +85,23 @@ export const useFreeCam = (
     null,
   );
 
+  // Resolve camera bindings into `code → slot` lookups. Recomputed (new identity)
+  // only when the preset/overrides change, which re-attaches the key listeners.
+  const { slotBindings } = useResolvedKeybinds();
+  const { moveMap, rotateMap, moveCodes } = useMemo(() => {
+    const resolved = slotBindings("pagescene");
+    const moveMap: Record<string, keyof HeldMoveKeys> = {};
+    for (const [id, slot] of Object.entries(CAMERA_MOVE_ACTION_SLOTS)) {
+      for (const b of resolved[id] ?? []) moveMap[b.code] = slot;
+    }
+    const rotateMap: Record<string, keyof HeldRotateKeys> = {};
+    for (const [id, slot] of Object.entries(CAMERA_ROTATE_ACTION_SLOTS)) {
+      for (const b of resolved[id] ?? []) rotateMap[b.code] = slot;
+    }
+    // Movement codes only matter for the Alt-modifier preventDefault path.
+    return { moveMap, rotateMap, moveCodes: new Set(Object.keys(moveMap)) };
+  }, [slotBindings]);
+
   // Hand the state to the editor so its render loop can integrate it.
   useEffect(() => {
     if (!editor) return undefined;
@@ -104,7 +119,11 @@ export const useFreeCam = (
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
+      if (usePageSceneStore.getState().modalTransformActive) return;
       if (isEventFromEditableElement(e)) return;
+      // Ctrl/Cmd chords are commands (undo, duplicate, copy…), not camera
+      // movement — don't let e.g. Ctrl+D both duplicate and strafe right.
+      if (e.ctrlKey || e.metaKey) return;
       // Browser-shortcut conflicts for Alt-slow-mode:
       //   - Alt+D focuses the address bar in Chrome / Firefox / Edge.
       //   - Tapping Alt on its own shows the menu bar in Firefox / Edge
@@ -113,23 +132,29 @@ export const useFreeCam = (
       // We block keydown for the Alt key itself and for Alt+WASD/QE so
       // the precise-fly path doesn't accidentally yank focus away or
       // pop the menu. Non-modified WASD is left alone.
-      if (isAltKey(e.code) || (e.altKey && MOVE_KEY_CODES.has(e.code))) {
+      if (isAltKey(e.code) || (e.altKey && moveCodes.has(e.code))) {
         e.preventDefault();
       }
       state.movementSpeed = movementSpeedForEvent(e);
-      const moveSlot = moveSlotForKeyCode(e.code);
+      const moveSlot = moveSlotForKeyCode(e.code, moveMap);
       if (moveSlot) state.moveKeys[moveSlot] = 1;
-      const rotateSlot = rotateSlotForKeyCode(e.code);
+      // Camera-look keys yield to the timeline while it's open (arrows mean
+      // frame stepping / nudging there) — mirrors the registry's cameraLook
+      // gate; keep the two in sync.
+      if (usePageSceneStore.getState().timelineExpanded) return;
+      const rotateSlot = rotateSlotForKeyCode(e.code, rotateMap);
       if (rotateSlot) state.rotateKeys[rotateSlot] = 1;
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
+      if (usePageSceneStore.getState().modalTransformActive) return;
       if (isEventFromEditableElement(e)) return;
+      if (e.ctrlKey || e.metaKey) return;
       state.movementSpeed = movementSpeedForEvent(e);
-      const moveSlot = moveSlotForKeyCode(e.code);
+      const moveSlot = moveSlotForKeyCode(e.code, moveMap);
       if (moveSlot) state.moveKeys[moveSlot] = 0;
-      const rotateSlot = rotateSlotForKeyCode(e.code);
+      const rotateSlot = rotateSlotForKeyCode(e.code, rotateMap);
       if (rotateSlot) state.rotateKeys[rotateSlot] = 0;
     };
 
@@ -137,6 +162,8 @@ export const useFreeCam = (
       // Record mode locks the viewport — no right-drag panning.
       if (editor.cameraController.locked) return;
       if (e.button !== 2) return;
+      // The modal transform owns the pointer (right-click cancels it).
+      if (usePageSceneStore.getState().modalTransformActive) return;
       dragRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
       state.velocity.set(0, 0, 0);
       try {
@@ -221,5 +248,5 @@ export const useFreeCam = (
       document.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, [canvas, editor]);
+  }, [canvas, editor, moveMap, rotateMap, moveCodes]);
 };

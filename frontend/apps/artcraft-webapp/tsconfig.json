@@ -45,6 +45,9 @@
       "path": "../../libs/components/gallery-modal"
     },
     {
+      "path": "../../libs/components/keybinds"
+    },
+    {
       "path": "../../libs/components/switch"
     },
     {
