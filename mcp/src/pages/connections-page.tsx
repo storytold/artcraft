@@ -2,8 +2,9 @@ import { isValidElement } from "hono/jsx";
 
 /**
  * `/connections` — where a user sees which AI apps hold a grant to their Artcraft account and
- * disconnects them. The app itself has no sessions screen, so this page is the only place that
- * can show "Claude is connected". A pure function of its view model; everything is escaped.
+ * disconnects them, and where they mint personal tokens for integrations that cannot run the
+ * OAuth flow themselves. The app itself has no sessions screen, so this page is the only place
+ * that can show "Claude is connected". A pure function of its view model; everything is escaped.
  */
 
 export interface ConnectionView {
@@ -11,6 +12,21 @@ export interface ConnectionView {
   readonly clientName: string;
   readonly scopes: readonly string[];
   readonly createdAt: string;
+}
+
+export interface PersonalTokenView {
+  readonly id: string;
+  readonly label: string;
+  readonly hint: string;
+  readonly createdAt: string;
+  readonly expiresAt: string;
+}
+
+/** Shown exactly once, in the response to the request that created it. */
+export interface NewTokenView {
+  readonly label: string;
+  readonly secret: string;
+  readonly expiresAt: string;
 }
 
 export interface ConnectionsView {
@@ -24,6 +40,8 @@ export interface ConnectionsView {
   readonly signedIn?: {
     readonly username: string;
     readonly connections: readonly ConnectionView[];
+    readonly personalTokens: readonly PersonalTokenView[];
+    readonly newToken?: NewTokenView;
   };
 }
 
@@ -34,6 +52,9 @@ export const CONNECTIONS_FORM_FIELDS = {
   password: "password",
   googleCredential: "google_credential",
   grantId: "grant_id",
+  tokenLabel: "token_label",
+  tokenLifetime: "token_lifetime",
+  tokenId: "token_id",
 } as const;
 
 export const CONNECTIONS_PATHS = {
@@ -41,7 +62,13 @@ export const CONNECTIONS_PATHS = {
   signIn: "/connections/sign-in",
   signOut: "/connections/sign-out",
   revoke: "/connections/revoke",
+  createToken: "/connections/tokens/create",
+  revokeToken: "/connections/tokens/revoke",
 } as const;
+
+/** The lifetimes a user can pick, in days; the form value is the key. */
+export const TOKEN_LIFETIME_DAYS = ["30", "90"] as const;
+export type TokenLifetimeDays = (typeof TOKEN_LIFETIME_DAYS)[number];
 
 export function renderConnectionsPage(view: ConnectionsView): string {
   const element: unknown = <ConnectionsPage view={view} />;
@@ -77,7 +104,7 @@ function ConnectionsPage({ view }: { view: ConnectionsView }) {
             <SignIn view={view} />
           )}
         </main>
-        {view.googleClientId && !view.signedIn ? (
+        {view.googleClientId ? (
           <>
             <script nonce={view.scriptNonce}>{GOOGLE_CALLBACK_SCRIPT}</script>
             <script src="https://accounts.google.com/gsi/client" async></script>
@@ -98,25 +125,9 @@ function SignIn({ view }: { view: ConnectionsView }) {
       </p>
       <form method="post" action={CONNECTIONS_PATHS.signIn} id="sign-in-form">
         <input type="hidden" name={f.csrf} value={view.csrfToken} />
-        <input type="hidden" name={f.method} value="password" id="method" />
-        <input type="hidden" name={f.googleCredential} value="" id="google-credential" />
-        {view.googleClientId ? (
-          <div class="google">
-            <div
-              id="g_id_onload"
-              data-client_id={view.googleClientId}
-              data-callback="onGoogleCredential"
-              data-auto_prompt="false"
-            ></div>
-            <div
-              class="g_id_signin"
-              data-type="standard"
-              data-text="continue_with"
-              data-size="large"
-            ></div>
-            <p class="or">or sign in with your password</p>
-          </div>
-        ) : null}
+        <input type="hidden" name={f.method} value="password" />
+        <input type="hidden" name={f.googleCredential} value="" />
+        {view.googleClientId ? <GoogleButton clientId={view.googleClientId} /> : null}
         <label>
           Username or email
           <input
@@ -186,7 +197,124 @@ function SignedIn({
       <p class="note small">
         Disconnecting stops the app immediately; it will ask you to sign in again if you reconnect.
       </p>
+      <PersonalTokens view={view} signedIn={signedIn} />
     </>
+  );
+}
+
+function PersonalTokens({
+  view,
+  signedIn,
+}: {
+  view: ConnectionsView;
+  signedIn: NonNullable<ConnectionsView["signedIn"]>;
+}) {
+  const f = CONNECTIONS_FORM_FIELDS;
+  return (
+    <section class="tokens">
+      <h2>Personal tokens</h2>
+      <p class="note">
+        For integrations that take a fixed token instead of signing you in — the OpenAI Responses
+        API (<code>authorization</code>) and the Anthropic Messages API connector (
+        <code>authorization_token</code>). A token can only read: your account and credits, your
+        generations, and models and prices.
+      </p>
+      {signedIn.newToken ? (
+        <div class="new-token" role="status">
+          <p>
+            <strong>{signedIn.newToken.label}</strong> is ready. Copy it now — it will not be shown
+            again.
+          </p>
+          <code class="secret">{signedIn.newToken.secret}</code>
+          <p class="meta">
+            Send it as <code>Authorization: Bearer …</code>. Expires {signedIn.newToken.expiresAt}.
+          </p>
+        </div>
+      ) : null}
+      {signedIn.personalTokens.length === 0 ? null : (
+        <ul class="connections">
+          {signedIn.personalTokens.map((token) => (
+            <li>
+              <div>
+                <strong>{token.label}</strong>
+                <span class="meta">
+                  {token.hint} · created {token.createdAt} · expires {token.expiresAt}
+                </span>
+              </div>
+              <form method="post" action={CONNECTIONS_PATHS.revokeToken}>
+                <input type="hidden" name={f.csrf} value={view.csrfToken} />
+                <input type="hidden" name={f.tokenId} value={token.id} />
+                <button type="submit" class="secondary">
+                  Revoke
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form method="post" action={CONNECTIONS_PATHS.createToken} id="create-token-form">
+        <input type="hidden" name={f.csrf} value={view.csrfToken} />
+        <input type="hidden" name={f.method} value="password" />
+        <input type="hidden" name={f.googleCredential} value="" />
+        <h3>New token</h3>
+        <label>
+          Name
+          <input
+            type="text"
+            name={f.tokenLabel}
+            placeholder="e.g. OpenAI Responses"
+            maxlength={64}
+            autocomplete="off"
+            required
+          />
+        </label>
+        <label>
+          Lifetime
+          <select name={f.tokenLifetime}>
+            {TOKEN_LIFETIME_DAYS.map((days) => (
+              <option value={days}>{days} days</option>
+            ))}
+          </select>
+        </label>
+        <p class="note small">
+          Confirm it is you: the token gets its own sign-in, separate from this page and from your
+          browser.
+        </p>
+        {view.googleClientId ? <GoogleButton clientId={view.googleClientId} /> : null}
+        <label>
+          Password
+          <input type="password" name={f.password} autocomplete="current-password" />
+        </label>
+        <div class="actions">
+          <button type="submit" class="primary">
+            Create token
+          </button>
+        </div>
+      </form>
+      <p class="note small">
+        Revoking a token stops it immediately. Tokens expire on their own after at most 90 days.
+      </p>
+    </section>
+  );
+}
+
+function GoogleButton({ clientId }: { clientId: string }) {
+  return (
+    <div class="google">
+      <div
+        id="g_id_onload"
+        data-client_id={clientId}
+        data-callback="onGoogleCredential"
+        data-auto_prompt="false"
+      ></div>
+      <div
+        class="g_id_signin"
+        data-type="standard"
+        data-text="continue_with"
+        data-size="large"
+      ></div>
+      <p class="or">or use your password</p>
+    </div>
   );
 }
 
@@ -203,11 +331,12 @@ const SCOPE_WORDS: Record<string, string> = {
   "read:catalog": "see models and prices",
 };
 
+/** One Google button per page; it submits whichever form is on it (sign-in or create-token). */
 const GOOGLE_CALLBACK_SCRIPT = `
 function onGoogleCredential(response) {
-  document.getElementById("method").value = "google";
-  document.getElementById("google-credential").value = response.credential;
-  var form = document.getElementById("sign-in-form");
+  var form = document.getElementById("sign-in-form") || document.getElementById("create-token-form");
+  form.querySelector('[name="method"]').value = "google";
+  form.querySelector('[name="google_credential"]').value = response.credential;
   form.noValidate = true;
   form.requestSubmit ? form.requestSubmit() : form.submit();
 }
@@ -221,6 +350,8 @@ body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 system
 .card { width:100%; max-width:520px; border:1px solid var(--line); border-radius:8px; padding:28px; }
 .eyebrow { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; font-weight:600; }
 h1 { font-size:22px; line-height:1.25; margin:0 0 16px; font-weight:600; }
+h2 { font-size:17px; margin:28px 0 8px; font-weight:600; }
+h3 { font-size:15px; margin:18px 0 0; font-weight:600; }
 .note { margin:0 0 12px; font-size:14px; opacity:.85; } .note.small { font-size:13px; opacity:.7; margin-top:16px; }
 .notice { border-left:3px solid var(--accent); padding:8px 12px; margin:12px 0; font-size:14px; }
 .error { border-left:3px solid var(--risk); padding:8px 12px; margin:12px 0; font-size:14px; }
@@ -228,8 +359,13 @@ h1 { font-size:22px; line-height:1.25; margin:0 0 16px; font-weight:600; }
 .connections { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
 .connections li { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--line); border-radius:6px; padding:12px 14px; }
 .connections .meta { display:block; font-size:13px; opacity:.7; }
+.tokens { border-top:1px solid var(--line); margin-top:24px; }
+.new-token { border:1px solid var(--accent); border-radius:6px; padding:12px 14px; margin:12px 0; font-size:14px; }
+.new-token p { margin:0 0 8px; } .new-token .meta { font-size:13px; opacity:.7; margin:8px 0 0; }
+.secret { display:block; font:13px/1.5 ui-monospace, monospace; word-break:break-all; user-select:all; padding:8px 10px; border:1px dashed var(--line); border-radius:4px; }
+code { font:13px ui-monospace, monospace; }
 label { display:block; margin:14px 0 0; font-size:14px; font-weight:600; }
-input[type=text], input[type=password] { display:block; width:100%; margin-top:6px; padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; font:inherit; }
+input[type=text], input[type=password], select { display:block; width:100%; margin-top:6px; padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; font:inherit; }
 .actions { display:flex; gap:10px; margin-top:20px; }
 button { padding:10px 14px; border-radius:6px; border:1px solid var(--line); font:inherit; font-weight:600; cursor:pointer; background:transparent; color:inherit; }
 button.primary { background:var(--accent); border-color:var(--accent); color:#fff; flex:1; }

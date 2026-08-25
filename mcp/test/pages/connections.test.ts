@@ -16,6 +16,7 @@ import {
   call,
   callMcp,
   exchangeCode,
+  mcpInitialize,
   ORIGIN,
   pkce,
   type TokenResponse,
@@ -270,5 +271,104 @@ describe("/connections", () => {
     expect(response.headers.get("set-cookie")).toContain(`${UI_SESSION_COOKIE_NAME}=;`);
     const after = await openPage(sessionCookie);
     expect(after.html).toContain(`action="${CONNECTIONS_PATHS.signIn}"`);
+  });
+});
+
+describe("/connections personal tokens", () => {
+  const SECRET_PATTERN = /artcraft_pat_[A-Za-z0-9_-]{43}/;
+
+  async function createToken(
+    sessionCookie: string,
+    fields: Partial<Record<string, string>> = {},
+  ): Promise<{ response: Response; html: string }> {
+    const page = await openPage(sessionCookie);
+    const response = await post(
+      CONNECTIONS_PATHS.createToken,
+      {
+        [CONNECTIONS_FORM_FIELDS.csrf]: page.csrf,
+        [CONNECTIONS_FORM_FIELDS.method]: "password",
+        [CONNECTIONS_FORM_FIELDS.password]: SEEDED_USER.password,
+        [CONNECTIONS_FORM_FIELDS.tokenLabel]: "Responses API",
+        [CONNECTIONS_FORM_FIELDS.tokenLifetime]: "30",
+        ...fields,
+      },
+      page.cookies,
+    );
+    return { response, html: await response.text() };
+  }
+
+  it("creates a token after a password confirmation, shows it once, and it works at /mcp", async () => {
+    const sessionCookie = await signIn();
+    const { response, html } = await createToken(sessionCookie);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const secret = SECRET_PATTERN.exec(html)?.[0] ?? "";
+    expect(secret).toMatch(SECRET_PATTERN);
+    expect(html).toContain("Copy it now");
+
+    expect((await mcpInitialize(secret)).status).toBe(200);
+
+    const again = await openPage(sessionCookie);
+    expect(again.html).toContain("<strong>Responses API</strong>");
+    expect(again.html).toContain(`artcraft_pat_…${secret.slice(-4)}`);
+    expect(again.html).not.toContain(secret);
+  });
+
+  it("refuses to create a token on a wrong password, a missing name, or without a session", async () => {
+    const sessionCookie = await signIn();
+    const wrong = await createToken(sessionCookie, { [CONNECTIONS_FORM_FIELDS.password]: "nope" });
+    expect(wrong.response.status).toBe(401);
+    expect(wrong.html).not.toMatch(SECRET_PATTERN);
+
+    const unnamed = await createToken(sessionCookie, { [CONNECTIONS_FORM_FIELDS.tokenLabel]: " " });
+    expect(unnamed.response.status).toBe(400);
+
+    const badLifetime = await createToken(sessionCookie, {
+      [CONNECTIONS_FORM_FIELDS.tokenLifetime]: "365",
+    });
+    expect(badLifetime.response.status).toBe(400);
+
+    const anonymous = await createToken("");
+    expect(anonymous.response.status).toBe(401);
+    expect(anonymous.html).not.toMatch(SECRET_PATTERN);
+  });
+
+  it("revokes a token from the page so it stops working", async () => {
+    const sessionCookie = await signIn();
+    const { html } = await createToken(sessionCookie, {
+      [CONNECTIONS_FORM_FIELDS.tokenLabel]: "Revoke me",
+    });
+    const secret = SECRET_PATTERN.exec(html)?.[0] ?? "";
+    expect((await mcpInitialize(secret)).status).toBe(200);
+
+    const page = await openPage(sessionCookie);
+    const id = new RegExp(
+      `name="${CONNECTIONS_FORM_FIELDS.tokenId}" value="([^"]+)"[^]{0,200}Revoke</button>`,
+    );
+    // The token id sits in the list item labelled "Revoke me"; find that item, then its id.
+    const item = page.html
+      .split("<li>")
+      .find((chunk) => chunk.includes("<strong>Revoke me</strong>"));
+    const tokenId = /name="token_id" value="([^"]+)"/.exec(item ?? "")?.[1] ?? "";
+    expect(tokenId).toMatch(/.+/);
+    expect(id.test(page.html)).toBe(true);
+
+    const revoked = await post(
+      CONNECTIONS_PATHS.revokeToken,
+      { [CONNECTIONS_FORM_FIELDS.csrf]: page.csrf, [CONNECTIONS_FORM_FIELDS.tokenId]: tokenId },
+      page.cookies,
+    );
+    expect(revoked.status).toBe(303);
+    expect(revoked.headers.get("location")).toContain("notice=token_revoked");
+    expect((await mcpInitialize(secret)).status).toBe(401);
+    expect((await openPage(sessionCookie)).html).not.toContain("<strong>Revoke me</strong>");
+  });
+
+  it("requires the CSRF token on both token forms", async () => {
+    const sessionCookie = await signIn();
+    for (const path of [CONNECTIONS_PATHS.createToken, CONNECTIONS_PATHS.revokeToken]) {
+      const response = await post(path, { [CONNECTIONS_FORM_FIELDS.csrf]: "nope" }, sessionCookie);
+      expect(response.status).toBe(403);
+    }
   });
 });
