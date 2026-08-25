@@ -3,7 +3,9 @@ import { Hono } from "hono";
 import { createArtcraftAuthenticator } from "./auth/authenticator";
 import { type AuthorizeDeps, authorizeRoutes } from "./auth/authorize";
 import type { Config } from "./config";
+import { generateCsrfToken } from "./auth/csrf";
 import { connectionsRoutes } from "./pages/connections";
+import { renderLandingPage } from "./pages/landing";
 
 /**
  * The unprotected HTTP surface: health, the authorization endpoint, and (later) the pages.
@@ -23,6 +25,16 @@ export function createApp(
       environment: config.environment,
     }),
   );
+
+  app.get("/", (c) => {
+    const nonce = generateCsrfToken();
+    c.header(
+      "content-security-policy",
+      `default-src 'none'; style-src 'nonce-${nonce}'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+    );
+    c.header("cache-control", "public, max-age=300");
+    return c.html(renderLandingPage({ origin: new URL(c.req.url).origin, scriptNonce: nonce }));
+  });
 
   app.route("/", authorizeRoutes(deps));
   app.route("/", connectionsRoutes({ ...deps, upstreamApiHost: config.upstreamApiHost }));
