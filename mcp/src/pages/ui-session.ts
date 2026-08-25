@@ -5,6 +5,8 @@
  * so they never collide with the OAuth provider's records in the same namespace.
  */
 
+import { base64Url } from "../encoding";
+
 export const UI_SESSION_COOKIE_NAME = "artcraft_connections";
 const KEY_PREFIX = "mcpui:session:";
 const TTL_SECONDS = 15 * 60;
@@ -79,11 +81,4 @@ export function readUiSessionCookie(request: Request): string | undefined {
 
 function isWellFormed(id: string): boolean {
   return /^[A-Za-z0-9_-]{43}$/.test(id);
-}
-
-function base64Url(bytes: Uint8Array): string {
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
 }
