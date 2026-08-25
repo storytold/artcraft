@@ -108,8 +108,10 @@ describe("finishAuthorization", () => {
     expect(unwrapped?.grant.props).toMatchObject({
       credential: { kind: "session", signedSession: SIGNED_SESSION },
       [GRANT_ISSUED_AT_PROP]: now,
+      userToken: "user_finish",
       username: "finisher",
       displayName: "Finisher",
+      scopes: ["read:jobs"],
     });
   });
 });
