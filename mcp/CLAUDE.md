@@ -231,6 +231,23 @@ Cite these; re-verify if the file references stop matching.
 - This pool-workers release exports no `fetchMock`; stub `globalThis.fetch` in tests (tests and
   the Worker share an isolate).
 
+## Consent flow facts
+
+- GET and POST /authorize share no server state: the original query is echoed in a hidden
+  field and re-validated by `parseAuthRequest` on POST, so a tampered redirect is refused.
+- CSRF is a double-submit token (cookie `artcraft_consent`, Path=/authorize, HttpOnly,
+  SameSite=Lax, Secure on https; not `__Host-` because local dev is http).
+- The page ships a nonce'd CSP allowing only our inline script/style and Google Identity
+  Services origins; `form-action 'self'`, `frame-ancestors 'none'`, `no-store`.
+- Sign-in failures re-render (401 credential, 502 upstream) with the upstream's message;
+  the password is never echoed. Cancel sends `error=access_denied` + `state` + `iss`.
+- The grant's `userId` is the Artcraft `user_…` token; props carry the credential,
+  `grantIssuedAt`, username and display name (encrypted); metadata carries the client name.
+- `GOOGLE_CLIENT_ID` is a public binding (preview/production); absent locally → password only.
+  Google works only after the origin is authorised in the console (docs/infra-request.md §3).
+- Fixtures and fake responses are validated against `test/fixtures/api.json` with Ajv
+  (`test/helpers/contract.ts`) — declare fixtures with `fixture(schema, value)`.
+
 ## Client requirements that bite
 
 - Unauthenticated `/mcp` → **401** with
@@ -351,6 +368,7 @@ mcp/
 ├── docs/backend-handoff.md # findings for the storyteller-web owner; not our work
 ├── docs/infra-request.md   # one-time batched asks for the backend team (Cloudflare, secrets, Google)
 ├── fake-upstream/          # separate Worker faking the allowlisted API routes; never imported by src/
+│   └── src/ state.ts (seeded localdev1), session.ts (HS256 sessions, cookie or header), routes/session.ts
 ├── scripts/gen-api.mjs     # fetch api.json → trim to allowlist → test/fixtures/api.json + src/upstream/schema.d.ts
 ├── src/
 │   ├── index.ts            # Worker entry: environment invariant first, then the OAuthProvider
@@ -359,7 +377,11 @@ mcp/
 │   ├── app.ts              # unprotected Hono routes: /healthz, /authorize, pages
 │   ├── auth/
 │   │   ├── oauth.ts        # provider options: endpoints, scopes, TTLs, CIMD+DCR, error logging
-│   │   ├── authorize.ts    # /authorize: parseAuthRequest → (Authenticator, next PR) → completeAuthorization
+│   │   ├── authorize.ts    # /authorize GET (render) + POST (CSRF → re-validate → deny | sign in → finish)
+│   │   ├── authenticator.ts    # Authenticator seam (swap point 1); Artcraft impl proxies /v1/login, google_sso
+│   │   ├── consent-page.tsx    # pure render of the sign-in + consent page (Hono JSX; everything escaped)
+│   │   ├── csrf.ts         # double-submit token: cookie + hidden field, constant-time compare
+│   │   ├── finish-authorization.ts  # requested ∩ supported scopes, completeAuthorization, grant props
 │   │   └── grant-age.ts    # 90-day absolute grant lifetime, enforced in tokenExchangeCallback
 │   ├── tokens/             # TokenResolver, Principal, GrantStore adapter
 │   ├── upstream/
@@ -372,6 +394,6 @@ mcp/
 │   └── pages/              # landing, connections
 └── test/
     ├── fixtures/api.json   # GENERATED spec snapshot (trimmed); the contract tests' reference
-    ├── helpers/            # pure check functions for guardrail tests; oauth-client.ts = an MCP client's moves
+    ├── helpers/            # guardrail check functions; oauth-client.ts = an MCP client's moves; contract.ts = Ajv vs api.json
     └── upstream/, oauth/, e2e/, *.test.ts
 ```
