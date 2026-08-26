@@ -1,6 +1,6 @@
 // Edit-3D splash modal. Mirrors the design language of
-// SignupCtaModal (bg-[#161618], border-white/10, off-center primary
-// glow, font-display heading) so the editor's onboarding modal feels
+// SignupCtaModal (flat near-black surface, hairline border,
+// font-display heading) so the editor's onboarding modal feels
 // like the rest of the webapp, not a one-off.
 
 import { Modal } from "@storyteller/ui-modal";
@@ -22,7 +22,7 @@ export function SceneSplashModal({
     <Modal
       isOpen={isOpen}
       onClose={close}
-      className="rounded-2xl w-full max-w-3xl overflow-hidden border border-white/10 bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+      className="w-full max-w-3xl overflow-hidden border border-white/15 bg-ui-modal p-0"
       childPadding={false}
       backdropClassName="!bg-black/80"
       closeOnOutsideClick
@@ -32,11 +32,7 @@ export function SceneSplashModal({
       <div className="relative overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-primary/25 blur-[80px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/15"
         />
 
         <div className="relative px-8 pt-10 pb-8 sm:px-10 sm:pt-12 sm:pb-10">

@@ -80,10 +80,10 @@ export function CreateMediaPageShell({
 
   if (!authChecked) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#101014]">
+      <div className="flex h-full items-center justify-center bg-ui-background">
         <LoaderCircleIcon
-          
-          className="animate-spin text-4xl text-primary/80" />
+
+          className="animate-spin text-4xl text-white/60" />
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function CreateMediaPageShell({
           goToHistory: () => setMobileTab("history"),
         }}
       >
-        <div className="flex h-full w-full flex-col bg-[#101014] text-white">
+        <div className="flex h-full w-full flex-col bg-ui-background text-white">
           <Seo title={title} description={description} />
 
           {/* Flex (not absolute) keeps the toggle cluster from overlapping
@@ -150,27 +150,20 @@ export function CreateMediaPageShell({
   }
 
   return (
-    <div className="flex h-full w-full bg-[#101014] text-white">
+    <div className="flex h-full w-full bg-ui-background text-white">
       <Seo title={title} description={description} />
 
       {/* Decorative background, empty state only. Not rendered on mobile
-          devices: the glow orbs use filter: blur(120px) and the truchet uses
-          mask-image, both of which are full-screen GPU layers that iOS Safari
-          must re-rasterize when an overlay (mobile menu, modal) composites over
-          them, causing multi-second hangs. (This is distinct from
-          backdrop-filter.) We gate on the actual device (react-device-detect's
-          user-agent check) rather than a viewport breakpoint so the layers
-          never mount on a real phone/tablet, and a narrow desktop window still
-          gets the decoration. */}
+          devices: the truchet uses mask-image, a full-screen GPU layer that
+          iOS Safari must re-rasterize when an overlay (mobile menu, modal)
+          composites over it, causing multi-second hangs. (This is distinct
+          from backdrop-filter.) We gate on the actual device
+          (react-device-detect's user-agent check) rather than a viewport
+          breakpoint so the layers never mount on a real phone/tablet, and a
+          narrow desktop window still gets the decoration. */}
       {!hasContent && !isMobile && (
         <>
-          {glowOrbs ?? (
-            <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-              <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
-              <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
-              <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
-            </div>
-          )}
+          {glowOrbs}
           <div
             aria-hidden
             className="pointer-events-none fixed inset-0 z-0"
@@ -193,7 +186,7 @@ export function CreateMediaPageShell({
         <div className="flex h-full w-full flex-col">
           {!hasContent && (
             <div className="flex flex-1 items-center justify-center">
-              <div className="animate-fade-in-up relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
+              <div className="animate-fade-in-up relative z-20 mb-32 flex flex-col items-center justify-center text-center">
                 <h1 className="text-5xl font-semibold text-white md:text-7xl">
                   {emptyStateTitle}
                 </h1>
@@ -219,7 +212,7 @@ export function CreateMediaPageShell({
           {hasContent && (
             <div
               aria-hidden
-              className="pointer-events-none fixed bottom-0 right-0 z-20 h-48 bg-gradient-to-t from-[#101014] to-transparent"
+              className="pointer-events-none fixed bottom-0 right-0 z-20 h-48 bg-gradient-to-t from-ui-background to-transparent"
               style={{ left: "var(--ac-sidebar-offset, 0px)" }}
             />
           )}

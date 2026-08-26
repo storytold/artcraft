@@ -53,11 +53,11 @@ export function MeshInputsRow({
   return (
     // Title on the left, upload slots right-aligned + top-aligned (matches
     // ImagePromptRow).
-    <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2">
+    <div className="glass flex items-start gap-3 px-3 py-2">
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
           <DynamicIcon icon={titleIcon} className="h-3.5 w-3.5" />
-          <span className="text-sm font-medium">{title}</span>
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">{title}</span>
         </div>
         <span className="text-[13px] text-white/60">{subtitle}</span>
       </div>
@@ -120,7 +120,7 @@ export function MeshInputsRow({
 // ── Slots ──────────────────────────────────────────────────────────────────
 
 const SLOT_CLASS =
-  "flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
+  "flex aspect-square w-14 items-center justify-center overflow-hidden border border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
 
 function SlotShell({
   label,
@@ -132,7 +132,7 @@ function SlotShell({
   return (
     <div className="flex flex-col items-center gap-1">
       {children}
-      <span className="text-[11px] text-white/60">{label}</span>
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60">{label}</span>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function ImageSlot({
         onChange={handleUpload}
       />
       {image ? (
-        <div className="group relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30">
+        <div className="group relative aspect-square w-14 overflow-hidden border border-white/30">
           <img
             src={image.url}
             alt={`${label} view`}
@@ -179,7 +179,7 @@ function ImageSlot({
           />
           <button
             onClick={() => onChange(undefined)}
-            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
+            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center bg-black/50 text-white transition-colors hover:bg-black"
           >
             <XIcon  className="h-2.5 w-2.5" />
           </button>
@@ -231,11 +231,11 @@ function MeshFileSlot({
         onChange={handleUpload}
       />
       {mesh ? (
-        <div className="group relative flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/10">
+        <div className="group relative flex aspect-square w-14 items-center justify-center overflow-hidden border border-white/30 bg-white/10">
           <BoxIcon  className="h-5 w-5 text-white/80" />
           <button
             onClick={() => onChange(undefined)}
-            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
+            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center bg-black/50 text-white transition-colors hover:bg-black"
           >
             <XIcon  className="h-2.5 w-2.5" />
           </button>

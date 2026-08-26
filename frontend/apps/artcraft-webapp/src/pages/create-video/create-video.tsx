@@ -1487,7 +1487,7 @@ export default function CreateVideo() {
       autoAdvance={loggedIn && !!prompt.trim() && !isGenerating && !needsImage}
       banner={
         requiresImageInput ? (
-          <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100">
+          <div className="flex items-start gap-2.5 border border-amber-500/40 bg-ui-panel px-3.5 py-2.5 text-xs text-amber-100">
             <InfoIcon
               
               className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
@@ -1506,13 +1506,13 @@ export default function CreateVideo() {
                 key={item.label}
                 type="button"
                 onClick={() => handleInputModeChange(item)}
-                className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                className={`border px-3 py-2.5 text-left transition-colors ${
                   item.selected
-                    ? "border-primary bg-primary/15"
+                    ? "border-white bg-white/10"
                     : "border-ui-panel-border bg-ui-controls hover:bg-ui-controls/80"
                 }`}
               >
-                <span className="block text-sm font-semibold text-base-fg">
+                <span className="block font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg">
                   {item.label}
                 </span>
                 <span className="block text-xs text-base-fg/55">
@@ -1566,7 +1566,7 @@ export default function CreateVideo() {
             />
           )}
           {hasSound && (
-            <div className="flex items-center justify-between rounded-xl border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
+            <div className="flex items-center justify-between border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
               <span className="flex items-center gap-2 text-sm font-medium text-base-fg/70">
                 <AudioLinesIcon  className="h-4 w-4" />
                 Audio
@@ -1653,7 +1653,7 @@ export default function CreateVideo() {
           <button
             type="button"
             onClick={() => setIsCharactersModalOpen(true)}
-            className="flex h-11 items-center justify-center gap-1 rounded-xl border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all hover:bg-ui-controls/80 active:scale-95"
+            className="flex h-11 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors hover:bg-ui-controls/80"
           >
             @Characters
           </button>
@@ -1663,14 +1663,6 @@ export default function CreateVideo() {
   );
 
   // ── Render ────────────────────────────────────────────────────────────
-
-  const videoGlowOrbs = (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
-      <div className="absolute bottom-[-15%] left-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-purple-600 opacity-[0.08] blur-[120px] transform-gpu" />
-      <div className="absolute bottom-[10%] right-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
-    </div>
-  );
 
   return (
     <CreateMediaPageShell
@@ -1688,7 +1680,7 @@ export default function CreateVideo() {
             variant="primary"
             onClick={openSignupCta}
             icon={SparklesIcon}
-            className="h-12 px-6 text-base font-semibold rounded-full"
+            className="h-12 px-6"
           >
             Sign up to create
           </Button>
@@ -1697,7 +1689,6 @@ export default function CreateVideo() {
       bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}
-      glowOrbs={videoGlowOrbs}
       promptForm={mobileForm}
       gridContent={
         <GenerationGallery
@@ -1726,7 +1717,7 @@ export default function CreateVideo() {
           }}
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
-            <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
+            <div className="mb-2 flex items-start gap-2.5 border border-yellow-500/40 bg-ui-panel px-3.5 py-2.5 text-xs text-yellow-200">
               <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
                 Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
@@ -1735,7 +1726,7 @@ export default function CreateVideo() {
             </div>
           )} */}
           {requiresImageInput && (
-            <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100 shadow-lg backdrop-blur-sm">
+            <div className="mb-2 flex items-start gap-2.5 border border-amber-500/40 bg-ui-panel px-3.5 py-2.5 text-xs text-amber-100">
               <InfoIcon
                 
                 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
@@ -1948,7 +1939,7 @@ export default function CreateVideo() {
                       }
                       className={
                         generateWithSound
-                          ? "bg-primary/40 hover:bg-primary/50 border-primary/30"
+                          ? "bg-white/10 hover:bg-white/15 border-white/40"
                           : undefined
                       }
                     />
@@ -1973,7 +1964,7 @@ export default function CreateVideo() {
                   <button
                     type="button"
                     onClick={() => setIsCharactersModalOpen(true)}
-                    className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg shadow-sm transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+                    className="flex h-9 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80"
                   >
                     @Characters
                   </button>

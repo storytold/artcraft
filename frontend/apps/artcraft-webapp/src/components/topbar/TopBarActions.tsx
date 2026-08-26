@@ -99,7 +99,7 @@ export function TopBarActions({ className }: { className?: string }) {
         <>
           <Link
             to="/pricing"
-            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
+            className="hidden lg:flex h-8 items-center gap-1.5 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
             <GemIcon  className="text-[11px]" />
             Pricing
@@ -118,7 +118,7 @@ export function TopBarActions({ className }: { className?: string }) {
               variant="primary"
               icon={GemIcon}
               onClick={() => navigate("/pricing")}
-              className="h-8 px-3 text-sm font-semibold rounded-lg"
+              className="h-8 px-3"
             >
               Upgrade
             </Button>
@@ -128,14 +128,14 @@ export function TopBarActions({ className }: { className?: string }) {
 
           <Link
             to="/library"
-            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-sm font-medium text-white/80 transition-colors"
+            className="hidden sm:flex h-8 items-center gap-1.5 px-3 border border-white/15 hover:bg-white/10 hover:border-white/30 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80 transition-colors"
           >
             <ImagesIcon  className="text-[11px]" />
             My Library
           </Link>
 
           <Menu as="div" className="relative ml-1">
-            <MenuButton className="flex h-8 w-8 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/40 ring-offset-2 ring-offset-[#121212]">
+            <MenuButton className="flex h-8 w-8 overflow-hidden border border-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 ring-offset-2 ring-offset-[#0b0b0c]">
               <span className="sr-only">Open user menu</span>
               <img
                 className="h-full w-full object-cover"
@@ -154,9 +154,9 @@ export function TopBarActions({ className }: { className?: string }) {
             >
               <MenuItems
                 modal={false}
-                className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-xl focus:outline-none overflow-hidden"
+                className="absolute right-0 z-50 mt-2 w-48 origin-top-right bg-[#101014] border border-white/15 focus:outline-none overflow-hidden"
               >
-                <div className="px-4 py-3 border-b border-white/[0.06]">
+                <div className="px-4 py-3 border-b border-white/15">
                   <p className="text-sm font-medium text-white truncate">
                     {user.display_name || user.username}
                   </p>
@@ -166,7 +166,7 @@ export function TopBarActions({ className }: { className?: string }) {
                     <button
                       onClick={() => setSettingsOpen(true)}
                       className={twMerge(
-                        active ? "bg-white/[0.04]" : "",
+                        active ? "bg-white/10" : "",
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
@@ -182,7 +182,7 @@ export function TopBarActions({ className }: { className?: string }) {
                     <button
                       onClick={() => navigate("/support")}
                       className={twMerge(
-                        active ? "bg-white/[0.04]" : "",
+                        active ? "bg-white/10" : "",
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
@@ -201,7 +201,7 @@ export function TopBarActions({ className }: { className?: string }) {
                       <button
                         onClick={() => navigate("/referrals")}
                         className={twMerge(
-                          active ? "bg-white/[0.04]" : "",
+                          active ? "bg-white/10" : "",
                           "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                         )}
                       >
@@ -220,7 +220,7 @@ export function TopBarActions({ className }: { className?: string }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={twMerge(
-                        active ? "bg-white/[0.04]" : "",
+                        active ? "bg-white/10" : "",
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
@@ -252,20 +252,20 @@ export function TopBarActions({ className }: { className?: string }) {
         <>
           <Link
             to="/pricing"
-            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
+            className="hidden lg:flex h-8 items-center gap-1.5 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
             <GemIcon  className="text-[11px]" />
             Pricing
           </Link>
           <Link
             to="/login"
-            className="h-8 flex items-center px-3 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.04] transition-all"
+            className="h-8 flex items-center px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+            className="h-8 flex items-center gap-1.5 px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-black bg-white hover:bg-white/80 transition-colors"
           >
             Sign up
           </Link>
@@ -305,8 +305,8 @@ function CreditsChip({
           {credits.toLocaleString()}
         </span>
       }
-      buttonClassName="h-8 px-3 ps-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-white/80 rounded-lg gap-1.5"
-      panelClassName="mt-2 bg-[#1a1a1a] border border-white/[0.08] text-white rounded-xl"
+      buttonClassName="h-8 px-3 ps-2.5 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-none gap-1.5"
+      panelClassName="mt-2 bg-[#101014] border border-white/15 text-white rounded-none"
     >
       {(close) => (
         <div className="w-72 max-w-[calc(100vw-24px)] p-3 text-white">

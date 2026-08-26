@@ -24,7 +24,7 @@ export function TopBar() {
   const showSelectToggle = showViewToggle;
 
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
+    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/15 bg-ui-background px-3 pb-4 pt-3 sm:pt-6">
       {/* Left: sidebar trigger (mobile only) + logo (when sidebar closed) + breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0 shrink-0">
         <SidebarTrigger className="md:hidden" />

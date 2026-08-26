@@ -28,7 +28,7 @@ export default function PageDraw() {
             transform: "translateZ(0)",
             // Recolors the lib's `.pegboard-bg` canvas backdrop (the surface
             // behind the artboard) to the webapp's page color.
-            "--st-canvas": "#101014",
+            "--st-canvas": "#0b0b0c",
             // With the global top bar hidden but the bottom prompt bar still
             // present, the usable canvas area's center sits above the geometric
             // center. Pull the side panels (toolbar + history) up by half the
@@ -39,7 +39,7 @@ export default function PageDraw() {
       >
         <PageDrawLib
           adapter={adapter}
-          backgroundClassName="bg-[#101014]"
+          backgroundClassName="bg-ui-background"
           fillParentHeight={!isMobile}
           // Cost/help live in the webapp's own chrome, not over the canvas.
           showBottomRightControls={false}

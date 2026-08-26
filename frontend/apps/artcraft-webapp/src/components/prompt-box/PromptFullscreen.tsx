@@ -7,7 +7,7 @@ import { Maximize2Icon } from "lucide-react";
 // Webapp "focus mode" for the prompt editor. Mirrors the desktop lib's
 // (@storyteller/ui-promptbox) fullscreen feature but lives here because the
 // webapp has its own PromptBox. Reuses the shared @storyteller/ui-modal for a
-// Trello-card-style centered panel + blurred backdrop. The overlay renders a
+// Trello-card-style centered panel. The overlay renders a
 // fresh editor bound to the SAME value + onChange, so text/mentions stay
 // continuous across open/close.
 
@@ -32,7 +32,7 @@ export const PromptFullscreenButton = ({
           type="button"
           aria-label="Expand prompt to focus mode"
           onClick={onClick}
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
+          className="flex h-6 w-6 items-center justify-center bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
         >
           <Maximize2Icon
             
@@ -96,7 +96,6 @@ export const PromptFullscreenModal = ({
       closeOnOutsideClick
       closeOnEsc
       className="w-full max-w-4xl"
-      backdropClassName="backdrop-blur-md"
     >
       {/* Explicit inline height (not a Tailwind arbitrary class) so the column
           is reliably bounded across the modal's nested wrappers — that's what

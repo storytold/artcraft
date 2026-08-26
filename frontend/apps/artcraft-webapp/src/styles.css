@@ -5,36 +5,37 @@
 @layer base {
   :root {
     /* Sidebar tokens (consumed by tailwind colors in tailwind.config.js).
-       Stored as raw hex so we can reference them via theme() if needed. */
-    --sidebar-bg: #1a1a1a;
+       Brutalist system: near-black surfaces, white/15 hairlines, white
+       accent for selection/focus. */
+    --sidebar-bg: #0b0b0c;
     --sidebar-fg: rgba(255, 255, 255, 0.72);
-    --sidebar-border: rgba(64, 64, 64, 0.5);
-    --sidebar-accent: rgba(255, 255, 255, 0.06);
+    --sidebar-border: rgba(255, 255, 255, 0.15);
+    --sidebar-accent: rgba(255, 255, 255, 0.08);
     --sidebar-accent-fg: #ffffff;
-    --sidebar-ring: rgba(45, 129, 255, 0.4);
+    --sidebar-ring: rgba(255, 255, 255, 0.4);
 
     /* shadcn design tokens consumed by @storyteller/ui-video-editor.
        Dark-theme palette (the editor only runs in dark mode today).
        --primary matches the webapp's brand blue (#2d81ff). */
-    --background: 0 0% 9%;
+    --background: 240 4% 5%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 12%;
+    --card: 240 11% 7%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 12%;
+    --popover: 240 4% 5%;
     --popover-foreground: 0 0% 98%;
     --primary: 216 100% 59%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 24%;
+    --secondary: 240 4% 9%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 18%;
+    --muted: 240 4% 9%;
     --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 16%;
+    --accent: 240 4% 9%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 217 91% 60%;
+    --border: 0 0% 100% / 0.15;
+    --input: 0 0% 100% / 0.15;
+    --ring: 0 0% 100% / 0.6;
 
     /* ── Motion tokens ──────────────────────────────────────────────────
        Shared easing curves + durations so motion across the app feels like
@@ -73,7 +74,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #363636 #171717;
+  scrollbar-color: #2c2c2f #0b0b0c;
 }
 
 *::-webkit-scrollbar {
@@ -81,13 +82,12 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: #171717;
+  background: #0b0b0c;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #363636;
-  border-radius: 4px;
-  border: 2px solid #171717;
+  background-color: #2c2c2f;
+  border: 2px solid #0b0b0c;
 }
 
 .scrollbar-hidden {
@@ -107,7 +107,7 @@
   h5,
   h6 {
     font-family:
-      "Outfit",
+      "Bricolage Grotesque",
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
@@ -121,7 +121,6 @@
 
   body {
     font-family:
-      "Source Sans 3",
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
@@ -131,9 +130,19 @@
       Arial,
       sans-serif;
     color: #ffffff;
-    background-color: #121212;
+    background-color: #0b0b0c;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Mono HUD micro-label, matching the marketing site's .hud-label. */
+  .hud-label {
+    font-family:
+      "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
   }
 
   .font-serif-italic {
@@ -153,16 +162,11 @@
   filter: invert(1);
 }
 
-/* Gradient panel surface used by pagescene + lib components. */
+/* Panel surface used by pagescene + lib components. Brutalist system:
+   flat near-black, no gradient (class name kept for lib compatibility). */
 .bg-ui-panel-gradient {
-  background:
-    radial-gradient(
-      60.68% 60.68% at 50% 0%,
-      rgba(255, 255, 255, 0.08) 0%,
-      rgba(0, 0, 0, 0) 70%
-    ),
-    #1f1f1f;
-  background-color: #1f1f1f;
+  background: #101014;
+  background-color: #101014;
 }
 
 .prevent-select {
@@ -233,19 +237,18 @@
   }
 }
 
+/* Brutalist system: former "glass" surfaces are now flat near-black panels
+   with white/15 hairline borders (class names kept for lib compatibility). */
 @layer components {
   .glass {
-    @apply relative border border-white/10 shadow-lg backdrop-blur-3xl transition-colors duration-300;
-    @apply bg-[#303032]/90 !important;
+    @apply relative border border-white/15 transition-colors duration-300;
+    @apply bg-[#101014]/95 !important;
   }
 }
 
 .liquid-glass {
-  background: #232323c0;
-  border: 1px solid #ffffff14;
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
+  background: rgba(11, 11, 12, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* Minimal thin scrollbar for prompt textareas */
@@ -264,7 +267,6 @@
 
 .promptbox-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
 }
 
 .promptbox-scrollbar::-webkit-scrollbar-thumb:hover {

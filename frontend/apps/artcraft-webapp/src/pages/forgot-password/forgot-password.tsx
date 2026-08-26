@@ -41,22 +41,14 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden flex flex-col">
+    <div className="relative min-h-screen bg-ui-background text-white overflow-hidden flex flex-col">
       <Seo
         title="Reset Password - ArtCraft"
         description="Reset your ArtCraft password."
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
-        }}
-      />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/[4%] rounded-2xl p-6 py-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#101014] border border-white/15 p-6 py-8">
           {!submitted ? (
             <>
               <div className="text-center mb-8">
@@ -80,13 +72,13 @@ const ForgotPassword = () => {
                 }}
               >
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                     {error}
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                     Email or Username
                   </label>
                   <Input
@@ -95,14 +87,14 @@ const ForgotPassword = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                   />
                 </div>
 
                 <div className="pt-2">
                   <Button
                     id="send-reset-btn"
-                    className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    className="w-full justify-center h-10"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -119,7 +111,7 @@ const ForgotPassword = () => {
             </>
           ) : (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
+              <div className="w-16 h-16 border border-white/15 bg-green-500/10 flex items-center justify-center mx-auto mb-4 text-green-500">
                 <MailIcon  className="text-2xl" />
               </div>
               <h3 className="text-xl font-medium mb-2">Check your email</h3>
@@ -128,12 +120,12 @@ const ForgotPassword = () => {
                 <span className="text-white font-medium">{email}</span>
               </p>
               <Link to="/forgot-password/verify">
-                <Button className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10 mb-3">
+                <Button className="w-full justify-center h-10 mb-3">
                   Enter Verification Code
                 </Button>
               </Link>
               <Button
-                className="rounded-full w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10"
+                className="w-full bg-transparent border border-white/15 hover:bg-white/10 text-white justify-center h-10"
                 onClick={() => setSubmitted(false)}
               >
                 Try another email

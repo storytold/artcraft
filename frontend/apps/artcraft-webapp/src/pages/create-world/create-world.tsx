@@ -478,7 +478,7 @@ export default function CreateWorld() {
             variant="primary"
             onClick={openSignupCta}
             icon={SparklesIcon}
-            className="h-12 px-6 text-base font-semibold rounded-full"
+            className="h-12 px-6"
           >
             Sign up to create
           </Button>

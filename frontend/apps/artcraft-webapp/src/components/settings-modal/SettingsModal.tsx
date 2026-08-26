@@ -44,7 +44,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex h-full flex-col sm:grid sm:grid-cols-12 sm:gap-3">
           <div className="relative shrink-0 border-b border-ui-panel-border p-4 sm:col-span-4 sm:border-b-0 sm:p-3 sm:pt-2 sm:after:absolute sm:after:right-0 sm:after:top-0 sm:after:h-full sm:after:w-px sm:after:bg-ui-panel-border">
             <div className="hidden items-center gap-2.5 py-0.5 sm:flex">
-              <h2 className="text-[18px] font-semibold opacity-80">Settings</h2>
+              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60">
+                Settings
+              </h2>
             </div>
             <hr className="my-2 hidden w-full border-ui-panel-border sm:block" />
             <div className="flex gap-2 overflow-x-auto pe-10 sm:block sm:space-y-1 sm:overflow-visible sm:pe-0">
@@ -53,8 +55,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   key={t.id}
                   onClick={() => setTab(t.id)}
                   className={twMerge(
-                    "h-9 shrink-0 rounded-lg px-3 text-left transition-colors sm:w-full sm:px-2",
-                    tab === t.id ? "bg-[#63636B]/20" : "hover:bg-white/[0.04]",
+                    "h-9 shrink-0 px-3 text-left transition-colors sm:w-full sm:px-2",
+                    tab === t.id
+                      ? "bg-white/10 text-white"
+                      : "text-white/70 hover:bg-white/[0.06] hover:text-white",
                   )}
                 >
                   <div className="flex items-center gap-2.5 whitespace-nowrap text-sm">
@@ -68,7 +72,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto sm:col-span-8 sm:h-full">
             <div className="w-full border-b border-ui-panel-border px-4 py-2.5 sm:px-0">
-              <h2 className="text-[18px] font-semibold">{activeLabel}</h2>
+              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80">
+                {activeLabel}
+              </h2>
             </div>
             <div className="h-full p-4 text-sm sm:p-3 sm:ps-0">
               {tab === "general" && <GeneralPanel />}
@@ -94,7 +100,7 @@ function GeneralPanel() {
     <div className="space-y-4 text-base-fg">
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium">Enter to generate</p>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">Enter to generate</p>
           <p className="text-xs opacity-70">
             When on, pressing Enter submits the prompt and Shift+Enter adds a
             new line. When off (default), both Enter and Shift+Enter add a new
@@ -109,7 +115,7 @@ function GeneralPanel() {
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium">Play videos with sound</p>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">Play videos with sound</p>
           <p className="text-xs opacity-70">
             When on (default), videos in the media viewer start unmuted so you
             don't have to click unmute every time. When off, they start muted.
@@ -123,7 +129,7 @@ function GeneralPanel() {
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium">Group models by family</p>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">Group models by family</p>
           <p className="text-xs opacity-70">
             When on (default), the model picker groups models into submenus by
             family, like Seedance or Veo. When off, every model shows in one

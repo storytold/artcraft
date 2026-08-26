@@ -63,7 +63,7 @@ function CollapsedPill({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2.5 rounded-full border border-primary/40 bg-gradient-to-r from-primary/90 to-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:from-primary hover:to-primary animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className="flex items-center gap-2.5 bg-white px-5 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition-colors hover:bg-white/80 animate-in fade-in slide-in-from-bottom-2 duration-300"
     >
       <BoxesIcon  className="h-3.5 w-3.5" />
       <span>See other demo scenes</span>
@@ -79,13 +79,13 @@ interface ExpandedPanelProps {
 
 function ExpandedPanel({ scenes, onClose, onPick }: ExpandedPanelProps) {
   return (
-    <div className="glass w-[860px] max-w-[90vw] overflow-hidden rounded-xl border border-ui-controls-border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="glass w-[860px] max-w-[90vw] overflow-hidden border border-ui-controls-border animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="flex items-center justify-between border-b border-ui-controls-border/60 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <LayersIcon
-            
+
             className="h-3 w-3 text-primary" />
-          <div className="text-xs font-semibold uppercase tracking-wider text-base-fg">
+          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg">
             Other demo scenes
           </div>
         </div>
@@ -93,7 +93,7 @@ function ExpandedPanel({ scenes, onClose, onPick }: ExpandedPanelProps) {
           type="button"
           onClick={onClose}
           aria-label="Close other scenes"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
+          className="flex h-6 w-6 items-center justify-center text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
         >
           <XIcon  className="h-4 w-4" />
         </button>

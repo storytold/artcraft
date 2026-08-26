@@ -32,9 +32,9 @@ export function MobileBottomNav() {
             key={item.href}
             to={item.href}
             className={twMerge(
-              "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors active:scale-95",
+              "flex flex-1 flex-col items-center justify-center gap-1 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] transition-colors",
               active
-                ? "text-primary"
+                ? "text-white"
                 : "text-base-fg/55 hover:text-base-fg/80",
             )}
           >

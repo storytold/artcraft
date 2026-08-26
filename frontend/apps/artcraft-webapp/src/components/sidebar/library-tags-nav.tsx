@@ -63,7 +63,7 @@ export function LibraryTagsNav({
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-label={expanded ? "Collapse tags" : "Expand tags"}
-            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
+            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
           >
             <ChevronRightIcon
               
@@ -103,7 +103,7 @@ export function LibraryTagsNav({
                     className="pl-5"
                   >
                     <TagIcon
-                      
+
                       className="text-violet-400" />
                     <span className="truncate">{tag.value}</span>
                     <span className="ml-auto text-[10px] text-sidebar-foreground/40 transition-opacity group-hover/menu-item:opacity-0">
@@ -123,7 +123,7 @@ export function LibraryTagsNav({
                       });
                     }}
                     aria-label={`Options for tag "${tag.value}"`}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center text-sidebar-foreground/50 opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   >
                     <EllipsisIcon  className="text-xs" />
                   </button>

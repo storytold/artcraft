@@ -247,16 +247,16 @@ export default function CreateVFX() {
 
   if (!authChecked) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#101014]">
+      <div className="flex h-screen items-center justify-center bg-ui-background">
         <LoaderCircleIcon
-          
+
           className="animate-spin text-4xl text-primary/80" />
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full bg-[#101014] text-white">
+    <div className="relative h-full w-full bg-ui-background text-white">
       <Seo
         title="Background Change - ArtCraft"
         description="Swap the backdrop of a video using a reference image."
@@ -304,7 +304,7 @@ export default function CreateVFX() {
 
       <div
         aria-hidden
-        className="pointer-events-none fixed bottom-0 right-0 z-20 h-72 bg-gradient-to-t from-[#101014] via-[#101014]/85 to-transparent transition-[left] duration-200 ease-linear"
+        className="pointer-events-none fixed bottom-0 right-0 z-20 h-72 bg-gradient-to-t from-ui-background via-ui-background/85 to-transparent transition-[left] duration-200 ease-linear"
         style={{ left: "var(--ac-sidebar-offset, 0px)" }}
       />
 
@@ -338,7 +338,7 @@ interface EmptyStateProps {
 
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+    <div className="flex h-12 w-12 items-center justify-center border border-white/15 bg-white/5">
       <SparklesIcon  className="text-2xl text-white/40" />
     </div>
     <h3 className="text-2xl font-bold text-white">{title}</h3>

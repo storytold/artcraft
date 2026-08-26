@@ -386,7 +386,7 @@ function MobileGate() {
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
       <div className="flex max-w-sm flex-col items-center gap-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/25 text-amber-300">
+        <div className="flex h-14 w-14 items-center justify-center border border-amber-400/30 bg-amber-500/25 text-amber-300">
           <MonitorIcon  className="text-xl" />
         </div>
         <h1 className="text-xl font-semibold text-white">

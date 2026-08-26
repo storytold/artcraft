@@ -630,7 +630,7 @@ export default function CreateAudio() {
       settingsFields={
         <>
           {styleSupported && (
-            <div className="rounded-xl border border-ui-panel-border bg-ui-controls px-3 py-1.5">
+            <div className="border border-ui-panel-border bg-ui-controls px-3 py-1.5">
               <StylePromptRow
                 value={ui.stylePrompt}
                 onChange={setStylePrompt}
@@ -774,7 +774,7 @@ export default function CreateAudio() {
             variant="primary"
             onClick={openSignupCta}
             icon={SparklesIcon}
-            className="h-12 px-6 text-base font-semibold rounded-full"
+            className="h-12 px-6"
           >
             Sign up to create
           </Button>
@@ -953,7 +953,7 @@ function MobileSliderRow({
           <button
             type="button"
             onClick={onReset}
-            className="rounded bg-white/5 px-2 py-0.5 text-xs font-medium text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
+            className="bg-white/5 px-2 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
           >
             Auto
           </button>

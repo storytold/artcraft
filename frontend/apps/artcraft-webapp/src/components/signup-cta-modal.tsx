@@ -72,7 +72,7 @@ export function SignupCtaModal() {
     <Modal
       isOpen={isOpen}
       onClose={close}
-      className="rounded-2xl w-full max-w-md overflow-hidden border border-white/[5%] bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+      className="w-full max-w-md overflow-hidden border border-white/15 bg-ui-modal p-0"
       allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
@@ -81,16 +81,6 @@ export function SignupCtaModal() {
       backdropClassName="bg-black/80"
     >
       <div className="relative overflow-hidden">
-        {/* Off-center ambient glow, feels designed, not generic */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-primary/25 blur-[80px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
-        />
-
         <div className="relative px-8 pt-10 pb-8 sm:px-10 sm:pt-12 sm:pb-10">
           <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-white sm:text-[34px] sm:leading-[1.1]">
             Start <span className="text-primary">crafting</span> in seconds.
@@ -105,10 +95,8 @@ export function SignupCtaModal() {
                 key={perk}
                 className="flex items-start gap-3 text-[14px] text-white/75"
               >
-                <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15">
-                  <CheckIcon
-                    
-                    className="text-[9px] text-primary" />
+                <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center bg-white/10">
+                  <CheckIcon className="text-[9px] text-white" />
                 </span>
                 <span>{perk}</span>
               </li>
@@ -117,16 +105,13 @@ export function SignupCtaModal() {
 
           <div className="mt-8 flex flex-col gap-3">
             {error && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
+              <div className="border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
                 {error}
               </div>
             )}
 
             <Link to={`/signup?from=${from}`} onClick={close} className="block">
-              <Button
-                variant="primary"
-                className="w-full h-10 text-sm font-semibold rounded-full"
-              >
+              <Button variant="primary" className="w-full h-10">
                 Create account with email
               </Button>
             </Link>
@@ -135,7 +120,7 @@ export function SignupCtaModal() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/10" />
               </div>
-              <span className="relative bg-[#161618] px-4 text-xs uppercase tracking-widest text-white/40">
+              <span className="relative bg-ui-modal px-4 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
                 or
               </span>
             </div>

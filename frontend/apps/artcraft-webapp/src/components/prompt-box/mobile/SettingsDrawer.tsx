@@ -64,13 +64,13 @@ export function SettingsDrawer({
         aria-describedby={undefined}
         modal={modal}
         open={open}
-        className="ac-drawer-content max-h-[80vh] rounded-t-2xl bg-ui-panel pb-[max(1rem,env(safe-area-inset-bottom))]"
+        className="ac-drawer-content max-h-[80vh] bg-ui-panel pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
         <button
           type="button"
           aria-label="Close"
           onClick={() => onOpenChange(false)}
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
         >
           <XIcon  className="text-sm" />
         </button>
@@ -104,7 +104,7 @@ export function SettingsDrawer({
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 bg-white/20" />
           <SheetHeader className={hideHeader ? "sr-only" : "select-none pb-2 pr-12"}>
             <SheetTitle>{title}</SheetTitle>
           </SheetHeader>

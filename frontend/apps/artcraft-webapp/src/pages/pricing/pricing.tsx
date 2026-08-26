@@ -14,10 +14,10 @@ import { Reveal } from "../../components/motion/reveal";
 const SeedanceBanner = () => (
   <div className="flex flex-col gap-5">
     <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-full px-3 py-1">
+      <span className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-white/10 border border-white/30 px-3 py-1">
         Early access
       </span>
-      <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65 bg-white/[0.04] border border-white/[0.08] rounded-full px-3 py-1">
+      <span className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/65 bg-white/5 border border-white/15 px-3 py-1">
         Available today in ArtCraft
       </span>
     </div>
@@ -33,7 +33,7 @@ const SeedanceBanner = () => (
       </p>
     </div>
 
-    <div className="relative w-full rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08]">
+    <div className="relative w-full overflow-hidden bg-[#080808] border border-white/15">
       <div style={{ paddingTop: "56.25%" }} className="relative">
         <iframe
           src="https://player.vimeo.com/video/1169289718?autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
@@ -46,16 +46,16 @@ const SeedanceBanner = () => (
     </div>
 
     <div className="grid grid-cols-2 gap-3">
-      <div className="rounded-xl bg-gradient-to-br from-primary/15 via-white/[0.03] to-white/[0.02] border border-primary/25 p-4">
-        <div className="text-[12px] font-semibold uppercase tracking-wider text-primary mb-1">
+      <div className="bg-[#101014] border border-white/30 p-4">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white mb-1">
           Seedance video credits
         </div>
         <div className="text-white/55 text-sm leading-snug">
           Included with every paid ArtCraft plan
         </div>
       </div>
-      <div className="rounded-xl bg-[#080808] border border-white/[0.08] p-4">
-        <div className="text-[12px] font-semibold uppercase tracking-wider text-white/70 mb-1">
+      <div className="bg-[#101014] border border-white/15 p-4">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 mb-1">
           First in the world
         </div>
         <div className="text-white/55 text-sm leading-snug">
@@ -73,10 +73,10 @@ const BuyMoreCreditsCta = ({ onClick }: { onClick: () => void }) => (
     <p className="text-base text-white/65">Need more credits?</p>
     <Button
       variant="secondary"
-      className="mt-3 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
+      className="mt-3 gap-2 border border-white/15 bg-transparent hover:bg-white/10 px-5 py-2 h-11 text-white"
       onClick={onClick}
     >
-      <CoinsIcon  className="text-primary text-[13px]" />
+      <CoinsIcon  className="text-[13px]" />
       Buy more credits
     </Button>
   </div>
@@ -113,24 +113,11 @@ const Pricing = () => {
   }, []);
 
   return (
-    <div className="relative min-h-full bg-[#101014] text-white">
+    <div className="relative min-h-full bg-ui-background text-white">
       <Seo
         title="Pricing - ArtCraft"
         description="Simple, transparent pricing for ArtCraft. Start for free and scale as you grow."
       />
-
-      {/* Subtle radial accent at top, matches landing3. Clipped to its own
-          wrapper so the outer page can grow naturally and let SidebarInset
-          handle scrolling. */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div
-          className="absolute inset-x-0 top-0 h-[700px]"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
-          }}
-        />
-      </div>
 
       <main className="relative z-10 px-4 sm:px-8 pt-10">
         {isSeedanceRef ? (
@@ -187,12 +174,12 @@ const Pricing = () => {
           </p>
           <Button
             variant="secondary"
-            className="mt-4 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
+            className="mt-4 gap-2 border border-white/15 bg-transparent hover:bg-white/10 px-5 py-2 h-11 text-white"
             onClick={() => setCreditsModalOpen(true)}
           >
             <CoinsIcon
-              
-              className="text-primary text-[13px]" />
+
+              className="text-[13px]" />
             Buy Credits
           </Button>
         </div>

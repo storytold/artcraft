@@ -11,25 +11,19 @@ const Welcome = () => {
   const downloadUrl = isMacOs ? DOWNLOAD_LINKS.MACOS : DOWNLOAD_LINKS.WINDOWS;
 
   return (
-    <div className="relative min-h-full bg-[#101014] text-white">
+    <div className="relative min-h-full bg-ui-background text-white">
       <Seo
         title="Welcome - ArtCraft"
         description="Welcome to ArtCraft. Get started with your subscription."
       />
 
-      {/* Background gradient — clipped to its own wrapper so the outer
-          page can grow naturally and let SidebarInset handle scrolling. */}
-      <div className="absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-primary/40 via-purple-600/30 to-blue-500/20 opacity-30 blur-[120px]"></div>
-      </div>
-
       <main className="relative z-10 pt-12 pb-20 px-4 sm:px-6 lg:px-8">
         {/* Success Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-full px-6 py-3 mb-6">
+          <div className="inline-flex items-center gap-3 bg-white/5 border border-white/15 px-6 py-3 mb-6">
             <CircleCheckIcon
-              
-              className="text-xl text-primary" />
+
+              className="text-xl text-green-400" />
             <span className="text-white font-medium">
               Account created successfully!
             </span>
@@ -56,12 +50,12 @@ const Welcome = () => {
 
         {/* Create-in-browser CTA — desktop download is optional */}
         <div className="max-w-3xl mx-auto mb-8">
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-10">
+          <div className="bg-[#101014] border border-white/15 p-8 md:p-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="w-10 h-10 bg-white/10 flex items-center justify-center">
                 <WandSparklesIcon
-                  
-                  className="text-primary text-lg" />
+
+                  className="text-white/70 text-lg" />
               </div>
               <h2 className="text-2xl font-medium text-white">
                 Start creating right here
@@ -84,11 +78,11 @@ const Welcome = () => {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="group flex items-center gap-3 bg-[#252529] hover:bg-[#2D2D32] border border-white/[0.06] hover:border-white/[0.12] rounded-xl px-4 py-3 transition-all"
+                  className="group flex items-center gap-3 bg-ui-controls hover:bg-white/10 border border-white/15 hover:border-white/30 px-4 py-3 transition-all"
                 >
                   <DynamicIcon
                     icon={item.icon}
-                    className="text-primary text-base shrink-0"
+                    className="text-white/70 text-base shrink-0"
                   />
                   <span className="text-white/90 font-medium flex-1">
                     {item.label}
@@ -104,12 +98,12 @@ const Welcome = () => {
 
         {/* Desktop app alternative */}
         <div className="max-w-3xl mx-auto">
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-10">
+          <div className="bg-[#101014] border border-white/15 p-8 md:p-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="w-10 h-10 bg-white/10 flex items-center justify-center">
                 <MonitorIcon
-                  
-                  className="text-primary text-lg" />
+
+                  className="text-white/70 text-lg" />
               </div>
               <h2 className="text-2xl font-medium text-white">
                 Want the desktop app too?
@@ -130,9 +124,9 @@ const Welcome = () => {
               ].map((item) => (
                 <div
                   key={item.step}
-                  className="bg-[#252529] p-4 rounded-xl flex items-center gap-4"
+                  className="bg-ui-controls border border-white/15 p-4 flex items-center gap-4"
                 >
-                  <div className="w-8 h-8 shrink-0 rounded-full bg-primary/60 flex items-center justify-center text-sm font-bold text-white">
+                  <div className="w-8 h-8 shrink-0 bg-white/10 border border-white/15 flex items-center justify-center font-mono text-[11px] font-semibold text-white">
                     {item.step}
                   </div>
                   <div className="text-white/90 font-medium">{item.text}</div>
@@ -151,7 +145,7 @@ const Welcome = () => {
                     <Button
                       as="link"
                       href={downloadUrl}
-                      className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold"
+                      className="bg-white text-black hover:bg-white/80 px-6 py-2.5"
                     >
                       <DownloadIcon  className="mr-2" />
                       Download for {isMacOs ? "Mac" : "Windows"}
@@ -161,14 +155,14 @@ const Welcome = () => {
                         href={DOWNLOAD_LINKS.WINDOWS}
                         className="hover:text-white transition-colors flex items-center gap-2"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        <span className="w-1.5 h-1.5 bg-current"></span>
                         Windows
                       </a>
                       <a
                         href={DOWNLOAD_LINKS.MACOS}
                         className="hover:text-white transition-colors flex items-center gap-2"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        <span className="w-1.5 h-1.5 bg-current"></span>
                         Mac
                       </a>
                     </div>
@@ -178,7 +172,7 @@ const Welcome = () => {
             )}
 
             {isMobile && (
-              <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
+              <div className="bg-[#431407] border border-orange-900/50 p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
                   <MonitorIcon  className="text-2xl" />
                 </div>

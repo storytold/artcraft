@@ -25,10 +25,10 @@ const SetPassword = () => {
   // a password) from being misrouted here.
   if (!authChecked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#101014]">
+      <div className="flex min-h-screen items-center justify-center bg-ui-background">
         <LoaderCircleIcon
-          
-          className="animate-spin text-4xl text-primary/80" />
+
+          className="animate-spin text-4xl text-white/80" />
       </div>
     );
   }
@@ -68,22 +68,14 @@ const SetPassword = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden flex flex-col">
+    <div className="relative min-h-screen bg-ui-background text-white overflow-hidden flex flex-col">
       <Seo
         title="Set Password - ArtCraft"
         description="Set a password for your ArtCraft account."
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
-        }}
-      />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/[4%] rounded-2xl p-6 py-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#101014] border border-white/15 p-6 py-8">
           <div className="text-center mb-8">
             <img
               src="/images/artcraft-icon.png"
@@ -105,13 +97,13 @@ const SetPassword = () => {
             }}
           >
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                 Password
               </label>
               <div className="relative">
@@ -121,7 +113,7 @@ const SetPassword = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
                   autoFocus
-                  inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                  inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                 />
                 <button
                   type="button"
@@ -135,7 +127,7 @@ const SetPassword = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                 Confirm password
               </label>
               <div className="relative">
@@ -144,7 +136,7 @@ const SetPassword = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your password"
-                  inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                  inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                 />
                 <button
                   type="button"
@@ -161,7 +153,7 @@ const SetPassword = () => {
 
             <div className="pt-2">
               <Button
-                className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                className="w-full justify-center h-10"
                 type="submit"
                 disabled={isLoading}
               >

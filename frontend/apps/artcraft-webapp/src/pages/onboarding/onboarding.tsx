@@ -285,27 +285,24 @@ const Onboarding = () => {
 
   if (isLoading) {
     return (
-      <div className="relative min-h-screen bg-[#101014] text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+      <div className="relative min-h-screen bg-ui-background text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white"></div>
       </div>
     );
   }
 
   if (currentStep === "complete") {
     return (
-      <div className="relative min-h-screen bg-[#101014] text-white">
+      <div className="relative min-h-screen bg-ui-background text-white">
         <Seo
           title="Setup Complete - ArtCraft"
           description="Your account setup is complete."
         />
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
-        </div>
 
         <main className="relative z-10 pt-20 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto border border-white/15 bg-green-500/10 flex items-center justify-center">
                 <CircleCheckIcon
                   
                   className="text-5xl text-green-400" />
@@ -322,28 +319,24 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white">
+    <div className="relative min-h-screen bg-ui-background text-white">
       <Seo
         title="Complete Your Setup - ArtCraft"
         description="Just a few more details to get you started with ArtCraft."
       />
 
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]"></div>
-      </div>
-
       <main className="relative z-10 pt-20 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="max-w-md w-full">
           {isNewAccount && (
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6 flex items-start gap-3 animate-fade-in shadow-lg shadow-blue-900/10">
+            <div className="bg-white/5 border border-white/15 p-4 mb-6 flex items-start gap-3 animate-fade-in">
               <InfoIcon
-                
-                className="text-blue-400 mt-1 flex-shrink-0 text-lg" />
+
+                className="text-white/70 mt-1 flex-shrink-0 text-lg" />
               <div>
-                <h3 className="text-blue-200 font-medium mb-1">
+                <h3 className="text-white font-medium mb-1">
                   Account Created
                 </h3>
-                <p className="text-blue-300/80 text-sm leading-relaxed">
+                <p className="text-white/60 text-sm leading-relaxed">
                   We've automatically created an account for you. Please
                   complete your setup below to secure it.
                 </p>
@@ -351,7 +344,7 @@ const Onboarding = () => {
             </div>
           )}
 
-          <div className="bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
+          <div className="bg-[#101014] border border-white/15 p-6 py-8">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-semibold mb-2">
                 {currentStep === "password" &&
@@ -376,7 +369,7 @@ const Onboarding = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
                   {error}
                 </div>
               )}
@@ -384,7 +377,7 @@ const Onboarding = () => {
               {currentStep === "password" && (
                 <>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+                    <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                       Password
                     </label>
                     <Input
@@ -393,13 +386,13 @@ const Onboarding = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                      inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                       placeholder="Enter your password"
                       minLength={8}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+                    <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                       Confirm Password
                     </label>
                     <Input
@@ -408,7 +401,7 @@ const Onboarding = () => {
                       value={passwordConfirmation}
                       onChange={(e) => setPasswordConfirmation(e.target.value)}
                       required
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                      inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                       placeholder="Confirm your password"
                       minLength={8}
                     />
@@ -418,7 +411,7 @@ const Onboarding = () => {
 
               {currentStep === "email" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                     Email Address
                   </label>
                   <Input
@@ -427,7 +420,7 @@ const Onboarding = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -435,7 +428,7 @@ const Onboarding = () => {
 
               {currentStep === "username" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
                     Username
                   </label>
                   <Input
@@ -443,7 +436,7 @@ const Onboarding = () => {
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                     placeholder="Your display name"
                   />
                 </div>
@@ -452,7 +445,7 @@ const Onboarding = () => {
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  className="flex-1 bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                  className="flex-1 justify-center h-10"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -467,7 +460,7 @@ const Onboarding = () => {
                   <Button
                     type="button"
                     onClick={handleSkip}
-                    className="bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10 px-6"
+                    className="bg-transparent border border-white/15 hover:bg-white/10 text-white justify-center h-10 px-6"
                   >
                     Skip
                   </Button>

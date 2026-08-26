@@ -61,10 +61,10 @@ function ScrollToTop() {
 
 function AuthCheckSpinner() {
   return (
-    <div className="flex h-screen items-center justify-center bg-[#101014]">
+    <div className="flex h-screen items-center justify-center bg-ui-background">
       <LoaderCircleIcon
-        
-        className="animate-spin text-4xl text-primary/80" />
+
+        className="animate-spin text-4xl text-white/70" />
     </div>
   );
 }
@@ -114,7 +114,7 @@ function ProtectedContent() {
       style={{ "--ac-sidebar-offset": sidebarOffset } as React.CSSProperties}
     >
       {!hideTopBar && <TopBar />}
-      <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-[#121212]">
+      <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-ui-background">
         <PageTransition>
           <Outlet />
         </PageTransition>

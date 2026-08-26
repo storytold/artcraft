@@ -31,7 +31,7 @@ export const AuthLayout = () => {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#101014] p-4 text-white">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ui-background p-4 text-white">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
@@ -48,16 +48,7 @@ export const AuthLayout = () => {
         />
       </div>
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
-        }}
-      />
-
-      <div className="relative z-10 flex w-full max-w-5xl overflow-hidden rounded-3xl border border-white/[4%] bg-[#1C1C20] shadow-2xl lg:min-h-[640px]">
+      <div className="relative z-10 flex w-full max-w-5xl overflow-hidden border border-white/15 bg-[#101014] lg:min-h-[640px]">
         {/* Form pane — only the inner content swaps per route (via Outlet), so
             this pane and the showcase beside it stay mounted across the
             login/signup toggle. */}
@@ -66,7 +57,7 @@ export const AuthLayout = () => {
             type="button"
             onClick={handleBack}
             aria-label="Go back"
-            className="absolute left-5 top-5 z-20 flex h-9 w-9 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            className="absolute left-5 top-5 z-20 flex h-9 w-9 items-center justify-center text-white/60 transition-colors hover:bg-white/10 hover:text-white"
           >
             <ArrowLeftIcon />
           </button>

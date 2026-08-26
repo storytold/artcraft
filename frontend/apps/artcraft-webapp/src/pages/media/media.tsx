@@ -129,9 +129,9 @@ export default function MediaPage() {
         description="View shared media from ArtCraft."
       />
       <div className="mx-auto max-w-[1920px] w-full h-auto lg:h-[calc(100vh-100px)] min-h-[500px]">
-        <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden rounded-xl border border-white/[2%]">
+        <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden border border-white/15">
           {/* Media Preview Area */}
-          <div className="relative flex-1 bg-black/20 backdrop-blur-lg flex items-center justify-center overflow-hidden min-h-[30vh] lg:min-h-0">
+          <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[30vh] lg:min-h-0">
             {mediaRecordLoading ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <LoadingSpinner className="h-12 w-12 text-white/60" />
