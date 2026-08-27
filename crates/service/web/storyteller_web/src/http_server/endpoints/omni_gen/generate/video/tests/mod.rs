@@ -25,6 +25,7 @@
 
 pub mod support;
 
+mod mcp_session_tests;
 mod omni_api_parity_tests;
 mod seedance_2p0;
 mod seedance_2p5;
