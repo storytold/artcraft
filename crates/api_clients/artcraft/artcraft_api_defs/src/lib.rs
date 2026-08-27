@@ -7,6 +7,7 @@ pub mod folders;
 pub mod generate;
 pub mod internal;
 pub mod jobs;
+pub mod mcp_sessions;
 pub mod media_file;
 pub mod moderation;
 pub mod omni_api;

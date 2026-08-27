@@ -65,5 +65,6 @@ LIMIT 1
     can_ban_users: nullable_i8_to_bool_default_false(r.can_ban_users),
     maybe_feature_flags: r.maybe_feature_flags,
     maybe_api_key_token: None,
+    maybe_mcp_session_token: None,
   }))
 }

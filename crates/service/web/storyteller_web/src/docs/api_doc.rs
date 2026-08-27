@@ -122,6 +122,19 @@ use artcraft_api_defs::api_keys::get_api_key::*;
 use artcraft_api_defs::api_keys::delete_api_key::*;
 use artcraft_api_defs::api_keys::update_api_key::*;
 
+// MCP session endpoints
+use crate::http_server::endpoints::mcp_sessions::create_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::refresh_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::revoke_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::delete_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::list_mcp_sessions_handler::*;
+use artcraft_api_defs::mcp_sessions::common::*;
+use artcraft_api_defs::mcp_sessions::create_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::refresh_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::revoke_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::delete_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::list_mcp_sessions::*;
+
 // Folder endpoints
 use crate::http_server::endpoints::folders::folder::color_code_folder_handler::*;
 use crate::http_server::endpoints::folders::folder::cover_image_folder_handler::*;
@@ -682,6 +695,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::api_keys::get_api_key_handler::get_api_key_handler,
     crate::http_server::endpoints::api_keys::delete_api_key_handler::delete_api_key_handler,
     crate::http_server::endpoints::api_keys::update_api_key_handler::update_api_key_handler,
+
+    // MCP sessions
+    crate::http_server::endpoints::mcp_sessions::create_mcp_session_handler::create_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::refresh_mcp_session_handler::refresh_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::revoke_mcp_session_handler::revoke_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::delete_mcp_session_handler::delete_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::list_mcp_sessions_handler::list_mcp_sessions_handler,
 
     // Folders
     crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler,
@@ -1483,6 +1503,17 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     DeleteApiKeySuccessResponse,
     UpdateApiKeyRequest,
     UpdateApiKeySuccessResponse,
+
+    // MCP sessions
+    McpSessionInfo,
+    McpSessionPathInfo,
+    CreateMcpSessionRequest,
+    CreateMcpSessionSuccessResponse,
+    RefreshMcpSessionSuccessResponse,
+    RevokeMcpSessionSuccessResponse,
+    DeleteMcpSessionSuccessResponse,
+    ListMcpSessionsQueryParams,
+    ListMcpSessionsSuccessResponse,
 
     // Folders
     FolderInfo,

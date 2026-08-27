@@ -1,6 +1,7 @@
 pub mod bucket_urls;
 pub mod filter_model_name;
 pub mod get_authorization_header_api_key;
+pub mod get_authorization_header_mcp_private_session_token;
 pub mod get_host_header;
 pub mod get_request_platform_type;
 pub mod handle_multipart_error;

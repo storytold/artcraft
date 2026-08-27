@@ -14,6 +14,7 @@ pub mod generate;
 pub mod image_studio;
 pub mod inference_job;
 pub mod internal;
+pub mod mcp_sessions;
 pub mod media_files;
 pub mod misc;
 pub mod model_download;

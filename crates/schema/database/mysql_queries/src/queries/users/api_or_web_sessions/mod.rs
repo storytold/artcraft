@@ -1,3 +1,4 @@
 pub mod api_or_web_session_user_record;
 pub mod get_api_or_web_session_user_by_api_key;
+pub mod get_api_or_web_session_user_by_mcp_private_session_token;
 pub mod get_api_or_web_session_user_by_session_token;
