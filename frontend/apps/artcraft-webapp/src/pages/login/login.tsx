@@ -157,9 +157,9 @@ const Login = () => {
       <RevealGroup inView={false} delayChildren={0.28} stagger={0.08}>
         <Reveal className="relative my-6 flex items-center justify-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10" />
+            <div className="w-full border-t border-white/15" />
           </div>
-          <span className="relative bg-[#1C1C20] px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+          <span className="relative bg-[#101014] px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
             or
           </span>
         </Reveal>

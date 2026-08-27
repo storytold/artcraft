@@ -436,7 +436,7 @@ export default function FrameExtractor() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative min-h-full w-full shrink-0 bg-[#101014] px-3 pb-8 sm:px-4 md:px-8 lg:px-12">
+    <div className="relative min-h-full w-full shrink-0 bg-ui-background px-3 pb-8 sm:px-4 md:px-8 lg:px-12">
       <Seo
         title="Video Frame Extractor - ArtCraft"
         description="Grab a still frame from any video — capture, save to your library, or use it as an image prompt reference."
@@ -452,7 +452,7 @@ export default function FrameExtractor() {
                 variant="action"
                 icon={RotateCwIcon}
                 onClick={clearSource}
-                className="px-3 py-1.5 text-sm"
+                className="px-3 py-1.5"
               >
                 Switch Video
               </Button>

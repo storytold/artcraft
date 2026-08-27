@@ -414,56 +414,6 @@
   @apply bg-center;
 }
 
-@property --angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-@keyframes rotate {
-  0% {
-    --angle: 0deg;
-  }
-
-  100% {
-    --angle: 360deg;
-  }
-}
-
-.glow-border-animated {
-  position: relative;
-  overflow: hidden;
-}
-
-.glow-border-animated::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0%,
-    transparent 80%,
-    rgba(147, 197, 253, 0.4) 85%,
-    rgba(191, 219, 254, 0.9) 90%,
-    rgba(255, 255, 255, 1) 92.5%,
-    rgba(191, 219, 254, 0.9) 95%,
-    rgba(147, 197, 253, 0.4) 100%,
-    transparent 100%
-  );
-  border-radius: inherit;
-  animation: rotate 2.2s linear infinite;
-  z-index: -1;
-}
-
-.glow-border-animated::after {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  background: inherit;
-  border-radius: inherit;
-  z-index: -1;
-}
-
 /* Mobile bottom-sheet (SettingsDrawer). The shadcn Sheet relies on the
    tailwindcss-animate plugin, which isn't enabled here, so we drive the
    slide ourselves off Radix's data-state. Defining a closed-state animation

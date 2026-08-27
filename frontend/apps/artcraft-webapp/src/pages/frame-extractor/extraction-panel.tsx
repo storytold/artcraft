@@ -43,9 +43,9 @@ export const ExtractionPanel = ({
   const burstAvailable = Number.isFinite(duration) && duration > 0;
 
   return (
-    <div className="flex h-fit flex-col divide-y divide-ui-divider rounded-xl border border-ui-panel-border bg-ui-panel">
+    <div className="flex h-fit flex-col divide-y divide-ui-divider border border-ui-panel-border bg-ui-panel">
       <div className="space-y-3 p-4">
-        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
+        <div className="flex items-center justify-between font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/50">
           <span>Playhead</span>
           <span className="font-mono text-xs normal-case tracking-normal text-base-fg/80">
             {disabled ? "--:--.---" : formatTimePrecise(currentTime)}
@@ -56,7 +56,7 @@ export const ExtractionPanel = ({
           icon={CameraIcon}
           onClick={onCaptureCurrent}
           disabled={disabled || isExtracting}
-          className="w-full py-2 text-sm font-medium"
+          className="w-full py-2"
         >
           Capture frame
         </Button>
@@ -111,7 +111,7 @@ export const ExtractionPanel = ({
                           Math.max(1, Math.min(50, parseInt(e.target.value) || 1)),
                         )
                       }
-                      className="w-full rounded-md border border-ui-controls-border bg-ui-controls px-2.5 py-1.5 text-sm text-base-fg focus:border-primary focus:outline-none"
+                      className="w-full border border-ui-controls-border bg-ui-controls px-2.5 py-1.5 text-sm text-base-fg focus:border-white/40 focus:outline-none"
                     />
                   </label>
                   <label className="block">
@@ -129,15 +129,15 @@ export const ExtractionPanel = ({
                           Math.max(1, Math.min(10000, parseInt(e.target.value) || 1)),
                         )
                       }
-                      className="w-full rounded-md border border-ui-controls-border bg-ui-controls px-2.5 py-1.5 text-sm text-base-fg focus:border-primary focus:outline-none"
+                      className="w-full border border-ui-controls-border bg-ui-controls px-2.5 py-1.5 text-sm text-base-fg focus:border-white/40 focus:outline-none"
                     />
                   </label>
                 </div>
                 {isExtracting && progress ? (
                   <div className="flex items-center gap-2">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-1.5 flex-1 overflow-hidden bg-white/10">
                       <div
-                        className="h-full rounded-full bg-primary transition-all"
+                        className="h-full bg-white transition-all"
                         style={{
                           width: `${(progress.done / progress.total) * 100}%`,
                         }}
@@ -148,7 +148,7 @@ export const ExtractionPanel = ({
                     </span>
                     <button
                       onClick={onCancel}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-base-fg/50 transition-colors hover:bg-white/10 hover:text-base-fg"
+                      className="flex h-6 w-6 items-center justify-center text-base-fg/50 transition-colors hover:bg-white/10 hover:text-base-fg"
                       aria-label="Cancel extraction"
                     >
                       <XIcon  className="text-xs" />
@@ -159,7 +159,7 @@ export const ExtractionPanel = ({
                     variant="action"
                     onClick={onExtractBurst}
                     disabled={isExtracting}
-                    className="w-full py-1.5 text-sm font-medium"
+                    className="w-full py-1.5"
                   >
                     Extract {numFrames} {numFrames === 1 ? "frame" : "frames"}
                   </Button>

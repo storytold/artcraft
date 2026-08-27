@@ -266,9 +266,9 @@ export default function Referrals() {
 
 function ProfileLinkPanel({ profileLink }: { profileLink: string }) {
   return (
-    <section className="rounded-2xl bg-[#1C1C20] border border-white/10 p-6 sm:p-8 shadow-2xl">
+    <section className="bg-[#101014] border border-white/15 p-6 sm:p-8">
       <div className="mb-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary mb-2">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-2">
           Option 1
         </div>
         <h2 className="text-lg font-medium text-white">
@@ -307,13 +307,13 @@ function ReferralCodeRow({
   });
 
   return (
-    <li className="rounded-xl bg-black/20 border border-white/[0.08] px-4 py-3.5">
+    <li className="bg-ui-controls border border-white/15 px-4 py-3.5">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-medium text-white truncate">
             {entry.code}
           </div>
-          <div className="mt-0.5 text-[11px] uppercase tracking-wide text-white/40">
+          <div className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
             Created {createdLabel}
           </div>
         </div>
@@ -323,7 +323,7 @@ function ReferralCodeRow({
               type="button"
               onClick={onCancelDelete}
               disabled={isDeleting}
-              className="h-9 px-3 rounded-full text-xs font-semibold text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-50"
+              className="h-9 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -331,7 +331,7 @@ function ReferralCodeRow({
               type="button"
               onClick={onConfirmDelete}
               disabled={isDeleting}
-              className="h-9 px-3.5 rounded-full text-xs font-semibold text-white bg-red-500/85 hover:bg-red-500 transition-colors disabled:opacity-50"
+              className="h-9 px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-red-500/85 hover:bg-red-500 transition-colors disabled:opacity-50"
             >
               {isDeleting ? "Deleting…" : "Delete"}
             </button>
@@ -340,7 +340,7 @@ function ReferralCodeRow({
           <button
             type="button"
             onClick={onRequestDelete}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="h-9 w-9 inline-flex items-center justify-center text-white/45 hover:text-white hover:bg-white/10 transition-colors"
             title="Delete referral code"
           >
             <Trash2Icon  className="text-[13px]" />
@@ -372,12 +372,12 @@ function CopyableLink({ value }: { value: string }) {
         value={value}
         readOnly
         onFocus={(e) => e.currentTarget.select()}
-        className="flex-1 min-w-0 h-11 rounded-xl bg-black/20 border border-white/10 focus:border-primary/50 px-4 text-sm text-white/80 font-mono outline-none transition-colors"
+        className="flex-1 min-w-0 h-11 bg-ui-controls border border-white/15 focus:border-white/40 px-4 text-sm text-white/80 font-mono outline-none transition-colors"
       />
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex h-11 items-center gap-2 rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 text-xs font-semibold text-white/85 transition-all"
+        className="inline-flex h-11 items-center gap-2 bg-transparent hover:bg-white/10 border border-white/15 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/85 transition-colors"
       >
         <DynamicIcon
           icon={copied ? CheckIcon : CopyIcon}

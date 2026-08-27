@@ -7,19 +7,18 @@ import { formatTimeAgo } from "../../../lib/format-time-ago";
 
 // Card, skeleton, and "new project" tile for the video projects landing.
 // Visual language follows the library/create-page cards: ui-controls
-// surface, primary hover ring, hover-revealed kebab menu, and the house
+// surface, hairline hover ring, hover-revealed kebab menu, and the house
 // dashed recipe for the new-item tile.
 
 // Deterministic per-project placeholder art so thumbnail-less cards don't
-// all look identical (blue/teal/purple/pink families, matching the
-// create-page glow orbs).
-const PLACEHOLDER_GRADIENTS = [
-  "from-blue-600/30 via-blue-500/15 to-[#00AABA]/20",
-  "from-purple-600/30 via-blue-500/15 to-pink-500/20",
-  "from-[#00AABA]/30 via-blue-600/15 to-purple-500/20",
-  "from-pink-500/25 via-purple-500/15 to-blue-600/20",
-  "from-indigo-500/30 via-blue-500/15 to-teal-500/20",
-  "from-sky-500/25 via-indigo-500/15 to-purple-600/20",
+// all look identical (flat blue/teal/purple/pink tints).
+const PLACEHOLDER_TINTS = [
+  "bg-blue-600/20",
+  "bg-purple-600/20",
+  "bg-[#00AABA]/20",
+  "bg-pink-500/15",
+  "bg-indigo-500/20",
+  "bg-sky-500/15",
 ];
 
 const STAGGER_STEP_MS = 30;
@@ -48,7 +47,7 @@ export function VideoProjectCard({
   return (
     <div
       className={twMerge(
-        "animate-fade-in-up group relative flex flex-col overflow-hidden rounded-xl bg-ui-controls/40 ring-1 ring-white/5 transition-all duration-200 hover:ring-2 hover:ring-primary-400/60",
+        "animate-fade-in-up group relative flex flex-col overflow-hidden bg-ui-controls/40 ring-1 ring-white/15 transition-all duration-200 hover:ring-white/40",
         isDeleting && "pointer-events-none opacity-50",
       )}
       style={{
@@ -73,8 +72,8 @@ export function VideoProjectCard({
         ) : (
           <div
             className={twMerge(
-              "flex h-full w-full items-center justify-center bg-gradient-to-br",
-              gradientForProject(project.id),
+              "flex h-full w-full items-center justify-center",
+              tintForProject(project.id),
             )}
           >
             <ClapperboardIcon
@@ -83,7 +82,7 @@ export function VideoProjectCard({
           </div>
         )}
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+          <span className="bg-white/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
             Open project
           </span>
         </div>
@@ -109,7 +108,7 @@ export function VideoProjectCard({
           triggerIcon={
             <EllipsisIcon  className="text-base-fg" />
           }
-          buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
+          buttonClassName="h-7 w-7 p-0 bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
           panelClassName="w-max min-w-44 p-1"
           closeOnUnhover
         >
@@ -117,7 +116,7 @@ export function VideoProjectCard({
             <div className="flex flex-col">
               <button
                 type="button"
-                className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-2 text-sm text-base-fg hover:bg-ui-controls/60"
+                className="flex w-full items-center gap-2 whitespace-nowrap px-2 py-2 text-sm text-base-fg hover:bg-ui-controls/60"
                 onClick={(e) => {
                   e.stopPropagation();
                   close();
@@ -129,7 +128,7 @@ export function VideoProjectCard({
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-2 text-sm text-red hover:bg-red/10"
+                className="flex w-full items-center gap-2 whitespace-nowrap px-2 py-2 text-sm text-red hover:bg-red/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   close();
@@ -149,11 +148,11 @@ export function VideoProjectCard({
 
 export function VideoProjectCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl ring-1 ring-white/5">
+    <div className="flex flex-col overflow-hidden ring-1 ring-white/15">
       <div className="animate-shimmer aspect-video w-full bg-white/[0.04]" />
       <div className="space-y-2 px-3 py-3">
-        <div className="animate-shimmer h-3.5 w-2/3 rounded bg-white/[0.06]" />
-        <div className="animate-shimmer h-3 w-1/3 rounded bg-white/[0.05]" />
+        <div className="animate-shimmer h-3.5 w-2/3 bg-white/[0.06]" />
+        <div className="animate-shimmer h-3 w-1/3 bg-white/[0.05]" />
       </div>
     </div>
   );
@@ -164,9 +163,9 @@ export function NewProjectTile({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] py-10 transition-colors hover:border-white/40 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+      className="group flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2.5 border border-dashed border-white/20 bg-white/[0.02] py-10 transition-colors hover:border-white/40 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/55 transition-colors group-hover:bg-primary/15 group-hover:text-primary">
+      <span className="flex h-9 w-9 items-center justify-center bg-white/5 text-white/55 transition-colors group-hover:bg-white/15 group-hover:text-white">
         <PlusIcon />
       </span>
       <span className="text-sm font-medium text-white/70">New project</span>
@@ -174,10 +173,10 @@ export function NewProjectTile({ onClick }: { onClick: () => void }) {
   );
 }
 
-function gradientForProject(id: string): string {
+function tintForProject(id: string): string {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
   }
-  return PLACEHOLDER_GRADIENTS[hash % PLACEHOLDER_GRADIENTS.length];
+  return PLACEHOLDER_TINTS[hash % PLACEHOLDER_TINTS.length];
 }

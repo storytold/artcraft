@@ -1,5 +1,16 @@
 import { Link } from "react-router-dom";
-import { ArrowRightIcon, BoxIcon, FilmIcon, GlobeIcon, GroupIcon, ImageIcon, ImagesIcon, MusicIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BoxIcon,
+  FilmIcon,
+  GlobeIcon,
+  GroupIcon,
+  ImageIcon,
+  ImagesIcon,
+  MusicIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import Seo from "../../components/seo";
@@ -108,12 +119,22 @@ export function Home() {
         title="ArtCraft - Create AI Images and Video"
         description="Generate AI images and video with ArtCraft."
       />
-      <Reveal as="h1" inView={false} y={20} className="text-center font-display text-4xl sm:text-6xl mx-auto font-semibold tracking-tight">
+      <Reveal
+        as="h1"
+        inView={false}
+        y={20}
+        className="text-center font-display text-4xl sm:text-6xl mx-auto font-semibold tracking-tight"
+      >
         What will you <span className="text-primary">craft</span> today?
       </Reveal>
 
       <section className="py-12">
-        <Reveal as="h2" inView={false} delay={0.08} className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-4">
+        <Reveal
+          as="h2"
+          inView={false}
+          delay={0.08}
+          className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-4"
+        >
           Create
         </Reveal>
         <RevealGroup
@@ -126,7 +147,7 @@ export function Home() {
             <Reveal key={app.href} y={20}>
               <Link
                 to={app.href}
-                className={`group relative flex h-full border border-white/15 bg-ui-panel p-5 transition-colors duration-150 ${app.hoverBorder}`}
+                className={`group relative flex h-full border !rounded-[4px] border-white/10 bg-white/5 p-5 transition-colors duration-150 ${app.hoverBorder}`}
               >
                 <div className="relative flex w-full items-start gap-4">
                   <div
@@ -137,7 +158,7 @@ export function Home() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white truncate">
+                        <h3 className=" text-sm font-bold uppercase tracking-[0.08em] text-white truncate">
                           {app.label}
                         </h3>
                         {app.badge && (
@@ -152,11 +173,11 @@ export function Home() {
                           </span>
                         )}
                       </div>
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-white/15 text-white/40 transition-colors duration-150 group-hover:border-white/40 group-hover:text-white">
-                        <ArrowRightIcon  className="text-xs" />
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border border-white/15 text-white/40 transition-colors duration-150 group-hover:border-white/40 group-hover:text-white">
+                        <ArrowRightIcon className="text-xs" />
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-white/55 leading-snug">
+                    <p className="mt-1 text-sm text-white/55 leading-snug">
                       {app.description}
                     </p>
                   </div>

@@ -136,7 +136,7 @@ const Welcome = () => {
 
             {/* Download Contingency */}
             {!isMobile && (
-              <div className="pt-6 border-t border-white/10">
+              <div className="pt-6 border-t border-white/15">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <span className="text-white/50 text-sm">
                     Download didn't start?

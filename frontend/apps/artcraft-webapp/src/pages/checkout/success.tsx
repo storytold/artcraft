@@ -212,7 +212,7 @@ const CheckoutSuccess = () => {
             )}
 
             {/* Discord CTA */}
-            <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-2 items-center">
+            <div className="mt-8 pt-6 border-t border-white/15 flex flex-col gap-2 items-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="text-white/70 text-sm">
                   Join our community

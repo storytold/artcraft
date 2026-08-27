@@ -215,7 +215,7 @@ function VideoEditorSession({
         </p>
         <button
           onClick={() => navigate("/video-editor")}
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm transition-colors hover:bg-white/10"
+          className="border border-white/15 px-4 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors hover:bg-white/10"
         >
           Back to projects
         </button>

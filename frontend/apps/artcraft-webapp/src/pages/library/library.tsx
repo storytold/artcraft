@@ -1552,7 +1552,7 @@ export default function Library() {
                     >
                       <TagIcon
                         
-                        className="text-xs text-white/60" />
+                        className="text-xs text-violet-400" />
                       <span className="max-w-[14rem] truncate">{t.value}</span>
                       <span className="text-xs text-white/40">
                         {t.useCount}
@@ -1951,7 +1951,7 @@ function TagCloud({
           style={{
             fontSize: `min(${Math.round(16 + weight * 40)}px, ${(5 + weight * 7).toFixed(1)}vw)`,
           }}
-          className={`max-w-full truncate leading-none transition-colors hover:text-white ${
+          className={`max-w-full truncate leading-none transition-colors hover:text-violet-400 ${
             weight > 0.66
               ? "font-bold text-white"
               : weight > 0.33
@@ -2305,7 +2305,7 @@ function BulkSelectionBar({
                     <FolderIcon
                       
                       className={
-                        folder.colorCode ? "text-xs" : "text-xs text-white/60"
+                        folder.colorCode ? "text-xs" : "text-xs text-primary"
                       }
                       style={
                         folder.colorCode

@@ -24,11 +24,11 @@ export const VideoDropZone = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-ui-panel-border bg-ui-panel p-3">
+    <div className="overflow-hidden border border-ui-panel-border bg-ui-panel p-3">
       <div
         className={twMerge(
-          "flex aspect-video flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-ui-border bg-ui-background/40 p-6 text-center transition-colors",
-          isDragActive && "border-primary/60 bg-primary/5",
+          "flex aspect-video flex-col items-center justify-center gap-4 border border-dashed border-ui-border bg-ui-background/40 p-6 text-center transition-colors",
+          isDragActive && "border-white/60 bg-white/5",
         )}
         onDragEnter={(e) => {
           e.preventDefault();
@@ -65,7 +65,7 @@ export const VideoDropZone = ({
             variant="primary"
             icon={UploadIcon}
             onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-1.5 text-sm font-medium"
+            className="px-4 py-1.5"
           >
             Select video
           </Button>
@@ -73,7 +73,7 @@ export const VideoDropZone = ({
             variant="action"
             icon={ImagesIcon}
             onClick={onPickFromLibrary}
-            className="px-4 py-1.5 text-sm font-medium"
+            className="px-4 py-1.5"
           >
             From library
           </Button>
