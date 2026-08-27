@@ -15,6 +15,7 @@ import { watchThemeColors, type ThemeColors } from "@/lib/theme-colors";
 import { useTunerStore } from "@/lib/tuner";
 import {
   sampleWordmark,
+  sampleWordmarkGlyphs,
   WordmarkSim,
   type SampledWordmark,
 } from "./wordmark-sim";
@@ -25,6 +26,7 @@ import {
   materialTuner,
   haloTuner,
 } from "./hero-tunables";
+import SeedanceRail3D, { createRailDrag } from "./wordmark-rail";
 
 const WORDMARK = "artcraft";
 const FONT_WEIGHT = 700;
@@ -35,18 +37,22 @@ type PointerState = {
   active: boolean;
 };
 
-// The hero wordmark: "artcraft" built from small axis-aligned blocks — the
-// same primitives you block a scene out with before the AI render. The cursor
-// is both a point light and a push force — the blocks part around it, pop
-// toward the viewer, and rejoin on their springs. On mount they assemble from
-// a scattered cloud. Server HTML, reduced-motion visitors, and WebGL failures
-// all get the static display-type wordmark instead.
+// The hero wordmark: "artcraft" as a hybrid of crisp type and particles —
+// a solid Archivo letter core sits just behind a settled pile of small 3D
+// balls (white pearls on dark, ink spheres on light). The core keeps the
+// word instantly readable through every gap in the pile; the cursor is a
+// point light and a push force, and shoving the pearls aside reveals the
+// solid letterform beneath. On mount the balls assemble from a scattered
+// cloud. Server HTML, reduced-motion visitors, and WebGL failures all get
+// the static display-type wordmark instead.
 export default function HeroWordmark() {
   const [ready, setReady] = useState(false);
   const [colors, setColors] = useState<ThemeColors | null>(null);
   const [sample, setSample] = useState<SampledWordmark | null>(null);
+  const [core, setCore] = useState<SampledWordmark | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef<PointerState>({ x: 0, y: 0, active: false });
+  const railDragRef = useRef(createRailDrag());
 
   // Gate: motion allowed and the tab actually foregrounded (a canvas born in
   // a hidden tab can come up blank).
@@ -96,14 +102,26 @@ export default function HeroWordmark() {
 
       const { ballScale, ...formation } = formationTuner.read();
       const spacing = Math.min(18, Math.max(11, width / 62)) * ballScale;
+      const targetWidth = Math.min(width * 0.88, 1280);
       setSample(
         sampleWordmark({
           text: WORDMARK,
           fontFamily: family,
           fontWeight: FONT_WEIGHT,
-          targetWidth: Math.min(width * 0.88, 1280),
+          targetWidth,
           spacing,
           formation,
+        }),
+      );
+      // The crisp letter cores behind the pile. gapEm matches the ball
+      // raster's per-glyph gap (0.05em) so the two layers align exactly.
+      setCore(
+        sampleWordmarkGlyphs({
+          text: WORDMARK,
+          fontFamily: family,
+          fontWeight: FONT_WEIGHT,
+          targetWidth,
+          gapEm: 0.05,
         }),
       );
     };
@@ -133,37 +151,68 @@ export default function HeroWordmark() {
     };
   }, [ready]);
 
-  // Pointer in text-plane coordinates (origin at container center, y up).
+  // Pointer in text-plane coordinates (origin at container center, y up),
+  // plus drag bookkeeping for the orbit: pressing anywhere grabs the ring
+  // of takes and spins it, while pointer movement keeps pushing the balls
+  // — everything in the scene answers the same hand.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    const dragLast = { x: 0, t: 0 };
     const onMove = (e: PointerEvent) => {
       const rect = container.getBoundingClientRect();
       pointerRef.current.x = e.clientX - rect.left - rect.width / 2;
       pointerRef.current.y = -(e.clientY - rect.top - rect.height / 2);
       pointerRef.current.active = true;
+      const d = railDragRef.current;
+      if (d.dragging) {
+        const now = performance.now();
+        const dx = e.clientX - dragLast.x;
+        const dt = Math.max(8, now - dragLast.t) / 1000;
+        d.dx += dx;
+        d.vel = d.vel * 0.75 + (-dx / dt) * 0.25;
+        dragLast.x = e.clientX;
+        dragLast.t = now;
+      }
+    };
+    const onDown = (e: PointerEvent) => {
+      onMove(e);
+      const d = railDragRef.current;
+      d.dragging = true;
+      d.dx = 0;
+      d.vel = 0;
+      dragLast.x = e.clientX;
+      dragLast.t = performance.now();
+      container.setPointerCapture(e.pointerId);
+    };
+    const onUp = () => {
+      railDragRef.current.dragging = false;
     };
     const onLeave = () => {
       pointerRef.current.active = false;
+      railDragRef.current.dragging = false;
     };
     container.addEventListener("pointermove", onMove);
-    container.addEventListener("pointerdown", onMove);
+    container.addEventListener("pointerdown", onDown);
+    container.addEventListener("pointerup", onUp);
     container.addEventListener("pointerleave", onLeave);
     container.addEventListener("pointercancel", onLeave);
     return () => {
       container.removeEventListener("pointermove", onMove);
-      container.removeEventListener("pointerdown", onMove);
+      container.removeEventListener("pointerdown", onDown);
+      container.removeEventListener("pointerup", onUp);
       container.removeEventListener("pointerleave", onLeave);
       container.removeEventListener("pointercancel", onLeave);
     };
   }, []);
 
-  const active = ready && colors !== null && sample !== null;
+  const active = ready && colors !== null && sample !== null && core !== null;
 
   return (
     <div
       ref={containerRef}
-      className="font-display relative h-[52vh] min-h-[340px] w-full touch-pan-y select-none md:h-[62vh]"
+      className="font-display relative h-svh min-h-[560px] w-full touch-pan-y select-none"
+      style={{ fontStretch: "100%" }}
     >
       {/* Static wordmark: the server-rendered face of the hero, replaced by
           the ball field once it's live. */}
@@ -177,19 +226,43 @@ export default function HeroWordmark() {
         {WORDMARK}
       </p>
 
-      {ready && colors && sample && (
+      {ready && colors && sample && core && (
         <CanvasBoundary>
           <Canvas
             aria-hidden
             tabIndex={-1}
             dpr={[1, 2]}
-            gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+            gl={{
+              antialias: true,
+              alpha: true,
+              powerPreference: "high-performance",
+            }}
             style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
           >
             <FittedCamera />
-            <BlockField sample={sample} colors={colors} pointer={pointerRef} />
+            <BallField
+              sample={sample}
+              core={core}
+              colors={colors}
+              pointer={pointerRef}
+            />
+            <SeedanceRail3D
+              pointer={pointerRef}
+              drag={railDragRef}
+              colors={colors}
+            />
           </Canvas>
         </CanvasBoundary>
+      )}
+
+      {active && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-1.5 flex items-center justify-between px-6 md:px-10"
+        >
+          <p className="hud-label text-faint">Rendered with Seedance 2.5</p>
+          <p className="hud-label hidden text-faint sm:block">drag to spin</p>
+        </div>
       )}
     </div>
   );
@@ -213,8 +286,8 @@ function FittedCamera() {
 }
 
 // Studio reflections without any network fetch: three's procedural room,
-// prefiltered once per WebGL context. Light theme only — it gives the matte
-// ink blocks a hint of sheen on their top faces.
+// prefiltered once per WebGL context. Light theme only — it gives the ink
+// spheres their sheen.
 function StudioEnvironment() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -251,12 +324,14 @@ const HALO_FRAGMENT = /* glsl */ `
   }
 `;
 
-function BlockField({
+function BallField({
   sample,
+  core,
   colors,
   pointer,
 }: {
   sample: SampledWordmark;
+  core: SampledWordmark;
   colors: ThemeColors;
   pointer: React.RefObject<PointerState>;
 }) {
@@ -268,6 +343,11 @@ function BlockField({
   const counterRef = useRef<THREE.DirectionalLight>(null);
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const lightPos = useRef(new THREE.Vector3(0, 120, 0));
+  // The word sits in the upper-middle of the canvas, clear of the orbit's
+  // low front sweep. The mesh group is offset by `lift`; pointer coords are
+  // shifted the opposite way before they reach the sim so the push force
+  // stays aligned with what you see.
+  const lift = useThree((s) => s.size.height) * 0.12;
   const sim = useMemo(
     () => new WordmarkSim(sample, physicsTuner.read().scatter),
     [sample],
@@ -283,8 +363,45 @@ function BlockField({
     return c.r + c.g + c.b < 1.5;
   }, [colors.bg]);
 
-  // A faint backing glow behind the text plane, following the cursor. With
-  // the lit blocks it stays a whisper (see haloTuner alpha defaults) — just
+  // Crisp letter cores: one lit sprite quad per glyph, sitting just behind
+  // the pile. The silhouette reads through every gap between balls, and
+  // pushing the pearls aside reveals the solid letterform.
+  const coreGlyphs = core.glyphs ?? [];
+  const coreTextures = useMemo(
+    () =>
+      coreGlyphs.map((g) => {
+        const t = new THREE.CanvasTexture(g.canvas);
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        return t;
+      }),
+    [coreGlyphs],
+  );
+  useEffect(
+    () => () => coreTextures.forEach((t) => t.dispose()),
+    [coreTextures],
+  );
+  const coreMats = useMemo(
+    () =>
+      coreTextures.map(
+        (t) =>
+          new THREE.MeshStandardMaterial({
+            map: t,
+            transparent: true,
+            depthWrite: false,
+            roughness: 0.55,
+            metalness: 0,
+          }),
+      ),
+    [coreTextures],
+  );
+  useEffect(() => () => coreMats.forEach((m) => m.dispose()), [coreMats]);
+  useEffect(() => {
+    const col = dark ? new THREE.Color("#ffffff") : new THREE.Color(colors.ink);
+    coreMats.forEach((m) => m.color.copy(col));
+  }, [coreMats, dark, colors.ink]);
+
+  // A faint backing glow behind the text plane, following the cursor — just
   // enough halation to mark where the torch is pointed.
   const haloMaterial = useMemo(
     () =>
@@ -295,7 +412,7 @@ function BlockField({
           uColor: {
             value: new THREE.Color(dark ? "#a8c4ff" : colors.accent),
           },
-          uAlpha: { value: dark ? 0.1 : 0.14 },
+          uAlpha: { value: dark ? 0.1 : 0.08 },
           uFalloff: { value: 2.6 },
         },
         transparent: true,
@@ -306,28 +423,19 @@ function BlockField({
   );
   useEffect(() => () => haloMaterial.dispose(), [haloMaterial]);
 
-  // Per-block colors. Light theme: ink blocks on paper. Dark theme: light
-  // concrete-toned blocks on the near-black terminal bg — clearly visible at
-  // rest, with per-block tonal variety so the pile reads as material, not a
-  // flat fill. Both keep sparse brand-accent blocks.
+  // Per-ball colors: pure white pearls on the dark theme, pure ink on light
+  // — never gray; the lighting rig supplies all the shading. Sparse
+  // brand-accent balls in both.
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    const bg = new THREE.Color(colors.bg);
-    const ink = new THREE.Color(colors.ink);
     const accent = new THREE.Color(colors.accent);
     const base = dark
-      ? ink.clone().lerp(bg, 0.16)
-      : ink.clone();
-    const c = new THREE.Color();
+      ? new THREE.Color("#ffffff")
+      : new THREE.Color(colors.ink);
     const rand = seeded(4242);
     for (let i = 0; i < sim.n; i++) {
-      if (rand() < accentShare) {
-        c.copy(accent);
-      } else {
-        c.copy(base).lerp(bg, rand() * (dark ? 0.3 : 0.16));
-      }
-      mesh.setColorAt(i, c);
+      mesh.setColorAt(i, rand() < accentShare ? accent : base);
     }
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }, [colors, sim, dark, accentShare]);
@@ -343,14 +451,11 @@ function BlockField({
     const mt = materialTuner.read();
     const ht = haloTuner.read();
 
-    sim.step(delta, p.x, p.y, p.active, phys);
+    sim.step(delta, p.x, p.y - lift, p.active, phys);
 
-    // Box edge = collision radius × blockFill: below 2 leaves hairline seams
-    // between neighbors (mosaic), above it lets corners bite in (rubble).
-    const edge = mt.blockFill;
     for (let i = 0; i < sim.n; i++) {
       dummy.position.set(sim.x[i], sim.y[i], sim.z[i]);
-      dummy.scale.setScalar(sim.r[i] * edge);
+      dummy.scale.setScalar(sim.r[i]);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
@@ -360,7 +465,7 @@ function BlockField({
     // wander a slow Lissajous path so the relief never goes flat.
     const t = state.clock.elapsedTime;
     const targetX = p.active ? p.x : Math.sin(t * 0.22) * 320;
-    const targetY = p.active ? p.y : Math.cos(t * 0.17) * 130;
+    const targetY = p.active ? p.y : lift + Math.cos(t * 0.17) * 130;
     const k = 1 - Math.exp(-6 * delta);
     lightPos.current.x += (targetX - lightPos.current.x) * k;
     lightPos.current.y += (targetY - lightPos.current.y) * k;
@@ -369,14 +474,10 @@ function BlockField({
       lightPos.current.y,
       lt.lightZ,
     );
-    haloRef.current?.position.set(
-      lightPos.current.x,
-      lightPos.current.y,
-      ht.z,
-    );
+    haloRef.current?.position.set(lightPos.current.x, lightPos.current.y, ht.z);
 
-    // At rest the word sits in near-eclipse; approaching with the cursor
-    // brings the light up to full.
+    // At rest the light idles dim; approaching with the cursor brings it up
+    // to full.
     const light = lightRef.current;
     if (light) {
       light.distance = lt.lightRange;
@@ -417,27 +518,47 @@ function BlockField({
     <>
       {/* No environment in dark mode: three applies scene.environment at
           effectively full strength here regardless of envMapIntensity, and
-          matte blocks don't need reflections — directional faces carry the
-          form on their own. */}
+          the white pearls read best under the rig + cursor light alone. */}
       {!dark && <StudioEnvironment />}
 
       {dark ? (
-        // Lit rig for the light blocks: a cool key from front-above gives
-        // every top face a bright plane and every side face a step down —
-        // the faceted read that makes the voxels legible at rest. A steel
-        // counter-rim from behind separates the pile from the black bg, and
-        // the cursor light stays the interactive torch.
+        // Lit rig for the white pearls: enough ambient to read at rest, a
+        // cool key from front-above, a steel counter-rim from behind to
+        // separate the pile from the dark bg, and the cursor light as the
+        // interactive torch.
         <>
-          <ambientLight ref={ambientRef} intensity={0.4} />
-          <directionalLight ref={keyRef} position={[-240, 380, 420]} intensity={1.05} color="#eef3ff" />
-          <directionalLight ref={counterRef} position={[430, -160, -380]} intensity={0.7} color="#9db8e8" />
-          <directionalLight ref={fillRef} position={[0, -80, 520]} intensity={0.3} />
+          <ambientLight ref={ambientRef} intensity={0.5} />
+          <directionalLight
+            ref={keyRef}
+            position={[-240, 380, 420]}
+            intensity={1.05}
+            color="#eef3ff"
+          />
+          <directionalLight
+            ref={counterRef}
+            position={[430, -160, -380]}
+            intensity={0.7}
+            color="#9db8e8"
+          />
+          <directionalLight
+            ref={fillRef}
+            position={[0, -80, 520]}
+            intensity={0.3}
+          />
         </>
       ) : (
         <>
           <ambientLight ref={ambientRef} intensity={0.55} />
-          <directionalLight ref={keyRef} position={[-260, 340, 420]} intensity={0.75} />
-          <directionalLight position={[180, 260, -420]} intensity={0.5} color="#eef3ff" />
+          <directionalLight
+            ref={keyRef}
+            position={[-260, 340, 420]}
+            intensity={0.75}
+          />
+          <directionalLight
+            position={[180, 260, -420]}
+            intensity={0.5}
+            color="#eef3ff"
+          />
         </>
       )}
 
@@ -457,30 +578,34 @@ function BlockField({
         <planeGeometry args={[720, 720]} />
       </mesh>
 
-      {/* Axis-aligned unit cubes — the brutalist unit. Per-face normals give
-          each block three distinct light planes; no smoothing, no gloss. */}
-      <instancedMesh
-        ref={meshRef}
-        args={[undefined, undefined, sim.n]}
-        frustumCulled={false}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        {dark ? (
-          <meshPhysicalMaterial
-            roughness={0.8}
-            metalness={0}
-            clearcoat={0}
-            clearcoatRoughness={0.25}
-            envMapIntensity={0.05}
-          />
-        ) : (
-          <meshStandardMaterial
-            roughness={0.55}
-            metalness={0.05}
-            envMapIntensity={0.45}
-          />
-        )}
-      </instancedMesh>
+      {/* The settled-pile ball field — organic sizes, spheres. Dark theme
+          renders them as glossy white pearls (clearcoat over a white body)
+          so they stay really white while the rig and cursor light give them
+          their shape. */}
+      <group position={[0, lift, 0]}>
+        <instancedMesh
+          ref={meshRef}
+          args={[undefined, undefined, sim.n]}
+          frustumCulled={false}
+        >
+          <sphereGeometry args={[1, 24, 16]} />
+          {dark ? (
+            <meshPhysicalMaterial
+              roughness={0.35}
+              metalness={0}
+              clearcoat={0.9}
+              clearcoatRoughness={0.2}
+              envMapIntensity={0.05}
+            />
+          ) : (
+            <meshStandardMaterial
+              roughness={0.3}
+              metalness={0.15}
+              envMapIntensity={0.55}
+            />
+          )}
+        </instancedMesh>
+      </group>
     </>
   );
 }

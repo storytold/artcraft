@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
+import { Archivo, Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
 import SiteNav from "@/components/site-nav";
 import SiteFooter from "@/components/site-footer";
 import MotionProvider from "@/components/motion-provider";
@@ -8,10 +8,13 @@ import "./globals.css";
 
 const SITE_URL = "https://getartcraft.com";
 
-const bricolage = Bricolage_Grotesque({
+// Display face: Archivo with its width axis loaded, so headings can run
+// slightly expanded (font-stretch) for the industrial-grotesque look.
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-archivo",
   display: "swap",
+  axes: ["wdth"],
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -91,7 +94,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${bricolage.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
+      className={`${archivo.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />

@@ -115,7 +115,7 @@ const AudioRefTile = ({
   }, []);
 
   return (
-    <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer flex items-center justify-center">
+    <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer flex items-center justify-center">
       <button
         onClick={handleTogglePlay}
         className="flex items-center justify-center w-full h-full"
@@ -255,7 +255,7 @@ export const ImagePromptRow = ({
         style={style}
         {...(allowReorder ? { ...attributes, ...listeners } : {})}
         className={twMerge(
-          "glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 transition-opacity group",
+          "glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 transition-opacity group",
           allowReorder
             ? "cursor-move hover:border-white/80"
             : "cursor-pointer hover:border-white/80",
@@ -845,7 +845,7 @@ export const ImagePromptRow = ({
       )}
       <div
         className={twMerge(
-          "absolute left-0 glass w-full rounded-t-2xl flex",
+          "absolute left-0 glass w-full rounded-t-[3px] flex",
           showVideoReferenceSection ? "-top-[144px]" : "-top-[72px]",
           className,
         )}
@@ -916,7 +916,7 @@ export const ImagePromptRow = ({
                     .map((image, index) => (
                       <div
                         key={image.id}
-                        className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                        className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                         onClick={() => onImageClick?.(image)}
                       >
                         <img
@@ -953,7 +953,7 @@ export const ImagePromptRow = ({
                     return (
                       <div
                         key={id}
-                        className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30"
+                        className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30"
                       >
                         <div className="absolute inset-0">
                           <img
@@ -1006,7 +1006,7 @@ export const ImagePromptRow = ({
                   >
                     <Button
                       variant="action"
-                      className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                      className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                       onClick={() => {
                         if (allowUpload) handleUploadClickStart();
                         else {
@@ -1045,7 +1045,7 @@ export const ImagePromptRow = ({
                 <div className="flex gap-2 items-center">
                   {endFrameImage ? (
                     <div
-                      className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                      className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                       onClick={() => onImageClick?.(endFrameImage)}
                     >
                       <img
@@ -1066,7 +1066,7 @@ export const ImagePromptRow = ({
                       </button>
                     </div>
                   ) : uploadingEnd ? (
-                    <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30">
+                    <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30">
                       <div className="absolute inset-0">
                         <img
                           src={URL.createObjectURL(uploadingEnd.file)}
@@ -1115,7 +1115,7 @@ export const ImagePromptRow = ({
                     >
                       <Button
                         variant="action"
-                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                         onClick={() => {
                           if (allowUploadEnd) handleUploadClickEnd();
                           else {
@@ -1156,7 +1156,7 @@ export const ImagePromptRow = ({
                   {referenceVideos.map((video) => (
                     <div
                       key={video.id}
-                      className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer"
+                      className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer"
                     >
                       <video
                         src={video.url}
@@ -1181,7 +1181,7 @@ export const ImagePromptRow = ({
                     </div>
                   ))}
                   {uploadingVideo && (
-                    <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30">
+                    <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30">
                       <div className="absolute inset-0">
                         <video
                           src={URL.createObjectURL(uploadingVideo.file)}
@@ -1231,7 +1231,7 @@ export const ImagePromptRow = ({
                       >
                         <Button
                           variant="action"
-                          className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                          className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                           onClick={handleUploadClickVideo}
                         >
                           <PlusIcon
@@ -1271,7 +1271,7 @@ export const ImagePromptRow = ({
                     />
                   ))}
                   {uploadingAudio && (
-                    <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 flex items-center justify-center">
+                    <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 flex items-center justify-center">
                       <LoaderCircleIcon
                         
                         className="h-6 w-6 animate-spin text-white" />
@@ -1281,7 +1281,7 @@ export const ImagePromptRow = ({
                     !uploadingAudio && (
                       <Button
                         variant="action"
-                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                         onClick={handleUploadClickAudio}
                       >
                         <PlusIcon
@@ -1296,7 +1296,7 @@ export const ImagePromptRow = ({
         </div>
         <div className="flex items-center">
           <div className="w-[1px] h-full bg-white/10" />
-          <div className="flex items-center gap-2 w-[1px] h-full bg-base-fg/20 dark:bg-base-fg/10 rounded-lg" />
+          <div className="flex items-center gap-2 w-[1px] h-full bg-base-fg/20 dark:bg-base-fg/10" />
           <div className="p-2">
             <Button
               variant="action"

@@ -72,7 +72,7 @@ const Support = () => {
 
 const SupportLink = ({ row }: { row: SupportRow }) => {
   const className =
-    "group flex items-center gap-4 px-4 py-4 sm:px-5 sm:py-5 transition-colors duration-150 hover:bg-white/[0.03]";
+    "group flex items-center gap-4 rounded-[3px] px-4 py-4 sm:px-5 sm:py-5 transition-colors duration-150 hover:bg-white/[0.03]";
 
   const content = (
     <>

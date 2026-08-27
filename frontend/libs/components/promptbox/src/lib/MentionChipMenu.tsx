@@ -20,7 +20,7 @@ const ANCHOR_GAP = 4;
 const OPEN_GRACE_MS = 700;
 
 const MENU_ROW =
-  "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base-fg transition-colors hover:bg-ui-controls/60 cursor-pointer";
+  "flex w-full items-center gap-2 rounded-[3px] px-2 py-2 text-sm text-base-fg transition-colors hover:bg-ui-controls/60 cursor-pointer";
 
 // Header subtitle and empty-replace-list copy per chip type.
 const TYPE_COPY: Record<MentionItem["type"], { title: string; empty: string }> =
@@ -182,7 +182,7 @@ export function MentionChipMenu({
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
       className={twMerge(
-        "fixed z-[9999] w-56 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl",
+        "fixed z-[9999] w-56 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl",
         "transform-gpu transition duration-75 ease-out",
         entered
           ? "translate-y-0 opacity-100"
@@ -210,7 +210,7 @@ export function MentionChipMenu({
               onClick={onPreview}
               title="View full size"
               aria-label={`View ${currentName}`}
-              className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-md"
+              className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-[3px]"
             >
               <ChipAvatar
                 preview={currentPreview}
@@ -255,7 +255,7 @@ export function MentionChipMenu({
           <div className="flex items-center gap-2 px-2 py-1.5">
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-base-fg/60 transition-colors hover:bg-ui-controls/60 hover:text-base-fg"
+              className="flex h-6 w-6 items-center justify-center rounded-[3px] text-base-fg/60 transition-colors hover:bg-ui-controls/60 hover:text-base-fg"
               onClick={() => setView("menu")}
               aria-label="Back"
             >
@@ -312,7 +312,7 @@ function ChipAvatar({
 }) {
   const FallbackIcon = type === "character" ? UserIcon : ImageIcon;
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/20">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-black/20">
       {preview ? (
         <img src={preview} alt={name} className="h-full w-full object-cover" />
       ) : (

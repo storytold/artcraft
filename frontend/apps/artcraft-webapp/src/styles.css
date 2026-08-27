@@ -72,18 +72,19 @@
   }
 }
 
-/* Subtle 4px corners on interactive controls. The brutalist system keeps
+/* Subtle 3px corners on interactive controls. The brutalist system keeps
    large surfaces (panels, modals, tables), passive labels, and media tiles
-   square; anything pressable gets a soft corner for affordance. Tailwind
-   radius utilities (rounded-full, rounded-none) still win — the utilities
-   layer is emitted after base. */
+   square; anything pressable gets a soft corner for affordance. Explicit
+   rounding elsewhere uses the same rounded-[3px] value. Tailwind radius
+   utilities (rounded-full, rounded-none) still win — the utilities layer
+   is emitted after base. */
 @layer base {
   button,
   select,
   textarea,
   input:not([type="radio"]):not([type="range"]),
   [role="button"] {
-    border-radius: 4px;
+    border-radius: 3px;
   }
 }
 
@@ -115,6 +116,9 @@
 }
 
 @layer base {
+  /* Display face: Archivo — an industrial grotesque that matches the
+     hard-edged HUD system better than Bricolage's editorial quirk.
+     Weights still come from per-usage utilities. */
   h1,
   h2,
   h3,
@@ -122,7 +126,7 @@
   h5,
   h6 {
     font-family:
-      "Bricolage Grotesque",
+      "Archivo",
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
@@ -131,7 +135,15 @@
       "Helvetica Neue",
       Arial,
       sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+  }
+
+  /* Only display-scale headings run expanded on the wdth axis; compact
+     headings (card titles, section labels) stay at normal width so they
+     don't truncate in tight layouts. */
+  h1,
+  h2 {
+    font-stretch: 118%;
   }
 
   body {
@@ -166,6 +178,15 @@
     font-weight: 400;
     letter-spacing: -0.01em;
   }
+}
+
+/* Display utility carries the ax-display reference treatment (Archivo at
+   weight 620, 118% width), matching the marketing site. Plain (unlayered)
+   rule so it wins over font-weight utilities like font-semibold, which are
+   emitted at the top of the file. */
+.font-display {
+  font-stretch: 118%;
+  font-weight: 620;
 }
 
 /* Shared component utilities (matching desktop app theme) */

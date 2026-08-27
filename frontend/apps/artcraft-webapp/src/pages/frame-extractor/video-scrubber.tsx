@@ -275,7 +275,7 @@ export const VideoScrubber = ({
             Number.isFinite(duration) &&
             duration > 0 && (
               <div
-                className="pointer-events-none absolute -top-6 -translate-x-1/2 bg-black/80 px-2 py-0.5 font-mono text-[10px] text-white"
+                className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded-[3px] bg-black/80 px-2 py-0.5 font-mono text-[10px] text-white"
                 style={{ left: `${hoverRatio * 100}%` }}
               >
                 {formatTimePrecise(hoverRatio * duration)}

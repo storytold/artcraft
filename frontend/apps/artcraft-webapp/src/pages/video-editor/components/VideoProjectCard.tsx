@@ -47,7 +47,7 @@ export function VideoProjectCard({
   return (
     <div
       className={twMerge(
-        "animate-fade-in-up group relative flex flex-col overflow-hidden bg-ui-controls/40 ring-1 ring-white/15 transition-all duration-200 hover:ring-white/40",
+        "animate-fade-in-up group relative flex flex-col overflow-hidden rounded-[3px] bg-ui-controls/40 ring-1 ring-white/15 transition-all duration-200 hover:ring-white/40",
         isDeleting && "pointer-events-none opacity-50",
       )}
       style={{
@@ -148,7 +148,7 @@ export function VideoProjectCard({
 
 export function VideoProjectCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden ring-1 ring-white/15">
+    <div className="flex flex-col overflow-hidden rounded-[3px] ring-1 ring-white/15">
       <div className="animate-shimmer aspect-video w-full bg-white/[0.04]" />
       <div className="space-y-2 px-3 py-3">
         <div className="animate-shimmer h-3.5 w-2/3 bg-white/[0.06]" />

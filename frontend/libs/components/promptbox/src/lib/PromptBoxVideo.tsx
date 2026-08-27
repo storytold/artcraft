@@ -1307,7 +1307,7 @@ export const PromptBoxVideo = ({
       <button
         type="button"
         onClick={() => setIsCharactersModalOpen(true)}
-        className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+        className="flex h-9 items-center justify-center gap-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
       >
         @Characters
       </button>
@@ -1332,7 +1332,7 @@ export const PromptBoxVideo = ({
       <div className="relative z-20 flex flex-col gap-3">
         <div
           className={twMerge(
-            "glass relative w-full rounded-2xl p-4",
+            "glass relative w-full rounded-[3px] p-4",
             isFocused
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
@@ -1347,7 +1347,7 @@ export const PromptBoxVideo = ({
             keyframeMode={!isReferenceMode}
           />
           {selectedModel?.textToVideoSupported === false && (
-            <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
+            <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon
                 
                 className="h-3 w-3 shrink-0" />
@@ -1374,7 +1374,7 @@ export const PromptBoxVideo = ({
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                       : "Describe what you want to happen in the video..."
                   }
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg"
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded-[3px] bg-transparent pb-2 pr-8 pt-1 text-base-fg"
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
                     const isSubmitCombo = enterToGenerate && !e.shiftKey;
@@ -1397,7 +1397,7 @@ export const PromptBoxVideo = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Describe what you want to happen in the video..."
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded-[3px] bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -1638,13 +1638,13 @@ export const PromptBoxVideo = ({
                 ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                 : "Describe what you want to happen in the video..."
             }
-            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg"
             style={{ resize: "none" }}
           />
         ) : (
           <textarea
             placeholder="Describe what you want to happen in the video..."
-            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
             value={prompt}
             onChange={handleChange}
             onPaste={handlePaste}

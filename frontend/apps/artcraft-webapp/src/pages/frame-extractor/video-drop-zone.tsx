@@ -27,7 +27,7 @@ export const VideoDropZone = ({
     <div className="overflow-hidden border border-ui-panel-border bg-ui-panel p-3">
       <div
         className={twMerge(
-          "flex aspect-video flex-col items-center justify-center gap-4 border border-dashed border-ui-border bg-ui-background/40 p-6 text-center transition-colors",
+          "flex aspect-video flex-col items-center justify-center gap-4 rounded-[3px] border border-dashed border-ui-border bg-ui-background/40 p-6 text-center transition-colors",
           isDragActive && "border-white/60 bg-white/5",
         )}
         onDragEnter={(e) => {

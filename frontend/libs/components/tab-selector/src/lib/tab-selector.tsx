@@ -79,7 +79,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
           {/* Animated indicator */}
           <div
             className={twMerge(
-              "absolute top-1 z-10 h-[calc(100%-8px)] rounded-[3px] bg-white transition-all duration-200 ease-in-out",
+              "absolute top-1 z-10 h-[calc(100%-8px)] rounded-[2px] bg-white transition-all duration-200 ease-in-out",
               indicatorClassName,
             )}
             style={{
@@ -99,7 +99,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
               disabled={disabled}
               className={({ selected }) =>
                 twMerge(
-                  "relative z-20 mx-0.5 min-w-max rounded-[3px] border-2 border-transparent px-4 py-0.5 text-center text-sm font-semibold transition-all duration-200 ease-in-out",
+                  "relative z-20 mx-0.5 min-w-max rounded-[2px] border-2 border-transparent px-4 py-0.5 text-center text-sm font-semibold transition-all duration-200 ease-in-out",
                   "focus-visible:outline-none focus-visible:ring-0",
                   selected
                     ? twMerge("text-black", selectedTabClassName)

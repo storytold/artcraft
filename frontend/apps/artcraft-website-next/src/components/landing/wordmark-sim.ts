@@ -13,12 +13,25 @@ export type Ball = {
   y: number;
   z: number;
   r: number;
+  /** Slat mode only: full bar width; balls omit it (render uses r). */
+  w?: number;
+};
+
+export type GlyphSprite = {
+  canvas: HTMLCanvasElement;
+  w: number;
+  h: number;
 };
 
 export type SampledWordmark = {
   balls: Ball[];
   width: number;
   height: number;
+  /** Slat mode only: shared bar depth in px. */
+  slatDepth?: number;
+  /** Glyph mode only: one crisp rasterized sprite per letter, index-aligned
+      with `balls` (each letter is one rigid body). */
+  glyphs?: GlyphSprite[];
 };
 
 // All knobs of the arrangement — registered with the dev tuner in
@@ -37,21 +50,21 @@ export type FormationParams = {
 
 // ————————————————————————————— sampling —————————————————————————————
 
-export function sampleWordmark(opts: {
-  text: string;
-  fontFamily: string;
-  fontWeight: number;
-  targetWidth: number;
-  /** Base unit in px — ball sizes and slab depth scale from this. */
-  spacing: number;
-  formation: FormationParams;
-}): SampledWordmark {
-  const { text, fontFamily, fontWeight, targetWidth, spacing, formation } =
-    opts;
-
-  // Each glyph is measured and drawn individually with a small manual gap:
-  // no shaping ever runs across letters, so the font can't fuse tight pairs
-  // ("ft") into a ligature that would blob together once quantized to balls.
+// Rasterizes the wordmark to an ink mask. Each glyph is measured and drawn
+// individually with a small manual gap: no shaping ever runs across letters,
+// so the font can't fuse tight pairs ("ft") into a ligature that would blob
+// together once quantized.
+function rasterizeWordmark(
+  text: string,
+  fontFamily: string,
+  fontWeight: number,
+  targetWidth: number,
+  pad: number,
+): {
+  covered: (x: number, y: number) => boolean;
+  width: number;
+  height: number;
+} {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   const glyphs = [...text];
@@ -72,7 +85,6 @@ export function sampleWordmark(opts: {
     descent = Math.max(descent, m.actualBoundingBoxDescent);
   }
 
-  const pad = spacing;
   const width = Math.ceil(targetWidth + pad * 2);
   const height = Math.ceil(ascent + descent + pad * 2);
   canvas.width = width;
@@ -89,6 +101,180 @@ export function sampleWordmark(opts: {
     if (x < 0 || y < 0 || x >= width || y >= height) return false;
     return alpha[(y * width + x) * 4 + 3] > 127;
   };
+  return { covered, width, height };
+}
+
+// ————————————————————————— glyph sampling ————————————————————————
+
+// One body per LETTER: each glyph is rasterized crisp (2× resolution) onto
+// its own sprite, and its center becomes a rigid body in the sim — the
+// letters themselves shove apart under the cursor and spring home, instead
+// of the word being rebuilt from particles.
+export function sampleWordmarkGlyphs(opts: {
+  text: string;
+  fontFamily: string;
+  fontWeight: number;
+  targetWidth: number;
+  /** Extra tracking between letters, in em. */
+  gapEm: number;
+}): SampledWordmark {
+  const { text, fontFamily, fontWeight, targetWidth, gapEm } = opts;
+  const measure = document
+    .createElement("canvas")
+    .getContext("2d", { willReadFrequently: true })!;
+  const chars = [...text];
+
+  measure.font = `${fontWeight} 100px ${fontFamily}`;
+  const width100 =
+    chars.reduce((w, g) => w + measure.measureText(g).width, 0) +
+    100 * gapEm * (chars.length - 1);
+  const fontPx = (100 * targetWidth) / Math.max(1, width100);
+  const gapPx = fontPx * gapEm;
+
+  measure.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
+  let ascent = 0;
+  let descent = 0;
+  for (const g of chars) {
+    const m = measure.measureText(g);
+    ascent = Math.max(ascent, m.actualBoundingBoxAscent);
+    descent = Math.max(descent, m.actualBoundingBoxDescent);
+  }
+
+  const PAD = 6; // px of air inside each sprite so antialiasing never clips
+  const RES = 2; // supersampling — sprites stay crisp at dpr 2
+  const balls: Ball[] = [];
+  const glyphs: GlyphSprite[] = [];
+  let penX = 0;
+  for (const g of chars) {
+    const m = measure.measureText(g);
+    const left = m.actualBoundingBoxLeft;
+    const right = m.actualBoundingBoxRight;
+    const gAsc = m.actualBoundingBoxAscent;
+    const gDesc = m.actualBoundingBoxDescent;
+    const w = Math.ceil(left + right) + PAD * 2;
+    const h = Math.ceil(gAsc + gDesc) + PAD * 2;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w * RES;
+    canvas.height = h * RES;
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(RES, RES);
+    ctx.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
+    ctx.fillStyle = "#fff";
+    ctx.fillText(g, PAD + left, PAD + gAsc);
+
+    balls.push({
+      x: penX + (right - left) / 2,
+      y: ascent - gAsc + (gAsc + gDesc) / 2,
+      z: 0,
+      r: h * 0.5,
+      w,
+    });
+    glyphs.push({ canvas, w, h });
+    penX += m.width + gapPx;
+  }
+
+  return {
+    balls,
+    width: Math.ceil(targetWidth),
+    height: Math.ceil(ascent + descent),
+    glyphs,
+  };
+}
+
+// ————————————————————————— slat sampling ————————————————————————
+
+// "artcraft" as scanline slats: every row of the ink mask becomes a run of
+// thin bars — the same language as the site's white invert label blocks and
+// hairline rules — which the cursor can shear apart row by row.
+export type SlatFormationParams = {
+  rows: number;    // scanline count across the word's height
+  rowGap: number;  // px of air between rows
+  segMin: number;  // px — drop covered runs shorter than this
+  segMax: number;  // × row height — split longer runs into pieces
+  depth: number;   // bar depth, × row height
+  zSpread: number; // random z offset, × row height
+  seed: number;
+};
+
+export function sampleWordmarkSlats(opts: {
+  text: string;
+  fontFamily: string;
+  fontWeight: number;
+  targetWidth: number;
+  formation: SlatFormationParams;
+}): SampledWordmark {
+  const { text, fontFamily, fontWeight, targetWidth, formation } = opts;
+  const pad = 8;
+  const { covered, width, height } = rasterizeWordmark(
+    text,
+    fontFamily,
+    fontWeight,
+    targetWidth,
+    pad,
+  );
+
+  const rand = mulberry32(formation.seed);
+  const rows = Math.max(4, Math.round(formation.rows));
+  const rowH = (height - pad * 2) / rows;
+  const halfSlat = Math.max(1, (rowH - formation.rowGap) / 2);
+  const balls: Ball[] = [];
+
+  for (let ri = 0; ri < rows; ri++) {
+    const yC = Math.round(pad + rowH * (ri + 0.5));
+    let runStart = -1;
+    for (let x = 0; x <= width; x++) {
+      const on = x < width && covered(x, yC);
+      if (on && runStart < 0) runStart = x;
+      if (!on && runStart >= 0) {
+        const len = x - runStart;
+        if (len >= formation.segMin) {
+          // Long horizontals split into pieces with a hairline shaved off
+          // each end, so crossbars shatter in chunks instead of moving as
+          // one stiff plank.
+          const maxLen = Math.max(rowH, formation.segMax * rowH);
+          const pieces = Math.max(1, Math.ceil(len / maxLen));
+          const pieceLen = len / pieces;
+          for (let p = 0; p < pieces; p++) {
+            balls.push({
+              x: runStart + pieceLen * (p + 0.5),
+              y: yC,
+              z: (rand() * 2 - 1) * formation.zSpread * rowH,
+              r: halfSlat,
+              w: Math.max(1.5, pieceLen - 1.5),
+            });
+          }
+        }
+        runStart = -1;
+      }
+    }
+  }
+
+  return { balls, width, height, slatDepth: rowH * formation.depth };
+}
+
+// ————————————————————————— ball sampling ————————————————————————
+
+export function sampleWordmark(opts: {
+  text: string;
+  fontFamily: string;
+  fontWeight: number;
+  targetWidth: number;
+  /** Base unit in px — ball sizes and slab depth scale from this. */
+  spacing: number;
+  formation: FormationParams;
+}): SampledWordmark {
+  const { text, fontFamily, fontWeight, targetWidth, spacing, formation } =
+    opts;
+
+  const pad = spacing;
+  const { covered, width, height } = rasterizeWordmark(
+    text,
+    fontFamily,
+    fontWeight,
+    targetWidth,
+    pad,
+  );
 
   // Fast "random point inside the ink" sampling: collect covered pixels on a
   // coarse stride once, then darts pick from that list with subpixel jitter.
@@ -249,12 +435,14 @@ export const DEFAULT_PARAMS: SimParams = {
 export class WordmarkSim {
   readonly n: number;
   readonly r: Float32Array;
+  /** Render width per body: bars carry their own, balls default to 2r. */
+  readonly w: Float32Array;
   readonly x: Float32Array;
   readonly y: Float32Array;
   readonly z: Float32Array;
-  private readonly hx: Float32Array;
-  private readonly hy: Float32Array;
-  private readonly hz: Float32Array;
+  readonly hx: Float32Array;
+  readonly hy: Float32Array;
+  readonly hz: Float32Array;
   private readonly vx: Float32Array;
   private readonly vy: Float32Array;
   private readonly vz: Float32Array;
@@ -270,6 +458,7 @@ export class WordmarkSim {
     const { balls, width, height } = sample;
     this.n = balls.length;
     this.r = new Float32Array(this.n);
+    this.w = new Float32Array(this.n);
     this.x = new Float32Array(this.n);
     this.y = new Float32Array(this.n);
     this.z = new Float32Array(this.n);
@@ -294,6 +483,7 @@ export class WordmarkSim {
       this.y[i] = this.hy[i] + dir[1] * dist * 0.7;
       this.z[i] = this.hz[i] + dir[2] * dist * 0.55;
       this.r[i] = b.r;
+      this.w[i] = b.w ?? b.r * 2;
       if (b.r > rMax) rMax = b.r;
       this.phase[i] = (i * 2.399963) % (Math.PI * 2);
     }
@@ -306,6 +496,9 @@ export class WordmarkSim {
     pointerY: number,
     pointerActive: boolean,
     params: SimParams = DEFAULT_PARAMS,
+    // Glyph mode runs a handful of letter-sized bodies whose rest pose is
+    // closer than their sphere radii — skip the collision pass there.
+    collide = true,
   ) {
     const clamped = Math.min(dt, 1 / 30);
     this.time += clamped;
@@ -353,7 +546,7 @@ export class WordmarkSim {
       this.z[i] += this.vz[i] * clamped;
     }
 
-    this.resolveCollisions();
+    if (collide) this.resolveCollisions();
   }
 
   // One positional-relaxation pass over a 3D spatial hash. The rest pose is

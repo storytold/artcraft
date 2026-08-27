@@ -704,7 +704,7 @@ export const PromptBox3D = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-full rounded-2xl p-4",
+            "glass relative w-full rounded-[3px] p-4",
             isPromptBoxFocused ? "!border !border-primary" : "",
             selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&
@@ -755,7 +755,7 @@ export const PromptBox3D = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe your image..."
-                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
+                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded-[3px] bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -1052,14 +1052,14 @@ export const PromptBox3D = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage as any}
-              className="relative top-auto rounded-2xl"
+              className="relative top-auto rounded-[3px]"
             />
           ) : undefined
         }
       >
         <textarea
           placeholder="Describe your image..."
-          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}

@@ -39,7 +39,9 @@ export const Button = ({
   function getVariantClassNames(variant: string) {
     switch (variant) {
       case "secondary": {
-        return "bg-transparent text-base-fg border border-ui-controls-border hover:bg-white/10 hover:border-white/30";
+        // Resting bg-white/5 tint (matching the home grid cards) so the
+        // button reads as a surface, not a bare outline on the page bg.
+        return "bg-white/5 text-base-fg border border-ui-controls-border hover:bg-white/10 hover:border-white/30";
       }
       case "action": {
         return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80";

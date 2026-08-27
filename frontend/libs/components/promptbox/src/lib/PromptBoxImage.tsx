@@ -455,7 +455,7 @@ export const PromptBoxImage = ({
       <div className="relative z-20 flex flex-col">
         <div
           className={twMerge(
-            "glass relative w-full rounded-2xl p-4",
+            "glass relative w-full rounded-[3px] p-4",
             isFocused
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
@@ -476,7 +476,7 @@ export const PromptBoxImage = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe what you want in the image..."
-                className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
+                className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded-[3px] bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -613,7 +613,7 @@ export const PromptBoxImage = ({
       >
         <textarea
           placeholder="Describe what you want in the image..."
-          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}

@@ -77,7 +77,7 @@ export function SoundsSettingsPopover({
                   <button
                     type="button"
                     onClick={() => onBpmChange?.(null)}
-                    className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
+                    className="rounded-[3px] bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
                   >
                     Auto
                   </button>
@@ -107,7 +107,7 @@ export function SoundsSettingsPopover({
                   type="button"
                   title={entry.label}
                   onClick={() => onMusicalKeyChange?.(entry.value)}
-                  className={`rounded-md border px-1.5 py-1 text-xs font-medium transition-colors ${
+                  className={`rounded-[3px] border px-1.5 py-1 text-xs font-medium transition-colors ${
                     entry.value === musicalKey
                       ? "border-white/30 bg-white/15 text-base-fg"
                       : "border-transparent bg-white/5 text-base-fg/60 hover:bg-white/10 hover:text-base-fg"

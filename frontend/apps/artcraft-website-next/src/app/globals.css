@@ -35,7 +35,7 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #0b0b0c;
+  --bg: #121316;
   --bg-raised: #101014;
   --bg-sunken: #060607;
   --ink: #f2f1ee;
@@ -56,7 +56,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0b0b0c;
+    --bg: #121316;
     --bg-raised: #101014;
     --bg-sunken: #060607;
     --ink: #f2f1ee;
@@ -92,10 +92,11 @@
   --color-invert-fg: var(--invert-fg);
   --color-danger: var(--danger);
 
-  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-display: var(--font-archivo), system-ui, sans-serif;
   --font-serif: var(--font-instrument), Georgia, serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* No rounded corners anywhere in this design language. */
   --radius-*: initial;
@@ -125,7 +126,9 @@ body {
 
 /* Signature interaction: label blocks invert on hover/active. */
 .invert-block {
-  transition: background-color 120ms linear, color 120ms linear;
+  transition:
+    background-color 120ms linear,
+    color 120ms linear;
 }
 .invert-block:hover,
 .invert-block[data-active="true"] {
@@ -144,6 +147,17 @@ body {
   :root:not([data-theme="light"]) .themed-logo {
     filter: brightness(0) invert(1);
   }
+}
+
+/* Display type: Archivo at weight 620, slightly expanded on the width
+   axis (the ax-display reference treatment). Declared after the utility
+   layer so it also wins over per-usage font-weight utilities. The hero
+   wordmark opts back out of the stretch inline (canvas rasterization
+   can't apply font-stretch, so its static fallback must match the
+   sampled blocks). */
+.font-display {
+  font-stretch: 118%;
+  font-weight: 620;
 }
 
 /* Mono HUD micro-label. */

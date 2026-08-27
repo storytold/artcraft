@@ -24,7 +24,7 @@ export class PromptBoxErrorBoundary extends Component<Props, State> {
   override render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-300">
+        <div className="flex items-center justify-center rounded-[3px] border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-300">
           <span>Something went wrong with the prompt box.&nbsp;</span>
           <button
             className="underline hover:text-red-200"

@@ -27,7 +27,7 @@ module.exports = {
           "monospace",
         ],
         display: [
-          "Bricolage Grotesque",
+          "Archivo",
           "system-ui",
           "-apple-system",
           "BlinkMacSystemFont",
@@ -183,8 +183,11 @@ module.exports = {
         panel: "#0b0b0c",
         "panel-border": "rgb(255 255 255 / 0.15)",
         border: "rgb(255 255 255 / 0.15)",
-        controls: "#161618",
-        "controls-button": "#161618",
+        // Raised control surface — a step above the #0b0b0c page/panel bg
+        // (matches the sidebar's #1e1f22) so buttons and inputs read as
+        // surfaces instead of blending into the background.
+        controls: "#1e1f22",
+        "controls-button": "#1e1f22",
         "controls-border": "rgb(255 255 255 / 0.15)",
         divider: "rgb(255 255 255 / 0.15)",
         modal: "#0b0b0c",

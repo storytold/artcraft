@@ -43,7 +43,7 @@ export function StylePromptRow({
           type="button"
           aria-label="Clear style"
           onClick={() => onChange("")}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-base-fg/40 transition-colors hover:bg-white/10 hover:text-base-fg"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] text-base-fg/40 transition-colors hover:bg-white/10 hover:text-base-fg"
         >
           <XIcon  className="h-3 w-3" />
         </button>

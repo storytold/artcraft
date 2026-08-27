@@ -228,7 +228,7 @@ export const GalleryCard = memo(function GalleryCard({
       )}
 
       {/* Hover overlay with media type + model badges and quick actions */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-[4px] from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-[3px] from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
           <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
             <DynamicIcon icon={mediaIcon} className="text-[10px]" />

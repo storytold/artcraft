@@ -58,7 +58,7 @@ export function Toaster({
       position={position}
       toastOptions={{
         style: {
-          borderRadius: "4px",
+          borderRadius: "3px",
         },
         success: {
           style: {

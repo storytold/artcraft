@@ -141,7 +141,7 @@ export function BaseImageSelector({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
-        className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-4 border border-dashed p-8 text-center transition-colors ${
+        className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-[3px] border border-dashed p-8 text-center transition-colors ${
           isDragging
             ? "border-white bg-white/10"
             : "border-white/15 bg-ui-background hover:border-white/40"

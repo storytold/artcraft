@@ -88,7 +88,7 @@ export const DeckCard = ({
   return (
     <div
       className={twMerge(
-        "glass group relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg border-2 border-white/30 transition-all duration-200",
+        "glass group relative aspect-square w-14 shrink-0 overflow-hidden rounded-[3px] border-2 border-white/30 transition-all duration-200",
         !item.uploading &&
           "cursor-pointer hover:border-white/80 hover:cursor-zoom-in",
         item.kind === "audio" && "hover:cursor-pointer",
@@ -143,12 +143,12 @@ export const DeckCard = ({
       )}
 
       {item.kind === "video" && (
-        <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center rounded bg-black/60 text-white">
+        <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
           <VideoIcon  className="h-2.5 w-2.5" />
         </div>
       )}
       {item.kind === "audio" && (
-        <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center rounded bg-black/60 text-white">
+        <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
           <MusicIcon  className="h-2.5 w-2.5" />
         </div>
       )}
@@ -235,7 +235,7 @@ export const DeckAddMenu = ({
               key={action.key}
               type="button"
               onClick={action.onSelect}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium text-base-fg transition-colors hover:bg-white/10"
+              className="flex w-full items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-left text-[13px] font-medium text-base-fg transition-colors hover:bg-white/10"
             >
               <DynamicIcon
                 icon={
@@ -274,13 +274,13 @@ export const DeckPreviewModal = ({ item, onClose }: DeckPreviewModalProps) => (
           src={item.previewUrl ?? item.url}
           controls
           autoPlay
-          className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+          className="max-h-[90vh] max-w-[90vw] object-contain"
         />
       ) : (
         <img
           src={item.previewUrl ?? item.url}
           alt={item.name}
-          className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+          className="max-h-[90vh] max-w-[90vw] object-contain"
         />
       ))}
   </Modal>
