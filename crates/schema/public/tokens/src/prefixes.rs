@@ -39,6 +39,7 @@ pub(crate) enum TokenPrefix {
   InferenceJob,
   McpSession,
   McpSessionPrivate, // The private credential for an MCP session; carries more entropy.
+  McpSessionRefresh, // The rotating refresh credential for an MCP session; carries more entropy.
   MediaFile,
   MediaUpload,
   ModelWeight,
@@ -134,6 +135,7 @@ impl PrefixGenerator for TokenPrefix {
       Self::InferenceJob => "jinf_",
       Self::McpSession => "mcp_",
       Self::McpSessionPrivate => "mcp_session_",
+      Self::McpSessionRefresh => "mcp_refresh_",
       Self::MediaFile => "m_",
       Self::MediaUpload => "mu_",
       Self::ModelWeight => "weight_",
@@ -366,6 +368,7 @@ mod tests {
             || prefix == "tts_task_"
             || prefix == "app_session_"
             || prefix == "mcp_session_"
+            || prefix == "mcp_refresh_"
         {
           // TODO/FIXME: I'm too tired at 5AM to replacen from the left. Make this test valid.
           //  These tokens are from the AIChatBot sidecar, so asserting their validity is less important.

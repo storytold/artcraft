@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO mcp_sessions\nSET\n  token = ?,\n  private_session_token = ?,\n  private_refresh_token = ?,\n  user_token = ?,\n  maybe_mcp_client_name = ?,\n  maybe_mcp_client_version = ?,\n  maybe_mcp_client_vendor = ?,\n  ip_address_creation = ?,\n  ip_address_update = ?,\n  created_at = NOW(),\n  expires_at = NOW() + INTERVAL ? DAY\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "f67a73ea3d5751cc76d2d6f954bd939179b3e9005a359e04c3a4dd78f8fe562e"
+}

@@ -14,6 +14,10 @@ CREATE TABLE mcp_sessions (
   -- Private entropy presented by clients; used for lookup of live sessions.
   private_session_token VARCHAR(64) NOT NULL,
 
+  -- Private refresh credential. Presenting this on the refresh endpoint extends the
+  -- session's expiry and ROTATES this value — the previous refresh token becomes invalid.
+  private_refresh_token VARCHAR(64) NOT NULL,
+
   -- The user that the session belongs to.
   user_token VARCHAR(32) NOT NULL,
 
@@ -53,6 +57,7 @@ CREATE TABLE mcp_sessions (
   PRIMARY KEY (id),
   UNIQUE KEY (token),
   UNIQUE KEY (private_session_token),
+  UNIQUE KEY (private_refresh_token),
   KEY fk_user_token (user_token),
   KEY index_ip_address_creation (ip_address_creation),
   KEY index_maybe_deleted_at (maybe_deleted_at)

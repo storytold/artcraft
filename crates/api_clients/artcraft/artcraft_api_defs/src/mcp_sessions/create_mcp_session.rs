@@ -2,6 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use tokens::tokens::mcp_session_private::McpSessionPrivateToken;
+use tokens::tokens::mcp_session_refresh::McpSessionRefreshToken;
 
 // ── POST /v1/mcp/session/create ──
 
@@ -25,4 +26,9 @@ pub struct CreateMcpSessionSuccessResponse {
   /// ONLY time it is ever returned — the caller must store it now, as it cannot be retrieved
   /// again.
   pub private_session_token: McpSessionPrivateToken,
+
+  /// The secret credential the MCP client presents on `/v1/mcp/session/refresh` to extend the
+  /// session. Each successful refresh returns a NEW refresh token and invalidates this one —
+  /// store whichever value is newest.
+  pub private_refresh_token: McpSessionRefreshToken,
 }

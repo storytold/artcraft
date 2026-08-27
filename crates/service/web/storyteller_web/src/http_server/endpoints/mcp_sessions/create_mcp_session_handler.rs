@@ -72,8 +72,10 @@ pub async fn create_mcp_session_handler(
 
   Ok(Json(CreateMcpSessionSuccessResponse {
     success: true,
-    // The only time the secret credential is ever exposed.
+    // The only time the session credential is ever exposed. The refresh token is exposed again
+    // only as the rotated replacement in refresh responses.
     private_session_token: inserted.private_session_token,
+    private_refresh_token: inserted.private_refresh_token,
   }))
 }
 

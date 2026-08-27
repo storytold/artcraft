@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE mcp_sessions\nSET\n  expires_at = NOW() + INTERVAL ? DAY,\n  private_refresh_token = ?,\n  ip_address_update = ?\nWHERE private_session_token = ?\n  AND private_refresh_token = ?\n  AND maybe_deleted_at IS NULL\n  AND expires_at > NOW()\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "ed8f7ef94099d2dddf50f819316485351e149db72ce8a4f5cff6b57f4b84244d"
+}
