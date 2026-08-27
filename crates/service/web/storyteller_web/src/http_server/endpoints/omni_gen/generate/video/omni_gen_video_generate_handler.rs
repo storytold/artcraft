@@ -14,12 +14,13 @@ use crate::http_server::endpoints::omni_gen::generate::video::shared_video_gener
   run_authenticated_video_generation, VideoGenerationAuth,
 };
 use crate::http_server::endpoints::omni_gen::shared_utils::video::validate_video_request::validate_video_request;
-use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::{require_api_or_web_session, SessionType};
+use crate::http_server::user_lookup::api_or_web_session::require_any_session_or_key::{require_any_session_or_key, AnySessionType};
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 
 /// Generate a video using the omni-gen unified endpoint.
-/// Authenticates as either a web-session (cookie) user or an API-key (`Authorization` header) user.
+/// Authenticates as a web-session (cookie) user, an API-key (`Authorization` header) user, or
+/// an MCP-session (`Authorization` header) user.
 ///
 /// Razor-thin handler: authenticate, then delegate to the shared
 /// generation core in `shared_video_generation` (which is authoritative for
@@ -55,8 +56,8 @@ pub async fn omni_gen_video_generate_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  // Either an API-key user (Authorization header) or a web-session (cookie) user.
-  let session = require_api_or_web_session(
+  // An API-key or MCP-session user (Authorization header) or a web-session (cookie) user.
+  let session = require_any_session_or_key(
     &http_request,
     &server_state.session_checker,
     &server_state.avt_cookie_manager,
@@ -64,13 +65,14 @@ pub async fn omni_gen_video_generate_handler(
   ).await?;
 
   let maybe_platform_type = match session.session_type {
-    SessionType::Api => Some(PlatformType::ApiKey),
-    SessionType::WebSession => get_request_platform_type(&http_request),
+    AnySessionType::Api => Some(PlatformType::ApiKey),
+    AnySessionType::McpSession => Some(PlatformType::Mcp),
+    AnySessionType::WebSession => get_request_platform_type(&http_request),
   };
 
   let auth = VideoGenerationAuth {
     user_token: &session.user_token,
-    // AVT tokens are web-session only; API-key sessions never carry one.
+    // AVT tokens are web-session only; API-key and MCP sessions never carry one.
     maybe_avt_token: session.maybe_avt_token.clone(),
     maybe_platform_type,
   };

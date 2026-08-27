@@ -36,14 +36,15 @@ use crate::http_server::endpoints::omni_gen::generate::mesh::insert_db_job::inse
 use crate::http_server::endpoints::omni_gen::generate::mesh::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::shared_utils::mesh::validate_mesh_request::validate_mesh_request;
-use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::{require_api_or_web_session, SessionType};
+use crate::http_server::user_lookup::api_or_web_session::require_any_session_or_key::{require_any_session_or_key, AnySessionType};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
 /// Generate a mesh (3D object) using the omni-gen unified endpoint.
-/// Authenticates as either a web-session (cookie) user or an API-key (`Authorization` header) user.
+/// Authenticates as a web-session (cookie) user, an API-key (`Authorization` header) user, or
+/// an MCP-session (`Authorization` header) user.
 #[utoipa::path(
   post,
   tag = "Omni Gen",
@@ -81,8 +82,8 @@ pub async fn omni_gen_mesh_generate_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  // Either an API-key user (Authorization header) or a web-session (cookie) user.
-  let session = require_api_or_web_session(
+  // An API-key or MCP-session user (Authorization header) or a web-session (cookie) user.
+  let session = require_any_session_or_key(
     &http_request,
     &server_state.session_checker,
     &server_state.avt_cookie_manager,
@@ -91,7 +92,7 @@ pub async fn omni_gen_mesh_generate_handler(
 
   let user_token = &session.user_token;
 
-  // AVT tokens are web-session only; API-key sessions never carry one.
+  // AVT tokens are web-session only; API-key and MCP sessions never carry one.
   let maybe_avt_token = session.maybe_avt_token.clone();
 
   // ==================== IDEMPOTENCY ==================== //
@@ -209,8 +210,9 @@ server_state.maybe_media_cdn_override_url.as_deref(),
   // ==================== WRITE RESULT ==================== //
 
   let maybe_platform_type = match session.session_type {
-    SessionType::Api => Some(PlatformType::ApiKey),
-    SessionType::WebSession => get_request_platform_type(&http_request),
+    AnySessionType::Api => Some(PlatformType::ApiKey),
+    AnySessionType::McpSession => Some(PlatformType::Mcp),
+    AnySessionType::WebSession => get_request_platform_type(&http_request),
   };
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {

@@ -22,6 +22,7 @@ pub mod google_sign_in_accounts;
 pub mod health_check;
 pub mod idepotency_tokens;
 pub mod ip_bans;
+pub mod mcp_sessions;
 pub mod media_files;
 pub mod media_uploads;
 pub mod model_categories;

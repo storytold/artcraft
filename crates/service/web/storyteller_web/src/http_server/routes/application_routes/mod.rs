@@ -10,6 +10,7 @@ mod folders_routes;
 mod generate_routes;
 mod internal_routes;
 mod job_routes;
+mod mcp_session_routes;
 mod media_files_routes;
 mod moderation_routes;
 mod omni_api_routes;

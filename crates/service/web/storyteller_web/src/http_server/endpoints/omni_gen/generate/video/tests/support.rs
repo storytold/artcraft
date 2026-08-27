@@ -41,6 +41,7 @@ use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::queries::api_keys::insert_api_key::{insert_api_key, InsertApiKeyArgs};
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_testing::fixtures::users::TestUser;
+use tokens::tokens::mcp_session_private::McpSessionPrivateToken;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
 use server_environment::ServerEnvironment;
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
@@ -172,6 +173,36 @@ impl TestHarness {
     .await
     .expect("insert api key");
     api_key
+  }
+
+  /// Mint a live MCP session for `user` and return its private credential.
+  pub async fn create_mcp_session(&self, user: &TestUser) -> McpSessionPrivateToken {
+    mysql_testing::fixtures::mcp_sessions::create_test_mcp_session(&self.pool, &user.user_token)
+      .await
+      .expect("create mcp session")
+      .private_session_token
+  }
+
+  /// POST the request through the omni_gen generate handler, authenticating
+  /// with an MCP session credential in the Authorization header.
+  pub async fn post_generate_via_mcp_session(
+    &self,
+    private_session_token: &McpSessionPrivateToken,
+    request: OmniGenVideoCostAndGenerateRequest,
+  ) -> Result<OmniGenVideoGenerateResponse, CommonWebError> {
+    let http_request = TestRequest::post()
+      .uri("/v1/omni_gen/generate/video")
+      .insert_header(("Authorization", format!("Bearer {}", private_session_token.as_str())))
+      .peer_addr("127.0.0.1:9999".parse().expect("peer addr"))
+      .to_http_request();
+
+    omni_gen_video_generate_handler(
+      http_request,
+      Json(request),
+      Data::new(self.server_state.clone()),
+    )
+    .await
+    .map(Json::into_inner)
   }
 
   /// POST the request through the omni_api (API-key only) generate handler,
