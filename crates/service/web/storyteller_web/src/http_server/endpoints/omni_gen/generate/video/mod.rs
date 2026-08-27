@@ -8,5 +8,6 @@ pub mod insert_db_job;
 // Database fixture tests. Always compiled with `cfg(test)` so IDEs discover
 // them and they can't bit-rot, but each test is `ignore`d unless the
 // `database_tests` feature is enabled (see tests/mod.rs).
+// `pub(crate)` so other modules' database tests can reuse `support::TestHarness`.
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
