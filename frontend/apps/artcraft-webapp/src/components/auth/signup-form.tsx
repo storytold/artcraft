@@ -132,7 +132,7 @@ export const SignupForm = ({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               autoFocus={autoFocus}
-              inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+              inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
             />
           </Reveal>
 
@@ -148,7 +148,7 @@ export const SignupForm = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Min. 8 characters"
-                inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
               />
               <button
                 type="button"
@@ -168,7 +168,7 @@ export const SignupForm = ({
               disabled={isLoading}
             >
               {isLoading ? (
-                <LoaderCircleIcon  className="animate-spin" />
+                <LoaderCircleIcon className="animate-spin" />
               ) : (
                 "Create account"
               )}

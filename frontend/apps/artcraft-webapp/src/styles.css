@@ -7,7 +7,7 @@
     /* Sidebar tokens (consumed by tailwind colors in tailwind.config.js).
        Brutalist system: near-black surfaces, white/15 hairlines, white
        accent for selection/focus. */
-    --sidebar-bg: #0b0b0c;
+    --sidebar-bg: #1e1f22;
     --sidebar-fg: rgba(255, 255, 255, 0.72);
     --sidebar-border: rgba(255, 255, 255, 0.15);
     --sidebar-accent: rgba(255, 255, 255, 0.08);
@@ -17,7 +17,7 @@
     /* shadcn design tokens consumed by @storyteller/ui-video-editor.
        Dark-theme palette (the editor only runs in dark mode today).
        --primary matches the webapp's brand blue (#2d81ff). */
-    --background: 240 4% 5%;
+    --background: 240 5% 8%;
     --foreground: 0 0% 98%;
     --card: 240 11% 7%;
     --card-foreground: 0 0% 98%;
@@ -69,6 +69,21 @@
       --dur-slow: 1ms;
       --dur-page: 1ms;
     }
+  }
+}
+
+/* Subtle 4px corners on interactive controls. The brutalist system keeps
+   large surfaces (panels, modals, tables), passive labels, and media tiles
+   square; anything pressable gets a soft corner for affordance. Tailwind
+   radius utilities (rounded-full, rounded-none) still win — the utilities
+   layer is emitted after base. */
+@layer base {
+  button,
+  select,
+  textarea,
+  input:not([type="radio"]):not([type="range"]),
+  [role="button"] {
+    border-radius: 4px;
   }
 }
 
@@ -241,8 +256,8 @@
    with white/15 hairline borders (class names kept for lib compatibility). */
 @layer components {
   .glass {
-    @apply relative border border-white/15 transition-colors duration-300;
-    @apply bg-[#101014]/95 !important;
+    @apply relative border border-white/15 transition-colors duration-300 rounded-[3px] backdrop-blur-sm;
+    @apply bg-[#1E1F22]/95 !important;
   }
 }
 

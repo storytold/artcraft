@@ -88,7 +88,7 @@ export const ToastContainer = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="glass flex max-w-full items-center gap-3 px-4 py-2.5 text-sm text-white animate-toast-in sm:max-w-md"
+          className="glass flex max-w-full items-center gap-3 rounded-[3px] px-4 py-2.5 text-sm text-white animate-toast-in sm:max-w-md"
         >
           <div
             className={`flex h-6 w-6 flex-shrink-0 items-center justify-center ${
@@ -107,7 +107,7 @@ export const ToastContainer = () => {
             onClick={() => dismiss(toast.id)}
             className="ml-1 text-white/40 transition-colors hover:text-white/80"
           >
-            <XIcon  className="h-3 w-3" />
+            <XIcon className="h-3 w-3" />
           </button>
         </div>
       ))}

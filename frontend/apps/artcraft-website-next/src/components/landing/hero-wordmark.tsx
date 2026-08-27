@@ -35,10 +35,11 @@ type PointerState = {
   active: boolean;
 };
 
-// The hero wordmark: "artcraft" built from small 3D balls. The cursor is both
-// a point light and a push force — the balls part around it, pop toward the
-// viewer, and rejoin on their springs. On mount they assemble from a
-// scattered cloud. Server HTML, reduced-motion visitors, and WebGL failures
+// The hero wordmark: "artcraft" built from small axis-aligned blocks — the
+// same primitives you block a scene out with before the AI render. The cursor
+// is both a point light and a push force — the blocks part around it, pop
+// toward the viewer, and rejoin on their springs. On mount they assemble from
+// a scattered cloud. Server HTML, reduced-motion visitors, and WebGL failures
 // all get the static display-type wordmark instead.
 export default function HeroWordmark() {
   const [ready, setReady] = useState(false);
@@ -186,7 +187,7 @@ export default function HeroWordmark() {
             style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
           >
             <FittedCamera />
-            <BallField sample={sample} colors={colors} pointer={pointerRef} />
+            <BlockField sample={sample} colors={colors} pointer={pointerRef} />
           </Canvas>
         </CanvasBoundary>
       )}
@@ -212,8 +213,8 @@ function FittedCamera() {
 }
 
 // Studio reflections without any network fetch: three's procedural room,
-// prefiltered once per WebGL context. This is what gives the dark "car
-// paint" balls something to mirror.
+// prefiltered once per WebGL context. Light theme only — it gives the matte
+// ink blocks a hint of sheen on their top faces.
 function StudioEnvironment() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -250,7 +251,7 @@ const HALO_FRAGMENT = /* glsl */ `
   }
 `;
 
-function BallField({
+function BlockField({
   sample,
   colors,
   pointer,
@@ -282,8 +283,9 @@ function BallField({
     return c.r + c.g + c.b < 1.5;
   }, [colors.bg]);
 
-  // The halo sits behind the text plane, so the balls eclipse it: bodies go
-  // to silhouette against the glow while their rims catch the back light.
+  // A faint backing glow behind the text plane, following the cursor. With
+  // the lit blocks it stays a whisper (see haloTuner alpha defaults) — just
+  // enough halation to mark where the torch is pointed.
   const haloMaterial = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -293,7 +295,7 @@ function BallField({
           uColor: {
             value: new THREE.Color(dark ? "#a8c4ff" : colors.accent),
           },
-          uAlpha: { value: dark ? 0.5 : 0.14 },
+          uAlpha: { value: dark ? 0.1 : 0.14 },
           uFalloff: { value: 2.6 },
         },
         transparent: true,
@@ -304,9 +306,10 @@ function BallField({
   );
   useEffect(() => () => haloMaterial.dispose(), [haloMaterial]);
 
-  // Per-ball colors. Light theme: ink with slight tonal variety. Dark theme:
-  // near-black lacquer, so shape comes from reflections and the back rim
-  // instead of albedo. Both keep sparse brand-accent balls.
+  // Per-block colors. Light theme: ink blocks on paper. Dark theme: light
+  // concrete-toned blocks on the near-black terminal bg — clearly visible at
+  // rest, with per-block tonal variety so the pile reads as material, not a
+  // flat fill. Both keep sparse brand-accent blocks.
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
@@ -314,16 +317,15 @@ function BallField({
     const ink = new THREE.Color(colors.ink);
     const accent = new THREE.Color(colors.accent);
     const base = dark
-      ? bg.clone().lerp(ink, 0.10)
+      ? ink.clone().lerp(bg, 0.16)
       : ink.clone();
     const c = new THREE.Color();
     const rand = seeded(4242);
     for (let i = 0; i < sim.n; i++) {
       if (rand() < accentShare) {
         c.copy(accent);
-        if (dark) c.multiplyScalar(0.8);
       } else {
-        c.copy(base).lerp(ink, rand() * (dark ? 0.08 : 0.16));
+        c.copy(base).lerp(bg, rand() * (dark ? 0.3 : 0.16));
       }
       mesh.setColorAt(i, c);
     }
@@ -343,9 +345,12 @@ function BallField({
 
     sim.step(delta, p.x, p.y, p.active, phys);
 
+    // Box edge = collision radius × blockFill: below 2 leaves hairline seams
+    // between neighbors (mosaic), above it lets corners bite in (rubble).
+    const edge = mt.blockFill;
     for (let i = 0; i < sim.n; i++) {
       dummy.position.set(sim.x[i], sim.y[i], sim.z[i]);
-      dummy.scale.setScalar(sim.r[i]);
+      dummy.scale.setScalar(sim.r[i] * edge);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
@@ -412,19 +417,21 @@ function BallField({
     <>
       {/* No environment in dark mode: three applies scene.environment at
           effectively full strength here regardless of envMapIntensity, and
-          any env flood washes the eclipse out. The rim lights are the only
-          broad sources; the cursor light does the revealing. */}
+          matte blocks don't need reflections — directional faces carry the
+          form on their own. */}
       {!dark && <StudioEnvironment />}
 
       {dark ? (
-        // Eclipse rig: almost no front light. A cool key from behind-above
-        // rims the top edges, a faint counter-rim catches the lower-right,
-        // and the cursor light does the actual revealing.
+        // Lit rig for the light blocks: a cool key from front-above gives
+        // every top face a bright plane and every side face a step down —
+        // the faceted read that makes the voxels legible at rest. A steel
+        // counter-rim from behind separates the pile from the black bg, and
+        // the cursor light stays the interactive torch.
         <>
-          <ambientLight ref={ambientRef} intensity={0.05} />
-          <directionalLight ref={keyRef} position={[-160, 340, -460]} intensity={2.2} color="#e9f1ff" />
-          <directionalLight ref={counterRef} position={[430, -180, -380]} intensity={0.7} color="#7fa8e8" />
-          <directionalLight ref={fillRef} position={[0, -60, 520]} intensity={0.06} />
+          <ambientLight ref={ambientRef} intensity={0.4} />
+          <directionalLight ref={keyRef} position={[-240, 380, 420]} intensity={1.05} color="#eef3ff" />
+          <directionalLight ref={counterRef} position={[430, -160, -380]} intensity={0.7} color="#9db8e8" />
+          <directionalLight ref={fillRef} position={[0, -80, 520]} intensity={0.3} />
         </>
       ) : (
         <>
@@ -440,7 +447,7 @@ function BallField({
       <pointLight
         ref={lightRef}
         position={[0, 120, 130]}
-        intensity={dark ? 42000 : 30000}
+        intensity={30000}
         decay={2}
         distance={900}
         color={dark ? "#d6e4ff" : "#ffffff"}
@@ -450,25 +457,27 @@ function BallField({
         <planeGeometry args={[720, 720]} />
       </mesh>
 
+      {/* Axis-aligned unit cubes — the brutalist unit. Per-face normals give
+          each block three distinct light planes; no smoothing, no gloss. */}
       <instancedMesh
         ref={meshRef}
         args={[undefined, undefined, sim.n]}
         frustumCulled={false}
       >
-        <sphereGeometry args={[1, 24, 16]} />
+        <boxGeometry args={[1, 1, 1]} />
         {dark ? (
           <meshPhysicalMaterial
-            roughness={0.42}
-            metalness={0.5}
-            clearcoat={0.9}
-            clearcoatRoughness={0.22}
+            roughness={0.8}
+            metalness={0}
+            clearcoat={0}
+            clearcoatRoughness={0.25}
             envMapIntensity={0.05}
           />
         ) : (
           <meshStandardMaterial
-            roughness={0.3}
-            metalness={0.15}
-            envMapIntensity={0.55}
+            roughness={0.55}
+            metalness={0.05}
+            envMapIntensity={0.45}
           />
         )}
       </instancedMesh>

@@ -60,11 +60,9 @@ export function GoogleLoginButton({
       className={`group relative w-full h-10 transition-transform duration-150 active:scale-95 ${className}`}
     >
       {/* Custom visual button - shown behind */}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black font-medium group-hover:bg-white/80 transition-colors">
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 rounded-[3px] bg-white text-black font-medium group-hover:bg-white/80 transition-colors">
         {isLoading ? (
-          <LoaderCircleIcon
-            
-            className="animate-spin text-lg text-black/60" />
+          <LoaderCircleIcon className="animate-spin text-lg text-black/60" />
         ) : (
           <>
             <GoogleIcon />

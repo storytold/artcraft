@@ -156,7 +156,7 @@ function UsernameForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
           maxLength={USERNAME_MAX}
           autoComplete="username"
           autoFocus
-          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
         />
         <Input
           type="password"
@@ -164,7 +164,7 @@ function UsernameForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
           onChange={(e) => setCurrentPassword(e.target.value)}
           placeholder="Confirm password"
           autoComplete="current-password"
-          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
         />
         {error && <FormError message={error} />}
         <FormActions
@@ -262,7 +262,7 @@ function EmailForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
           maxLength={EMAIL_MAX}
           autoComplete="email"
           autoFocus
-          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
         />
         <Input
           type="password"
@@ -270,7 +270,7 @@ function EmailForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
           onChange={(e) => setCurrentPassword(e.target.value)}
           placeholder="Confirm password"
           autoComplete="current-password"
-          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+          inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
         />
         {error && <FormError message={error} />}
         <FormActions
@@ -388,7 +388,7 @@ function PasswordForm({
             placeholder="Current password"
             autoComplete="current-password"
             autoFocus
-            inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+            inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
           />
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -400,7 +400,7 @@ function PasswordForm({
             minLength={PASSWORD_MIN}
             autoComplete="new-password"
             autoFocus={passwordNotSet}
-            inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+            inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
           />
           <Input
             type="password"
@@ -411,7 +411,7 @@ function PasswordForm({
             }
             minLength={PASSWORD_MIN}
             autoComplete="new-password"
-            inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-none px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+            inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
           />
         </div>
         {error && <FormError message={error} />}
@@ -516,11 +516,7 @@ function FormActions({
         className="h-9 px-4"
         disabled={submitting || disabled}
       >
-        {submitting ? (
-          <LoaderCircleIcon  className="animate-spin" />
-        ) : (
-          "Save"
-        )}
+        {submitting ? <LoaderCircleIcon className="animate-spin" /> : "Save"}
       </Button>
     </div>
   );

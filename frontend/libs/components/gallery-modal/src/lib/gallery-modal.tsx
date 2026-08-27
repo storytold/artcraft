@@ -523,14 +523,14 @@ const FolderContextMenuItems = ({
 }) => (
   <div
     className={twMerge(
-      "min-w-44 border border-ui-panel-border bg-ui-panel p-1 shadow-xl z-[59]",
+      "min-w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl z-[59]",
       className,
     )}
     style={style}
   >
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
+      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onToggleStar(folderId, !hasStar)}
     >
       <StarIcon
@@ -548,7 +548,7 @@ const FolderContextMenuItems = ({
     <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
+      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onNewSubfolder(folderId)}
     >
       <FolderPlusIcon className="w-4" />
@@ -556,7 +556,7 @@ const FolderContextMenuItems = ({
     </button>
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
+      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onRename(folderId)}
     >
       <PencilIcon className="w-4" />
@@ -564,7 +564,7 @@ const FolderContextMenuItems = ({
     </button>
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-red"
+      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-red"
       onClick={() => onDelete(folderId)}
     >
       <Trash2Icon className="w-4" />
@@ -2601,14 +2601,14 @@ export const GalleryModal = React.memo(
               <div className="flex flex-wrap justify-between items-center gap-y-2">
                 <div className="flex items-center gap-3 flex-wrap gap-y-1">
                   {(mode === "view" || mode === "select") && (
-                    <div className="flex items-center gap-0.5 bg-ui-controls/40 p-0.5 relative z-[51]">
+                    <div className="flex items-center gap-0.5 rounded-[3px] bg-ui-controls/40 p-0.5 relative z-[51]">
                       {(["unsorted", "folders"] as const).map((t) => (
                         <button
                           key={t}
                           type="button"
                           onClick={() => switchGalleryTab(t)}
                           className={twMerge(
-                            " px-3 py-1 text-sm font-medium transition-colors",
+                            "rounded-[3px] px-3 py-1 text-sm font-medium transition-colors",
                             galleryTab === t
                               ? "bg-ui-controls text-base-fg"
                               : "text-base-fg/60 hover:text-base-fg",
@@ -2625,7 +2625,7 @@ export const GalleryModal = React.memo(
                       <button
                         type="button"
                         onClick={() => handleOpenNewFolderModal(null)}
-                        className="flex items-center gap-2 bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-base-fg hover:bg-ui-controls/90 transition-colors relative z-[51]"
+                        className="flex items-center gap-2 rounded-[3px] bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-base-fg hover:bg-ui-controls/90 transition-colors relative z-[51]"
                       >
                         <FolderPlusIcon className="text-xs" />
                         New folder
@@ -2654,7 +2654,7 @@ export const GalleryModal = React.memo(
                         type="button"
                         onClick={handleCloseTagView}
                         aria-label="Close tag view"
-                        className="flex h-7 w-7 items-center justify-center hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-[3px] hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                       >
                         <XIcon className="text-sm" />
                       </button>
@@ -2668,7 +2668,7 @@ export const GalleryModal = React.memo(
                         type="button"
                         onClick={handleCloseTagView}
                         aria-label="Close tags"
-                        className="flex h-7 w-7 items-center justify-center hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-[3px] hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                       >
                         <XIcon className="text-sm" />
                       </button>
@@ -2714,7 +2714,7 @@ export const GalleryModal = React.memo(
                         />
                       ) : (
                         <h2
-                          className="text-lg font-semibold cursor-pointer hover:bg-ui-controls/30 px-1.5 py-0 transition-colors truncate max-w-[20rem]"
+                          className="text-lg font-semibold cursor-pointer rounded-[3px] hover:bg-ui-controls/30 px-1.5 py-0 transition-colors truncate max-w-[20rem]"
                           onClick={() => handleStartRename(activeFolderId!)}
                         >
                           {activeFolder.name}
@@ -2732,7 +2732,7 @@ export const GalleryModal = React.memo(
                         <button
                           type="button"
                           onClick={() => setFolderMenuOpen((v) => !v)}
-                          className="flex h-7 w-7 items-center justify-center hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                          className="flex h-7 w-7 items-center justify-center rounded-[3px] hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                         >
                           <EllipsisIcon className="text-sm" />
                         </button>
@@ -2916,7 +2916,7 @@ export const GalleryModal = React.memo(
                             }
                           }}
                           className={twMerge(
-                            "flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm transition-colors",
+                            "flex items-center justify-between gap-2 rounded-[3px] px-2.5 py-1.5 text-sm transition-colors",
                             isActive &&
                               !activeFolderId &&
                               !activeTagToken &&
@@ -2949,7 +2949,7 @@ export const GalleryModal = React.memo(
                         type="button"
                         onClick={() => handleOpenNewFolderModal(null)}
                         aria-label="New folder"
-                        className="flex h-5 w-5 items-center justify-center text-base-fg/50 hover:bg-ui-controls/60 hover:text-base-fg transition-colors"
+                        className="flex h-5 w-5 items-center justify-center rounded-[3px] text-base-fg/50 hover:bg-ui-controls/60 hover:text-base-fg transition-colors"
                       >
                         <PlusIcon className="text-[10px]" />
                       </button>
@@ -2982,7 +2982,7 @@ export const GalleryModal = React.memo(
                               : undefined
                           }
                           className={twMerge(
-                            "flex w-full flex-shrink-0 items-center gap-2.5 px-2.5 py-1.5 text-sm transition-colors [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-base-fg",
+                            "flex w-full flex-shrink-0 items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-sm transition-colors [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-base-fg",
                             activeRootFolderId === folder.id
                               ? "bg-ui-controls/60 text-base-fg font-medium"
                               : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
@@ -3025,7 +3025,7 @@ export const GalleryModal = React.memo(
                               handleOpenTagFromSidebar(tag.tag_token)
                             }
                             className={twMerge(
-                              "flex w-full flex-shrink-0 items-center gap-2.5 px-2.5 py-1.5 text-sm transition-colors",
+                              "flex w-full flex-shrink-0 items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-sm transition-colors",
                               activeTagToken === tag.tag_token
                                 ? "bg-ui-controls/60 text-base-fg font-medium"
                                 : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
@@ -3042,7 +3042,7 @@ export const GalleryModal = React.memo(
                           type="button"
                           onClick={handleOpenTagBrowser}
                           className={twMerge(
-                            "flex w-full flex-shrink-0 items-center gap-2.5 px-2.5 py-1.5 text-sm transition-colors",
+                            "flex w-full flex-shrink-0 items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-sm transition-colors",
                             tagBrowserOpen && !activeTagToken
                               ? "bg-ui-controls/60 text-base-fg font-medium"
                               : "text-base-fg/50 hover:bg-ui-controls/30 hover:text-base-fg",
@@ -3341,7 +3341,7 @@ export const GalleryModal = React.memo(
                           </div>
                           {onLoginClick ? (
                             <button
-                              className=" bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                              className="rounded-[3px] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                               onClick={() => onLoginClick()}
                             >
                               Log in
@@ -3576,7 +3576,7 @@ export const GalleryModal = React.memo(
                           className="fixed inset-0 z-[59]"
                           onClick={() => setBulkFolderPopoverOpen(false)}
                         />
-                        <div className="absolute bottom-full mb-2 right-0 w-56 border border-ui-panel-border bg-ui-panel p-2 shadow-xl z-[60]">
+                        <div className="absolute bottom-full mb-2 right-0 w-56 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2 shadow-xl z-[60]">
                           {/* Folders */}
                           <div className="text-[11px] font-semibold uppercase tracking-wider text-base-fg/40 px-2 py-1">
                             Folders
@@ -3592,7 +3592,7 @@ export const GalleryModal = React.memo(
                               <button
                                 key={folder.id}
                                 type="button"
-                                className="flex w-full items-center gap-2.5 px-2 py-1.5 hover:bg-ui-controls/50 text-sm text-base-fg transition-colors"
+                                className="flex w-full items-center gap-2.5 rounded-[3px] px-2 py-1.5 hover:bg-ui-controls/50 text-sm text-base-fg transition-colors"
                                 onClick={() => {
                                   const ids = Array.from(bulkSelectedIds);
                                   requestFolderDrop(ids, folder.id);
@@ -3607,7 +3607,7 @@ export const GalleryModal = React.memo(
                           <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2.5 px-2 py-1.5 hover:bg-ui-controls/50 text-sm text-base-fg/70 transition-colors"
+                            className="flex w-full items-center gap-2.5 rounded-[3px] px-2 py-1.5 hover:bg-ui-controls/50 text-sm text-base-fg/70 transition-colors"
                             onClick={() => {
                               const ids = Array.from(bulkSelectedIds);
                               setBulkFolderPopoverOpen(false);
@@ -3633,7 +3633,7 @@ export const GalleryModal = React.memo(
                   )}
                   <button
                     onClick={clearBulkSelection}
-                    className="flex h-8 w-8 items-center justify-center bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg transition-colors"
                     aria-label="Clear selection"
                   >
                     <XIcon className="text-base" />

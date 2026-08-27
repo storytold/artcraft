@@ -20,12 +20,12 @@ export const ButtonIcon = ({
   ...rest
 }: ButtonIconProps) => {
   const className = twMerge(
-    "box-content flex h-8 w-8 items-center justify-center rounded-none transition-colors duration-150",
+    "box-content flex h-8 w-8 items-center justify-center rounded-[3px] transition-colors duration-150",
     bgFill
       ? "bg-ui-controls-button hover:bg-ui-controls-button/[0.75]"
       : "bg-transparent hover:bg-ui-panel/[0.4]",
     disabled && "opacity-50 hover:bg-transparent",
-    propsClassName
+    propsClassName,
   );
 
   return (

@@ -59,7 +59,9 @@ export function UserSignups() {
       if (cancelledRef.current) return;
 
       if (resp.success && resp.data) {
-        setUsers((prev) => (append ? [...prev, ...resp.data!.users] : resp.data!.users));
+        setUsers((prev) =>
+          append ? [...prev, ...resp.data!.users] : resp.data!.users,
+        );
         setNextCursor(resp.data.next_cursor);
       } else {
         setError(resp.errorMessage || "Failed to load users");
@@ -169,7 +171,9 @@ export function UserSignups() {
           onClick={handleRefresh}
           disabled={isLoading}
         >
-          <IconRefresh className={`size-4 ${isLoading ? "animate-spin" : ""}`} />
+          <IconRefresh
+            className={`size-4 ${isLoading ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
@@ -188,7 +192,8 @@ export function UserSignups() {
             All Users
             {!isLoading && (
               <span className="text-sm font-normal text-muted-foreground ml-1">
-                ({users.length}{nextCursor != null ? "+" : ""})
+                ({users.length}
+                {nextCursor != null ? "+" : ""})
               </span>
             )}
           </h3>
@@ -234,15 +239,33 @@ export function UserSignups() {
               <TableBody>
                 {Array.from({ length: 10 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="size-4 rounded-[4px]" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-36" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-20 rounded" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="size-4 rounded-[3px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-36" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -305,12 +328,21 @@ export function UserSignups() {
                       </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {user.display_name || <span className="text-muted-foreground/30">&mdash;</span>}
+                      {user.display_name || (
+                        <span className="text-muted-foreground/30">
+                          &mdash;
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
-                      <span className="text-muted-foreground">{user.email_address}</span>
+                      <span className="text-muted-foreground">
+                        {user.email_address}
+                      </span>
                       {!user.email_confirmed && (
-                        <Badge variant="outline" className="ml-2 text-[10px] text-amber-400 border-amber-400/30">
+                        <Badge
+                          variant="outline"
+                          className="ml-2 text-[10px] text-amber-400 border-amber-400/30"
+                        >
                           Unconfirmed
                         </Badge>
                       )}
@@ -330,40 +362,65 @@ export function UserSignups() {
                           {user.maybe_source}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground/30">&mdash;</span>
+                        <span className="text-muted-foreground/30">
+                          &mdash;
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-xs">
                       {user.maybe_signup_method ? (
-                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-muted-foreground"
+                        >
                           {user.maybe_signup_method}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground/30">&mdash;</span>
+                        <span className="text-muted-foreground/30">
+                          &mdash;
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-xs">
                       <div className="flex items-center gap-1.5">
                         {user.is_temporary && (
-                          <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-400 border-transparent">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-amber-500/10 text-amber-400 border-transparent"
+                          >
                             Temp
                           </Badge>
                         )}
                         {user.is_without_password && (
-                          <Badge variant="secondary" className="text-[10px] bg-orange-500/10 text-orange-400 border-transparent">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-orange-500/10 text-orange-400 border-transparent"
+                          >
                             No Password
                           </Badge>
                         )}
                         {!user.is_temporary && !user.is_without_password && (
-                          <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-transparent">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-emerald-500/10 text-emerald-400 border-transparent"
+                          >
                             Active
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">
-                      <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
-                        <a href={`/user/profile/${user.username}`} target="_blank" rel="noopener noreferrer">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <a
+                          href={`/user/profile/${user.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           <IconExternalLink className="size-3.5" />
                           View Profile
                         </a>
@@ -380,7 +437,9 @@ export function UserSignups() {
                           Loading more...
                         </div>
                       ) : (
-                        <span className="text-muted-foreground/50">Scroll for more</span>
+                        <span className="text-muted-foreground/50">
+                          Scroll for more
+                        </span>
                       )}
                     </TableCell>
                   </TableRow>

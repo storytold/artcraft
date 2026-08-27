@@ -77,6 +77,16 @@ const AUDIO_REF_MAX_DURATION_SECONDS = 600;
 
 const supports = (flag: boolean | null | undefined): boolean => flag === true;
 
+// The lib ToggleButton still carries the old glassy look (2px transparent
+// border, grey translucent blur). These overrides align the audio toggles
+// with their sibling toolbar controls (the PopoverMenu triggers): flat
+// ui-controls surface, 1px hairline border, 4px corners. Active keeps the
+// brand tint as the on-state affordance.
+const toolbarToggleClassName = (isActive: boolean): string =>
+  isActive
+    ? "rounded-[3px] border border-ui-controls-border backdrop-blur-none hover:border-ui-controls-border"
+    : "rounded-[3px] border border-ui-controls-border bg-ui-controls backdrop-blur-none hover:bg-ui-controls/80";
+
 // Store API model data alongside popover items via a lookup map
 let _modelLookup = new Map<string, OmniGenAudioModelDetails>();
 
@@ -490,6 +500,7 @@ export default function CreateAudio() {
             icon={MicOffIcon}
             activeIcon={MicOffIcon}
             label="Instrumental"
+            className={toolbarToggleClassName(ui.isInstrumental)}
             onClick={() => setUi({ isInstrumental: !ui.isInstrumental })}
           />
         </Tooltip>
@@ -506,6 +517,7 @@ export default function CreateAudio() {
             icon={MicIcon}
             activeIcon={MicIcon}
             label="Keep lyrics"
+            className={toolbarToggleClassName(ui.keepLyrics)}
             onClick={() => setUi({ keepLyrics: !ui.keepLyrics })}
           />
         </Tooltip>
@@ -522,6 +534,7 @@ export default function CreateAudio() {
             icon={RepeatIcon}
             activeIcon={RepeatIcon}
             label="Loop"
+            className={toolbarToggleClassName(ui.isLoopable)}
             onClick={() => setUi({ isLoopable: !ui.isLoopable })}
           />
         </Tooltip>
@@ -630,7 +643,7 @@ export default function CreateAudio() {
       settingsFields={
         <>
           {styleSupported && (
-            <div className="border border-ui-panel-border bg-ui-controls px-3 py-1.5">
+            <div className="rounded-[3px] border border-ui-panel-border bg-ui-controls px-3 py-1.5">
               <StylePromptRow
                 value={ui.stylePrompt}
                 onChange={setStylePrompt}

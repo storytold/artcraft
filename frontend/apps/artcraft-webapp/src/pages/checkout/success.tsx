@@ -1,4 +1,14 @@
-import { ArrowRightIcon, BoxIcon, CircleCheckIcon, DownloadIcon, ImageIcon, MonitorIcon, RocketIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BoxIcon,
+  CircleCheckIcon,
+  DownloadIcon,
+  ImageIcon,
+  MonitorIcon,
+  RocketIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
@@ -79,9 +89,7 @@ const CheckoutSuccess = () => {
             {/* Success Icon */}
             <div className="mb-6">
               <div className="w-20 h-20 mx-auto border border-white/15 bg-green-500/10 flex items-center justify-center">
-                <CircleCheckIcon
-                  
-                  className="text-5xl text-green-400" />
+                <CircleCheckIcon className="text-5xl text-green-400" />
               </div>
             </div>
 
@@ -99,9 +107,7 @@ const CheckoutSuccess = () => {
             <div className="bg-ui-controls border border-white/15 p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 bg-white/10 flex items-center justify-center">
-                  <WandSparklesIcon
-
-                    className="text-white/70 text-sm" />
+                  <WandSparklesIcon className="text-white/70 text-sm" />
                 </div>
                 <h2 className="text-lg font-medium text-white">
                   Start creating right here
@@ -124,7 +130,7 @@ const CheckoutSuccess = () => {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="group flex items-center gap-3 bg-ui-background hover:bg-white/10 border border-white/15 hover:border-white/30 px-4 py-3 transition-all"
+                    className="group flex items-center gap-3 rounded-[3px] bg-ui-background hover:bg-white/10 border border-white/15 hover:border-white/30 px-4 py-3 transition-all"
                   >
                     <DynamicIcon
                       icon={item.icon}
@@ -133,9 +139,7 @@ const CheckoutSuccess = () => {
                     <span className="text-white/90 font-medium flex-1">
                       {item.label}
                     </span>
-                    <ArrowRightIcon
-                      
-                      className="text-white/30 text-[11px] transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRightIcon className="text-white/30 text-[11px] transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 ))}
               </div>
@@ -145,9 +149,7 @@ const CheckoutSuccess = () => {
             <div className="bg-ui-controls border border-white/15 p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-white/10 flex items-center justify-center">
-                  <RocketIcon
-
-                    className="text-white/70 text-sm" />
+                  <RocketIcon className="text-white/70 text-sm" />
                 </div>
                 <h2 className="text-lg font-medium text-white">Next Steps</h2>
               </div>
@@ -177,14 +179,14 @@ const CheckoutSuccess = () => {
                   href={downloadUrl}
                   className="px-8 py-3 justify-center"
                 >
-                  <DownloadIcon  className="mr-2" />
+                  <DownloadIcon className="mr-2" />
                   Download ArtCraft
                 </Button>
               </div>
             ) : (
               <div className="bg-[#431407] border border-orange-900/50 p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
-                  <MonitorIcon  className="text-2xl" />
+                  <MonitorIcon className="text-2xl" />
                 </div>
                 ArtCraft is a desktop application. <br />
                 Please head to your computer to download and start creating.

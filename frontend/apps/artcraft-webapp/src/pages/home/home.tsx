@@ -147,7 +147,7 @@ export function Home() {
             <Reveal key={app.href} y={20}>
               <Link
                 to={app.href}
-                className={`group relative flex h-full border !rounded-[4px] border-white/10 bg-white/5 p-5 transition-colors duration-150 ${app.hoverBorder}`}
+                className={`group relative flex h-full border rounded-[3px] border-white/10 bg-white/5 p-5 transition-colors duration-150 ${app.hoverBorder}`}
               >
                 <div className="relative flex w-full items-start gap-4">
                   <div
@@ -173,7 +173,7 @@ export function Home() {
                           </span>
                         )}
                       </div>
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border border-white/15 text-white/40 transition-colors duration-150 group-hover:border-white/40 group-hover:text-white">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] border border-white/15 text-white/40 transition-colors duration-150 group-hover:border-white/40 group-hover:text-white">
                         <ArrowRightIcon className="text-xs" />
                       </span>
                     </div>

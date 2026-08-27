@@ -62,7 +62,7 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          className="w-full border border-ui-panel-border bg-ui-controls/40 px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
+          className="w-full rounded-[3px] border border-ui-panel-border bg-ui-controls/40 px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
           autoFocus
         />
         <div className="flex justify-end gap-2">

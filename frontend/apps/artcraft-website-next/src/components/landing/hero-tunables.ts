@@ -29,33 +29,34 @@ export const physicsTuner = defineTunables("physics", "Physics", {
 });
 
 export const lightTuner = defineTunables("light", "Cursor & Light", {
-  intensityDark: { label: "Cursor int (dark)", min: 0, max: 220000, step: 1000, default: 58000 },
+  intensityDark: { label: "Cursor int (dark)", min: 0, max: 220000, step: 1000, default: 30000 },
   intensityLight: { label: "Cursor int (light)", min: 0, max: 220000, step: 1000, default: 30000 },
   idleDim: { label: "Idle dim", min: 0, max: 1, step: 0.05, default: 0.3 },
   lightZ: { label: "Light z", min: 30, max: 500, step: 5, default: 130 },
   lightRange: { label: "Light range", min: 100, max: 3000, step: 50, default: 900 },
-  keyIntensity: { label: "Back key (dark)", min: 0, max: 8, step: 0.1, default: 2.2 },
+  keyIntensity: { label: "Key (dark)", min: 0, max: 8, step: 0.1, default: 1.05 },
   counterIntensity: { label: "Counter rim (dark)", min: 0, max: 4, step: 0.05, default: 0.7 },
-  frontFill: { label: "Front fill (dark)", min: 0, max: 1, step: 0.01, default: 0.06 },
-  ambientDark: { label: "Ambient (dark)", min: 0, max: 1, step: 0.01, default: 0.05 },
+  frontFill: { label: "Front fill (dark)", min: 0, max: 1, step: 0.01, default: 0.3 },
+  ambientDark: { label: "Ambient (dark)", min: 0, max: 1, step: 0.01, default: 0.4 },
   ambientLight: { label: "Ambient (light)", min: 0, max: 2, step: 0.05, default: 0.55 },
   dirLight: { label: "Key (light)", min: 0, max: 3, step: 0.05, default: 0.75 },
 });
 
 export const materialTuner = defineTunables("material", "Material", {
-  roughnessDark: { label: "Roughness (dark)", min: 0, max: 1, step: 0.02, default: 0.42 },
-  metalnessDark: { label: "Metalness (dark)", min: 0, max: 1, step: 0.02, default: 0.5 },
-  clearcoat: { label: "Clearcoat (dark)", min: 0, max: 1, step: 0.02, default: 0.9 },
-  clearcoatRoughness: { label: "Coat rough (dark)", min: 0, max: 1, step: 0.02, default: 0.22 },
-  roughnessLight: { label: "Roughness (light)", min: 0, max: 1, step: 0.02, default: 0.3 },
-  metalnessLight: { label: "Metalness (light)", min: 0, max: 1, step: 0.02, default: 0.15 },
-  envLight: { label: "Env int (light)", min: 0, max: 2, step: 0.05, default: 0.55 },
+  blockFill: { label: "Block fill ×", min: 1.2, max: 2.4, step: 0.02, default: 1.7 },
+  roughnessDark: { label: "Roughness (dark)", min: 0, max: 1, step: 0.02, default: 0.8 },
+  metalnessDark: { label: "Metalness (dark)", min: 0, max: 1, step: 0.02, default: 0 },
+  clearcoat: { label: "Clearcoat (dark)", min: 0, max: 1, step: 0.02, default: 0 },
+  clearcoatRoughness: { label: "Coat rough (dark)", min: 0, max: 1, step: 0.02, default: 0.25 },
+  roughnessLight: { label: "Roughness (light)", min: 0, max: 1, step: 0.02, default: 0.55 },
+  metalnessLight: { label: "Metalness (light)", min: 0, max: 1, step: 0.02, default: 0.05 },
+  envLight: { label: "Env int (light)", min: 0, max: 2, step: 0.05, default: 0.45 },
   accentShare: { label: "Accent share", min: 0, max: 0.3, step: 0.005, default: 0.05 },
 });
 
 export const haloTuner = defineTunables("halo", "Halo", {
   size: { label: "Size px", min: 200, max: 1800, step: 20, default: 720 },
-  alphaDark: { label: "Alpha (dark)", min: 0, max: 1, step: 0.02, default: 0.5 },
+  alphaDark: { label: "Alpha (dark)", min: 0, max: 1, step: 0.02, default: 0.1 },
   alphaLight: { label: "Alpha (light)", min: 0, max: 0.6, step: 0.01, default: 0.14 },
   z: { label: "Z offset", min: -400, max: 0, step: 5, default: -90 },
   falloff: { label: "Falloff", min: 0.5, max: 6, step: 0.1, default: 2.6 },

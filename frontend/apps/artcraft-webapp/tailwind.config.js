@@ -179,7 +179,7 @@ module.exports = {
       ui: {
         // Brutalist system: near-black surfaces with white/15 hairline
         // borders, aligned with artcraft-website + artcraft-website-next.
-        background: "#0b0b0c",
+        background: "#121316",
         panel: "#0b0b0c",
         "panel-border": "rgb(255 255 255 / 0.15)",
         border: "rgb(255 255 255 / 0.15)",

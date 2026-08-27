@@ -15,7 +15,14 @@ import {
 } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@storyteller/ui-button";
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CircleCheckIcon, InfoIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  CircleCheckIcon,
+  InfoIcon,
+} from "lucide-react";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -136,7 +143,7 @@ function PortalTooltip({
               zIndex: 9999,
             }}
             className={twMerge(
-              "pointer-events-auto rounded-none bg-ui-panel p-3 border border-ui-panel-border text-base-fg",
+              "pointer-events-auto rounded-[3px] bg-ui-panel p-3 border border-ui-panel-border text-base-fg",
               className,
             )}
           >
@@ -237,7 +244,7 @@ function InfoHint({ content }: { content: ReactNode }) {
           if (!pinnedRef.current) setOpen(false);
         }}
       >
-        <InfoIcon  className="h-3.5 w-3.5" />
+        <InfoIcon className="h-3.5 w-3.5" />
       </button>
       {open &&
         createPortal(
@@ -253,7 +260,7 @@ function InfoHint({ content }: { content: ReactNode }) {
               transform: "translate(-50%, -100%)",
               zIndex: 10000,
             }}
-            className="pointer-events-auto rounded-none border border-ui-panel-border bg-ui-panel px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg"
+            className="pointer-events-auto rounded-[3px] border border-ui-panel-border bg-ui-panel px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg"
             onClick={(e) => e.stopPropagation()}
             onMouseEnter={() => {
               if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -349,7 +356,7 @@ function RichListRow({
         if (!item.disabled) onClick?.();
       }}
       className={twMerge(
-        "group flex cursor-pointer items-center gap-3 rounded-none px-2 py-2 transition-colors",
+        "group flex cursor-pointer items-center gap-3 rounded-[3px] px-2 py-2 transition-colors",
         item.selected ? "bg-ui-controls/70" : "hover:bg-ui-controls/50",
         !item.selected && active ? "bg-ui-controls/50" : "",
         item.disabled ? "!cursor-not-allowed opacity-50" : "",
@@ -404,10 +411,8 @@ function RichListRow({
       {rightNode ??
         (item.selected &&
           (item.selectedRight ?? (
-            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-none bg-white">
-              <CheckIcon
-
-                className="text-[11px] font-bold text-black" />
+            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] bg-white">
+              <CheckIcon className="text-[11px] font-bold text-black" />
             </span>
           )))}
     </div>
@@ -629,7 +634,7 @@ function SubmenuFlyout({
               transform: "translateY(-50%)",
               zIndex: 9999,
             }}
-            className="pointer-events-auto w-[340px] rounded-none border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg"
+            className="pointer-events-auto w-[340px] rounded-[3px] border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg"
           >
             <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
               {item.label}
@@ -643,9 +648,7 @@ function SubmenuFlyout({
                   canScrollUp ? "opacity-100" : "opacity-0",
                 )}
               >
-                <ChevronUpIcon
-                  
-                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+                <ChevronUpIcon className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
               </div>
               <div
                 ref={scrollRef}
@@ -695,9 +698,7 @@ function SubmenuFlyout({
                   canScrollDown ? "opacity-100" : "opacity-0",
                 )}
               >
-                <ChevronDownIcon
-                  
-                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+                <ChevronDownIcon className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
               </div>
             </div>
           </div>,
@@ -850,7 +851,7 @@ export const PopoverMenu = ({
   };
 
   const className = twMerge(
-    "text-sm font-medium rounded-none px-2.5 py-1.5",
+    "text-sm font-medium rounded-[3px] px-2.5 py-1.5",
     "flex gap-2 items-center justify-center outline-none",
     "transition-colors duration-150",
     "bg-ui-controls px-3 text-base-fg hover:bg-ui-controls/80 border border-ui-controls-border",
@@ -1051,9 +1052,7 @@ export const PopoverMenu = ({
                         <span className="opacity-70">{triggerLabel}</span>
                         <div className="flex items-center gap-2">
                           <span className="truncate">{selectedItem.label}</span>
-                          <ChevronUpIcon
-                            
-                            className="text-sm" />
+                          <ChevronUpIcon className="text-sm" />
                         </div>
                       </div>
                     ) : null}
@@ -1091,7 +1090,7 @@ export const PopoverMenu = ({
                   <div
                     ref={panelContentRef}
                     className={twMerge(
-                      "z-10 min-w-48 mt-2 rounded-none bg-ui-panel p-1.5 border border-ui-panel-border overflow-visible",
+                      "z-10 min-w-48 mt-2 rounded-[3px] bg-ui-panel p-1.5 border border-ui-panel-border overflow-visible",
                       position === "top" ? "mb-2" : "mt-2",
                       panelClassName,
                     )}
@@ -1130,9 +1129,7 @@ export const PopoverMenu = ({
                             canScrollUp ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <ChevronUpIcon
-                            
-                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+                          <ChevronUpIcon className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
                         </div>
                         <div
                           ref={scrollContainerRef}
@@ -1164,9 +1161,7 @@ export const PopoverMenu = ({
                                       item={item}
                                       active={openTooltipIdx === index}
                                       rightNode={
-                                        <ChevronRightIcon
-                                          
-                                          className="ml-1 shrink-0 text-xs text-base-fg/50" />
+                                        <ChevronRightIcon className="ml-1 shrink-0 text-xs text-base-fg/50" />
                                       }
                                     />
                                   </SubmenuFlyout>
@@ -1231,18 +1226,14 @@ export const PopoverMenu = ({
                             canScrollDown ? "opacity-100" : "opacity-0",
                           )}
                         >
-                          <ChevronDownIcon
-                            
-                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+                          <ChevronDownIcon className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
                         </div>
                       </div>
                     ) : mode === "hoverSelect" ? (
                       <div className="relative flex flex-col text-sm text-base-fg overflow-visible">
                         {maxListHeight && canScrollUp && (
                           <div className="absolute top-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-b from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
-                            <ChevronUpIcon
-                              
-                              className="text-base-fg/60 text-xs animate-bounce" />
+                            <ChevronUpIcon className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
                         <div
@@ -1280,7 +1271,7 @@ export const PopoverMenu = ({
                                   }
                                 }}
                                 className={twMerge(
-                                  "group flex cursor-pointer items-start gap-2 rounded-none px-2 py-2 transition-all",
+                                  "group flex cursor-pointer items-start gap-2 rounded-[3px] px-2 py-2 transition-all",
                                   item.selected
                                     ? "bg-white/10 border-l-2 border-white"
                                     : "hover:bg-ui-controls/50",
@@ -1375,7 +1366,7 @@ export const PopoverMenu = ({
                                       position="right"
                                       delay={item.tooltipDelayMs ?? 300}
                                       interactive
-                                      className="!pointer-events-auto z-50 min-w-48 rounded-none bg-ui-panel p-1.5 border border-ui-panel-border"
+                                      className="!pointer-events-auto z-50 min-w-48 rounded-[3px] bg-ui-panel p-1.5 border border-ui-panel-border"
                                       onOpenChange={(open) =>
                                         setOpenTooltipIdx((prev) =>
                                           open
@@ -1401,9 +1392,7 @@ export const PopoverMenu = ({
                         </div>
                         {maxListHeight && canScrollDown && (
                           <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-t from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
-                            <ChevronDownIcon
-                              
-                              className="text-base-fg/60 text-xs animate-bounce" />
+                            <ChevronDownIcon className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
                         {showAddButton && onAdd && (
@@ -1440,7 +1429,7 @@ export const PopoverMenu = ({
                                 position="right"
                                 delay={item.tooltipDelayMs ?? 1000}
                                 interactive
-                                className="!pointer-events-auto z-50 min-w-48 rounded-none bg-ui-panel p-1.5 border border-ui-panel-border"
+                                className="!pointer-events-auto z-50 min-w-48 rounded-[3px] bg-ui-panel p-1.5 border border-ui-panel-border"
                                 onOpenChange={(open) =>
                                   setOpenTooltipIdx((prev) =>
                                     open ? index : prev === index ? null : prev,
@@ -1450,6 +1439,7 @@ export const PopoverMenu = ({
                                 <Button
                                   className={twMerge(
                                     "flex w-full items-center shadow-none justify-between px-1.5",
+                                    "font-sans text-sm font-medium normal-case tracking-normal",
                                     "bg-transparent hover:bg-ui-controls/60",
                                     openTooltipIdx === index
                                       ? "bg-ui-controls/60"
@@ -1504,16 +1494,14 @@ export const PopoverMenu = ({
                                   {mode === "toggle" && (
                                     <span
                                       className={twMerge(
-                                        "ml-2 h-5 w-5 rounded-none border flex items-center justify-center transition-colors",
+                                        "ml-2 h-5 w-5 rounded-[3px] border flex items-center justify-center transition-colors",
                                         item.selected
                                           ? "border-white bg-white"
                                           : "border-transparent bg-transparent",
                                       )}
                                     >
                                       {item.selected && (
-                                        <CheckIcon
-                                          
-                                          className="text-black text-xs font-bold" />
+                                        <CheckIcon className="text-black text-xs font-bold" />
                                       )}
                                     </span>
                                   )}
@@ -1523,6 +1511,7 @@ export const PopoverMenu = ({
                               <Button
                                 className={twMerge(
                                   "flex w-full items-center shadow-none justify-between px-1.5",
+                                  "font-sans text-sm font-medium normal-case tracking-normal",
                                   "bg-transparent hover:bg-ui-controls/60",
                                   mode === "toggle" && item.selected
                                     ? "hover:bg-ui-controls/80"
@@ -1567,16 +1556,14 @@ export const PopoverMenu = ({
                                 {mode === "toggle" && (
                                   <span
                                     className={twMerge(
-                                      "ml-2 h-5 w-5 rounded-none border flex items-center justify-center transition-colors",
+                                      "ml-2 h-5 w-5 rounded-[3px] border flex items-center justify-center transition-colors",
                                       item.selected
                                         ? "border-white bg-white"
                                         : "border-transparent bg-transparent",
                                     )}
                                   >
                                     {item.selected && (
-                                      <CheckIcon
-                                        
-                                        className="text-black text-xs font-bold" />
+                                      <CheckIcon className="text-black text-xs font-bold" />
                                     )}
                                   </span>
                                 )}

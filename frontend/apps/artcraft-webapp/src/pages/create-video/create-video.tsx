@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { AudioLinesIcon, ClockIcon, InfoIcon, SparklesIcon } from "lucide-react";
+import {
+  AudioLinesIcon,
+  ClockIcon,
+  InfoIcon,
+  SparklesIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
@@ -1488,9 +1493,7 @@ export default function CreateVideo() {
       banner={
         requiresImageInput ? (
           <div className="flex items-start gap-2.5 border border-amber-500/40 bg-ui-panel px-3.5 py-2.5 text-xs text-amber-100">
-            <InfoIcon
-              
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
+            <InfoIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
             <span>
               This model can&apos;t generate from text alone — add a starting
               frame to animate your prompt.
@@ -1566,9 +1569,9 @@ export default function CreateVideo() {
             />
           )}
           {hasSound && (
-            <div className="flex items-center justify-between border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
+            <div className="flex items-center justify-between rounded-[3px] border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
               <span className="flex items-center gap-2 text-sm font-medium text-base-fg/70">
-                <AudioLinesIcon  className="h-4 w-4" />
+                <AudioLinesIcon className="h-4 w-4" />
                 Audio
               </span>
               <ToggleButton
@@ -1584,7 +1587,7 @@ export default function CreateVideo() {
             <>
               <MobileFieldButton
                 label="Output"
-                icon={<ClockIcon  className="h-4 w-4" />}
+                icon={<ClockIcon className="h-4 w-4" />}
                 value={outputSummary}
                 onClick={() => setIsOutputDrawerOpen(true)}
               />
@@ -1727,9 +1730,7 @@ export default function CreateVideo() {
           )} */}
           {requiresImageInput && (
             <div className="mb-2 flex items-start gap-2.5 border border-amber-500/40 bg-ui-panel px-3.5 py-2.5 text-xs text-amber-100">
-              <InfoIcon
-                
-                className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
+              <InfoIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
               <span>
                 This model can&apos;t generate from text alone — add a starting
                 frame to animate your prompt.
@@ -1891,11 +1892,7 @@ export default function CreateVideo() {
                     <PopoverMenu
                       mode="default"
                       panelTitle="Duration"
-                      triggerIcon={
-                        <ClockIcon
-                          
-                          className="h-3.5 w-3.5" />
-                      }
+                      triggerIcon={<ClockIcon className="h-3.5 w-3.5" />}
                       triggerLabel={`${effectiveDuration}s`}
                     >
                       <div className="w-[min(16rem,calc(100vw-2rem))] pb-0.5">

@@ -42,7 +42,8 @@ interface PricingContentProps {
 export function PricingContent({ title, subtitle }: PricingContentProps) {
   const subscriptionStore = useSubscriptionState();
   const hasActiveSub = subscriptionStore.hasPaidPlan();
-  const activePlanId = subscriptionStore.subscriptionInfo?.productSlug || "free";
+  const activePlanId =
+    subscriptionStore.subscriptionInfo?.productSlug || "free";
 
   const [billingType, setBillingType] = useState("yearly");
   const isYearly = billingType === "yearly";
@@ -58,7 +59,7 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
 
   const handleUpdatePaymentMethod = async () => {
     await invoke(
-      "storyteller_open_customer_portal_update_payment_method_command"
+      "storyteller_open_customer_portal_update_payment_method_command",
     );
   };
 
@@ -170,7 +171,7 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
             tabs={billingTabs}
             activeTab={billingType}
             onTabChange={setBillingType}
-            className="w-fit rounded-none border border-white/15 bg-white/5"
+            className="w-fit rounded-[3px] border border-white/15 bg-white/5"
             tabClassName="w-24 text-md"
           />
           <span className="pointer-events-none absolute -left-6 -top-3 rounded-none bg-primary px-3 py-0.5 text-sm font-medium text-white">
@@ -403,7 +404,7 @@ const Feature = ({
           : "border border-white/20 text-transparent",
       )}
     >
-      {included && <CheckIcon  className="text-xs" />}
+      {included && <CheckIcon className="text-xs" />}
     </div>
     <span
       className={twMerge(

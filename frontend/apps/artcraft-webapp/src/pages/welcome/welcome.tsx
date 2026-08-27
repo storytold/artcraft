@@ -1,4 +1,13 @@
-import { ArrowRightIcon, BoxIcon, CircleCheckIcon, DownloadIcon, ImageIcon, MonitorIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BoxIcon,
+  CircleCheckIcon,
+  DownloadIcon,
+  ImageIcon,
+  MonitorIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Link } from "react-router-dom";
@@ -21,9 +30,7 @@ const Welcome = () => {
         {/* Success Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 bg-white/5 border border-white/15 px-6 py-3 mb-6">
-            <CircleCheckIcon
-
-              className="text-xl text-green-400" />
+            <CircleCheckIcon className="text-xl text-green-400" />
             <span className="text-white font-medium">
               Account created successfully!
             </span>
@@ -53,9 +60,7 @@ const Welcome = () => {
           <div className="bg-[#101014] border border-white/15 p-8 md:p-10">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-white/10 flex items-center justify-center">
-                <WandSparklesIcon
-
-                  className="text-white/70 text-lg" />
+                <WandSparklesIcon className="text-white/70 text-lg" />
               </div>
               <h2 className="text-2xl font-medium text-white">
                 Start creating right here
@@ -78,7 +83,7 @@ const Welcome = () => {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="group flex items-center gap-3 bg-ui-controls hover:bg-white/10 border border-white/15 hover:border-white/30 px-4 py-3 transition-all"
+                  className="group flex items-center gap-3 rounded-[3px] bg-ui-controls hover:bg-white/10 border border-white/15 hover:border-white/30 px-4 py-3 transition-all"
                 >
                   <DynamicIcon
                     icon={item.icon}
@@ -87,9 +92,7 @@ const Welcome = () => {
                   <span className="text-white/90 font-medium flex-1">
                     {item.label}
                   </span>
-                  <ArrowRightIcon
-                    
-                    className="text-white/30 text-[11px] transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRightIcon className="text-white/30 text-[11px] transition-transform group-hover:translate-x-0.5" />
                 </Link>
               ))}
             </div>
@@ -101,9 +104,7 @@ const Welcome = () => {
           <div className="bg-[#101014] border border-white/15 p-8 md:p-10">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-white/10 flex items-center justify-center">
-                <MonitorIcon
-
-                  className="text-white/70 text-lg" />
+                <MonitorIcon className="text-white/70 text-lg" />
               </div>
               <h2 className="text-2xl font-medium text-white">
                 Want the desktop app too?
@@ -147,7 +148,7 @@ const Welcome = () => {
                       href={downloadUrl}
                       className="bg-white text-black hover:bg-white/80 px-6 py-2.5"
                     >
-                      <DownloadIcon  className="mr-2" />
+                      <DownloadIcon className="mr-2" />
                       Download for {isMacOs ? "Mac" : "Windows"}
                     </Button>
                     <div className="flex gap-4 text-sm font-medium text-white/30">
@@ -174,7 +175,7 @@ const Welcome = () => {
             {isMobile && (
               <div className="bg-[#431407] border border-orange-900/50 p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
-                  <MonitorIcon  className="text-2xl" />
+                  <MonitorIcon className="text-2xl" />
                 </div>
                 ArtCraft is a powerful desktop experience. <br />
                 Please head to your computer to download and install.

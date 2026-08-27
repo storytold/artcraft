@@ -35,9 +35,9 @@ export const FailedRow = memo(function FailedRow({
   const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
+    <div className="flex items-center gap-3 px-2.5 py-2">
       {/* Error thumbnail — ref image (if any) faded behind the warning icon */}
-      <div className="relative flex size-[100px] shrink-0 items-center justify-center overflow-hidden rounded-md bg-red-500/10 leading-none">
+      <div className="relative flex size-[100px] shrink-0 items-center justify-center overflow-hidden bg-red-500/10 leading-none">
         {refImageUrl && (
           <img
             src={refImageUrl}
@@ -46,9 +46,7 @@ export const FailedRow = memo(function FailedRow({
             className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-10"
           />
         )}
-        <CircleAlertIcon
-          
-          className="relative text-2xl text-red-400" />
+        <CircleAlertIcon className="relative text-2xl text-red-400" />
       </div>
 
       {/* Reason + prompt + model */}
@@ -87,7 +85,7 @@ export const FailedRow = memo(function FailedRow({
       <button
         type="button"
         onClick={() => onDismiss(id)}
-        className="flex shrink-0 items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
+        className="flex shrink-0 items-center gap-1.5 rounded-[3px] bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
       >
         <XIcon />
         Dismiss

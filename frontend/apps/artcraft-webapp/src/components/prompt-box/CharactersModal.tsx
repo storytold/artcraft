@@ -1,16 +1,25 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { ArrowLeftIcon, EyeIcon, LoaderCircleIcon, PenIcon, PlusIcon, Trash2Icon, UploadIcon, UsersIcon, XIcon } from "lucide-react";
-import { twMerge } from "tailwind-merge";
 import {
-  CharactersApi,
-  Character,
-  MediaUploadApi,
-} from "@storyteller/api";
+  ArrowLeftIcon,
+  EyeIcon,
+  LoaderCircleIcon,
+  PenIcon,
+  PlusIcon,
+  Trash2Icon,
+  UploadIcon,
+  UsersIcon,
+  XIcon,
+} from "lucide-react";
+import { twMerge } from "tailwind-merge";
+import { CharactersApi, Character, MediaUploadApi } from "@storyteller/api";
 import { toast } from "../toast/toast";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@storyteller/ui-button";
-import { useCharactersStore, DeckPreviewModal } from "@storyteller/ui-promptbox";
+import {
+  useCharactersStore,
+  DeckPreviewModal,
+} from "@storyteller/ui-promptbox";
 import { useIsMobile } from "../ui/use-mobile";
 import { SettingsDrawer } from "./mobile/SettingsDrawer";
 
@@ -359,7 +368,7 @@ const CharacterListView = ({
             className="flex flex-col items-center justify-center gap-2 overflow-hidden border-2 border-dashed border-white/15 bg-white/[0.05] text-white/60 transition-colors hover:border-white/30 hover:text-white/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-              <PlusIcon  className="text-lg" />
+              <PlusIcon className="text-lg" />
               <span className="text-sm font-medium">Create New</span>
             </div>
           </button>
@@ -379,13 +388,11 @@ const CharacterListView = ({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-white/20">
-                    <UsersIcon  className="text-2xl" />
+                    <UsersIcon className="text-2xl" />
                   </div>
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
-                  <LoaderCircleIcon
-                    
-                    className="text-lg text-white/80 animate-spin" />
+                  <LoaderCircleIcon className="text-lg text-white/80 animate-spin" />
                   <span className="text-xs font-medium text-white/80">
                     Creating...
                   </span>
@@ -421,9 +428,7 @@ const CharacterListView = ({
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-white/20">
-                        <UsersIcon
-                          
-                          className="text-2xl" />
+                        <UsersIcon className="text-2xl" />
                       </div>
                     )}
                   </div>
@@ -447,7 +452,7 @@ const CharacterListView = ({
                         title="View full size"
                         className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                       >
-                        <EyeIcon  className="text-[10px]" />
+                        <EyeIcon className="text-[10px]" />
                       </button>
                     )}
                     {isUserCreated && (
@@ -459,9 +464,7 @@ const CharacterListView = ({
                           }}
                           className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                         >
-                          <PenIcon
-                            
-                            className="text-[10px]" />
+                          <PenIcon className="text-[10px]" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -470,9 +473,7 @@ const CharacterListView = ({
                           }}
                           className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                         >
-                          <Trash2Icon
-                            
-                            className="text-[10px]" />
+                          <Trash2Icon className="text-[10px]" />
                         </button>
                       </>
                     )}
@@ -492,9 +493,8 @@ const CharacterListView = ({
               Delete character?
             </h3>
             <p className="mb-5 text-sm text-white/70">
-              This will permanently delete{" "}
-              <strong>{confirmDelete.name}</strong>. This action cannot be
-              undone.
+              This will permanently delete <strong>{confirmDelete.name}</strong>
+              . This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2">
               <Button
@@ -617,7 +617,10 @@ const EditCharacterView = ({
 
         {/* Name input */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="edit-character-name" className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
+          <label
+            htmlFor="edit-character-name"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+          >
             Name
           </label>
           <input
@@ -632,8 +635,12 @@ const EditCharacterView = ({
 
         {/* Description input */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="edit-character-description" className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
-            Description <span className="font-normal text-white/40">(optional)</span>
+          <label
+            htmlFor="edit-character-description"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+          >
+            Description{" "}
+            <span className="font-normal text-white/40">(optional)</span>
           </label>
           <textarea
             id="edit-character-description"
@@ -857,7 +864,7 @@ const NewCharacterView = ({
         <div
           ref={dropZoneRef}
           className={twMerge(
-            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center border-2 border-dashed border-white/15 bg-white/[0.05] transition-colors overflow-hidden",
+            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-white/15 bg-white/[0.05] transition-colors overflow-hidden",
             isDragging && "border-white/60 bg-white/10",
           )}
           onDragEnter={handleDragEnter}
@@ -878,9 +885,7 @@ const NewCharacterView = ({
               />
               {!images[0]!.mediaToken && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <LoaderCircleIcon
-                    
-                    className="text-white animate-spin" />
+                  <LoaderCircleIcon className="text-white animate-spin" />
                 </div>
               )}
               <button
@@ -890,14 +895,12 @@ const NewCharacterView = ({
                 }}
                 className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
-                <XIcon  className="text-sm" />
+                <XIcon className="text-sm" />
               </button>
             </div>
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
-              <UploadIcon
-                
-                className="mb-2 text-xl text-white/40" />
+              <UploadIcon className="mb-2 text-xl text-white/40" />
               <p className="text-sm">Upload reference image</p>
               <p className="mb-3 text-xs text-white/40">
                 Click or drag an image here
@@ -916,7 +919,10 @@ const NewCharacterView = ({
 
         {/* Name input */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="character-name" className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
+          <label
+            htmlFor="character-name"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+          >
             Name
           </label>
           <input
@@ -931,8 +937,12 @@ const NewCharacterView = ({
 
         {/* Description input */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="character-description" className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
-            Description <span className="font-normal text-white/40">(optional)</span>
+          <label
+            htmlFor="character-description"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+          >
+            Description{" "}
+            <span className="font-normal text-white/40">(optional)</span>
           </label>
           <textarea
             id="character-description"

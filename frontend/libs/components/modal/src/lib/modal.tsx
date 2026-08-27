@@ -147,19 +147,13 @@ const ExpandButton = ({ className, size = "md" }: ExpandButtonProps) => {
       aria-label={expanded ? "Restore modal size" : "Expand modal"}
       onClick={toggleExpanded}
       className={twMerge(
-        "flex items-center justify-center rounded-none bg-black/40 text-white/60 transition-colors hover:bg-white hover:text-black",
+        "flex items-center justify-center rounded-[3px] bg-black/40 text-white/60 transition-colors hover:bg-white hover:text-black",
         sizeClasses[size],
         "relative z-[70]",
         className,
       )}
     >
-      <DynamicIcon
-        icon={
-          expanded
-            ? Minimize2Icon
-            : Maximize2Icon
-        }
-      />
+      <DynamicIcon icon={expanded ? Minimize2Icon : Maximize2Icon} />
     </button>
   );
 };

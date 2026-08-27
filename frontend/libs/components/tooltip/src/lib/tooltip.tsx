@@ -175,7 +175,8 @@ export const Tooltip = ({
       // in Chromium/WebKit (our glass surfaces use backdrop-blur), so a fixed
       // tooltip inside one would otherwise be positioned/clipped incorrectly.
       const backdropFilter =
-        cs.backdropFilter || (cs as unknown as Record<string, string>)["webkitBackdropFilter"];
+        cs.backdropFilter ||
+        (cs as unknown as Record<string, string>)["webkitBackdropFilter"];
       if (
         cs.transform !== "none" ||
         cs.willChange === "transform" ||
@@ -342,54 +343,54 @@ export const Tooltip = ({
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
     >
-        <div
-          ref={setTooltipRef}
-          {...(portal ? { "data-modal-outside-safe": "" } : {})}
-          onPointerEnter={() => interactive && setIsHoveringTooltip(true)}
-          onPointerLeave={() => interactive && setIsHoveringTooltip(false)}
-          onClick={() => {
-            if (closeOnClick) {
-              setIsShowing(false);
-            }
-          }}
-          style={{
-            ...getStyleForPosition(),
-            transitionDelay: `${delay}ms`,
-            transitionProperty: "opacity",
-            transitionDuration: "200ms",
-            transitionTimingFunction: "ease-out",
-            zIndex,
-          }}
-          className={twMerge(
-            isFixed ? "fixed" : "absolute",
-            "w-max rounded-none bg-ui-panel border border-ui-panel-border",
-            interactive
-              ? "pointer-events-auto p-3"
-              : "px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] pointer-events-none",
-            "text-base-fg",
-            className ? className : "",
-          )}
-        >
-          {interactive ? (
-            content
-          ) : (
-            <div className="flex flex-col gap-1">
-              {content}
-              {imageSrc && (
-                <img
-                  src={imageSrc}
-                  alt="tooltip"
-                  className="mb-1 aspect-square w-56 rounded-none"
-                />
-              )}
-              {description && (
-                <p className="font-sans text-xs font-normal normal-case tracking-normal text-base-fg/80">
-                  {description}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+      <div
+        ref={setTooltipRef}
+        {...(portal ? { "data-modal-outside-safe": "" } : {})}
+        onPointerEnter={() => interactive && setIsHoveringTooltip(true)}
+        onPointerLeave={() => interactive && setIsHoveringTooltip(false)}
+        onClick={() => {
+          if (closeOnClick) {
+            setIsShowing(false);
+          }
+        }}
+        style={{
+          ...getStyleForPosition(),
+          transitionDelay: `${delay}ms`,
+          transitionProperty: "opacity",
+          transitionDuration: "200ms",
+          transitionTimingFunction: "ease-out",
+          zIndex,
+        }}
+        className={twMerge(
+          isFixed ? "fixed" : "absolute",
+          "w-max rounded-[3px] bg-ui-panel border border-ui-panel-border",
+          interactive
+            ? "pointer-events-auto p-3"
+            : "px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] pointer-events-none",
+          "text-base-fg",
+          className ? className : "",
+        )}
+      >
+        {interactive ? (
+          content
+        ) : (
+          <div className="flex flex-col gap-1">
+            {content}
+            {imageSrc && (
+              <img
+                src={imageSrc}
+                alt="tooltip"
+                className="mb-1 aspect-square w-56 rounded-none"
+              />
+            )}
+            {description && (
+              <p className="font-sans text-xs font-normal normal-case tracking-normal text-base-fg/80">
+                {description}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </Transition>
   );
 

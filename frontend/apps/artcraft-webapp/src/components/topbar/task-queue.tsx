@@ -1,6 +1,17 @@
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, RotateCwIcon, Trash2Icon, XIcon } from "lucide-react";
+import {
+  BombIcon,
+  BrushIcon,
+  CheckIcon,
+  CircleAlertIcon,
+  CopyIcon,
+  ListChecksIcon,
+  LoaderCircleIcon,
+  RotateCwIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -259,9 +270,9 @@ const InProgressCard = ({
       <div className="flex items-center gap-2.5">
         <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-ui-controls">
           <LoaderCircleIcon
-            
             className="animate-spin text-base-fg/60"
-            size="lg" />
+            size="lg"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
@@ -406,10 +417,7 @@ const FailedCard = ({
     <div className="p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
         <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-red-500/10">
-          <CircleAlertIcon
-            
-            className="text-red-400"
-            size="lg" />
+          <CircleAlertIcon className="text-red-400" size="lg" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
@@ -1064,7 +1072,7 @@ export const TaskQueue = () => {
                   className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
                   onClick={() => handleClearFailed()}
                 >
-                  <XIcon  className="mr-1" />
+                  <XIcon className="mr-1" />
                   Clear failed
                 </button>
               </div>
@@ -1087,7 +1095,7 @@ export const TaskQueue = () => {
                   className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
                   onClick={() => handleClearCompleted()}
                 >
-                  <XIcon  className="mr-1" />
+                  <XIcon className="mr-1" />
                   Clear completed
                 </button>
               </div>
@@ -1128,17 +1136,15 @@ export const TaskQueue = () => {
           )}
           <PopoverMenu
             mode="default"
-            buttonClassName="h-8 w-8 !p-0 relative bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/80 rounded-none shadow-none"
-            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-[#101014] border border-white/15 mt-2 rounded-none"
+            buttonClassName="h-8 w-8 !p-0 relative bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/80 rounded-[3px] shadow-none"
+            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-[#101014] border border-white/15 mt-2 rounded-[3px]"
             position="bottom"
             align="end"
             triggerIcon={
               inProgressCount > 0 ? (
-                <LoaderCircleIcon
-                  
-                  className="animate-spin text-[11px]" />
+                <LoaderCircleIcon className="animate-spin text-[11px]" />
               ) : (
-                <ListChecksIcon  className="text-[11px]" />
+                <ListChecksIcon className="text-[11px]" />
               )
             }
             onOpenChange={handleOpenChange}
@@ -1183,28 +1189,28 @@ export const TaskQueue = () => {
                   className="flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
-                  <BrushIcon  className="mr-1.5" />
+                  <BrushIcon className="mr-1.5" />
                   Clear completed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
+                  <Trash2Icon className="mr-1.5" />
                   Clear stale
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
+                  <Trash2Icon className="mr-1.5" />
                   Clear failed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
-                  <BombIcon  className="mr-1.5" />
+                  <BombIcon className="mr-1.5" />
                   Remove all
                 </Button>
                 <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />

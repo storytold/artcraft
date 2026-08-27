@@ -33,14 +33,14 @@ export function MobileCountStepper({
   };
 
   return (
-    <div className="flex h-11 shrink-0 items-center border border-ui-panel-border bg-ui-controls px-1">
+    <div className="flex h-11 shrink-0 items-center rounded-[3px] border border-ui-panel-border bg-ui-controls px-1">
       <button
         type="button"
         onClick={() => step(-1)}
         disabled={index <= 0}
         className="flex h-9 w-8 items-center justify-center text-base-fg/80 transition-colors hover:bg-white/10 disabled:opacity-30"
       >
-        <MinusIcon  className="h-3 w-3" />
+        <MinusIcon className="h-3 w-3" />
       </button>
       <span className="min-w-10 text-center text-sm font-semibold tabular-nums text-base-fg">
         {value}/{maxValue}
@@ -51,7 +51,7 @@ export function MobileCountStepper({
         disabled={index === allowed.length - 1}
         className="flex h-9 w-8 items-center justify-center text-base-fg/80 transition-colors hover:bg-white/10 disabled:opacity-30"
       >
-        <PlusIcon  className="h-3 w-3" />
+        <PlusIcon className="h-3 w-3" />
       </button>
     </div>
   );

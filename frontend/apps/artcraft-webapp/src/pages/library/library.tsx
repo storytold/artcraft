@@ -35,7 +35,31 @@ import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
-import { ArrowDownToLineIcon, BoxIcon, CloudIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, FolderPlusIcon, GlobeIcon, Grid3x3Icon, ImageIcon, ImagesIcon, ListIcon, LoaderCircleIcon, MusicIcon, PencilIcon, PlusIcon, RefreshCwIcon, StarIcon, TagIcon, TagsIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
+import {
+  ArrowDownToLineIcon,
+  BoxIcon,
+  CloudIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  FolderPlusIcon,
+  GlobeIcon,
+  Grid3x3Icon,
+  ImageIcon,
+  ImagesIcon,
+  ListIcon,
+  LoaderCircleIcon,
+  MusicIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  StarIcon,
+  TagIcon,
+  TagsIcon,
+  Trash2Icon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { toast } from "../../components/toast/toast";
@@ -1042,7 +1066,9 @@ export default function Library() {
           gridColumns={4}
           scrollRoot={null}
         >
-          <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50 mb-2">{date}</h3>
+          <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50 mb-2">
+            {date}
+          </h3>
           <div className={GRID_CLASS}>
             {dateItems.map((item) => (
               <LibraryTile
@@ -1094,7 +1120,7 @@ export default function Library() {
             {/* Tabs + actions */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 border border-white/15 bg-ui-controls/40 p-1">
+                <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1">
                   <Link
                     to="/library"
                     className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
@@ -1106,13 +1132,11 @@ export default function Library() {
                     {tab === "unsorted" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 bg-white"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <Grid3x3Icon
-                      
-                      className="relative z-10 text-xs" />
+                    <Grid3x3Icon className="relative z-10 text-xs" />
                     <span className="relative z-10">All Assets</span>
                   </Link>
                   <Link
@@ -1126,13 +1150,11 @@ export default function Library() {
                     {tab === "folders" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 bg-white"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FolderIcon
-                      
-                      className="relative z-10 text-xs" />
+                    <FolderIcon className="relative z-10 text-xs" />
                     <span className="relative z-10">Folders</span>
                   </Link>
                   <Link
@@ -1146,13 +1168,11 @@ export default function Library() {
                     {tab === "folderless" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 bg-white"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FolderOpenIcon
-                      
-                      className="relative z-10 text-xs" />
+                    <FolderOpenIcon className="relative z-10 text-xs" />
                     <span className="relative z-10">Unfoldered</span>
                   </Link>
                   <Link
@@ -1166,13 +1186,11 @@ export default function Library() {
                     {tab === "tags" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 bg-white"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <TagIcon
-                      
-                      className="relative z-10 text-xs" />
+                    <TagIcon className="relative z-10 text-xs" />
                     <span className="relative z-10">Tags</span>
                   </Link>
                 </div>
@@ -1183,15 +1201,15 @@ export default function Library() {
                     title="Refresh library"
                   >
                     <RefreshCwIcon
-                      
-                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`} />
+                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`}
+                    />
                   </button>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
                 {tab === "folderless" && (
-                  <div className="flex items-center gap-1 border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
+                  <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
                     {FOLDERLESS_CLASS_FILTERS.map((filter) => (
                       <button
                         key={filter.id}
@@ -1205,7 +1223,7 @@ export default function Library() {
                         {folderlessClass === filter.id && (
                           <motion.span
                             layoutId="library-folderless-filter-indicator"
-                            className="absolute inset-0 bg-white"
+                            className="absolute inset-0 rounded-[3px] bg-white"
                             transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                           />
                         )}
@@ -1221,7 +1239,7 @@ export default function Library() {
                   </div>
                 )}
                 {tab === "unsorted" && (
-                  <div className="flex items-center gap-1 border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
+                  <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
                     {FILTERS.map((filter) => (
                       <button
                         key={filter.id}
@@ -1235,7 +1253,7 @@ export default function Library() {
                         {activeFilter === filter.id && (
                           <motion.span
                             layoutId="library-filter-indicator"
-                            className="absolute inset-0 bg-white"
+                            className="absolute inset-0 rounded-[3px] bg-white"
                             transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                           />
                         )}
@@ -1263,7 +1281,7 @@ export default function Library() {
                 {tab === "tags" && !activeTagToken && tags.length > 0 && (
                   <>
                     {tagView === "list" && (
-                      <div className="flex items-center gap-1 border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
+                      <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
                         {(
                           [
                             ["count", "Most used"],
@@ -1282,7 +1300,7 @@ export default function Library() {
                             {tagSort === id && (
                               <motion.span
                                 layoutId="library-tag-sort-indicator"
-                                className="absolute inset-0 bg-white"
+                                className="absolute inset-0 rounded-[3px] bg-white"
                                 transition={{
                                   duration: 0.32,
                                   ease: EASE_EMPHASIS,
@@ -1294,7 +1312,7 @@ export default function Library() {
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center gap-1 border border-white/15 bg-ui-controls/40 p-1">
+                    <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1">
                       {(
                         [
                           ["cloud", CloudIcon, "Cloud"],
@@ -1314,7 +1332,7 @@ export default function Library() {
                           {tagView === id && (
                             <motion.span
                               layoutId="library-tag-view-indicator"
-                              className="absolute inset-0 bg-white"
+                              className="absolute inset-0 rounded-[3px] bg-white"
                               transition={{
                                 duration: 0.32,
                                 ease: EASE_EMPHASIS,
@@ -1365,14 +1383,14 @@ export default function Library() {
                   className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="Rename folder"
                 >
-                  <PencilIcon  className="text-xs" />
+                  <PencilIcon className="text-xs" />
                 </button>
                 <button
                   onClick={() => openNewFolderModal(activeFolderId)}
                   className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="New subfolder"
                 >
-                  <FolderPlusIcon  className="text-xs" />
+                  <FolderPlusIcon className="text-xs" />
                 </button>
               </div>
             )}
@@ -1401,14 +1419,14 @@ export default function Library() {
                   className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="Rename tag"
                 >
-                  <PencilIcon  className="text-xs" />
+                  <PencilIcon className="text-xs" />
                 </button>
                 <button
                   onClick={() => confirmDeleteTag(activeTagToken)}
                   className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-red hover:bg-ui-controls/40 transition-colors"
                   title="Delete tag"
                 >
-                  <Trash2Icon  className="text-xs" />
+                  <Trash2Icon className="text-xs" />
                 </button>
               </div>
             )}
@@ -1446,9 +1464,7 @@ export default function Library() {
             currentSubfolders.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <div className="flex h-14 w-14 items-center justify-center border border-white/15 bg-ui-controls/30">
-                  <FolderOpenIcon
-                    
-                    className="text-2xl text-white/40" />
+                  <FolderOpenIcon className="text-2xl text-white/40" />
                 </div>
                 <p className="text-white/40 text-sm">No folders yet.</p>
                 <Button
@@ -1476,18 +1492,12 @@ export default function Library() {
                 </p>
                 <div className="flex gap-3">
                   <Link to="/create-image">
-                    <Button
-                      variant="primary"
-                      className="px-4 py-2"
-                    >
+                    <Button variant="primary" className="px-4 py-2">
                       Create Image
                     </Button>
                   </Link>
                   <Link to="/create-video">
-                    <Button
-                      variant="secondary"
-                      className="px-4 py-2"
-                    >
+                    <Button variant="secondary" className="px-4 py-2">
                       Create Video
                     </Button>
                   </Link>
@@ -1512,9 +1522,7 @@ export default function Library() {
             ) : tags.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <div className="flex h-14 w-14 items-center justify-center border border-white/15 bg-ui-controls/30">
-                  <TagsIcon
-                    
-                    className="text-2xl text-white/40" />
+                  <TagsIcon className="text-2xl text-white/40" />
                 </div>
                 <p className="text-white/40 text-sm">No tags yet.</p>
                 <p className="text-white/30 text-xs max-w-xs text-center">
@@ -1535,7 +1543,7 @@ export default function Library() {
                 {sortedTags.map((t) => (
                   <div
                     key={t.token}
-                    className="flex items-center border border-white/15 bg-ui-controls/40 hover:bg-ui-controls/70 transition-colors"
+                    className="flex items-center rounded-[3px] border border-white/15 bg-ui-controls/40 hover:bg-ui-controls/70 transition-colors"
                   >
                     <button
                       type="button"
@@ -1550,9 +1558,7 @@ export default function Library() {
                       }}
                       className="flex items-center gap-2 pl-4 pr-1 py-2 text-sm font-medium text-white"
                     >
-                      <TagIcon
-                        
-                        className="text-xs text-violet-400" />
+                      <TagIcon className="text-xs text-violet-400" />
                       <span className="max-w-[14rem] truncate">{t.value}</span>
                       <span className="text-xs text-white/40">
                         {t.useCount}
@@ -1572,7 +1578,7 @@ export default function Library() {
                       title="Rename or delete"
                       className="mr-1.5 flex h-6 w-6 items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors"
                     >
-                      <EllipsisIcon  className="text-xs" />
+                      <EllipsisIcon className="text-xs" />
                     </button>
                   </div>
                 ))}
@@ -1613,10 +1619,7 @@ export default function Library() {
               />
               <div className={GRID_CLASS}>
                 {Array.from({ length: 15 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square overflow-hidden"
-                  >
+                  <div key={i} className="aspect-square overflow-hidden">
                     <div
                       className="h-full w-full"
                       style={{
@@ -1642,18 +1645,12 @@ export default function Library() {
               </p>
               <div className="flex gap-3">
                 <Link to="/create-image">
-                  <Button
-                    variant="primary"
-                    className="px-4 py-2"
-                  >
+                  <Button variant="primary" className="px-4 py-2">
                     Create Image
                   </Button>
                 </Link>
                 <Link to="/create-video">
-                  <Button
-                    variant="secondary"
-                    className="px-4 py-2"
-                  >
+                  <Button variant="secondary" className="px-4 py-2">
                     Create Video
                   </Button>
                 </Link>
@@ -1766,7 +1763,7 @@ export default function Library() {
               }}
             />
             <div
-              className="fixed z-[9999] min-w-44 border border-ui-panel-border bg-ui-panel p-1"
+              className="fixed z-[9999] min-w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
               {(() => {
@@ -1787,8 +1784,8 @@ export default function Library() {
                       }}
                     >
                       <StarIcon
-                        
-                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`} />
+                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`}
+                      />
                       <span>{menuFolder?.hasStar ? "Unstar" : "Star"}</span>
                     </button>
                     <FolderColorRow
@@ -1808,7 +1805,7 @@ export default function Library() {
                   openNewFolderModal(contextMenu.folderId);
                 }}
               >
-                <FolderPlusIcon  className="w-4" />
+                <FolderPlusIcon className="w-4" />
                 <span>New subfolder</span>
               </button>
               <button
@@ -1816,7 +1813,7 @@ export default function Library() {
                 className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => startRename(contextMenu.folderId)}
               >
-                <PencilIcon  className="w-4" />
+                <PencilIcon className="w-4" />
                 <span>Rename</span>
               </button>
               <button
@@ -1828,7 +1825,7 @@ export default function Library() {
                   confirmDeleteFolder(folderId);
                 }}
               >
-                <Trash2Icon  className="w-4" />
+                <Trash2Icon className="w-4" />
                 <span>Delete folder</span>
               </button>
             </div>
@@ -1849,7 +1846,7 @@ export default function Library() {
               }}
             />
             <div
-              className="fixed z-[9999] min-w-44 border border-ui-panel-border bg-ui-panel p-1"
+              className="fixed z-[9999] min-w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1"
               style={{ left: tagContextMenu.x, top: tagContextMenu.y }}
             >
               <button
@@ -1857,7 +1854,7 @@ export default function Library() {
                 className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => setTagRenameTarget(tagContextMenu.tagToken)}
               >
-                <PencilIcon  className="w-4" />
+                <PencilIcon className="w-4" />
                 <span>Rename</span>
               </button>
               <button
@@ -1869,7 +1866,7 @@ export default function Library() {
                   confirmDeleteTag(token);
                 }}
               >
-                <Trash2Icon  className="w-4" />
+                <Trash2Icon className="w-4" />
                 <span>Delete tag</span>
               </button>
             </div>
@@ -2219,7 +2216,7 @@ function BulkSelectionBar({
                 className="fixed inset-0 z-[59]"
                 onClick={() => setSendToOpen(false)}
               />
-              <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 border border-ui-panel-border bg-ui-panel p-2">
+              <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
                 <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
                   Use as reference in
                 </div>
@@ -2259,7 +2256,7 @@ function BulkSelectionBar({
             }}
             className={BAR_BUTTON_CLASS}
           >
-            <ImagesIcon  className="text-xs" />
+            <ImagesIcon className="text-xs" />
             <span className="hidden sm:inline">Extract frames</span>
           </button>
         )}
@@ -2272,7 +2269,7 @@ function BulkSelectionBar({
           onClick={() => setPopoverOpen((v) => !v)}
           className={BAR_BUTTON_CLASS}
         >
-          <FolderPlusIcon  className="text-xs" />
+          <FolderPlusIcon className="text-xs" />
           {/* Icon-only on phones — five labeled buttons overflow the bar. */}
           <span className="hidden sm:inline">Add to folder</span>
         </button>
@@ -2282,7 +2279,7 @@ function BulkSelectionBar({
               className="fixed inset-0 z-[59]"
               onClick={() => setPopoverOpen(false)}
             />
-            <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto border border-ui-panel-border bg-ui-panel p-2">
+            <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
               <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
                 Folders
               </div>
@@ -2303,7 +2300,6 @@ function BulkSelectionBar({
                     className="flex w-full items-center gap-2.5 px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
                   >
                     <FolderIcon
-                      
                       className={
                         folder.colorCode ? "text-xs" : "text-xs text-primary"
                       }
@@ -2311,7 +2307,8 @@ function BulkSelectionBar({
                         folder.colorCode
                           ? { color: folder.colorCode }
                           : undefined
-                      } />
+                      }
+                    />
                     <span className="truncate">{folder.name}</span>
                   </button>
                 ))
@@ -2325,7 +2322,7 @@ function BulkSelectionBar({
                 }}
                 className="flex w-full items-center gap-2.5 px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
               >
-                <PlusIcon  className="w-4 text-xs" />
+                <PlusIcon className="w-4 text-xs" />
                 <span>Create new folder</span>
               </button>
             </div>
@@ -2347,7 +2344,7 @@ function BulkSelectionBar({
           }}
           className={BAR_BUTTON_CLASS}
         >
-          <TagsIcon  className="text-xs" />
+          <TagsIcon className="text-xs" />
           <span className="hidden sm:inline">Add tags</span>
         </button>
         {tagsOpen && (
@@ -2356,7 +2353,7 @@ function BulkSelectionBar({
               className="fixed inset-0 z-[59]"
               onClick={() => setTagsOpen(false)}
             />
-            <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 border border-ui-panel-border bg-ui-panel p-2">
+            <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
               <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
                 Add tags
               </div>
@@ -2403,7 +2400,7 @@ function BulkSelectionBar({
         onClick={onDeleteSelected}
         className="flex items-center gap-2 whitespace-nowrap bg-red/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white hover:bg-red transition-colors"
       >
-        <Trash2Icon  className="text-xs" />
+        <Trash2Icon className="text-xs" />
         Delete
       </button>
       <button
