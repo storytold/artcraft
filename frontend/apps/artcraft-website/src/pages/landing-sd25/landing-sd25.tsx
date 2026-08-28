@@ -104,33 +104,32 @@ const MADE_WITH_VIDEOS = [
 ];
 
 // Overview copy, written from ArtCraft's own point of view (control-first,
-// honest about hype) rather than as a spec sheet. Deliberately hedged because
-// 2.5 is unannounced — we say plainly what's rumor and pivot to what artists
-// can actually do today.
+// honest about hype) rather than as a spec sheet. Keep ByteDance's confirmed
+// launch claims separate from ArtCraft's own integration timeline.
 const OVERVIEW_PARAGRAPHS: ReadonlyArray<string> = [
-  "Seedance 2.5 is shaping up to be the most anticipated release in AI video. It's the expected next step for ByteDance's Seedance line — the same line whose 2.0 release took the #1 spot on the Artificial Analysis Video Arena in early 2026, leading both text-to-video and image-to-video at once. ByteDance still hasn't put out an official 2.5 spec as of mid-2026, but between the reporting, the leaks, and the obvious 1.0 → 1.5 → 2.0 march, the direction is hard to miss: a real step up, not a minor patch.",
-  "What people are hearing is that 2.5 blows past today's ceiling. The chatter points to as much as 4K output, where current generations top out around 720p and 1080p; generation quick enough to feel near-instant; clips that run past the roughly 15-second wall; characters that stay consistent from one session to the next without you re-uploading references every time; and a lot more you can feed in at once — many reference images plus audio and video, all in a single pass.",
-  "The part that isn't a rumor is the ground it stands on, and you can put it to work in ArtCraft right now through Seedance 2.0: audio that's generated jointly with the picture and lands in sync, accurate lip-sync across languages, multi-shot stories that keep a character and a style intact through every cut, precise camera control, and a reference mode that anchors a generation to your own images, video, and audio. Every one of those is exactly what 2.5 is expected to push further — and the moment it's out, it'll be in ArtCraft.",
+  "ByteDance officially launched Seedance 2.5 on July 31, 2026. Its release frames the model as a move from generating isolated clips toward completing a creative work, with upgrades focused on long-form storytelling, multimodal reference, and precise editing.",
+  "The confirmed headline is up to 30 seconds of audio-video generation in one pass, plus multi-round extensions. A single generation can use up to 30 images, 10 video clips, and 10 audio clips as references, while timestamp-level controls support targeted generation and editing. Claims such as 4K output or near-instant generation are not part of ByteDance's published release note.",
+  "ByteDance says Seedance 2.5 is rolling out on Jimeng AI, Doubao Pro, and other platforms, with API access coming soon through BytePlus ModelArk. Availability inside ArtCraft follows ArtCraft's own integration timeline, so the practical move is to prepare the scene, references, and camera plan now and check the model picker for current access.",
   "One thing worth remembering through all of this: in ArtCraft a video model is never a black box you toss a sentence into and cross your fingers. It's one stage of a pipeline you direct — set up the scene, place your references, frame the camera, then hand the shot off. A better model just makes that last step better. The control is still yours.",
 ];
 
-// Q&A framed around what an artist actually wonders about an unreleased model —
-// not an SEO spec recap. Honest about rumor vs. fact throughout.
+// Q&A framed around what an artist actually wonders about a newly released
+// model — not an SEO spec recap. Honest about provider and product timelines.
 const FAQ_ITEMS: ReadonlyArray<{ question: string; answer: string }> = [
   {
     question: "Is Seedance 2.5 real, or just hype?",
     answer:
-      "Both, a little. The Seedance line is real and very good, so a 2.5 is a safe bet eventually. But as of now there's no official announcement and no published spec — everything you've read about it, including on this page, is informed speculation. We've flagged it as such rather than dress rumors up as a feature list.",
+      "It is officially released. ByteDance published a dated launch note on July 31, 2026, confirming 30-second generation, expanded multimodal references, multi-round extensions, and timestamp-level editing. We keep those confirmed capabilities separate from unverified claims such as 4K or near-instant generation.",
   },
   {
     question: "When can I actually use it?",
     answer:
-      "We don't know, and anyone giving you a hard date is guessing. The moment ByteDance ships it and we can integrate it, it goes into ArtCraft — and we'll update this page. Until then, you're not waiting on us: the current Seedance is already here.",
+      "ByteDance says rollout is underway on Jimeng AI, Doubao Pro, and other platforms. Availability in ArtCraft is a separate integration question, so check the current ArtCraft model picker rather than assuming every product receives the model on the same day.",
   },
   {
     question: "What should I do in the meantime?",
     answer:
-      "Build the workflow now so you're fast when 2.5 lands. Seedance 2.0 is in ArtCraft today with the features 2.5 is expected to extend — synced audio generated with the video, multi-language lip-sync, multi-shot scenes that hold a character and style across cuts, precise camera control, and reference mode. Direct your shots with those instead of one-off prompts, and the habits transfer straight to the next model.",
+      "Build the workflow around the confirmed capabilities: plan a complete 30-second beat, label what each image, video, and audio reference should control, and identify any timestamp-level edits before generating. Those habits transfer whether you start in an official ByteDance product or when the model appears in your ArtCraft picker.",
   },
   {
     question: "Why use Seedance in ArtCraft instead of a website?",
@@ -658,7 +657,7 @@ const LandingSD25 = () => {
       <Seo
         title="Seedance 2.5 in ArtCraft. AI Video Generation. Fast and Open Desktop App."
         ogTitle="Seedance 2.5"
-        description="Seedance 2.5 is ByteDance's anticipated next-generation AI video model — reports point to 4K, real-time generation, longer clips, and persistent characters. See what's expected, and create with Seedance in ArtCraft today."
+        description="ByteDance officially launched Seedance 2.5 on July 31, 2026, with 30-second generation, expanded multimodal references, and timestamp-level editing. See what is confirmed and prepare an ArtCraft workflow."
       />
       {/* Top primary-blue accent, matches the pricing page */}
       <div
@@ -734,8 +733,8 @@ const LandingSD25 = () => {
             className="max-w-xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
             data-reveal
           >
-            Generate jaw-dropping AI videos with Seedance 2.5 before it’s
-            available anywhere else.
+            Prepare directed AI video workflows for ByteDance&apos;s officially
+            released Seedance 2.5.
           </p>
 
           {/* CTAs */}
@@ -812,16 +811,26 @@ const LandingSD25 = () => {
               <p key={i}>{paragraph}</p>
             ))}
           </div>
-          {/* Transparency note — 2.5 is unannounced, so we flag estimates. */}
+          {/* Transparency note — distinguish confirmed model facts from product availability. */}
           <div className="mt-8 flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4 text-sm text-white/45 leading-relaxed">
             <XIcon
               
               className="mt-0.5 shrink-0 text-white/30 text-[12px]" />
             <p>
-              To be clear: Seedance 2.5 isn't out. Anything specific on this
-              page — numbers, speeds, lengths — is our read on the rumors, not a
-              promise from ByteDance, and it can change the day it actually
-              ships.
+              ByteDance officially launched Seedance 2.5 on July 31, 2026. Its
+              release confirms 30-second generation, expanded reference limits,
+              and timestamp-level editing; it does not promise 4K, near-instant
+              generation, or availability in every product on the same day. See
+              the{" "}
+              <a
+                href="https://seed.bytedance.com/en/blog/one-take-creation-flexible-referencing-introducing-seedance-2-5"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 underline underline-offset-2 hover:text-white"
+              >
+                official release note
+              </a>
+              .
             </p>
           </div>
         </div>

@@ -58,7 +58,7 @@ export const PAGE_META: Record<string, PageMeta> = {
       "Seedance 2.5 in ArtCraft. AI Video Generation. Fast and Open Desktop App.",
     ogTitle: "Seedance 2.5",
     description:
-      "Seedance 2.5 is ByteDance's anticipated next-generation AI video model — reports point to 4K, real-time generation, longer clips, and persistent characters. See what's expected, and create with Seedance in ArtCraft today.",
+      "ByteDance officially launched Seedance 2.5 on July 31, 2026, with 30-second generation, expanded multimodal references, and timestamp-level editing. See what is confirmed and prepare an ArtCraft workflow.",
   },
   "/minimax-h3": {
     title:
