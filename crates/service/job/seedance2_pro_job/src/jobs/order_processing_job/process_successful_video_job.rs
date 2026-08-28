@@ -52,7 +52,7 @@ pub async fn process_successful_video_job(
   );
 
   // Download the video bytes.
-  let video_bytes: Vec<u8> = match reqwest::get(video_url).await {
+  let video_bytes: Vec<u8> = match deps.download_client.get(video_url).send().await {
     Ok(resp) => match resp.bytes().await {
       Ok(bytes) => bytes.to_vec(),
       Err(err) => {

@@ -117,7 +117,8 @@ async fn download_and_create_media_file(
 ) -> AnyhowResult<tokens::tokens::media_files::MediaFileToken> {
   info!("Downloading character image: {}", image_url);
 
-  let image_bytes: Vec<u8> = reqwest::get(image_url)
+  let image_bytes: Vec<u8> = deps.download_client.get(image_url)
+    .send()
     .await
     .map_err(|err| anyhow!("reqwest error downloading image: {:?}", err))?
     .bytes()

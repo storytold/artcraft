@@ -13,8 +13,12 @@ use kinovi_web_client::requests::poll_orders::poll_orders::{poll_orders, OrderSt
 use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
 use crate::kinovi_version::KinoviVersion;
+use crate::with_deadline::{with_deadline, DATABASE_DEADLINE};
 
 const POLL_ALERT_THRESHOLD: Duration = Duration::from_mins(6);
+
+/// Name under which this loop reports liveness to the health check.
+pub const HEARTBEAT_NAME: &str = "order_polling";
 
 /// How many of the newest order pages to re-scan when we periodically revisit
 /// the head of the list. Recently-submitted jobs finish soonest, so checking
@@ -37,6 +41,8 @@ const DEEP_PAGES_BETWEEN_HEAD_RECHECKS: u32 = 5;
 /// batch (or the whole walk) to complete.
 pub async fn order_polling_main_loop(job_dependencies: JobDependencies) {
   while !job_dependencies.application_shutdown.get() {
+    job_dependencies.heartbeats.beat(HEARTBEAT_NAME);
+
     let start = Instant::now();
 
     let result = run_poll_iteration(&job_dependencies).await;
@@ -94,11 +100,15 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   };
 
   // 1. Query all (limit 25,000) non-terminal KinoviWeb jobs from the DB.
-  let pending_jobs = match list_pending_kinovi_web_video_jobs(&deps.mysql_pool, third_party, job_type).await {
+  let pending_jobs = match with_deadline(
+    "pending jobs query",
+    DATABASE_DEADLINE,
+    list_pending_kinovi_web_video_jobs(&deps.mysql_pool, third_party, job_type),
+  ).await {
     Ok(jobs) => jobs,
     Err(err) => {
       error!("Failed to list pending database jobs: {:?}", err);
-      return alert_pager_and_return_err(&deps.pager, "Jobs DB query failed", err.into(), None);
+      return alert_pager_and_return_err(&deps.pager, "Jobs DB query failed", err, None);
     }
   };
 
@@ -188,6 +198,8 @@ async fn walk_orders(
 
     let response = poll_orders_with_retry(deps, cursor).await?;
 
+    deps.heartbeats.beat(HEARTBEAT_NAME);
+
     let page_summary = stage_finished_orders(deps, &response.orders, &job_by_order_id);
 
     result.pages_seen += 1;
@@ -261,6 +273,8 @@ async fn recheck_head_pages(
     }
 
     let response = poll_orders_with_retry(deps, cursor).await?;
+
+    deps.heartbeats.beat(HEARTBEAT_NAME);
 
     let page_summary = stage_finished_orders(deps, &response.orders, job_by_order_id);
 
