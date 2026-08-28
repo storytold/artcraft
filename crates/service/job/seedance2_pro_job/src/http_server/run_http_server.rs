@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use actix_web::dev::Server;
 use actix_web::middleware::Logger;
@@ -12,13 +13,19 @@ use pager::client::pager::Pager;
 
 use crate::http_server::endpoints::health_check_handler::get_health_check_handler;
 use crate::http_server::http_server_shared_state::HttpServerSharedState;
+use crate::loop_heartbeats::LoopHeartbeats;
 
 const DEFAULT_BIND_ADDRESS: &str = "0.0.0.0:11223";
 const DEFAULT_NUM_WORKERS: usize = 2;
 
+/// Loops heartbeat at least once per polled page (sub-second) and once per
+/// idle tick, so anything quieter than this for five minutes is wedged.
+const DEFAULT_HEARTBEAT_STALE_THRESHOLD_SECONDS: u64 = 5 * 60;
+
 pub struct CreateServerArgs {
   pub container_environment: ContainerEnvironment,
   pub job_stats: JobStats,
+  pub heartbeats: LoopHeartbeats,
   pub pager: Pager,
 }
 
@@ -33,6 +40,11 @@ pub fn run_http_server(args: CreateServerArgs) -> AnyhowResult<Server> {
       "CONSECUTIVE_FAILURE_UNHEALTHY_THRESHOLD",
       3,
     )?,
+    heartbeats: args.heartbeats,
+    heartbeat_stale_threshold: Duration::from_secs(easyenv::get_env_num(
+      "HEARTBEAT_STALE_THRESHOLD_SECONDS",
+      DEFAULT_HEARTBEAT_STALE_THRESHOLD_SECONDS,
+    )?),
     pager: args.pager,
     hostname,
   };

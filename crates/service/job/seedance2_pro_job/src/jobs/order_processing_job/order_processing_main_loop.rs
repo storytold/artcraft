@@ -6,12 +6,21 @@ use mysql_queries::queries::generic_inference::web::get_inference_job_status_val
 use crate::job_dependencies::JobDependencies;
 use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;
 use crate::jobs::order_processing_job::process_one_order::process_one_order;
+use crate::with_deadline::{with_deadline, DATABASE_DEADLINE};
 
 /// How long to nap when the reconciler is empty before peeking again.
 const IDLE_SLEEP: Duration = Duration::from_millis(500);
 
 /// How long to back off after a transient error before retrying.
 const ERROR_BACKOFF: Duration = Duration::from_secs(2);
+
+/// Hard ceiling on reconciling one order end to end (download, upload, DB
+/// finalize). Each I/O step has its own deadline; this is the backstop that
+/// guarantees the consumer can never be parked on a single order forever.
+const ORDER_PROCESSING_DEADLINE: Duration = Duration::from_secs(15 * 60);
+
+/// Name under which this loop reports liveness to the health check.
+pub const HEARTBEAT_NAME: &str = "order_processing";
 
 /// The consumer half of the pipeline.
 ///
@@ -23,6 +32,8 @@ const ERROR_BACKOFF: Duration = Duration::from_secs(2);
 /// soon as it's staged rather than after a whole batch.
 pub async fn order_processing_main_loop(deps: JobDependencies) {
   while !deps.application_shutdown.get() {
+    deps.heartbeats.beat(HEARTBEAT_NAME);
+
     let details = match deps.order_reconciler.peek_random() {
       Some(details) => details,
       None => {
@@ -36,7 +47,13 @@ pub async fn order_processing_main_loop(deps: JobDependencies) {
 
     // Lightweight pre-check: if the DB already considers the job terminal, drop
     // the staged order without doing any expensive download/upload work.
-    match get_inference_job_status_value(&deps.mysql_pool, &job_token).await {
+    let status_lookup = with_deadline(
+      "job status pre-check",
+      DATABASE_DEADLINE,
+      get_inference_job_status_value(&deps.mysql_pool, &job_token),
+    ).await;
+
+    match status_lookup {
       Ok(Some(status)) if is_job_status_terminal(status) => {
         info!(
           "Job {} is already terminal ({:?}); dropping staged order {}.",
@@ -69,7 +86,13 @@ pub async fn order_processing_main_loop(deps: JobDependencies) {
     // Commit to this order: pop it so we don't peek it again while working.
     deps.order_reconciler.remove(&order_id);
 
-    match process_one_order(&deps, &details).await {
+    let outcome = with_deadline(
+      "order processing",
+      ORDER_PROCESSING_DEADLINE,
+      process_one_order(&deps, &details),
+    ).await;
+
+    match outcome {
       Ok(()) => {
         let _ = deps.job_stats.increment_success_count();
       }

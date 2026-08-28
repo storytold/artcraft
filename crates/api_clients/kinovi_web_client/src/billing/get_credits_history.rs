@@ -10,6 +10,7 @@ use crate::error::kinovi_web_error::KinoviWebError;
 use crate::error::kinovi_web_generic_api_error::KinoviWebGenericApiError;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
+use crate::utils::request_timeouts::KINOVI_REQUEST_TIMEOUT;
 use crate::utils::number_coercion::{de_i64_int_or_float, de_u64_int_or_float};
 
 /// Page size the kinovi.ai billing dashboard uses.
@@ -117,6 +118,7 @@ pub async fn get_credits_history(
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
+    .timeout(KINOVI_REQUEST_TIMEOUT)
     .build()
     .map_err(|err| KinoviWebClientError::WreqClientError(err))?;
 

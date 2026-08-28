@@ -3,6 +3,7 @@ use crate::error::kinovi_web_error::KinoviWebError;
 use crate::error::kinovi_web_generic_api_error::KinoviWebGenericApiError;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
+use crate::utils::request_timeouts::KINOVI_UPLOAD_TIMEOUT;
 use log::info;
 use url::Url;
 use wreq::Client;
@@ -43,6 +44,7 @@ pub async fn upload_file(args: UploadFileArgs) -> Result<UploadFileResponse, Kin
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
+    .timeout(KINOVI_UPLOAD_TIMEOUT)
     .build()
     .map_err(|err| KinoviWebClientError::WreqClientError(err))?;
 

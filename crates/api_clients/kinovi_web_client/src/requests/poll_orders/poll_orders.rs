@@ -6,6 +6,7 @@ use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::requests::poll_orders::failure_reason::FailureReason;
 use crate::requests::poll_orders::request_types::*;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
+use crate::utils::request_timeouts::KINOVI_REQUEST_TIMEOUT;
 use chrono::{DateTime, Utc};
 use log::info;
 use wreq::Client;
@@ -155,6 +156,7 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
+    .timeout(KINOVI_REQUEST_TIMEOUT)
     .build()
     .map_err(|err| KinoviWebClientError::WreqClientError(err))?;
 

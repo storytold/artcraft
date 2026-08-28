@@ -5,6 +5,7 @@ use crate::error::kinovi_web_generic_api_error::KinoviWebGenericApiError;
 use crate::requests::generate_character::request_types::*;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
+use crate::utils::request_timeouts::KINOVI_REQUEST_TIMEOUT;
 use log::info;
 use wreq::Client;
 use wreq_util::Emulation;
@@ -75,6 +76,7 @@ pub async fn generate_character(args: GenerateCharacterArgs<'_>) -> Result<Gener
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
+    .timeout(KINOVI_REQUEST_TIMEOUT)
     .build()
     .map_err(|err| KinoviWebClientError::WreqClientError(err))?;
 

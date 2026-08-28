@@ -7,6 +7,7 @@ use crate::requests::generate_video::request_types::*;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::categorize_kinovi_web_error::categorize_kinovi_web_error;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
+use crate::utils::request_timeouts::KINOVI_REQUEST_TIMEOUT;
 use log::info;
 use wreq::Client;
 use wreq_util::Emulation;
@@ -364,6 +365,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
+    .timeout(KINOVI_REQUEST_TIMEOUT)
     .build()
     .map_err(|err| KinoviWebClientError::WreqClientError(err))?;
 
