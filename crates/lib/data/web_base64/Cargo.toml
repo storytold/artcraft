@@ -20,6 +20,7 @@ workspace-build-acceleration = { workspace =  true }
 
 # External
 base64 = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 # (None)

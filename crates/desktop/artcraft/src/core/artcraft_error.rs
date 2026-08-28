@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use artcraft_client::error::storyteller_error::StorytellerError;
+use web_base64::WebBase64Error;
 
 #[derive(Debug)]
 pub enum ArtcraftError {
@@ -51,6 +52,15 @@ impl From<anyhow::Error> for ArtcraftError {
 impl From<base64::DecodeError> for ArtcraftError {
   fn from(value: base64::DecodeError) -> Self {
     Self::DecodeError(value)
+  }
+}
+
+impl From<WebBase64Error> for ArtcraftError {
+  fn from(value: WebBase64Error) -> Self {
+    match value {
+      WebBase64Error::DecodeError(e) => Self::DecodeError(e),
+      other => Self::AnyhowError(anyhow::Error::new(other)),
+    }
   }
 }
 
