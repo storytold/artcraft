@@ -6,6 +6,10 @@ import {
   type Prompts,
 } from "@storyteller/api";
 import { toast } from "../components/toast/toast";
+import {
+  getAudioDurationFromUrl,
+  getVideoDurationFromUrl,
+} from "../components/prompt-box";
 import type {
   RefAudio,
   RefImage,
@@ -74,7 +78,7 @@ export async function applyRecreateFromMediaToken(
       toast.error("Recreate unavailable for this media");
       return;
     }
-    applyRecreateFromPromptData(promptData, fallbackMediaClass, navigate);
+    await applyRecreateFromPromptData(promptData, fallbackMediaClass, navigate);
   } catch {
     toast.error("Failed to load recreate data");
   }
@@ -96,7 +100,7 @@ export async function applyRecreateFromPromptToken(
       toast.error("Recreate data unavailable");
       return;
     }
-    applyRecreateFromPromptData(promptData, fallbackMediaClass, navigate);
+    await applyRecreateFromPromptData(promptData, fallbackMediaClass, navigate);
   } catch {
     toast.error("Failed to load recreate data");
   }
@@ -134,17 +138,17 @@ export function useRecreateFromPromptToken(
   return { isRecreating, handleRecreate };
 }
 
-function applyRecreateFromPromptData(
+async function applyRecreateFromPromptData(
   promptData: Prompts,
   fallbackMediaClass: RecreateMediaClass,
   navigate: NavigateFunction,
-): void {
+): Promise<void> {
   const mediaClass = resolveMediaClass(promptData, fallbackMediaClass);
   if (!mediaClass) {
     toast.error("Recreate not supported for this media type");
     return;
   }
-  const payload = buildRecreatePayload(promptData, mediaClass);
+  const payload = await buildRecreatePayload(promptData, mediaClass);
   if (mediaClass === "video") {
     useCreateVideoStore.getState().setPendingRecreate(payload);
     navigate("/create-video");
@@ -168,10 +172,10 @@ function resolveMediaClass(
   return fallback;
 }
 
-export function buildRecreatePayload(
+export async function buildRecreatePayload(
   promptData: Prompts,
   mediaClass: RecreateMediaClass,
-): RecreatePayload {
+): Promise<RecreatePayload> {
   const contextImages = promptData.maybe_context_images || [];
   const { referenceImages, endFrameImage, referenceVideos, referenceAudios } =
     partitionContextImages(contextImages);
@@ -186,8 +190,14 @@ export function buildRecreatePayload(
 
   if (mediaClass === "video") {
     payload.endFrameImage = endFrameImage;
-    payload.referenceVideos = referenceVideos;
-    payload.referenceAudios = referenceAudios;
+    payload.referenceVideos = await withMeasuredDurations(
+      referenceVideos,
+      getVideoDurationFromUrl,
+    );
+    payload.referenceAudios = await withMeasuredDurations(
+      referenceAudios,
+      getAudioDurationFromUrl,
+    );
     payload.generateWithSound = promptData.maybe_generate_audio ?? undefined;
     payload.durationSeconds = promptData.maybe_duration_seconds ?? undefined;
     payload.inputMode = inferInputMode(promptData, referenceImages);
@@ -256,6 +266,23 @@ function partitionContextImages(
   }
 
   return { referenceImages, endFrameImage, referenceVideos, referenceAudios };
+}
+
+// Reference video/audio durations feed the cost quote's input-seconds hint,
+// and the backend prices a zero/unknown input duration at the worst-case
+// 30-second maximum (models like Seedance 2.5 bill input seconds). Restored
+// refs come from the prompt record with no duration, so measure each from
+// its CDN copy; an unmeasurable file keeps 0 (worst-case quote, and the
+// generate endpoint bills from its own server-side measurement regardless).
+async function withMeasuredDurations<
+  T extends { url: string; duration: number },
+>(refs: T[], measureDuration: (url: string) => Promise<number>): Promise<T[]> {
+  return Promise.all(
+    refs.map(async (ref) => ({
+      ...ref,
+      duration: await measureDuration(ref.url),
+    })),
+  );
 }
 
 function inferInputMode(
