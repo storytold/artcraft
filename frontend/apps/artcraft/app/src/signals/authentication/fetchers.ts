@@ -100,7 +100,12 @@ export const persistLogin = async () => {
 
 // NB: Only for SyncStorytellerApiConfig.
 export const forceGetUserInfoAndSubcriptions = async () => {
-  getUserInfoAndSubcriptions();
+  try {
+    await getUserInfoAndSubcriptions();
+  } catch (error) {
+    setLogoutStates();
+    throw error;
+  }
 };
 
 async function getUserInfoAndSubcriptions() {

@@ -9,10 +9,15 @@ import "./styles/tailwind.css";
 import "./styles/base.css";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { pageHeight, pageWidth, persistLogin } from "~/signals";
-import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
+import {
+  RefreshSessionAfterApiHostChange,
+  SyncStorytellerApiConfig,
+} from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
+import { IsDesktopApp } from "@storyteller/tauri-utils";
+import { bootstrapArtcraftApp } from "./bootstrapArtcraftApp";
 
 // TODO(bt,2025-04-19): Make these configurable
 const ENV = {
@@ -25,8 +30,6 @@ const ENV = {
 
 const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   console.log("GlobalSettingsManager()");
-
-  SyncStorytellerApiConfig();
 
   useSignals();
 
@@ -96,9 +99,11 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   return null;
 };
 
-// TODO: Replace environment variables from `root.tsx`
-createRoot(document.getElementById("root")!).render(
-  <>
+const rootElement = document.getElementById("root")!;
+
+const renderArtcraft = () => {
+  // TODO: Replace environment variables from `root.tsx`
+  createRoot(rootElement).render(
     <StrictMode>
       <BrowserRouter>
         <GlobalSettingsManager env={ENV} />
@@ -106,6 +111,26 @@ createRoot(document.getElementById("root")!).render(
         <MainApp />
         <GlobalFileDropHandler />
       </BrowserRouter>
-    </StrictMode>
-  </>,
-);
+    </StrictMode>,
+  );
+};
+
+const renderApiHostError = (error: unknown) => {
+  console.error("ArtCraft API configuration failed", error);
+  rootElement.textContent =
+    "ArtCraft could not initialize its API configuration. Please restart the app.";
+};
+
+void bootstrapArtcraftApp({
+  isDesktopApp: IsDesktopApp,
+  syncApiHost: SyncStorytellerApiConfig,
+  refreshSession: RefreshSessionAfterApiHostChange,
+  renderApp: renderArtcraft,
+  renderApiHostError,
+  reportSessionRefreshError: (error) => {
+    console.error(
+      "ArtCraft session refresh failed after API host change",
+      error,
+    );
+  },
+});

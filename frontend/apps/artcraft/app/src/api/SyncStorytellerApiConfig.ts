@@ -1,70 +1,30 @@
 import { GetAppInfo } from "@storyteller/tauri-api";
 import { StorytellerApiHostStore } from "@storyteller/api";
 import { forceGetUserInfoAndSubcriptions } from "~/signals";
+import { createStorytellerApiHostSync } from "./StorytellerApiHostSync";
+import type { ApiHostSyncResult } from "./StorytellerApiHostSync";
 
-// Time before we should call Tauri again.
-const SYNC_THRESHOLD = 10 * 1000;
+const hostStore = StorytellerApiHostStore.getInstance();
 
-/**
- * Keep track of if we can call Tauri again.
- */
-class Cache {
-  private static instance: Cache;
-  private lastFetchSuccess?: number;
-
-  public static getInstance(): Cache {
-    if (Cache.instance !== undefined) {
-      return Cache.instance;
-    }
-    const instance = new Cache();
-    Cache.instance = instance;
-    return instance;
-  }
-
-  public canCall() : boolean {
-    if (this.lastFetchSuccess === undefined) {
-      return true;
-    }
-    return Date.now() - this.lastFetchSuccess > SYNC_THRESHOLD;
-  }
-
-  public setCallSuccess() {
-    this.lastFetchSuccess = Date.now();
-  }
-}
+const syncStorytellerApiHost = createStorytellerApiHostSync({
+  getNativeHost: async () => (await GetAppInfo()).payload.storyteller_host,
+  getCurrentHost: () => hostStore.getApiSchemeAndHost(),
+  setCurrentHost: (host) => hostStore.setApiSchemeAndHost(host),
+});
 
 /**
- * Syncs our view of the Storyteller API configs with Tauri.
- * Runs any necessary user session functions if things change.
+ * Installs the native-configured API host. The returned promise resolves only
+ * after the host store has been updated, so callers can safely mount REST
+ * consumers afterward.
  */
-export const SyncStorytellerApiConfig = async () => {
-  console.log("SyncStorytellerApiConfig()")
+export const SyncStorytellerApiConfig = (): Promise<ApiHostSyncResult> =>
+  syncStorytellerApiHost();
 
-  const cache = Cache.getInstance();
-  const oldValue = StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
-
-  if (!cache.canCall()) {
-    return;
-  }
-
-  GetAppInfo().then(async (appInfo) => {
-    console.log("SyncStorytellerApiConfig() - appInfo", appInfo);
-
-    const schemeAndHost = appInfo.payload.storyteller_host;
-    if (!schemeAndHost) {
-      return ;
-    }
-
-    console.log(`Updating hostname to ${schemeAndHost}`);
-    StorytellerApiHostStore.getInstance().setApiSchemeAndHost(schemeAndHost);
-
-    cache.setCallSuccess();
-
-    if (oldValue !== schemeAndHost) {
-      console.log("SyncStorytellerApiConfig() - force session refresh")
-      // NB: This is a hack that might prevent the login screen from being shown 
-      // if the user is working in development.
-      await forceGetUserInfoAndSubcriptions();
-    }
-  });
-}
+/**
+ * Refreshes session state after a host change. Startup treats this as
+ * noncritical: a session/network failure must not undo a successfully
+ * installed API host or prevent the application shell from rendering.
+ */
+export const RefreshSessionAfterApiHostChange = async (): Promise<void> => {
+  await forceGetUserInfoAndSubcriptions();
+};
