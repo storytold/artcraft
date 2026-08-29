@@ -16,6 +16,17 @@ const DEFAULT_MODEL_ID_FOR_PAGE: Partial<Record<ModelPage, string>> = {
   [ModelPage.Angles]: "flux_2_lora_angles",
 };
 
+export const availableDefaultModelForPage = (
+  models: Model[],
+  page: ModelPage,
+): Model | undefined => {
+  const defaultId = DEFAULT_MODEL_ID_FOR_PAGE[page];
+  return (
+    models.find((m) => m.id === defaultId || m.tauriId === defaultId) ??
+    models[0]
+  );
+};
+
 export const defaultModelForPage = (
   models: Model[],
   page: ModelPage,

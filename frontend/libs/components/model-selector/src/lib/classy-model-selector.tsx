@@ -20,7 +20,10 @@ import {
 import { ChevronUpIcon, CircleCheckIcon } from "lucide-react";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { defaultModelForPage } from "./defaultModelForPage";
+import {
+  availableDefaultModelForPage,
+  defaultModelForPage,
+} from "./defaultModelForPage";
 
 interface ClassyModelSelectorProps {
   items: Omit<PopoverItem, "selected">[];
@@ -139,39 +142,43 @@ export function ClassyModelSelector({
   showProviderSelection = true,
   ...popoverProps
 }: ClassyModelSelectorProps) {
-  const { selectedModels, setSelectedModel, setSelectedProvider } =
-    useClassyModelSelectorStore();
-  const itemModels: Model[] = items
-    .map((item) => item.model)
-    .filter((model) => model !== undefined);
+  const {
+    selectedModels,
+    setSelectedModel,
+    reconcileSelectedModelFromCatalog,
+    setSelectedProvider,
+  } = useClassyModelSelectorStore();
+  const itemModels = useMemo(
+    () =>
+      items
+        .map((item) => item.model)
+        .filter((model): model is Model => model !== undefined),
+    [items],
+  );
+  const storedSelectedModel = selectedModels[page];
   const selectedModel =
-    selectedModels[page] || defaultModelForPage(itemModels, page);
+    storedSelectedModel || defaultModelForPage(itemModels, page);
   const selectedProvider = useSelectedProviderForModel(page, selectedModel?.id);
   const selectedProvidersByModel = useClassyModelSelectorStore(
     (s) => s.selectedProviders[page] ?? {},
   );
 
-  // For the first mount, make sure the selected model is set for other components to listen
+  // Seed an automatic default for downstream consumers. When the asynchronous
+  // backend catalog arrives, automatic selections may follow its available
+  // default while explicit choices keep their id. Matching selections still
+  // receive the rebuilt instance so capability-driven UI uses hydrated data.
   useEffect(() => {
-    // Initialize selected model if not set
-    if (!selectedModels[page] && items[0]) {
-      setSelectedModel(page, defaultModelForPage(itemModels, page));
-    }
-  }, []);
-
-  // The backend listing hydrates asynchronously and rebuilds the model
-  // instances with API capabilities. Swap a stale selected instance for the
-  // fresh one so capability-driven UI (keyframes, references, pickers)
-  // reflects the API data without needing a manual re-select.
-  useEffect(() => {
-    const selected = selectedModels[page];
-    if (!selected) return;
-    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
-    if (fresh !== undefined && fresh !== selected) {
-      setSelectedModel(page, fresh);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selectedModels, page]);
+    reconcileSelectedModelFromCatalog(
+      page,
+      itemModels,
+      availableDefaultModelForPage(itemModels, page),
+    );
+  }, [
+    itemModels,
+    page,
+    reconcileSelectedModelFromCatalog,
+    storedSelectedModel,
+  ]);
 
   // Initialize a default provider for each model so we can render icons even when not selected
   useEffect(() => {
