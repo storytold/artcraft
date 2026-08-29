@@ -60,6 +60,15 @@ pub enum TauriVideoModel {
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
 
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
+
   #[serde(rename = "sora_2")]
   Sora2,
 
@@ -149,4 +158,28 @@ pub enum TauriGenerateVideoErrorType {
   NeedsFalApiKey,
   FalError,
   NeedsStorytellerCredentials,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{TauriGenerateVideoRequest, TauriVideoModel};
+
+  #[test]
+  fn seedance_2p5_models_deserialize_at_tauri_command_boundary() {
+    let preview: TauriGenerateVideoRequest = serde_json::from_str(r#"{"model":"seedance_2p5_preview"}"#).unwrap();
+    let full: TauriGenerateVideoRequest = serde_json::from_str(r#"{"model":"seedance_2p5"}"#).unwrap();
+    let ultra: TauriGenerateVideoRequest = serde_json::from_str(r#"{"model":"seedance_2p5_u"}"#).unwrap();
+
+    assert!(matches!(preview.model, Some(TauriVideoModel::Seedance2p5Preview)));
+    assert!(matches!(full.model, Some(TauriVideoModel::Seedance2p5)));
+    assert!(matches!(ultra.model, Some(TauriVideoModel::Seedance2p5Ultra)));
+  }
+
+  #[test]
+  fn unsupported_seedance_2p5_spellings_are_rejected() {
+    for model in ["seedance_2p5_fast", "seedance_2p5_ultra"] {
+      let request = format!(r#"{{"model":"{model}"}}"#);
+      assert!(serde_json::from_str::<TauriGenerateVideoRequest>(&request).is_err());
+    }
+  }
 }

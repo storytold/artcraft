@@ -20,6 +20,70 @@ pub struct TaskEnqueueSuccess {
   pub maybe_prompt_token: Option<PromptToken>,
 }
 
+fn generation_model_to_task_model_type(model: GenerationModel) -> Option<TaskModelType> {
+  match model {
+    GenerationModel::Flux1Dev => Some(TaskModelType::Flux1Dev),
+    GenerationModel::FluxDevJuggernaut => Some(TaskModelType::FluxDevJuggernaut),
+    GenerationModel::Flux1Schnell => Some(TaskModelType::Flux1Schnell),
+    GenerationModel::FluxPro1 => Some(TaskModelType::FluxPro1), // NB: This is for inpainting.
+    GenerationModel::FluxPro11 => Some(TaskModelType::FluxPro11),
+    GenerationModel::FluxPro11Ultra => Some(TaskModelType::FluxPro11Ultra),
+    GenerationModel::FluxProKontextMax => Some(TaskModelType::FluxProKontextMax),
+    GenerationModel::Gemini25Flash => Some(TaskModelType::Gemini25Flash),
+    GenerationModel::NanoBanana => Some(TaskModelType::NanoBanana),
+    GenerationModel::NanoBanana2 => Some(TaskModelType::NanoBanana2),
+    GenerationModel::NanoBananaPro => Some(TaskModelType::NanoBananaPro),
+    GenerationModel::GptImage1 => Some(TaskModelType::GptImage1),
+    GenerationModel::GptImage1p5 => Some(TaskModelType::GptImage1p5),
+    GenerationModel::GptImage2 => Some(TaskModelType::GptImage2),
+    GenerationModel::Seedream4 => Some(TaskModelType::Seedream4),
+    GenerationModel::Seedream4p5 => Some(TaskModelType::Seedream4p5),
+    GenerationModel::Seedream5Lite => Some(TaskModelType::Seedream5Lite),
+    GenerationModel::QwenEdit2511Angles => Some(TaskModelType::QwenEdit2511Angles),
+    GenerationModel::Flux2LoraAngles => Some(TaskModelType::Flux2LoraAngles),
+    GenerationModel::GrokImage => Some(TaskModelType::GrokImage),
+    GenerationModel::Recraft3 => Some(TaskModelType::Recraft3),
+    GenerationModel::GrokVideo => Some(TaskModelType::GrokVideo),
+    GenerationModel::GrokImagineVideo1p5 => Some(TaskModelType::GrokImagineVideo1p5),
+    GenerationModel::Kling21Pro => Some(TaskModelType::Kling21Pro),
+    GenerationModel::Kling21Master => Some(TaskModelType::Kling21Master),
+    GenerationModel::Kling2p5TurboPro => Some(TaskModelType::Kling2p5TurboPro),
+    GenerationModel::Kling2p6Pro => Some(TaskModelType::Kling2p6Pro),
+    GenerationModel::Kling3p0Standard => Some(TaskModelType::Kling3p0Standard),
+    GenerationModel::Kling3p0Pro => Some(TaskModelType::Kling3p0Pro),
+    GenerationModel::HappyHorse1p0 => Some(TaskModelType::HappyHorse1p0),
+    GenerationModel::Seedance10Lite => Some(TaskModelType::Seedance10Lite),
+    GenerationModel::Seedance1p5Pro => Some(TaskModelType::Seedance1p5Pro),
+    GenerationModel::Seedance2p0 => Some(TaskModelType::Seedance2p0),
+    GenerationModel::Seedance2p0Fast => Some(TaskModelType::Seedance2p0Fast),
+    GenerationModel::Seedance2p5Preview => Some(TaskModelType::Seedance2p5Preview),
+    GenerationModel::Seedance2p5 => Some(TaskModelType::Seedance2p5),
+    GenerationModel::Seedance2p5Ultra => Some(TaskModelType::Seedance2p5Ultra),
+    GenerationModel::Sora2 => Some(TaskModelType::Sora2),
+    GenerationModel::Sora2Pro => Some(TaskModelType::Sora2Pro),
+    GenerationModel::Veo2 => Some(TaskModelType::Veo2),
+    GenerationModel::Veo3 => Some(TaskModelType::Veo3),
+    GenerationModel::Veo3p1 => Some(TaskModelType::Veo3p1),
+    GenerationModel::Veo3p1Fast => Some(TaskModelType::Veo3p1Fast),
+    GenerationModel::Veo3Fast => Some(TaskModelType::Veo3Fast),
+    GenerationModel::Hunyuan3d2_0 => Some(TaskModelType::Hunyuan3d2_0),
+    GenerationModel::Hunyuan3d2_1 => Some(TaskModelType::Hunyuan3d2_1),
+    GenerationModel::Hunyuan3d3 => Some(TaskModelType::Hunyuan3d3),
+    GenerationModel::WorldlabsMarble => Some(TaskModelType::WorldlabsMarble),
+    GenerationModel::WorldlabsMarble0p1Mini => Some(TaskModelType::WorldlabsMarble0p1Mini),
+    GenerationModel::WorldlabsMarble0p1Plus => Some(TaskModelType::WorldlabsMarble0p1Plus),
+    GenerationModel::Midjourney => Some(TaskModelType::Midjourney), // NB: This is a generic Midjourney model, version unknown.
+    GenerationModel::Midjourney7 => Some(TaskModelType::Midjourney7),
+    GenerationModel::Midjourney7Niji => Some(TaskModelType::Midjourney7Niji),
+    GenerationModel::Midjourney8 => Some(TaskModelType::Midjourney8),
+
+    // TODO: These seem wrong -
+    GenerationModel::Kling1_6 => Some(TaskModelType::Kling16Pro), // NB: `VideoModel::Kling16Pro`.
+    GenerationModel::Kling2_0 => None, // TODO: unused elsewhere?
+    GenerationModel::Sora => None, // TODO: unused elsewhere?
+  }
+}
+
 impl TaskEnqueueSuccess{
   pub fn to_frontend_event_action(&self) -> GenerationAction {
     match self.task_type {
@@ -60,66 +124,7 @@ impl TaskEnqueueSuccess{
     frontend_subscriber_id: Option<&str>,
     frontend_subscriber_payload: Option<&str>,
   ) -> Result<TaskId, SqliteTasksError> {
-    // TODO: Move this mapping elsewhere, or remove the other models.
-    let model_type = match self.model {
-      None => None,
-      Some(GenerationModel::Flux1Dev) => Some(TaskModelType::Flux1Dev),
-      Some(GenerationModel::FluxDevJuggernaut) => Some(TaskModelType::FluxDevJuggernaut),
-      Some(GenerationModel::Flux1Schnell) => Some(TaskModelType::Flux1Schnell),
-      Some(GenerationModel::FluxPro1) => Some(TaskModelType::FluxPro1), // NB: This is for inpainting.
-      Some(GenerationModel::FluxPro11) => Some(TaskModelType::FluxPro11),
-      Some(GenerationModel::FluxPro11Ultra) => Some(TaskModelType::FluxPro11Ultra),
-      Some(GenerationModel::FluxProKontextMax) => Some(TaskModelType::FluxProKontextMax),
-      Some(GenerationModel::Gemini25Flash) => Some(TaskModelType::Gemini25Flash),
-      Some(GenerationModel::NanoBanana) => Some(TaskModelType::NanoBanana),
-      Some(GenerationModel::NanoBanana2) => Some(TaskModelType::NanoBanana2),
-      Some(GenerationModel::NanoBananaPro) => Some(TaskModelType::NanoBananaPro),
-      Some(GenerationModel::GptImage1) => Some(TaskModelType::GptImage1),
-      Some(GenerationModel::GptImage1p5) => Some(TaskModelType::GptImage1p5),
-      Some(GenerationModel::GptImage2) => Some(TaskModelType::GptImage2),
-      Some(GenerationModel::Seedream4) => Some(TaskModelType::Seedream4),
-      Some(GenerationModel::Seedream4p5) => Some(TaskModelType::Seedream4p5),
-      Some(GenerationModel::Seedream5Lite) => Some(TaskModelType::Seedream5Lite),
-      Some(GenerationModel::QwenEdit2511Angles) => Some(TaskModelType::QwenEdit2511Angles),
-      Some(GenerationModel::Flux2LoraAngles) => Some(TaskModelType::Flux2LoraAngles),
-      Some(GenerationModel::GrokImage) => Some(TaskModelType::GrokImage),
-      Some(GenerationModel::Recraft3) => Some(TaskModelType::Recraft3),
-      Some(GenerationModel::GrokVideo) => Some(TaskModelType::GrokVideo),
-      Some(GenerationModel::GrokImagineVideo1p5) => Some(TaskModelType::GrokImagineVideo1p5),
-      Some(GenerationModel::Kling21Pro) => Some(TaskModelType::Kling21Pro),
-      Some(GenerationModel::Kling21Master) => Some(TaskModelType::Kling21Master),
-      Some(GenerationModel::Kling2p5TurboPro) => Some(TaskModelType::Kling2p5TurboPro),
-      Some(GenerationModel::Kling2p6Pro) => Some(TaskModelType::Kling2p6Pro),
-      Some(GenerationModel::Kling3p0Standard) => Some(TaskModelType::Kling3p0Standard),
-      Some(GenerationModel::Kling3p0Pro) => Some(TaskModelType::Kling3p0Pro),
-      Some(GenerationModel::HappyHorse1p0) => Some(TaskModelType::HappyHorse1p0),
-      Some(GenerationModel::Seedance10Lite) => Some(TaskModelType::Seedance10Lite),
-      Some(GenerationModel::Seedance1p5Pro) => Some(TaskModelType::Seedance1p5Pro),
-      Some(GenerationModel::Seedance2p0) => Some(TaskModelType::Seedance2p0),
-      Some(GenerationModel::Seedance2p0Fast) => Some(TaskModelType::Seedance2p0Fast),
-      Some(GenerationModel::Sora2) => Some(TaskModelType::Sora2),
-      Some(GenerationModel::Sora2Pro) => Some(TaskModelType::Sora2Pro),
-      Some(GenerationModel::Veo2) => Some(TaskModelType::Veo2),
-      Some(GenerationModel::Veo3) => Some(TaskModelType::Veo3),
-      Some(GenerationModel::Veo3p1) => Some(TaskModelType::Veo3p1),
-      Some(GenerationModel::Veo3p1Fast) => Some(TaskModelType::Veo3p1Fast),
-      Some(GenerationModel::Veo3Fast) => Some(TaskModelType::Veo3Fast),
-      Some(GenerationModel::Hunyuan3d2_0) => Some(TaskModelType::Hunyuan3d2_0),
-      Some(GenerationModel::Hunyuan3d2_1) => Some(TaskModelType::Hunyuan3d2_1),
-      Some(GenerationModel::Hunyuan3d3) => Some(TaskModelType::Hunyuan3d3),
-      Some(GenerationModel::WorldlabsMarble) => Some(TaskModelType::WorldlabsMarble),
-      Some(GenerationModel::WorldlabsMarble0p1Mini) => Some(TaskModelType::WorldlabsMarble0p1Mini),
-      Some(GenerationModel::WorldlabsMarble0p1Plus) => Some(TaskModelType::WorldlabsMarble0p1Plus),
-      Some(GenerationModel::Midjourney) => Some(TaskModelType::Midjourney), // NB: This is a generic Midjourney model, version unknown.
-      Some(GenerationModel::Midjourney7) => Some(TaskModelType::Midjourney7),
-      Some(GenerationModel::Midjourney7Niji) => Some(TaskModelType::Midjourney7Niji),
-      Some(GenerationModel::Midjourney8) => Some(TaskModelType::Midjourney8),
-
-      // TODO: These seem wrong -
-      Some(GenerationModel::Kling1_6) => Some(TaskModelType::Kling16Pro), // NB: `VideoModel::Kling16Pro`.
-      Some(GenerationModel::Kling2_0) => None, // TODO: unused elsewhere?
-      Some(GenerationModel::Sora) => None, // TODO: unused elsewhere?
-    };
+    let model_type = self.model.and_then(generation_model_to_task_model_type);
 
     create_task(CreateTaskArgs {
       db: task_database.get_connection(),
@@ -135,5 +140,29 @@ impl TaskEnqueueSuccess{
       frontend_subscriber_id,
       frontend_subscriber_payload,
     }).await
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn seedance_2p5_generation_models_map_to_persisted_task_models() {
+    for (generation_model, expected) in [
+      (GenerationModel::Seedance2p5Preview, "seedance_2p5_preview"),
+      (GenerationModel::Seedance2p5, "seedance_2p5"),
+      (GenerationModel::Seedance2p5Ultra, "seedance_2p5_u"),
+    ] {
+      let task_model = generation_model_to_task_model_type(generation_model).unwrap();
+      assert_eq!(task_model.to_str(), expected);
+    }
+  }
+
+  #[test]
+  fn extracted_mapping_preserves_legacy_special_cases() {
+    assert_eq!(generation_model_to_task_model_type(GenerationModel::Kling1_6).unwrap().to_str(), "kling_1.6_pro");
+    assert!(generation_model_to_task_model_type(GenerationModel::Kling2_0).is_none());
+    assert!(generation_model_to_task_model_type(GenerationModel::Sora).is_none());
   }
 }

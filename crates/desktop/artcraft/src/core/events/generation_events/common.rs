@@ -121,6 +121,12 @@ pub enum GenerationModel {
   Seedance2p0,
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
   #[serde(rename = "veo_2")]
   Veo2,
   #[serde(rename = "veo_3")]

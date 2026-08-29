@@ -316,6 +316,9 @@ fn task_model_type_to_generation_model(model: TaskModelType) -> Option<Generatio
     TaskModelType::Seedance1p5Pro => Some(GenerationModel::Seedance1p5Pro),
     TaskModelType::Seedance2p0 => Some(GenerationModel::Seedance2p0),
     TaskModelType::Seedance2p0Fast => Some(GenerationModel::Seedance2p0Fast),
+    TaskModelType::Seedance2p5Preview => Some(GenerationModel::Seedance2p5Preview),
+    TaskModelType::Seedance2p5 => Some(GenerationModel::Seedance2p5),
+    TaskModelType::Seedance2p5Ultra => Some(GenerationModel::Seedance2p5Ultra),
     TaskModelType::Sora2 => Some(GenerationModel::Sora2),
     TaskModelType::Sora2Pro => Some(GenerationModel::Sora2Pro),
     TaskModelType::Veo2 => Some(GenerationModel::Veo2),
@@ -331,5 +334,22 @@ fn task_model_type_to_generation_model(model: TaskModelType) -> Option<Generatio
     TaskModelType::WorldlabsMarble => Some(GenerationModel::WorldlabsMarble),
     TaskModelType::WorldlabsMarble0p1Mini => Some(GenerationModel::WorldlabsMarble0p1Mini),
     TaskModelType::WorldlabsMarble0p1Plus => Some(GenerationModel::WorldlabsMarble0p1Plus),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn seedance_2p5_task_models_map_to_completion_event_identifiers() {
+    for (task_model, expected) in [
+      (TaskModelType::Seedance2p5Preview, r#""seedance_2p5_preview""#),
+      (TaskModelType::Seedance2p5, r#""seedance_2p5""#),
+      (TaskModelType::Seedance2p5Ultra, r#""seedance_2p5_u""#),
+    ] {
+      let generation_model = task_model_type_to_generation_model(task_model).unwrap();
+      assert_eq!(serde_json::to_string(&generation_model).unwrap(), expected);
+    }
   }
 }

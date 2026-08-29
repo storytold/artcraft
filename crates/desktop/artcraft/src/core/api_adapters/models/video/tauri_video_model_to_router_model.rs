@@ -19,6 +19,9 @@ pub fn tauri_video_model_to_router_model(model: TauriVideoModel) -> RouterVideoM
     TauriVideoModel::Seedance1p5Pro => RouterVideoModel::Seedance1p5Pro,
     TauriVideoModel::Seedance2p0 => RouterVideoModel::Seedance2p0,
     TauriVideoModel::Seedance2p0Fast => RouterVideoModel::Seedance2p0Fast,
+    TauriVideoModel::Seedance2p5Preview => RouterVideoModel::Seedance2p5Preview,
+    TauriVideoModel::Seedance2p5 => RouterVideoModel::Seedance2p5,
+    TauriVideoModel::Seedance2p5Ultra => RouterVideoModel::Seedance2p5Ultra,
     TauriVideoModel::Sora2 => RouterVideoModel::Sora2,
     TauriVideoModel::Sora2Pro => RouterVideoModel::Sora2Pro,
     TauriVideoModel::Veo2 => RouterVideoModel::Veo2,
@@ -26,5 +29,26 @@ pub fn tauri_video_model_to_router_model(model: TauriVideoModel) -> RouterVideoM
     TauriVideoModel::Veo3Fast => RouterVideoModel::Veo3Fast,
     TauriVideoModel::Veo3p1 => RouterVideoModel::Veo3p1,
     TauriVideoModel::Veo3p1Fast => RouterVideoModel::Veo3p1Fast,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn seedance_2p5_models_map_to_router_models() {
+    assert!(matches!(
+      tauri_video_model_to_router_model(TauriVideoModel::Seedance2p5Preview),
+      RouterVideoModel::Seedance2p5Preview
+    ));
+    assert!(matches!(
+      tauri_video_model_to_router_model(TauriVideoModel::Seedance2p5),
+      RouterVideoModel::Seedance2p5
+    ));
+    assert!(matches!(
+      tauri_video_model_to_router_model(TauriVideoModel::Seedance2p5Ultra),
+      RouterVideoModel::Seedance2p5Ultra
+    ));
   }
 }
