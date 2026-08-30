@@ -1,0 +1,44 @@
+[package]
+name = "artcraft-mcp-server"
+edition = "2021"
+version = "0.1.0"
+authors = ["Brandon Thomas <bt@brand.io>"]
+publish = false
+
+[[bin]]
+name = "artcraft-mcp-server"
+path = "src/main.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { workspace = true }
+
+# Web / HTTP client
+artcraft_client = { path = "../../../api_clients/artcraft/artcraft_client" }
+artcraft_api_defs = { path = "../../../api_clients/artcraft/artcraft_api_defs" }
+enums = { path = "../../../schema/public/enums" }
+tokens = { path = "../../../schema/public/tokens" }
+mimetypes = { path = "../../../lib/files/mimetypes" }
+
+# Async runtime
+tokio = { workspace = true, features = ["macros", "signal", "rt-multi-thread"] }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Logging
+log = { workspace = true }
+env_logger = { workspace = true }
+
+# Errors
+anyhow = { workspace = true }
+
+# UUID
+uuid = { workspace = true }
+
+# Directories (for credentials discovery)
+directories = "5.0.1"

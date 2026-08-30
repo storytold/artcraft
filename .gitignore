@@ -1,6 +1,9 @@
 # Secrets are BAD!
 *secret*sh
 .env
+artcraft_session.txt
+artcraft_avt.txt
+credentials/
 .env-aichatbot-secrets
 .env-analytics-job
 .env-elasticsearch-secrets
