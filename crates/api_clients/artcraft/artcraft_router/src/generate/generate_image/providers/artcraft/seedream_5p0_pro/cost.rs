@@ -148,7 +148,7 @@ mod tests {
 
   #[test]
   fn price_covers_kinovi_cost() {
-    use seedance2pro_client::generate::image::generate_seedream_5p0_pro::{
+    use kinovi_web_client::generate::image::generate_seedream_5p0_pro::{
       KinoviSeedream5p0ProBatchCount, KinoviSeedream5p0ProResolution,
     };
     use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::cost::KinoviSeedream5p0ProCostState;

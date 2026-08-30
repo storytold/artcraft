@@ -11,6 +11,7 @@ use pager::notification::notification_details_builder::NotificationDetailsBuilde
 use pager::notification::notification_urgency::NotificationUrgency;
 
 use crate::http_server::http_server_shared_state::HttpServerSharedState;
+use crate::loop_heartbeats::HeartbeatAge;
 
 #[derive(Serialize)]
 pub struct HealthCheckResponse {
@@ -22,6 +23,16 @@ pub struct HealthCheckResponse {
   pub total_success_count: u64,
   pub total_failure_ratio: f32,
   pub total_success_ratio: f32,
+  /// Seconds since each loop last made progress, oldest first.
+  pub loop_heartbeat_ages_seconds: Vec<LoopHeartbeatAge>,
+  /// Loops whose heartbeat is older than the staleness threshold.
+  pub stale_loops: Vec<String>,
+}
+
+#[derive(Serialize)]
+pub struct LoopHeartbeatAge {
+  pub loop_name: String,
+  pub age_seconds: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -75,8 +86,21 @@ pub async fn get_health_check_handler(
     0.0
   };
 
-  let is_healthy =
-    job_stats.consecutive_failure_count < server_state.consecutive_failure_unhealthy_threshold;
+  let heartbeat_ages = server_state.heartbeats.ages();
+  let stale_loops: Vec<String> = server_state.heartbeats
+      .stale(server_state.heartbeat_stale_threshold)
+      .into_iter()
+      .map(|entry| format!("{} ({}s)", entry.loop_name, entry.age.as_secs()))
+      .collect();
+
+  let too_many_failures =
+    job_stats.consecutive_failure_count >= server_state.consecutive_failure_unhealthy_threshold;
+
+  let is_healthy = !too_many_failures && stale_loops.is_empty();
+
+  if !stale_loops.is_empty() {
+    error!("Health check: stale loop heartbeat(s): {:?}", stale_loops);
+  }
 
   if !is_healthy {
     let notification = NotificationDetailsBuilder::from_title(
@@ -86,11 +110,13 @@ pub async fn get_health_check_handler(
              Hostname: {}\n\
              Consecutive failure count: {}\n\
              Total failure count: {}\n\
-             Total success count: {}",
+             Total success count: {}\n\
+             Stale loops: {:?}",
           server_state.hostname,
           job_stats.consecutive_failure_count,
           job_stats.total_failure_count,
           job_stats.total_success_count,
+          stale_loops,
         )))
         .set_urgency(Some(NotificationUrgency::High))
         .set_http_method(Some(http_request.method().to_string()))
@@ -111,6 +137,8 @@ pub async fn get_health_check_handler(
     total_success_count: job_stats.total_success_count,
     total_failure_ratio,
     total_success_ratio,
+    loop_heartbeat_ages_seconds: heartbeat_ages.into_iter().map(to_loop_heartbeat_age).collect(),
+    stale_loops,
   };
 
   let body = serde_json::to_string(&response).map_err(|_e| HealthCheckError::ServerError)?;
@@ -123,5 +151,12 @@ pub async fn get_health_check_handler(
     Ok(HttpResponse::InternalServerError()
       .content_type(ContentType::json())
       .body(body))
+  }
+}
+
+fn to_loop_heartbeat_age(entry: HeartbeatAge) -> LoopHeartbeatAge {
+  LoopHeartbeatAge {
+    loop_name: entry.loop_name.to_string(),
+    age_seconds: entry.age.as_secs(),
   }
 }

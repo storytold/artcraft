@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { LoaderCircleIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { useGalleryViewStore } from "./gallery-view-store";
 
@@ -47,7 +47,7 @@ interface GalleryThumbnailProps {
   alt: string;
   isVideo: boolean;
   // Icon shown when there is no thumbnail at all (e.g. 3D meshes).
-  fallbackIcon: IconDefinition;
+  fallbackIcon: LucideIcon;
   // Classes for the <img> element (sizing / object-fit).
   imgClassName?: string;
   fallbackIconClassName?: string;
@@ -150,10 +150,9 @@ export function GalleryThumbnail({
     return (
       <>
         <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-lg text-white/30"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-lg text-white/30" />
           {showRetryLabel && (
             <span className="text-[10px] text-white/30">Loading thumbnail…</span>
           )}
@@ -188,7 +187,7 @@ export function GalleryThumbnail({
 
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <FontAwesomeIcon icon={fallbackIcon} className={fallbackIconClassName} />
+      <DynamicIcon icon={fallbackIcon} className={fallbackIconClassName} />
     </div>
   );
 }

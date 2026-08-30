@@ -18,6 +18,12 @@
       "path": "../button-icon-select"
     },
     {
+      "path": "../keybinds"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

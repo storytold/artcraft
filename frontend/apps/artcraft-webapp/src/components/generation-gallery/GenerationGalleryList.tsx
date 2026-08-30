@@ -1,19 +1,12 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faLink,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   GenerationListView,
   type GalleryItem,
-  is3DMediaClass,
   type RecreateSlotContext,
   useGallerySelectionStore,
+  useLastViewedGenerationStore,
 } from "@storyteller/ui-generation-list";
 import { toast } from "../toast/toast";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
@@ -45,6 +38,7 @@ export function GenerationGalleryList({
 }: GenerationGalleryProps) {
   const selectionActive = useGallerySelectionStore((s) => s.active);
   const selectedIds = useGallerySelectionStore((s) => s.ids);
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
   return (
     <GenerationListView
       inProgressJobs={inProgressJobs}
@@ -70,6 +64,7 @@ export function GenerationGalleryList({
       selectionMode={!!selectable && selectionActive}
       selectedIds={selectedIds}
       onToggleSelect={handleToggleSelect}
+      lastViewedId={lastViewedId}
     />
   );
 }
@@ -93,14 +88,16 @@ function RowRecreateButton({
   mediaClass,
   kind,
 }: RecreateSlotContext) {
-  // Recreate only targets the image/video create pages; 3D generations have no
-  // recreate flow, so map to a valid class for the hook and render nothing.
+  // Recreate only targets the image/video create pages; 3D and audio
+  // generations have no recreate flow, so map to a valid class for the hook
+  // (it must run unconditionally) and render nothing.
+  const hasRecreateFlow = mediaClass === "image" || mediaClass === "video";
   const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
     promptToken,
-    is3DMediaClass(mediaClass) ? "image" : mediaClass,
+    hasRecreateFlow ? mediaClass : "image",
   );
 
-  if (is3DMediaClass(mediaClass)) return null;
+  if (!hasRecreateFlow) return null;
   return (
     <Tooltip content="Recreate" position="top">
       <button
@@ -114,8 +111,8 @@ function RowRecreateButton({
             : "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
         }
       >
-        <FontAwesomeIcon
-          icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+        <DynamicIcon
+          icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
           className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
         />
       </button>
@@ -172,8 +169,8 @@ function GalleryRowActions({
             aria-label="Recreate"
             className={buttonClass}
           >
-            <FontAwesomeIcon
-              icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+            <DynamicIcon
+              icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
               className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
             />
           </button>
@@ -187,7 +184,7 @@ function GalleryRowActions({
             aria-label="Make Video"
             className={buttonClass}
           >
-            <FontAwesomeIcon icon={faVideo} className="text-sm" />
+            <VideoIcon  className="text-sm" />
           </button>
         </Tooltip>
       )}
@@ -198,8 +195,8 @@ function GalleryRowActions({
           aria-label="Share"
           className={buttonClass}
         >
-          <FontAwesomeIcon
-            icon={shareCopied ? faCheck : faLink}
+          <DynamicIcon
+            icon={shareCopied ? CheckIcon : LinkIcon}
             className="text-sm"
           />
         </button>
@@ -213,8 +210,8 @@ function GalleryRowActions({
             aria-label="Download"
             className={buttonClass}
           >
-            <FontAwesomeIcon
-              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+            <DynamicIcon
+              icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
               className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
             />
           </button>

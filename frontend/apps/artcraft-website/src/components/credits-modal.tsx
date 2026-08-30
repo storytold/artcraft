@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import { faCoins } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CoinsIcon } from "lucide-react";
 import { BillingApi } from "@storyteller/api";
 import { toast } from "./toast/toast";
 
@@ -86,10 +85,9 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
               )}
 
               <div className="flex items-center gap-2.5">
-                <FontAwesomeIcon
-                  icon={faCoins}
-                  className="text-2xl text-primary"
-                />
+                <CoinsIcon
+                  
+                  className="text-2xl text-primary" />
                 <span className="text-3xl font-bold tracking-tight text-white">
                   {pack.total.toLocaleString()}
                 </span>

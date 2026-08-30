@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
 use crate::kinovi_version::KinoviVersion;
+use crate::loop_heartbeats::LoopHeartbeats;
 use crate::order_reconciler::OrderReconciler;
 use chrono::Duration;
 use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
 use pager::client::pager::Pager;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use tokio::sync::Notify;
@@ -19,8 +20,12 @@ pub struct JobDependencies {
   /// Public GCS/S3 bucket for storing generated videos.
   pub public_bucket_client: LegacyBucketClient,
 
+  /// HTTP client for downloading finished media from Kinovi's CDN. Built once
+  /// with a request deadline so a stalled download can't park a loop forever.
+  pub download_client: reqwest::Client,
+
   /// Session credentials for polling seedance2-pro.com.
-  pub seedance2pro_session: Seedance2ProSession,
+  pub kinovi_web_session: KinoviWebSession,
 
   /// The kinovi account/version we poll
   pub kinovi_version: KinoviVersion,
@@ -61,4 +66,8 @@ pub struct JobDependencies {
   /// Hand-off between the polling loop (producer) and the processing loop
   /// (consumer): finished Kinovi orders staged for reconciliation into our DB.
   pub order_reconciler: OrderReconciler,
+
+  /// Liveness signal from each loop, surfaced by the health check so a
+  /// wedged loop gets the pod restarted instead of sitting silent.
+  pub heartbeats: LoopHeartbeats,
 }

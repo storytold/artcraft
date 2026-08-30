@@ -4,8 +4,7 @@ import Footer from "../../components/footer";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay } from "@fortawesome/pro-solid-svg-icons";
+import { PlayIcon } from "lucide-react";
 import { getTutorialItems, TutorialItem } from "@storyteller/markdown-content";
 
 const websiteThumb = (url: string): string => {
@@ -102,7 +101,7 @@ export const TutorialsPage = () => {
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="inline-flex items-center gap-2 text-white/90 text-sm font-medium">
-                      <FontAwesomeIcon icon={faPlay} />
+                      <PlayIcon />
                       Watch video
                     </span>
                   </div>

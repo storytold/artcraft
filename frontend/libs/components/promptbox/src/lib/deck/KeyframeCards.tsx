@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRightArrowLeft,
-  faPlus,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowLeftRightIcon, PlusIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { DeckAddAction, DeckItem } from "./deckTypes";
 import {
@@ -74,11 +70,11 @@ export const KeyframeCards = ({
                 title="Swap frames"
                 className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-black/60 text-[10px] text-white shadow backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80"
               >
-                <FontAwesomeIcon icon={faArrowRightArrowLeft} />
+                <ArrowLeftRightIcon />
               </button>
             ) : (
               <div className="pointer-events-none flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-black/40 text-[10px] text-white/50 backdrop-blur-md">
-                <FontAwesomeIcon icon={faArrowRightArrowLeft} />
+                <ArrowLeftRightIcon />
               </div>
             )}
           </div>
@@ -150,7 +146,7 @@ export const DeckSlotCard = ({
         tiltClass,
       )}
     >
-      <FontAwesomeIcon icon={faPlus} className="text-lg opacity-80" />
+      <PlusIcon  className="text-lg opacity-80" />
       <span className="px-0.5 text-center text-[8px] font-medium leading-tight opacity-70">
         {label}
       </span>

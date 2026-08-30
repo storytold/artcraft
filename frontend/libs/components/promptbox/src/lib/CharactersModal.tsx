@@ -1,17 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faArrowLeft,
-  faUpload,
-  faUserGroup,
-  faSpinnerThird,
-  faImages,
-  faXmark,
-  faPen,
-  faTrashAlt,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowLeftIcon, EyeIcon, ImagesIcon, LoaderCircleIcon, PenIcon, PlusIcon, Trash2Icon, UploadIcon, UsersIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import {
   CharactersApi,
@@ -23,6 +12,7 @@ import { toast } from "@storyteller/ui-toaster";
 import { v4 as uuidv4 } from "uuid";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { useCharactersStore } from "./promptStore";
+import { DeckPreviewModal } from "./deck/DeckCard";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { Label } from "@storyteller/ui-label";
@@ -228,6 +218,9 @@ const CharacterListView = ({
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(
+    null,
+  );
 
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
@@ -286,7 +279,7 @@ const CharacterListView = ({
         </p>
       ),
       primaryActionText: "Delete",
-      primaryActionIcon: faTrashAlt,
+      primaryActionIcon: Trash2Icon,
       secondaryActionText: "Cancel",
       primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
       onPrimaryAction: async () => {
@@ -362,7 +355,7 @@ const CharacterListView = ({
             className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-base-fg/10 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/25 hover:text-base-fg/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-              <FontAwesomeIcon icon={faPlus} className="text-lg" />
+              <PlusIcon  className="text-lg" />
               <span className="text-sm font-medium">Create New</span>
             </div>
           </button>
@@ -382,14 +375,13 @@ const CharacterListView = ({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-base-fg/20">
-                    <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                    <UsersIcon  className="text-2xl" />
                   </div>
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="text-lg text-white/80 animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="text-lg text-white/80 animate-spin" />
                   <span className="text-xs font-medium text-white/80">
                     Creating...
                   </span>
@@ -425,10 +417,9 @@ const CharacterListView = ({
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-base-fg/20">
-                        <FontAwesomeIcon
-                          icon={faUserGroup}
-                          className="text-2xl"
-                        />
+                        <UsersIcon
+                          
+                          className="text-2xl" />
                       </div>
                     )}
                   </div>
@@ -439,30 +430,48 @@ const CharacterListView = ({
                   </div>
                 </button>
 
-                {/* Edit / Delete overlay buttons (user-created only) */}
-                {isUserCreated && (
-                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditCharacter(character);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
-                    >
-                      <FontAwesomeIcon icon={faPen} className="text-[10px]" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(character);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
-                    >
-                      <FontAwesomeIcon
-                        icon={faTrashAlt}
-                        className="text-[10px]"
-                      />
-                    </button>
+                {/* View / Edit / Delete overlay buttons. Hover-revealed on
+                    desktop; always visible on touch devices (no hover). */}
+                {(character.maybe_avatar?.cdn_url || isUserCreated) && (
+                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                    {character.maybe_avatar?.cdn_url && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewCharacter(character);
+                        }}
+                        title="View full size"
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                      >
+                        <EyeIcon  className="text-[10px]" />
+                      </button>
+                    )}
+                    {isUserCreated && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCharacter(character);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                        >
+                          <PenIcon
+                            
+                            className="text-[10px]" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(character);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                        >
+                          <Trash2Icon
+                            
+                            className="text-[10px]" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -471,6 +480,19 @@ const CharacterListView = ({
         </div>
       )}
 
+      <DeckPreviewModal
+        item={
+          previewCharacter?.maybe_avatar?.cdn_url
+            ? {
+                id: previewCharacter.token,
+                kind: "image",
+                url: previewCharacter.maybe_avatar.cdn_url,
+                name: previewCharacter.name,
+              }
+            : null
+        }
+        onClose={() => setPreviewCharacter(null)}
+      />
     </div>
   );
 };
@@ -541,7 +563,7 @@ const EditCharacterView = ({
             onClick={onBack}
             className="flex items-center justify-center text-base-fg/60 transition-colors hover:text-base-fg"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
           <h2 className="text-xl font-bold text-base-fg">Edit Character</h2>
         </div>
@@ -798,7 +820,7 @@ const NewCharacterView = ({
             onClick={onBack}
             className="flex items-center justify-center text-base-fg/60 transition-colors hover:text-base-fg"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
           <h2 className="text-xl font-bold text-base-fg">New Character</h2>
         </div>
@@ -828,10 +850,9 @@ const NewCharacterView = ({
               />
               {!images[0]!.mediaToken && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="text-white animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="text-white animate-spin" />
                 </div>
               )}
               <button
@@ -841,15 +862,14 @@ const NewCharacterView = ({
                 }}
                 className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
-                <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                <XIcon  className="text-sm" />
               </button>
             </div>
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center text-base-fg/60">
-              <FontAwesomeIcon
-                icon={faUpload}
-                className="mb-2 text-xl text-base-fg/40"
-              />
+              <UploadIcon
+                
+                className="mb-2 text-xl text-base-fg/40" />
               <p className="text-sm">Upload reference image</p>
               <p className="mb-3 text-xs text-base-fg/40">
                 Click or drag an image here
@@ -862,14 +882,14 @@ const NewCharacterView = ({
                   onClick={() => setIsGalleryOpen(true)}
                   className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
                 >
-                  <FontAwesomeIcon icon={faImages} className="text-xs" />
+                  <ImagesIcon  className="text-xs" />
                   Choose from Library
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
                 >
-                  <FontAwesomeIcon icon={faUpload} className="text-xs" />
+                  <UploadIcon  className="text-xs" />
                   Upload Image
                 </button>
               </div>

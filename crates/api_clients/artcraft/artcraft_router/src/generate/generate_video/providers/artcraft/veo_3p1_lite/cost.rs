@@ -4,10 +4,10 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 use crate::generate::generate_video::providers::artcraft::veo_3p1_lite::request::ArtcraftVeo3p1LiteRequestState;
 
 /// Per-second rates in hundredths of a US cent.
-const SEVEN_TWENTY_P_AUDIO_OFF_RATE: u64 = 315;
-const SEVEN_TWENTY_P_AUDIO_ON_RATE: u64 = 525;
-const TEN_EIGHTY_P_AUDIO_OFF_RATE: u64 = 525;
-const TEN_EIGHTY_P_AUDIO_ON_RATE: u64 = 840;
+const SEVEN_TWENTY_P_AUDIO_OFF_RATE: u64 = 345;
+const SEVEN_TWENTY_P_AUDIO_ON_RATE: u64 = 575;
+const TEN_EIGHTY_P_AUDIO_OFF_RATE: u64 = 575;
+const TEN_EIGHTY_P_AUDIO_ON_RATE: u64 = 920;
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftVeo3p1LiteCostState {
@@ -88,28 +88,28 @@ mod tests {
   }
 
   #[test]
-  fn defaults_8s_720p_audio_on_is_42() { assert_eq!(cost_cents(None, None, None), 42); }
+  fn defaults_8s_720p_audio_on_is_46() { assert_eq!(cost_cents(None, None, None), 46); }
 
   #[test]
-  fn audio_off_8s_720p_is_26() {
-    // 315 * 8 = 2520 hundredth-cents → 26 cents.
-    assert_eq!(cost_cents(Some(8), None, Some(false)), 26);
+  fn audio_off_8s_720p_is_28() {
+    // 345 * 8 = 2760 hundredth-cents → 28 cents.
+    assert_eq!(cost_cents(Some(8), None, Some(false)), 28);
   }
 
   #[test]
-  fn audio_on_8s_1080p_is_68() {
-    // 840 * 8 = 6720 hundredth-cents → 68 cents.
-    assert_eq!(cost_cents(Some(8), Some(RouterResolution::TenEightyP), Some(true)), 68);
+  fn audio_on_8s_1080p_is_74() {
+    // 920 * 8 = 7360 hundredth-cents → 74 cents.
+    assert_eq!(cost_cents(Some(8), Some(RouterResolution::TenEightyP), Some(true)), 74);
   }
 
   #[test]
-  fn audio_off_8s_1080p_is_42() {
-    assert_eq!(cost_cents(Some(8), Some(RouterResolution::TenEightyP), Some(false)), 42);
+  fn audio_off_8s_1080p_is_46() {
+    assert_eq!(cost_cents(Some(8), Some(RouterResolution::TenEightyP), Some(false)), 46);
   }
 
   #[test]
-  fn audio_on_4s_720p_is_21() {
-    assert_eq!(cost_cents(Some(4), None, Some(true)), 21);
+  fn audio_on_4s_720p_is_23() {
+    assert_eq!(cost_cents(Some(4), None, Some(true)), 23);
   }
 
   #[test]

@@ -7,14 +7,8 @@ import {
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateButton, ToggleButton } from "@storyteller/ui-button";
-import {
-  faChevronDown,
-  faChevronUp,
-  faMicrophoneLines,
-  faMicrophoneSlash,
-  faRepeat,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDownIcon, ChevronUpIcon, MicIcon, MicOffIcon, RepeatIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import type { OmniGenAudioModelDetails, UploadMediaFn } from "@storyteller/api";
 import {
   enqueueAudioGeneration,
@@ -41,7 +35,15 @@ import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
-import { AudioReferenceRow } from "./common/AudioReferenceRow";
+import {
+  AudioReferenceRow,
+  type AudioReferenceRowHandle,
+} from "./common/AudioReferenceRow";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./deck/usePromptBoxDrop";
 import { AudioTuningPopover } from "./common/AudioTuningPopover";
 import { SoundsSettingsPopover } from "./common/SoundsSettingsPopover";
 import { StylePromptRow } from "./common/StylePromptRow";
@@ -210,6 +212,17 @@ export const PromptBoxAudio = ({
     maxAudioRefs - referenceAudios.length,
   );
 
+  // Audio refs already in the deck, greyed out in the library picker so one
+  // media file can't be added twice — the backend rejects a generation request
+  // when the same token appears in it twice.
+  const addedAudioTokens = useMemo(
+    () =>
+      referenceAudios
+        .map((audio) => audio.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceAudios],
+  );
+
   const handleAudioLibrarySelectToggle = (id: string) => {
     setAudioLibrarySelectedIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
@@ -281,6 +294,39 @@ export const PromptBoxAudio = ({
     }
     setReferenceImages(images);
   };
+
+  // Drag & drop / paste onto the box bounds. Uploads run through the
+  // reference row's own plumbing so limits, duration caps, and the
+  // audio/image mutual exclusion all behave exactly as they do for the
+  // row's own file pickers.
+  const referenceRowRef = useRef<AudioReferenceRowHandle>(null);
+
+  const handleDroppedFiles = ({ images, audios }: DroppedFiles) => {
+    if (audios.length > 0) {
+      void referenceRowRef.current?.addAudioFiles(audios);
+    } else if (images.length > 0) {
+      // One image ref max, and it can't coexist with audio — so a mixed drop
+      // resolves to the audio above and the image is ignored.
+      void referenceRowRef.current?.addImageFile(images[0]!);
+    }
+  };
+
+  const drop = usePromptBoxDrop({
+    acceptsImages: imageRefsSupported,
+    acceptsVideos: false,
+    acceptsAudio: audioRefsSupported,
+    onDropFiles: handleDroppedFiles,
+  });
+
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={imageRefsSupported}
+      acceptsVideos={false}
+      acceptsAudio={audioRefsSupported}
+    />
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
@@ -410,8 +456,8 @@ export const PromptBoxAudio = ({
         >
           <ToggleButton
             isActive={isInstrumental}
-            icon={faMicrophoneSlash}
-            activeIcon={faMicrophoneSlash}
+            icon={MicOffIcon}
+            activeIcon={MicOffIcon}
             label="Instrumental"
             onClick={() => setIsInstrumental(!isInstrumental)}
           />
@@ -426,8 +472,8 @@ export const PromptBoxAudio = ({
         >
           <ToggleButton
             isActive={keepLyrics}
-            icon={faMicrophoneLines}
-            activeIcon={faMicrophoneLines}
+            icon={MicIcon}
+            activeIcon={MicIcon}
             label="Keep lyrics"
             onClick={() => setKeepLyrics(!keepLyrics)}
           />
@@ -442,8 +488,8 @@ export const PromptBoxAudio = ({
         >
           <ToggleButton
             isActive={isLoopable}
-            icon={faRepeat}
-            activeIcon={faRepeat}
+            icon={RepeatIcon}
+            activeIcon={RepeatIcon}
             label="Loop"
             onClick={() => setIsLoopable(!isLoopable)}
           />
@@ -486,6 +532,7 @@ export const PromptBoxAudio = ({
   const referenceRow: ReactNode =
     audioRefsSupported || imageRefsSupported ? (
       <AudioReferenceRow
+        ref={referenceRowRef}
         referenceAudios={referenceAudios}
         onReferenceAudiosChange={handleReferenceAudiosChange}
         maxAudioCount={audioRefsSupported ? maxAudioRefs : 0}
@@ -512,7 +559,9 @@ export const PromptBoxAudio = ({
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
+          {...drop.dropZoneProps}
         >
+          {dropOverlay}
           {referenceRow}
 
           <div className="flex justify-center gap-2">
@@ -578,8 +627,8 @@ export const PromptBoxAudio = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -592,6 +641,7 @@ export const PromptBoxAudio = ({
         isOpen={isAudioLibraryOpen}
         onClose={closeAudioLibrary}
         selectedItemIds={audioLibrarySelectedIds}
+        disabledItemIds={addedAudioTokens}
         onSelectItem={handleAudioLibrarySelectToggle}
         maxSelections={maxAudioLibrarySelections}
         onUseSelected={handleAudioLibraryUseSelected}
@@ -604,6 +654,8 @@ export const PromptBoxAudio = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={Infinity}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
         clearAllButton={
           <PromptClearAllButton
             onClick={handleClearAll}

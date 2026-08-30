@@ -12,12 +12,14 @@ use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -31,9 +33,11 @@ use crate::http_server::endpoints::generate::common::generation_debug_logs::Gene
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
-use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_kinovi_web_jobs::{insert_kinovi_web_jobs, InsertKinoviWebJobsArgs};
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
+use crate::http_server::user_lookup::api_or_web_session::require_any_session_or_key::{require_any_session_or_key, AnySessionType};
 use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
@@ -41,6 +45,8 @@ use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
 /// Generate an image using the omni-gen unified endpoint.
+/// Authenticates as a web-session (cookie) user, an API-key (`Authorization` header) user, or
+/// an MCP-session (`Authorization` header) user.
 #[utoipa::path(
   post,
   tag = "Omni Gen",
@@ -74,25 +80,18 @@ pub async fn omni_gen_image_generate_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  let maybe_user_session = server_state
-    .session_checker
-    .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
-    .await
-    .map_err(|e| {
-      warn!("Session checker error: {:?}", e);
-      CommonWebError::from(e)
-    })?;
-
-  let session = match maybe_user_session.as_ref() {
-    Some(session) => session,
-    None => return Err(CommonWebError::NotAuthorized),
-  };
+  // An API-key or MCP-session user (Authorization header) or a web-session (cookie) user.
+  let session = require_any_session_or_key(
+    &http_request,
+    &server_state.session_checker,
+    &server_state.avt_cookie_manager,
+    &mut *mysql_connection,
+  ).await?;
 
   let user_token = &session.user_token;
 
-  let maybe_avt_token = server_state
-    .avt_cookie_manager
-    .get_avt_token_from_request(&http_request);
+  // AVT tokens are web-session only; API-key and MCP sessions never carry one.
+  let maybe_avt_token = session.maybe_avt_token.clone();
 
   // ==================== MODEL ACCESS CHECK ==================== //
 
@@ -123,12 +122,21 @@ pub async fn omni_gen_image_generate_handler(
     &http_request,
     &mut mysql_connection,
     server_state.server_environment,
+server_state.maybe_media_cdn_override_url.as_deref(),
     request.image_media_tokens.as_deref().unwrap_or(&[]),
   ).await?;
 
   // ==================== HYDRATE ROUTER REQUEST ==================== //
 
   let router_builder = hydrate_to_router_request(&request)?;
+
+  // ==================== PIPELINE DISPATCH ==================== //
+
+  let kinovi_account = match request.model {
+    Some(CommonImageModel::Seedream5p0ProUltra) => KinoviAccount::BytePlusUltra,
+    // Everything else goes through Volcengine
+    _ => KinoviAccount::Volcengine,
+  };
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
@@ -168,6 +176,7 @@ pub async fn omni_gen_image_generate_handler(
     server_state: &server_state,
     user_token,
     resolved_media: &resolved_media,
+    kinovi_account,
     debug_log_context: &debug_log_context,
     mysql_connection,
   }).await;
@@ -204,7 +213,11 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== WRITE RESULT ==================== //
 
-  let maybe_platform_type = get_request_platform_type(&http_request);
+  let maybe_platform_type = match session.session_type {
+    AnySessionType::Api => Some(PlatformType::ApiKey),
+    AnySessionType::McpSession => Some(PlatformType::Mcp),
+    AnySessionType::WebSession => get_request_platform_type(&http_request),
+  };
 
   let mut transaction = mysql_connection
     .begin()
@@ -279,19 +292,20 @@ pub async fn omni_gen_image_generate_handler(
   // -- Inference job --
   //
   // Each provider has its own queue / worker. Branch by response variant
-  // so the row lands on the correct queue (the Seedance2Pro/Kinovi worker
+  // so the row lands on the correct queue (the KinoviWeb/Kinovi worker
   // for Midjourney; the Fal worker for everything else).
 
   let job_token: InferenceJobToken = match &pipeline_result.response {
-    GenerateImageResponse::Seedance2Pro(payload) => {
-      info!("Inserting seedance2pro image job(s) with token: {:?}", pipeline_result.apriori_job_token);
+    GenerateImageResponse::KinoviWeb(payload) => {
+      info!("Inserting kinovi_web image job(s) with token: {:?}", pipeline_result.apriori_job_token);
 
-      // The image-side omni pipeline always dispatches Midjourney via the
-      // Volcengine Kinovi account today. If we ever route to BytePlus /
-      // BytePlus Ultra here, mirror the video-side `kinovi_account` knob.
-      let kinovi_version = KinoviVersion::Volcengine;
+      let kinovi_version = match kinovi_account {
+        KinoviAccount::Volcengine => KinoviVersion::Volcengine,
+        KinoviAccount::BytePlus => KinoviVersion::BytePlus,
+        KinoviAccount::BytePlusUltra => KinoviVersion::BytePlusUltra,
+      };
 
-      let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+      let result = insert_kinovi_web_jobs(InsertKinoviWebJobsArgs {
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.maybe_wallet_ledger_entry_token.as_ref(),

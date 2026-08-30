@@ -1,21 +1,17 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faXmark,
-  faWandMagicSparkles,
-  faTrashCan,
-  faPlus,
-  faChevronLeft,
-  faChevronRight,
-} from "@fortawesome/pro-regular-svg-icons";
-import { faStar } from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, StarIcon, Trash2Icon, WandSparklesIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
 import { extractPalette } from "../boards/palette";
 import { Favicon } from "./Favicon";
+import {
+  isEventFromEditableElement,
+  useResolvedKeybinds,
+} from "@storyteller/keybinds";
 
 interface Props {
   item: BoardItem;
@@ -61,14 +57,22 @@ export const ItemInspector = ({
   const [palette, setPalette] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
 
+  // Viewer keys resolve from the "moodboard-grid" surface (rebindable):
+  // prev/next item, Escape closes. Inert while typing in the tag field.
+  const { matchAction } = useResolvedKeybinds();
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" && hasPrev) onPrev();
-      else if (e.key === "ArrowRight" && hasNext) onNext();
+      if (isEventFromEditableElement(e)) return;
+      const action = matchAction(e, "moodboard-grid");
+      if (action === "moodboard-grid.nav.prev" && hasPrev) onPrev();
+      else if (action === "moodboard-grid.nav.next" && hasNext) onNext();
+      else if (action === "moodboard-grid.selection.clearOrClose") onClose();
+      else return;
+      e.preventDefault();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onPrev, onNext, hasPrev, hasNext]);
+  }, [matchAction, onPrev, onNext, onClose, hasPrev, hasNext]);
 
   // Pull a palette for images, keyed on the image src — NOT the whole item, so
   // editing tags/rating (which produce a new item object) doesn't re-decode the
@@ -136,14 +140,13 @@ export const ItemInspector = ({
                     onClick={() => onSetRating(item.rating === n ? 0 : n)}
                     className="rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    <FontAwesomeIcon
-                      icon={faStar}
+                    <StarIcon
+                      
                       className={
                         n <= item.rating
                           ? "h-4 w-4 text-yellow-400"
                           : "h-4 w-4 text-base-fg/20 transition-colors hover:text-base-fg/40"
-                      }
-                    />
+                      } />
                   </button>
                 ))}
               </div>
@@ -159,7 +162,7 @@ export const ItemInspector = ({
                     className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
                   >
                     {tag}
-                    <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                    <XIcon  className="h-2.5 w-2.5" />
                   </button>
                 ))}
                 <input
@@ -197,7 +200,7 @@ export const ItemInspector = ({
                   onClick={() => onAddPaletteToBoard(palette)}
                   className="mt-2.5 flex items-center gap-1.5 rounded text-xs font-medium text-base-fg/60 transition-colors hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+                  <PlusIcon  className="h-3 w-3" />
                   Add swatches to board
                 </button>
               </Section>
@@ -209,7 +212,7 @@ export const ItemInspector = ({
             {item.kind === "image" && (
               <Button
                 variant="primary"
-                icon={faWandMagicSparkles}
+                icon={WandSparklesIcon}
                 onClick={onUseReference}
                 className="w-full col-span-2 py-1.5 text-[13px]"
               >
@@ -218,7 +221,7 @@ export const ItemInspector = ({
             )}
             <Button
               variant="destructive"
-              icon={faTrashCan}
+              icon={Trash2Icon}
               onClick={onDelete}
               className="w-full col-span-2 py-1.5 text-[13px]"
             >
@@ -336,8 +339,8 @@ const NavArrow = ({
       side === "left" ? "left-3" : "right-3",
     ].join(" ")}
   >
-    <FontAwesomeIcon
-      icon={side === "left" ? faChevronLeft : faChevronRight}
+    <DynamicIcon
+      icon={side === "left" ? ChevronLeftIcon : ChevronRightIcon}
       className="text-lg"
     />
   </button>

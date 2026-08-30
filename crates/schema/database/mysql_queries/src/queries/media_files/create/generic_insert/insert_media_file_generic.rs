@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use sqlx::MySqlPool;
+use sqlx::{Acquire, MySql};
 
 use enums::by_table::generic_synthetic_ids::id_category::IdCategory;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
@@ -14,6 +14,7 @@ use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::prompts::PromptToken;
@@ -23,8 +24,13 @@ use crate::payloads::media_file_extra_info::media_file_extra_info::MediaFileExtr
 use crate::queries::generic_synthetic_ids::transactional_increment_generic_synthetic_id::transactional_increment_generic_synthetic_id;
 use crate::queries::media_files::create::generic_insert::insert_media_file_generic_executor::{insert_media_file_generic_executor, InsertMediaFileGenericExecutorArgs};
 
-pub struct InsertArgs<'a> {
-    pub pool: &'a MySqlPool,
+pub struct InsertArgs<'a, A>
+where
+    A: Acquire<'a, Database = MySql>,
+{
+    /// Where to get the connection: a `&MySqlPool` (acquires one) or an
+    /// already-acquired `&mut PoolConnection` (reuses it).
+    pub pool: A,
 
     // Creator info
     pub maybe_creator_user_token: Option<&'a UserToken>,
@@ -71,6 +77,9 @@ pub struct InsertArgs<'a> {
     // If batch generated, this is the batch token.
     pub maybe_batch_token: Option<&'a BatchGenerationToken>,
 
+    // If produced by an inference job, the job that generated this file.
+    pub maybe_source_job_token: Option<&'a InferenceJobToken>,
+
     // Storage details
     pub public_bucket_directory_hash: &'a str,
     pub maybe_public_bucket_prefix: Option<&'a str>,
@@ -107,9 +116,12 @@ pub struct InsertArgs<'a> {
 /// Insert a media file record, allocating the creator's synthetic IDs in the
 /// same transaction. Wraps [`insert_media_file_generic_executor`], which runs
 /// the actual INSERT.
-pub async fn insert_media_file_generic(
-    args: InsertArgs<'_>
+pub async fn insert_media_file_generic<'a, A>(
+    args: InsertArgs<'a, A>
 ) -> AnyhowResult<(MediaFileToken, u64)>
+where
+    A: Acquire<'a, Database = MySql> + Send,
+    <A as Acquire<'a>>::Connection: Send,
 {
     let extra_file_modification_info = args
         .maybe_extra_media_info.map(|extra| extra.to_json_string())
@@ -165,6 +177,7 @@ pub async fn insert_media_file_generic(
         maybe_scene_source_media_file_token: args.maybe_scene_source_media_file_token,
         maybe_prompt_token: args.maybe_prompt_token,
         maybe_batch_token: args.maybe_batch_token,
+        maybe_source_job_token: args.maybe_source_job_token,
         public_bucket_directory_hash: args.public_bucket_directory_hash,
         maybe_public_bucket_prefix: args.maybe_public_bucket_prefix,
         maybe_public_bucket_extension: args.maybe_public_bucket_extension,

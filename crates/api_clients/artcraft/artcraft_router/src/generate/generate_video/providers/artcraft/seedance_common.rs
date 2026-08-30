@@ -3,35 +3,27 @@
 //! ArtCraft credits equal USD cents (100 credits = $1.00).
 
 use enums::common::generation::common_resolution::CommonResolution;
+use kinovi_web_client::generate::video::generate_seedance_2p5::{
+  MAX_BILLED_INPUT_SECONDS, MIN_BILLED_INPUT_SECONDS,
+};
 
 // 4K is priced uniformly across the non-Fast Seedance 2.0 models. Rates are held
 // in hundredths of a USD cent per second so the math is exact integer arithmetic
 // (no floating point), then rounded up to whole cents.
 
-/// 4K output price, in hundredths of a USD cent per second (86.60 ¢/s).
-const FOUR_K_CENTI_CENTS_PER_SECOND: u64 = 8660;
+/// 4K output price, in hundredths of a USD cent per second (92.50 ¢/s).
+const FOUR_K_CENTI_CENTS_PER_SECOND: u64 = 9250;
 
-/// Extra hundredths of a USD cent per second when a reference video is attached
-/// at 4K (17.20 ¢/s surcharge).
-const FOUR_K_VIDEO_REFERENCE_SURCHARGE_CENTI_CENTS_PER_SECOND: u64 = 1720;
-
-/// ArtCraft's user-facing price (USD cents) for Seedance 2.0 at 4K.
-///
-/// A reference video adds a per-second surcharge (4K with and without a video
-/// reference are priced differently). The cost scales with duration and batch
-/// count, rounded up to whole cents.
+/// ArtCraft's price (USD cents) for Seedance 2.0 at 4K with no reference
+/// videos attached. Each model prices reference videos through its own
+/// with-reference rate card. The cost scales with duration and batch count,
+/// rounded up to whole cents.
 pub fn seedance_2p0_four_k_usd_cents(
   duration_seconds: u16,
   batch_count: u16,
-  has_video_reference: bool,
 ) -> u64 {
-  let mut centi_cents_per_second = FOUR_K_CENTI_CENTS_PER_SECOND;
-  if has_video_reference {
-    centi_cents_per_second += FOUR_K_VIDEO_REFERENCE_SURCHARGE_CENTI_CENTS_PER_SECOND;
-  }
-
   let total_centi_cents =
-    centi_cents_per_second * duration_seconds as u64 * batch_count as u64;
+    FOUR_K_CENTI_CENTS_PER_SECOND * duration_seconds as u64 * batch_count as u64;
 
   // Round up to whole cents.
   total_centi_cents.div_ceil(100)
@@ -39,33 +31,33 @@ pub fn seedance_2p0_four_k_usd_cents(
 
 // ── Seedance 2.0 Mini pricing ──
 //
-// Mini offers only 480p and 720p. The rates below are the per-second USER price
-// in USD cents (margin already included); a reference video adds a per-second
-// surcharge. Rates are fractional, so the total is rounded UP to a whole cent
-// once at the end (after multiplying by duration × batch).
+// Mini offers only 480p and 720p. The rates below are the price in USD cents
+// per second; a reference video adds a per-second surcharge. Rates are
+// fractional, so the total is rounded UP to a whole cent once at the end
+// (after multiplying by duration × batch).
 //
-// The regular Mini and the BytePlus / BytePlus Ultra Minis carry DIFFERENT
-// margins, so they have separate rate sets and helpers below.
+// The regular Mini and the BytePlus / BytePlus Ultra Minis have separate
+// rate sets and helpers below.
 
 /// Regular Mini — 480p price, USD cents per second.
-const MINI_CENTS_PER_SECOND_480P: f64 = 3.24074074;
+const MINI_CENTS_PER_SECOND_480P: f64 = 3.45;
 /// Regular Mini — 480p reference-video surcharge, USD cents per second.
-const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.86419753;
+const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.90;
 /// Regular Mini — 720p price, USD cents per second.
-const MINI_CENTS_PER_SECOND_720P: f64 = 8.64197531;
+const MINI_CENTS_PER_SECOND_720P: f64 = 8.90;
 /// Regular Mini — 720p reference-video surcharge, USD cents per second.
-const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.72839506;
+const MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.80;
 
 /// BytePlus / BytePlus Ultra Mini — 480p price, USD cents per second.
-const BYTEPLUS_MINI_CENTS_PER_SECOND_480P: f64 = 3.27160494;
+const BYTEPLUS_MINI_CENTS_PER_SECOND_480P: f64 = 3.55;
 /// BytePlus / BytePlus Ultra Mini — 480p reference-video surcharge, USD cents per second.
-const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.87242798;
+const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_480P: f64 = 0.95;
 /// BytePlus / BytePlus Ultra Mini — 720p price, USD cents per second.
-const BYTEPLUS_MINI_CENTS_PER_SECOND_720P: f64 = 8.72427984;
+const BYTEPLUS_MINI_CENTS_PER_SECOND_720P: f64 = 9.10;
 /// BytePlus / BytePlus Ultra Mini — 720p reference-video surcharge, USD cents per second.
-const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.74485597;
+const BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P: f64 = 1.85;
 
-/// ArtCraft's user-facing price (USD cents) for the regular Seedance 2.0 Mini.
+/// ArtCraft's price (USD cents) for the regular Seedance 2.0 Mini.
 ///
 /// Only 480p and 720p are offered; any other resolution prices at 720p. A
 /// reference video adds the per-second surcharge. The fractional total is
@@ -88,9 +80,8 @@ pub fn seedance_2p0_mini_usd_cents(
   )
 }
 
-/// ArtCraft's user-facing price (USD cents) for the Seedance 2.0 BytePlus Mini
-/// and BytePlus Ultra Mini (which share the same rates — a higher margin than
-/// the regular Mini).
+/// ArtCraft's price (USD cents) for the Seedance 2.0 BytePlus Mini and
+/// BytePlus Ultra Mini (which share the same rates).
 ///
 /// Only 480p and 720p are offered; any other resolution prices at 720p. A
 /// reference video adds the per-second surcharge. The fractional total is
@@ -111,6 +102,159 @@ pub fn seedance_2p0_byteplus_mini_usd_cents(
     BYTEPLUS_MINI_CENTS_PER_SECOND_720P,
     BYTEPLUS_MINI_VIDEO_REFERENCE_SURCHARGE_CENTS_PER_SECOND_720P,
   )
+}
+
+// ── Seedance 2.5 Preview pricing ──
+//
+// 2.5 Preview offers only 480p and 720p, generates one video per request (no
+// batching), and — unlike the 2.0 family — references of any kind do NOT
+// change the price.
+
+/// Seedance 2.5 Preview — 480p price, USD cents per second.
+const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_480P: f64 = 21.38234568;
+/// Seedance 2.5 Preview — 720p price, USD cents per second.
+const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_720P: f64 = 42.76469136;
+
+/// ArtCraft's price (USD cents) for Seedance 2.5 Preview.
+///
+/// Only 480p and 720p are offered; any other resolution prices at 720p.
+/// References never affect the price and there is no batching. The fractional
+/// total is rounded UP to a whole cent.
+pub fn seedance_2p5_preview_usd_cents(
+  resolution: CommonResolution,
+  duration_seconds: u16,
+) -> u64 {
+  let cents_per_second = match resolution {
+    CommonResolution::FourEightyP => SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_480P,
+    // Everything else (including 720p and unsupported resolutions) prices at 720p.
+    _ => SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_720P,
+  };
+
+  (cents_per_second * duration_seconds as f64).ceil() as u64
+}
+
+/// Seedance 2.5 — 480p price, USD cents per second.
+const SEEDANCE_2P5_CENTS_PER_SECOND_480P: f64 = 11.76954733;
+/// Seedance 2.5 — 720p price, USD cents per second.
+const SEEDANCE_2P5_CENTS_PER_SECOND_720P: f64 = 26.70781893;
+/// Seedance 2.5 — 1080p price, USD cents per second.
+const SEEDANCE_2P5_CENTS_PER_SECOND_1080P: f64 = 45.85869386;
+/// Seedance 2.5 — 480p price with video references, USD cents per second.
+const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_480P: f64 = 7.24279835;
+/// Seedance 2.5 — 720p price with video references, USD cents per second.
+const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 15.84362140;
+/// Seedance 2.5 — 1080p price with video references, USD cents per second.
+const SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P: f64 = 27.39973680;
+
+/// ArtCraft's price (USD cents) for Seedance 2.5.
+///
+/// 480p, 720p, and 1080p are offered; any other resolution prices at 720p
+/// (the request planner maps unsupported resolutions before pricing, so
+/// this fallback is only a failsafe). Without video references, billed
+/// seconds = output duration. With video references, the per-second rate
+/// drops but the billed seconds are the output duration PLUS the total
+/// seconds of reference video input (clamped to the 4..=30 second billing
+/// range). The fractional total is rounded UP to a whole cent. No batching.
+pub fn seedance_2p5_usd_cents(
+  resolution: CommonResolution,
+  duration_seconds: u16,
+  has_video_references: bool,
+  maybe_total_input_seconds: Option<u16>,
+) -> u64 {
+  let (cents_per_second, billed_seconds) = if has_video_references {
+    let rate = match resolution {
+      CommonResolution::FourEightyP => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P,
+      // Everything else (including 720p and unsupported resolutions) prices at 720p.
+      _ => SEEDANCE_2P5_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
+    };
+    // The TOTAL input duration clamps to the 4..=30 second billing range
+    // (three 1s videos sum to 3 and bill 4; three 3s videos bill 9).
+    //
+    // FAILSAFE: an unknown (never probed) or zero input duration bills the
+    // 30-second MAXIMUM, matching the provider client's own fallback. It
+    // must never default toward the minimum — billing 4 input seconds for
+    // an unmeasured input while the provider assumes 30 sells input seconds
+    // far below cost.
+    let billed_input_seconds = match maybe_total_input_seconds {
+      None | Some(0) => u16::from(MAX_BILLED_INPUT_SECONDS),
+      Some(seconds) => {
+        seconds.clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS))
+      }
+    };
+    (rate, u64::from(duration_seconds) + u64::from(billed_input_seconds))
+  } else {
+    let rate = match resolution {
+      CommonResolution::FourEightyP => SEEDANCE_2P5_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_CENTS_PER_SECOND_1080P,
+      _ => SEEDANCE_2P5_CENTS_PER_SECOND_720P,
+    };
+    (rate, u64::from(duration_seconds))
+  };
+
+  (cents_per_second * billed_seconds as f64).ceil() as u64
+}
+
+/// Seedance 2.5 Ultra — 480p price, USD cents per second.
+const SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_480P: f64 = 13.90946502;
+/// Seedance 2.5 Ultra — 720p price, USD cents per second.
+const SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_720P: f64 = 31.56378601;
+/// Seedance 2.5 Ultra — 1080p price, USD cents per second.
+const SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_1080P: f64 = 50.10486922;
+/// Seedance 2.5 Ultra — 480p price with video references, USD cents per second.
+const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_480P: f64 = 8.55967078;
+/// Seedance 2.5 Ultra — 720p price with video references, USD cents per second.
+const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_720P: f64 = 18.72427984;
+/// Seedance 2.5 Ultra — 1080p price with video references, USD cents per second.
+const SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P: f64 = 29.93674947;
+
+/// ArtCraft's price (USD cents) for Seedance 2.5 Ultra.
+///
+/// 480p, 720p, and 1080p are offered; any other resolution prices at 720p
+/// (the request planner maps unsupported resolutions before pricing, so
+/// this fallback is only a failsafe). Without video references, billed
+/// seconds = output duration. With video references, the per-second rate
+/// drops but the billed seconds are the output duration PLUS the total
+/// seconds of reference video input. The fractional total is rounded UP to
+/// a whole cent. No batching.
+pub fn seedance_2p5_ultra_usd_cents(
+  resolution: CommonResolution,
+  duration_seconds: u16,
+  has_video_references: bool,
+  maybe_total_input_seconds: Option<u16>,
+) -> u64 {
+  let (cents_per_second, billed_seconds) = if has_video_references {
+    let rate = match resolution {
+      CommonResolution::FourEightyP => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_1080P,
+      // Everything else (including 720p and unsupported resolutions) prices at 720p.
+      _ => SEEDANCE_2P5_ULTRA_VIDEO_REFERENCE_CENTS_PER_SECOND_720P,
+    };
+    // The TOTAL input duration clamps to the 4..=30 second billing range
+    // (three 1s videos sum to 3 and bill 4; three 3s videos bill 9).
+    //
+    // FAILSAFE: an unknown (never probed) or zero input duration bills the
+    // 30-second MAXIMUM, matching the provider client's own fallback. It
+    // must never default toward the minimum — billing 4 input seconds for
+    // an unmeasured input while the provider assumes 30 sells input seconds
+    // far below cost.
+    let billed_input_seconds = match maybe_total_input_seconds {
+      None | Some(0) => u16::from(MAX_BILLED_INPUT_SECONDS),
+      Some(seconds) => {
+        seconds.clamp(u16::from(MIN_BILLED_INPUT_SECONDS), u16::from(MAX_BILLED_INPUT_SECONDS))
+      }
+    };
+    (rate, u64::from(duration_seconds) + u64::from(billed_input_seconds))
+  } else {
+    let rate = match resolution {
+      CommonResolution::FourEightyP => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_1080P,
+      _ => SEEDANCE_2P5_ULTRA_CENTS_PER_SECOND_720P,
+    };
+    (rate, u64::from(duration_seconds))
+  };
+
+  (cents_per_second * billed_seconds as f64).ceil() as u64
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -143,44 +287,23 @@ mod tests {
   use super::*;
 
   #[test]
-  fn four_k_without_video_reference() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1, false), 347);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1, false), 433);
-    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1, false), 866);
-    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1, false), 1299);
-  }
-
-  #[test]
-  fn four_k_with_video_reference() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1, true), 416);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1, true), 519);
-    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1, true), 1038);
-    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1, true), 1557);
-  }
-
-  #[test]
-  fn video_reference_always_costs_more() {
-    for &duration in &[4u16, 5, 10, 15] {
-      assert!(
-        seedance_2p0_four_k_usd_cents(duration, 1, true)
-          > seedance_2p0_four_k_usd_cents(duration, 1, false),
-        "video reference should cost more at {duration}s",
-      );
-    }
+  fn four_k_base_prices() {
+    assert_eq!(seedance_2p0_four_k_usd_cents(4, 1), 370);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 1), 463);
+    assert_eq!(seedance_2p0_four_k_usd_cents(10, 1), 925);
+    assert_eq!(seedance_2p0_four_k_usd_cents(15, 1), 1388);
   }
 
   #[test]
   fn batch_count_multiplies() {
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2, false), 866);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 4, false), 1732);
-    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2, true), 1038);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 2), 925);
+    assert_eq!(seedance_2p0_four_k_usd_cents(5, 4), 1850);
   }
 
   // ── Seedance 2.0 Mini ──
   //
   // Every combination (480p/720p × with/without video reference × 4/5/10/15s)
-  // at batch 1. These are the supplier's per-combo cost plus a 5% margin,
-  // rounded up to whole cents.
+  // at batch 1, rounded up to whole cents.
 
   mod mini {
     use super::*;
@@ -191,34 +314,34 @@ mod tests {
 
     #[test]
     fn four_eighty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 13);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 33);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 49);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 14);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 35);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 52);
     }
 
     #[test]
     fn four_eighty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 21);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 42);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 62);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 22);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 44);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 66);
     }
 
     #[test]
     fn seven_twenty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 35);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 44);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 87);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 130);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 36);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 45);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 89);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 134);
     }
 
     #[test]
     fn seven_twenty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 42);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 52);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 104);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 156);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 43);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 54);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 108);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 161);
     }
 
     #[test]
@@ -245,16 +368,16 @@ mod tests {
     fn batch_count_scales_the_total() {
       // Batch is baked in before the single round-up, so batched totals can be
       // a cent under N× the single price.
-      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 87);
-      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 173);
-      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 33);
+      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 89);
+      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 178);
+      assert_eq!(seedance_2p0_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 35);
     }
   }
 
   // ── Seedance 2.0 BytePlus / BytePlus Ultra Mini ──
   //
-  // Same combinations as the regular Mini, but at a higher margin (6% vs 5%),
-  // so the prices are equal-or-higher than the regular Mini.
+  // Same combinations as the regular Mini; the prices are equal-or-higher
+  // than the regular Mini.
 
   mod byteplus_mini {
     use super::*;
@@ -265,34 +388,34 @@ mod tests {
 
     #[test]
     fn four_eighty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 14);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 33);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 50);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, false), 15);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, false), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, false), 36);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, false), 54);
     }
 
     #[test]
     fn four_eighty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 17);
-      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 21);
-      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 42);
-      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 63);
+      assert_eq!(cents(CommonResolution::FourEightyP, 4, true), 18);
+      assert_eq!(cents(CommonResolution::FourEightyP, 5, true), 23);
+      assert_eq!(cents(CommonResolution::FourEightyP, 10, true), 45);
+      assert_eq!(cents(CommonResolution::FourEightyP, 15, true), 68);
     }
 
     #[test]
     fn seven_twenty_p_without_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 35);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 44);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 88);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 131);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, false), 37);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, false), 46);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, false), 91);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, false), 137);
     }
 
     #[test]
     fn seven_twenty_p_with_video_reference() {
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 42);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 53);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 105);
-      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 158);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 4, true), 44);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 5, true), 55);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 10, true), 110);
+      assert_eq!(cents(CommonResolution::SevenTwentyP, 15, true), 165);
     }
 
     #[test]
@@ -320,9 +443,9 @@ mod tests {
 
     #[test]
     fn batch_count_scales_the_total() {
-      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 88);
-      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 175);
-      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 33);
+      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 2, false), 91);
+      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::SevenTwentyP, 5, 4, false), 182);
+      assert_eq!(seedance_2p0_byteplus_mini_usd_cents(CommonResolution::FourEightyP, 5, 2, false), 36);
     }
   }
 }

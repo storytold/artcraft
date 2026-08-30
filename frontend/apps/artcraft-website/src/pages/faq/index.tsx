@@ -3,8 +3,7 @@ import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { getFaqItems } from "@storyteller/markdown-content";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight } from "@fortawesome/pro-solid-svg-icons";
+import { ArrowRightIcon } from "lucide-react";
 
 const FaqIndex = () => {
   const title = "Frequently Asked Questions - ArtCraft";
@@ -60,7 +59,7 @@ const FaqIndex = () => {
             >
               <h2 className="text-xl font-medium mb-2 group-hover:text-blue-400 transition-colors flex items-center gap-2">
                 {item.title}
-                <FontAwesomeIcon icon={faArrowRight} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                <ArrowRightIcon  className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
               </h2>
               <p className="text-white/70 text-sm">{item.description}</p>
             </Link>

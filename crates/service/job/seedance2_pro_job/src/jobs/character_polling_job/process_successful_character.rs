@@ -11,10 +11,10 @@ use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::characters::activate_character_with_media::activate_character_with_media;
 use mysql_queries::queries::characters::get_character_token_by_kinovi_id::get_character_token_by_kinovi_id;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_character_jobs::PendingKinoviWebCharacterJob;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use seedance2pro_client::requests::poll_characters::poll_characters::CharacterStatus;
+use kinovi_web_client::requests::poll_characters::poll_characters::CharacterStatus;
 
 use crate::job_dependencies::JobDependencies;
 
@@ -29,7 +29,7 @@ const SUFFIX_JPG: &str = ".jpg";
 /// 3. Mark the inference job as completed.
 pub async fn process_successful_character(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProCharacterJob,
+  job: &PendingKinoviWebCharacterJob,
   character: &CharacterStatus,
 ) -> AnyhowResult<()> {
 
@@ -112,12 +112,13 @@ pub async fn process_successful_character(
 /// Download an image from a URL, upload to bucket, and create a media file record.
 async fn download_and_create_media_file(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProCharacterJob,
+  job: &PendingKinoviWebCharacterJob,
   image_url: &str,
 ) -> AnyhowResult<tokens::tokens::media_files::MediaFileToken> {
   info!("Downloading character image: {}", image_url);
 
-  let image_bytes: Vec<u8> = reqwest::get(image_url)
+  let image_bytes: Vec<u8> = deps.download_client.get(image_url)
+    .send()
     .await
     .map_err(|err| anyhow!("reqwest error downloading image: {:?}", err))?
     .bytes()

@@ -1,13 +1,5 @@
 import { memo, useCallback, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faCube,
-  faImage,
-  faMusic,
-  faPlay,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -35,6 +27,8 @@ export interface GalleryRowProps {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (item: GalleryItem) => void;
+  /** Persistent badge marking the item most recently viewed in the lightbox. */
+  lastViewed?: boolean;
 }
 
 export const GalleryRow = memo(function GalleryRow({
@@ -48,17 +42,18 @@ export const GalleryRow = memo(function GalleryRow({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  lastViewed = false,
 }: GalleryRowProps) {
   const isVideo = item.mediaClass === "video";
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   const mediaIcon = isVideo
-    ? faVideo
+    ? VideoIcon
     : is3D
-      ? faCube
+      ? BoxIcon
       : isAudio
-        ? faMusic
-        : faImage;
+        ? MusicIcon
+        : ImageIcon;
   const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
@@ -106,12 +101,12 @@ export const GalleryRow = memo(function GalleryRow({
               : "border-white/60 bg-black/40 text-transparent"
           } ${item.fullImage ? "" : "invisible"}`}
         >
-          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+          <CheckIcon  className="text-[10px]" />
         </div>
       )}
 
       {/* Thumbnail */}
-      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none">
+      <div className={`relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none ${lastViewed ? "ring-2 ring-primary-400/50" : ""}`}>
         <GalleryThumbnail
           thumbnail={item.thumbnail}
           stillThumbnail={item.stillThumbnail}
@@ -124,11 +119,18 @@ export const GalleryRow = memo(function GalleryRow({
         {isVideo && item.thumbnail && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-              <FontAwesomeIcon
-                icon={faPlay}
-                className="ml-0.5 text-[9px] text-white/90"
-              />
+              <PlayIcon
+                
+                className="ml-0.5 text-[9px] text-white/90" />
             </span>
+          </div>
+        )}
+        {/* Persistent "Last viewed" badge (stays until another item is
+            opened in the lightbox). */}
+        {lastViewed && (
+          <div className="pointer-events-none absolute left-1 top-1 z-10 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/80">
+            <EyeIcon />
+            Last viewed
           </div>
         )}
       </div>

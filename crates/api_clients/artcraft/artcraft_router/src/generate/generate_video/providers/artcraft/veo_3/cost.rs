@@ -11,8 +11,8 @@ impl ArtcraftVeo3CostState {
   pub fn from_request(request: &ArtcraftVeo3RequestState) -> Self {
     Self {
       duration_seconds: duration_seconds_for_cost(request.request.duration_seconds),
-      // v1 legacy Veo 3 handler defaults generate_audio to false.
-      generate_audio: request.request.generate_audio.unwrap_or(false),
+      // Unset defaults to audio on.
+      generate_audio: request.request.generate_audio.unwrap_or(true),
     }
   }
 
@@ -81,8 +81,7 @@ mod tests {
   }
 
   #[test]
-  fn audio_default_is_off() {
-    // None → audio defaults to false.
-    assert_eq!(cost_cents(Some(8), None), cost_cents(Some(8), Some(false)));
+  fn audio_default_is_on() {
+    assert_eq!(cost_cents(Some(8), None), cost_cents(Some(8), Some(true)));
   }
 }

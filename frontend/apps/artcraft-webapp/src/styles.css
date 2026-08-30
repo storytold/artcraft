@@ -475,9 +475,12 @@
   }
 }
 
+/* --ac-drawer-drag-y: set inline by SettingsDrawer when a pull-down gesture
+   dismisses the sheet, so the slide-down starts from where the finger let go
+   instead of snapping back to the top first. Fresh mounts default to 0. */
 @keyframes ac-drawer-down {
   from {
-    transform: translateY(0);
+    transform: translateY(var(--ac-drawer-drag-y, 0px));
   }
   to {
     transform: translateY(100%);
@@ -507,4 +510,19 @@
 
 .ac-sheet-overlay[data-state="closed"] {
   animation: ac-sheet-fade 0.2s ease-in reverse forwards;
+}
+
+/* Lucide icons ship with a fixed 24px default; size them relative to the
+   surrounding font so they scale with text like the previous icons did.
+   1.2em (not 1em) because Lucide draws glyphs on a 20px grid inside a 24px
+   viewBox — the extra 20% makes the visible mark fill a full 1em, matching
+   the old solid-glyph sizing. Explicit w-/h-/size- utilities still win
+   (the utilities layer is emitted later). */
+@layer base {
+  .lucide {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -0.2em;
+  }
 }

@@ -58,6 +58,7 @@ pub(super) async fn handle_artcraft_video_via_router(
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
+    total_reference_video_input_seconds: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: None,
     negative_prompt: None,

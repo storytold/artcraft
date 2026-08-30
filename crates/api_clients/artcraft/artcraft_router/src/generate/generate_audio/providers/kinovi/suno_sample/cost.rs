@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::audio::generate_suno_sample::GenerateSunoSampleRequest;
+use kinovi_web_client::generate::audio::generate_suno_sample::GenerateSunoSampleRequest;
 
 use crate::generate::generate_audio::audio_generation_cost_estimate::AudioGenerationCostEstimate;
 use crate::generate::generate_audio::providers::kinovi::suno_sample::draft::KinoviSunoSampleDraftState;
@@ -18,7 +18,7 @@ impl KinoviSunoSampleCostState {
   }
 
   pub fn estimate_cost(&self) -> AudioGenerationCostEstimate {
-    // Cost math is owned by seedance2pro_client's binding — the router just
+    // Cost math is owned by kinovi_web_client's binding — the router just
     // forwards the result so router cost ≡ binding cost by construction.
     let pricing_request = GenerateSunoSampleRequest {
       prompt: String::new(),
@@ -63,7 +63,7 @@ mod tests {
   fn cost_from_draft_is_seven_cents() {
     let builder = GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoSample,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("mystical RPG adventure".to_string()),
       audio_references: Some(AudioListRef::Urls(vec!["https://example.com/a.aac".to_string()])),
       ..Default::default()

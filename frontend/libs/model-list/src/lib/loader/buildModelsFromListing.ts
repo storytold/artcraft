@@ -17,7 +17,10 @@
 
 import { ImageModel } from "../classes/ImageModel.js";
 import { VideoModel } from "../classes/VideoModel.js";
-import { ModelCreator } from "../classes/metadata/ModelCreator.js";
+import {
+  ModelCreator,
+  modelCreatorFromBackend,
+} from "../classes/metadata/ModelCreator.js";
 import { SizeIconOption, SizeOption } from "../classes/metadata/SizeOption.js";
 import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
 import { CommonResolution } from "../classes/properties/CommonResolution.js";
@@ -370,33 +373,4 @@ const creatorFor = (
     if (modelId.startsWith(prefix)) return creator;
   }
   return ModelCreator.ArtCraft;
-};
-
-/** Backend `model_creator` snake_case string -> frontend `ModelCreator` enum. */
-const modelCreatorFromBackend = (raw?: string): ModelCreator | undefined => {
-  switch (raw) {
-    case "alibaba": return ModelCreator.Alibaba;
-    case "artcraft": return ModelCreator.ArtCraft;
-    case "black_forest_labs": return ModelCreator.BlackForestLabs;
-    case "bytedance": return ModelCreator.Bytedance;
-    case "fal": return ModelCreator.Fal;
-    case "google": return ModelCreator.Google;
-    case "grok": return ModelCreator.Grok;
-    case "hailuo": return ModelCreator.Hailuo;
-    case "higgsfield": return ModelCreator.Higgsfield;
-    case "kling": return ModelCreator.Kling;
-    case "krea": return ModelCreator.Krea;
-    case "midjourney": return ModelCreator.Midjourney;
-    case "open_ai": return ModelCreator.OpenAi;
-    case "open_art": return ModelCreator.OpenArt;
-    case "recraft": return ModelCreator.Recraft;
-    case "replicate": return ModelCreator.Replicate;
-    case "runway": return ModelCreator.Runway;
-    case "stability": return ModelCreator.Stability;
-    case "tencent": return ModelCreator.Tencent;
-    case "tensor_art": return ModelCreator.TensorArt;
-    case "vidu": return ModelCreator.Vidu;
-    case "world_labs": return ModelCreator.WorldLabs;
-    default: return undefined;
-  }
 };

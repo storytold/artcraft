@@ -1,0 +1,4 @@
+pub mod insert_generic_inference_job_for_kinovi_web_character_with_apriori_job_token;
+pub mod insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token;
+pub mod list_pending_kinovi_web_character_jobs;
+pub mod list_pending_kinovi_web_video_jobs;

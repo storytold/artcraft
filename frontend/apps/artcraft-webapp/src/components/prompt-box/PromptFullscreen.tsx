@@ -1,9 +1,15 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  HTMLAttributes,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
+import { Maximize2Icon } from "lucide-react";
 
 // Webapp "focus mode" for the prompt editor. Mirrors the desktop lib's
 // (@storyteller/ui-promptbox) fullscreen feature but lives here because the
@@ -35,10 +41,9 @@ export const PromptFullscreenButton = ({
           onClick={onClick}
           className="flex h-6 w-6 items-center justify-center rounded-full bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
         >
-          <FontAwesomeIcon
-            icon={faUpRightAndDownLeftFromCenter}
-            className="h-3 w-3"
-          />
+          <Maximize2Icon
+            
+            className="h-3 w-3" />
         </button>
       </Tooltip>
     </div>
@@ -62,6 +67,13 @@ interface PromptFullscreenModalProps {
   imagePromptRow?: ReactNode;
   /** Clear-all control rendered on the footer's right side, left of Done. */
   clearAllButton?: ReactNode;
+  /** Drop-zone handlers (usePromptBoxDrop's `dropZoneProps`, the same object
+   *  the inline box spreads) so drag & drop keeps working while focus mode
+   *  covers the inline box. */
+  dropZoneProps?: HTMLAttributes<HTMLDivElement>;
+  /** The same PromptBoxDropOverlay element the inline box renders, shown over
+   *  the panel while files hover it. */
+  dropOverlay?: ReactNode;
 }
 
 export const PromptFullscreenModal = ({
@@ -73,6 +85,8 @@ export const PromptFullscreenModal = ({
   footerControls,
   imagePromptRow,
   clearAllButton,
+  dropZoneProps,
+  dropOverlay,
 }: PromptFullscreenModalProps) => {
   const showCounter =
     promptLength !== undefined && maxPromptLength !== undefined;
@@ -104,7 +118,12 @@ export const PromptFullscreenModal = ({
           is reliably bounded across the modal's nested wrappers — that's what
           lets the editor scroll instead of stretching the panel. min-h-0 lets
           the flex children shrink below content size. */}
-      <div className="flex min-h-0 flex-col gap-2" style={{ height: "70vh" }}>
+      <div
+        {...dropZoneProps}
+        className="relative flex min-h-0 flex-col gap-2"
+        style={{ height: "70vh" }}
+      >
+        {dropOverlay}
         <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
         {/* flex-1 so the editor takes only the space left after the (shrink-0)
             image row + footer — keeps it from overflowing when the window is

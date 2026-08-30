@@ -24,6 +24,13 @@ export interface DragGhostState {
   thumbnail: string;
   /** Optional caption rendered under the thumbnail (asset library shows names). */
   label?: string;
+  /**
+   * Optional drop-compatibility badge on the ghost's corner: "ok" (green
+   * check — the hovered target accepts this item) or "blocked" (red slash —
+   * incompatible target or nothing droppable under the cursor). Omit for
+   * drags that don't validate their target.
+   */
+  indicator?: "ok" | "blocked";
 }
 
 interface DragGhostProps {
@@ -134,6 +141,43 @@ export function DragGhost({
         crossOrigin={crossOrigin}
         className="pointer-events-none min-h-0 w-full flex-1 select-none object-cover"
       />
+      {state.indicator && (
+        <div
+          className={`absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full shadow-md ring-1 ring-black/30 ${
+            state.indicator === "ok" ? "bg-emerald-500" : "bg-red-500"
+          }`}
+        >
+          {state.indicator === "ok" ? (
+            <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
+              <path
+                d="M3.5 8.5 6.5 11.5 12.5 5"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
+              <circle
+                cx="8"
+                cy="8"
+                r="5.4"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+              />
+              <path
+                d="M4.2 4.2 11.8 11.8"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          )}
+        </div>
+      )}
       {state.label && (
         <div className="w-full select-none truncate bg-ui-controls px-2 py-1 text-center text-[12px]">
           {state.label}

@@ -16,7 +16,9 @@ impl ArtcraftQwenEdit2511AnglesCostState {
   }
 
   pub fn estimate_cost(&self) -> ImageGenerationCostEstimate {
-    let cost_in_usd_cents = 4u64 * self.num_images as u64;
+    // 4.6¢ per output image (held in hundredths of a cent, rounded up to
+    // whole cents across the batch).
+    let cost_in_usd_cents = (460u64 * self.num_images as u64).div_ceil(100);
     ImageGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
       cost_in_usd_cents: Some(cost_in_usd_cents),
@@ -59,14 +61,14 @@ mod tests {
   }
 
   #[test]
-  fn one_image_costs_4_cents() { assert_eq!(cost_cents(1), 4); }
+  fn one_image_costs_5_cents() { assert_eq!(cost_cents(1), 5); }
 
   #[test]
-  fn two_images_costs_8_cents() { assert_eq!(cost_cents(2), 8); }
+  fn two_images_costs_10_cents() { assert_eq!(cost_cents(2), 10); }
 
   #[test]
-  fn three_images_costs_12_cents() { assert_eq!(cost_cents(3), 12); }
+  fn three_images_costs_14_cents() { assert_eq!(cost_cents(3), 14); }
 
   #[test]
-  fn four_images_costs_16_cents() { assert_eq!(cost_cents(4), 16); }
+  fn four_images_costs_19_cents() { assert_eq!(cost_cents(4), 19); }
 }

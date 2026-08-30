@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { faImage } from "@fortawesome/pro-solid-svg-icons";
+import { ImageIcon } from "lucide-react";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
@@ -298,6 +298,16 @@ export default function CreateImage() {
     [maxImageRefs, referenceImages, setReferenceImages],
   );
 
+  // Refs already in the deck, greyed out in the picker so the same media file
+  // can't be added twice to the reference list.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGenerating) return;
     if (!selectedModel) {
@@ -404,7 +414,7 @@ export default function CreateImage() {
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
       isLoggedIn={!!user}
-      heroIcon={faImage}
+      heroIcon={ImageIcon}
       heroTitle="Create Image"
       heroSubtitle="Sign in to generate stunning AI images with multiple models"
       hasContent={hasContent}
@@ -521,6 +531,7 @@ export default function CreateImage() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}

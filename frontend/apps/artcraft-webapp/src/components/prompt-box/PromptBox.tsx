@@ -8,33 +8,28 @@ import {
   type ReactNode,
 } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronDown,
-  faChevronUp,
-  faMusic,
-  faUserGroup,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, ChevronUpIcon, MusicIcon, UsersIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { GenerateIconButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   KeyframeCards,
+  MentionTextarea,
   PromptClearAllButton,
   ReferenceDeck,
+  buildMentionColorMap,
+  getMentionColor,
   useDeckMedia,
   type DeckAddAction,
   type DeckItem,
 } from "@storyteller/ui-promptbox";
 import { arrayMove } from "@dnd-kit/sortable";
-import { MentionTextarea } from "./MentionTextarea";
 import {
   PromptBoxDropOverlay,
   usePromptBoxDrop,
   type DroppedFiles,
 } from "./PromptBoxDropZone";
 import { toast } from "../toast/toast";
-import { getMentionColor, buildMentionColorMap } from "./mention-colors";
 import { uploadImage } from "./upload-image";
 import { uploadVideo, uploadAudio } from "./upload-media";
 import type { RefImage, RefVideo, RefAudio, MentionItem } from "./types";
@@ -114,6 +109,14 @@ interface PromptBoxProps {
   // @-mention support (enables colored prompt overlay + autocomplete)
   mentionItems?: MentionItem[];
 
+  // Records which character token a mention name refers to (dropdown pick or
+  // chip-menu replace) — needed because several characters can share a name.
+  onMentionSelect?: (item: MentionItem) => void;
+
+  // name (without "@") -> character token; picks which character's thumbnail
+  // renders in a mention chip when labels collide.
+  mentionSelections?: Record<string, string>;
+
   // Soft prompt-length limit from the model API (`text_prompt_max_length`).
   // Undefined = unlimited (no counter). The limit is not enforced here; the
   // page's submit handler blocks generation when over.
@@ -162,6 +165,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       modelSelector,
       secondaryPromptRow,
       mentionItems,
+      onMentionSelect,
+      mentionSelections,
       maxPromptLength,
     },
     ref,
@@ -271,6 +276,17 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       acceptsAudio: dropAcceptsAudio,
       onDropFiles: handleDroppedFiles,
     });
+
+    // One overlay element serves both drop zones (inline box + focus mode).
+    const dropOverlay = (
+      <PromptBoxDropOverlay
+        dragState={drop.dragState}
+        acceptsImages={dropAcceptsImages}
+        acceptsVideos={dropAcceptsVideos}
+        acceptsAudio={dropAcceptsAudio}
+        keyframeMode={isKeyframeMode}
+      />
+    );
 
     // Mixed deck items ordered images → videos → audios so the page's
     // index-derived @ImageN/@VideoN/@AudioN mention labels stay aligned.
@@ -769,13 +785,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             )}
             {...drop.dropZoneProps}
           >
-            <PromptBoxDropOverlay
-              dragState={drop.dragState}
-              acceptsImages={dropAcceptsImages}
-              acceptsVideos={dropAcceptsVideos}
-              acceptsAudio={dropAcceptsAudio}
-              keyframeMode={isKeyframeMode}
-            />
+            {dropOverlay}
             <div className="flex gap-3">
               {renderReferenceWidget()}
               {referenceSlots}
@@ -789,10 +799,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     mentionItems={mentionItems}
                     placeholder={placeholder}
                     className={twMerge(
-                      "promptbox-scrollbar min-h-[2.5em] w-full pr-8 text-base-fg placeholder-base-fg/60",
+                      "promptbox-scrollbar min-h-[2.5em] w-full resize-y pr-8 text-base-fg placeholder-base-fg/60",
                       isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                     )}
                     colorMap={mentionColorMap}
+                    enterToGenerate={enterToGenerate}
+                    onMentionSelect={onMentionSelect}
+                    selectedTokens={mentionSelections}
                     onKeyDown={(e) => {
                       if (
                         e.key === "Enter" &&
@@ -877,14 +890,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                                   className="h-full w-full object-cover"
                                 />
                               ) : item.type === "character" ? (
-                                <FontAwesomeIcon
-                                  icon={faUserGroup}
-                                  className="h-3.5 w-3.5 text-white/60"
-                                />
+                                <UsersIcon
+                                  
+                                  className="h-3.5 w-3.5 text-white/60" />
                               ) : (
-                                <FontAwesomeIcon
+                                <DynamicIcon
                                   icon={
-                                    item.type === "video" ? faVideo : faMusic
+                                    item.type === "video" ? VideoIcon : MusicIcon
                                   }
                                   className="h-3.5 w-3.5 text-white/60"
                                 />
@@ -964,8 +976,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                   onClick={toggleExpand}
                   className="px-3 py-0.5 text-white/30 transition-colors hover:text-white/90"
                 >
-                  <FontAwesomeIcon
-                    icon={isExpanded ? faChevronUp : faChevronDown}
+                  <DynamicIcon
+                    icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                     className="text-xs"
                   />
                 </button>
@@ -978,6 +990,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           onClose={closeFullscreen}
           promptLength={prompt.length}
           maxPromptLength={maxPromptLength}
+          dropZoneProps={drop.dropZoneProps}
+          dropOverlay={dropOverlay}
           footerControls={
             <>
               {modelSelector}
@@ -1009,6 +1023,9 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               className="promptbox-scrollbar h-full min-h-0 w-full overflow-y-auto text-base-fg placeholder-base-fg/60"
               style={{ resize: "none" }}
               colorMap={mentionColorMap}
+              enterToGenerate={enterToGenerate}
+              onMentionSelect={onMentionSelect}
+              selectedTokens={mentionSelections}
               onKeyDown={(e) => {
                 if (
                   e.key === "Enter" &&

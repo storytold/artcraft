@@ -10,7 +10,7 @@ pub struct ArtcraftAudioResponsePayload {
 }
 
 #[derive(Clone, Debug)]
-pub struct Seedance2proAudioResponsePayload {
+pub struct KinoviWebAudioResponsePayload {
   pub order_id: String,
   pub task_id: String,
 }
@@ -37,7 +37,7 @@ pub struct FalAudioResponsePayload {
 #[derive(Clone, Debug)]
 pub enum GenerateAudioResponse {
   Artcraft(ArtcraftAudioResponsePayload),
-  Seedance2Pro(Seedance2proAudioResponsePayload),
+  KinoviWeb(KinoviWebAudioResponsePayload),
   Fal(FalAudioResponsePayload),
 }
 
@@ -49,9 +49,9 @@ impl GenerateAudioResponse {
     }
   }
 
-  pub fn get_seedance2pro_payload(&self) -> Option<Seedance2proAudioResponsePayload> {
+  pub fn get_kinovi_web_payload(&self) -> Option<KinoviWebAudioResponsePayload> {
     match self {
-      Self::Seedance2Pro(p) => Some(p.clone()),
+      Self::KinoviWeb(p) => Some(p.clone()),
       _ => None,
     }
   }

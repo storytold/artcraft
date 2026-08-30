@@ -56,13 +56,13 @@
       "path": "../../libs/components/slider-v2/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/toaster/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/omni-gen/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/pricing-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/components/promptbox/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/model-selector/tsconfig.lib.json"
@@ -74,13 +74,19 @@
       "path": "../../libs/components/pagescene/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/components/lightbox-modal/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/switch/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/state/subscription/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/promptbox/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/audio-player/tsconfig.lib.json"
@@ -122,6 +128,9 @@
       "path": "../../libs/components/button/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/icons/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/vfx/tsconfig.lib.json"
     },
     {
@@ -129,6 +138,9 @@
     },
     {
       "path": "../../libs/api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/keybinds/tsconfig.lib.json"
     }
   ]
 }

@@ -1,12 +1,6 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCube,
-  faObjectGroup,
-  faWandMagicSparkles,
-  faImage,
-  faGem,
-} from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { BoxIcon, GemIcon, GroupIcon, ImageIcon, WandSparklesIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -41,7 +35,7 @@ interface EnumPickerProps {
   labels: Record<string, string>;
   tooltip: string;
   panelTitle: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
 }
 
 function EnumPicker({
@@ -72,7 +66,7 @@ function EnumPicker({
         }}
         mode="toggle"
         panelTitle={panelTitle}
-        triggerIcon={<FontAwesomeIcon icon={icon} className="h-3.5 w-3.5" />}
+        triggerIcon={<DynamicIcon icon={icon} className="h-3.5 w-3.5" />}
       />
     </Tooltip>
   );
@@ -90,7 +84,7 @@ export const MeshOutputTypePicker = (props: {
     labels={MESH_OUTPUT_TYPE_LABELS}
     tooltip="Output type"
     panelTitle="Output type"
-    icon={faCube}
+    icon={BoxIcon}
   />
 );
 
@@ -104,7 +98,7 @@ export const PolygonTypePicker = (props: {
     labels={POLYGON_TYPE_LABELS}
     tooltip="Polygon type"
     panelTitle="Polygon type"
-    icon={faObjectGroup}
+    icon={GroupIcon}
   />
 );
 
@@ -118,7 +112,7 @@ export const GeometryQualityPicker = (props: {
     labels={MESH_QUALITY_LABELS}
     tooltip="Geometry quality"
     panelTitle="Geometry quality"
-    icon={faWandMagicSparkles}
+    icon={WandSparklesIcon}
   />
 );
 
@@ -132,7 +126,7 @@ export const TextureQualityPicker = (props: {
     labels={MESH_QUALITY_LABELS}
     tooltip="Texture quality"
     panelTitle="Texture quality"
-    icon={faImage}
+    icon={ImageIcon}
   />
 );
 
@@ -168,7 +162,7 @@ export const FaceCountPicker = ({
         }}
         mode="toggle"
         panelTitle="Face count"
-        triggerIcon={<FontAwesomeIcon icon={faGem} className="h-3.5 w-3.5" />}
+        triggerIcon={<GemIcon  className="h-3.5 w-3.5" />}
       />
     </Tooltip>
   );

@@ -1,11 +1,7 @@
 import { Fragment } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCaretDown,
-  faRightFromBracket,
-  faUser,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, LogOutIcon, UserIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Menu, Transition } from "@headlessui/react";
 import { Gravatar } from "@storyteller/ui-gravatar";
 import { twMerge } from "tailwind-merge";
@@ -28,7 +24,7 @@ export default function ProfileDropdown() {
   const options = [
     {
       label: "Logout",
-      icon: faRightFromBracket,
+      icon: LogOutIcon,
       onClick: () => {
         logout();
       },
@@ -46,7 +42,7 @@ export default function ProfileDropdown() {
             avatarIndex={avatarIndex}
             backgroundIndex={backgroundColorIndex}
           />
-          <FontAwesomeIcon icon={faCaretDown} />
+          <ChevronDownIcon />
         </div>
       </Menu.Button>
       <Transition
@@ -73,7 +69,7 @@ export default function ProfileDropdown() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <FontAwesomeIcon icon={faUser} />
+                <UserIcon />
                 My Profile
               </a>
             )}
@@ -88,7 +84,7 @@ export default function ProfileDropdown() {
                   )}
                   onClick={() => option.onClick()}
                 >
-                  <FontAwesomeIcon icon={option.icon} />
+                  <DynamicIcon icon={option.icon} />
                   {option.label}
                 </button>
               )}

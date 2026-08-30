@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { SoundManager } from "@storyteller/soundboard";
 import { Button } from "@storyteller/ui-button";
-import { faPlay } from "@fortawesome/pro-solid-svg-icons";
+import { PlayIcon } from "lucide-react";
 import {
   AppPreferencesPayload,
   GetAppPreferences,
@@ -127,7 +127,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
             <Button
               variant="primary"
               className="w-[40px] h-[40px]"
-              icon={faPlay}
+              icon={PlayIcon}
               onClick={() => playSound(deleteFileSound)}
             />
           </div>
@@ -146,7 +146,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
             <Button
               variant="primary"
               className="w-[40px] h-[40px]"
-              icon={faPlay}
+              icon={PlayIcon}
               onClick={() => playSound(enqueueSuccessSound)}
             />
           </div>
@@ -165,7 +165,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
             <Button
               variant="primary"
               className="w-[40px] h-[40px]"
-              icon={faPlay}
+              icon={PlayIcon}
               onClick={() => playSound(enqueueFailureSound)}
             />
           </div>
@@ -184,7 +184,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
             <Button
               variant="primary"
               className="w-[40px] h-[40px]"
-              icon={faPlay}
+              icon={PlayIcon}
               onClick={() => playSound(generationSuccessSound)}
             />
           </div>
@@ -203,7 +203,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
             <Button
               variant="primary"
               className="w-[40px] h-[40px]"
-              icon={faPlay}
+              icon={PlayIcon}
               onClick={() => playSound(generationFailureSound)}
             />
           </div>

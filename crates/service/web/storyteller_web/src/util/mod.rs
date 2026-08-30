@@ -10,6 +10,7 @@ pub mod enroll_in_studio;
 pub mod generate_api_key;
 pub mod http_download_url_to_bytes;
 pub mod http_download_url_to_tempfile;
+pub mod internal_api_key;
 pub mod lookup;
 pub mod placeholder_images;
 pub mod read_toml_file_to_struct;

@@ -32,6 +32,7 @@ import { UserSpendSummary } from "@/pages/UserSpendSummary";
 import { UserSpendHistory } from "@/pages/UserSpendHistory";
 import { NotFoundPage } from "@/pages/NotFound";
 import { Spinner } from "./components/ui/spinner";
+import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
 function AppRoutes() {
@@ -112,6 +113,7 @@ function App() {
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
+      <Toaster position="bottom-right" />
     </ThemeProvider>
   );
 }

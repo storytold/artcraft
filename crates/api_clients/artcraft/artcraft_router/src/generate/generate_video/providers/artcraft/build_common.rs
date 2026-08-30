@@ -82,6 +82,7 @@ pub fn build_artcraft_omni_video_request(
     negative_prompt: None,
     generate_audio: None,
     quality: None,
+    estimate_only: None,
   })
 }
 
@@ -230,7 +231,7 @@ fn plan_output_resolution(
   }
 }
 
-/// Batch counts: 1, 2, 4.
+/// Batch counts: 1 through 4.
 pub fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -238,7 +239,8 @@ pub fn plan_batch_count(
   let count = video_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1 | 2 | 4 => Ok(count),
+    1..=4 => Ok(count),
+    // 5 and above:
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -247,9 +249,31 @@ pub fn plan_batch_count(
         }))
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(4),
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { 2 } else { 4 })
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(4),
+    },
+  }
+}
+
+/// Batch counts for the Seedance 2.0 Mini family: 1-8 are all valid
+/// (wider than the shared 1/2/4 planning); higher counts clamp to 8 per the
+/// mitigation strategy.
+pub fn plan_mini_batch_count(
+  video_batch_count: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<u16, ArtcraftRouterError> {
+  let count = video_batch_count.unwrap_or(1);
+  match count {
+    0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
+    1..=8 => Ok(count),
+    _ => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "video_batch_count",
+          value: format!("{}", count),
+        }))
       }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade
+      | RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(8),
     },
   }
 }

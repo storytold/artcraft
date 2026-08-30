@@ -1,11 +1,5 @@
-import {
-  faCheck,
-  faStar,
-  faGem,
-  faCopy,
-  faEnvelope,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CheckIcon, CopyIcon, GemIcon, MailIcon, StarIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import {
   SUBSCRIPTION_PLANS,
@@ -493,8 +487,8 @@ const PricingTable = ({
                   frame?.tab,
                 )}
               >
-                <FontAwesomeIcon
-                  icon={highlight === "popular" ? faStar : faGem}
+                <DynamicIcon
+                  icon={highlight === "popular" ? StarIcon : GemIcon}
                   className="text-xs pb-0.5"
                 />
                 {highlight === "popular" ? "Most Popular" : "Best Value"}
@@ -635,7 +629,7 @@ const Feature = ({
     <div
       className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}
     >
-      <FontAwesomeIcon icon={faCheck} className="text-xs" />
+      <CheckIcon  className="text-xs" />
     </div>
     <span
       className={`text-sm mt-[3px] ${highlighted ? "text-white" : "text-white/80"}`}
@@ -709,8 +703,8 @@ const ContactUsButton = ({
             onClick={handleCopy}
             className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.06]"
           >
-            <FontAwesomeIcon
-              icon={copied ? faCheck : faCopy}
+            <DynamicIcon
+              icon={copied ? CheckIcon : CopyIcon}
               className="w-4 text-primary"
             />
             {copied ? "Copied!" : "Copy email"}
@@ -720,7 +714,7 @@ const ContactUsButton = ({
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2.5 border-t border-white/10 px-4 py-3 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.06]"
           >
-            <FontAwesomeIcon icon={faEnvelope} className="w-4 text-primary" />
+            <MailIcon  className="w-4 text-primary" />
             Email us
           </a>
         </div>

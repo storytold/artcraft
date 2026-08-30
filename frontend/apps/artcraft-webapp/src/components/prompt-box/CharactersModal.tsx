@@ -1,16 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Modal } from "@storyteller/ui-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faArrowLeft,
-  faUpload,
-  faUserGroup,
-  faSpinnerThird,
-  faXmark,
-  faPen,
-  faTrashAlt,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowLeftIcon, EyeIcon, LoaderCircleIcon, PenIcon, PlusIcon, Trash2Icon, UploadIcon, UsersIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import {
   CharactersApi,
@@ -20,7 +10,9 @@ import {
 import { toast } from "../toast/toast";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@storyteller/ui-button";
-import { useCharactersStore } from "./characters-store";
+import { useCharactersStore, DeckPreviewModal } from "@storyteller/ui-promptbox";
+import { useIsMobile } from "../ui/use-mobile";
+import { SettingsDrawer } from "./mobile/SettingsDrawer";
 
 interface CharactersModalProps {
   isOpen: boolean;
@@ -50,6 +42,7 @@ export const CharactersModal = ({
   onClose,
   onSelectCharacter,
 }: CharactersModalProps) => {
+  const isMobile = useIsMobile();
   const [view, setView] = useState<ModalView>("list");
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(
     null,
@@ -154,6 +147,58 @@ export const CharactersModal = ({
     return () => timers.forEach(clearTimeout);
   }, [pendingCharacters]);
 
+  const content =
+    view === "list" ? (
+      <CharacterListView
+        key={refreshKey}
+        onCreateClick={() => setView("create")}
+        onSelectCharacter={onSelectCharacter}
+        onEditCharacter={handleEdit}
+        pendingCharacters={pendingCharacters}
+        onPendingResolved={removePending}
+      />
+    ) : view === "create" ? (
+      <NewCharacterView
+        onBack={() => setView("list")}
+        onCreated={handleCreated}
+      />
+    ) : editingCharacter ? (
+      <EditCharacterView
+        character={editingCharacter}
+        onBack={() => {
+          setEditingCharacter(null);
+          setView("list");
+        }}
+        onSaved={handleEditDone}
+      />
+    ) : null;
+
+  if (isMobile) {
+    return (
+      <SettingsDrawer
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) handleClose();
+        }}
+        title={
+          view === "list"
+            ? "Characters"
+            : view === "create"
+              ? "New Character"
+              : "Edit Character"
+        }
+        // Create/edit render their own back-arrow heading inside the body.
+        hideHeader={view !== "list"}
+        // The full-size preview and library picker open modals on top of
+        // this drawer — a modal sheet's body lock would strand
+        // pointer-events on <body> (see SettingsDrawer).
+        modal={false}
+      >
+        <div className="pb-2">{content}</div>
+      </SettingsDrawer>
+    );
+  }
+
   return (
     <Modal
       isOpen={isOpen}
@@ -170,30 +215,7 @@ export const CharactersModal = ({
               : "min(calc(600px - 2.5rem), calc(80vh - 2.5rem))",
         }}
       >
-        {view === "list" ? (
-          <CharacterListView
-            key={refreshKey}
-            onCreateClick={() => setView("create")}
-            onSelectCharacter={onSelectCharacter}
-            onEditCharacter={handleEdit}
-            pendingCharacters={pendingCharacters}
-            onPendingResolved={removePending}
-          />
-        ) : view === "create" ? (
-          <NewCharacterView
-            onBack={() => setView("list")}
-            onCreated={handleCreated}
-          />
-        ) : editingCharacter ? (
-          <EditCharacterView
-            character={editingCharacter}
-            onBack={() => {
-              setEditingCharacter(null);
-              setView("list");
-            }}
-            onSaved={handleEditDone}
-          />
-        ) : null}
+        {content}
       </div>
     </Modal>
   );
@@ -220,6 +242,9 @@ const CharacterListView = ({
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<Character | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(
+    null,
+  );
 
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
@@ -295,7 +320,7 @@ const CharacterListView = ({
   return (
     <div className="flex flex-col">
       {loading && characters.length === 0 ? (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
@@ -327,14 +352,14 @@ const CharacterListView = ({
           `}</style>
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {/* Create New card */}
           <button
             onClick={onCreateClick}
             className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/10 bg-white/[0.05] text-white/60 transition-colors hover:border-white/25 hover:text-white/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-              <FontAwesomeIcon icon={faPlus} className="text-lg" />
+              <PlusIcon  className="text-lg" />
               <span className="text-sm font-medium">Create New</span>
             </div>
           </button>
@@ -354,14 +379,13 @@ const CharacterListView = ({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-white/20">
-                    <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                    <UsersIcon  className="text-2xl" />
                   </div>
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="text-lg text-white/80 animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="text-lg text-white/80 animate-spin" />
                   <span className="text-xs font-medium text-white/80">
                     Creating...
                   </span>
@@ -397,10 +421,9 @@ const CharacterListView = ({
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-white/20">
-                        <FontAwesomeIcon
-                          icon={faUserGroup}
-                          className="text-2xl"
-                        />
+                        <UsersIcon
+                          
+                          className="text-2xl" />
                       </div>
                     )}
                   </div>
@@ -411,30 +434,48 @@ const CharacterListView = ({
                   </div>
                 </button>
 
-                {/* Edit / Delete overlay buttons (user-created only) */}
-                {isUserCreated && (
-                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditCharacter(character);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
-                    >
-                      <FontAwesomeIcon icon={faPen} className="text-[10px]" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmDelete(character);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
-                    >
-                      <FontAwesomeIcon
-                        icon={faTrashAlt}
-                        className="text-[10px]"
-                      />
-                    </button>
+                {/* View / Edit / Delete overlay buttons. Hover-revealed on
+                    desktop; always visible on touch devices (no hover). */}
+                {(character.maybe_avatar?.cdn_url || isUserCreated) && (
+                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                    {character.maybe_avatar?.cdn_url && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewCharacter(character);
+                        }}
+                        title="View full size"
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                      >
+                        <EyeIcon  className="text-[10px]" />
+                      </button>
+                    )}
+                    {isUserCreated && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCharacter(character);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                        >
+                          <PenIcon
+                            
+                            className="text-[10px]" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmDelete(character);
+                          }}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                        >
+                          <Trash2Icon
+                            
+                            className="text-[10px]" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -477,6 +518,20 @@ const CharacterListView = ({
           </div>
         </div>
       )}
+
+      <DeckPreviewModal
+        item={
+          previewCharacter?.maybe_avatar?.cdn_url
+            ? {
+                id: previewCharacter.token,
+                kind: "image",
+                url: previewCharacter.maybe_avatar.cdn_url,
+                name: previewCharacter.name,
+              }
+            : null
+        }
+        onClose={() => setPreviewCharacter(null)}
+      />
     </div>
   );
 };
@@ -546,7 +601,7 @@ const EditCharacterView = ({
             onClick={onBack}
             className="flex items-center justify-center text-white/60 transition-colors hover:text-white"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
           <h2 className="text-xl font-bold text-white">Edit Character</h2>
         </div>
@@ -795,7 +850,7 @@ const NewCharacterView = ({
             onClick={onBack}
             className="flex items-center justify-center text-white/60 transition-colors hover:text-white"
           >
-            <FontAwesomeIcon icon={faArrowLeft} />
+            <ArrowLeftIcon />
           </button>
           <h2 className="text-xl font-bold text-white">New Character</h2>
         </div>
@@ -825,10 +880,9 @@ const NewCharacterView = ({
               />
               {!images[0]!.mediaToken && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="text-white animate-spin"
-                  />
+                  <LoaderCircleIcon
+                    
+                    className="text-white animate-spin" />
                 </div>
               )}
               <button
@@ -838,15 +892,14 @@ const NewCharacterView = ({
                 }}
                 className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
-                <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                <XIcon  className="text-sm" />
               </button>
             </div>
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
-              <FontAwesomeIcon
-                icon={faUpload}
-                className="mb-2 text-xl text-white/40"
-              />
+              <UploadIcon
+                
+                className="mb-2 text-xl text-white/40" />
               <p className="text-sm">Upload reference image</p>
               <p className="mb-3 text-xs text-white/40">
                 Click or drag an image here

@@ -1,12 +1,9 @@
-import {
-  FontAwesomeIcon,
-  FontAwesomeIconProps,
-} from "@fortawesome/react-fontawesome";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon, DynamicIconProps } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
-interface ButtonIconProps extends FontAwesomeIconProps {
-  icon: IconDefinition;
+interface ButtonIconProps extends DynamicIconProps {
+  icon: LucideIcon;
   onClick: () => void;
   className?: string;
   bgFill?: boolean;
@@ -33,7 +30,7 @@ export const ButtonIcon = ({
 
   return (
     <button className={className} onClick={onClick} disabled={disabled}>
-      <FontAwesomeIcon icon={icon} size={size} {...rest} />
+      <DynamicIcon icon={icon} size={size} {...rest} />
     </button>
   );
 };

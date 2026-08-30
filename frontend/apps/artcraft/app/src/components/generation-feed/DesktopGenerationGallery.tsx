@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faLink,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { toast } from "@storyteller/ui-toaster";
 import {
@@ -45,6 +38,9 @@ export interface DesktopGenerationGalleryProps {
   isInitialLoading: boolean;
   onLoadMore: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
+  /** Id of the item most recently viewed in the lightbox; that tile gets a
+   *  persistent "Last viewed" badge. */
+  lastViewedId?: string | null;
   /** Image page only: show a "Make Video" quick action on image items. */
   enableMakeVideo?: boolean;
   /** Enables the multi-select + batch download flow (select toggle in the
@@ -186,8 +182,8 @@ function SelectionDownloadBar({
         disabled={isDownloading || selectedItems.length === 0}
         className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
       >
-        <FontAwesomeIcon
-          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+        <DynamicIcon
+          icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
           className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
         />
         Download
@@ -294,8 +290,8 @@ function ItemActions({
             aria-label="Recreate"
             className={buttonClass}
           >
-            <FontAwesomeIcon
-              icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+            <DynamicIcon
+              icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
               className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
             />
           </button>
@@ -309,7 +305,7 @@ function ItemActions({
             aria-label="Make Video"
             className={buttonClass}
           >
-            <FontAwesomeIcon icon={faVideo} className="text-sm" />
+            <VideoIcon  className="text-sm" />
           </button>
         </Tooltip>
       )}
@@ -320,8 +316,8 @@ function ItemActions({
           aria-label="Share"
           className={buttonClass}
         >
-          <FontAwesomeIcon
-            icon={shareCopied ? faCheck : faLink}
+          <DynamicIcon
+            icon={shareCopied ? CheckIcon : LinkIcon}
             className="text-sm"
           />
         </button>
@@ -335,8 +331,8 @@ function ItemActions({
             aria-label="Download"
             className={buttonClass}
           >
-            <FontAwesomeIcon
-              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+            <DynamicIcon
+              icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
               className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
             />
           </button>

@@ -2,8 +2,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::providers::artcraft::flux_2_lora_angles::request::ArtcraftFlux2LoraAnglesRequestState;
 
 /// Cost state for Artcraft Flux 2 LoRA Angles. Pricing mirrors v1
-/// (`estimate_image_cost_artcraft_flux_2_lora_angles`): 4¢ per output image
-/// (Artcraft markup over Fal's 2¢/image base rate).
+/// (`estimate_image_cost_artcraft_flux_2_lora_angles`): 4¢ per output image.
 #[derive(Clone, Debug)]
 pub struct ArtcraftFlux2LoraAnglesCostState {
   pub num_images: u16,

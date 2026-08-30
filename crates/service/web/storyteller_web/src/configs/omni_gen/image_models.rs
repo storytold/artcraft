@@ -470,6 +470,37 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Seedream5p0ProUltra,
+    model_creator: Some(ModelCreator::Bytedance),
+    full_name: Some("Seedream 5.0 Pro Ultra".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    image_refs_max: Some(14),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    resolution_options: Some(vec![
+      CommonResolution::OneK,
+      CommonResolution::TwoK,
+    ]),
+    resolution_default: Some(CommonResolution::TwoK),
+    batch_size_min: Some(1),
+    batch_size_max: Some(8),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
   models
 }
 
@@ -517,6 +548,10 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
       },
       OmniGenImageProviderModelDetails {
         model: CommonImageModel::Seedream5p0Pro,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::Seedream5p0ProUltra,
         overrides: None,
       },
       OmniGenImageProviderModelDetails {

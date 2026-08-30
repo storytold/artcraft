@@ -22,14 +22,15 @@ use crate::generate::generate_image::generate_image_request_builder::GenerateIma
 /// Per-model build functions are expected to validate model-specific
 /// constraints (e.g. unsupported aspect ratios) BEFORE calling this helper.
 /// Validation that's identical across every Artcraft image model — batch count
-/// (1..=4) and image_inputs shape — lives here.
+/// (1..=[`max_batch_count`]) and image_inputs shape — lives here.
 pub fn build_artcraft_omni_image_request(
   builder: GenerateImageRequestBuilder,
   model: CommonImageModelEnum,
 ) -> Result<OmniGenImageCostAndGenerateRequest, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 
-  let image_batch_count = plan_batch_count(builder.image_batch_count, strategy)?;
+  let image_batch_count =
+    plan_batch_count_with_max(builder.image_batch_count, strategy, max_batch_count(model))?;
   let image_media_tokens = resolve_image_list_ref(builder.image_inputs.clone())?;
 
   let aspect_ratio = builder.aspect_ratio.map(to_aspect_ratio_enum);
@@ -52,26 +53,47 @@ pub fn build_artcraft_omni_image_request(
   })
 }
 
+/// The largest batch each Artcraft image model accepts. Seedream 5.0 Pro and
+/// Ultra accept batches of up to 8; every other model caps at 4.
+pub fn max_batch_count(model: CommonImageModelEnum) -> u16 {
+  match model {
+    CommonImageModelEnum::Seedream5p0Pro | CommonImageModelEnum::Seedream5p0ProUltra => 8,
+    _ => 4,
+  }
+}
+
 /// Validate batch count (1..=4). Mirrors the v1 plan-level validation that
 /// every Artcraft image model performs.
 pub fn plan_batch_count(
   image_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<u16, ArtcraftRouterError> {
+  plan_batch_count_with_max(image_batch_count, strategy, 4)
+}
+
+/// Validate batch count (1..=`max`), clamping or erroring per the mitigation
+/// strategy when the request exceeds the model's cap.
+pub fn plan_batch_count_with_max(
+  image_batch_count: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+  max: u16,
+) -> Result<u16, ArtcraftRouterError> {
   let count = image_batch_count.unwrap_or(1);
-  match count {
-    0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1..=4 => Ok(count),
-    _ => match strategy {
-      RequestMismatchMitigationStrategy::ErrorOut => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "image_batch_count",
-          value: format!("{}", count),
-        }))
-      }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade
-      | RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(4),
-    },
+  if count == 0 {
+    return Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations));
+  }
+  if count <= max {
+    return Ok(count);
+  }
+  match strategy {
+    RequestMismatchMitigationStrategy::ErrorOut => {
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "image_batch_count",
+        value: format!("{}", count),
+      }))
+    }
+    RequestMismatchMitigationStrategy::PayMoreUpgrade
+    | RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(max),
   }
 }
 

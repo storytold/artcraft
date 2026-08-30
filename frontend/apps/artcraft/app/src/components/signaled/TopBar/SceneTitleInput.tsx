@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
-import { faPencil, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon, PencilIcon } from "lucide-react";
 import { scene, signalScene, authentication } from "~/signals";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 import { Input } from "@storyteller/ui-input";
@@ -111,10 +110,9 @@ export const SceneTitleInput = ({ pageName }: Props) => {
               data-tauri-drag-region="false"
             >
               {scene.value.title || ""}
-              <FontAwesomeIcon
-                icon={faPencil}
-                className="ml-2 text-sm opacity-50"
-              />
+              <PencilIcon
+                
+                className="ml-2 text-sm opacity-50" />
             </button>
           ) : (
             <div className="ml-0.5 rounded-md px-2 py-1">
@@ -154,7 +152,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
         </div>
       )}
 
-      {isSaving && <FontAwesomeIcon icon={faSpinnerThird} spin />}
+      {isSaving && <LoaderCircleIcon className="animate-spin" />}
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { FOLDER_COLOR_PRESETS } from "./folderUtils";
 
@@ -42,7 +41,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
         !colorCode && "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
       )}
     >
-      <FontAwesomeIcon icon={faXmark} className="text-[10px]" />
+      <XIcon  className="text-[10px]" />
     </button>
     {/* Custom hex (native picker) */}
     <label

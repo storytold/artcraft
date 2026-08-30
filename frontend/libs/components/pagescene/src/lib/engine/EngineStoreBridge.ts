@@ -146,6 +146,45 @@ export class EngineStoreBridge {
         store.setTimelineDuration(e.duration);
         store.setTimelineTracks(e.tracks);
         store.setTimelineClipLanes(e.clipLanes);
+        // Prune selections whose target vanished — Cancel, undo of a Save
+        // and scene loads replace timeline content wholesale, and a stale
+        // id keeps TimelineEditor's capture-phase Del/Backspace handler
+        // alive, eating the key meant for the selected scene object.
+        const keyframeExists = (id: string) =>
+          e.tracks.some((t) => t.keyframes.some((k) => k.id === id));
+        if (
+          store.timelineSelectedKeyframeId &&
+          !keyframeExists(store.timelineSelectedKeyframeId)
+        ) {
+          store.setTimelineSelectedKeyframe(null);
+        }
+        if (
+          store.timelineEasingKeyframeId &&
+          !keyframeExists(store.timelineEasingKeyframeId)
+        ) {
+          store.setTimelineEasingKeyframe(null);
+        }
+        if (
+          store.timelineSelectedClipLaneId &&
+          !e.clipLanes.some((l) => l.id === store.timelineSelectedClipLaneId)
+        ) {
+          store.setTimelineSelectedClipLane(null);
+        }
+        // The transition popover must close not only when its lane vanishes
+        // but also when the lane LOSES its transition while surviving —
+        // Cancel and undo-of-a-Save revert transitionEasing wholesale with
+        // lane ids intact, and a popover left open would silently re-create
+        // the reverted transition on the next curve drag. (The enable flow
+        // is safe: toggleTransition sets the easing BEFORE selecting the
+        // lane, so this prune never races it.)
+        if (store.timelineEasingClipLaneId) {
+          const easingLane = e.clipLanes.find(
+            (l) => l.id === store.timelineEasingClipLaneId,
+          );
+          if (!easingLane || !easingLane.strip.transitionEasing) {
+            store.setTimelineEasingClipLane(null);
+          }
+        }
       }),
       bus.subscribe(TimelinePlayheadEvent, (e) => {
         const store = usePageSceneStore.getState();

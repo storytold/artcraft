@@ -65,12 +65,7 @@ import {
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
-import {
-  faMicrophoneLines,
-  faMicrophoneSlash,
-  faRepeat,
-  faSparkles,
-} from "@fortawesome/pro-solid-svg-icons";
+import { MicIcon, MicOffIcon, RepeatIcon, SparklesIcon } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -377,6 +372,24 @@ export default function CreateAudio() {
     [maxImageRefs, handleReferenceImagesChange],
   );
 
+  // Refs already in each slot, greyed out in that slot's picker so the same
+  // media file can't be added twice to one field.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
+  const usedAudioTokens = useMemo(
+    () =>
+      referenceAudios
+        .map((audio) => audio.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceAudios],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -474,8 +487,8 @@ export default function CreateAudio() {
         >
           <ToggleButton
             isActive={ui.isInstrumental}
-            icon={faMicrophoneSlash}
-            activeIcon={faMicrophoneSlash}
+            icon={MicOffIcon}
+            activeIcon={MicOffIcon}
             label="Instrumental"
             onClick={() => setUi({ isInstrumental: !ui.isInstrumental })}
           />
@@ -490,8 +503,8 @@ export default function CreateAudio() {
         >
           <ToggleButton
             isActive={ui.keepLyrics}
-            icon={faMicrophoneLines}
-            activeIcon={faMicrophoneLines}
+            icon={MicIcon}
+            activeIcon={MicIcon}
             label="Keep lyrics"
             onClick={() => setUi({ keepLyrics: !ui.keepLyrics })}
           />
@@ -506,8 +519,8 @@ export default function CreateAudio() {
         >
           <ToggleButton
             isActive={ui.isLoopable}
-            icon={faRepeat}
-            activeIcon={faRepeat}
+            icon={RepeatIcon}
+            activeIcon={RepeatIcon}
             label="Loop"
             onClick={() => setUi({ isLoopable: !ui.isLoopable })}
           />
@@ -760,7 +773,7 @@ export default function CreateAudio() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -868,6 +881,7 @@ export default function CreateAudio() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={maxImageRefs}
             onUseSelected={handleLibraryImageSelect}
@@ -879,6 +893,7 @@ export default function CreateAudio() {
             isOpen={isAudioPickerOpen}
             onClose={() => setIsAudioPickerOpen(false)}
             selectedItemIds={audioPickerSelectedIds}
+            disabledItemIds={usedAudioTokens}
             onSelectItem={handleAudioPickerSelect}
             maxSelections={audioPickerMax}
             onUseSelected={handleLibraryAudioSelect}

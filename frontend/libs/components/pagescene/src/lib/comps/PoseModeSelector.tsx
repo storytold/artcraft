@@ -2,9 +2,10 @@ import React from "react";
 import { useShallow } from "zustand/shallow";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
-import { faCheck, faPersonRunning } from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, FilmIcon, FootprintsIcon } from "lucide-react";
 import { usePageSceneStore } from "../PageSceneStore";
 import { getActiveEditor } from "../contexts/EngineContext/EngineContext";
+import { openAnimationsModal } from "../actions";
 
 interface PoseModeSelectorProps {}
 
@@ -41,7 +42,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
         <>
           {poseMode === "select" ? (
             <Button
-              icon={faPersonRunning}
+              icon={FootprintsIcon}
               onClick={handleModeChange}
               className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
             >
@@ -49,7 +50,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
             </Button>
           ) : (
             <Button
-              icon={faCheck}
+              icon={CheckIcon}
               onClick={handleModeChange}
               className="rounded-xl outline-none  focus-visible:outline-none"
             >
@@ -58,6 +59,24 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
           )}
         </>
       </Tooltip>
+      {/* Animations-only library for the selected character. Hidden while
+          posing so the row stays a single "Done" affordance. */}
+      {poseMode === "select" && (
+        <Tooltip
+          content={"Add an animation to this character"}
+          position={"bottom"}
+          delay={300}
+          closeOnClick={true}
+        >
+          <Button
+            icon={FilmIcon}
+            onClick={() => openAnimationsModal()}
+            className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
+          >
+            Add Animation
+          </Button>
+        </Tooltip>
+      )}
     </div>
   );
 };

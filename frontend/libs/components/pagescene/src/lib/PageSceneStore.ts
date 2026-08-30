@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { LucideIcon } from "lucide-react";
 import { Camera, FocalLengthDragging } from "@storyteller/common";
 import {
   AssetType,
@@ -72,7 +72,7 @@ export interface SceneObject {
 // engine maintains its own object model.
 export interface OutlinerItem {
   id: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   name: string;
   type: string;
   visible: boolean;
@@ -80,6 +80,15 @@ export interface OutlinerItem {
   // True for the render-camera placeholder ("::CAM::") — the outliner shows a
   // view-from-camera button for these rows.
   isCamera?: boolean;
+  // True when the object contains a SkinnedMesh — the timeline gives it a
+  // clip row and animation drags can target it (bind check still applies).
+  hasSkeleton?: boolean;
+  // Display names of clips baked into the object's own GLB, in index order.
+  // Non-empty → the timeline clip row offers a baked-clip picker.
+  bakedClips?: string[];
+  // Whether the persistent skeleton overlay (outliner bone icon) is on for
+  // this object. Mirrors object.userData.skeletonVisible.
+  skeletonVisible?: boolean;
 }
 
 // The currently inspected object in the right-hand control panel.
@@ -97,6 +106,9 @@ export interface DragPosition {
   currX: number;
   currY: number;
 }
+
+// See PageSceneState.animationDropState.
+export type AnimationDropState = "none" | "checking" | "ok" | "blocked";
 
 export interface PrecisionSelectorCoords {
   x: number;
@@ -177,6 +189,9 @@ interface PageSceneState {
   ignoreKeyDelete: boolean;
   hotkeyStatus: HotkeyStatus;
   isPromptBoxFocused: boolean;
+  // True while a Blender-style modal transform (grab/move) is in progress, so
+  // free-cam and the normal keymap stand down and let the modal own input.
+  modalTransformActive: boolean;
 
   // timeline (mirrors TimelineController; see engine/editor/TimelineController.ts)
   timelineExists: boolean;
@@ -187,17 +202,40 @@ interface PageSceneState {
   timelineTracks: TimelineTrack[];
   timelineClipLanes: ClipLane[];
   timelineSelectedKeyframeId: string | null;
+  // Selected clip strip (click-to-select). Drives the strip's × visibility
+  // and Del/Backspace removal — mirrors keyframe selection.
+  timelineSelectedClipLaneId: string | null;
   // Left keyframe of the segment whose easing curve is being edited in the
   // Motion popover (opened from the curve chip BETWEEN two keyframes).
   // Distinct from timelineSelectedKeyframeId, which drives selection/delete.
   timelineEasingKeyframeId: string | null;
+  // Leading clip lane whose gap-transition curve is being edited in the
+  // Motion popover (opened from the chip in the gap between two strips).
+  timelineEasingClipLaneId: string | null;
+  // Object whose timeline row should be scrolled into view. Set (with
+  // timelineExpanded) after a clip is added; consumed and cleared by an
+  // effect in TimelineEditor. A store field because TimelineEditor is
+  // unmounted while collapsed, so expand + scroll can't happen in one tick.
+  timelineRevealObjectUuid: string | null;
+  // Timeline "focus" toggle: show only the selected object's track row.
+  // Follows the selection; with nothing selected, all rows show. Store-held
+  // (not TimelineEditor state) so it survives the collapse/expand remount.
+  timelineFocusSelected: boolean;
 
   // record output
   producedArtifact: ProducedArtifact | null;
   recordingProgress: RecordingProgress | null;
+  // Mutable abort flag for the in-flight encode (recordTimeline polls
+  // `cancelled` between frames). Held here so the Escape keybind and the
+  // overlay's Cancel button can reach it; null when no encode is running.
+  encodeCancelSignal: { cancelled: boolean } | null;
 
   // layout / panels
   assetModalVisible: boolean;
+  // The standalone animations-only library modal ("Add Animation" button).
+  // Mutually exclusive with assetModalVisible (see openAnimationsModal /
+  // openAssetModal), so at most one library panel is ever open.
+  animationsModalVisible: boolean;
   assetModalVisibleDuringDrag: boolean;
   // True while an asset is being dragged out of the library modal. The modal
   // stays open but goes pointer-transparent (and translucent when reopen is on)
@@ -220,6 +258,11 @@ interface PageSceneState {
   canDrop: boolean;
   dragItem: MediaItem | null;
   dragPosition: DragPosition;
+  // Live verdict for the animation-clip drag under the cursor, shown as a
+  // badge on the drag ghost: "none" (not an animation drag), "checking"
+  // (clip still loading), "ok" (target binds the clip), "blocked"
+  // (no target, or a rig/bone-name mismatch).
+  animationDropState: AnimationDropState;
 
   // object panel (right-hand inspector for selected object)
   objectPanelShowing: boolean;
@@ -297,18 +340,27 @@ interface PageSceneState {
   setTimelineTracks: (tracks: TimelineTrack[]) => void;
   setTimelineClipLanes: (clipLanes: ClipLane[]) => void;
   setTimelineSelectedKeyframe: (id: string | null) => void;
+  setTimelineSelectedClipLane: (id: string | null) => void;
   setTimelineEasingKeyframe: (id: string | null) => void;
+  setTimelineEasingClipLane: (id: string | null) => void;
+  setTimelineRevealObjectUuid: (uuid: string | null) => void;
+  setTimelineFocusSelected: (focus: boolean) => void;
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
   clearProducedArtifact: () => void;
   setRecordingProgress: (progress: RecordingProgress | null) => void;
+  setEncodeCancelSignal: (signal: { cancelled: boolean } | null) => void;
+  // Flip the in-flight encode's abort flag (no-op when nothing is encoding).
+  requestEncodeCancel: () => void;
   toggleStats: () => void;
   setIgnoreKeyDelete: (ignore: boolean) => void;
   disableHotkeyInput: (level: DomLevels) => void;
   enableHotkeyInput: (level: DomLevels) => void;
   setIsPromptBoxFocused: (focused: boolean) => void;
+  setModalTransformActive: (active: boolean) => void;
 
   // layout
   setAssetModalVisible: (visible: boolean) => void;
+  setAnimationsModalVisible: (visible: boolean) => void;
   setAssetModalVisibleDuringDrag: (visible: boolean) => void;
   setAssetDraggingUnder: (dragging: boolean) => void;
   setReopenAfterDrag: (reopen: boolean) => void;
@@ -324,6 +376,7 @@ interface PageSceneState {
   setCanDrop: (canDrop: boolean) => void;
   setDragItem: (item: MediaItem | null) => void;
   setDragPosition: (pos: DragPosition) => void;
+  setAnimationDropState: (state: AnimationDropState) => void;
 
   // object panel
   showObjectPanel: (obj?: ObjectPanelObject) => void;
@@ -393,14 +446,21 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineTracks: [],
   timelineClipLanes: [],
   timelineSelectedKeyframeId: null,
+  timelineSelectedClipLaneId: null,
   timelineEasingKeyframeId: null,
+  timelineEasingClipLaneId: null,
+  timelineRevealObjectUuid: null,
+  timelineFocusSelected: false,
   producedArtifact: null,
   recordingProgress: null,
+  encodeCancelSignal: null,
   ignoreKeyDelete: false,
   hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE },
   isPromptBoxFocused: false,
+  modalTransformActive: false,
 
   assetModalVisible: false,
+  animationsModalVisible: false,
   assetModalVisibleDuringDrag: true,
   assetDraggingUnder: false,
   reopenAfterDrag: false,
@@ -415,6 +475,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   canDrop: false,
   dragItem: null,
   dragPosition: { currX: 0, currY: 0 },
+  animationDropState: "none",
 
   objectPanelShowing: false,
   objectPanelCurrent: undefined,
@@ -500,7 +561,13 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
   setTimelineClipLanes: (clipLanes) => set({ timelineClipLanes: clipLanes }),
   setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
+  setTimelineSelectedClipLane: (id) =>
+    set({ timelineSelectedClipLaneId: id }),
   setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
+  setTimelineEasingClipLane: (id) => set({ timelineEasingClipLaneId: id }),
+  setTimelineRevealObjectUuid: (uuid) =>
+    set({ timelineRevealObjectUuid: uuid }),
+  setTimelineFocusSelected: (focus) => set({ timelineFocusSelected: focus }),
   setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),
   clearProducedArtifact: () =>
     set((s) => {
@@ -508,6 +575,11 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       return { producedArtifact: null };
     }),
   setRecordingProgress: (progress) => set({ recordingProgress: progress }),
+  setEncodeCancelSignal: (signal) => set({ encodeCancelSignal: signal }),
+  requestEncodeCancel: () => {
+    const signal = get().encodeCancelSignal;
+    if (signal) signal.cancelled = true;
+  },
   toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
   setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
   disableHotkeyInput: (level) => {
@@ -527,9 +599,12 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     }
   },
   setIsPromptBoxFocused: (focused) => set({ isPromptBoxFocused: focused }),
+  setModalTransformActive: (active) => set({ modalTransformActive: active }),
 
   // layout actions
   setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),
+  setAnimationsModalVisible: (visible) =>
+    set({ animationsModalVisible: visible }),
   setAssetModalVisibleDuringDrag: (visible) =>
     set({ assetModalVisibleDuringDrag: visible }),
   setAssetDraggingUnder: (dragging) => set({ assetDraggingUnder: dragging }),
@@ -558,6 +633,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setCanDrop: (canDrop) => set({ canDrop }),
   setDragItem: (item) => set({ dragItem: item }),
   setDragPosition: (pos) => set({ dragPosition: pos }),
+  setAnimationDropState: (state) => set({ animationDropState: state }),
 
   // object panel actions
   showObjectPanel: (obj) =>

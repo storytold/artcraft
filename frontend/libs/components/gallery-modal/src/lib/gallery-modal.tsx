@@ -60,28 +60,28 @@ import {
   galleryModalLightboxNavNext,
 } from "./galleryModalSignals";
 import galleryDnd, { FOLDER_DROP_EVENT } from "./galleryDnd";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBorderAll,
-  faImage,
-  faMusic,
-  faVideo,
-  faCube,
-  faGlobe,
-  faUpload,
-  faExpand,
-  faCompress,
-  faArrowsRotate,
-  faTrashCan,
-  faXmark,
-  faFolder,
-  faPlus,
-  faFolderPlus,
-  faEllipsis,
-  faPencil,
-  faStar,
-  faTag,
-} from "@fortawesome/pro-solid-svg-icons";
+  BoxIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderPlusIcon,
+  GlobeIcon,
+  Grid3x3Icon,
+  ImageIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  MusicIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  StarIcon,
+  TagIcon,
+  Trash2Icon,
+  UploadIcon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import {
   useMediaPromptTokens,
   usePrompts,
@@ -268,6 +268,10 @@ interface GalleryModalProps {
   onClose?: () => void;
   mode: ModalMode;
   selectedItemIds?: string[];
+  /** Select mode: ids that are already added to the destination (e.g. the
+   *  reference deck). Shown greyed out with an "Added" badge and unclickable,
+   *  so the same media file can't be picked twice. */
+  disabledItemIds?: string[];
   onSelectItem?: (id: string) => void;
   maxSelections?: number;
   onUseSelected?: (selectedItems: GalleryItem[]) => void;
@@ -320,13 +324,13 @@ interface GalleryModalProps {
 const EMPTY_SELECTED_IDS: string[] = [];
 
 const SIDEBAR_FILTERS = [
-  { id: "all", label: "All Assets", icon: faBorderAll },
-  { id: "image", label: "Image", icon: faImage },
-  { id: "video", label: "Video", icon: faVideo },
-  { id: "audio", label: "Audio", icon: faMusic },
-  { id: "mesh", label: "Mesh", icon: faCube },
-  { id: "splat", label: "Splat", icon: faGlobe },
-  { id: "uploaded", label: "Uploaded", icon: faUpload },
+  { id: "all", label: "All Assets", icon: Grid3x3Icon },
+  { id: "image", label: "Image", icon: ImageIcon },
+  { id: "video", label: "Video", icon: VideoIcon },
+  { id: "audio", label: "Audio", icon: MusicIcon },
+  { id: "mesh", label: "Mesh", icon: BoxIcon },
+  { id: "splat", label: "Splat", icon: GlobeIcon },
+  { id: "uploaded", label: "Uploaded", icon: UploadIcon },
 ];
 
 // Media classes for the user-list endpoint. The Mesh and Splat tabs don't use
@@ -355,7 +359,9 @@ const getFilterMediaClass = (filter: string) => {
 // The backend used to file all 3D media under the (now deprecated) coarse
 // "dimensional" class; new records are "mesh" or "splat". Treat all three as 3D.
 const is3DClass = (mediaClass: string | undefined | null): boolean =>
-  mediaClass === "dimensional" || mediaClass === "mesh" || mediaClass === "splat";
+  mediaClass === "dimensional" ||
+  mediaClass === "mesh" ||
+  mediaClass === "splat";
 
 const getLabel = (item: any) => {
   if (!!item.maybe_title) {
@@ -481,7 +487,7 @@ const BulkThumb = ({
         />
       ) : (
         <div className="h-full w-full flex items-center justify-center bg-black/50">
-          <FontAwesomeIcon
+          <DynamicIcon
             icon={placeholderIcon}
             className="text-xs text-white/50"
           />
@@ -527,8 +533,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onToggleStar(folderId, !hasStar)}
     >
-      <FontAwesomeIcon
-        icon={faStar}
+      <StarIcon
         className={twMerge(
           "w-4",
           hasStar ? "text-amber-400" : "text-base-fg/40",
@@ -546,7 +551,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onNewSubfolder(folderId)}
     >
-      <FontAwesomeIcon icon={faFolderPlus} className="w-4" />
+      <FolderPlusIcon className="w-4" />
       <span>New subfolder</span>
     </button>
     <button
@@ -554,7 +559,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
       onClick={() => onRename(folderId)}
     >
-      <FontAwesomeIcon icon={faPencil} className="w-4" />
+      <PencilIcon className="w-4" />
       <span>Rename</span>
     </button>
     <button
@@ -562,7 +567,7 @@ const FolderContextMenuItems = ({
       className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
       onClick={() => onDelete(folderId)}
     >
-      <FontAwesomeIcon icon={faTrashCan} className="w-4" />
+      <Trash2Icon className="w-4" />
       <span>Delete folder</span>
     </button>
   </div>
@@ -573,6 +578,7 @@ export const GalleryModal = React.memo(
     onClose,
     mode = "view",
     selectedItemIds = EMPTY_SELECTED_IDS,
+    disabledItemIds = EMPTY_SELECTED_IDS,
     onSelectItem,
     maxSelections = 4,
     onUseSelected,
@@ -990,15 +996,15 @@ export const GalleryModal = React.memo(
           item.media_class === "audio"
             ? null
             : item.media_class === "video"
-            ? item.media_links.maybe_video_previews?.animated
-            : is3DClass(item.media_class)
-              ? // Prefer the modern CDN link; fall back to the deprecated
-                // bucket URL for older responses.
-                (item.cover_image?.maybe_links?.cdn_url ??
-                item.cover_image?.maybe_cover_image_public_bucket_url)
-              : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
-                  width: THUMBNAIL_SIZES.MEDIUM,
-                }),
+              ? item.media_links.maybe_video_previews?.animated
+              : is3DClass(item.media_class)
+                ? // Prefer the modern CDN link; fall back to the deprecated
+                  // bucket URL for older responses.
+                  (item.cover_image?.maybe_links?.cdn_url ??
+                  item.cover_image?.maybe_cover_image_public_bucket_url)
+                : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
+                    width: THUMBNAIL_SIZES.MEDIUM,
+                  }),
         thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
         fullImage: item.media_links.cdn_url,
         createdAt: item.created_at,
@@ -1487,7 +1493,10 @@ export const GalleryModal = React.memo(
           if (lastCy < r.top + EDGE) {
             dy = -Math.min(MAX_SPEED, Math.ceil((r.top + EDGE - lastCy) / 3));
           } else if (lastCy > r.bottom - EDGE) {
-            dy = Math.min(MAX_SPEED, Math.ceil((lastCy - (r.bottom - EDGE)) / 3));
+            dy = Math.min(
+              MAX_SPEED,
+              Math.ceil((lastCy - (r.bottom - EDGE)) / 3),
+            );
           }
           if (dy === 0) return;
           scroller.scrollTop += dy;
@@ -1550,6 +1559,7 @@ export const GalleryModal = React.memo(
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
         if (mode === "select" && onSelectItem) {
+          if (disabledItemIds.includes(item.id)) return;
           onSelectItem(item.id);
         } else if (bulkSelectionMode) {
           toggleBulkSelect(item.id);
@@ -1559,7 +1569,13 @@ export const GalleryModal = React.memo(
           galleryModalLightboxMediaId.value = item.id;
         }
       },
-      [mode, onSelectItem, bulkSelectionMode, toggleBulkSelect],
+      [
+        mode,
+        onSelectItem,
+        disabledItemIds,
+        bulkSelectionMode,
+        toggleBulkSelect,
+      ],
     );
 
     const handleCloseLightbox = useCallback(() => {
@@ -2487,7 +2503,14 @@ export const GalleryModal = React.memo(
           loadItems();
         }
       },
-      [activeTagToken, activeFolderId, hasMore, loadItems, loadFolderMedia, loadTagMedia],
+      [
+        activeTagToken,
+        activeFolderId,
+        hasMore,
+        loadItems,
+        loadFolderMedia,
+        loadTagMedia,
+      ],
     );
 
     // Folder tiles for the current location, rendered on the same grid as media
@@ -2604,10 +2627,7 @@ export const GalleryModal = React.memo(
                         onClick={() => handleOpenNewFolderModal(null)}
                         className="flex items-center gap-2 rounded-lg bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-base-fg hover:bg-ui-controls/90 transition-colors relative z-[51]"
                       >
-                        <FontAwesomeIcon
-                          icon={faFolderPlus}
-                          className="text-xs"
-                        />
+                        <FolderPlusIcon className="text-xs" />
                         New folder
                       </button>
                     )}
@@ -2622,10 +2642,7 @@ export const GalleryModal = React.memo(
                         Tags
                       </button>
                       <span className="text-base-fg/30">/</span>
-                      <FontAwesomeIcon
-                        icon={faTag}
-                        className="text-sm text-violet-400"
-                      />
+                      <TagIcon className="text-sm text-violet-400" />
                       <h2 className="text-lg font-semibold truncate max-w-[16rem]">
                         {activeTag.tag_value}
                       </h2>
@@ -2639,16 +2656,13 @@ export const GalleryModal = React.memo(
                         aria-label="Close tag view"
                         className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                       >
-                        <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                        <XIcon className="text-sm" />
                       </button>
                     </div>
                   ) : tagBrowserOpen ? (
                     /* ── All-tags browser header ── */
                     <div className="flex items-center gap-2 relative z-[51]">
-                      <FontAwesomeIcon
-                        icon={faTag}
-                        className="text-sm text-violet-400"
-                      />
+                      <TagIcon className="text-sm text-violet-400" />
                       <h2 className="text-lg font-semibold">Tags</h2>
                       <button
                         type="button"
@@ -2656,7 +2670,7 @@ export const GalleryModal = React.memo(
                         aria-label="Close tags"
                         className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                       >
-                        <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                        <XIcon className="text-sm" />
                       </button>
                     </div>
                   ) : galleryTab === "folders" && activeFolder ? (
@@ -2720,10 +2734,7 @@ export const GalleryModal = React.memo(
                           onClick={() => setFolderMenuOpen((v) => !v)}
                           className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
                         >
-                          <FontAwesomeIcon
-                            icon={faEllipsis}
-                            className="text-sm"
-                          />
+                          <EllipsisIcon className="text-sm" />
                         </button>
                         {folderMenuOpen && (
                           <>
@@ -2760,23 +2771,23 @@ export const GalleryModal = React.memo(
                               : "Select Videos"
                             : activeFilter === "audio"
                               ? "Select Audio"
-                            : activeFilter === "mesh"
-                              ? maxSelections === 1
-                                ? "Select 3D Object"
-                                : "Select 3D Objects"
-                              : activeFilter === "splat"
+                              : activeFilter === "mesh"
                                 ? maxSelections === 1
-                                  ? "Select 3D World"
-                                  : "Select 3D Worlds"
-                              : activeFilter === "uploaded"
-                                ? maxSelections === 1
-                                  ? "Select Upload"
-                                  : "Select Uploads"
-                                : activeFilter === "all"
-                                  ? "Select Media"
-                                  : maxSelections === 1
-                                    ? "Select Image"
-                                    : "Select Images"}
+                                  ? "Select 3D Object"
+                                  : "Select 3D Objects"
+                                : activeFilter === "splat"
+                                  ? maxSelections === 1
+                                    ? "Select 3D World"
+                                    : "Select 3D Worlds"
+                                  : activeFilter === "uploaded"
+                                    ? maxSelections === 1
+                                      ? "Select Upload"
+                                      : "Select Uploads"
+                                    : activeFilter === "all"
+                                      ? "Select Media"
+                                      : maxSelections === 1
+                                        ? "Select Image"
+                                        : "Select Images"}
                         </h2>
                       )}
                       {mode === "view" && galleryTab === "unsorted" && (
@@ -2798,15 +2809,15 @@ export const GalleryModal = React.memo(
                     !activeTagToken &&
                     !tagBrowserOpen &&
                     activeFilter !== "uploaded" && (
-                    <div className="relative z-[51] flex items-center">
-                      <Checkbox
-                        id="gallery-show-uploads"
-                        checked={showUploads}
-                        onChange={(e) => setShowUploads(e.target.checked)}
-                        label="Show uploads"
-                      />
-                    </div>
-                  )}
+                      <div className="relative z-[51] flex items-center">
+                        <Checkbox
+                          id="gallery-show-uploads"
+                          checked={showUploads}
+                          onChange={(e) => setShowUploads(e.target.checked)}
+                          label="Show uploads"
+                        />
+                      </div>
+                    )}
                 </div>
                 <div className="flex justify-end gap-2 items-center flex-wrap ml-auto">
                   {/* Refresh button */}
@@ -2818,12 +2829,11 @@ export const GalleryModal = React.memo(
                     <Button
                       variant="action"
                       onClick={refreshGallery}
-                      className="relative z-[51] h-9 w-9"
+                      className="relative z-[51] h-9 w-9 p-2.5"
                       disabled={loading}
                       aria-label="Refresh list"
                     >
-                      <FontAwesomeIcon
-                        icon={faArrowsRotate}
+                      <RefreshCwIcon
                         className={`text-lg text-base-fg ${loading ? "animate-spin" : ""}`}
                       />
                     </Button>
@@ -2841,10 +2851,12 @@ export const GalleryModal = React.memo(
                           fit === "cover" ? "contain" : "cover",
                         )
                       }
-                      className="relative z-[51] h-9 w-9"
+                      className="relative z-[51] h-9 w-9 p-2.5"
                     >
-                      <FontAwesomeIcon
-                        icon={imageFit === "cover" ? faExpand : faCompress}
+                      <DynamicIcon
+                        icon={
+                          imageFit === "cover" ? MaximizeIcon : MinimizeIcon
+                        }
                         className="text-lg text-base-fg"
                       />
                     </Button>
@@ -2917,7 +2929,7 @@ export const GalleryModal = React.memo(
                           )}
                         >
                           <div className="flex items-center gap-2.5">
-                            <FontAwesomeIcon
+                            <DynamicIcon
                               icon={f.icon}
                               className="text-xs w-4"
                             />
@@ -2939,7 +2951,7 @@ export const GalleryModal = React.memo(
                         aria-label="New folder"
                         className="flex h-5 w-5 items-center justify-center rounded text-base-fg/50 hover:bg-ui-controls/60 hover:text-base-fg transition-colors"
                       >
-                        <FontAwesomeIcon icon={faPlus} className="text-[10px]" />
+                        <PlusIcon className="text-[10px]" />
                       </button>
                     )}
                   </div>
@@ -2976,8 +2988,7 @@ export const GalleryModal = React.memo(
                               : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faFolder}
+                          <FolderIcon
                             className={twMerge(
                               "text-xs w-4",
                               !folder.colorCode && "text-primary",
@@ -2990,10 +3001,7 @@ export const GalleryModal = React.memo(
                           />
                           <span className="truncate">{folder.name}</span>
                           {folder.hasStar && (
-                            <FontAwesomeIcon
-                              icon={faStar}
-                              className="ml-auto text-[10px] text-amber-400"
-                            />
+                            <StarIcon className="ml-auto text-[10px] text-amber-400" />
                           )}
                         </button>
                       ))
@@ -3023,10 +3031,7 @@ export const GalleryModal = React.memo(
                                 : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
                             )}
                           >
-                            <FontAwesomeIcon
-                              icon={faTag}
-                              className="text-xs w-4 text-violet-400"
-                            />
+                            <TagIcon className="text-xs w-4 text-violet-400" />
                             <span className="truncate">{tag.tag_value}</span>
                             <span className="ml-auto text-[10px] text-base-fg/40">
                               {tag.use_count}
@@ -3043,10 +3048,7 @@ export const GalleryModal = React.memo(
                               : "text-base-fg/50 hover:bg-ui-controls/30 hover:text-base-fg",
                           )}
                         >
-                          <FontAwesomeIcon
-                            icon={faEllipsis}
-                            className="text-xs w-4"
-                          />
+                          <EllipsisIcon className="text-xs w-4" />
                           <span>All tags</span>
                           <span className="ml-auto text-[10px] text-base-fg/40">
                             {sortedTags.length}
@@ -3078,10 +3080,7 @@ export const GalleryModal = React.memo(
                   ) : activeTagItems.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3">
                       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-400/10">
-                        <FontAwesomeIcon
-                          icon={faTag}
-                          className="text-violet-400 text-2xl"
-                        />
+                        <TagIcon className="text-violet-400 text-2xl" />
                       </div>
                       <div className="text-base-fg font-semibold">
                         No files carry this tag
@@ -3121,6 +3120,10 @@ export const GalleryModal = React.memo(
                                     activeFilter={activeFilter}
                                     audioPromptText={audioPromptTextFor(item)}
                                     selected={selectedItemIds.includes(item.id)}
+                                    disabled={
+                                      mode === "select" &&
+                                      disabledItemIds.includes(item.id)
+                                    }
                                     onClick={() => handleItemClick(item)}
                                     onImageError={(e) => {
                                       e.currentTarget.src =
@@ -3168,10 +3171,7 @@ export const GalleryModal = React.memo(
                   userTags.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3">
                       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-400/10">
-                        <FontAwesomeIcon
-                          icon={faTag}
-                          className="text-violet-400 text-2xl"
-                        />
+                        <TagIcon className="text-violet-400 text-2xl" />
                       </div>
                       <div className="text-base-fg font-semibold">
                         No tags yet
@@ -3192,10 +3192,7 @@ export const GalleryModal = React.memo(
                   currentSubfolders.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3">
                       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                        <FontAwesomeIcon
-                          icon={faFolder}
-                          className="text-primary text-2xl"
-                        />
+                        <FolderIcon className="text-primary text-2xl" />
                       </div>
                       <div className="text-base-fg font-semibold">
                         No folders yet
@@ -3206,7 +3203,7 @@ export const GalleryModal = React.memo(
                       {mode === "view" && (
                         <Button
                           variant="action"
-                          icon={faFolderPlus}
+                          icon={FolderPlusIcon}
                           onClick={() => handleOpenNewFolderModal(null)}
                           className="mt-1 px-3 py-1.5 text-sm"
                         >
@@ -3227,10 +3224,7 @@ export const GalleryModal = React.memo(
                     currentSubfolders.length > 0 ? null : (
                       <div className="flex h-full flex-col items-center justify-center gap-3">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                          <FontAwesomeIcon
-                            icon={faFolder}
-                            className="text-primary text-2xl"
-                          />
+                          <FolderIcon className="text-primary text-2xl" />
                         </div>
                         <div className="text-base-fg font-semibold">
                           This folder is empty
@@ -3243,7 +3237,7 @@ export const GalleryModal = React.memo(
                         {mode === "view" && (
                           <Button
                             variant="action"
-                            icon={faFolderPlus}
+                            icon={FolderPlusIcon}
                             onClick={() =>
                               handleOpenNewFolderModal(activeFolderId)
                             }
@@ -3285,6 +3279,10 @@ export const GalleryModal = React.memo(
                                     activeFilter={activeFilter}
                                     audioPromptText={audioPromptTextFor(item)}
                                     selected={selectedItemIds.includes(item.id)}
+                                    disabled={
+                                      mode === "select" &&
+                                      disabledItemIds.includes(item.id)
+                                    }
                                     onClick={() => handleItemClick(item)}
                                     onImageError={(e) => {
                                       e.currentTarget.src =
@@ -3428,12 +3426,14 @@ export const GalleryModal = React.memo(
                                       item={item}
                                       mode={mode}
                                       activeFilter={activeFilter}
-                                      audioPromptText={audioPromptTextFor(
-                                        item,
-                                      )}
+                                      audioPromptText={audioPromptTextFor(item)}
                                       selected={selectedItemIds.includes(
                                         item.id,
                                       )}
+                                      disabled={
+                                        mode === "select" &&
+                                        disabledItemIds.includes(item.id)
+                                      }
                                       onClick={() => handleItemClick(item)}
                                       onImageError={(e) => {
                                         e.currentTarget.src =
@@ -3530,14 +3530,14 @@ export const GalleryModal = React.memo(
                     {bulkSelectedItems.slice(0, 4).map((si) => {
                       const placeholderIcon =
                         si.mediaClass === "video"
-                          ? faVideo
+                          ? VideoIcon
                           : si.mediaClass === "audio"
-                            ? faMusic
+                            ? MusicIcon
                             : si.mediaClass === "dimensional" ||
                                 si.mediaClass === "mesh" ||
                                 si.mediaClass === "splat"
-                              ? faCube
-                              : faImage;
+                              ? BoxIcon
+                              : ImageIcon;
                       return (
                         <BulkThumb
                           key={si.id}
@@ -3565,7 +3565,7 @@ export const GalleryModal = React.memo(
                       variant="action"
                       onClick={() => setBulkFolderPopoverOpen((v) => !v)}
                       className="px-3 bg-ui-controls/60 hover:bg-ui-controls/90"
-                      icon={faFolderPlus}
+                      icon={FolderPlusIcon}
                     >
                       Add to folder
                     </Button>
@@ -3599,10 +3599,7 @@ export const GalleryModal = React.memo(
                                   setBulkFolderPopoverOpen(false);
                                 }}
                               >
-                                <FontAwesomeIcon
-                                  icon={faFolder}
-                                  className="text-primary text-xs"
-                                />
+                                <FolderIcon className="text-primary text-xs" />
                                 <span className="truncate">{folder.name}</span>
                               </button>
                             ))
@@ -3617,10 +3614,7 @@ export const GalleryModal = React.memo(
                               handleOpenNewFolderModal(undefined, ids);
                             }}
                           >
-                            <FontAwesomeIcon
-                              icon={faPlus}
-                              className="text-xs w-4"
-                            />
+                            <PlusIcon className="text-xs w-4" />
                             <span>Create new folder</span>
                           </button>
                         </div>
@@ -3632,7 +3626,7 @@ export const GalleryModal = React.memo(
                       variant="destructive"
                       onClick={handleBulkDelete}
                       className="px-3"
-                      icon={faTrashCan}
+                      icon={Trash2Icon}
                     >
                       Delete
                     </Button>
@@ -3642,7 +3636,7 @@ export const GalleryModal = React.memo(
                     className="flex h-8 w-8 items-center justify-center rounded-md bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg transition-colors"
                     aria-label="Clear selection"
                   >
-                    <FontAwesomeIcon icon={faXmark} className="text-base" />
+                    <XIcon className="text-base" />
                   </button>
                 </div>
               </div>

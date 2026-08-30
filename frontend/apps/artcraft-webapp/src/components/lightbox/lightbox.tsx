@@ -5,13 +5,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
 import { is3DMediaClass } from "@storyteller/ui-generation-list";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronLeft,
-  faChevronRight,
-  faMusic,
-  faTrashCan,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon, MusicIcon, Trash2Icon } from "lucide-react";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
@@ -390,7 +384,7 @@ export function Lightbox({
                 muted={!soundEnabled}
                 playsInline
                 disablePictureInPicture
-                controlsList="nodownload noplaybackrate nofullscreen"
+                controlsList="nodownload noplaybackrate"
                 className="h-full w-full object-contain"
                 onLoadedData={(e) => {
                   setMediaLoaded(true);
@@ -427,10 +421,9 @@ export function Lightbox({
               <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
                 <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-10 sm:px-6">
                   <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
-                    <FontAwesomeIcon
-                      icon={faMusic}
-                      className="text-2xl text-white/70"
-                    />
+                    <MusicIcon
+                      
+                      className="text-2xl text-white/70" />
                   </div>
                   <WaveformAudioPlayer
                     key={selectedImageUrl}
@@ -528,7 +521,7 @@ export function Lightbox({
                 className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Previous item"
               >
-                <FontAwesomeIcon icon={faChevronLeft} className="text-lg" />
+                <ChevronLeftIcon  className="text-lg" />
               </button>
             )}
             {onNavigateNext && (
@@ -540,7 +533,7 @@ export function Lightbox({
                 className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Next item"
               >
-                <FontAwesomeIcon icon={faChevronRight} className="text-lg" />
+                <ChevronRightIcon  className="text-lg" />
               </button>
             )}
           </div>
@@ -590,7 +583,7 @@ export function Lightbox({
         onPrimaryAction={handleDelete}
         primaryActionText="Delete"
         secondaryActionText="Cancel"
-        primaryActionIcon={faTrashCan}
+        primaryActionIcon={Trash2Icon}
         primaryActionBtnClassName="bg-red-500/10 hover:bg-red-500/20 text-red-500"
       />
     </>

@@ -25,38 +25,18 @@ import {
   FOLDER_DROP_EVENT,
   type GalleryItem,
 } from "@storyteller/ui-gallery-modal";
+import {
+  TagChipInput,
+  type TagSuggestion,
+} from "@storyteller/ui-lightbox-modal";
 import { PLACEHOLDER_IMAGES, is3DModelUrl } from "@storyteller/common";
 import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowsRotate,
-  faBorderAll,
-  faCube,
-  faImage,
-  faMusic,
-  faVideo,
-  faPencil,
-  faTrashCan,
-  faFolderPlus,
-  faFolder,
-  faFolderOpen,
-  faGlobe,
-  faPlus,
-  faXmark,
-  faStar,
-  faTag,
-  faTags,
-  faEllipsis,
-  faCloud,
-  faList,
-  faSpinnerThird,
-  faPhotoFilm,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, BoxIcon, CloudIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, FolderPlusIcon, GlobeIcon, Grid3x3Icon, ImageIcon, ImagesIcon, ListIcon, LoaderCircleIcon, MusicIcon, PencilIcon, PlusIcon, RefreshCwIcon, StarIcon, TagIcon, TagsIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { toast } from "../../components/toast/toast";
 import { downloadItemsAsZip } from "../../lib/download-media-zip";
@@ -82,23 +62,23 @@ import {
 const PAGE_SIZE = 60;
 
 const FILTERS = [
-  { id: "all", label: "All", icon: faBorderAll, route: "/library" },
-  { id: "image", label: "Images", icon: faImage, route: "/library/images" },
-  { id: "video", label: "Videos", icon: faVideo, route: "/library/videos" },
-  { id: "audio", label: "Audio", icon: faMusic, route: "/library/audio" },
-  { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
-  { id: "splats", label: "Splats", icon: faGlobe, route: "/library/splats" },
+  { id: "all", label: "All", icon: Grid3x3Icon, route: "/library" },
+  { id: "image", label: "Images", icon: ImageIcon, route: "/library/images" },
+  { id: "video", label: "Videos", icon: VideoIcon, route: "/library/videos" },
+  { id: "audio", label: "Audio", icon: MusicIcon, route: "/library/audio" },
+  { id: "meshes", label: "Meshes", icon: BoxIcon, route: "/library/meshes" },
+  { id: "splats", label: "Splats", icon: GlobeIcon, route: "/library/splats" },
 ];
 
 // Class scopes for the Unfoldered tab. Local state (not routes): the tab is
 // one page and the filter maps to the endpoint's `filter_media_class` param.
 const FOLDERLESS_CLASS_FILTERS = [
-  { id: "all", label: "All", icon: faBorderAll },
-  { id: "image", label: "Images", icon: faImage },
-  { id: "video", label: "Videos", icon: faVideo },
-  { id: "audio", label: "Audio", icon: faMusic },
-  { id: "mesh", label: "Meshes", icon: faCube },
-  { id: "splat", label: "Splats", icon: faGlobe },
+  { id: "all", label: "All", icon: Grid3x3Icon },
+  { id: "image", label: "Images", icon: ImageIcon },
+  { id: "video", label: "Videos", icon: VideoIcon },
+  { id: "audio", label: "Audio", icon: MusicIcon },
+  { id: "mesh", label: "Meshes", icon: BoxIcon },
+  { id: "splat", label: "Splats", icon: GlobeIcon },
 ];
 
 const ROUTE_TO_FILTER: Record<string, string> = {
@@ -1136,10 +1116,9 @@ export default function Library() {
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FontAwesomeIcon
-                      icon={faBorderAll}
-                      className="relative z-10 text-xs"
-                    />
+                    <Grid3x3Icon
+                      
+                      className="relative z-10 text-xs" />
                     <span className="relative z-10">All Assets</span>
                   </Link>
                   <Link
@@ -1157,10 +1136,9 @@ export default function Library() {
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FontAwesomeIcon
-                      icon={faFolder}
-                      className="relative z-10 text-xs"
-                    />
+                    <FolderIcon
+                      
+                      className="relative z-10 text-xs" />
                     <span className="relative z-10">Folders</span>
                   </Link>
                   <Link
@@ -1178,10 +1156,9 @@ export default function Library() {
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FontAwesomeIcon
-                      icon={faFolderOpen}
-                      className="relative z-10 text-xs"
-                    />
+                    <FolderOpenIcon
+                      
+                      className="relative z-10 text-xs" />
                     <span className="relative z-10">Unfoldered</span>
                   </Link>
                   <Link
@@ -1199,10 +1176,9 @@ export default function Library() {
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FontAwesomeIcon
-                      icon={faTag}
-                      className="relative z-10 text-xs"
-                    />
+                    <TagIcon
+                      
+                      className="relative z-10 text-xs" />
                     <span className="relative z-10">Tags</span>
                   </Link>
                 </div>
@@ -1212,10 +1188,9 @@ export default function Library() {
                     className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                     title="Refresh library"
                   >
-                    <FontAwesomeIcon
-                      icon={faArrowsRotate}
-                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`}
-                    />
+                    <RefreshCwIcon
+                      
+                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`} />
                   </button>
                 )}
               </div>
@@ -1240,7 +1215,7 @@ export default function Library() {
                             transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                           />
                         )}
-                        <FontAwesomeIcon
+                        <DynamicIcon
                           icon={filter.icon}
                           className="relative z-10 text-xs"
                         />
@@ -1270,7 +1245,7 @@ export default function Library() {
                             transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                           />
                         )}
-                        <FontAwesomeIcon
+                        <DynamicIcon
                           icon={filter.icon}
                           className="relative z-10 text-xs"
                         />
@@ -1284,7 +1259,7 @@ export default function Library() {
                 {tab === "folders" && !inFolder && (
                   <Button
                     variant="primary"
-                    icon={faFolderPlus}
+                    icon={FolderPlusIcon}
                     onClick={() => openNewFolderModal(null)}
                     className="rounded-full text-xs sm:text-sm px-3 sm:px-4 py-2"
                   >
@@ -1328,8 +1303,8 @@ export default function Library() {
                     <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
                       {(
                         [
-                          ["cloud", faCloud, "Cloud"],
-                          ["list", faList, "List"],
+                          ["cloud", CloudIcon, "Cloud"],
+                          ["list", ListIcon, "List"],
                         ] as const
                       ).map(([id, icon, label]) => (
                         <button
@@ -1352,7 +1327,7 @@ export default function Library() {
                               }}
                             />
                           )}
-                          <FontAwesomeIcon
+                          <DynamicIcon
                             icon={icon}
                             className="relative z-10 text-xs"
                           />
@@ -1396,14 +1371,14 @@ export default function Library() {
                   className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="Rename folder"
                 >
-                  <FontAwesomeIcon icon={faPencil} className="text-xs" />
+                  <PencilIcon  className="text-xs" />
                 </button>
                 <button
                   onClick={() => openNewFolderModal(activeFolderId)}
                   className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="New subfolder"
                 >
-                  <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
+                  <FolderPlusIcon  className="text-xs" />
                 </button>
               </div>
             )}
@@ -1432,14 +1407,14 @@ export default function Library() {
                   className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="Rename tag"
                 >
-                  <FontAwesomeIcon icon={faPencil} className="text-xs" />
+                  <PencilIcon  className="text-xs" />
                 </button>
                 <button
                   onClick={() => confirmDeleteTag(activeTagToken)}
                   className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-red hover:bg-ui-controls/40 transition-colors"
                   title="Delete tag"
                 >
-                  <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
+                  <Trash2Icon  className="text-xs" />
                 </button>
               </div>
             )}
@@ -1477,15 +1452,14 @@ export default function Library() {
             currentSubfolders.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ui-controls/30">
-                  <FontAwesomeIcon
-                    icon={faFolderOpen}
-                    className="text-2xl text-white/40"
-                  />
+                  <FolderOpenIcon
+                    
+                    className="text-2xl text-white/40" />
                 </div>
                 <p className="text-white/40 text-sm">No folders yet.</p>
                 <Button
                   variant="primary"
-                  icon={faFolderPlus}
+                  icon={FolderPlusIcon}
                   onClick={() => openNewFolderModal(null)}
                   className="rounded-full text-sm px-4 py-2"
                 >
@@ -1544,10 +1518,9 @@ export default function Library() {
             ) : tags.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ui-controls/30">
-                  <FontAwesomeIcon
-                    icon={faTags}
-                    className="text-2xl text-white/40"
-                  />
+                  <TagsIcon
+                    
+                    className="text-2xl text-white/40" />
                 </div>
                 <p className="text-white/40 text-sm">No tags yet.</p>
                 <p className="text-white/30 text-xs max-w-xs text-center">
@@ -1583,10 +1556,9 @@ export default function Library() {
                       }}
                       className="flex items-center gap-2 pl-4 pr-1 py-2 text-sm font-medium text-white"
                     >
-                      <FontAwesomeIcon
-                        icon={faTag}
-                        className="text-xs text-violet-400"
-                      />
+                      <TagIcon
+                        
+                        className="text-xs text-violet-400" />
                       <span className="max-w-[14rem] truncate">{t.value}</span>
                       <span className="text-xs text-white/40">
                         {t.useCount}
@@ -1606,7 +1578,7 @@ export default function Library() {
                       title="Rename or delete"
                       className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition-colors"
                     >
-                      <FontAwesomeIcon icon={faEllipsis} className="text-xs" />
+                      <EllipsisIcon  className="text-xs" />
                     </button>
                   </div>
                 ))}
@@ -1820,10 +1792,9 @@ export default function Library() {
                         setContextMenu(null);
                       }}
                     >
-                      <FontAwesomeIcon
-                        icon={faStar}
-                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`}
-                      />
+                      <StarIcon
+                        
+                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`} />
                       <span>{menuFolder?.hasStar ? "Unstar" : "Star"}</span>
                     </button>
                     <FolderColorRow
@@ -1843,7 +1814,7 @@ export default function Library() {
                   openNewFolderModal(contextMenu.folderId);
                 }}
               >
-                <FontAwesomeIcon icon={faFolderPlus} className="w-4" />
+                <FolderPlusIcon  className="w-4" />
                 <span>New subfolder</span>
               </button>
               <button
@@ -1851,7 +1822,7 @@ export default function Library() {
                 className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => startRename(contextMenu.folderId)}
               >
-                <FontAwesomeIcon icon={faPencil} className="w-4" />
+                <PencilIcon  className="w-4" />
                 <span>Rename</span>
               </button>
               <button
@@ -1863,7 +1834,7 @@ export default function Library() {
                   confirmDeleteFolder(folderId);
                 }}
               >
-                <FontAwesomeIcon icon={faTrashCan} className="w-4" />
+                <Trash2Icon  className="w-4" />
                 <span>Delete folder</span>
               </button>
             </div>
@@ -1892,7 +1863,7 @@ export default function Library() {
                 className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => setTagRenameTarget(tagContextMenu.tagToken)}
               >
-                <FontAwesomeIcon icon={faPencil} className="w-4" />
+                <PencilIcon  className="w-4" />
                 <span>Rename</span>
               </button>
               <button
@@ -1904,7 +1875,7 @@ export default function Library() {
                   confirmDeleteTag(token);
                 }}
               >
-                <FontAwesomeIcon icon={faTrashCan} className="w-4" />
+                <Trash2Icon  className="w-4" />
                 <span>Delete tag</span>
               </button>
             </div>
@@ -2071,11 +2042,16 @@ const LibraryTile = memo(function LibraryTile({
 const SEND_TO_TARGETS: {
   destination: PromptDestination;
   label: string;
-  icon: typeof faImage;
+  icon: typeof ImageIcon;
 }[] = [
-  { destination: "image", label: "Create image", icon: faImage },
-  { destination: "video", label: "Create video", icon: faVideo },
+  { destination: "image", label: "Create image", icon: ImageIcon },
+  { destination: "video", label: "Create video", icon: VideoIcon },
 ];
+
+// Shared styling for the bar's action pills. `whitespace-nowrap` keeps labels
+// on a single line — the bar grows instead of squishing buttons into two rows.
+const BAR_BUTTON_CLASS =
+  "flex items-center gap-2 whitespace-nowrap rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors";
 
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
@@ -2100,6 +2076,9 @@ function BulkSelectionBar({
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [sendToOpen, setSendToOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [tagChips, setTagChips] = useState<string[]>([]);
+  const [addingTags, setAddingTags] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<{
     done: number;
     total: number;
@@ -2113,10 +2092,21 @@ function BulkSelectionBar({
     [folders],
   );
 
-  // Close the popover when navigating so it doesn't dangle over the new view.
+  // Close the popovers when navigating so they don't dangle over the new view.
   useEffect(() => {
     setPopoverOpen(false);
+    setTagsOpen(false);
   }, [activeFolderId]);
+
+  // Autocomplete for the Add-tags popover: the user's tags, most-used first.
+  const storeTags = useLibraryTagsStore((s) => s.tags);
+  const tagSuggestions = useMemo(
+    (): TagSuggestion[] =>
+      [...storeTags]
+        .sort(compareTagsByUseCount)
+        .map((t) => ({ value: t.value, useCount: t.useCount })),
+    [storeTags],
+  );
 
   // Resolve selected items from everything loaded (root library + folder/tag
   // caches) — the selection survives navigation, so selected items may not be
@@ -2173,6 +2163,20 @@ function BulkSelectionBar({
     }
   };
 
+  const handleAddTags = async () => {
+    if (addingTags || tagChips.length === 0) return;
+    setAddingTags(true);
+    const ok = await useLibraryTagsStore
+      .getState()
+      .bulkAddTags(Array.from(ids), tagChips);
+    setAddingTags(false);
+    if (ok) {
+      setTagsOpen(false);
+      setTagChips([]);
+      clear();
+    }
+  };
+
   return (
     <div
       data-no-marquee
@@ -2194,7 +2198,7 @@ function BulkSelectionBar({
           </div>
         )}
       </div>
-      <span className="px-1 text-sm font-medium text-white/80">
+      <span className="whitespace-nowrap px-1 text-sm font-medium text-white/80">
         {ids.size} selected
       </span>
 
@@ -2206,10 +2210,10 @@ function BulkSelectionBar({
             type="button"
             title="Send to prompt"
             onClick={() => setSendToOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+            className={BAR_BUTTON_CLASS}
           >
-            <FontAwesomeIcon
-              icon={hasPromptImages ? faImage : faVideo}
+            <DynamicIcon
+              icon={hasPromptImages ? ImageIcon : VideoIcon}
               className="text-xs"
             />
             {/* Icon-only on phones — a fourth labeled button overflows the bar. */}
@@ -2238,7 +2242,7 @@ function BulkSelectionBar({
                     }}
                     className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
                   >
-                    <FontAwesomeIcon icon={target.icon} className="w-4 text-xs" />
+                    <DynamicIcon icon={target.icon} className="w-4 text-xs" />
                     <span>{target.label}</span>
                   </button>
                 ))}
@@ -2259,9 +2263,9 @@ function BulkSelectionBar({
               clear();
               navigate(`/frame-extractor?media=${token}`);
             }}
-            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+            className={BAR_BUTTON_CLASS}
           >
-            <FontAwesomeIcon icon={faPhotoFilm} className="text-xs" />
+            <ImagesIcon  className="text-xs" />
             <span className="hidden sm:inline">Extract frames</span>
           </button>
         )}
@@ -2270,11 +2274,13 @@ function BulkSelectionBar({
       <div className="relative">
         <button
           type="button"
+          title="Add to folder"
           onClick={() => setPopoverOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+          className={BAR_BUTTON_CLASS}
         >
-          <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
-          Add to folder
+          <FolderPlusIcon  className="text-xs" />
+          {/* Icon-only on phones — five labeled buttons overflow the bar. */}
+          <span className="hidden sm:inline">Add to folder</span>
         </button>
         {popoverOpen && (
           <>
@@ -2302,8 +2308,8 @@ function BulkSelectionBar({
                     }}
                     className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
                   >
-                    <FontAwesomeIcon
-                      icon={faFolder}
+                    <FolderIcon
+                      
                       className={
                         folder.colorCode ? "text-xs" : "text-xs text-primary"
                       }
@@ -2311,8 +2317,7 @@ function BulkSelectionBar({
                         folder.colorCode
                           ? { color: folder.colorCode }
                           : undefined
-                      }
-                    />
+                      } />
                     <span className="truncate">{folder.name}</span>
                   </button>
                 ))
@@ -2326,9 +2331,59 @@ function BulkSelectionBar({
                 }}
                 className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
               >
-                <FontAwesomeIcon icon={faPlus} className="w-4 text-xs" />
+                <PlusIcon  className="w-4 text-xs" />
                 <span>Create new folder</span>
               </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Add tags */}
+      <div className="relative">
+        <button
+          type="button"
+          title="Add tags"
+          onClick={() => {
+            setTagsOpen((v) => !v);
+            // Lazy-load the user's tags for autocomplete on first open.
+            if (!useLibraryTagsStore.getState().tagsLoaded) {
+              void useLibraryTagsStore.getState().loadTags();
+            }
+          }}
+          className={BAR_BUTTON_CLASS}
+        >
+          <TagsIcon  className="text-xs" />
+          <span className="hidden sm:inline">Add tags</span>
+        </button>
+        {tagsOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-[59]"
+              onClick={() => setTagsOpen(false)}
+            />
+            <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
+              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                Add tags
+              </div>
+              <TagChipInput
+                chips={tagChips}
+                suggestions={tagSuggestions}
+                dropUp
+                onAdd={(values) => setTagChips((prev) => [...prev, ...values])}
+                onRemove={(value) =>
+                  setTagChips((prev) => prev.filter((c) => c !== value))
+                }
+              />
+              <Button
+                variant="primary"
+                disabled={tagChips.length === 0}
+                loading={addingTags}
+                onClick={handleAddTags}
+                className="mt-2 w-full justify-center rounded-md text-sm py-1.5"
+              >
+                Tag {ids.size} {ids.size === 1 ? "item" : "items"}
+              </Button>
             </div>
           </>
         )}
@@ -2338,10 +2393,10 @@ function BulkSelectionBar({
         type="button"
         onClick={handleDownloadSelected}
         disabled={isDownloading}
-        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors disabled:opacity-60"
+        className={`${BAR_BUTTON_CLASS} disabled:opacity-60`}
       >
-        <FontAwesomeIcon
-          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+        <DynamicIcon
+          icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
           className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
         />
         {isDownloading && downloadProgress
@@ -2352,9 +2407,9 @@ function BulkSelectionBar({
       <button
         type="button"
         onClick={onDeleteSelected}
-        className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
+        className="flex items-center gap-2 whitespace-nowrap rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
       >
-        <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
+        <Trash2Icon  className="text-xs" />
         Delete
       </button>
       <button
@@ -2363,7 +2418,7 @@ function BulkSelectionBar({
         aria-label="Clear selection"
         className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white hover:bg-ui-controls/90 transition-colors"
       >
-        <FontAwesomeIcon icon={faXmark} />
+        <XIcon />
       </button>
     </div>
   );
@@ -2375,12 +2430,12 @@ function BulkThumb({ item }: { item: GalleryItem }) {
   const [failed, setFailed] = useState(false);
   const placeholderIcon =
     item.mediaClass === "video"
-      ? faVideo
+      ? VideoIcon
       : is3DMediaClass(item.mediaClass)
-        ? faCube
+        ? BoxIcon
         : item.mediaClass === "audio"
-          ? faMusic
-          : faImage;
+          ? MusicIcon
+          : ImageIcon;
   const showImage = !!item.thumbnail && !failed;
   return (
     <div className="-ml-2 h-8 w-8 flex-shrink-0 overflow-hidden rounded border-2 border-ui-panel bg-black/30 first:ml-0">
@@ -2393,7 +2448,7 @@ function BulkThumb({ item }: { item: GalleryItem }) {
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black/50">
-          <FontAwesomeIcon
+          <DynamicIcon
             icon={placeholderIcon}
             className="text-xs text-white/50"
           />

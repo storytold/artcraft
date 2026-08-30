@@ -1,7 +1,4 @@
-import {
-  faChevronRight,
-  faChevronLeft,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { ButtonIcon } from "@storyteller/ui-button-icon";
 
@@ -42,7 +39,7 @@ export const Pagination = ({
     >
       <ButtonIcon
         className="-ml-2 pt-2 text-gray-400"
-        icon={faChevronLeft}
+        icon={ChevronLeftIcon}
         onClick={handleSetPreviousPage}
         disabled={currentPage === 0}
         aria-hidden
@@ -78,7 +75,7 @@ export const Pagination = ({
         {currentPage + 1 !== totalPages ? (
           <ButtonIcon
             className="-mr-2 pt-2 text-gray-500 hover:text-brand-primary"
-            icon={faChevronRight}
+            icon={ChevronRightIcon}
             onClick={handleSetNextPage}
             aria-hidden
           />

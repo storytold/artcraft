@@ -11,6 +11,7 @@ export const upload3DObjectsBatch = async ({
   thumbnails,
   engineCategory,
   animationType,
+  durationsMillis,
   onFileStatusChange,
   onOverallProgress,
   onComplete,
@@ -19,6 +20,8 @@ export const upload3DObjectsBatch = async ({
   thumbnails: Map<File, Blob>;
   engineCategory: FilterEngineCategories;
   animationType?: MediaFileAnimationType;
+  // Per-file clip durations; required by the backend for animation uploads.
+  durationsMillis?: Map<File, number>;
   onFileStatusChange: (
     index: number,
     status: FileEntryStatus,
@@ -43,6 +46,7 @@ export const upload3DObjectsBatch = async ({
           assetFile: file,
           engineCategory,
           animationType,
+          durationMillis: durationsMillis?.get(file),
           thumbnailSnapshot: thumbnails.get(file),
           progressCallback: (state) => {
             if (state.status === UploaderStates.success) {

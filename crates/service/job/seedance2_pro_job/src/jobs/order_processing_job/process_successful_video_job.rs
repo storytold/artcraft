@@ -10,11 +10,11 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_video_jobs::PendingKinoviWebJob;
 use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token_with_executor::{mark_generic_inference_job_successfully_done_by_token_with_executor, MarkGenericInferenceJobSuccessfullyDoneByTokenWithExecutorArgs};
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
+use kinovi_web_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
@@ -26,7 +26,7 @@ const SUFFIX: &str = ".mp4";
 /// Download the completed video, upload to bucket, create media file record, and mark job done.
 pub async fn process_successful_video_job(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProJob,
+  job: &PendingKinoviWebJob,
   order: &OrderStatus,
 ) -> AnyhowResult<()> {
   // Get the video URL.
@@ -52,7 +52,7 @@ pub async fn process_successful_video_job(
   );
 
   // Download the video bytes.
-  let video_bytes: Vec<u8> = match reqwest::get(video_url).await {
+  let video_bytes: Vec<u8> = match deps.download_client.get(video_url).send().await {
     Ok(resp) => match resp.bytes().await {
       Ok(bytes) => bytes.to_vec(),
       Err(err) => {
@@ -134,6 +134,7 @@ pub async fn process_successful_video_job(
     .maybe_frame_width(maybe_frame_width)
     .maybe_generation_provider(Some(GenerationProvider::Artcraft))
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .maybe_source_job_token(Some(&job.job_token))
     .maybe_platform_type(job.maybe_platform_type)
     .media_file_class(MediaFileClass::Video)
     .media_file_origin_category(MediaFileOriginCategory::Inference)
@@ -174,7 +175,7 @@ pub async fn process_successful_video_job(
 
 async fn finalize_success(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProJob,
+  job: &PendingKinoviWebJob,
   order: &OrderStatus,
   media_file_token: &str,
 ) -> AnyhowResult<()> {

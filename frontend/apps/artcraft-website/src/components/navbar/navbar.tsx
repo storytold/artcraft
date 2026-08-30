@@ -14,18 +14,8 @@ import { Fragment } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { USER_FEATURE_FLAGS, UsersApi } from "@storyteller/api";
 import { useSession, invalidateSession } from "../../lib/session";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faXmark,
-  faGem,
-  faGift,
-  faArrowRight,
-  faChevronDown,
-  faLifeRing,
-  faRocket,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { ArrowRightIcon, ChevronDownIcon, GemIcon, GiftIcon, LifeBuoyIcon, MenuIcon, RocketIcon, XIcon } from "lucide-react";
+import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import {
   appLink,
   SOCIAL_LINKS,
@@ -161,10 +151,9 @@ export default function Navbar() {
                                 )}
                               >
                                 {entry.name}
-                                <FontAwesomeIcon
-                                  icon={faChevronDown}
-                                  className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180"
-                                />
+                                <ChevronDownIcon
+                                  
+                                  className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180" />
                               </Link>
                             </NavigationMenu.Trigger>
                           ) : (
@@ -176,10 +165,9 @@ export default function Navbar() {
                               )}
                             >
                               {entry.name}
-                              <FontAwesomeIcon
-                                icon={faChevronDown}
-                                className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180"
-                              />
+                              <ChevronDownIcon
+                                
+                                className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180" />
                             </NavigationMenu.Trigger>
                           )}
                           <NavigationMenu.Content className="absolute top-full left-0 mt-2 rounded-xl border border-white/[0.08] bg-[#1a1a1a] shadow-xl overflow-hidden">
@@ -229,7 +217,7 @@ export default function Navbar() {
                       to="/pricing"
                       className="hidden xl:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
                     >
-                      <FontAwesomeIcon icon={faGem} className="text-[11px]" />
+                      <GemIcon  className="text-[11px]" />
                       Pricing
                     </Link>
 
@@ -238,10 +226,9 @@ export default function Navbar() {
                         href={WEBAPP_URL}
                         className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                       >
-                        <FontAwesomeIcon
-                          icon={faRocket}
-                          className="text-[10px]"
-                        />
+                        <RocketIcon
+                          
+                          className="text-[10px]" />
                         Launch App
                       </a>
                     )}
@@ -282,10 +269,9 @@ export default function Navbar() {
                                   "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                                 )}
                               >
-                                <FontAwesomeIcon
-                                  icon={faLifeRing}
-                                  className="text-[11px] text-white/50"
-                                />
+                                <LifeBuoyIcon
+                                  
+                                  className="text-[11px] text-white/50" />
                                 Support
                               </button>
                             )}
@@ -300,10 +286,9 @@ export default function Navbar() {
                                     "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                                   )}
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faGift}
-                                    className="text-[11px] text-white/50"
-                                  />
+                                  <GiftIcon
+                                    
+                                    className="text-[11px] text-white/50" />
                                   Referrals
                                 </a>
                               )}
@@ -320,10 +305,9 @@ export default function Navbar() {
                                   "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                                 )}
                               >
-                                <FontAwesomeIcon
-                                  icon={faDiscord}
-                                  className="text-[11px] text-white/50"
-                                />
+                                <DiscordIcon
+                                  
+                                  className="text-[11px] text-white/50" />
                                 Join Discord
                               </a>
                             )}
@@ -351,7 +335,7 @@ export default function Navbar() {
                       to="/pricing"
                       className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
                     >
-                      <FontAwesomeIcon icon={faGem} className="text-[11px]" />
+                      <GemIcon  className="text-[11px]" />
                       Pricing
                     </Link>
                     {USE_WEBAPP_FOR_APP_FEATURES ? (
@@ -359,10 +343,9 @@ export default function Navbar() {
                         href={WEBAPP_URL}
                         className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                       >
-                        <FontAwesomeIcon
-                          icon={faRocket}
-                          className="text-[10px]"
-                        />
+                        <RocketIcon
+                          
+                          className="text-[10px]" />
                         Launch App
                       </a>
                     ) : (
@@ -378,10 +361,9 @@ export default function Navbar() {
                           className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                         >
                           Sign up
-                          <FontAwesomeIcon
-                            icon={faArrowRight}
-                            className="text-[10px] transition-transform group-hover:translate-x-0.5"
-                          />
+                          <ArrowRightIcon
+                            
+                            className="text-[10px] transition-transform group-hover:translate-x-0.5" />
                         </Link>
                       </>
                     )}
@@ -392,8 +374,8 @@ export default function Navbar() {
                 <div className="flex items-center gap-1.5 lg:hidden">
                   <DisclosureButton className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors">
                     <span className="sr-only">Open main menu</span>
-                    <FontAwesomeIcon
-                      icon={open ? faXmark : faBars}
+                    <DynamicIcon
+                      icon={open ? XIcon : MenuIcon}
                       className="text-base"
                     />
                   </DisclosureButton>
@@ -508,10 +490,9 @@ export default function Navbar() {
                         href={WEBAPP_URL}
                         className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
                       >
-                        <FontAwesomeIcon
-                          icon={faRocket}
-                          className="text-[10px]"
-                        />
+                        <RocketIcon
+                          
+                          className="text-[10px]" />
                         Launch App
                       </DisclosureButton>
                     )}
@@ -521,10 +502,9 @@ export default function Navbar() {
                         to="/pricing"
                         className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
                       >
-                        <FontAwesomeIcon
-                          icon={faGem}
-                          className="text-[10px]"
-                        />
+                        <GemIcon
+                          
+                          className="text-[10px]" />
                         Pricing
                       </DisclosureButton>
                       <DisclosureButton
@@ -534,10 +514,9 @@ export default function Navbar() {
                         rel="noopener noreferrer"
                         className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
                       >
-                        <FontAwesomeIcon
-                          icon={faDiscord}
-                          className="text-[10px]"
-                        />
+                        <DiscordIcon
+                          
+                          className="text-[10px]" />
                         Discord
                       </DisclosureButton>
                       {hasReferralsFlag && (
@@ -546,10 +525,9 @@ export default function Navbar() {
                           href={webappUrl("/referrals")}
                           className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
                         >
-                          <FontAwesomeIcon
-                            icon={faGift}
-                            className="text-[10px]"
-                          />
+                          <GiftIcon
+                            
+                            className="text-[10px]" />
                           Referrals
                         </DisclosureButton>
                       )}
@@ -579,7 +557,7 @@ export default function Navbar() {
                       href={WEBAPP_URL}
                       className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
                     >
-                      <FontAwesomeIcon icon={faRocket} className="text-[10px]" />
+                      <RocketIcon  className="text-[10px]" />
                       Launch App
                     </DisclosureButton>
                   ) : (

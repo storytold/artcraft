@@ -1,10 +1,7 @@
 import { useCallback } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronLeft,
-  faChevronRight,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import type { VFXShowcaseEntry } from "./showcase-fixtures";
 
 interface ShowcaseCarouselProps {
@@ -98,8 +95,8 @@ const ArrowButton = ({ direction, disabled, onClick }: ArrowButtonProps) => (
         : "hover:bg-white/10 hover:text-white",
     )}
   >
-    <FontAwesomeIcon
-      icon={direction === "prev" ? faChevronLeft : faChevronRight}
+    <DynamicIcon
+      icon={direction === "prev" ? ChevronLeftIcon : ChevronRightIcon}
       className="h-3 w-3"
     />
   </button>

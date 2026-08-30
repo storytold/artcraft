@@ -29,10 +29,17 @@ export type GizmoControllerDeps = {
   setTransformSpace: (space: TransformSpace) => void;
 };
 
+// Snap increments applied when grid snapping is enabled (matches the values
+// originally hardcoded in configure()).
+const TRANSLATION_SNAP = 0.01;
+const ROTATION_SNAP = 0.01;
+const SCALE_SNAP = 0.01;
+
 export class GizmoController {
   control: TransformControls | undefined;
 
   private deps: GizmoControllerDeps;
+  private snapping = true;
 
   constructor(deps: GizmoControllerDeps) {
     this.deps = deps;
@@ -47,9 +54,7 @@ export class GizmoController {
     if (camera == undefined) return;
     this.control = new TransformControls(camera, domElement);
     this.control.space = "world";
-    this.control.setScaleSnap(0.01);
-    this.control.setTranslationSnap(0.01);
-    this.control.setRotationSnap(0.01);
+    this.applySnapping();
     this.control.setSize(0.5);
     this.control.addEventListener("change", callbacks.onChange);
     this.control.addEventListener("dragging-changed", (event: any) => {
@@ -70,6 +75,28 @@ export class GizmoController {
   setSpace(space: TransformSpace) {
     if (this.control == undefined) return;
     this.control.space = space;
+  }
+
+  // Grid snapping. When off, transforms are continuous (snap = null).
+  setSnapping(enabled: boolean) {
+    this.snapping = enabled;
+    this.applySnapping();
+  }
+
+  toggleSnapping(): boolean {
+    this.setSnapping(!this.snapping);
+    return this.snapping;
+  }
+
+  isSnapping(): boolean {
+    return this.snapping;
+  }
+
+  private applySnapping() {
+    if (this.control == undefined) return;
+    this.control.setTranslationSnap(this.snapping ? TRANSLATION_SNAP : null);
+    this.control.setRotationSnap(this.snapping ? ROTATION_SNAP : null);
+    this.control.setScaleSnap(this.snapping ? SCALE_SNAP : null);
   }
 
   // Flip the store's transform-space preference and push the new value

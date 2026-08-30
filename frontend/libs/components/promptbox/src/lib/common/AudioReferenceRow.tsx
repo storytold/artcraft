@@ -1,18 +1,28 @@
-import { useCallback, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFolderOpen,
-  faImage,
-  faMusic,
-  faPlay,
-  faPlus,
-  faStop,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+import { FolderOpenIcon, ImageIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
 import type { UploadMediaFn } from "@storyteller/api";
 import type { RefAudio, RefImage } from "../promptStore";
+import {
+  AUDIO_FILE_ACCEPT,
+  AUDIO_FILE_TYPE_ERROR,
+  isAudioFile,
+} from "./audioFiles";
+
+/** Lets the prompt box push dropped/pasted files through the same upload
+ *  path the row's own file inputs use. */
+export interface AudioReferenceRowHandle {
+  addAudioFiles: (files: File[]) => Promise<void>;
+  addImageFile: (file: File) => Promise<void>;
+}
 
 export interface AudioReferenceRowProps {
   referenceAudios: RefAudio[];
@@ -36,20 +46,26 @@ export interface AudioReferenceRowProps {
 // remix/sample source or Seed Audio refs), plus an optional image reference
 // for models that support one. Rendered inside the glass card, above the
 // prompt textarea.
-export function AudioReferenceRow({
-  referenceAudios,
-  onReferenceAudiosChange,
-  maxAudioCount,
-  maxAudioRefDuration,
-  uploadAudio,
-  onPickAudioFromLibrary,
-  audioRequired = false,
-  imageSupported = false,
-  referenceImages = [],
-  onReferenceImagesChange,
-  uploadImage,
-  className = "",
-}: AudioReferenceRowProps) {
+export const AudioReferenceRow = forwardRef<
+  AudioReferenceRowHandle,
+  AudioReferenceRowProps
+>(function AudioReferenceRow(
+  {
+    referenceAudios,
+    onReferenceAudiosChange,
+    maxAudioCount,
+    maxAudioRefDuration,
+    uploadAudio,
+    onPickAudioFromLibrary,
+    audioRequired = false,
+    imageSupported = false,
+    referenceImages = [],
+    onReferenceImagesChange,
+    uploadImage,
+    className = "",
+  },
+  ref,
+) {
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
@@ -61,14 +77,16 @@ export function AudioReferenceRow({
   const referenceImagesRef = useRef(referenceImages);
   referenceImagesRef.current = referenceImages;
 
-  const handleAudioFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = Array.from(event.target.files || []);
+  const processAudioFiles = async (files: File[]) => {
     if (files.length === 0) return;
 
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR);
+    }
+
     const availableSlots = Math.max(0, maxAudioCount - referenceAudios.length);
-    const filesToProcess = files.slice(0, availableSlots);
+    const filesToProcess = audioFiles.slice(0, availableSlots);
 
     for (const file of filesToProcess) {
       const duration = await getAudioFileDuration(file);
@@ -113,15 +131,17 @@ export function AudioReferenceRow({
         });
       }
     }
+  };
 
+  const handleAudioFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    await processAudioFiles(Array.from(event.target.files || []));
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
-  const handleImageFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = (event.target.files || [])[0];
-    if (!file || !uploadImage) return;
+  const processImageFile = async (file: File) => {
+    if (!uploadImage) return;
 
     setIsUploadingImage(true);
     await uploadImage({
@@ -146,9 +166,25 @@ export function AudioReferenceRow({
         }
       },
     });
+  };
 
+  const handleImageFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = (event.target.files || [])[0];
+    if (file) await processImageFile(file);
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      addAudioFiles: processAudioFiles,
+      addImageFile: processImageFile,
+    }),
+    // Recreated each render so the handle always closes over fresh props
+    // (slot counts, current refs) rather than mount-time values.
+  );
 
   const removeAudio = (id: string) => {
     onReferenceAudiosChange(referenceAudios.filter((a) => a.id !== id));
@@ -160,7 +196,7 @@ export function AudioReferenceRow({
       <input
         ref={audioInputRef}
         type="file"
-        accept="audio/*"
+        accept={AUDIO_FILE_ACCEPT}
         className="hidden"
         multiple={maxAudioCount > 1}
         onChange={handleAudioFileUpload}
@@ -177,7 +213,7 @@ export function AudioReferenceRow({
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-base-fg opacity-90">
-          <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />
+          <MusicIcon  className="h-3.5 w-3.5" />
           <span className="text-sm font-medium">
             Audio Track{" "}
             <span className="font-semibold text-base-fg/60">
@@ -208,7 +244,7 @@ export function AudioReferenceRow({
               disabled={isUploadingAudio}
               className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
             >
-              <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+              <PlusIcon  className="h-3 w-3" />
               {isUploadingAudio ? "Uploading…" : "Add audio"}
             </button>
             {onPickAudioFromLibrary && (
@@ -218,7 +254,7 @@ export function AudioReferenceRow({
                 disabled={isUploadingAudio}
                 className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
-                <FontAwesomeIcon icon={faFolderOpen} className="h-3 w-3" />
+                <FolderOpenIcon  className="h-3 w-3" />
                 From library
               </button>
             )}
@@ -228,7 +264,7 @@ export function AudioReferenceRow({
         {imageSupported && (
           <>
             <div className="ms-2 flex items-center gap-2 text-base-fg opacity-90">
-              <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+              <ImageIcon  className="h-3.5 w-3.5" />
               <span className="text-sm font-medium">Image</span>
             </div>
             {referenceImages.map((image) => (
@@ -247,10 +283,9 @@ export function AudioReferenceRow({
                   onClick={() => onReferenceImagesChange?.([])}
                   className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
                 >
-                  <FontAwesomeIcon
-                    icon={faXmark}
-                    className="h-3 w-3 text-white"
-                  />
+                  <XIcon
+                    
+                    className="h-3 w-3 text-white" />
                 </button>
               </div>
             ))}
@@ -261,7 +296,7 @@ export function AudioReferenceRow({
                 disabled={isUploadingImage}
                 className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
-                <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+                <PlusIcon  className="h-3 w-3" />
                 {isUploadingImage ? "Uploading…" : "Add image"}
               </button>
             )}
@@ -270,7 +305,7 @@ export function AudioReferenceRow({
       </div>
     </div>
   );
-}
+});
 
 function AudioRefTile({
   audio,
@@ -309,8 +344,8 @@ function AudioRefTile({
         onClick={togglePlay}
         className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-black transition-transform hover:scale-105"
       >
-        <FontAwesomeIcon
-          icon={isPlaying ? faStop : faPlay}
+        <DynamicIcon
+          icon={isPlaying ? SquareIcon : PlayIcon}
           className={`h-2 w-2 ${isPlaying ? "" : "ml-px"}`}
         />
       </button>
@@ -323,7 +358,7 @@ function AudioRefTile({
         onClick={() => onRemove(audio.id)}
         className="flex h-4 w-4 items-center justify-center rounded text-base-fg/40 transition-colors hover:text-base-fg"
       >
-        <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+        <XIcon  className="h-2.5 w-2.5" />
       </button>
     </div>
   );

@@ -6,12 +6,8 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateImage, GenerateImageRequest } from "@storyteller/tauri-api";
-import {
-  faExpand,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { ImageModel } from "@storyteller/model-list";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { UploadMediaFn } from "@storyteller/api";
@@ -34,6 +30,11 @@ import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { useDeckMedia } from "./deck/useDeckMedia";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 
 interface PromptBoxImageProps {
@@ -132,12 +133,45 @@ export const PromptBoxImage = ({
     ownGalleryModal: true,
   });
 
+  // Drag & drop / paste onto the box bounds. Images are the only reference
+  // kind this box takes, and only when the model can use them at all.
+  const dropAcceptsImages = !!selectedModel?.canUseImagePrompt;
+
+  const handleDroppedFiles = ({ images }: DroppedFiles) => {
+    if (images.length === 0) return;
+    if (deck.availableImageSlots <= 0) {
+      toast.error(
+        `Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`,
+      );
+      return;
+    }
+    deck.processImageFiles(images, "start");
+  };
+
+  const drop = usePromptBoxDrop({
+    acceptsImages: dropAcceptsImages,
+    acceptsVideos: false,
+    acceptsAudio: false,
+    onDropFiles: handleDroppedFiles,
+  });
+
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={dropAcceptsImages}
+      acceptsVideos={false}
+      acceptsAudio={false}
+    />
+  );
+
   const deckItems: DeckItem[] = useMemo(
     () => [
       ...referenceImages.map((img, i) => ({
         id: img.id,
         kind: "image" as const,
         url: img.url,
+        previewUrl: img.fullUrl ?? img.url,
         name: `Image ${i + 1}`,
       })),
       ...deck.uploadingImages.map((entry, i) => ({
@@ -218,17 +252,17 @@ export const PromptBoxImage = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+      icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
 
@@ -437,7 +471,9 @@ export const PromptBoxImage = ({
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
+          {...drop.dropZoneProps}
         >
+          {dropOverlay}
           <div className="flex justify-center gap-2">
             {renderReferenceDeck()}
 
@@ -512,7 +548,7 @@ export const PromptBoxImage = ({
                       panelTitle="Resolution"
                       showIconsInList
                       triggerIcon={
-                        <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                        <MaximizeIcon  className="h-4 w-4" />
                       }
                     />
                   </Tooltip>
@@ -557,8 +593,8 @@ export const PromptBoxImage = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -571,6 +607,8 @@ export const PromptBoxImage = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
         footerControls={modelSelector}
         imagePromptRow={renderReferenceDeck(true) ?? undefined}
         clearAllButton={

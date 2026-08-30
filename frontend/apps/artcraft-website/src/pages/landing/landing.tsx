@@ -1,7 +1,7 @@
 import { Button } from "@storyteller/ui-button";
 import { DownloadButton } from "../../components/download-button";
-import { faArrowDownToLine } from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { ArrowDownToLineIcon } from "lucide-react";
+import { DiscordIcon } from "@storyteller/icons";
 import { SOCIAL_LINKS } from "../../config/links";
 
 const Landing = () => {
@@ -45,7 +45,7 @@ const Landing = () => {
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
             <DownloadButton />
             <Button
-              icon={faDiscord}
+              icon={DiscordIcon}
               className="rounded-xl px-8 py-4 text-md border-2 border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-md"
               as="link"
               href={SOCIAL_LINKS.DISCORD}
@@ -87,7 +87,7 @@ const Landing = () => {
               </p>
             </div>
             <Button
-              icon={faArrowDownToLine}
+              icon={ArrowDownToLineIcon}
               className="rounded-lg px-5 py-3.5 text-md bg-[#2D81FF] hover:bg-[#438AF6]"
               as="link"
               href="/download"
@@ -113,7 +113,7 @@ const Landing = () => {
               </p>
             </div>
             <Button
-              icon={faArrowDownToLine}
+              icon={ArrowDownToLineIcon}
               className="rounded-lg px-5 py-3.5 text-md bg-[#2D81FF] hover:bg-[#438AF6]"
               as="link"
               href="/download"
@@ -182,7 +182,7 @@ const Landing = () => {
             updated with the latest features and updates.
           </p>
           <Button
-            icon={faDiscord}
+            icon={DiscordIcon}
             className="rounded-xl px-8 py-4 text-md bg-[#5865F2] hover:bg-[#6a76ff] transition-all duration-300 backdrop-blur-md"
             as="link"
             href={SOCIAL_LINKS.DISCORD}

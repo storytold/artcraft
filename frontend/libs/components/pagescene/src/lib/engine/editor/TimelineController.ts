@@ -9,13 +9,14 @@
 import * as THREE from "three";
 import type Editor from "../editor";
 import { snapshotTransform, writeTransform } from "./actions/snapshots";
-import { SaveTimelineAction } from "./actions/SaveTimelineAction";
+import { TimelineEditAction } from "./actions/TimelineEditAction";
 import { sampleTrackAt } from "../timeline/interpolation";
 import {
   cloneTimeline,
   DEFAULT_EASING,
   DEFAULT_TIMELINE_DURATION,
   DEFAULT_TIMELINE_FPS,
+  DEFAULT_TRANSITION_GAP,
   type ClipLane,
   type ClipStrip,
   type EasingSpec,
@@ -28,6 +29,14 @@ import {
   TimelinePlayheadEvent,
 } from "../events/EngineEvent";
 
+// Whole-timeline state pair for undo/redo: the live timeline plus the
+// last-saved baseline (which Cancel reverts to). TimelineEditAction restores
+// both, so undoing past a Save also restores the older baseline.
+export interface TimelineUndoSnapshot {
+  live: TimelineData | null;
+  saved: TimelineData | null;
+}
+
 export class TimelineController {
   private timeline: TimelineData | null = null;
   private saved: TimelineData | null = null;
@@ -35,6 +44,48 @@ export class TimelineController {
   private isPlaying = false;
 
   constructor(private readonly editor: Editor) {}
+
+  // ─── per-edit undo ────────────────────────────────────────────────────
+  //
+  // Every user-facing timeline edit is one undo step (TimelineEditAction).
+  // Discrete edits wrap in recordEdit(); continuous gestures capture
+  // snapshotForUndo() at gesture start and call recordEditSince() at the
+  // end so the whole drag is a single step. Engine-internal mutations
+  // (autoKeyIfTracked riding a gizmo transform) bypass recording on purpose.
+
+  snapshotForUndo(): TimelineUndoSnapshot {
+    return {
+      live: this.timeline ? cloneTimeline(this.timeline) : null,
+      saved: this.saved ? cloneTimeline(this.saved) : null,
+    };
+  }
+
+  restoreSnapshot(snap: TimelineUndoSnapshot): void {
+    this.timeline = snap.live ? cloneTimeline(snap.live) : null;
+    this.saved = snap.saved ? cloneTimeline(snap.saved) : null;
+    if (this.timeline) {
+      this.playhead = Math.min(this.playhead, this.timeline.duration);
+    }
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+    this.emitPlayhead();
+  }
+
+  recordEdit<T>(label: string, mutate: () => T): T {
+    const before = this.snapshotForUndo();
+    const result = mutate();
+    this.recordEditSince(label, before);
+    return result;
+  }
+
+  recordEditSince(label: string, before: TimelineUndoSnapshot): void {
+    const after = this.snapshotForUndo();
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    this.editor.history.record(
+      new TimelineEditAction(this, label, before, after),
+    );
+  }
 
   // ─── queries ──────────────────────────────────────────────────────────
 
@@ -73,6 +124,26 @@ export class TimelineController {
     this.playhead = 0;
     this.isPlaying = false;
     this.editor.characterAnimationManager.clear();
+    this.emitChanged();
+    this.emitPlayhead();
+  }
+
+  // Reset to a fresh empty timeline (scene switch / new scene). Unlike
+  // create() — a no-op when a timeline already exists — this REPLACES
+  // whatever is loaded, dropping tracks, strips and their runtimes, so a
+  // scene saved without a timeline (or a brand-new scene) never inherits
+  // the previous scene's animation data.
+  reset(): void {
+    this.timeline = {
+      duration: DEFAULT_TIMELINE_DURATION,
+      fps: DEFAULT_TIMELINE_FPS,
+      tracks: [],
+      clipLanes: [],
+    };
+    this.saved = cloneTimeline(this.timeline);
+    this.playhead = 0;
+    this.isPlaying = false;
+    this.syncClipLanes(); // disposes every lane runtime, prunes mixers
     this.emitChanged();
     this.emitPlayhead();
   }
@@ -120,13 +191,44 @@ export class TimelineController {
   }
 
   // Set the max timeline duration (seconds). Clamped to [1, 60] — covers the
-  // required 5–30s range with headroom. Keeps the playhead in range.
+  // required 5–30s range with headroom. Keeps the playhead in range, and
+  // re-fits clip strips into the new range: a shrink used to strand strips
+  // beyond the end — rendered outside the lane, unreachable by playback, and
+  // trimming one computed a NEGATIVE max duration (clamping it to a frame).
   setDuration(seconds: number): void {
     if (!this.timeline || !Number.isFinite(seconds)) return;
-    this.timeline.duration = Math.max(1, Math.min(60, seconds));
-    if (this.playhead > this.timeline.duration) {
-      this.playhead = this.timeline.duration;
+    const duration = Math.max(1, Math.min(60, seconds));
+    this.timeline.duration = duration;
+    if (this.playhead > duration) {
+      this.playhead = duration;
     }
+    // Ascending order so earlier strips claim room first; a strip longer
+    // than the whole timeline shrinks to fit, and resolveFreeStart re-snaps
+    // anything now out of range into the nearest free slot.
+    const lanes = [...this.timeline.clipLanes].sort(
+      (a, b) => a.strip.startTime - b.strip.startTime,
+    );
+    let lanesChanged = false;
+    for (const lane of lanes) {
+      const strip = lane.strip;
+      if (strip.startTime + strip.duration <= duration) continue;
+      lanesChanged = true;
+      if (strip.duration > duration) {
+        strip.duration = duration;
+        strip.autoDuration = false;
+      }
+      const freeStart = this.resolveFreeStart(
+        lane.objectUuid,
+        lane.id,
+        strip.startTime,
+        strip.duration,
+      );
+      // No free slot in the shrunken timeline: park the strip flush with the
+      // end; overlaps (if any) resolve on the next add/move like restore's.
+      strip.startTime = freeStart ?? Math.max(0, duration - strip.duration);
+    }
+    if (lanesChanged) this.syncClipLanes();
+    this.evaluate();
     this.emitChanged();
     this.emitPlayhead();
   }
@@ -238,7 +340,8 @@ export class TimelineController {
 
   // Add a new stacked clip lane for `objectUuid` (a character). The clip is
   // dropped at `startTime`, clamped so it starts within the timeline. Returns
-  // the new lane id, or null if there is no timeline.
+  // the new lane id, or null if there is no timeline or no free slot left on
+  // the character's row (callers surface that to the user).
   addClipLane(objectUuid: string, strip: Omit<ClipStrip, "id">): string | null {
     if (!this.timeline) return null;
     // Characters hold clips on a single row: snap the drop to the nearest free
@@ -249,6 +352,7 @@ export class TimelineController {
       strip.startTime,
       strip.duration,
     );
+    if (startTime === null) return null;
     const lane: ClipLane = {
       id: THREE.MathUtils.generateUUID(),
       objectUuid,
@@ -267,12 +371,16 @@ export class TimelineController {
     if (!this.timeline) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane) return;
-    lane.strip.startTime = this.resolveFreeStart(
+    const freeStart = this.resolveFreeStart(
       lane.objectUuid,
       laneId,
       startTime,
       lane.strip.duration,
     );
+    // No free slot for the drag target — keep the strip where it was (its
+    // current position is always valid since it's excluded from the search).
+    if (freeStart === null) return;
+    lane.strip.startTime = freeStart;
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
@@ -299,6 +407,73 @@ export class TimelineController {
     this.emitChanged();
   }
 
+  // Set (or clear, with null) the opt-in pose transition from `laneId`'s
+  // strip into the NEXT strip on its row. Rides the Save/Cancel session
+  // like every other clip edit.
+  setClipTransitionEasing(laneId: string, easing: EasingSpec | null): void {
+    if (!this.timeline) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane) return;
+    if (easing) lane.strip.transitionEasing = { ...easing };
+    else delete lane.strip.transitionEasing;
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  // Guarantee at least `gap` seconds of daylight between `laneId`'s strip and
+  // the NEXT strip on its row, so an enabled transition has room to play.
+  // Auto-placement packs strips flush (resolveFreeStart), so this is what
+  // makes the boundary chip usable without hand-dragging a gap open first.
+  // Makes room by shifting the next strip right (bounded by the strip after
+  // it / the timeline end), then by trimming the leading strip when shifting
+  // alone isn't enough. Returns false — mutating nothing — when there is no
+  // next strip or the row is too packed to make room (callers surface that).
+  // Rides the Save/Cancel session like every other clip edit.
+  ensureTransitionGap(laneId: string, gap = DEFAULT_TRANSITION_GAP): boolean {
+    if (!this.timeline) return false;
+    const lead = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lead) return false;
+    const leadEnd = lead.strip.startTime + lead.strip.duration;
+    // Epsilon: a strip trimmed flush against its neighbour can put leadEnd a
+    // float-rounding hair PAST the neighbour's start; `>= leadEnd` alone
+    // would then miss it and misreport "no next strip".
+    const next = this.timeline.clipLanes
+      .filter(
+        (l) =>
+          l.objectUuid === lead.objectUuid &&
+          l.id !== lead.id &&
+          l.strip.startTime >= leadEnd - 1e-6,
+      )
+      .sort((a, b) => a.strip.startTime - b.strip.startTime)[0];
+    if (!next) return false;
+    const needed = gap - (next.strip.startTime - leadEnd);
+    if (needed <= 0) return true;
+    const followBound = this.nextStartAfter(
+      lead.objectUuid,
+      next.id,
+      next.strip.startTime,
+    );
+    const shiftAvail = Math.max(
+      0,
+      followBound - (next.strip.startTime + next.strip.duration),
+    );
+    const minDur = 1 / (this.timeline.fps || DEFAULT_TIMELINE_FPS);
+    const trimAvail = Math.max(0, lead.strip.duration - minDur);
+    if (shiftAvail + trimAvail < needed) return false;
+    const shift = Math.min(needed, shiftAvail);
+    next.strip.startTime += shift;
+    const trim = needed - shift;
+    if (trim > 0) {
+      lead.strip.duration -= trim;
+      lead.strip.autoDuration = false;
+    }
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+    return true;
+  }
+
   // Toggle whether a clip loops for the remainder of its strip.
   setClipLoop(laneId: string, loop: boolean): void {
     if (!this.timeline) return;
@@ -311,33 +486,43 @@ export class TimelineController {
   }
 
   // Called by CharacterAnimationManager once a clip GLB has loaded and its
-  // real length is known. Adopts the natural length only for a fresh drop
-  // (autoDuration still set) — a user-trimmed strip keeps its hand-set length.
+  // real length is known. Fresh strips default to a compact width
+  // (DEFAULT_CLIP_DURATION in actions/timeline.ts); if the clip is actually
+  // SHORTER than that placeholder, shrink the strip so it never claims time
+  // the clip can't fill. Never grows — a long clip stays at the compact
+  // width until the user trims it out. User-trimmed strips are untouched.
   resolveClipDuration(laneId: string, naturalDuration: number): void {
     if (!this.timeline || !(naturalDuration > 0)) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane || lane.strip.autoDuration === false) return;
-    // Adopt the natural length but never let it overrun the next clip or the
-    // timeline end (single-row, non-overlapping).
-    const nextStart = this.nextStartAfter(
-      lane.objectUuid,
-      laneId,
-      lane.strip.startTime,
-    );
-    const maxDur = nextStart - lane.strip.startTime;
-    lane.strip.duration = Math.min(naturalDuration, maxDur);
+    lane.strip.duration = Math.min(lane.strip.duration, naturalDuration);
     lane.strip.autoDuration = false;
+    // Keep the runtime's strip window in sync with the (possibly shrunk) width.
+    this.syncClipLanes();
     this.emitChanged();
   }
 
+  // Removal is SESSION-INDEPENDENT (its own undo step, recorded by the
+  // actions/timeline.ts wrapper), so it is mirrored into the `saved`
+  // snapshot too: otherwise Cancel would resurrect the deleted strip. The
+  // undo snapshot captures both worlds, so undo restores them exactly.
   removeClipLane(laneId: string): void {
     if (!this.timeline) return;
     this.timeline.clipLanes = this.timeline.clipLanes.filter(
       (l) => l.id !== laneId,
     );
+    if (this.saved) {
+      this.saved.clipLanes = this.saved.clipLanes.filter(
+        (l) => l.id !== laneId,
+      );
+    }
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
+  }
+
+  getClipLane(laneId: string): ClipLane | null {
+    return this.timeline?.clipLanes.find((l) => l.id === laneId) ?? null;
   }
 
   // All clip lanes for one character (stacked lanes, drop order).
@@ -347,21 +532,26 @@ export class TimelineController {
   }
 
   // ─── save / cancel ──────────────────────────────────────────────────────
+  //
+  // Individual edits carry their own undo steps (see recordEdit), so Save
+  // only moves the Cancel baseline — its undo restores the OLD baseline
+  // without jumping the live timeline (Ctrl+Z right after Save still undoes
+  // the last edit, not the whole session). Cancel is itself one undo step,
+  // so a mis-click can be undone.
 
   save(): void {
     if (!this.timeline) return;
-    const before = this.saved
-      ? cloneTimeline(this.saved)
-      : cloneTimeline(this.timeline);
-    const action = new SaveTimelineAction(this, before);
-    this.saved = cloneTimeline(this.timeline);
-    if (action.commit()) this.editor.history.record(action);
+    this.recordEdit("Save Timeline", () => {
+      this.saved = cloneTimeline(this.timeline!);
+    });
     this.emitChanged();
   }
 
   cancel(): void {
     if (!this.saved) return;
-    this.timeline = cloneTimeline(this.saved);
+    this.recordEdit("Cancel Timeline Edits", () => {
+      this.timeline = cloneTimeline(this.saved!);
+    });
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
@@ -405,12 +595,13 @@ export class TimelineController {
   // Snap `desiredStart` to the nearest position where a `duration`-long strip
   // fits without overlapping the character's other clips, within the timeline.
   // Used by add + move so a character's clips stay a non-overlapping sequence.
+  // Returns null when the row has no free slot for `duration` at all.
   private resolveFreeStart(
     characterUuid: string,
     exceptLaneId: string | null,
     desiredStart: number,
     duration: number,
-  ): number {
+  ): number | null {
     if (!this.timeline) return desiredStart;
     const maxStart = Math.max(0, this.timeline.duration - duration);
     const clamp = (s: number) => Math.max(0, Math.min(s, maxStart));
@@ -426,7 +617,7 @@ export class TimelineController {
     const valid = candidates
       .map(clamp)
       .filter((s) => !this.overlapsAny(s, duration, others));
-    if (valid.length === 0) return desired; // no room — accept the clamp
+    if (valid.length === 0) return null; // row is full — reject the drop
     valid.sort((a, b) => Math.abs(a - desired) - Math.abs(b - desired));
     return valid[0];
   }

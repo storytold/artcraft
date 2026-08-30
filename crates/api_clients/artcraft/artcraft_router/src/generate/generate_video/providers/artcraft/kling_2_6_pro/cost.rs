@@ -21,10 +21,10 @@ impl ArtcraftKling2p6ProCostState {
     //   audio off: $0.07/sec → 5s=35¢, 10s=70¢
     //   audio on:  $0.14/sec → 5s=70¢, 10s=140¢
     let cost_in_usd_cents: u64 = match (self.generate_audio, self.is_ten_seconds) {
-      (false, false) => 35,
-      (false, true) => 70,
-      (true, false) => 70,
-      (true, true) => 140,
+      (false, false) => 41,
+      (false, true) => 81,
+      (true, false) => 81,
+      (true, true) => 161,
     };
 
     VideoGenerationCostEstimate {
@@ -58,16 +58,16 @@ mod tests {
   }
 
   #[test]
-  fn audio_off_5s_is_35() { assert_eq!(cost_cents(Some(5), Some(false)), 35); }
+  fn audio_off_5s_is_41() { assert_eq!(cost_cents(Some(5), Some(false)), 41); }
 
   #[test]
-  fn audio_off_10s_is_70() { assert_eq!(cost_cents(Some(10), Some(false)), 70); }
+  fn audio_off_10s_is_81() { assert_eq!(cost_cents(Some(10), Some(false)), 81); }
 
   #[test]
-  fn audio_on_5s_is_70() { assert_eq!(cost_cents(Some(5), Some(true)), 70); }
+  fn audio_on_5s_is_81() { assert_eq!(cost_cents(Some(5), Some(true)), 81); }
 
   #[test]
-  fn audio_on_10s_is_140() { assert_eq!(cost_cents(Some(10), Some(true)), 140); }
+  fn audio_on_10s_is_161() { assert_eq!(cost_cents(Some(10), Some(true)), 161); }
 
   #[test]
   fn audio_default_is_on() {

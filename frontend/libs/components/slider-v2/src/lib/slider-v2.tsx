@@ -2,7 +2,7 @@ import { Transition } from "@headlessui/react";
 import React, { useState, useRef, useEffect, ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@storyteller/ui-button";
-import { faMinus, faPlus } from "@fortawesome/pro-solid-svg-icons";
+import { MinusIcon, PlusIcon } from "lucide-react";
 
 interface SliderProps {
   min: number;
@@ -112,7 +112,7 @@ export const SliderV2 = ({
     <div className="flex w-full">
       {showDecrement && (
         <Button
-          icon={faMinus}
+          icon={MinusIcon}
           className="focus-visible:outline-primary my-auto mr-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
           onClick={handleDecrement}
         />
@@ -187,7 +187,7 @@ export const SliderV2 = ({
 
       {showIncrement && (
         <Button
-          icon={faPlus}
+          icon={PlusIcon}
           className="focus-visible:outline-primary my-auto ml-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
           onClick={handleIncrement}
         />

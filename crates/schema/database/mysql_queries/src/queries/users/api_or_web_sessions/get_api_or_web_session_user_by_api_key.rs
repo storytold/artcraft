@@ -40,6 +40,7 @@ SELECT
   users.user_role_slug,
   users.is_banned,
   user_roles.can_ban_users,
+  users.maybe_feature_flags,
   api_keys.token as `api_key_token: ApiKeyToken`
 FROM api_keys
 INNER JOIN users
@@ -65,6 +66,8 @@ LIMIT 1
     user_role_slug: r.user_role_slug,
     is_banned: i8_to_bool(r.is_banned),
     can_ban_users: nullable_i8_to_bool_default_false(r.can_ban_users),
+    maybe_feature_flags: r.maybe_feature_flags,
     maybe_api_key_token: Some(r.api_key_token),
+    maybe_mcp_session_token: None,
   }))
 }

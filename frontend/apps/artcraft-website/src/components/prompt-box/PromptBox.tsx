@@ -8,63 +8,37 @@ import {
   type ReactNode,
 } from "react";
 import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronDown,
-  faChevronUp,
-  faMusic,
-  faUserGroup,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
-import { GenerateButton } from "@storyteller/ui-button";
+import { ChevronDownIcon, ChevronUpIcon, MusicIcon, UsersIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
+import { GenerateIconButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { ImagePromptRow } from "./ImagePromptRow";
-import { MentionTextarea } from "./MentionTextarea";
-import type { RefImage, MentionItem } from "./types";
+import {
+  KeyframeCards,
+  MentionTextarea,
+  PromptClearAllButton,
+  ReferenceDeck,
+  buildMentionColorMap,
+  getMentionColor,
+  useDeckMedia,
+  type DeckAddAction,
+  type DeckItem,
+} from "@storyteller/ui-promptbox";
+import { arrayMove } from "@dnd-kit/sortable";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./PromptBoxDropZone";
+import { toast } from "../toast/toast";
+import { uploadImage } from "./upload-image";
+import { uploadVideo, uploadAudio } from "./upload-media";
+import type { RefImage, RefVideo, RefAudio, MentionItem } from "./types";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
-
-// ── @-mention color palette ─────────────────────────────────────────────
-
-const IMAGE_COLORS = [
-  "rgb(96, 165, 250)",
-  "rgb(251, 146, 60)",
-  "rgb(167, 139, 250)",
-  "rgb(52, 211, 153)",
-  "rgb(251, 113, 133)",
-];
-
-const VIDEO_COLORS = [
-  "rgb(250, 204, 21)",
-  "rgb(245, 158, 11)",
-  "rgb(74, 222, 128)",
-];
-
-const AUDIO_COLORS = ["rgb(192, 132, 252)", "rgb(232, 121, 249)"];
-
-const CHARACTER_COLORS = [
-  "rgb(45, 212, 191)", // teal
-  "rgb(34, 197, 94)", // emerald
-  "rgb(14, 165, 233)", // sky
-];
-
-function getMentionColor(label: string, mentionItems?: MentionItem[]): string {
-  const imgMatch = label.match(/^@Image(\d+)$/);
-  if (imgMatch)
-    return IMAGE_COLORS[(parseInt(imgMatch[1]) - 1) % IMAGE_COLORS.length];
-  const vidMatch = label.match(/^@Video(\d+)$/);
-  if (vidMatch)
-    return VIDEO_COLORS[(parseInt(vidMatch[1]) - 1) % VIDEO_COLORS.length];
-  const audMatch = label.match(/^@Audio(\d+)$/);
-  if (audMatch)
-    return AUDIO_COLORS[(parseInt(audMatch[1]) - 1) % AUDIO_COLORS.length];
-  // Character mentions: match by name from mentionItems
-  if (mentionItems) {
-    const charItems = mentionItems.filter((m) => m.type === "character");
-    const idx = charItems.findIndex((m) => m.label === label);
-    if (idx !== -1) return CHARACTER_COLORS[idx % CHARACTER_COLORS.length];
-  }
-  return "rgb(255, 255, 255)";
-}
+import {
+  PromptFullscreenButton,
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreen";
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -73,7 +47,6 @@ interface PromptBoxProps {
   onPromptChange: (prompt: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
-  submitLabel?: string;
   placeholder?: string;
   disabled?: boolean;
   credits?: number | null;
@@ -98,17 +71,50 @@ interface PromptBoxProps {
   // Pick from library
   onPickFromLibrary?: () => void;
   onPickEndFrameFromLibrary?: () => void;
+  onPickVideoFromLibrary?: () => void;
+  onPickAudioFromLibrary?: () => void;
   // Clear all references (images, end frame, videos, audios)
   onClearAllRefs?: () => void;
+  // Toolbar clear-all support. The button wipes the prompt and every
+  // reference the box renders; pages holding extra state outside the box
+  // (media reference row, secondary prompts) clear it via onClearAllExtras
+  // and report its presence via hasClearableExtras so the button enables.
+  onClearAllExtras?: () => void;
+  hasClearableExtras?: boolean;
 
-  // Media reference row (video/audio refs, rendered between image row and prompt)
-  mediaReferenceRow?: ReactNode;
+  // Video/audio references, rendered as cards in the reference deck (video
+  // page in reference mode).
+  videoRefsSupported?: boolean;
+  referenceVideos?: RefVideo[];
+  onReferenceVideosChange?: (videos: RefVideo[]) => void;
+  maxVideoCount?: number;
+  maxVideoRefDuration?: number;
+  audioRefsSupported?: boolean;
+  referenceAudios?: RefAudio[];
+  onReferenceAudiosChange?: (audios: RefAudio[]) => void;
+  maxAudioCount?: number;
+  maxAudioRefDuration?: number;
+
+  // Always-visible named slot cards rendered beside the reference deck,
+  // built from DeckSlotCard.
+  referenceSlots?: ReactNode;
 
   // Model selector (rendered above the toolbar, typically hidden on desktop via lg:hidden)
   modelSelector?: ReactNode;
 
+  // Secondary prompt row rendered directly under the main textarea.
+  secondaryPromptRow?: ReactNode;
+
   // @-mention support (enables colored prompt overlay + autocomplete)
   mentionItems?: MentionItem[];
+
+  // Records which character token a mention name refers to (dropdown pick or
+  // chip-menu replace) — needed because several characters can share a name.
+  onMentionSelect?: (item: MentionItem) => void;
+
+  // name (without "@") -> character token; picks which character's thumbnail
+  // renders in a mention chip when labels collide.
+  mentionSelections?: Record<string, string>;
 
   // Soft prompt-length limit from the model API (`text_prompt_max_length`).
   // Undefined = unlimited (no counter). The limit is not enforced here; the
@@ -123,7 +129,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onPromptChange,
       onSubmit,
       isSubmitting,
-      submitLabel = "Generate",
       placeholder = "Describe what you want...",
       disabled,
       credits,
@@ -140,10 +145,27 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       rightToolbar,
       onPickFromLibrary,
       onPickEndFrameFromLibrary,
+      onPickVideoFromLibrary,
+      onPickAudioFromLibrary,
       onClearAllRefs,
-      mediaReferenceRow,
+      onClearAllExtras,
+      hasClearableExtras,
+      videoRefsSupported,
+      referenceVideos = [],
+      onReferenceVideosChange,
+      maxVideoCount = 3,
+      maxVideoRefDuration = 30,
+      audioRefsSupported,
+      referenceAudios = [],
+      onReferenceAudiosChange,
+      maxAudioCount = 2,
+      maxAudioRefDuration = 30,
+      referenceSlots,
       modelSelector,
+      secondaryPromptRow,
       mentionItems,
+      onMentionSelect,
+      mentionSelections,
       maxPromptLength,
     },
     ref,
@@ -154,7 +176,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
     const [isFocused, setIsFocused] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [showImagePrompts, setShowImagePrompts] = useState(false);
+    const { isFullscreen, openFullscreen, closeFullscreen } =
+      useFullscreenPrompt();
 
     const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
 
@@ -178,12 +201,386 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const [mentionIndex, setMentionIndex] = useState(0);
     const mentionAnchorRef = useRef<number | null>(null);
 
-    const isImageRowVisible =
-      supportsImagePrompts &&
-      (isVideo || showImagePrompts || referenceImages.length > 0);
-
     const hasMentionItems = (mentionItems?.length ?? 0) > 0;
-    const hasAnyRowAbove = isImageRowVisible || !!mediaReferenceRow;
+
+    const deck = useDeckMedia({
+      referenceImages,
+      setReferenceImages: onReferenceImagesChange,
+      // 0 blocks image uploads (incl. via the combined picker) on pages whose
+      // model only takes audio/video refs.
+      maxImages: supportsImagePrompts ? maxImagePromptCount : 0,
+      setEndFrameImage: onEndFrameImageChange,
+      referenceVideos,
+      setReferenceVideos: onReferenceVideosChange,
+      maxVideos: maxVideoCount,
+      maxVideoTotalSec: maxVideoRefDuration,
+      referenceAudios,
+      setReferenceAudios: onReferenceAudiosChange,
+      maxAudios: maxAudioCount,
+      maxAudioTotalSec: maxAudioRefDuration,
+      uploadImage,
+      uploadVideo,
+      uploadAudio,
+      // Library picking stays with the page-level GalleryModals.
+      ownGalleryModal: false,
+    });
+
+    // Drag & drop onto the box bounds: files route to the reference kind
+    // their MIME matches, gated on what the page's model supports. Keyframe
+    // mode renders no video/audio deck, so those kinds only land in
+    // reference mode where the user can see (and remove) them.
+    const isKeyframeMode = !!isVideo && !isReferenceMode;
+    const dropAcceptsImages =
+      !!supportsImagePrompts && maxImagePromptCount > 0;
+    const dropAcceptsVideos =
+      !isKeyframeMode && !!videoRefsSupported && !!onReferenceVideosChange;
+    const dropAcceptsAudio =
+      !isKeyframeMode && !!audioRefsSupported && !!onReferenceAudiosChange;
+
+    const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
+      if (images.length > 0) {
+        if (isKeyframeMode) {
+          // Fill the empty keyframe slots in order: start frame, then end.
+          const queue = [...images];
+          const startOpen =
+            referenceImages.length === 0 && deck.uploadingImages.length === 0;
+          const endOpen =
+            !!showEndFrameSection && !endFrameImage && !deck.uploadingEnd;
+          if (startOpen) deck.processImageFiles([queue.shift()!], "start");
+          if (endOpen && queue.length > 0) {
+            deck.processImageFiles([queue.shift()!], "end");
+          }
+          if (!startOpen && !endOpen) {
+            toast.error(
+              showEndFrameSection
+                ? "Start and end frames are already set"
+                : "The start frame is already set",
+            );
+          }
+        } else if (deck.availableImageSlots <= 0) {
+          toast.error(
+            `Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`,
+          );
+        } else {
+          deck.processImageFiles(images, "start");
+        }
+      }
+      if (videos.length > 0) deck.processVideoFiles(videos);
+      if (audios.length > 0) deck.processAudioFiles(audios);
+    };
+
+    const drop = usePromptBoxDrop({
+      acceptsImages: dropAcceptsImages,
+      acceptsVideos: dropAcceptsVideos,
+      acceptsAudio: dropAcceptsAudio,
+      onDropFiles: handleDroppedFiles,
+    });
+
+    // Mixed deck items ordered images → videos → audios so the page's
+    // index-derived @ImageN/@VideoN/@AudioN mention labels stay aligned.
+    const deckItems: DeckItem[] = useMemo(
+      () => [
+        ...referenceImages.map((img, i) => ({
+          id: img.id,
+          kind: "image" as const,
+          url: img.url,
+          previewUrl: img.fullUrl ?? img.url,
+          name: `Image ${i + 1}`,
+        })),
+        ...deck.uploadingImages.map((entry, i) => ({
+          id: entry.id,
+          kind: "image" as const,
+          url: entry.previewUrl,
+          name: `Image ${referenceImages.length + i + 1}`,
+          uploading: true,
+        })),
+        ...referenceVideos.map((video, i) => ({
+          id: video.id,
+          kind: "video" as const,
+          url: video.url,
+          name: `Video ${i + 1}`,
+          duration: video.duration,
+        })),
+        ...(deck.uploadingVideo
+          ? [
+              {
+                id: deck.uploadingVideo.id,
+                kind: "video" as const,
+                url: deck.uploadingVideo.previewUrl,
+                name: `Video ${referenceVideos.length + 1}`,
+                uploading: true,
+              },
+            ]
+          : []),
+        ...referenceAudios.map((audio, i) => ({
+          id: audio.id,
+          kind: "audio" as const,
+          url: audio.url,
+          name: `Audio ${i + 1}`,
+          duration: audio.duration,
+        })),
+        ...(deck.uploadingAudio
+          ? [
+              {
+                id: deck.uploadingAudio.id,
+                kind: "audio" as const,
+                name: `Audio ${referenceAudios.length + 1}`,
+                uploading: true,
+              },
+            ]
+          : []),
+      ],
+      [
+        referenceImages,
+        referenceVideos,
+        referenceAudios,
+        deck.uploadingImages,
+        deck.uploadingVideo,
+        deck.uploadingAudio,
+      ],
+    );
+
+    const deckAddActions: DeckAddAction[] = [];
+    if (
+      supportsImagePrompts &&
+      referenceImages.length + deck.uploadingImages.length <
+        maxImagePromptCount
+    ) {
+      deckAddActions.push({
+        key: "upload-image",
+        label: "Upload",
+        group: "image",
+        onSelect: deck.openImageUpload,
+      });
+      if (onPickFromLibrary) {
+        deckAddActions.push({
+          key: "library-image",
+          label: isVideo ? "From library" : "Pick from library",
+          group: "image",
+          onSelect: onPickFromLibrary,
+        });
+      }
+    }
+    if (
+      videoRefsSupported &&
+      referenceVideos.length < maxVideoCount &&
+      !deck.uploadingVideo
+    ) {
+      deckAddActions.push({
+        key: "upload-video",
+        label: "Upload",
+        group: "video",
+        onSelect: deck.openVideoUpload,
+      });
+      if (onPickVideoFromLibrary) {
+        deckAddActions.push({
+          key: "library-video",
+          label: "From library",
+          group: "video",
+          onSelect: onPickVideoFromLibrary,
+        });
+      }
+    }
+    if (
+      audioRefsSupported &&
+      referenceAudios.length < maxAudioCount &&
+      !deck.uploadingAudio
+    ) {
+      deckAddActions.push({
+        key: "upload-audio",
+        label: "Upload",
+        group: "audio",
+        onSelect: deck.openAudioUpload,
+      });
+      if (onPickAudioFromLibrary) {
+        deckAddActions.push({
+          key: "library-audio",
+          label: "From library",
+          group: "audio",
+          onSelect: onPickAudioFromLibrary,
+        });
+      }
+    }
+
+    const handleRemoveDeckItem = (id: string) => {
+      if (referenceImages.some((img) => img.id === id)) {
+        onReferenceImagesChange(referenceImages.filter((img) => img.id !== id));
+      } else if (referenceVideos.some((video) => video.id === id)) {
+        onReferenceVideosChange?.(
+          referenceVideos.filter((video) => video.id !== id),
+        );
+      } else if (referenceAudios.some((audio) => audio.id === id)) {
+        onReferenceAudiosChange?.(
+          referenceAudios.filter((audio) => audio.id !== id),
+        );
+      }
+    };
+
+    const firstFrameItem: DeckItem | undefined = referenceImages[0]
+      ? {
+          id: referenceImages[0].id,
+          kind: "image",
+          url: referenceImages[0].url,
+          previewUrl: referenceImages[0].fullUrl ?? referenceImages[0].url,
+          name: "First frame",
+        }
+      : deck.uploadingImages[0]
+        ? {
+            id: deck.uploadingImages[0].id,
+            kind: "image",
+            url: deck.uploadingImages[0].previewUrl,
+            name: "First frame",
+            uploading: true,
+          }
+        : undefined;
+
+    const lastFrameItem: DeckItem | undefined = endFrameImage
+      ? {
+          id: endFrameImage.id,
+          kind: "image",
+          url: endFrameImage.url,
+          previewUrl: endFrameImage.fullUrl ?? endFrameImage.url,
+          name: "Last frame",
+        }
+      : deck.uploadingEnd
+        ? {
+            id: deck.uploadingEnd.id,
+            kind: "image",
+            url: deck.uploadingEnd.previewUrl,
+            name: "Last frame",
+            uploading: true,
+          }
+        : undefined;
+
+    const hasAttachedRefs =
+      referenceImages.length > 0 ||
+      !!endFrameImage ||
+      referenceVideos.length > 0 ||
+      referenceAudios.length > 0 ||
+      !!hasClearableExtras;
+    const hasClearableContent = prompt.length > 0 || hasAttachedRefs;
+
+    const handleClearAll = () => {
+      onPromptChange("");
+      // Prefer the page's single-shot clear (pages that keep all refs in one
+      // state object need it to avoid stale-closure partial updates).
+      if (onClearAllRefs) {
+        onClearAllRefs();
+      } else {
+        onReferenceImagesChange([]);
+        onEndFrameImageChange?.(undefined);
+        onReferenceVideosChange?.([]);
+        onReferenceAudiosChange?.([]);
+      }
+      onClearAllExtras?.();
+    };
+
+    const handleSwapFrames = () => {
+      const first = referenceImages[0];
+      if (!first || !endFrameImage) return;
+      onReferenceImagesChange([endFrameImage]);
+      onEndFrameImageChange?.(first);
+    };
+
+    // Left-of-textarea reference widget: image deck, keyframe cards, or the
+    // mixed deck depending on page/mode.
+    const renderReferenceWidget = (alwaysExpanded?: boolean) => {
+      if (isKeyframeMode) {
+        if (!supportsImagePrompts) return null;
+        return (
+          <KeyframeCards
+            firstFrame={firstFrameItem}
+            lastFrame={lastFrameItem}
+            showLastFrame={!!showEndFrameSection}
+            onFirstAddActions={[
+              {
+                key: "upload-first",
+                label: "Upload",
+                onSelect: deck.openImageUpload,
+              },
+              ...(onPickFromLibrary
+                ? [
+                    {
+                      key: "library-first",
+                      label: "Pick from library",
+                      onSelect: onPickFromLibrary,
+                    },
+                  ]
+                : []),
+            ]}
+            onLastAddActions={[
+              {
+                key: "upload-last",
+                label: "Upload",
+                onSelect: deck.openEndUpload,
+              },
+              ...(onPickEndFrameFromLibrary
+                ? [
+                    {
+                      key: "library-last",
+                      label: "Pick from library",
+                      onSelect: onPickEndFrameFromLibrary,
+                    },
+                  ]
+                : []),
+            ]}
+            onRemoveFirst={() => onReferenceImagesChange([])}
+            onRemoveLast={() => onEndFrameImageChange?.(undefined)}
+            onSwap={handleSwapFrames}
+          />
+        );
+      }
+      if (!supportsImagePrompts && !videoRefsSupported && !audioRefsSupported) {
+        return null;
+      }
+      const totalVideoRefSeconds = referenceVideos.reduce(
+        (sum, video) => sum + video.duration,
+        0,
+      );
+      const totalAudioRefSeconds = referenceAudios.reduce(
+        (sum, audio) => sum + audio.duration,
+        0,
+      );
+      const groupHints: Record<string, string> = {};
+      if (supportsImagePrompts) {
+        groupHints.image = `${referenceImages.length}/${maxImagePromptCount}`;
+      }
+      // A non-finite duration cap means "no limit" — show counts only.
+      if (videoRefsSupported) {
+        groupHints.video =
+          `${referenceVideos.length}/${maxVideoCount}` +
+          (isFinite(maxVideoRefDuration)
+            ? ` · ${totalVideoRefSeconds}/${maxVideoRefDuration}s`
+            : "");
+      }
+      if (audioRefsSupported) {
+        groupHints.audio =
+          `${referenceAudios.length}/${maxAudioCount}` +
+          (isFinite(maxAudioRefDuration)
+            ? ` · ${totalAudioRefSeconds}/${maxAudioRefDuration}s`
+            : "");
+      }
+
+      return (
+        <ReferenceDeck
+          items={deckItems}
+          canAdd={deckAddActions.length > 0}
+          addActions={deckAddActions}
+          addMenuGroupHints={groupHints}
+          onAddClick={
+            supportsImagePrompts || videoRefsSupported || audioRefsSupported
+              ? deck.openAnyUpload
+              : undefined
+          }
+          onRemove={handleRemoveDeckItem}
+          onReorderImages={(from, to) =>
+            onReferenceImagesChange(arrayMove(referenceImages, from, to))
+          }
+          onClearAll={onClearAllRefs}
+          alwaysExpanded={alwaysExpanded}
+        />
+      );
+    };
 
     // Filtered mention items for autocomplete
     const filteredMentionItems = useMemo(() => {
@@ -336,14 +733,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     }, [mentionItems]);
 
     // Build label → color map for MentionTextarea
-    const mentionColorMap = useMemo(() => {
-      if (!mentionItems?.length) return {};
-      const map: Record<string, string> = {};
-      for (const item of mentionItems) {
-        map[item.label] = getMentionColor(item.label, mentionItems);
-      }
-      return map;
-    }, [mentionItems]);
+    const mentionColorMap = useMemo(
+      () => buildMentionColorMap(mentionItems),
+      [mentionItems],
+    );
 
     // Render highlighted prompt with colored @-mentions
     const renderHighlightedPrompt = useCallback(() => {
@@ -371,63 +764,25 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     return (
       <div ref={ref} className="prompt-box-root">
         <div className="relative flex flex-col">
-          {isImageRowVisible && (
-            <ImagePromptRow
-              maxImagePromptCount={maxImagePromptCount}
-              referenceImages={referenceImages}
-              setReferenceImages={onReferenceImagesChange}
-              onPickFromLibrary={onPickFromLibrary}
-              onClearAll={onClearAllRefs}
-              isVideo={isVideo}
-              isReferenceMode={isReferenceMode}
-              endFrameImage={endFrameImage}
-              setEndFrameImage={onEndFrameImageChange}
-              showEndFrameSection={showEndFrameSection}
-              onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
-            />
-          )}
-
-          {mediaReferenceRow}
+          {deck.fileInputs}
 
           <div
             className={twMerge(
-              "glass rounded-xl p-3 sm:p-4 !transition-all duration-200",
-              hasAnyRowAbove && "rounded-t-none border-t-0",
+              "glass rounded-2xl p-3 sm:p-4 !transition-all duration-200",
               isFocused && "ring-1 ring-primary",
             )}
+            {...drop.dropZoneProps}
           >
+            <PromptBoxDropOverlay
+              dragState={drop.dragState}
+              acceptsImages={dropAcceptsImages}
+              acceptsVideos={dropAcceptsVideos}
+              acceptsAudio={dropAcceptsAudio}
+              keyframeMode={isKeyframeMode}
+            />
             <div className="flex gap-3">
-              {supportsImagePrompts && !isVideo && (
-                <Tooltip
-                  content="Add Image"
-                  position="top"
-                  closeOnClick={true}
-                  className={twMerge(isImageRowVisible && "hidden opacity-0")}
-                >
-                  <button
-                    type="button"
-                    className={twMerge(
-                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-transparent p-0 transition-all hover:text-primary-500",
-                      isImageRowVisible && "text-primary",
-                    )}
-                    onClick={() => setShowImagePrompts((prev) => !prev)}
-                  >
-                    <svg
-                      width="24"
-                      height="20"
-                      viewBox="0 0 24 20"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="opacity-80 transition-all hover:opacity-100"
-                    >
-                      <path
-                        d="M2.66667 2H16C16.3667 2 16.6667 2.3 16.6667 2.66667V6.1125C17.1 6.04167 17.5458 6 18 6C18.225 6 18.4458 6.00833 18.6667 6.02917V2.66667C18.6667 1.19583 17.4708 0 16 0H2.66667C1.19583 0 0 1.19583 0 2.66667V16C0 17.4708 1.19583 18.6667 2.66667 18.6667H11.5C11.0625 18.0583 10.7083 17.3875 10.4542 16.6667H2.66667C2.3 16.6667 2 16.3667 2 16V2.66667C2 2.3 2.3 2 2.66667 2ZM11.8625 7.49167C11.6833 7.1875 11.3542 7 11 7C10.6458 7 10.3167 7.1875 10.1375 7.49167L8.2 10.7833L7.48333 9.75833C7.29583 9.49167 6.99167 9.33333 6.6625 9.33333C6.33333 9.33333 6.02917 9.49167 5.84167 9.75833L3.50833 13.0917C3.29583 13.3958 3.26667 13.7958 3.44167 14.125C3.61667 14.4542 3.9625 14.6667 4.33333 14.6667H10.0292C10.0125 14.4458 10 14.225 10 14C10 11.7833 10.9 9.77917 12.3542 8.33333L11.8625 7.49583V7.49167ZM5.33333 6.66667C6.07083 6.66667 6.66667 6.07083 6.66667 5.33333C6.66667 4.59583 6.07083 4 5.33333 4C4.59583 4 4 4.59583 4 5.33333C4 6.07083 4.59583 6.66667 5.33333 6.66667ZM18 20C21.3125 20 24 17.3125 24 14C24 10.6875 21.3125 8 18 8C14.6875 8 12 10.6875 12 14C12 17.3125 14.6875 20 18 20ZM18.6667 11.3333V13.3333H20.6667C21.0333 13.3333 21.3333 13.6333 21.3333 14C21.3333 14.3667 21.0333 14.6667 20.6667 14.6667H18.6667V16.6667C18.6667 17.0333 18.3667 17.3333 18 17.3333C17.6333 17.3333 17.3333 17.0333 17.3333 16.6667V14.6667H15.3333C14.9667 14.6667 14.6667 14.3667 14.6667 14C14.6667 13.6333 14.9667 13.3333 15.3333 13.3333H17.3333V11.3333C17.3333 10.9667 17.6333 10.6667 18 10.6667C18.3667 10.6667 18.6667 10.9667 18.6667 11.3333Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </button>
-                </Tooltip>
-              )}
+              {renderReferenceWidget()}
+              {referenceSlots}
 
               <div className="promptbox-resize-wrap relative flex-1">
                 {hasMentionItems && mentionItems ? (
@@ -438,12 +793,20 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     mentionItems={mentionItems}
                     placeholder={placeholder}
                     className={twMerge(
-                      "promptbox-scrollbar min-h-[2.5em] w-full text-base-fg placeholder-base-fg/60",
+                      "promptbox-scrollbar min-h-[2.5em] w-full resize-y pr-8 text-base-fg placeholder-base-fg/60",
                       isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                     )}
                     colorMap={mentionColorMap}
+                    enterToGenerate={enterToGenerate}
+                    onMentionSelect={onMentionSelect}
+                    selectedTokens={mentionSelections}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && enterToGenerate && !e.shiftKey && !e.metaKey) {
+                      if (
+                        e.key === "Enter" &&
+                        enterToGenerate &&
+                        !e.shiftKey &&
+                        !e.metaKey
+                      ) {
                         e.preventDefault();
                         onSubmit();
                       }
@@ -458,7 +821,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                         ref={highlightRef}
                         aria-hidden
                         className={twMerge(
-                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words text-sm text-base-fg",
+                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words pr-8 text-sm text-base-fg",
                           isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         )}
                       >
@@ -472,7 +835,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       autoFocus
                       placeholder={placeholder}
                       className={twMerge(
-                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent text-md text-base-fg placeholder-base-fg/60 focus:outline-none",
+                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent pr-8 text-md text-base-fg placeholder-base-fg/60 focus:outline-none",
                         isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         hasMentionItems && "text-transparent caret-white",
                       )}
@@ -521,14 +884,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                                   className="h-full w-full object-cover"
                                 />
                               ) : item.type === "character" ? (
-                                <FontAwesomeIcon
-                                  icon={faUserGroup}
-                                  className="h-3.5 w-3.5 text-white/60"
-                                />
+                                <UsersIcon
+                                  
+                                  className="h-3.5 w-3.5 text-white/60" />
                               ) : (
-                                <FontAwesomeIcon
+                                <DynamicIcon
                                   icon={
-                                    item.type === "video" ? faVideo : faMusic
+                                    item.type === "video" ? VideoIcon : MusicIcon
                                   }
                                   className="h-3.5 w-3.5 text-white/60"
                                 />
@@ -551,13 +913,15 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     )}
                   </>
                 )}
+                <PromptFullscreenButton onClick={openFullscreen} />
 
                 {maxPromptLength !== undefined && (
                   <div
                     className={twMerge(
                       // right-4 keeps the counter clear of the textarea's resize grip.
                       "pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums",
-                      isFinite(maxPromptLength) && prompt.length > maxPromptLength
+                      isFinite(maxPromptLength) &&
+                        prompt.length > maxPromptLength
                         ? "text-red-500"
                         : "text-base-fg/40",
                     )}
@@ -569,23 +933,29 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               </div>
             </div>
 
+            {secondaryPromptRow && (
+              <div className="mt-2">{secondaryPromptRow}</div>
+            )}
+
             {/* Toolbar */}
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 {modelSelector}
                 {leftToolbar}
               </div>
-              <div className="flex items-center gap-2 sm:shrink-0">
+              <div className="flex items-center gap-1.5 sm:shrink-0">
                 {rightToolbar}
-                <GenerateButton
-                  className="flex flex-1 sm:flex-none items-center justify-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={hasAttachedRefs}
+                />
+                <GenerateIconButton
                   onClick={onSubmit}
                   disabled={disabled ?? (!prompt.trim() || isSubmitting)}
                   loading={isSubmitting}
                   credits={credits}
-                >
-                  {submitLabel}
-                </GenerateButton>
+                />
               </div>
             </div>
 
@@ -600,8 +970,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                   onClick={toggleExpand}
                   className="px-3 py-0.5 text-white/30 transition-colors hover:text-white/90"
                 >
-                  <FontAwesomeIcon
-                    icon={isExpanded ? faChevronUp : faChevronDown}
+                  <DynamicIcon
+                    icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                     className="text-xs"
                   />
                 </button>
@@ -609,6 +979,67 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             </div>
           </div>
         </div>
+        <PromptFullscreenModal
+          isOpen={isFullscreen}
+          onClose={closeFullscreen}
+          promptLength={prompt.length}
+          maxPromptLength={maxPromptLength}
+          footerControls={
+            <>
+              {modelSelector}
+              {leftToolbar}
+            </>
+          }
+          imagePromptRow={
+            renderReferenceWidget(true) || referenceSlots ? (
+              <div className="flex flex-wrap items-center gap-3">
+                {renderReferenceWidget(true)}
+                {referenceSlots}
+              </div>
+            ) : undefined
+          }
+          clearAllButton={
+            <PromptClearAllButton
+              onClick={handleClearAll}
+              disabled={!hasClearableContent}
+              confirmClear={hasAttachedRefs}
+            />
+          }
+        >
+          {hasMentionItems && mentionItems ? (
+            <MentionTextarea
+              value={prompt}
+              onChange={onPromptChange}
+              mentionItems={mentionItems}
+              placeholder={placeholder}
+              className="promptbox-scrollbar h-full min-h-0 w-full overflow-y-auto text-base-fg placeholder-base-fg/60"
+              style={{ resize: "none" }}
+              colorMap={mentionColorMap}
+              enterToGenerate={enterToGenerate}
+              onMentionSelect={onMentionSelect}
+              selectedTokens={mentionSelections}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  enterToGenerate &&
+                  !e.shiftKey &&
+                  !e.metaKey
+                ) {
+                  e.preventDefault();
+                  onSubmit();
+                }
+              }}
+            />
+          ) : (
+            <textarea
+              placeholder={placeholder}
+              className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+              value={prompt}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+            />
+          )}
+        </PromptFullscreenModal>
       </div>
     );
   },

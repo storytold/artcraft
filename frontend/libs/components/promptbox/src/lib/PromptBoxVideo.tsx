@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType } from "@storyteller/common";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
@@ -6,14 +6,8 @@ import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest } from "@storyteller/tauri-api";
-import {
-  faWaveformLines,
-  faClock,
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   CommonResolution,
@@ -35,6 +29,11 @@ import type { UploadImageFn } from "./ImagePromptRow";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { KeyframeCards } from "./deck/KeyframeCards";
 import { useDeckMedia } from "./deck/useDeckMedia";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker";
@@ -174,6 +173,13 @@ export const PromptBoxVideo = ({
     useFullscreenPrompt();
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
 
+  // Mentions are plain text: with several characters sharing a name,
+  // "@Robot" alone can't identify one. Records which token the user actually
+  // picked (dropdown, modal, or chip-menu replace), keyed by name.
+  const [mentionSelections, setMentionSelections] = useState<
+    Record<string, string>
+  >({});
+
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
   const charactersLoaded = useCharactersStore((s) => s.loaded);
@@ -193,6 +199,7 @@ export const PromptBoxVideo = ({
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
+              full_image_url: c.maybe_full_image?.cdn_url,
             })),
           );
         }
@@ -483,6 +490,7 @@ export const PromptBoxVideo = ({
     referenceImages,
     setReferenceImages,
     maxImages: maxImageCount,
+    endFrameImage,
     setEndFrameImage,
     referenceVideos,
     setReferenceVideos,
@@ -498,6 +506,63 @@ export const PromptBoxVideo = ({
     ownGalleryModal: true,
   });
 
+  // Drag & drop / paste onto the box bounds: files route to the reference
+  // kind their MIME matches, gated on what the model supports. Keyframe mode
+  // renders no video/audio deck, so those kinds only land in reference mode
+  // where the user can see (and remove) them.
+  const dropAcceptsVideos = isReferenceMode && maxVideoCount > 0;
+  const dropAcceptsAudio = isReferenceMode && maxAudioCount > 0;
+
+  const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
+    if (images.length > 0) {
+      if (!isReferenceMode) {
+        // Fill the empty keyframe slots in order: first frame, then last.
+        const queue = [...images];
+        const firstOpen =
+          referenceImages.length === 0 && deck.uploadingImages.length === 0;
+        const lastOpen =
+          !!selectedModel?.endFrame && !endFrameImage && !deck.uploadingEnd;
+        if (firstOpen) deck.processImageFiles([queue.shift()!], "start");
+        if (lastOpen && queue.length > 0) {
+          deck.processImageFiles([queue.shift()!], "end");
+        }
+        if (!firstOpen && !lastOpen) {
+          toast.error(
+            selectedModel?.endFrame
+              ? "First and last frames are already set"
+              : "The first frame is already set",
+          );
+        }
+      } else if (deck.availableImageSlots <= 0) {
+        toast.error(
+          `Max ${maxImageCount} image reference${maxImageCount === 1 ? "" : "s"}`,
+        );
+      } else {
+        deck.processImageFiles(images, "start");
+      }
+    }
+    if (videos.length > 0) void deck.processVideoFiles(videos);
+    if (audios.length > 0) void deck.processAudioFiles(audios);
+  };
+
+  const drop = usePromptBoxDrop({
+    acceptsImages: maxImageCount > 0,
+    acceptsVideos: dropAcceptsVideos,
+    acceptsAudio: dropAcceptsAudio,
+    onDropFiles: handleDroppedFiles,
+  });
+
+  // One overlay element serves both drop zones (inline box + focus mode).
+  const dropOverlay = (
+    <PromptBoxDropOverlay
+      dragState={drop.dragState}
+      acceptsImages={maxImageCount > 0}
+      acceptsVideos={dropAcceptsVideos}
+      acceptsAudio={dropAcceptsAudio}
+      keyframeMode={!isReferenceMode}
+    />
+  );
+
   // Mixed deck items ordered images → videos → audios: the @ImageN/@VideoN/
   // @AudioN mention labels are index-derived per type, so this ordering (and
   // image-only reordering) is load-bearing.
@@ -507,6 +572,7 @@ export const PromptBoxVideo = ({
         id: img.id,
         kind: "image" as const,
         url: img.url,
+        previewUrl: img.fullUrl ?? img.url,
         name: `Image ${i + 1}`,
       })),
       ...deck.uploadingImages.map((entry, i) => ({
@@ -664,6 +730,7 @@ export const PromptBoxVideo = ({
         id: referenceImages[0].id,
         kind: "image",
         url: referenceImages[0].url,
+        previewUrl: referenceImages[0].fullUrl ?? referenceImages[0].url,
         name: "First frame",
       }
     : deck.uploadingImages[0]
@@ -681,6 +748,7 @@ export const PromptBoxVideo = ({
         id: endFrameImage.id,
         kind: "image",
         url: endFrameImage.url,
+        previewUrl: endFrameImage.fullUrl ?? endFrameImage.url,
         name: "Last frame",
       }
     : deck.uploadingEnd
@@ -837,6 +905,8 @@ export const PromptBoxVideo = ({
         label: `@${char.name}`,
         type: "character" as const,
         preview: char.avatar_image_url,
+        token: char.character_token,
+        fullPreview: char.full_image_url ?? char.avatar_image_url,
       })),
     ],
     [
@@ -847,6 +917,14 @@ export const PromptBoxVideo = ({
       activeCharacters,
     ],
   );
+
+  // Record which token a mention name refers to when the user picks a
+  // character explicitly (dropdown pick or chip-menu replace).
+  const handleMentionSelect = useCallback((item: MentionItem) => {
+    if (item.type !== "character" || !item.token) return;
+    const name = item.label.replace(/^@/, "");
+    setMentionSelections((prev) => ({ ...prev, [name]: item.token! }));
+  }, []);
 
   // Build label → color map for inline mention highlighting
   const mentionColorMap = useMemo(() => {
@@ -1051,25 +1129,33 @@ export const PromptBoxVideo = ({
         );
       }
 
-      // Extract character tokens from @-mentions in prompt.
+      // Extract character tokens from @-mentions in prompt, resolving to
+      // exactly one token per mentioned name. Several characters can share a
+      // name; prefer the user's explicit pick (mentionSelections), else the
+      // newest (store is newest-first).
       // Use a word-boundary regex so `@Bob` doesn't match inside `@Bob2`.
-      const mentionedCharacters = (() => {
+      const mentionedTokens = (() => {
         if (activeCharacters.length === 0) return [];
-        const sorted = [...activeCharacters].sort(
-          (a, b) => b.name.length - a.name.length,
-        );
-        const matched = new Set<string>();
-        for (const c of sorted) {
-          const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const regex = new RegExp(`@${escaped}(?!\\w)`);
-          if (regex.test(prompt)) matched.add(c.character_token);
+        const byName = new Map<string, StoredCharacter[]>();
+        for (const c of activeCharacters) {
+          byName.set(c.name, [...(byName.get(c.name) ?? []), c]);
         }
-        return activeCharacters.filter((c) => matched.has(c.character_token));
+        const names = [...byName.keys()].sort((a, b) => b.length - a.length);
+        const tokens: string[] = [];
+        for (const name of names) {
+          const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          if (!new RegExp(`@${escaped}(?!\\w)`).test(prompt)) continue;
+          const candidates = byName.get(name)!;
+          const chosen =
+            candidates.find(
+              (c) => c.character_token === mentionSelections[name],
+            ) ?? candidates[0];
+          tokens.push(chosen.character_token);
+        }
+        return tokens;
       })();
-      if (mentionedCharacters.length > 0) {
-        request.reference_character_tokens = mentionedCharacters.map(
-          (c) => c.character_token,
-        );
+      if (mentionedTokens.length > 0) {
+        request.reference_character_tokens = mentionedTokens;
       }
 
       // Pass duration if model supports it
@@ -1265,20 +1351,21 @@ export const PromptBoxVideo = ({
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
+          {...drop.dropZoneProps}
         >
+          {dropOverlay}
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
-              <FontAwesomeIcon
-                icon={faCircleInfo}
-                className="h-3 w-3 shrink-0"
-              />
+              <InfoIcon
+                
+                className="h-3 w-3 shrink-0" />
               <span>
                 This model can&apos;t generate from text alone - add a starting
                 frame to animate your prompt.
               </span>
             </div>
           )}
-          <div className="relative flex justify-center gap-2">
+          <div className="relative flex justify-center gap-3">
             {isReferenceMode ? renderReferenceDeck() : renderKeyframeCards()}
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
@@ -1288,6 +1375,8 @@ export const PromptBoxVideo = ({
                   onChange={setPrompt}
                   mentionItems={allMentionItems}
                   colorMap={mentionColorMap}
+                  onMentionSelect={handleMentionSelect}
+                  selectedTokens={mentionSelections}
                   placeholder={
                     isReferenceMode
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
@@ -1376,7 +1465,7 @@ export const PromptBoxVideo = ({
                     mode="default"
                     panelTitle="Duration"
                     triggerIcon={
-                      <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                      <ClockIcon  className="h-3.5 w-3.5" />
                     }
                     triggerLabel={`${effectiveDuration}s`}
                   >
@@ -1415,8 +1504,8 @@ export const PromptBoxVideo = ({
                 >
                   <ToggleButton
                     isActive={generateWithSound}
-                    icon={faWaveformLines}
-                    activeIcon={faWaveformLines}
+                    icon={AudioLinesIcon}
+                    activeIcon={AudioLinesIcon}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
                   />
                 </Tooltip>
@@ -1429,7 +1518,7 @@ export const PromptBoxVideo = ({
             <div className="flex items-center gap-2">
               {modelNeedsAnImageButNoneAreSelected && (
                 <span className="flex items-center gap-1.5 text-xs text-red-500 font-medium animate-pulse">
-                  <FontAwesomeIcon icon={faCircleInfo} />
+                  <InfoIcon />
                   Starting frame required
                 </span>
               )}
@@ -1476,8 +1565,8 @@ export const PromptBoxVideo = ({
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon
-                  icon={isExpanded ? faChevronUp : faChevronDown}
+                <DynamicIcon
+                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                   className="text-xs"
                 />
               </button>
@@ -1486,10 +1575,7 @@ export const PromptBoxVideo = ({
         </div>
         {/* {selectedModel?.id === "seedance_2p0" && (
           <div className="flex items-start gap-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3.5 py-2.5 text-xs text-yellow-200">
-            <FontAwesomeIcon
-              icon={faTriangleExclamation}
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400"
-            />
+            <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
             <span>
               Seedance 2.0 is in Early Alpha. Generations may be slow, and may
               experience outages. Seedance may reject safe inputs unexpectedly.
@@ -1506,6 +1592,10 @@ export const PromptBoxVideo = ({
           const spaceBefore =
             prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
           setPrompt(prompt + spaceBefore + mention + " ");
+          setMentionSelections((prev) => ({
+            ...prev,
+            [character.name]: character.token,
+          }));
           setIsCharactersModalOpen(false);
           requestAnimationFrame(() => {
             const el = mentionEditorRef.current;
@@ -1525,6 +1615,8 @@ export const PromptBoxVideo = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        dropZoneProps={drop.fullscreenDropZoneProps}
+        dropOverlay={dropOverlay}
         clearAllButton={
           <PromptClearAllButton
             onClick={handleClearAll}
@@ -1549,6 +1641,8 @@ export const PromptBoxVideo = ({
             onChange={setPrompt}
             mentionItems={allMentionItems}
             colorMap={mentionColorMap}
+            onMentionSelect={handleMentionSelect}
+            selectedTokens={mentionSelections}
             placeholder={
               isReferenceMode
                 ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."

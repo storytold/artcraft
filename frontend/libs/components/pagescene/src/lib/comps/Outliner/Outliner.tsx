@@ -1,14 +1,6 @@
 import { useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRightToBracket,
-  faEye,
-  faEyeSlash,
-  faLock,
-  faLockOpen,
-  faPlus,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoneIcon, EyeIcon, EyeOffIcon, LockIcon, LockOpenIcon, LogInIcon, PlusIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
@@ -18,6 +10,7 @@ import { OutlinerItem, usePageSceneStore } from "../../PageSceneStore";
 import { openAssetModal } from "../../actions/openAssetModal";
 import { toggleObjectLock } from "../../actions/toggleObjectLock";
 import { toggleObjectVisibility } from "../../actions/toggleObjectVisibility";
+import { toggleSkeletonHelper } from "../../actions/toggleSkeletonHelper";
 import { toggleCameraView } from "../../actions/cameraView";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
@@ -55,6 +48,12 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
     toggleCameraView(editorEngine);
   };
 
+  const handleToggleSkeleton = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editorEngine) return;
+    toggleSkeletonHelper(editorEngine, item.id);
+  };
+
   return (
     <div
       role="button"
@@ -69,7 +68,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
     >
       <span className="flex min-w-0 items-center gap-3">
         <div className="flex w-5 shrink-0 items-center justify-center text-base text-white/85">
-          <FontAwesomeIcon icon={item.icon} />
+          <DynamicIcon icon={item.icon} />
         </div>
         <span className="min-w-0">
           <span className="block truncate text-[13px] font-semibold text-white">
@@ -88,7 +87,23 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
             className="text-white/60 transition-colors duration-100 hover:text-white text-xs"
           >
             <div className="w-3">
-              <FontAwesomeIcon icon={faArrowRightToBracket} />
+              <LogInIcon />
+            </div>
+          </button>
+        )}
+        {item.hasSkeleton && (
+          /* Editor-only skeleton overlay (never part of renders); state
+             persists with the scene. */
+          <button
+            onClick={handleToggleSkeleton}
+            title={item.skeletonVisible ? "Hide skeleton" : "Show skeleton"}
+            className={twMerge(
+              "text-white/60 transition-colors duration-100 hover:text-white text-xs",
+              item.skeletonVisible && "text-white/90",
+            )}
+          >
+            <div className="w-3">
+              <BoneIcon />
             </div>
           </button>
         )}
@@ -101,7 +116,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
           )}
         >
           <div className="w-3">
-            <FontAwesomeIcon icon={item.locked ? faLock : faLockOpen} />
+            <DynamicIcon icon={item.locked ? LockIcon : LockOpenIcon} />
           </div>
         </button>
         <button
@@ -113,7 +128,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
           )}
         >
           <div className="w-3">
-            <FontAwesomeIcon icon={item.visible ? faEye : faEyeSlash} />
+            <DynamicIcon icon={item.visible ? EyeIcon : EyeOffIcon} />
           </div>
         </button>
       </div>
@@ -143,14 +158,14 @@ export const Outliner = () => {
       <div className="flex items-center px-4 pb-1 pt-3">
         <h1 className="grow text-base font-semibold">Scene</h1>
         <Button
-          icon={faPlus}
+          icon={PlusIcon}
           className="h-6 bg-transparent px-1.5 text-sm font-medium text-white/80 hover:bg-transparent hover:text-white"
           onClick={openAssetModal}
         >
           Add
         </Button>
         <Button
-          icon={faXmark}
+          icon={XIcon}
           className="h-5 bg-transparent p-0 text-xl opacity-50 hover:bg-transparent hover:opacity-90"
           onClick={() => {
             usePageSceneStore.getState().setOutlinerShowing(false);

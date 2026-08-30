@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faVideo, faUpDownLeftRight } from "@fortawesome/pro-solid-svg-icons";
+import { MoveIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext";
 import { toggleCameraView } from "../../actions";
@@ -37,8 +37,8 @@ export const CameraStatusPill = () => {
             : "glass glass-no-hover flex h-[34px] items-center gap-2 rounded-full px-3 text-xs font-medium text-base-fg/70 shadow-xl transition-all duration-200 hover:text-base-fg"
         }
       >
-        <FontAwesomeIcon
-          icon={inCameraView ? faVideo : faUpDownLeftRight}
+        <DynamicIcon
+          icon={inCameraView ? VideoIcon : MoveIcon}
           className="h-3 w-3"
         />
         {inCameraView ? renderCameraLabel : "Viewport"}

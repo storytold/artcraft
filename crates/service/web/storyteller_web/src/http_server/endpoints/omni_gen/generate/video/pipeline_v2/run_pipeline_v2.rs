@@ -1,10 +1,11 @@
 use std::convert::TryFrom;
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use log::{error, info, warn};
-use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::router_provider::RouterProvider;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video::video_generation_draft_context::VideoGenerationDraftContext;
@@ -23,8 +24,8 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_rou
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use mysql_queries::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
-use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
-use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_kinovi_web_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
@@ -35,6 +36,12 @@ pub struct RunPipelineV2Args<'a> {
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
   pub kinovi_account: KinoviAccount,
   pub debug_log_context: &'a GenerationDebugLogContext<'a>,
+
+  /// Source URL → local file path for reference videos the handler already
+  /// downloaded (for input-seconds billing). The Kinovi upload reads these
+  /// instead of downloading the same bytes again.
+  pub predownloaded_media_paths: Option<&'a HashMap<String, PathBuf>>,
+
   /// The handler's open connection. The pipeline uses it for its remaining
   /// pre-request DB writes (billing, outbound-request debug log) and releases
   /// it BEFORE the external provider call.
@@ -54,34 +61,28 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     kinovi_character_id_map,
     kinovi_account,
     debug_log_context,
+    predownloaded_media_paths,
     mut mysql_connection,
   } = args;
 
-  let mut router_builder = router_builder.clone();
-
-  match router_builder.model {
-    RouterVideoModel::PreviewModel |
-    RouterVideoModel::Seedance2p0BytePlus |
-    RouterVideoModel::Seedance2p0BytePlusUltra => {
-      router_builder.model = RouterVideoModel::Seedance2p0;
-    },
-    RouterVideoModel::PreviewModelFast |
-    RouterVideoModel::Seedance2p0BytePlusFast | 
-    RouterVideoModel::Seedance2p0BytePlusUltraFast => {
-      router_builder.model = RouterVideoModel::Seedance2p0Fast;
-    },
-    _ => {}, // Fall-through
-  }
+  let router_builder = router_builder.clone();
 
   let provider = match router_builder.model {
-    RouterVideoModel::HappyHorse1p0 => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0 => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0Fast => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0Mini => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::Seedance2Pro,
-    //RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
-    //RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
+    RouterVideoModel::HappyHorse1p0 => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0 => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0Fast => RouterProvider::KinoviWeb,
+    RouterVideoModel::PreviewModel => RouterProvider::KinoviWeb,
+    RouterVideoModel::PreviewModelFast => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlus => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusFast => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusUltra => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusUltraFast => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0Mini => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p5Preview => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p5 => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p5Ultra => RouterProvider::KinoviWeb,
     RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,
     RouterVideoModel::GrokImagineVideo1p5 => RouterProvider::GrokApi,
     _ => RouterProvider::Fal,
@@ -90,6 +91,33 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   // 1. Build execution request
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
+
+  // These variants are FULFILLED by the base model (they build the same
+  // execution request), but they are PRICED as themselves — each has its own
+  // cost entry under the Artcraft provider.
+  //
+  // IMPORTANT: the model rewrite must apply to the EXECUTION builder only.
+  // The cost estimate below must see the ORIGINAL model. Rewriting before
+  // the cost estimate makes every variant price as its base model — a
+  // pricing bug we actually shipped, where these variants charged the base
+  // rate while the cost endpoint quoted their real prices. Do not "hoist"
+  // or "deduplicate" this match to the top of the function.
+  match exec_builder.model {
+    RouterVideoModel::PreviewModel |
+    RouterVideoModel::Seedance2p0BytePlus |
+    RouterVideoModel::Seedance2p0BytePlusUltra => {
+      exec_builder.model = RouterVideoModel::Seedance2p0;
+    },
+    RouterVideoModel::PreviewModelFast |
+    RouterVideoModel::Seedance2p0BytePlusFast |
+    RouterVideoModel::Seedance2p0BytePlusUltraFast => {
+      exec_builder.model = RouterVideoModel::Seedance2p0Fast;
+    },
+    RouterVideoModel::Seedance2p5Ultra => {
+      exec_builder.model = RouterVideoModel::Seedance2p5;
+    },
+    _ => {}, // Fall-through
+  }
 
   // Fal, GmiCloud, and Grok (xAI) take image URLs directly, not media file tokens.
   // Resolve tokens to URLs before building.
@@ -125,7 +153,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let cost = system_cost_estimate.cost_in_credits.unwrap_or(0);
 
   // Provider-side estimate (what the fulfilling provider charges us). The
-  // router defers to the underlying provider crates (seedance2pro_client,
+  // router defers to the underlying provider crates (kinovi_web_client,
   // gmicloud_client, grok_api_client, the fal pricing modules, etc.) per
   // request variant. Bookkeeping only — failures must not block generation.
   let maybe_provider_cost_estimate = match draft_or_request.estimate_cost() {
@@ -180,11 +208,12 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     media_file_to_url_map.as_ref(),
     kinovi_character_id_map.as_ref(),
     kinovi_account,
+    predownloaded_media_paths,
   ).await;
 
   // 5. On failure, refund wallet for Kinovi requests.
   if let Err(ref err) = result {
-    if matches!(provider, RouterProvider::Seedance2Pro) {
+    if matches!(provider, RouterProvider::KinoviWeb) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
 
@@ -218,6 +247,7 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
   kinovi_account: KinoviAccount,
+  predownloaded_media_paths: Option<&HashMap<String, PathBuf>>,
 ) -> Result<GenerateVideoResponse, CommonWebError> {
 
   let provider = draft_or_request.get_provider();
@@ -230,6 +260,7 @@ async fn upload_and_generate(
         client: Some(&client),
         media_file_to_artcraft_url_map: media_file_urls_by_token,
         character_token_to_kinovi_id_map: kinovi_character_ids,
+        predownloaded_media_paths,
       };
 
       draft.finalize(draft_context)

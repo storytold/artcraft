@@ -1,7 +1,6 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCoins, faSpinner } from "@fortawesome/pro-solid-svg-icons";
+import { CoinsIcon, LoaderIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
 import {
   useCostBreakdownModalStore,
@@ -320,7 +319,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       <DragHandle>
         <div className="flex items-center gap-2 pb-3 bg-ui-panel-header border-b border-ui-panel-border select-none">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-fg">
-            <FontAwesomeIcon icon={faCoins} className="text-white" />
+            <CoinsIcon  className="text-white" />
             Cost Breakdown
           </div>
         </div>
@@ -387,10 +386,9 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                 <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
                   {isEstimateLoading && isLiveEstimatePage ? (
                     <>
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        className="animate-spin text-base"
-                      />
+                      <LoaderIcon
+                        
+                        className="animate-spin text-base" />
                       <span className="text-base-fg/50 text-sm">
                         Calculating…
                       </span>

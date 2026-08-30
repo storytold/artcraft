@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0_mini::{
+use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
   KinoviSeedance2p0MiniAspectRatio as KinoviAspectRatio,
   KinoviSeedance2p0MiniBitrate as KinoviBitrate,
   KinoviSeedance2p0MiniBatchCount as KinoviBatchCount,
@@ -116,7 +116,10 @@ fn plan_output_resolution(
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<KinoviOutputResolution>, ArtcraftRouterError> {
   match resolution {
-    None => Ok(None),
+    // Unset defaults to explicit 720p. Cost estimation prices unset as 720p,
+    // so the request must pin 720p too — never leave the resolution up to the
+    // provider's server-side default, or billing and supplier cost can diverge.
+    None => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
 
     // Direct mappings
     Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
@@ -221,7 +224,7 @@ fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<KinoviBitrate> {
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::generate::video::generate_seedance_2p0_mini::{
+  use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
     KinoviSeedance2p0MiniAspectRatio as KinoviAspectRatio,
     KinoviSeedance2p0MiniBatchCount as KinoviBatchCount,
     KinoviSeedance2p0MiniOutputResolution as KinoviOutputResolution,
@@ -429,10 +432,10 @@ mod tests {
     }
 
     #[test]
-    fn resolution_none() {
+    fn resolution_none_defaults_to_720p() {
       let builder = GenerateVideoRequestBuilder { resolution: None, ..mini_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0_mini(builder));
-      assert!(draft.resolution.is_none());
+      assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
     }
   }
 
@@ -491,7 +494,7 @@ mod tests {
   fn mini_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Mini,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a cat dancing".to_string()),
       duration_seconds: Some(5),
       video_batch_count: Some(1),

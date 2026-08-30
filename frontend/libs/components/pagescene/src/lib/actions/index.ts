@@ -8,6 +8,8 @@ export * from "./setCameraAspect";
 export * from "./setObjectColor";
 export * from "./toggleObjectLock";
 export * from "./toggleObjectVisibility";
+export * from "./toggleSkeletonHelper";
+export * from "./openAnimationsModal";
 export * from "./openAssetModal";
 export * from "./transformObject";
 export * from "./timeline";

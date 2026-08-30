@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
 interface Option {
   value: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   text?: string;
   tooltip?: string;
 }
@@ -58,7 +58,7 @@ export function ButtonIconSelect({
               )}
               onClick={() => handleOptionChange(value)}
             >
-              <FontAwesomeIcon icon={icon} />
+              <DynamicIcon icon={icon} />
               {text && (
                 <span className="text-nowrap text-sm font-medium">{text}</span>
               )}
@@ -76,7 +76,7 @@ export function ButtonIconSelect({
             )}
             onClick={() => handleOptionChange(value)}
           >
-            <FontAwesomeIcon icon={icon} />
+            <DynamicIcon icon={icon} />
             {text && (
               <span className="text-nowrap text-sm font-medium">{text}</span>
             )}

@@ -124,6 +124,10 @@ export interface SceneState {
   activeTool: ActiveTool;
   brushColor: string;
   brushSize: number;
+  // Eraser keeps its own size (like inpaintBrushSize) — erasing strokes are
+  // typically much bigger than brush strokes, so the sizes don't shadow each
+  // other across tool switches.
+  eraserSize: number;
   brushOpacity: number;
   fillColor: string;
   currentShape: "rectangle" | "circle" | "triangle" | null;
@@ -249,6 +253,7 @@ export interface SceneState {
   setBrushColor: (color: string) => void;
   setBrushOpacity: (opacity: number) => void;
   setBrushSize: (size: number) => void;
+  setEraserSize: (size: number) => void;
   setFillColor: (color: string) => void;
 
   // Inpaint actions
@@ -336,6 +341,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   activeTool: "select",
   brushColor: "#000000",
   brushSize: 5,
+  eraserSize: 16,
   brushOpacity: 1,
   fillColor: "white",
   currentShape: null,
@@ -1031,6 +1037,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   setActiveTool: (tool: ActiveTool) => set({ activeTool: tool }),
   setBrushColor: (color: string) => set({ brushColor: color }),
   setBrushSize: (size: number) => set({ brushSize: size }),
+  setEraserSize: (size: number) => set({ eraserSize: size }),
   setFillColor: (color: string) => set({ fillColor: color }),
   setBrushOpacity: (opacity: number) => set({ brushOpacity: opacity }),
 
@@ -1107,6 +1114,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       inpaintLineNodes: JSON.parse(JSON.stringify(state.inpaintLineNodes)),
       brushColor: state.brushColor,
       brushSize: state.brushSize,
+      eraserSize: state.eraserSize,
       fillColor: state.fillColor,
       aspectRatioType: state.aspectRatioType,
       version: "2.0",
@@ -1172,6 +1180,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         selectedNodeIds: [],
         brushColor: sceneData.brushColor || "#000000",
         brushSize: sceneData.brushSize || 5,
+        eraserSize: sceneData.eraserSize || 16,
         fillColor: sceneData.fillColor || "white",
         aspectRatioType: sceneData.aspectRatioType || AspectRatioType.NONE,
       });

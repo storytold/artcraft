@@ -69,4 +69,23 @@ pub struct OmniGenVideoCostAndGenerateRequest {
   /// Some models will default this to true, others will default it to false,
   /// so it's best to be explicit.
   pub generate_audio: Option<bool>,
+
+  /// Frontend-supplied hints for cost estimation only. IGNORED by
+  /// generation — the generate endpoints measure inputs themselves (e.g.
+  /// ffprobing reference videos) and bill from those measurements.
+  pub estimate_only: Option<EstimateFields>,
+}
+
+/// These fields are ignored by generation. They're only used by the frontend
+/// to aid in cost estimation (e.g. Seedance 2.5 bills reference-video input
+/// seconds, so the cost quote needs the combined input duration without the
+/// server downloading and probing the files on every poll).
+#[derive(Clone, Copy, Serialize, Deserialize, ToSchema, Debug, Default)]
+pub struct EstimateFields {
+  /// Combined duration of all reference video inputs, in milliseconds.
+  pub total_input_video_duration_millis: Option<u32>,
+
+  /// Combined duration of all reference audio inputs, in milliseconds.
+  /// (No model bills audio input seconds yet; accepted for future models.)
+  pub total_input_audio_duration_millis: Option<u32>,
 }

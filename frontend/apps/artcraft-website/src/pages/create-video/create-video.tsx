@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClock,
-  faFilm,
-  faWaveformLines,
-} from "@fortawesome/pro-solid-svg-icons";
+import { AudioLinesIcon, ClockIcon, FilmIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { ToggleButton } from "@storyteller/ui-button";
@@ -15,7 +11,6 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   PromptBox,
-  MediaReferenceRow,
   CharactersModal,
   useCharactersStore,
   type RefImage,
@@ -40,6 +35,14 @@ import {
   startVideoPolling,
 } from "./generate-video-api";
 import {
+  AUTO_RATIOS,
+  LABEL_TO_RES,
+  buildResolutionPopoverItems,
+  buildSizePopoverItems,
+  getDurationRange,
+  resolveDurationForModel,
+} from "./video-model-options";
+import {
   AspectRatioIcon,
   AutoIcon,
 } from "../create-image/components/AspectRatioIcon";
@@ -57,46 +60,6 @@ import { toast } from "../../components/toast/toast";
 const DEFAULT_MODEL_ID = "seedance_2p0";
 
 const VIDEO_FILTER = [FilterMediaClasses.VIDEO];
-
-const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_3k", "auto_4k"]);
-
-// ── Aspect ratio labels (shared with image page) ─────────────────────────
-
-const AR_LABELS: Record<string, string> = {
-  auto: "Auto",
-  square: "Square",
-  wide_five_by_four: "5:4 (Wide)",
-  wide_four_by_three: "4:3 (Wide)",
-  wide_three_by_two: "3:2 (Wide)",
-  wide_sixteen_by_nine: "16:9 (Wide)",
-  wide_twenty_one_by_nine: "21:9 (Wide)",
-  tall_four_by_five: "4:5 (Tall)",
-  tall_three_by_four: "3:4 (Tall)",
-  tall_two_by_three: "2:3 (Tall)",
-  tall_nine_by_sixteen: "9:16 (Tall)",
-  tall_nine_by_twenty_one: "9:21 (Tall)",
-  auto_2k: "Auto (2K)",
-  auto_3k: "Auto (3K)",
-  auto_4k: "Auto (4K)",
-  square_hd: "Square (HD)",
-  wide: "Wide",
-  tall: "Tall",
-};
-
-const RES_LABELS: Record<string, string> = {
-  half_k: "0.5K",
-  four_eighty_p: "480p",
-  seven_twenty_p: "720p",
-  one_k: "1K",
-  ten_eighty_p: "1080p",
-  two_k: "2K",
-  three_k: "3K",
-  four_k: "4K",
-};
-
-const LABEL_TO_RES: Record<string, string> = Object.fromEntries(
-  Object.entries(RES_LABELS).map(([k, v]) => [v, k]),
-);
 
 // ── Model lookup ─────────────────────────────────────────────────────────
 
@@ -119,46 +82,6 @@ function buildModelPopoverItems(
     ),
     action: model.model,
   }));
-}
-
-function buildSizePopoverItems(
-  aspectRatioOptions: string[],
-  selectedValue: string,
-): PopoverItem[] {
-  return aspectRatioOptions.map((ar) => ({
-    label: AR_LABELS[ar] ?? ar,
-    selected: ar === selectedValue,
-    icon: AUTO_RATIOS.has(ar) ? (
-      <AutoIcon />
-    ) : (
-      <AspectRatioIcon commonAspectRatio={ar} />
-    ),
-    action: ar,
-  }));
-}
-
-function resolveDurationForModel(
-  model: OmniGenVideoModelInfo,
-  current: number | null,
-): number | null {
-  if (current == null) return model.duration_seconds_default ?? null;
-  if (
-    model.duration_seconds_min != null &&
-    model.duration_seconds_max != null
-  ) {
-    if (
-      current >= model.duration_seconds_min &&
-      current <= model.duration_seconds_max
-    ) {
-      return current;
-    }
-    return model.duration_seconds_default ?? model.duration_seconds_min;
-  }
-  if (model.duration_seconds_options?.length) {
-    if (model.duration_seconds_options.includes(current)) return current;
-    return model.duration_seconds_default ?? model.duration_seconds_options[0]!;
-  }
-  return model.duration_seconds_default ?? null;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -428,29 +351,11 @@ export default function CreateVideo() {
       ),
     [selectedModel?.aspect_ratio_options, selectedSize],
   );
-  const durationRange = useMemo((): { min: number; max: number } | null => {
-    if (!selectedModel) return null;
-    if (
-      selectedModel.duration_seconds_min != null &&
-      selectedModel.duration_seconds_max != null &&
-      selectedModel.duration_seconds_max > selectedModel.duration_seconds_min
-    ) {
-      return {
-        min: selectedModel.duration_seconds_min,
-        max: selectedModel.duration_seconds_max,
-      };
-    }
-    if (
-      selectedModel.duration_seconds_options &&
-      selectedModel.duration_seconds_options.length > 1
-    ) {
-      const opts = [...selectedModel.duration_seconds_options].sort(
-        (a, b) => a - b,
-      );
-      return { min: opts[0]!, max: opts[opts.length - 1]! };
-    }
-    return null;
-  }, [selectedModel]);
+  const durationRange = useMemo(
+    (): { min: number; max: number } | null =>
+      selectedModel ? getDurationRange(selectedModel) : null,
+    [selectedModel],
+  );
   const effectiveDuration =
     duration ?? selectedModel?.duration_seconds_default ?? 5;
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
@@ -471,10 +376,10 @@ export default function CreateVideo() {
   const resolutionItems = useMemo(
     (): PopoverItem[] | null =>
       selectedModel?.resolution_options
-        ? selectedModel.resolution_options.map((r) => ({
-            label: RES_LABELS[r] ?? r,
-            selected: r === (resolution ?? selectedModel.resolution_default),
-          }))
+        ? buildResolutionPopoverItems(
+            selectedModel.resolution_options,
+            resolution ?? selectedModel.resolution_default ?? null,
+          )
         : null,
     [selectedModel, resolution],
   );
@@ -738,6 +643,22 @@ export default function CreateVideo() {
     setIsEndFramePickerOpen(false);
   }, []);
 
+  // Each picker only greys out tokens already in its own slot, so the same
+  // media file can't be added twice to one field. Reusing an image across
+  // slots (e.g. the same image as start AND end frame) stays allowed.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
+  const usedEndFrameTokens = useMemo(
+    () => (endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : []),
+    [endFrameImage],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGeneratingRef.current) {
       console.log("[generate-video] blocked", {
@@ -945,7 +866,7 @@ export default function CreateVideo() {
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
       isLoggedIn={!!user}
-      heroIcon={faFilm}
+      heroIcon={FilmIcon}
       heroTitle="Create Video"
       heroSubtitle="Sign in to generate stunning AI videos with multiple models"
       hasContent={hasContent}
@@ -978,7 +899,7 @@ export default function CreateVideo() {
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
+              <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
                 Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
                 Seedance may reject safe inputs unexpectedly. Try several short generations before longer ones.
@@ -1045,25 +966,19 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
-            mediaReferenceRow={
-              isReferenceMode ? (
-                <MediaReferenceRow
-                  referenceVideos={referenceVideos}
-                  onReferenceVideosChange={setReferenceVideos}
-                  maxVideoCount={selectedModel?.video_references_max ?? 3}
-                  maxVideoRefDuration={
-                    selectedModel?.video_references_max_total_duration_seconds ??
-                    30
-                  }
-                  referenceAudios={referenceAudios}
-                  onReferenceAudiosChange={setReferenceAudios}
-                  maxAudioCount={selectedModel?.audio_references_max ?? 2}
-                  maxAudioRefDuration={
-                    selectedModel?.audio_references_max_total_duration_seconds ??
-                    30
-                  }
-                />
-              ) : undefined
+            videoRefsSupported={!!selectedModel?.video_references_supported}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={selectedModel?.video_references_max ?? 3}
+            maxVideoRefDuration={
+              selectedModel?.video_references_max_total_duration_seconds ?? 30
+            }
+            audioRefsSupported={!!selectedModel?.audio_references_supported}
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={setReferenceAudios}
+            maxAudioCount={selectedModel?.audio_references_max ?? 2}
+            maxAudioRefDuration={
+              selectedModel?.audio_references_max_total_duration_seconds ?? 30
             }
             rightToolbar={
               <GenerationCountPicker
@@ -1120,10 +1035,9 @@ export default function CreateVideo() {
                       mode="default"
                       panelTitle="Duration"
                       triggerIcon={
-                        <FontAwesomeIcon
-                          icon={faClock}
-                          className="h-3.5 w-3.5"
-                        />
+                        <ClockIcon
+                          
+                          className="h-3.5 w-3.5" />
                       }
                       triggerLabel={`${effectiveDuration}s`}
                     >
@@ -1161,8 +1075,8 @@ export default function CreateVideo() {
                   >
                     <ToggleButton
                       isActive={generateWithSound}
-                      icon={faWaveformLines}
-                      activeIcon={faWaveformLines}
+                      icon={AudioLinesIcon}
+                      activeIcon={AudioLinesIcon}
                       onClick={() =>
                         setUi({ generateWithSound: !generateWithSound })
                       }
@@ -1210,6 +1124,7 @@ export default function CreateVideo() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}
@@ -1221,6 +1136,7 @@ export default function CreateVideo() {
             isOpen={isEndFramePickerOpen}
             onClose={() => setIsEndFramePickerOpen(false)}
             selectedItemIds={endFramePickerSelectedIds}
+            disabledItemIds={usedEndFrameTokens}
             onSelectItem={handleEndFramePickerSelect}
             maxSelections={1}
             onUseSelected={handleEndFrameLibrarySelect}

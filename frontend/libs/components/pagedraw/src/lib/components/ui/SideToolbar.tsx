@@ -1,28 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMousePointer,
-  faEyeDropper,
-  faImage,
-  faUndo,
-  faRedo,
-  faPaintBrush,
-  faXmark,
-  faTrashXmark,
-  faEraser,
-  faSendBack,
-} from "@fortawesome/pro-solid-svg-icons";
-import {
-  faShapes,
-  faCircle,
-  faSquare,
-  faTriangle,
-  faDroplet,
-} from "@fortawesome/pro-regular-svg-icons";
+import { CircleIcon, DropletIcon, EraserIcon, ImageIcon, MousePointerIcon, PaintbrushIcon, PipetteIcon, Redo2Icon, RotateCcwIcon, SendToBackIcon, ShapesIcon, SquareIcon, Trash2Icon, TriangleIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
 import { hsvaToHex } from "@uiw/color-convert";
 import SliderWithIndicator from "./SliderWithIndicator";
+import {
+  formatBinding,
+  useResolvedKeybinds,
+  type ActionId,
+} from "@storyteller/keybinds";
 import { ActiveTool, useSceneStore } from "../../stores/SceneState";
 import { Node } from "../../Node";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -33,6 +20,16 @@ import {
 
 const shapeIconBtn =
   "flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/10";
+
+// Toolbar entry → registry action whose resolved key renders as the button's
+// corner badge (updates live when the user remaps in Settings → Keybinds).
+const TOOL_ACTION_IDS: Record<string, ActionId> = {
+  select: "pagedraw.tools.select",
+  "add-shape": "pagedraw.tools.shape",
+  draw: "pagedraw.tools.brush",
+  inpaint: "pagedraw.tools.mask",
+  erase: "pagedraw.tools.eraser",
+};
 
 // Debounce function
 function useDebounced<T extends (...args: A) => void, A extends unknown[]>(
@@ -70,8 +67,15 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   className = "",
 }) => {
   const store = useSceneStore();
+  const { forAction } = useResolvedKeybinds();
   const [open, setOpen] = useState<string | null>(null);
-  const [brushSize, setBrushSize] = useState(16);
+  // Canonical brush/eraser size lives in the store (PaintSurface draws with
+  // it, the Ctrl+± keybinds adjust it) — the slider reads/writes it directly
+  // so keyboard changes show up here too.
+  const brushSize = store.brushSize;
+  const setBrushSize = store.setBrushSize;
+  const eraserSize = store.eraserSize;
+  const setEraserSize = store.setEraserSize;
   const [brushHsva, setBrushHsva] = useState<HsvaColor>({
     h: 120,
     s: 100,
@@ -170,7 +174,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   ) => (
     <div className={`glass relative w-fit rounded-2xl p-4 shadow-lg`}>
       <button className="bg-ui-controls/60 text-base-fg hover:bg-ui-controls/80 absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full">
-        <FontAwesomeIcon icon={faEyeDropper} size="sm" />
+        <PipetteIcon size="0.875em" />
       </button>
 
       <HsvaColorPicker
@@ -210,13 +214,27 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const BgPopout = makePicker(bgHsva, setBgHsva, sendBg);
   const ShapePopout = makePicker(shapeHsva, setShapeHsva, sendShapeColor);
 
+  // Size-only popout — the eraser has no color, just its own size, kept
+  // separate from the brush so switching tools doesn't clobber either.
+  const EraserPopout = (
+    <div className="glass relative w-56 rounded-2xl p-4 shadow-lg">
+      <p className="mb-2 text-sm font-medium text-white">Eraser Size</p>
+      <SliderWithIndicator
+        value={eraserSize}
+        onChange={setEraserSize}
+        min={1}
+        max={64}
+      />
+    </div>
+  );
+
   // Tools
   const tools = [
     {
       id: "select",
       label: "Select & Move",
       icon: (
-        <FontAwesomeIcon icon={faMousePointer} className="pl-0.5 text-lg" />
+        <MousePointerIcon  className="pl-0.5 text-lg" />
       ),
       onClick: () => {
         onSelect();
@@ -226,7 +244,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "add-shape",
       label: "Add Shape",
-      icon: <FontAwesomeIcon icon={faShapes} className="h-5 w-5" />,
+      icon: <ShapesIcon  className="h-5 w-5" />,
       onClick: () => {
         store.selectNode(null);
         if (!store.currentShape) {
@@ -236,26 +254,31 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       },
       popout: (
         <div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5 shadow-lg">
-          {[faSquare, faCircle, faTriangle].map((faIcon, i) => (
-            <button
-              key={i}
-              className={shapeIconBtn}
-              onClick={() => {
-                const shapes = ["rectangle", "circle", "triangle"] as const;
-                onActivateShapeTool(shapes[i]);
-                setOpen(null);
-              }}
-            >
-              <FontAwesomeIcon icon={faIcon} className="h-5 w-5 text-white" />
-            </button>
-          ))}
+          {[SquareIcon, CircleIcon, TriangleIcon].map((ShapeIcon, i) => {
+            const shapes = ["rectangle", "circle", "triangle"] as const;
+            const isCurrent = currentShape === shapes[i];
+            return (
+              <button
+                key={i}
+                className={`${shapeIconBtn} ${
+                  isCurrent ? "bg-primary/30 ring-1 ring-primary" : ""
+                }`}
+                onClick={() => {
+                  onActivateShapeTool(shapes[i]);
+                  setOpen(null);
+                }}
+              >
+                <ShapeIcon className="h-5 w-5 text-white" />
+              </button>
+            );
+          })}
         </div>
       ),
     },
     {
       id: "upload",
       label: "Upload Image",
-      icon: <FontAwesomeIcon icon={faImage} className="h-5 w-5" />,
+      icon: <ImageIcon  className="h-5 w-5" />,
       onClick: () => {
         onUploadImage();
       },
@@ -274,7 +297,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "inpaint",
       label: "Mask",
-      icon: <FontAwesomeIcon icon={faSendBack} className="h-5 w-5" />,
+      icon: <SendToBackIcon  className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("inpaint");
       },
@@ -282,10 +305,11 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "erase",
       label: "Eraser",
-      icon: <FontAwesomeIcon icon={faEraser} className="h-5 w-5" />,
+      icon: <EraserIcon  className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("eraser");
       },
+      popout: EraserPopout,
     },
     { id: "separator-3", type: "separator" },
     {
@@ -297,13 +321,12 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             className="absolute h-5 w-5 rounded-full border-2 border-white"
             style={{ backgroundColor: hsvaToHex(bgHsva) }}
           />
-          <FontAwesomeIcon
-            icon={faDroplet}
+          <DropletIcon
+            
             className="relative h-2 w-2 text-white drop-shadow-sm"
             style={{
               filter: "drop-shadow(0 0 1px rgba(0,0,0,0.8))",
-            }}
-          />
+            }} />
         </div>
       ),
       popout: BgPopout,
@@ -311,7 +334,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "undo",
       label: "Undo",
-      icon: <FontAwesomeIcon icon={faUndo} className="h-5 w-5" />,
+      icon: <RotateCcwIcon  className="h-5 w-5" />,
       onClick: () => {
         store.undo();
       },
@@ -319,7 +342,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "redo",
       label: "Redo",
-      icon: <FontAwesomeIcon icon={faRedo} className="h-5 w-5" />,
+      icon: <Redo2Icon  className="h-5 w-5" />,
       onClick: () => {
         store.redo();
       },
@@ -334,7 +357,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     showActionReminder({
       reminderType: "default",
       title: "Reset Canvas",
-      primaryActionIcon: faTrashXmark,
+      primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName: "bg-red hover:bg-red/80",
       message: (
         <p className="text-sm text-white/70">
@@ -393,9 +416,20 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         }
 
         const { id, icon, onClick, popout, label } = tool;
+        // Two item ids don't match their ActiveTool value 1:1.
         const active =
           id === activeToolId ||
-          (id === "add-shape" && activeToolId === "shape");
+          (id === "add-shape" && activeToolId === "shape") ||
+          (id === "erase" && activeToolId === "eraser");
+
+        // Resolved shortcut badge in the button corner (switchable tools only).
+        const toolActionId = TOOL_ACTION_IDS[id];
+        const toolBinding = toolActionId ? forAction(toolActionId)[0] : undefined;
+        const keyBadge = toolBinding ? (
+          <span className="pointer-events-none absolute bottom-0 right-0 min-w-[13px] rounded-[4px] bg-black/60 px-0.5 text-center text-[9px] font-medium leading-[13px] text-white/80">
+            {formatBinding(toolBinding)}
+          </span>
+        ) : null;
         const btnStyle = active
           ? "bg-primary/30 border-2 !border-primary text-white"
           : (id === "inpaint" && !supportsMaskTool)
@@ -410,25 +444,30 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
               style={{ backgroundColor: hsvaToHex(brushHsva) }}
             />
           ) : (
-            <FontAwesomeIcon icon={faPaintBrush} className="h-5 w-5" />
+            <PaintbrushIcon  className="h-5 w-5" />
           );
         }
 
         if (id === "add-shape" && activeToolId === "shape" && currentShape) {
           const shapeIcons = {
-            rectangle: faSquare,
-            circle: faCircle,
-            triangle: faTriangle,
+            rectangle: SquareIcon,
+            circle: CircleIcon,
+            triangle: TriangleIcon,
           } as const;
           displayIcon = (
-            <FontAwesomeIcon
+            <DynamicIcon
               icon={shapeIcons[currentShape]}
               className="h-5 w-5"
             />
           );
         }
 
-        const tooltipLabel = (id === "inpaint" && !supportsMaskTool) ? label + " (Model unsupported)" : label;
+        const tooltipLabel =
+          id === "inpaint" && !supportsMaskTool
+            ? label + " (Model unsupported)"
+            : id === "add-shape" && toolBinding
+              ? `${label} — ${formatBinding(toolBinding)} cycles shapes`
+              : label;
 
         return (
           <div key={id} className="relative">
@@ -472,6 +511,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     className={`${baseBtn} ${btnStyle}`}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 ) : (
                   <button
@@ -482,6 +522,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     disabled={id === "inpaint" && !supportsMaskTool}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 )}
               </Tooltip>
@@ -521,6 +562,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     className={`${baseBtn} ${btnStyle}`}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 ) : (
                   <button
@@ -530,6 +572,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     className={`${baseBtn} ${btnStyle}`}
                   >
                     {displayIcon}
+                    {keyBadge}
                   </button>
                 )}
               </>
@@ -569,7 +612,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
               className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent text-white transition-colors hover:bg-red/50"
               onClick={handleResetCanvas}
             >
-              <FontAwesomeIcon icon={faXmark} className="h-5 w-5 text-xl" />
+              <XIcon  className="h-5 w-5 text-xl" />
             </button>
           </Tooltip>
         </div>

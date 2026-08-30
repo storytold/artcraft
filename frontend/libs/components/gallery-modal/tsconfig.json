@@ -45,6 +45,9 @@
       "path": "../modal"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

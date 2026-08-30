@@ -58,10 +58,7 @@ export const OpenAIApiKeyBlock = () => {
         disabled={isCheckingArtcraftSession}
       >
         {isCheckingArtcraftSession ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-sm"
-          />
+          <LoaderCircleIcon className="animate-spin text-sm" />
         ) : isLoggedIn ? (
           "Log Out"
         ) : (

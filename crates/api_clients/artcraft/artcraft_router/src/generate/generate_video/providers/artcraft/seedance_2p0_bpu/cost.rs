@@ -1,6 +1,5 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
-use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p0_four_k_usd_cents;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu::request::ArtcraftSeedance2p0BytePlusUltraRequestState;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
@@ -11,6 +10,24 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 const CENTS_PER_SECOND_480P: f64 = 10.0;
 const CENTS_PER_SECOND_720P: f64 = 25.0;
 const CENTS_PER_SECOND_1080P: f64 = 50.0;
+
+/// USD cents per second, in hundredths of a cent, when one or more
+/// reference videos are attached. Held as integer hundredths so the math is
+/// exact; rounded up to whole cents once, after multiplying by
+/// duration × batch.
+///   480p:  10.20 ¢/s
+///   720p:  25.70 ¢/s
+///   1080p: 57.80 ¢/s
+///   4K:   119.00 ¢/s
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P: u64 = 1_020;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P: u64 = 2_570;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_1080P: u64 = 5_780;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_4K: u64 = 11_900;
+
+/// 4K output price with no reference videos, in hundredths of a USD cent
+/// per second (95.00 ¢/s), rounded up to whole cents after multiplying by
+/// duration × batch.
+const CENTI_CENTS_PER_SECOND_4K: u64 = 9_500;
 
 pub struct ArtcraftSeedance2p0BytePlusUltraCostState {
   pub resolution: CommonResolution,
@@ -32,12 +49,24 @@ impl ArtcraftSeedance2p0BytePlusUltraCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
+    if self.has_video_reference {
+      let usd_cents = self.with_video_reference_usd_cents();
+      return VideoGenerationCostEstimate {
+        cost_in_credits: Some(usd_cents),
+        cost_in_usd_cents: Some(usd_cents),
+        is_free: false,
+        is_unlimited: false,
+        is_rate_limited: false,
+        has_watermark: false,
+        failures_are_refunded: None,
+      };
+    }
+
     if self.resolution == CommonResolution::FourK {
-      let usd_cents = seedance_2p0_four_k_usd_cents(
-        self.duration_seconds,
-        self.batch_count,
-        self.has_video_reference,
-      );
+      let total_centi_cents = CENTI_CENTS_PER_SECOND_4K
+        * self.duration_seconds as u64
+        * self.batch_count as u64;
+      let usd_cents = total_centi_cents.div_ceil(100);
       return VideoGenerationCostEstimate {
         cost_in_credits: Some(usd_cents),
         cost_in_usd_cents: Some(usd_cents),
@@ -67,6 +96,22 @@ impl ArtcraftSeedance2p0BytePlusUltraCostState {
       failures_are_refunded: None,
     }
   }
+
+  /// Price when one or more reference videos are attached.
+  fn with_video_reference_usd_cents(&self) -> u64 {
+    let centi_cents_per_second = match self.resolution {
+      CommonResolution::FourEightyP => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_1080P,
+      CommonResolution::FourK => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_4K,
+      // Everything else (including 720p) prices at 720p.
+      _ => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P,
+    };
+
+    let seconds = self.duration_seconds as u64 * self.batch_count as u64;
+
+    // Round up to whole cents.
+    (centi_cents_per_second * seconds).div_ceil(100)
+  }
 }
 
 #[cfg(test)]
@@ -90,6 +135,11 @@ mod tests {
     #[test]
     fn batch_2() {
       assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2), 250);
+    }
+
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 3), 375);
     }
 
     #[test]
@@ -119,6 +169,11 @@ mod tests {
       assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 100);
     }
 
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 150);
+    }
+
     #[test]
     fn batch_4() {
       assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 200);
@@ -139,6 +194,11 @@ mod tests {
     #[test]
     fn batch_2() {
       assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 2), 500);
+    }
+
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 3), 750);
     }
 
     #[test]
@@ -164,18 +224,20 @@ mod tests {
 
     #[test]
     fn explicit_4k_without_video_reference() {
-      assert_eq!(artcraft_4k_cents(4, 1, false), 347);
-      assert_eq!(artcraft_4k_cents(5, 1, false), 433);
-      assert_eq!(artcraft_4k_cents(10, 1, false), 866);
-      assert_eq!(artcraft_4k_cents(15, 1, false), 1299);
+      // 95.00 ¢/s card, rounded up to whole cents.
+      assert_eq!(artcraft_4k_cents(4, 1, false), 380);
+      assert_eq!(artcraft_4k_cents(5, 1, false), 475);
+      assert_eq!(artcraft_4k_cents(10, 1, false), 950);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1425);
     }
 
     #[test]
     fn explicit_4k_with_video_reference() {
-      assert_eq!(artcraft_4k_cents(4, 1, true), 416);
-      assert_eq!(artcraft_4k_cents(5, 1, true), 519);
-      assert_eq!(artcraft_4k_cents(10, 1, true), 1038);
-      assert_eq!(artcraft_4k_cents(15, 1, true), 1557);
+      // 119.00 ¢/s with-reference card, rounded up to whole cents.
+      assert_eq!(artcraft_4k_cents(4, 1, true), 476);
+      assert_eq!(artcraft_4k_cents(5, 1, true), 595);
+      assert_eq!(artcraft_4k_cents(10, 1, true), 1190);
+      assert_eq!(artcraft_4k_cents(15, 1, true), 1785);
     }
   }
 
@@ -228,4 +290,74 @@ mod tests {
   fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: u16, video_batch_count: u16) -> u64 {
     build_cost(resolution, duration_seconds, video_batch_count).cost_in_usd_cents.unwrap()
   }
+
+  // ── Video reference deltas ──
+  //
+  // References price on the with-reference rate card (10.20/25.70/57.80/113.80 ¢/s); the delta must be positive at every resolution and duration.
+
+  mod video_reference_deltas {
+    use enums::common::generation::common_resolution::CommonResolution;
+
+    use super::super::ArtcraftSeedance2p0BytePlusUltraCostState;
+
+    #[test]
+    fn refs_cost_more_at_480p() {
+      assert_ref_delta(CommonResolution::FourEightyP, 5, 50, 51, 1);
+      assert_ref_delta(CommonResolution::FourEightyP, 10, 100, 102, 2);
+      assert_ref_delta(CommonResolution::FourEightyP, 15, 150, 153, 3);
+    }
+
+    #[test]
+    fn refs_cost_more_at_720p() {
+      assert_ref_delta(CommonResolution::SevenTwentyP, 5, 125, 129, 4);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 10, 250, 257, 7);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 15, 375, 386, 11);
+    }
+
+    #[test]
+    fn refs_cost_more_at_1080p() {
+      assert_ref_delta(CommonResolution::TenEightyP, 5, 250, 289, 39);
+      assert_ref_delta(CommonResolution::TenEightyP, 10, 500, 578, 78);
+      assert_ref_delta(CommonResolution::TenEightyP, 15, 750, 867, 117);
+    }
+
+    #[test]
+    fn refs_cost_more_at_4k() {
+      assert_ref_delta(CommonResolution::FourK, 5, 475, 595, 120);
+      assert_ref_delta(CommonResolution::FourK, 10, 950, 1190, 240);
+      assert_ref_delta(CommonResolution::FourK, 15, 1425, 1785, 360);
+    }
+
+    /// Price the same generation with and without a reference video; pin
+    /// both prices and the delta, in USD cents AND credits (credits equal
+    /// cents, and both must show references costing more).
+    fn assert_ref_delta(
+      resolution: CommonResolution,
+      duration_seconds: u16,
+      expected_no_ref: u64,
+      expected_with_ref: u64,
+      expected_delta: u64,
+    ) {
+      let no_ref = ArtcraftSeedance2p0BytePlusUltraCostState {
+        resolution, duration_seconds, batch_count: 1, has_video_reference: false,
+      }.estimate_cost();
+      let with_ref = ArtcraftSeedance2p0BytePlusUltraCostState {
+        resolution, duration_seconds, batch_count: 1, has_video_reference: true,
+      }.estimate_cost();
+
+      let no_ref_cents = no_ref.cost_in_usd_cents.unwrap();
+      let with_ref_cents = with_ref.cost_in_usd_cents.unwrap();
+      assert_eq!(no_ref_cents, expected_no_ref);
+      assert_eq!(with_ref_cents, expected_with_ref);
+      assert_eq!(with_ref_cents - no_ref_cents, expected_delta);
+      assert!(with_ref_cents > no_ref_cents, "references must cost more");
+
+      let no_ref_credits = no_ref.cost_in_credits.unwrap();
+      let with_ref_credits = with_ref.cost_in_credits.unwrap();
+      assert_eq!(no_ref_credits, expected_no_ref);
+      assert_eq!(with_ref_credits, expected_with_ref);
+      assert_eq!(with_ref_credits - no_ref_credits, expected_delta);
+    }
+  }
+
 }

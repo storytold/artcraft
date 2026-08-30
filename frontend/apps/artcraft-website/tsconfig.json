@@ -15,10 +15,16 @@
       "path": "../../libs/components/gallery-modal"
     },
     {
+      "path": "../../libs/components/toaster"
+    },
+    {
       "path": "../../libs/omni-gen"
     },
     {
       "path": "../../libs/components/switch"
+    },
+    {
+      "path": "../../libs/components/promptbox"
     },
     {
       "path": "../../libs/components/close-button"
@@ -48,19 +54,22 @@
       "path": "../../libs/markdown-content"
     },
     {
-      "path": "../../libs/components/modal"
-    },
-    {
       "path": "../../libs/components/input"
     },
     {
       "path": "../../libs/components/button"
     },
     {
+      "path": "../../libs/components/modal"
+    },
+    {
       "path": "../../libs/common"
     },
     {
       "path": "../../libs/api"
+    },
+    {
+      "path": "../../libs/icons"
     },
     {
       "path": "./tsconfig.app.json"

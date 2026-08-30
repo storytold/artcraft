@@ -1,17 +1,9 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUser,
-  faCog,
-  faKey,
-  faVolumeHigh,
-  faCircleInfo,
-  faCreditCard,
-  faPalette,
-  faFlask,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CreditCardIcon, FlaskConicalIcon, InfoIcon, KeyIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
+import { KeybindsSettings } from "@storyteller/keybinds";
 import { MiscSettingsPane } from "./panes/MiscSettingsPane";
 import { AudioSettingsPane } from "./panes/AudioSettingsPane";
 import { AccountSettingsPane } from "./panes/AccountSettings/AccountSettingsPane";
@@ -37,6 +29,7 @@ interface SettingsModalProps {
 type SettingsSection =
   | "general"
   | "appearance"
+  | "keybinds"
   | "accounts"
   | "api_keys"
   | "alerts"
@@ -74,24 +67,25 @@ export const SettingsModal = ({
   }, [experimentalEnabled, selectedSection]);
 
   const sections = [
-    { id: "general" as const, label: "General", icon: faCog },
+    { id: "general" as const, label: "General", icon: SettingsIcon },
 
-    { id: "accounts" as const, label: "Accounts", icon: faUser },
-    { id: "api_keys" as const, label: "API Keys", icon: faKey },
-    { id: "billing" as const, label: "Plan & Credits", icon: faCreditCard },
+    { id: "accounts" as const, label: "Accounts", icon: UserIcon },
+    { id: "api_keys" as const, label: "API Keys", icon: KeyIcon },
+    { id: "billing" as const, label: "Plan & Credits", icon: CreditCardIcon },
 
     /* {
       id: "provider_priority" as const,
       label: "Provider Priority",
-      icon: faRoute,
+      icon: RouteIcon,
     }, */
-    { id: "appearance" as const, label: "Appearance", icon: faPalette },
-    { id: "alerts" as const, label: "Alerts", icon: faVolumeHigh },
-    { id: "about" as const, label: "About", icon: faCircleInfo },
-    //{ id: "video" as const, label: "Video", icon: faVideo },
-    //{ id: "image" as const, label: "Image", icon: faImage },
+    { id: "appearance" as const, label: "Appearance", icon: PaletteIcon },
+    { id: "keybinds" as const, label: "Keybinds", icon: KeyboardIcon },
+    { id: "alerts" as const, label: "Alerts", icon: Volume2Icon },
+    { id: "about" as const, label: "About", icon: InfoIcon },
+    //{ id: "video" as const, label: "Video", icon: VideoIcon },
+    //{ id: "image" as const, label: "Image", icon: ImageIcon },
     ...(experimentalEnabled
-      ? [{ id: "experimental" as const, label: "Experimental", icon: faFlask }]
+      ? [{ id: "experimental" as const, label: "Experimental", icon: FlaskConicalIcon }]
       : []),
   ];
 
@@ -99,6 +93,8 @@ export const SettingsModal = ({
     switch (selectedSection) {
       case "appearance":
         return <AppearanceSettingsPane />;
+      case "keybinds":
+        return <KeybindsSettings />;
       case "alerts":
         return <AudioSettingsPane />;
       case "general":
@@ -163,7 +159,7 @@ export const SettingsModal = ({
                     }}
                   >
                     <div className="flex items-center gap-2.5 text-sm">
-                      <FontAwesomeIcon icon={section.icon} />
+                      <DynamicIcon icon={section.icon} />
                       {section.label}
                     </div>
                   </button>
@@ -179,7 +175,7 @@ export const SettingsModal = ({
               {experimentalEnabled && selectedSection === "experimental" && (
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ui-panel-border bg-ui-modal/95 backdrop-blur px-3 py-2">
                   <div className="flex items-center gap-2 text-xs opacity-80">
-                    <FontAwesomeIcon icon={faFlask} />
+                    <FlaskConicalIcon />
                     Experimental features enabled
                   </div>
                   <Button

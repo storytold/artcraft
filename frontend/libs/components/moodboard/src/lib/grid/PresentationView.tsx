@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faXmark,
-  faChevronLeft,
-  faChevronRight,
-} from "@fortawesome/pro-regular-svg-icons";
+import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { BoardItem } from "../boards/boardTypes";
+import { useResolvedKeybinds } from "@storyteller/keybinds";
 
 interface Props {
   items: BoardItem[];
@@ -13,22 +10,27 @@ interface Props {
 }
 
 // Distraction-free, full-bleed review deck. One item at a time, keyboard-driven
-// (←/→ navigate, Esc exits). For client/team review and sharing-by-screen.
+// via the "moodboard-grid" keybinds surface (by default ←/→ or Space navigate,
+// Esc exits). For client/team review and sharing-by-screen.
 export const PresentationView = ({ items, onClose }: Props) => {
   const [index, setIndex] = useState(0);
   const count = items.length;
+  const { matchAction } = useResolvedKeybinds();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft")
+      const action = matchAction(e, "moodboard-grid");
+      if (action === "moodboard-grid.selection.clearOrClose") onClose();
+      else if (action === "moodboard-grid.nav.prev")
         setIndex((i) => (i - 1 + count) % Math.max(count, 1));
-      else if (e.key === "ArrowRight" || e.key === " ")
+      else if (action === "moodboard-grid.nav.next")
         setIndex((i) => (i + 1) % Math.max(count, 1));
+      else return;
+      e.preventDefault();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose, count]);
+  }, [matchAction, onClose, count]);
 
   const item = items[Math.min(index, count - 1)];
 
@@ -40,7 +42,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
         onClick={onClose}
         className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
       >
-        <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+        <XIcon  className="h-4 w-4" />
       </button>
 
       {count === 0 ? (
@@ -155,8 +157,8 @@ const Arrow = ({
       side === "left" ? "left-5" : "right-5",
     ].join(" ")}
   >
-    <FontAwesomeIcon
-      icon={side === "left" ? faChevronLeft : faChevronRight}
+    <DynamicIcon
+      icon={side === "left" ? ChevronLeftIcon : ChevronRightIcon}
       className="h-5 w-5"
     />
   </button>

@@ -56,6 +56,8 @@ export interface GenerationListViewProps {
   selectionMode?: boolean;
   selectedIds?: ReadonlySet<string>;
   onToggleSelect?: (item: GalleryItem) => void;
+  /** Marks the row the user most recently viewed in the lightbox. */
+  lastViewedId?: string | null;
 }
 
 export function GenerationListView({
@@ -75,6 +77,7 @@ export function GenerationListView({
   selectionMode = false,
   selectedIds,
   onToggleSelect,
+  lastViewedId,
 }: GenerationListViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -211,6 +214,7 @@ export function GenerationListView({
               selectMode={selectionMode}
               selected={selectionMode && selectedIds?.has(entry.item.id)}
               onToggleSelect={onToggleSelect}
+              lastViewed={!!lastViewedId && entry.item.id === lastViewedId}
             />
           );
         })}

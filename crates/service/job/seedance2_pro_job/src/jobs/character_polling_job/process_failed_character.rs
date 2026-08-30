@@ -1,14 +1,14 @@
 use log::{error, info, warn};
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
-use seedance2pro_client::requests::poll_characters::poll_characters::CharacterStatus;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_character_jobs::PendingKinoviWebCharacterJob;
+use kinovi_web_client::requests::poll_characters::poll_characters::CharacterStatus;
 
 use crate::job_dependencies::JobDependencies;
 
 pub async fn process_failed_character(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProCharacterJob,
+  job: &PendingKinoviWebCharacterJob,
   character: &CharacterStatus,
 ) {
   let reason = character.fail_reason

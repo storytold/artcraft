@@ -3,10 +3,16 @@
   "include": [],
   "references": [
     {
+      "path": "../keybinds"
+    },
+    {
       "path": "../../tauri-utils"
     },
     {
       "path": "../../model-list"
+    },
+    {
+      "path": "../popover"
     },
     {
       "path": "../promptbox"
@@ -40,6 +46,9 @@
     },
     {
       "path": "../../api"
+    },
+    {
+      "path": "../../icons"
     },
     {
       "path": "../../analytics/google-analytics"

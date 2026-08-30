@@ -1,4 +1,8 @@
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
+
+// The markup is applied at cent granularity with ceiling rounding.
+const MARKUP_NUMERATOR: u64 = 115;
+const MARKUP_DENOMINATOR: u64 = 100;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_pro::request::ArtcraftKling3p0ProRequestState;
 
 #[derive(Clone, Debug)]
@@ -17,12 +21,11 @@ impl ArtcraftKling3p0ProCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client kling_3p0_pro:
-    //   audio off: $0.224/sec  (rate=224 in tenths-of-cents)
-    //   audio on:  $0.336/sec  (rate=336)
-    // ceiling-divided to whole cents.
+    // Base rates in tenths of a cent per second; the total is
+    // ceiling-divided to whole cents, then the markup applied.
     let rate: u64 = if self.generate_audio { 336 } else { 224 };
-    let cost_in_usd_cents = (rate * self.duration_seconds + 9) / 10;
+    let base = (rate * self.duration_seconds + 9) / 10;
+    let cost_in_usd_cents = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -57,24 +60,24 @@ mod tests {
   #[test]
   fn audio_on_5s_is_168() {
     // rate=336, (336*5 + 9) / 10 = 1689/10 = 168.
-    assert_eq!(cost_cents(Some(5), Some(true)), 168);
+    assert_eq!(cost_cents(Some(5), Some(true)), 194);
   }
 
   #[test]
   fn audio_off_5s_is_112() {
     // rate=224, (224*5 + 9) / 10 = 1129/10 = 112.
-    assert_eq!(cost_cents(Some(5), Some(false)), 112);
+    assert_eq!(cost_cents(Some(5), Some(false)), 129);
   }
 
   #[test]
   fn audio_on_10s_is_336() {
-    assert_eq!(cost_cents(Some(10), Some(true)), 336);
+    assert_eq!(cost_cents(Some(10), Some(true)), 387);
   }
 
   #[test]
   fn audio_on_15s_is_504() {
     // rate=336, (336*15 + 9) / 10 = 5049/10 = 504.
-    assert_eq!(cost_cents(Some(15), Some(true)), 504);
+    assert_eq!(cost_cents(Some(15), Some(true)), 580);
   }
 
   #[test]

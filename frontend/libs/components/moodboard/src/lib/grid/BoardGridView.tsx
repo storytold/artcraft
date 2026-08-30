@@ -16,6 +16,10 @@ import { BoardGridToolbar } from "./BoardGridToolbar";
 import { BoardEmptyState } from "./BoardEmptyState";
 import { SelectionBar } from "./SelectionBar";
 import { ItemInspector } from "./ItemInspector";
+import {
+  isEventFromEditableElement,
+  useResolvedKeybinds,
+} from "@storyteller/keybinds";
 
 interface Props {
   active: boolean;
@@ -151,33 +155,38 @@ export const BoardGridView = ({ active, adapter }: Props) => {
     assignItemsToSection(board.id, Array.from(selectedItemIds), sectionId);
   };
 
-  // Grid keyboard: delete / escape + Lightroom-style triage (0-5 rate, P pick)
-  // on the current selection. Inert while the inspector owns input. Delete is
-  // bound to Delete/Backspace only — `x` is deliberately NOT an alias, since the
-  // board has no undo and `x` sits among the number-key triage row, where an
-  // accidental press would silently destroy work.
+  // Grid keyboard: escape / delete + Lightroom-style triage (rate 0-5, P
+  // pick) on the current selection, resolved from the "moodboard-grid"
+  // keybinds surface so Settings → Keybinds can rebind them. Inert while the
+  // inspector owns input (it answers the same surface itself). nav.prev/next
+  // are deliberately NOT consumed here: with no viewer open the arrow keys
+  // belong to the cards' roving focus (a11y), not a shortcut. Delete has no
+  // single-letter alias on purpose — the board has no undo, and a stray press
+  // in the number-key triage row would silently destroy work.
+  const { matchAction } = useResolvedKeybinds();
   useEffect(() => {
     if (!active || openId) return undefined;
     const handler = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (/input|textarea/i.test(t.tagName) || t.isContentEditable)) return;
+      if (isEventFromEditableElement(e)) return;
+      const action = matchAction(e, "moodboard-grid");
+      if (!action) return;
       const ids = Array.from(selectedItemIds);
 
-      if (e.key === "Escape") {
+      if (action === "moodboard-grid.selection.clearOrClose") {
         clearSelection();
         return;
       }
       if (ids.length === 0) return;
 
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (action === "moodboard-grid.edit.delete") {
         e.preventDefault();
         deleteSelected();
-      } else if (e.key === "p") {
+      } else if (action === "moodboard-grid.rate.pick") {
         e.preventDefault();
         if (board) rateItems(board.id, ids, 5);
-      } else if (/^[0-5]$/.test(e.key)) {
+      } else if (action.startsWith("moodboard-grid.rate.")) {
         e.preventDefault();
-        if (board) rateItems(board.id, ids, Number(e.key));
+        if (board) rateItems(board.id, ids, Number(action.slice(-1)));
       }
     };
     document.addEventListener("keydown", handler);
@@ -190,6 +199,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
     deleteSelected,
     clearSelection,
     rateItems,
+    matchAction,
   ]);
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {

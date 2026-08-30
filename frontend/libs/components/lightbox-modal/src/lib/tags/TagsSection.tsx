@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTag } from "@fortawesome/pro-solid-svg-icons";
+import { TagIcon } from "lucide-react";
 import {
   TagsApi,
   UsersApi,
@@ -238,7 +237,7 @@ export function TagsSection({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-medium text-base-fg/60">
-          <FontAwesomeIcon icon={faTag} />
+          <TagIcon />
           <span>Tags</span>
         </div>
         {isOwner && tags.length >= 2 && (

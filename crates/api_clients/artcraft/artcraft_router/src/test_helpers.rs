@@ -355,6 +355,7 @@ pub fn base_video_request() -> GenerateVideoRequestBuilder {
     duration_seconds: None,
     video_batch_count: None,
     generate_audio: None,
+    total_reference_video_input_seconds: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     idempotency_token: None,
   }

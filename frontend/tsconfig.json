@@ -214,10 +214,16 @@
       "path": "./libs/components/moodboard"
     },
     {
+      "path": "./libs/components/keybinds"
+    },
+    {
       "path": "./libs/omni-gen"
     },
     {
       "path": "./libs/components/audio-player"
+    },
+    {
+      "path": "./libs/icons"
     }
   ]
 }

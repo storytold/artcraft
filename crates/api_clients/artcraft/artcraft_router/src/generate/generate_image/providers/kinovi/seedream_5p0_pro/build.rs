@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_seedream_5p0_pro::{
+use kinovi_web_client::generate::image::generate_seedream_5p0_pro::{
   GenerateSeedream5p0ProRequest, KinoviSeedream5p0ProAspectRatio, KinoviSeedream5p0ProBatchCount,
   KinoviSeedream5p0ProResolution, MAX_REFERENCE_IMAGES,
 };
@@ -67,7 +67,7 @@ fn has_image_inputs(image_inputs: Option<&ImageListRef>) -> bool {
 }
 
 /// Reject over-limit reference lists before any uploads happen — the
-/// Seedance2Pro client would reject them anyway, but only after the draft
+/// KinoviWeb client would reject them anyway, but only after the draft
 /// stage has already uploaded every image to the Kinovi CDN.
 fn validate_reference_image_count(
   image_inputs: Option<&ImageListRef>,
@@ -191,7 +191,7 @@ mod tests {
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Seedream5p0Pro,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("an anime girl riding a dinosaur".to_string()),
       image_inputs: None,
       resolution: None,

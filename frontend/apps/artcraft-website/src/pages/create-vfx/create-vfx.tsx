@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird, faSparkles } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon, SparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import {
   PromptBoxVFX,
@@ -244,10 +243,9 @@ export default function CreateVFX() {
   if (!authChecked) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#101014]">
-        <FontAwesomeIcon
-          icon={faSpinnerThird}
-          className="animate-spin text-4xl text-primary/80"
-        />
+        <LoaderCircleIcon
+          
+          className="animate-spin text-4xl text-primary/80" />
       </div>
     );
   }
@@ -263,10 +261,9 @@ export default function CreateVFX() {
           <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
         </div>
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
-          <FontAwesomeIcon
-            icon={faSparkles}
-            className="mb-6 text-5xl text-white/20"
-          />
+          <SparklesIcon
+            
+            className="mb-6 text-5xl text-white/20" />
           <h1 className="mb-3 text-4xl font-bold">Background Change</h1>
           <p className="mb-8 max-w-md text-center text-lg text-white/60">
             Sign in to swap the backdrop of a video using a reference image.
@@ -392,7 +389,7 @@ interface EmptyStateProps {
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
-      <FontAwesomeIcon icon={faSparkles} className="text-2xl text-white/40" />
+      <SparklesIcon  className="text-2xl text-white/40" />
     </div>
     <h3 className="text-2xl font-bold text-white">{title}</h3>
     <p className="text-sm text-white/60 max-w-xs">{subtitle}</p>

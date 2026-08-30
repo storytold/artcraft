@@ -1,6 +1,5 @@
 import { ChangeEvent } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTags, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { TagsIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 export interface StylePromptRowProps {
@@ -29,10 +28,9 @@ export function StylePromptRow({
         className,
       )}
     >
-      <FontAwesomeIcon
-        icon={faTags}
-        className="h-3.5 w-3.5 shrink-0 text-base-fg/40"
-      />
+      <TagsIcon
+        
+        className="h-3.5 w-3.5 shrink-0 text-base-fg/40" />
       <input
         type="text"
         value={value}
@@ -47,7 +45,7 @@ export function StylePromptRow({
           onClick={() => onChange("")}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-base-fg/40 transition-colors hover:bg-white/10 hover:text-base-fg"
         >
-          <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
+          <XIcon  className="h-3 w-3" />
         </button>
       )}
     </div>

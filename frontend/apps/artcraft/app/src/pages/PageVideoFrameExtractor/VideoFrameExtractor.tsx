@@ -1,20 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlay,
-  faPause,
-  faVolumeHigh,
-  faVolumeMute,
-  faPhotoFilm,
-  faSparkles,
-  faImages,
-  faStepBackward,
-  faStepForward,
-  faArrowRotateRight,
-  faSave,
-  faVideo,
-  faCheck,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SaveIcon, SkipBackIcon, SkipForwardIcon, SparklesIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
@@ -484,7 +470,7 @@ export const VideoFrameExtractor = () => {
               <div className="w-full max-w-5xl">
                 <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <UploadEntryCard
-                    icon={faPhotoFilm}
+                    icon={ImagesIcon}
                     title="Extract Video Frames"
                     description="Capture perfect moments from your videos. Select frames at precise timestamps and save them as images."
                     accentBackgroundClass="bg-rose-500/40"
@@ -493,7 +479,7 @@ export const VideoFrameExtractor = () => {
                     onFilesSelected={handleLocalVideoSelect}
                     primaryLabel="Select Video"
                     secondaryLabel="Pick from Library"
-                    secondaryIcon={faImages}
+                    secondaryIcon={ImagesIcon}
                     onSecondaryClick={() => setIsGalleryModalOpen(true)}
                   />
                 </div>
@@ -503,7 +489,7 @@ export const VideoFrameExtractor = () => {
                 <div className="w-full overflow-hidden rounded-xl border border-ui-panel-border bg-ui-controls/40">
                   <div className="relative aspect-video w-full bg-black">
                     <Button
-                      icon={faArrowRotateRight}
+                      icon={RotateCwIcon}
                       variant="action"
                       onClick={() => {
                         setVideoUrl("");
@@ -587,17 +573,16 @@ export const VideoFrameExtractor = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                             title="First Frame"
                           >
-                            <FontAwesomeIcon
-                              icon={faStepBackward}
-                              className="text-sm text-white"
-                            />
+                            <SkipBackIcon
+                              
+                              className="text-sm text-white" />
                           </button>
                           <button
                             onClick={togglePlayPause}
                             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
                           >
-                            <FontAwesomeIcon
-                              icon={isPlaying ? faPause : faPlay}
+                            <DynamicIcon
+                              icon={isPlaying ? PauseIcon : PlayIcon}
                               className="text-white"
                             />
                           </button>
@@ -606,18 +591,17 @@ export const VideoFrameExtractor = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                             title="Last Frame"
                           >
-                            <FontAwesomeIcon
-                              icon={faStepForward}
-                              className="text-sm text-white"
-                            />
+                            <SkipForwardIcon
+                              
+                              className="text-sm text-white" />
                           </button>
                           <div className="mx-1 h-6 w-px bg-white/20" />
                           <button
                             onClick={toggleMute}
                             className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                           >
-                            <FontAwesomeIcon
-                              icon={isMuted ? faVolumeMute : faVolumeHigh}
+                            <DynamicIcon
+                              icon={isMuted ? VolumeXIcon : Volume2Icon}
                               className="text-sm text-white"
                             />
                           </button>
@@ -644,7 +628,7 @@ export const VideoFrameExtractor = () => {
                 <div className="flex justify-center">
                   <Button
                     variant="primary"
-                    icon={isExtracting ? undefined : faSparkles}
+                    icon={isExtracting ? undefined : SparklesIcon}
                     loading={isExtracting}
                     onClick={handleExtract}
                     className="px-12 py-3 text-lg font-semibold"
@@ -704,10 +688,9 @@ export const VideoFrameExtractor = () => {
                   <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
                     <div>
                       <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-base-fg/60">
-                        <FontAwesomeIcon
-                          icon={faSparkles}
-                          className="text-primary"
-                        />
+                        <SparklesIcon
+                          
+                          className="text-primary" />
                         Extraction Settings
                       </h3>
 
@@ -776,10 +759,9 @@ export const VideoFrameExtractor = () => {
                     <div>
                       <div className="mb-6 flex items-center justify-between">
                         <h3 className="flex items-center gap-2 text-xl font-bold uppercase tracking-wider text-base-fg">
-                          <FontAwesomeIcon
-                            icon={faPhotoFilm}
-                            className="text-primary"
-                          />
+                          <ImagesIcon
+                            
+                            className="text-primary" />
                           Extracted Frames
                         </h3>
                         <div className="bg-ui-badge rounded-full border-2 border-primary/30 px-5 py-2 text-sm font-bold text-base-fg shadow-lg">
@@ -816,8 +798,8 @@ export const VideoFrameExtractor = () => {
                                     savingFrames.has(frame.id)
                                       ? undefined
                                       : savedFrames.has(frame.id)
-                                        ? faCheck
-                                        : faSave
+                                        ? CheckIcon
+                                        : SaveIcon
                                   }
                                   loading={savingFrames.has(frame.id)}
                                   onClick={() =>
@@ -844,7 +826,7 @@ export const VideoFrameExtractor = () => {
                                   icon={
                                     convertingFrames.has(frame.id)
                                       ? undefined
-                                      : faVideo
+                                      : VideoIcon
                                   }
                                   loading={convertingFrames.has(frame.id)}
                                   onClick={() =>

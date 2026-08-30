@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Input } from "./input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 interface NumberInputProps {
@@ -72,13 +71,13 @@ export const NumberInput: React.FC<NumberInputProps> = ({
           )}
           onClick={handleIncrement}
         >
-          <FontAwesomeIcon icon={faChevronUp} />
+          <ChevronUpIcon />
         </button>
         <button
           className={twMerge(incrementButtonStyle, "rounded-br-md")}
           onClick={handleDecrement}
         >
-          <FontAwesomeIcon icon={faChevronDown} />
+          <ChevronDownIcon />
         </button>
       </div>
     </div>

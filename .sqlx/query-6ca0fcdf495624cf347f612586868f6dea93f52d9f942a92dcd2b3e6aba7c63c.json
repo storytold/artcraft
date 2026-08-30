@@ -1,0 +1,36 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n  maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`\nFROM generic_inference_jobs\nWHERE job_type = ?\nAND status = 'pending'\nORDER BY id ASC\nLIMIT 1\nFOR UPDATE SKIP LOCKED\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "maybe_prompt_token: tokens::tokens::prompts::PromptToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "6ca0fcdf495624cf347f612586868f6dea93f52d9f942a92dcd2b3e6aba7c63c"
+}

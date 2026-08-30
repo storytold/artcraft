@@ -55,6 +55,7 @@ pub async fn estimate_video_cost_handler(
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
+    total_reference_video_input_seconds: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     idempotency_token: None,
   };
@@ -133,6 +134,8 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::GrokVideo => RouterVideoModel::GrokVideo,
     CommonVideoModel::GrokImagineVideo => RouterVideoModel::GrokImagineVideo,
     CommonVideoModel::GrokImagineVideo1p5 => RouterVideoModel::GrokImagineVideo1p5,
+    CommonVideoModel::Flux3 => RouterVideoModel::Flux3,
+    CommonVideoModel::Flux3Draft => RouterVideoModel::Flux3Draft,
     CommonVideoModel::Kling16Pro => RouterVideoModel::Kling16Pro,
     CommonVideoModel::Kling21Pro => RouterVideoModel::Kling21Pro,
     CommonVideoModel::Kling21Master => RouterVideoModel::Kling21Master,
@@ -144,8 +147,12 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Seedance1p5Pro => RouterVideoModel::Seedance1p5Pro,
     CommonVideoModel::Seedance2p0 => RouterVideoModel::Seedance2p0,
     CommonVideoModel::Seedance2p0Fast => RouterVideoModel::Seedance2p0Fast,
-    CommonVideoModel::Seedance2p0Ultra => RouterVideoModel::Seedance2p0Ultra,
-    CommonVideoModel::Seedance2p0UltraFast => RouterVideoModel::Seedance2p0UltraFast,
+    // Deprecated: these never launched and have no execution route.
+    #[allow(deprecated)]
+    CommonVideoModel::Seedance2p0Ultra
+    | CommonVideoModel::Seedance2p0UltraFast => {
+      return Err(HandlerError::InvalidInput(format!("Model is not supported: {:?}", model)));
+    }
     CommonVideoModel::Seedance2p0BytePlus=> RouterVideoModel::Seedance2p0BytePlus,
     CommonVideoModel::Seedance2p0BytePlusFast=> RouterVideoModel::Seedance2p0BytePlusFast,
     CommonVideoModel::Seedance2p0BytePlusUltra => RouterVideoModel::Seedance2p0BytePlusUltra,
@@ -153,7 +160,13 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Seedance2p0Mini => RouterVideoModel::Seedance2p0Mini,
     CommonVideoModel::Seedance2p0BytePlusMini => RouterVideoModel::Seedance2p0BytePlusMini,
     CommonVideoModel::Seedance2p0BytePlusUltraMini => RouterVideoModel::Seedance2p0BytePlusUltraMini,
+    CommonVideoModel::Seedance2p5Preview => RouterVideoModel::Seedance2p5Preview,
+    CommonVideoModel::Seedance2p5 => RouterVideoModel::Seedance2p5,
+    CommonVideoModel::Seedance2p5Ultra => RouterVideoModel::Seedance2p5Ultra,
     CommonVideoModel::HappyHorse1p0 => RouterVideoModel::HappyHorse1p0,
+    CommonVideoModel::MinimaxH3 => RouterVideoModel::MinimaxH3,
+    CommonVideoModel::MinimaxH3Turbo => RouterVideoModel::MinimaxH3Turbo,
+    CommonVideoModel::MinimaxH3Ultra => RouterVideoModel::MinimaxH3Ultra,
     CommonVideoModel::Sora2 => RouterVideoModel::Sora2,
     CommonVideoModel::Sora2Pro => RouterVideoModel::Sora2Pro,
     CommonVideoModel::Veo2 => RouterVideoModel::Veo2,

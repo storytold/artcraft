@@ -1,8 +1,7 @@
 import { ItemElement } from "./ItemElement";
 import type { MediaItem } from "../../../models/assets";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEmptySet } from "@fortawesome/pro-solid-svg-icons";
+import { CircleSlashIcon } from "lucide-react";
 import { AutoSizer, Grid } from "react-virtualized";
 import "react-virtualized/styles.css";
 
@@ -92,10 +91,9 @@ export const ItemElements = ({
   if (items.length === 0 && !busy) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center text-center">
-        <FontAwesomeIcon
-          icon={faEmptySet}
-          className="mb-4 text-4xl opacity-30"
-        />
+        <CircleSlashIcon
+          
+          className="mb-4 text-4xl opacity-30" />
         <h4>You do not have anything here.</h4>
         <p className="text-sm opacity-75">Please upload some assets.</p>
       </div>

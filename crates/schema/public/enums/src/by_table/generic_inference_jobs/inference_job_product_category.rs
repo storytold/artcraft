@@ -1,3 +1,8 @@
+// Deprecated model variants (e.g. the Seedance 2.0 Ultra tier) must keep
+// their classification arms here so historical rows still map; suppress the
+// deprecation lint file-wide.
+#![allow(deprecated)]
+
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -22,8 +27,16 @@ pub enum InferenceJobProductCategory {
   #[default]
   DownloadGptSoVits,
   
+  // =============== ARTCRAFT FIRST PARTY ===============
+
+  /// First-party (our own GPU inference) Minimax H3 video generation.
+  /// Covers both the Turbo and Ultra variants; the `job_type` column
+  /// distinguishes them.
+  #[serde(rename = "artcraft_minimax_h3")]
+  ArtcraftMinimaxH3,
+
   // =============== FAL ===============
-  
+
   FalImage,
   FalVideo,
   FalAudio,
@@ -71,6 +84,10 @@ pub enum InferenceJobProductCategory {
 
   #[serde(rename = "seedance2pro_video_bpu")]
   Seedance2ProVideoBytePlusUltra,
+
+  /// Seedance 2 Pro / Kinovi (BytePlus Ultra account): image generation.
+  #[serde(rename = "seedance2pro_image_bpu")]
+  Seedance2ProImageBytePlusUltra,
 
   // =============== WORLD LABS ===============
 
@@ -169,6 +186,7 @@ impl InferenceJobProductCategory {
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::DownloadGptSoVits => "download_gpt_so_vits",
+      Self::ArtcraftMinimaxH3 => "artcraft_minimax_h3",
       Self::FalImage => "fal_image",
       Self::FalVideo => "fal_video",
       Self::FalAudio => "fal_audio",
@@ -183,6 +201,7 @@ impl InferenceJobProductCategory {
       Self::Seedance2ProAudio => "seedance2pro_audio",
       Self::Seedance2ProVideoAlt => "seedance2pro_video_alt",
       Self::Seedance2ProVideoBytePlusUltra => "seedance2pro_video_bpu",
+      Self::Seedance2ProImageBytePlusUltra => "seedance2pro_image_bpu",
       Self::WorldlabsSplat => "worldlabs_splat",
       Self::TtsGptSoVits => "tts_gpt_so_vits",
       Self::TtsStyleTts2 => "tts_style_tts2",
@@ -212,6 +231,7 @@ impl InferenceJobProductCategory {
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "download_gpt_so_vits" => Ok(Self::DownloadGptSoVits),
+      "artcraft_minimax_h3" => Ok(Self::ArtcraftMinimaxH3),
       "fal_image" => Ok(Self::FalImage),
       "fal_video" => Ok(Self::FalVideo),
       "fal_audio" => Ok(Self::FalAudio),
@@ -226,6 +246,7 @@ impl InferenceJobProductCategory {
       "seedance2pro_audio" => Ok(Self::Seedance2ProAudio),
       "seedance2pro_video_alt" => Ok(Self::Seedance2ProVideoAlt),
       "seedance2pro_video_bpu" => Ok(Self::Seedance2ProVideoBytePlusUltra),
+      "seedance2pro_image_bpu" => Ok(Self::Seedance2ProImageBytePlusUltra),
       "worldlabs_splat" => Ok(Self::WorldlabsSplat),
       "tts_gpt_so_vits" => Ok(Self::TtsGptSoVits),
       "tts_style_tts2" => Ok(Self::TtsStyleTts2),
@@ -258,6 +279,7 @@ impl InferenceJobProductCategory {
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::DownloadGptSoVits,
+      Self::ArtcraftMinimaxH3,
       Self::FalImage,
       Self::FalVideo,
       Self::FalAudio,
@@ -272,6 +294,7 @@ impl InferenceJobProductCategory {
       Self::Seedance2ProAudio,
       Self::Seedance2ProVideoAlt,
       Self::Seedance2ProVideoBytePlusUltra,
+      Self::Seedance2ProImageBytePlusUltra,
       Self::WorldlabsSplat,
       Self::TtsGptSoVits,
       Self::TtsStyleTts2,
@@ -310,6 +333,7 @@ mod tests {
     #[test]
     fn test_serialization() {
       assert_serialization(InferenceJobProductCategory::DownloadGptSoVits, "download_gpt_so_vits");
+      assert_serialization(InferenceJobProductCategory::ArtcraftMinimaxH3, "artcraft_minimax_h3");
       assert_serialization(InferenceJobProductCategory::FalImage, "fal_image");
       assert_serialization(InferenceJobProductCategory::FalVideo, "fal_video");
       assert_serialization(InferenceJobProductCategory::FalAudio, "fal_audio");
@@ -324,6 +348,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::Seedance2ProAudio, "seedance2pro_audio");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideoAlt, "seedance2pro_video_alt");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra, "seedance2pro_video_bpu");
+      assert_serialization(InferenceJobProductCategory::Seedance2ProImageBytePlusUltra, "seedance2pro_image_bpu");
       assert_serialization(InferenceJobProductCategory::WorldlabsSplat, "worldlabs_splat");
       assert_serialization(InferenceJobProductCategory::TtsGptSoVits, "tts_gpt_so_vits");
       assert_serialization(InferenceJobProductCategory::TtsStyleTts2, "tts_style_tts2");
@@ -352,6 +377,7 @@ mod tests {
     #[test]
     fn to_str() {
       assert_eq!(InferenceJobProductCategory::DownloadGptSoVits.to_str(), "download_gpt_so_vits");
+      assert_eq!(InferenceJobProductCategory::ArtcraftMinimaxH3.to_str(), "artcraft_minimax_h3");
       assert_eq!(InferenceJobProductCategory::FalImage.to_str(), "fal_image");
       assert_eq!(InferenceJobProductCategory::FalVideo.to_str(), "fal_video");
       assert_eq!(InferenceJobProductCategory::FalAudio.to_str(), "fal_audio");
@@ -366,6 +392,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::Seedance2ProAudio.to_str(), "seedance2pro_audio");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideoAlt.to_str(), "seedance2pro_video_alt");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra.to_str(), "seedance2pro_video_bpu");
+      assert_eq!(InferenceJobProductCategory::Seedance2ProImageBytePlusUltra.to_str(), "seedance2pro_image_bpu");
       assert_eq!(InferenceJobProductCategory::WorldlabsSplat.to_str(), "worldlabs_splat");
       assert_eq!(InferenceJobProductCategory::TtsGptSoVits.to_str(), "tts_gpt_so_vits");
       assert_eq!(InferenceJobProductCategory::TtsStyleTts2.to_str(), "tts_style_tts2");
@@ -393,6 +420,7 @@ mod tests {
     #[test]
     fn from_str() {
       assert_eq!(InferenceJobProductCategory::from_str("download_gpt_so_vits").unwrap(), InferenceJobProductCategory::DownloadGptSoVits);
+      assert_eq!(InferenceJobProductCategory::from_str("artcraft_minimax_h3").unwrap(), InferenceJobProductCategory::ArtcraftMinimaxH3);
       assert_eq!(InferenceJobProductCategory::from_str("fal_image").unwrap(), InferenceJobProductCategory::FalImage);
       assert_eq!(InferenceJobProductCategory::from_str("fal_video").unwrap(), InferenceJobProductCategory::FalVideo);
       assert_eq!(InferenceJobProductCategory::from_str("fal_audio").unwrap(), InferenceJobProductCategory::FalAudio);
@@ -407,6 +435,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_audio").unwrap(), InferenceJobProductCategory::Seedance2ProAudio);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video_alt").unwrap(), InferenceJobProductCategory::Seedance2ProVideoAlt);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video_bpu").unwrap(), InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra);
+      assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_image_bpu").unwrap(), InferenceJobProductCategory::Seedance2ProImageBytePlusUltra);
       assert_eq!(InferenceJobProductCategory::from_str("worldlabs_splat").unwrap(), InferenceJobProductCategory::WorldlabsSplat);
       assert_eq!(InferenceJobProductCategory::from_str("tts_gpt_so_vits").unwrap(), InferenceJobProductCategory::TtsGptSoVits);
       assert_eq!(InferenceJobProductCategory::from_str("tts_style_tts2").unwrap(), InferenceJobProductCategory::TtsStyleTts2);
@@ -434,7 +463,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 38;
+      const EXPECTED_COUNT : usize = 40;
 
       assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);

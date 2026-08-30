@@ -1,12 +1,6 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faCube,
-  faImage,
-  faMusic,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -79,6 +73,8 @@ export interface GalleryCardProps {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (item: GalleryItem) => void;
+  /** Persistent badge marking the item most recently viewed in the lightbox. */
+  lastViewed?: boolean;
 }
 
 export const GalleryCard = memo(function GalleryCard({
@@ -90,6 +86,7 @@ export const GalleryCard = memo(function GalleryCard({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  lastViewed = false,
 }: GalleryCardProps) {
   const isSquare = shape === "square";
   const cached = aspectRatioCache.get(item.id);
@@ -99,13 +96,19 @@ export const GalleryCard = memo(function GalleryCard({
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   const mediaIcon = isVideo
-    ? faVideo
+    ? VideoIcon
     : is3D
-      ? faCube
+      ? BoxIcon
       : isAudio
-        ? faMusic
-        : faImage;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
+        ? MusicIcon
+        : ImageIcon;
+  const mediaLabel = isVideo
+    ? "Video"
+    : is3D
+      ? "3D"
+      : isAudio
+        ? "Audio"
+        : "Image";
   const modelDisplayName = item.modelId
     ? getModelDisplayName(item.modelId)
     : null;
@@ -162,7 +165,7 @@ export const GalleryCard = memo(function GalleryCard({
     <div
       role="button"
       tabIndex={0}
-      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : ""}`}
+      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : lastViewed ? "ring-2 ring-primary-400/50" : ""}`}
       style={outerStyle}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -172,7 +175,10 @@ export const GalleryCard = memo(function GalleryCard({
           outside the card's rounded corners without being clipped. */}
       <div
         className="absolute inset-0 overflow-hidden rounded-[inherit]"
-        style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
+        style={{
+          contentVisibility: "auto",
+          containIntrinsicSize: "auto 200px",
+        }}
       >
         {isAudio ? (
           <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
@@ -181,10 +187,9 @@ export const GalleryCard = memo(function GalleryCard({
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
-                <FontAwesomeIcon
-                  icon={faMusic}
-                  className="text-xl text-white/70"
-                />
+                <MusicIcon
+                  
+                  className="text-xl text-white/70" />
               </div>
             </div>
             {item.fullImage && (
@@ -217,15 +222,25 @@ export const GalleryCard = memo(function GalleryCard({
               : "border-white/60 bg-black/40 text-transparent"
           }`}
         >
-          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+          <CheckIcon  className="text-[10px]" />
+        </div>
+      )}
+
+      {/* Persistent "Last viewed" badge (stays until another item is opened
+          in the lightbox). Top-right so it never collides with the selection
+          checkbox chip at top-left. */}
+      {lastViewed && (
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+          <EyeIcon />
+          Last viewed
         </div>
       )}
 
       {/* Hover overlay with media type + model badges and quick actions */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-lg from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
           <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
-            <FontAwesomeIcon icon={mediaIcon} className="text-[10px]" />
+            <DynamicIcon icon={mediaIcon} className="text-[10px]" />
             {mediaLabel}
           </div>
           {modelDisplayName && modelIconPath && (

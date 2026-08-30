@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../select"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

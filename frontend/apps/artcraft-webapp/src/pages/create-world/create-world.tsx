@@ -4,11 +4,7 @@ import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import {
-  faSparkles,
-  faPanorama,
-  faWandMagicSparkles,
-} from "@fortawesome/pro-solid-svg-icons";
+import { RectangleHorizontalIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
 import {
   PromptBox,
   ImagePromptRow,
@@ -287,6 +283,16 @@ export default function CreateWorld() {
     [maxImageRefs, referenceImages, setReferenceImages],
   );
 
+  // Refs already in the deck, greyed out in the picker so the same media file
+  // can't be added twice to the reference list.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -390,8 +396,8 @@ export default function CreateWorld() {
         <Tooltip content="360° panorama input" position="top" closeOnClick>
           <ToggleButton
             isActive={isPanoramic}
-            icon={faPanorama}
-            activeIcon={faPanorama}
+            icon={RectangleHorizontalIcon}
+            activeIcon={RectangleHorizontalIcon}
             label={isPanoramic ? "Panorama" : "Panorama off"}
             onClick={() => setUi({ isPanoramic: !isPanoramic })}
           />
@@ -405,8 +411,8 @@ export default function CreateWorld() {
         >
           <ToggleButton
             isActive={disableRecaption}
-            icon={faWandMagicSparkles}
-            activeIcon={faWandMagicSparkles}
+            icon={WandSparklesIcon}
+            activeIcon={WandSparklesIcon}
             label={disableRecaption ? "No recaption" : "Recaption"}
             onClick={() => setUi({ disableRecaption: !disableRecaption })}
           />
@@ -471,7 +477,7 @@ export default function CreateWorld() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -561,6 +567,7 @@ export default function CreateWorld() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}

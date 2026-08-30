@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleInfo,
-  faClock,
-  faSparkles,
-  faWaveformLines,
-} from "@fortawesome/pro-solid-svg-icons";
+import { AudioLinesIcon, ClockIcon, InfoIcon, SparklesIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { Button, ToggleButton } from "@storyteller/ui-button";
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -33,6 +33,7 @@ import {
   type RefVideo,
   type RefAudio,
   type MentionItem,
+  type StoredCharacter,
 } from "../../components/prompt-box";
 import {
   GenerationGallery,
@@ -70,8 +71,11 @@ import {
 import {
   effectivePromptMaxLength,
   getCreatorIconPathForModelId,
+  getCreatorIconSourceForModelId,
   getModelDescription,
+  getModelFamilyName,
   getModelInfo,
+  modelCreatorFromBackend,
 } from "@storyteller/model-list";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -79,7 +83,7 @@ import { toast } from "../../components/toast/toast";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
-const DEFAULT_MODEL_ID = "seedance_2p0";
+const DEFAULT_MODEL_ID = "seedance_2p5";
 
 // Models where character @-mentions are intentionally held back in the UI for now,
 // even though the API reports character_references_supported. Remove an entry to enable.
@@ -141,13 +145,6 @@ const LABEL_TO_BITRATE: Record<string, string> = Object.fromEntries(
 
 // ── Model lookup ─────────────────────────────────────────────────────────
 
-// Placeholder entries shown in the picker as disabled "SOON" items. These are
-// UI-only — they are not in `_modelLookup`, so the click handler is a no-op
-// (the `disabled` flag also prevents the row from firing).
-const COMING_SOON_MODELS: ReadonlyArray<{ id: string; label: string }> = [
-  { id: "seedance_2p1", label: "Seedance 2.5" },
-];
-
 let _modelLookup = new Map<string, OmniGenVideoModelInfo>();
 
 function buildModelPopoverItems(
@@ -155,40 +152,33 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  const apiItems: PopoverItem[] = models.map((model) => ({
-    label: model.full_name || model.model,
-    selected: model.model === selectedId,
-    description: getModelDescription(model.model, model.extra_info_short),
-    info: getModelInfo(model.model, model.extra_info) || undefined,
-    icon: (
-      <img
-        src={getCreatorIconPathForModelId(model.model)}
-        alt={`${model.model} logo`}
-        className="h-4 w-4 icon-auto-contrast"
-      />
-    ),
-    action: model.model,
-  }));
-  const comingSoonItems: PopoverItem[] = COMING_SOON_MODELS.map(
-    ({ id, label }) => ({
-      label,
-      selected: false,
-      disabled: true,
+  return models.map((model) => {
+    const badges = [
+      ...(model.show_generate_with_sound_toggle
+        ? [{ label: "Audio Support" }]
+        : []),
+      ...(model.ending_keyframe_supported ? [{ label: "Start/End" }] : []),
+      ...(model.image_references_supported ? [{ label: "Reference" }] : []),
+    ];
+    const iconSource = getCreatorIconSourceForModelId(model.model);
+    return {
+      label: model.full_name || model.model,
+      selected: model.model === selectedId,
+      description: getModelDescription(model.model, model.extra_info_short),
+      info: getModelInfo(model.model, model.extra_info) || undefined,
+      badges: badges.length > 0 ? badges : undefined,
       icon: (
         <img
-          src={getCreatorIconPathForModelId(id)}
-          alt={`${id} logo`}
-          className="h-5 w-5 icon-auto-contrast"
+          src={iconSource.src}
+          alt={`${model.model} logo`}
+          className={
+            iconSource.isColor ? "h-4 w-4" : "h-4 w-4 icon-auto-contrast"
+          }
         />
       ),
-      trailing: (
-        <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-          Soon
-        </span>
-      ),
-    }),
-  );
-  return [...apiItems, ...comingSoonItems];
+      action: model.model,
+    };
+  });
 }
 
 function buildSizePopoverItems(
@@ -443,6 +433,19 @@ export default function CreateVideo() {
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
 
+  // Mentions are plain text: with several characters sharing a name,
+  // "@Robot" alone can't identify one. Records which token the user actually
+  // picked (dropdown, modal, or chip-menu replace), keyed by name.
+  const [mentionSelections, setMentionSelections] = useState<
+    Record<string, string>
+  >({});
+
+  const handleMentionSelect = useCallback((item: MentionItem) => {
+    if (item.type !== "character" || !item.token) return;
+    const name = item.label.replace(/^@/, "");
+    setMentionSelections((prev) => ({ ...prev, [name]: item.token! }));
+  }, []);
+
   // Load characters on mount if not already loaded
   useEffect(() => {
     if (charactersLoaded) return;
@@ -456,6 +459,7 @@ export default function CreateVideo() {
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
+              full_image_url: c.maybe_full_image?.cdn_url,
             })),
           );
         }
@@ -553,7 +557,19 @@ export default function CreateVideo() {
 
   const lightbox = useLightboxNav(flatItems);
 
-  // Cost estimate
+  // Cost estimate. The input durations are estimate-only hints: models like
+  // Seedance 2.5 bill reference-video input seconds, and sending the
+  // durations lets the quote match what generation will bill (generation
+  // itself measures the real files server-side).
+  const totalInputVideoDurationMillis =
+    isReferenceMode && referenceVideos.length > 0
+      ? referenceVideos.reduce((sum, vid) => sum + vid.duration, 0) * 1000
+      : undefined;
+  const totalInputAudioDurationMillis =
+    isReferenceMode && referenceAudios.length > 0
+      ? referenceAudios.reduce((sum, aud) => sum + aud.duration, 0) * 1000
+      : undefined;
+
   const estimatedCredits = useVideoCostEstimate({
     model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
@@ -565,7 +581,10 @@ export default function CreateVideo() {
     hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
     isReferenceMode,
     referenceImageCount: isReferenceMode ? referenceImages.length : 0,
+    referenceVideoCount: isReferenceMode ? referenceVideos.length : 0,
     generateAudio: hasSound ? generateWithSound : undefined,
+    totalInputVideoDurationMillis,
+    totalInputAudioDurationMillis,
   });
 
   // Character @-mentions are driven by the model's capability flag (set by the
@@ -584,6 +603,10 @@ export default function CreateVideo() {
             label: `@Image${i + 1}`,
             type: "image" as const,
             preview: img.url,
+            // `url` is the thumbnail — the chip Preview modal renders at
+            // natural size, so it needs the full-res image (same fallback
+            // the deck cards use).
+            fullPreview: img.fullUrl ?? img.url,
           })),
           ...referenceVideos.map((vid, i) => ({
             label: `@Video${i + 1}`,
@@ -601,6 +624,8 @@ export default function CreateVideo() {
       label: `@${char.name}`,
       type: "character" as const,
       preview: char.avatar_image_url,
+      token: char.character_token,
+      fullPreview: char.full_image_url ?? char.avatar_image_url,
     }));
     return [...refItems, ...charItems];
   }, [
@@ -611,10 +636,10 @@ export default function CreateVideo() {
     activeCharacters,
   ]);
 
-  // Seedance 2.0 models support @-mention references in the prompt — once at
+  // Seedance 2.x models support @-mention references in the prompt — once at
   // least one ref is attached, surface that in the placeholder.
   const isSeedance2Model = (selectedModel?.model ?? "").startsWith(
-    "seedance_2p0",
+    "seedance_2",
   );
   const hasUploadedRefs =
     referenceImages.length > 0 ||
@@ -628,6 +653,25 @@ export default function CreateVideo() {
   const modelItems = useMemo(
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
     [apiModels, selectedModel?.model],
+  );
+  // Family-grouped variant for the desktop picker. The mobile bottom sheet
+  // keeps the flat `modelItems` (no flyouts on touch).
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const groupedModelItems = useMemo(
+    () =>
+      modelPickerStyle === "grouped"
+        ? groupModelItems(modelItems, (item) =>
+            getModelFamilyName(
+              item.action,
+              modelCreatorFromBackend(
+                item.action
+                  ? _modelLookup.get(item.action)?.model_creator
+                  : undefined,
+              ),
+            ),
+          )
+        : modelItems,
+    [modelItems, modelPickerStyle],
   );
   const sizeItems = useMemo(
     () =>
@@ -1141,6 +1185,34 @@ export default function CreateVideo() {
     setIsEndFramePickerOpen(false);
   }, []);
 
+  // Each picker only greys out tokens already in its own slot, so the same
+  // media file can't be added twice to one field. Reusing an image across
+  // slots (e.g. the same image as start AND end frame) stays allowed.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
+  const usedEndFrameTokens = useMemo(
+    () => (endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : []),
+    [endFrameImage],
+  );
+
+  const usedVideoTokens = useMemo(
+    () =>
+      referenceVideos.map((v) => v.mediaToken).filter((t): t is string => !!t),
+    [referenceVideos],
+  );
+
+  const usedAudioTokens = useMemo(
+    () =>
+      referenceAudios.map((a) => a.mediaToken).filter((t): t is string => !!t),
+    [referenceAudios],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -1207,27 +1279,35 @@ export default function CreateVideo() {
             .filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
 
-    // Extract character tokens from @-mentions in the prompt. Match longest
-    // names first and require a non-word boundary after so `@Bob` doesn't
-    // false-match inside `@Bobby`, and only pick up characters that still
-    // exist in the current store (stale names are ignored).
-    const mentionedCharacters = (() => {
+    // Extract character tokens from @-mentions in the prompt, resolving to
+    // exactly one token per mentioned name. Match longest names first and
+    // require a non-word boundary after so `@Bob` doesn't false-match inside
+    // `@Bobby`, and only pick up characters that still exist in the current
+    // store (stale names are ignored). Several characters can share a name;
+    // prefer the user's explicit pick (mentionSelections), else the newest
+    // (store is newest-first).
+    const mentionedTokens = (() => {
       if (activeCharacters.length === 0) return [];
-      const sorted = [...activeCharacters].sort(
-        (a, b) => b.name.length - a.name.length,
-      );
-      const matched = new Set<string>();
-      for (const c of sorted) {
-        const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const regex = new RegExp(`@${escaped}(?![\\w])`);
-        if (regex.test(prompt)) matched.add(c.character_token);
+      const byName = new Map<string, StoredCharacter[]>();
+      for (const c of activeCharacters) {
+        byName.set(c.name, [...(byName.get(c.name) ?? []), c]);
       }
-      return activeCharacters.filter((c) => matched.has(c.character_token));
+      const names = [...byName.keys()].sort((a, b) => b.length - a.length);
+      const tokens: string[] = [];
+      for (const name of names) {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        if (!new RegExp(`@${escaped}(?![\\w])`).test(prompt)) continue;
+        const candidates = byName.get(name)!;
+        const chosen =
+          candidates.find(
+            (c) => c.character_token === mentionSelections[name],
+          ) ?? candidates[0];
+        tokens.push(chosen.character_token);
+      }
+      return tokens;
     })();
     const referenceCharacterTokens =
-      mentionedCharacters.length > 0
-        ? mentionedCharacters.map((c) => c.character_token)
-        : undefined;
+      mentionedTokens.length > 0 ? mentionedTokens : undefined;
 
     const baseParams = {
       prompt: prompt.trim(),
@@ -1402,14 +1482,15 @@ export default function CreateVideo() {
       credits={estimatedCredits}
       placeholder={promptPlaceholder}
       mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
+      onMentionSelect={handleMentionSelect}
+      mentionSelections={mentionSelections}
       autoAdvance={loggedIn && !!prompt.trim() && !isGenerating && !needsImage}
       banner={
         requiresImageInput ? (
           <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100">
-            <FontAwesomeIcon
-              icon={faCircleInfo}
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400"
-            />
+            <InfoIcon
+              
+              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
             <span>
               This model can&apos;t generate from text alone — add a starting
               frame to animate your prompt.
@@ -1487,13 +1568,13 @@ export default function CreateVideo() {
           {hasSound && (
             <div className="flex items-center justify-between rounded-xl border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
               <span className="flex items-center gap-2 text-sm font-medium text-base-fg/70">
-                <FontAwesomeIcon icon={faWaveformLines} className="h-4 w-4" />
+                <AudioLinesIcon  className="h-4 w-4" />
                 Audio
               </span>
               <ToggleButton
                 isActive={generateWithSound}
-                icon={faWaveformLines}
-                activeIcon={faWaveformLines}
+                icon={AudioLinesIcon}
+                activeIcon={AudioLinesIcon}
                 label={generateWithSound ? "On" : "Off"}
                 onClick={() => setUi({ generateWithSound: !generateWithSound })}
               />
@@ -1503,7 +1584,7 @@ export default function CreateVideo() {
             <>
               <MobileFieldButton
                 label="Output"
-                icon={<FontAwesomeIcon icon={faClock} className="h-4 w-4" />}
+                icon={<ClockIcon  className="h-4 w-4" />}
                 value={outputSummary}
                 onClick={() => setIsOutputDrawerOpen(true)}
               />
@@ -1606,7 +1687,7 @@ export default function CreateVideo() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -1646,7 +1727,7 @@ export default function CreateVideo() {
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
+              <TriangleAlertIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
                 Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
                 Seedance may reject safe inputs unexpectedly. Try several short generations before longer ones.
@@ -1655,10 +1736,9 @@ export default function CreateVideo() {
           )} */}
           {requiresImageInput && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100 shadow-lg backdrop-blur-sm">
-              <FontAwesomeIcon
-                icon={faCircleInfo}
-                className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400"
-              />
+              <InfoIcon
+                
+                className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
               <span>
                 This model can&apos;t generate from text alone — add a starting
                 frame to animate your prompt.
@@ -1700,11 +1780,11 @@ export default function CreateVideo() {
                 closeOnClick
               >
                 <PopoverMenu
-                  items={modelItems}
+                  items={groupedModelItems}
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-[360px]"
+                  panelClassName="w-[280px]"
                   richList
                   triggerIcon={
                     <img
@@ -1727,6 +1807,8 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
+            onMentionSelect={handleMentionSelect}
+            mentionSelections={mentionSelections}
             videoRefsSupported={supportsVideoRefs}
             referenceVideos={referenceVideos}
             onReferenceVideosChange={setReferenceVideos}
@@ -1819,10 +1901,9 @@ export default function CreateVideo() {
                       mode="default"
                       panelTitle="Duration"
                       triggerIcon={
-                        <FontAwesomeIcon
-                          icon={faClock}
-                          className="h-3.5 w-3.5"
-                        />
+                        <ClockIcon
+                          
+                          className="h-3.5 w-3.5" />
                       }
                       triggerLabel={`${effectiveDuration}s`}
                     >
@@ -1860,8 +1941,8 @@ export default function CreateVideo() {
                   >
                     <ToggleButton
                       isActive={generateWithSound}
-                      icon={faWaveformLines}
-                      activeIcon={faWaveformLines}
+                      icon={AudioLinesIcon}
+                      activeIcon={AudioLinesIcon}
                       onClick={() =>
                         setUi({ generateWithSound: !generateWithSound })
                       }
@@ -1909,6 +1990,7 @@ export default function CreateVideo() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}
@@ -1920,6 +2002,7 @@ export default function CreateVideo() {
             isOpen={isEndFramePickerOpen}
             onClose={() => setIsEndFramePickerOpen(false)}
             selectedItemIds={endFramePickerSelectedIds}
+            disabledItemIds={usedEndFrameTokens}
             onSelectItem={handleEndFramePickerSelect}
             maxSelections={1}
             onUseSelected={handleEndFrameLibrarySelect}
@@ -1931,6 +2014,7 @@ export default function CreateVideo() {
             isOpen={isVideoRefPickerOpen}
             onClose={() => setIsVideoRefPickerOpen(false)}
             selectedItemIds={videoRefPickerSelectedIds}
+            disabledItemIds={usedVideoTokens}
             onSelectItem={handleVideoRefPickerSelect}
             maxSelections={videoRefPickerMax}
             onUseSelected={handleLibraryVideoSelect}
@@ -1942,6 +2026,7 @@ export default function CreateVideo() {
             isOpen={isAudioRefPickerOpen}
             onClose={() => setIsAudioRefPickerOpen(false)}
             selectedItemIds={audioRefPickerSelectedIds}
+            disabledItemIds={usedAudioTokens}
             onSelectItem={handleAudioRefPickerSelect}
             maxSelections={audioRefPickerMax}
             onUseSelected={handleLibraryAudioSelect}
@@ -1956,6 +2041,10 @@ export default function CreateVideo() {
               const spaceBefore =
                 prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
               setPrompt(prompt + spaceBefore + mention + " ");
+              setMentionSelections((prev) => ({
+                ...prev,
+                [character.name]: character.token,
+              }));
               setIsCharactersModalOpen(false);
             }}
           />

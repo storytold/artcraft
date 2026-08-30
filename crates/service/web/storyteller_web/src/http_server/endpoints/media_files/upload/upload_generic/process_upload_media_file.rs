@@ -20,6 +20,7 @@ use mysql_queries::queries::media_files::create::insert_builder::media_file_inse
 use mysql_queries::queries::media_files::create::specialized_insert::insert_media_file_from_file_upload::{insert_media_file_from_file_upload, InsertMediaFileFromUploadArgs, UploadType};
 use tokens::tokens::media_files::MediaFileToken;
 
+use crate::http_server::endpoints::media_files::upload::common_utils::read_upload_session::read_upload_session;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_generic::drain_multipart_request::{drain_multipart_request, MediaFileUploadSource};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -65,32 +66,20 @@ pub async fn process_upload_media_file(
 
   // ==================== READ SESSION ==================== //
 
-  let maybe_user_session = server_state
-      .session_checker
-      .maybe_get_user_session_from_connection(http_request, &mut mysql_connection)
-      .await
-      .map_err(|e| {
-        error!("Session checker error: {:?}", e);
-        MediaFileUploadError::ServerError
-      })?;
+  // API-key / MCP-session (Authorization header) or optional web-session (cookie) callers;
+  // banned users are rejected inside.
+  let session_auth = read_upload_session(http_request, server_state, &mut mysql_connection).await?;
 
   let maybe_avt_token = server_state
       .avt_cookie_manager
       .get_avt_token_from_request(&http_request);
 
-  // ==================== BANNED USERS ==================== //
-
-  if let Some(ref user) = maybe_user_session {
-    if user.is_banned {
-      return Err(MediaFileUploadError::NotAuthorized);
-    }
-  }
-
   // ==================== RATE LIMIT ==================== //
 
-  let rate_limiter = match maybe_user_session {
-    None => &server_state.redis_rate_limiters.file_upload_logged_out,
-    Some(ref _session) => &server_state.redis_rate_limiters.file_upload_logged_in,
+  let rate_limiter = if session_auth.is_logged_in() {
+    &server_state.redis_rate_limiters.file_upload_logged_in
+  } else {
+    &server_state.redis_rate_limiters.file_upload_logged_out
   };
 
   if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
@@ -132,18 +121,12 @@ pub async fn process_upload_media_file(
         error!("Invalid visibility: {:?}", err);
         MediaFileUploadError::BadInput("invalid visibility".to_string())
       })?
-      .or_else(|| {
-        maybe_user_session
-            .as_ref()
-            .map(|user_session| user_session.preferred_tts_result_visibility)
-      })
+      .or_else(|| session_auth.maybe_preferred_visibility())
       .unwrap_or(Visibility::default());
 
   let ip_address = get_request_ip(&http_request);
 
-  let maybe_user_token = maybe_user_session
-      .as_ref()
-      .map(|session| session.get_user_token());
+  let maybe_user_token = session_auth.maybe_user_token();
 
   let maybe_file_size_bytes = upload_media_request.file_bytes
       .as_ref()

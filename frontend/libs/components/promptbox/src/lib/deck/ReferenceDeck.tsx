@@ -1,13 +1,6 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashAlt } from "@fortawesome/pro-solid-svg-icons";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import {
   DndContext,
@@ -174,6 +167,11 @@ export const ReferenceDeck = ({
 
   const handleRootEnter = () => {
     clearCloseTimer();
+    // The add menu is body-portaled, so hovering it counts as leaving the
+    // root and decays `hovered` (the panel stays up via addMenuOpen). Coming
+    // back onto the open panel must re-arm `hovered`, or it would collapse
+    // under the cursor the moment the menu closes.
+    if (expanded) setHovered(true);
   };
 
   const handleRootLeave = () => {
@@ -215,6 +213,11 @@ export const ReferenceDeck = ({
         interactive={true}
         position="top"
         delay={100}
+        // Body-portaled: rendered inline, the menu is trapped in the
+        // promptbox's .glass stacking context and paints under the fixed
+        // z-30 sidebar no matter its own z-index.
+        portal
+        zIndex={9999}
         className="-mb-0.5 border border-ui-controls-border bg-ui-controls p-1.5 text-base-fg"
         closeOnClick={true}
         onOpenChange={holdPanel ? setAddMenuOpen : undefined}
@@ -251,7 +254,7 @@ export const ReferenceDeck = ({
             onClick={handleAddClick}
             className="glass flex aspect-square w-14 -rotate-6 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all duration-200 hover:rotate-0 hover:scale-105 hover:bg-ui-controls/60 dark:border-white/25"
           >
-            <FontAwesomeIcon icon={faPlus} className="text-lg opacity-80" />
+            <PlusIcon className="text-lg opacity-80" />
             <span className="text-[9px] font-medium leading-none opacity-70">
               {emptyLabel}
             </span>
@@ -268,8 +271,10 @@ export const ReferenceDeck = ({
     <div
       className={twMerge(
         "glass w-max rounded-xl border border-white/10 p-2 shadow-2xl",
+        // In-flow (fullscreen modal): cap at the container width so the
+        // cards wrap into rows instead of overflowing the modal.
         alwaysExpanded
-          ? "relative"
+          ? "relative max-w-full"
           : twMerge(
               "absolute bottom-0 left-0 z-40 origin-bottom-left transition-all duration-200 ease-out",
               expanded
@@ -293,12 +298,19 @@ export const ReferenceDeck = ({
             onClick={onClearAll}
             className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-base-fg/60 transition-colors hover:text-red-400"
           >
-            <FontAwesomeIcon icon={faTrashAlt} className="h-2.5 w-2.5" />
+            <Trash2Icon className="h-2.5 w-2.5" />
             Clear all
           </button>
         </div>
       )}
-      <div className="flex flex-wrap gap-2">
+      {/* Rows are 56px cards + 8px gap; cap at three rows in the fullscreen
+          modal and scroll past that so a huge deck can't crush the editor. */}
+      <div
+        className={twMerge(
+          "flex flex-wrap gap-2",
+          alwaysExpanded && "max-h-[184px] overflow-y-auto overscroll-contain",
+        )}
+      >
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -352,7 +364,7 @@ export const ReferenceDeck = ({
               onClick={handleAddClick}
               className="glass flex aspect-square w-14 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all hover:bg-ui-controls/60 dark:border-white/25"
             >
-              <FontAwesomeIcon icon={faPlus} className="text-xl opacity-80" />
+              <PlusIcon className="text-xl opacity-80" />
             </button>,
           )}
       </div>
@@ -361,7 +373,16 @@ export const ReferenceDeck = ({
 
   if (alwaysExpanded) {
     return (
-      <div className={twMerge("relative flex shrink-0 items-center", className)}>
+      // No shrink-0 here: hosts may place this in a flex row (webapp focus
+      // mode), where the w-max panel makes the root's preferred width the
+      // full unwrapped card row. min-w-0 + shrink lets the root collapse to
+      // the row's width so the panel's max-w-full has a bounded reference.
+      <div
+        className={twMerge(
+          "relative flex min-w-0 max-w-full items-center",
+          className,
+        )}
+      >
         <DeckStyles />
         {expandedPanel}
         <DeckPreviewModal
@@ -419,7 +440,7 @@ export const ReferenceDeck = ({
           ))}
           {overflowCount > 0 && (
             <div className="pointer-events-none absolute -right-1 -top-1 z-10 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
-              +{overflowCount}
+              {items.length}
             </div>
           )}
         </div>
@@ -441,7 +462,7 @@ export const ReferenceDeck = ({
                 onClick={handleAddClick}
                 className="flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-ui-controls text-xs text-base-fg shadow-md transition-all hover:scale-110 hover:brightness-125"
               >
-                <FontAwesomeIcon icon={faPlus} />
+                <PlusIcon />
               </button>,
               false,
             )}

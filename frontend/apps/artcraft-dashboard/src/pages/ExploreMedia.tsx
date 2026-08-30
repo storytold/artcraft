@@ -26,9 +26,8 @@ const MEDIA_CLASS_OPTIONS = [
   { value: "", label: "All" },
   { value: "image", label: "Image" },
   { value: "video", label: "Video" },
-  // "dimensional" is the deprecated pre-split class; rows persist until the
-  // backfill lands, so the 3D filter matches all three classes.
-  { value: "mesh,splat,dimensional", label: "3D" },
+  { value: "mesh", label: "Meshes" },
+  { value: "splat", label: "Splats" },
 ] as const;
 
 const PAGE_SIZE = 24;

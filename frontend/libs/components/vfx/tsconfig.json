@@ -24,6 +24,9 @@
       "path": "../button"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "./tsconfig.lib.json"
     }
   ],

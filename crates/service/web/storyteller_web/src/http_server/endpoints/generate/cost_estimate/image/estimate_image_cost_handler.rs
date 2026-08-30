@@ -142,6 +142,7 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::Seedream4p5 => RouterImageModel::Seedream4p5,
     CommonImageModel::Seedream5Lite => RouterImageModel::Seedream5Lite,
     CommonImageModel::Seedream5p0Pro => RouterImageModel::Seedream5p0Pro,
+    CommonImageModel::Seedream5p0ProUltra => RouterImageModel::Seedream5p0ProUltra,
     CommonImageModel::GrokImagineImage => RouterImageModel::GrokImagineImage,
     CommonImageModel::GrokImagineImageQuality => RouterImageModel::GrokImagineImageQuality,
     CommonImageModel::QwenEdit2511Angles => RouterImageModel::QwenEdit2511Angles,

@@ -39,6 +39,7 @@ import {
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   useGalleryData,
+  useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
@@ -156,7 +157,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
 
   // Open a completed row in the global lightbox (rendered by TopBar's
   // gallery modal); prev/next walk the merged feed order.
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
+
   const openInLightbox = useCallback((item: GalleryItem) => {
+    useLastViewedGenerationStore.getState().setId(item.id);
     const list = flatCompletedRef.current;
     const index = list.findIndex((i) => i.id === item.id);
     galleryModalLightboxNavPrev.value =
@@ -197,6 +201,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
+          lastViewedId={lastViewedId}
           selectable
           selectionBarBottomOffset={promptHeight + 32}
         />

@@ -1,8 +1,8 @@
 import { Button } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import { ReactNode } from "react";
-import { faRightToBracket } from "@fortawesome/pro-solid-svg-icons";
-import { IconDefinition } from "@fortawesome/pro-solid-svg-icons";
+import { LogInIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 export type ReminderType = "default" | "soraLogin" | "artcraftLogin";
@@ -22,7 +22,7 @@ interface ActionReminderModalProps {
   isLoading?: boolean;
   openAiLogo?: string;
   modalClassName?: string;
-  primaryActionIcon?: IconDefinition;
+  primaryActionIcon?: LucideIcon;
   primaryActionBtnClassName?: string;
 }
 
@@ -40,13 +40,13 @@ export function ActionReminderModal({
   onSecondaryAction,
   isLoading = false,
   modalClassName: customModalClassName = "",
-  primaryActionIcon: customPrimaryActionIcon = faRightToBracket,
+  primaryActionIcon: customPrimaryActionIcon = LogInIcon,
   primaryActionBtnClassName: customPrimaryActionBtnClassName = "",
 }: ActionReminderModalProps) {
   let titleText: string | undefined;
   let messageContent: ReactNode;
   let primaryActionBtnText: string;
-  let primaryActionIcon = faRightToBracket;
+  let primaryActionIcon = LogInIcon;
   let primaryActionBtnClassName = "";
 
   if (!hideTitle) {
@@ -75,7 +75,7 @@ export function ActionReminderModal({
         </p>
       );
       primaryActionBtnText = customPrimaryActionText || "Login with OpenAI";
-      primaryActionIcon = customPrimaryActionIcon || faRightToBracket;
+      primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
     case "artcraftLogin":
@@ -86,7 +86,7 @@ export function ActionReminderModal({
         </p>
       );
       primaryActionBtnText = customPrimaryActionText || "Login / Sign Up";
-      primaryActionIcon = customPrimaryActionIcon || faRightToBracket;
+      primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
     default:
@@ -96,7 +96,7 @@ export function ActionReminderModal({
         </p>
       );
       primaryActionBtnText = customPrimaryActionText || "Proceed";
-      primaryActionIcon = customPrimaryActionIcon || faRightToBracket;
+      primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
   }

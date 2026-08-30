@@ -1,6 +1,7 @@
 pub mod bucket_urls;
 pub mod filter_model_name;
 pub mod get_authorization_header_api_key;
+pub mod get_authorization_header_mcp_private_session_token;
 pub mod get_host_header;
 pub mod get_request_platform_type;
 pub mod handle_multipart_error;
@@ -8,6 +9,7 @@ pub mod job_keepalives;
 pub mod open_zip_archive;
 pub mod read_multipart_field_bytes;
 pub mod redis_rate_limiter;
+pub mod require_internal_api_key;
 pub mod response_error_helpers;
 pub mod response_success_helpers;
 pub mod scoped_temp_dir_creator;

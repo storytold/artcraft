@@ -1,28 +1,28 @@
 import { useContext, useEffect, useRef } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlay,
-  faPause,
-  faBackwardStep,
-  faForwardStep,
-  faChevronUp,
-  faTrash,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronDownIcon, CrosshairIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, TrashIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
-  addClipToCharacter,
+  beginTimelineEdit,
   cancelTimeline,
+  commitTimelineEdit,
   deleteKeyframe,
   pauseTimeline,
   playTimeline,
   saveTimeline,
   seekTimeline,
+  setClipTransitionEasing,
+  setKeyframeEasing,
 } from "../../actions";
+import type { TimelineUndoSnapshot } from "../../engine/editor/TimelineController";
 import { usePageSceneStore } from "../../PageSceneStore";
-import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
 import {
-  ANIMATION_CLIP_MIME,
+  DEFAULT_EASING,
+  DEFAULT_TIMELINE_FPS,
+} from "../../engine/timeline/types";
+import {
   formatTimecode,
   formatTimecodeFrames,
   fractionToTime,
@@ -54,17 +54,42 @@ export const TimelineEditor = () => {
   const selectedKeyframeId = usePageSceneStore(
     (s) => s.timelineSelectedKeyframeId,
   );
+  const selectedClipLaneId = usePageSceneStore(
+    (s) => s.timelineSelectedClipLaneId,
+  );
+  const revealObjectUuid = usePageSceneStore(
+    (s) => s.timelineRevealObjectUuid,
+  );
+  const selectedObject = usePageSceneStore((s) => s.selectedObject);
+  const focusSelected = usePageSceneStore((s) => s.timelineFocusSelected);
+  const setFocusSelected = usePageSceneStore(
+    (s) => s.setTimelineFocusSelected,
+  );
   const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
 
   // Every scene object gets a track row (empty lanes included), so the
   // editor never looks blank while the scene has content — no selection
-  // required to see where keyframes can go.
+  // required to see where keyframes can go. The focus toggle narrows the
+  // list to the selected object's row; with nothing selected (or the
+  // selection not an outliner row) it falls back to showing everything
+  // rather than an empty list.
   const trackByUuid = new Map(tracks.map((t) => [t.objectUuid, t]));
-  const rows = outlinerItems;
+  const focusedRows =
+    focusSelected && selectedObject
+      ? outlinerItems.filter((item) => item.id === selectedObject.id)
+      : [];
+  const rows = focusedRows.length > 0 ? focusedRows : outlinerItems;
 
-  // Only characters get skeletal-animation clip lanes. Clip drags are accepted
-  // on a character's block; other rows ignore them.
+  // Clip-row eligibility: characters and any skinned object (creatures,
+  // rigged uploads) accept animation drags — the bind check still gates the
+  // drop — and any object with baked clips gets a row for its picker even
+  // without a skeleton (baked transform animations play through the mixer
+  // too).
   const characterIds = new Set(characters.map((c) => c.id));
+  const acceptsClipDrops = (item: (typeof rows)[number]) =>
+    characterIds.has(item.id) || !!item.hasSkeleton;
+  const hasClipRow = (item: (typeof rows)[number]) =>
+    acceptsClipDrops(item) || (item.bakedClips?.length ?? 0) > 0;
   const clipLanesByChar = new Map<string, typeof clipLanes>();
   for (const lane of clipLanes) {
     const list = clipLanesByChar.get(lane.objectUuid) ?? [];
@@ -79,6 +104,42 @@ export const TimelineEditor = () => {
   // The Motion popover edits the easing of the segment BETWEEN two
   // keyframes (stored on the left one) and anchors at the segment midpoint.
   const easingKeyframeId = usePageSceneStore((s) => s.timelineEasingKeyframeId);
+  const easingClipLaneIdForUndo = usePageSceneStore(
+    (s) => s.timelineEasingClipLaneId,
+  );
+
+  // One popover session = ONE undo step. The popover's onChange fires per
+  // curve-drag event (raw setKeyframeEasing / setClipTransitionEasing);
+  // snapshot when a popover opens, commit when it closes or retargets —
+  // "Remove transition" rides this same session, so it isn't double-recorded.
+  const easingTarget = easingKeyframeId ?? easingClipLaneIdForUndo ?? null;
+  const easingUndo = useRef<{
+    target: string;
+    before: TimelineUndoSnapshot;
+  } | null>(null);
+  useEffect(() => {
+    if (!editor) return;
+    if (easingUndo.current && easingUndo.current.target !== easingTarget) {
+      commitTimelineEdit(editor, "Edit Easing", easingUndo.current.before);
+      easingUndo.current = null;
+    }
+    if (easingTarget && !easingUndo.current) {
+      easingUndo.current = {
+        target: easingTarget,
+        before: beginTimelineEdit(editor),
+      };
+    }
+  }, [easingTarget, editor]);
+  // Collapse/unmount with a popover open still commits the session.
+  useEffect(
+    () => () => {
+      if (easingUndo.current && editor) {
+        commitTimelineEdit(editor, "Edit Easing", easingUndo.current.before);
+        easingUndo.current = null;
+      }
+    },
+    [editor],
+  );
   let easingAnchor: {
     keyframe: (typeof tracks)[number]["keyframes"][number];
     leftPercent: number;
@@ -99,27 +160,42 @@ export const TimelineEditor = () => {
     }
   }
 
-  // Selected keyframe: Delete/Backspace removes it (capture phase, so the
-  // engine's document-level Delete — which deletes the selected scene
-  // object — never sees the key), and clicking anywhere that isn't a
-  // keyframe or the Delete button deselects it.
+  // Clip gap-transition popover: anchored at the midpoint of the gap between
+  // the leading strip (which stores transitionEasing) and the next strip on
+  // its row. Same lane-area coordinate system as the keyframe popover.
+  const easingClipLaneId = usePageSceneStore((s) => s.timelineEasingClipLaneId);
+  const clipTransitionAnchor = (() => {
+    if (!easingClipLaneId) return null;
+    const lead = clipLanes.find((l) => l.id === easingClipLaneId);
+    if (!lead) return null;
+    const leadEnd = lead.strip.startTime + lead.strip.duration;
+    // Epsilon matches TimelineController.ensureTransitionGap: a strip
+    // trimmed flush can put leadEnd a float hair past the neighbour's start.
+    const next = clipLanes
+      .filter(
+        (l) =>
+          l.objectUuid === lead.objectUuid &&
+          l.id !== lead.id &&
+          l.strip.startTime >= leadEnd - 1e-6,
+      )
+      .sort((a, b) => a.strip.startTime - b.strip.startTime)[0];
+    if (!next) return null;
+    return {
+      laneId: lead.id,
+      easing: lead.strip.transitionEasing ?? DEFAULT_EASING,
+      leftPercent:
+        timeToFraction((leadEnd + next.strip.startTime) / 2, duration) * 100,
+    };
+  })();
+
+  // Deleting the selected keyframe / clip strip via Del/Backspace is NOT
+  // handled here — it's the registry action pagescene.timeline.deleteSelected
+  // (see engine/keymap.ts), whose `when` gate is the exact complement of the
+  // scene-object delete's, so consumption order is decided declaratively
+  // rather than by listener phase. This component only owns click-away
+  // deselection.
   useEffect(() => {
     if (!selectedKeyframeId) return undefined;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      if (editor) deleteKeyframe(editor, selectedKeyframeId);
-      usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
-    };
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (
@@ -130,13 +206,48 @@ export const TimelineEditor = () => {
       }
       usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
     };
-    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
+    return () =>
       document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [selectedKeyframeId]);
+
+  useEffect(() => {
+    if (!selectedClipLaneId) return undefined;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("[data-clip-strip]")) return;
+      usePageSceneStore.getState().setTimelineSelectedClipLane(null);
     };
-  }, [selectedKeyframeId, editor]);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [selectedClipLaneId]);
+
+  // Scroll the row list to the object whose clip was just added
+  // (addClipToCharacter sets the uuid alongside timelineExpanded). A store
+  // field rather than a call because the editor is unmounted while
+  // collapsed: expanding mounts it, this effect runs post-mount with the
+  // uuid already set, scrolls, then clears.
+  useEffect(() => {
+    if (!revealObjectUuid) return;
+    const store = usePageSceneStore.getState();
+    // Focus mode can hide the revealed row (clip dropped onto a character
+    // that isn't the selected object): fall back to all tracks so the new
+    // clip is visible. The effect re-runs off the focusSelected dep once
+    // the row exists, then scrolls.
+    if (
+      store.timelineFocusSelected &&
+      store.selectedObject?.id !== revealObjectUuid
+    ) {
+      store.setTimelineFocusSelected(false);
+      return;
+    }
+    const row = document.querySelector(
+      `[data-timeline-row-uuid="${CSS.escape(revealObjectUuid)}"]`,
+    );
+    row?.scrollIntoView({ block: "nearest" });
+    store.setTimelineRevealObjectUuid(null);
+  }, [revealObjectUuid, focusSelected]);
 
   // Clicking anywhere outside the popover (canvas included) dismisses it;
   // the easing chips opt out so they can toggle it themselves.
@@ -156,6 +267,25 @@ export const TimelineEditor = () => {
     return () =>
       document.removeEventListener("pointerdown", onPointerDown, true);
   }, [easingKeyframeId]);
+
+  // Same dismissal for the clip gap-transition popover (its chips carry
+  // data-transition-chip).
+  useEffect(() => {
+    if (!easingClipLaneId) return undefined;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest("#motion-popover") ||
+        target?.closest("[data-transition-chip]")
+      ) {
+        return;
+      }
+      usePageSceneStore.getState().setTimelineEasingClipLane(null);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [easingClipLaneId]);
 
   const playheadFraction = timeToFraction(playhead, duration);
 
@@ -184,35 +314,6 @@ export const TimelineEditor = () => {
     );
   };
 
-  // Drop an animation clip (dragged from the Animations drawer) onto a
-  // character at the pointer's time. Lane geometry matches the ruler, so the
-  // ruler rect converts pointer-x → time exactly as scrubbing does.
-  const dropClipOnCharacter = (characterId: string, e: React.DragEvent) => {
-    const ruler = rulerRef.current;
-    if (!ruler || !editor) return;
-    const raw = e.dataTransfer.getData(ANIMATION_CLIP_MIME);
-    if (!raw) return;
-    e.preventDefault();
-    let payload: { media_id?: string; name?: string };
-    try {
-      payload = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    if (!payload.media_id) return;
-    const rect = ruler.getBoundingClientRect();
-    const time = quantizeToFrame(
-      fractionToTime((e.clientX - rect.left) / rect.width, duration),
-      fps,
-    );
-    addClipToCharacter(
-      editor,
-      characterId,
-      { media_id: payload.media_id, name: payload.name },
-      time,
-    );
-  };
-
   return (
     <div
       id="timeline-editor"
@@ -228,15 +329,15 @@ export const TimelineEditor = () => {
           onClick={() => editor && seekTimeline(editor, 0)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faBackwardStep} className="h-3.5 w-3.5" />
+          <SkipBackIcon  className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={togglePlay}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/90 hover:bg-white/10"
         >
-          <FontAwesomeIcon
-            icon={isPlaying ? faPause : faPlay}
+          <DynamicIcon
+            icon={isPlaying ? PauseIcon : PlayIcon}
             className="h-3.5 w-3.5"
           />
         </button>
@@ -246,18 +347,44 @@ export const TimelineEditor = () => {
           onClick={() => editor && seekTimeline(editor, duration)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faForwardStep} className="h-3.5 w-3.5" />
+          <SkipForwardIcon  className="h-3.5 w-3.5" />
         </button>
         <span className="ml-2 tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
         </span>
+        {/* ml-auto lives on a wrapper: Tooltip's className styles the popup
+            panel, and its trigger div is hard-coded to "relative". */}
+        <div className="ml-auto">
+          <Tooltip
+            content={
+              focusSelected
+                ? "Show all tracks"
+                : "Show only the selected object's track"
+            }
+            position="top"
+            delay={300}
+            closeOnClick
+          >
+            <button
+              type="button"
+              onClick={() => setFocusSelected(!focusSelected)}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                focusSelected
+                  ? "bg-primary/20 text-white"
+                  : "text-base-fg/60 hover:bg-white/10"
+              }`}
+            >
+              <CrosshairIcon  className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        </div>
         <button
           type="button"
           title="Collapse timeline"
           onClick={() => setExpanded(false)}
-          className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faChevronUp} className="h-3 w-3" />
+          <ChevronDownIcon  className="h-3 w-3" />
         </button>
       </div>
 
@@ -267,6 +394,10 @@ export const TimelineEditor = () => {
           <div className="w-32 shrink-0" />
           <div
             ref={rulerRef}
+            // Tagged so DndAsset can convert an animation drop's pointer-x
+            // into a timeline time using this exact rect (lane geometry
+            // matches the ruler, same conversion scrubbing uses).
+            data-timeline-ruler=""
             className="relative h-5 flex-1 cursor-pointer touch-none text-[10px] text-base-fg/50"
             onPointerDown={(e) => {
               isScrubbing.current = true;
@@ -283,11 +414,41 @@ export const TimelineEditor = () => {
               isScrubbing.current = false;
             }}
           >
-            <span className="absolute left-0">{formatTimecode(0)}</span>
+            {/* labels are centered on their ticks (the edge ones spill a
+                little into the spacer columns, which is intentional) */}
+            <span className="absolute left-0 -translate-x-1/2">
+              {formatTimecode(0)}
+            </span>
             <span className="absolute left-1/2 -translate-x-1/2">
               {formatTimecode(duration / 2)}
             </span>
-            <DurationLabel className="absolute right-0" />
+            <DurationLabel className="absolute right-0 translate-x-1/2" />
+            {/* tick marks in three tiers: major every 5 s, second ticks,
+                and faint sub-ticks between them. Sub-tick density adapts
+                to the timeline length so long timelines don't turn the
+                ruler into a solid smear. */}
+            {(() => {
+              const subsPerSecond = duration <= 15 ? 4 : duration <= 30 ? 2 : 1;
+              const count = Math.floor(duration * subsPerSecond) + 1;
+              return Array.from({ length: count }, (_, i) => {
+                const t = i / subsPerSecond;
+                const isSecond = i % subsPerSecond === 0;
+                const isMajor = isSecond && t % 5 === 0;
+                return (
+                  <span
+                    key={i}
+                    className={`pointer-events-none absolute bottom-0 w-px ${
+                      isMajor
+                        ? "h-2 bg-white/30"
+                        : isSecond
+                          ? "h-1.5 bg-white/20"
+                          : "h-1 bg-white/10"
+                    }`}
+                    style={{ left: `${timeToFraction(t, duration) * 100}%` }}
+                  />
+                );
+              });
+            })()}
           </div>
           <div className="w-7 shrink-0" />
         </div>
@@ -304,34 +465,33 @@ export const TimelineEditor = () => {
              alignment with the ruler-driven playhead. */
           <div className="max-h-[154px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {rows.map((item) => {
-              const isCharacter = characterIds.has(item.id);
-              const lanes = isCharacter ? clipLanesByChar.get(item.id) : undefined;
+              const droppable = acceptsClipDrops(item);
+              const clipRow = hasClipRow(item);
+              const lanes = clipRow ? clipLanesByChar.get(item.id) : undefined;
               return (
+                /* Clip-eligible rows advertise themselves as drop targets;
+                   DndAsset hit-tests this attribute during animation drags
+                   (pointer-based — no HTML5 DnD). Other rows stay untagged.
+                   data-timeline-row-uuid tags EVERY row; it's the scroll
+                   target for the post-add reveal effect above. */
                 <div
                   key={item.id}
-                  onDragOver={
-                    isCharacter
-                      ? (e) => {
-                          // Allow the drop only when it carries an animation clip.
-                          if (e.dataTransfer.types.includes(ANIMATION_CLIP_MIME)) {
-                            e.preventDefault();
-                          }
-                        }
-                      : undefined
-                  }
-                  onDrop={
-                    isCharacter
-                      ? (e) => dropClipOnCharacter(item.id, e)
-                      : undefined
-                  }
+                  data-timeline-row-uuid={item.id}
+                  data-clip-drop-uuid={droppable ? item.id : undefined}
                 >
                   <TimelineTrackRow
                     item={item}
                     track={trackByUuid.get(item.id)}
                     duration={duration}
                   />
-                  {isCharacter && (
-                    <TimelineClipRow lanes={lanes ?? []} duration={duration} />
+                  {clipRow && (
+                    <TimelineClipRow
+                      objectUuid={item.id}
+                      lanes={lanes ?? []}
+                      duration={duration}
+                      bakedClips={item.bakedClips}
+                      droppable={droppable}
+                    />
                   )}
                 </div>
               );
@@ -355,18 +515,61 @@ export const TimelineEditor = () => {
         </div>
 
         {/* Anchor the popover in the lane area (same geometry as the
-            playhead overlay) so its left % lines up with the easing chip. */}
-        {easingAnchor && (
+            playhead overlay) so its left % lines up with the easing chip.
+            Keyframe easing takes priority over a clip transition so the two
+            popovers (which share #motion-popover) never render together. */}
+        {easingAnchor ? (
           <div
             className="pointer-events-none absolute inset-y-0"
             style={{ left: LANE_LEFT, right: LANE_RIGHT }}
           >
             <MotionPopover
-              keyframe={easingAnchor.keyframe}
+              easing={easingAnchor.keyframe.easing}
+              onChange={(next) =>
+                editor &&
+                setKeyframeEasing(editor, easingAnchor.keyframe.id, next)
+              }
               leftPercent={easingAnchor.leftPercent}
             />
           </div>
-        )}
+        ) : clipTransitionAnchor ? (
+          <div
+            className="pointer-events-none absolute inset-y-0"
+            style={{ left: LANE_LEFT, right: LANE_RIGHT }}
+          >
+            <MotionPopover
+              title="Transition"
+              easing={clipTransitionAnchor.easing}
+              onChange={(next) =>
+                editor &&
+                setClipTransitionEasing(
+                  editor,
+                  clipTransitionAnchor.laneId,
+                  next,
+                )
+              }
+              leftPercent={clipTransitionAnchor.leftPercent}
+              footer={
+                <button
+                  type="button"
+                  className="mt-2 w-full rounded-md border border-ui-controls-border/60 px-2 py-1.5 text-[11px] text-base-fg/80 transition-colors hover:bg-ui-controls/40"
+                  onClick={() => {
+                    if (editor) {
+                      setClipTransitionEasing(
+                        editor,
+                        clipTransitionAnchor.laneId,
+                        null,
+                      );
+                    }
+                    usePageSceneStore.getState().setTimelineEasingClipLane(null);
+                  }}
+                >
+                  Remove transition
+                </button>
+              }
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* footer */}
@@ -383,7 +586,7 @@ export const TimelineEditor = () => {
             <div data-keyframe-delete>
               <Button
                 variant="secondary"
-                icon={faTrash}
+                icon={TrashIcon}
                 className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg hover:bg-ui-controls/90"
                 onClick={() =>
                   editor && deleteKeyframe(editor, selectedKeyframe.id)

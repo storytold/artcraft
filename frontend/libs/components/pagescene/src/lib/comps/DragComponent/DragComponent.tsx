@@ -12,7 +12,7 @@ export const DragComponent = () => (
     height={120}
     crossOrigin="anonymous"
     getState={() => {
-      const { dragItem, dragPosition, assetDraggingUnder } =
+      const { dragItem, dragPosition, assetDraggingUnder, animationDropState } =
         usePageSceneStore.getState();
       if (!dragItem || !assetDraggingUnder) return null;
       const thumbnail =
@@ -23,6 +23,12 @@ export const DragComponent = () => (
         y: dragPosition.currY,
         thumbnail,
         label: dragItem.name || dragItem.media_id,
+        // Animation drags validate their target live; "checking" renders no
+        // badge (verdict unknown while the clip is still loading).
+        indicator:
+          animationDropState === "ok" || animationDropState === "blocked"
+            ? animationDropState
+            : undefined,
       };
     }}
   />

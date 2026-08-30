@@ -1,5 +1,4 @@
-import { faCopy } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CopyIcon } from "lucide-react";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PROMPT_TOOLBAR_ICON_BUTTON_CLASSES } from "@storyteller/ui-promptbox";
@@ -79,7 +78,7 @@ export const GenerationCountPicker = ({
         onSelect={onSelect}
         mode="toggle"
         panelTitle={panelTitle}
-        triggerIcon={<FontAwesomeIcon icon={faCopy} className="h-4 w-4" />}
+        triggerIcon={<CopyIcon  className="h-4 w-4" />}
         buttonClassName={twMerge(PROMPT_TOOLBAR_ICON_BUTTON_CLASSES, "w-11")}
       />
     </Tooltip>

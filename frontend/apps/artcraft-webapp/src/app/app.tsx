@@ -7,8 +7,8 @@ import {
   useLocation,
   useNavigationType,
 } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
+import { useGlobalKeybinds } from "@storyteller/keybinds";
 import Home from "../pages/home";
 import Media from "../pages/media";
 import { ToastContainer } from "../components/toast/toast";
@@ -63,10 +63,9 @@ function ScrollToTop() {
 function AuthCheckSpinner() {
   return (
     <div className="flex h-screen items-center justify-center bg-[#101014]">
-      <FontAwesomeIcon
-        icon={faSpinnerThird}
-        className="animate-spin text-4xl text-primary/80"
-      />
+      <LoaderCircleIcon
+        
+        className="animate-spin text-4xl text-primary/80" />
     </div>
   );
 }
@@ -136,6 +135,11 @@ function ProtectedLayout() {
 }
 
 export function App() {
+  // App-shell mount of the global keybind dispatcher (window capture phase,
+  // so global actions like Ctrl+B keep working over open modals). Features
+  // register their behavior via useGlobalAction — see @storyteller/keybinds.
+  useGlobalKeybinds();
+
   return (
     <>
       <ScrollToTop />

@@ -3,6 +3,12 @@
   "include": [],
   "references": [
     {
+      "path": "../keybinds"
+    },
+    {
+      "path": "../tab-selector"
+    },
+    {
       "path": "../button-icon"
     },
     {
@@ -12,10 +18,10 @@
       "path": "../label"
     },
     {
-      "path": "../button-icon-select"
+      "path": "../button-dropdown"
     },
     {
-      "path": "../tab-selector"
+      "path": "../button-icon-select"
     },
     {
       "path": "../badge"
@@ -27,16 +33,13 @@
       "path": "../close-button"
     },
     {
+      "path": "../button"
+    },
+    {
       "path": "../modal"
     },
     {
       "path": "../checkbox"
-    },
-    {
-      "path": "../button"
-    },
-    {
-      "path": "../button-dropdown"
     },
     {
       "path": "../promptbox"
@@ -70,6 +73,9 @@
     },
     {
       "path": "../../common"
+    },
+    {
+      "path": "../../icons"
     },
     {
       "path": "./tsconfig.lib.json"

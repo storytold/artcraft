@@ -1,10 +1,6 @@
 import * as THREE from "three";
-import {
-  IconDefinition,
-  faCamera,
-  faCube,
-  faPerson,
-} from "@fortawesome/pro-solid-svg-icons";
+import { BoxIcon, CameraIcon, PersonStandingIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Scene from "./scene";
 import { MouseControls } from "./keybinds_controls";
 import { ClipGroup, AssetType } from "../enums";
@@ -18,12 +14,21 @@ import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
   id: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   name: string;
   type: string;
   visible: boolean;
   locked: boolean;
   isCamera: boolean;
+  // True when the object contains a SkinnedMesh — it can accept skeletal
+  // animation clips (subject to the bone-name bind check).
+  hasSkeleton: boolean;
+  // Whether the persistent skeleton overlay is toggled on (userData flag).
+  skeletonVisible: boolean;
+  // Display names of the clips baked into the object's own GLB
+  // (object.animations), in index order. Empty for objects without baked
+  // animations.
+  bakedClips: string[];
 };
 
 export interface SceneManagerAPI {
@@ -207,22 +212,29 @@ export class SceneManager implements SceneManagerAPI {
     object: THREE.Object3D,
     timeline_characters: { [key: string]: ClipGroup },
   ) {
-    let faicon = faCube;
+    let faicon = BoxIcon;
     let name = object.name;
     // Human-readable kind shown as the outliner row's subtitle.
     let kind = "3D Object";
     if (object.name == "::CAM::") {
-      faicon = faCamera;
+      faicon = CameraIcon;
       name = "Camera";
       kind = "Camera";
     } else if (object.uuid in timeline_characters) {
-      faicon = faPerson;
+      faicon = PersonStandingIcon;
       kind = "Character";
     }
     let locked = object.userData["locked"];
     if (locked == undefined) {
       locked = false;
     }
+    let hasSkeleton = false;
+    object.traverse((child) => {
+      if ((child as THREE.SkinnedMesh).isSkinnedMesh) hasSkeleton = true;
+    });
+    const bakedClips = (object.animations ?? []).map(
+      (clip, index) => clip.name || `Clip ${index + 1}`,
+    );
     return {
       id: object.uuid,
       icon: faicon,
@@ -231,6 +243,9 @@ export class SceneManager implements SceneManagerAPI {
       visible: object.visible,
       locked: object.userData["locked"],
       isCamera: object.name == "::CAM::",
+      hasSkeleton,
+      bakedClips,
+      skeletonVisible: object.userData["skeletonVisible"] === true,
     };
   }
 

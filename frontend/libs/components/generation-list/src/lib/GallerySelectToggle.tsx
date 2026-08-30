@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSquareCheck } from "@fortawesome/pro-solid-svg-icons";
+import { SquareCheckIcon } from "lucide-react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useGallerySelectionStore } from "./gallery-selection-store";
 
@@ -25,7 +24,7 @@ export function GallerySelectToggle() {
               : "text-white/45 hover:text-white/80"
           }`}
         >
-          <FontAwesomeIcon icon={faSquareCheck} />
+          <SquareCheckIcon />
         </button>
       </Tooltip>
     </div>

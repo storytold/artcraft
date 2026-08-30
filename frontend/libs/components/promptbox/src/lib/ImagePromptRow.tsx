@@ -10,21 +10,21 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faImages,
-  faPlay,
-  faPlus,
-  faSpinnerThird,
-  faStop,
-  faTrashAlt,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faImage, faVideo, faMusic } from "@fortawesome/pro-regular-svg-icons";
+import { ImageIcon, ImagesIcon, LoaderCircleIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { RefImage, RefVideo, RefAudio } from "./promptStore";
+import {
+  createImagePreviewUrl,
+  revokeIfBlobUrl,
+} from "./common/imagePreview";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
+import {
+  AUDIO_FILE_ACCEPT,
+  AUDIO_FILE_TYPE_ERROR,
+  isAudioFile,
+} from "./common/audioFiles";
 import {
   DndContext,
   closestCenter,
@@ -124,8 +124,8 @@ const AudioRefTile = ({
         onClick={handleTogglePlay}
         className="flex items-center justify-center w-full h-full"
       >
-        <FontAwesomeIcon
-          icon={isPlaying ? faStop : faPlay}
+        <DynamicIcon
+          icon={isPlaying ? SquareIcon : PlayIcon}
           className={twMerge(
             "h-5 w-5 transition-colors",
             isPlaying
@@ -148,7 +148,7 @@ const AudioRefTile = ({
         }}
         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
       >
-        <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+        <XIcon  className="h-2.5 w-2.5" />
       </button>
     </div>
   );
@@ -185,8 +185,10 @@ export const ImagePromptRow = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const audioFileInputRef = useRef<HTMLInputElement>(null);
+  // `previewUrl` is a downscaled object URL, empty until the downscale
+  // finishes (full-res uploading previews used to OOM-crash iOS tabs).
   const [uploadingImages, setUploadingImages] = useState<
-    { id: string; file: File }[]
+    { id: string; file: File; previewUrl: string }[]
   >([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [galleryTarget, setGalleryTarget] = useState<"start" | "end" | "video">(
@@ -201,6 +203,7 @@ export const ImagePromptRow = ({
   const [uploadingEnd, setUploadingEnd] = useState<{
     id: string;
     file: File;
+    previewUrl: string;
   } | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState<{
     id: string;
@@ -216,6 +219,17 @@ export const ImagePromptRow = ({
   useEffect(() => {
     referenceImagesRef.current = referenceImages;
   }, [referenceImages]);
+
+  // Committed refs land in the caller's store one render before the local
+  // entry removal — commits reuse the entry's id, so hide entries whose ref
+  // is already committed to avoid the card flashing next to its spinner.
+  const visibleUploadingImages = useMemo(
+    () =>
+      uploadingImages.filter(
+        (entry) => !referenceImages.some((img) => img.id === entry.id),
+      ),
+    [uploadingImages, referenceImages],
+  );
 
   const allowReorder = useMemo(
     () => maxImagePromptCount > 1 && referenceImages.length > 1,
@@ -290,7 +304,7 @@ export const ImagePromptRow = ({
           }}
           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
         >
-          <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+          <XIcon  className="h-2.5 w-2.5" />
         </button>
       </div>
     );
@@ -310,28 +324,32 @@ export const ImagePromptRow = ({
     () =>
       Math.min(
         maxImagePromptCount,
-        referenceImages.length + uploadingImages.length,
+        referenceImages.length + visibleUploadingImages.length,
       ),
-    [maxImagePromptCount, referenceImages.length, uploadingImages.length],
+    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
   );
   const availableSlotsRender = useMemo(
     () =>
       Math.max(
         0,
-        maxImagePromptCount - referenceImages.length - uploadingImages.length,
+        maxImagePromptCount -
+          referenceImages.length -
+          visibleUploadingImages.length,
       ),
-    [maxImagePromptCount, referenceImages.length, uploadingImages.length],
+    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
   );
 
   useEffect(() => {
     const anyVisible =
       visible &&
-      (referenceImages.length > 0 || uploadingImages.length > 0 || allowUpload);
+      (referenceImages.length > 0 ||
+        visibleUploadingImages.length > 0 ||
+        allowUpload);
     onVisibilityChange?.(!!anyVisible);
   }, [
     visible,
     referenceImages.length,
-    uploadingImages.length,
+    visibleUploadingImages.length,
     allowUpload,
     onVisibilityChange,
   ]);
@@ -378,6 +396,23 @@ export const ImagePromptRow = ({
     () => referenceVideos.reduce((sum, v) => sum + v.duration, 0),
     [referenceVideos],
   );
+
+  // Tokens already in the slot the picker targets, greyed out in the gallery
+  // so one media file can't be added twice to the same field. Reusing an image
+  // across slots (e.g. start AND end frame) stays allowed.
+  const disabledGalleryIds = useMemo(() => {
+    if (galleryTarget === "video") {
+      return referenceVideos
+        .map((video) => video.mediaToken)
+        .filter((t): t is string => !!t);
+    }
+    if (galleryTarget === "end") {
+      return endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : [];
+    }
+    return referenceImages
+      .map((img) => img.mediaToken)
+      .filter((t): t is string => !!t);
+  }, [galleryTarget, referenceImages, referenceVideos, endFrameImage]);
 
   const handleVideoFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -500,13 +535,18 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR);
+    }
+
     const availableSlots = Math.max(0, maxAudioCount - referenceAudios.length);
-    if (availableSlots <= 0) {
+    if (audioFiles.length === 0 || availableSlots <= 0) {
       if (audioFileInputRef.current) audioFileInputRef.current.value = "";
       return;
     }
 
-    const filesToProcess = files.slice(0, availableSlots);
+    const filesToProcess = audioFiles.slice(0, availableSlots);
 
     for (const file of filesToProcess) {
       const duration = await getAudioDuration(file);
@@ -575,7 +615,8 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const currentCount = referenceImages.length + uploadingImages.length;
+    const currentCount =
+      referenceImages.length + visibleUploadingImages.length;
     const availableSlots = Math.max(0, maxImagePromptCount - currentCount);
     if (availableSlots <= 0 && uploadTarget !== "end") {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -587,83 +628,80 @@ export const ImagePromptRow = ({
         ? files.slice(0, 1)
         : files.slice(0, availableSlots);
 
-    filesToProcess.forEach((file) => {
+    filesToProcess.forEach(async (file) => {
       const uploadId = Math.random().toString(36).substring(7);
       if (uploadTarget === "end") {
-        setUploadingEnd({ id: uploadId, file });
+        setUploadingEnd({ id: uploadId, file, previewUrl: "" });
       } else {
-        setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
+        setUploadingImages((prev) => [
+          ...prev,
+          { id: uploadId, file, previewUrl: "" },
+        ]);
       }
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (uploadImage) {
-          await uploadImage({
-            title: `reference-image-${Math.random()
-              .toString(36)
-              .substring(2, 15)}`,
-            assetFile: file,
-            progressCallback: (newState) => {
-              if (newState.status === UploaderStates.success && newState.data) {
-                const referenceImage: RefImage = {
-                  id: Math.random().toString(36).substring(7),
-                  url: reader.result as string,
-                  file,
-                  mediaToken: newState.data,
-                };
-                if (uploadTarget === "end") {
-                  setUploadingEnd(null);
-                } else {
-                  setUploadingImages((prev) =>
-                    prev.filter((img) => img.id !== uploadId),
-                  );
-                }
-                if (uploadTarget === "end") {
-                  setEndFrameImage?.(referenceImage);
-                } else {
-                  setReferenceImages([
-                    ...referenceImagesRef.current,
-                    referenceImage,
-                  ]);
-                }
-              } else if (
-                newState.status === UploaderStates.assetError ||
-                newState.status === UploaderStates.imageCreateError
-              ) {
-                if (uploadTarget === "end") {
-                  setUploadingEnd(null);
-                } else {
-                  setUploadingImages((prev) =>
-                    prev.filter((img) => img.id !== uploadId),
-                  );
-                }
-              }
-            },
-          });
-        } else {
-          const referenceImage: RefImage = {
-            id: Math.random().toString(36).substring(7),
-            url: reader.result as string,
-            file,
-            mediaToken: "",
-          };
-          if (uploadTarget === "end") {
-            setUploadingEnd(null);
-          } else {
-            setUploadingImages((prev) =>
-              prev.filter((img) => img.id !== uploadId),
-            );
-          }
-          if (uploadTarget === "end") {
-            setEndFrameImage?.(referenceImage);
-          } else {
-            setReferenceImages([...referenceImagesRef.current, referenceImage]);
-          }
-        }
+      // Downscaled preview; the committed thumbnail reuses it while the
+      // original file backs the full-res preview modal via `fullUrl`.
+      const previewUrl = await createImagePreviewUrl(file);
+      if (uploadTarget === "end") {
+        setUploadingEnd((prev) =>
+          prev && prev.id === uploadId ? { ...prev, previewUrl } : prev,
+        );
+      } else {
+        setUploadingImages((prev) =>
+          prev.map((e) => (e.id === uploadId ? { ...e, previewUrl } : e)),
+        );
+      }
 
-        if (fileInputRef.current) fileInputRef.current.value = "";
+      const removeEntry = () => {
+        if (uploadTarget === "end") {
+          setUploadingEnd(null);
+        } else {
+          setUploadingImages((prev) =>
+            prev.filter((img) => img.id !== uploadId),
+          );
+        }
       };
-      reader.readAsDataURL(file);
+
+      const commit = (mediaToken: string) => {
+        // Same id as the uploading entry so the card swaps in place.
+        const referenceImage: RefImage = {
+          id: uploadId,
+          url: previewUrl,
+          fullUrl: URL.createObjectURL(file),
+          file,
+          mediaToken,
+        };
+        removeEntry();
+        if (uploadTarget === "end") {
+          setEndFrameImage?.(referenceImage);
+        } else {
+          setReferenceImages([...referenceImagesRef.current, referenceImage]);
+        }
+      };
+
+      if (uploadImage) {
+        await uploadImage({
+          title: `reference-image-${Math.random()
+            .toString(36)
+            .substring(2, 15)}`,
+          assetFile: file,
+          progressCallback: (newState) => {
+            if (newState.status === UploaderStates.success && newState.data) {
+              commit(newState.data);
+            } else if (
+              newState.status === UploaderStates.assetError ||
+              newState.status === UploaderStates.imageCreateError
+            ) {
+              revokeIfBlobUrl(previewUrl);
+              removeEntry();
+            }
+          },
+        });
+      } else {
+        commit("");
+      }
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
     });
   };
 
@@ -819,7 +857,7 @@ export const ImagePromptRow = ({
             type="file"
             ref={audioFileInputRef}
             className="hidden"
-            accept="audio/*"
+            accept={AUDIO_FILE_ACCEPT}
             onChange={handleAudioFileUpload}
             multiple={maxAudioCount > 1}
           />
@@ -845,7 +883,7 @@ export const ImagePromptRow = ({
             <div className="flex gap-2 py-2 px-3">
               <div className="flex flex-col grow gap-1">
                 <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                  <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                  <ImageIcon  className="h-3.5 w-3.5" />
                   <span className="text-sm font-medium flex items-center gap-1.5">
                     {isVideo
                       ? isReferenceMode
@@ -918,26 +956,24 @@ export const ImagePromptRow = ({
                           }}
                           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                         >
-                          <FontAwesomeIcon
-                            icon={faXmark}
-                            className="h-2.5 w-2.5"
-                          />
+                          <XIcon
+                            
+                            className="h-2.5 w-2.5" />
                         </button>
                       </div>
                     ))
                 )}
-                {uploadingImages
+                {visibleUploadingImages
                   .slice(
                     0,
                     Math.max(0, maxImagePromptCount - referenceImages.length),
                   )
-                  .map(({ id, file }) => {
-                    const previewUrl = URL.createObjectURL(file);
-                    return (
-                      <div
-                        key={id}
-                        className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30"
-                      >
+                  .map(({ id, previewUrl }) => (
+                    <div
+                      key={id}
+                      className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30"
+                    >
+                      {previewUrl && (
                         <div className="absolute inset-0">
                           <img
                             src={previewUrl}
@@ -945,16 +981,15 @@ export const ImagePromptRow = ({
                             className="h-full w-full object-cover blur-sm"
                           />
                         </div>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <FontAwesomeIcon
-                            icon={faSpinnerThird}
-                            className="h-6 w-6 animate-spin text-white"
-                          />
-                        </div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <LoaderCircleIcon
+
+                          className="h-6 w-6 animate-spin text-white" />
                       </div>
-                    );
-                  })}
-                {referenceImages.length + uploadingImages.length <
+                    </div>
+                  ))}
+                {referenceImages.length + visibleUploadingImages.length <
                   maxImagePromptCount && (
                   <Tooltip
                     interactive={true}
@@ -968,7 +1003,7 @@ export const ImagePromptRow = ({
                           <Button
                             variant="primary"
                             onClick={handleUploadClickStart}
-                            icon={faPlus}
+                            icon={PlusIcon}
                             className="w-full"
                           >
                             Upload
@@ -980,7 +1015,7 @@ export const ImagePromptRow = ({
                             setGalleryTarget("start");
                             setIsGalleryModalOpen(true);
                           }}
-                          icon={faImages}
+                          icon={ImagesIcon}
                           className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                         >
                           Pick from library
@@ -999,10 +1034,9 @@ export const ImagePromptRow = ({
                         }
                       }}
                     >
-                      <FontAwesomeIcon
-                        icon={faPlus}
-                        className="text-2xl opacity-80 text-base-fg"
-                      />
+                      <PlusIcon
+                        
+                        className="text-2xl opacity-80 text-base-fg" />
                     </Button>
                   </Tooltip>
                 )}
@@ -1014,7 +1048,7 @@ export const ImagePromptRow = ({
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                      <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                      <ImageIcon  className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         End Frame{" "}
                         <span className="text-base-fg/60 text-xs">
@@ -1045,26 +1079,26 @@ export const ImagePromptRow = ({
                         }}
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <FontAwesomeIcon
-                          icon={faXmark}
-                          className="h-2.5 w-2.5"
-                        />
+                        <XIcon
+                          
+                          className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ) : uploadingEnd ? (
                     <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30">
-                      <div className="absolute inset-0">
-                        <img
-                          src={URL.createObjectURL(uploadingEnd.file)}
-                          alt="Uploading preview"
-                          className="h-full w-full object-cover blur-sm"
-                        />
-                      </div>
+                      {uploadingEnd.previewUrl && (
+                        <div className="absolute inset-0">
+                          <img
+                            src={uploadingEnd.previewUrl}
+                            alt="Uploading preview"
+                            className="h-full w-full object-cover blur-sm"
+                          />
+                        </div>
+                      )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <FontAwesomeIcon
-                          icon={faSpinnerThird}
-                          className="h-6 w-6 animate-spin text-white"
-                        />
+                        <LoaderCircleIcon
+
+                          className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   ) : (
@@ -1080,7 +1114,7 @@ export const ImagePromptRow = ({
                             <Button
                               variant="primary"
                               onClick={handleUploadClickEnd}
-                              icon={faPlus}
+                              icon={PlusIcon}
                               className="w-full"
                             >
                               Upload
@@ -1092,7 +1126,7 @@ export const ImagePromptRow = ({
                               setGalleryTarget("end");
                               setIsGalleryModalOpen(true);
                             }}
-                            icon={faImages}
+                            icon={ImagesIcon}
                             className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                           >
                             Pick from library
@@ -1111,10 +1145,9 @@ export const ImagePromptRow = ({
                           }
                         }}
                       >
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="text-2xl opacity-80 text-base-fg"
-                        />
+                        <PlusIcon
+                          
+                          className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     </Tooltip>
                   )}
@@ -1128,7 +1161,7 @@ export const ImagePromptRow = ({
               <div className="flex gap-2 py-2 px-3">
                 <div className="flex flex-col grow gap-1">
                   <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                    <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
+                    <VideoIcon  className="h-3.5 w-3.5" />
                     <span className="text-sm font-medium flex items-center gap-1.5">
                       Video Ref{" "}
                       <span className="text-base-fg/60 font-semibold">
@@ -1162,10 +1195,9 @@ export const ImagePromptRow = ({
                         }}
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <FontAwesomeIcon
-                          icon={faXmark}
-                          className="h-2.5 w-2.5"
-                        />
+                        <XIcon
+                          
+                          className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ))}
@@ -1180,10 +1212,9 @@ export const ImagePromptRow = ({
                         />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <FontAwesomeIcon
-                          icon={faSpinnerThird}
-                          className="h-6 w-6 animate-spin text-white"
-                        />
+                        <LoaderCircleIcon
+                          
+                          className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   )}
@@ -1200,7 +1231,7 @@ export const ImagePromptRow = ({
                             <Button
                               variant="primary"
                               onClick={handleUploadClickVideo}
-                              icon={faPlus}
+                              icon={PlusIcon}
                               className="w-full"
                             >
                               Upload
@@ -1211,7 +1242,7 @@ export const ImagePromptRow = ({
                                 setGalleryTarget("video");
                                 setIsGalleryModalOpen(true);
                               }}
-                              icon={faImages}
+                              icon={ImagesIcon}
                               className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                             >
                               Pick from library
@@ -1224,10 +1255,9 @@ export const ImagePromptRow = ({
                           className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                           onClick={handleUploadClickVideo}
                         >
-                          <FontAwesomeIcon
-                            icon={faPlus}
-                            className="text-2xl opacity-80 text-base-fg"
-                          />
+                          <PlusIcon
+                            
+                            className="text-2xl opacity-80 text-base-fg" />
                         </Button>
                       </Tooltip>
                     )}
@@ -1239,7 +1269,7 @@ export const ImagePromptRow = ({
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                      <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />
+                      <MusicIcon  className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         Audio Ref{" "}
                         <span className="text-base-fg/60 font-semibold">
@@ -1263,10 +1293,9 @@ export const ImagePromptRow = ({
                   ))}
                   {uploadingAudio && (
                     <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 flex items-center justify-center">
-                      <FontAwesomeIcon
-                        icon={faSpinnerThird}
-                        className="h-6 w-6 animate-spin text-white"
-                      />
+                      <LoaderCircleIcon
+                        
+                        className="h-6 w-6 animate-spin text-white" />
                     </div>
                   )}
                   {referenceAudios.length < maxAudioCount &&
@@ -1276,10 +1305,9 @@ export const ImagePromptRow = ({
                         className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                         onClick={handleUploadClickAudio}
                       >
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="text-2xl opacity-80 text-base-fg"
-                        />
+                        <PlusIcon
+                          
+                          className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     )}
                 </div>
@@ -1293,7 +1321,7 @@ export const ImagePromptRow = ({
           <div className="p-2">
             <Button
               variant="action"
-              icon={faTrashAlt}
+              icon={Trash2Icon}
               className="h-8 w-3"
               onClick={() => {
                 setReferenceImages([]);
@@ -1310,6 +1338,7 @@ export const ImagePromptRow = ({
         onClose={handleGalleryClose}
         mode="select"
         selectedItemIds={selectedGalleryImages}
+        disabledItemIds={disabledGalleryIds}
         onSelectItem={handleImageSelect}
         maxSelections={
           galleryTarget === "end"

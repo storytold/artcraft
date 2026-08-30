@@ -16,9 +16,8 @@ import {
   type SceneState,
   useSceneStore,
 } from "./stores/SceneState";
-import { useUndoRedoHotkeys } from "./hooks/useUndoRedoHotkeys";
-import { useDeleteHotkeys } from "./hooks/useDeleteHotkeys";
-import { useCopyPasteHotkeys } from "./hooks/useCopyPasteHotkeys";
+import { usePagedrawKeybinds } from "./hooks/usePagedrawKeybinds";
+import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import Konva from "konva";
 import { ContextMenuContainer } from "./components/ui/ContextMenu";
 import InpaintToolBar from "./components/ui/InpaintToolBar";
@@ -49,15 +48,13 @@ import {
   Model3DOverlay,
   type Model3DOverlayHandle,
 } from "./components/Model3DOverlay";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUpRightAndDownLeftFromCenter,
-  faArrowsRotate,
-  faCamera,
-} from "@fortawesome/pro-solid-svg-icons";
+import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
+
+// Order the shape hotkey cycles through (matches the submenu's visual order).
+const SHAPE_CYCLE = ["rectangle", "circle", "triangle"] as const;
 
 export const DecodeBase64ToImage = async (
   base64String: string,
@@ -238,17 +235,17 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
       style={{ left: cx, top: cy }}
     >
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} />}
+        icon={<Maximize2Icon />}
         title="Scale — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
       />
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faArrowsRotate} />}
+        icon={<RefreshCwIcon />}
         title="Rotate — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
       />
       <DragScrubButton
-        icon={<FontAwesomeIcon icon={faCamera} />}
+        icon={<CameraIcon />}
         title="Field of view — drag"
         onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
       />
@@ -314,6 +311,7 @@ const PageDraw = ({
       fillColor: state.fillColor,
       brushColor: state.brushColor,
       brushSize: state.brushSize,
+      eraserSize: state.eraserSize,
       inpaintOperation: state.inpaintOperation,
       inpaintBrushSize: state.inpaintBrushSize,
       setInpaintOperation: state.setInpaintOperation,
@@ -368,6 +366,7 @@ const PageDraw = ({
     fillColor,
     brushColor,
     brushSize,
+    eraserSize,
     inpaintOperation,
     inpaintBrushSize,
     setInpaintOperation,
@@ -433,12 +432,81 @@ const PageDraw = ({
   const supportsMaskedInpainting =
     selectedImageModel?.usesInpaintingMask ?? false;
 
-  useDeleteHotkeys({ onDelete: deleteSelectedItems });
-  useUndoRedoHotkeys({ undo, redo });
-  useCopyPasteHotkeys({
+  // Keyboard tool switching mirrors the SideToolbar buttons; size up/down
+  // adjusts whichever size the active tool draws with (brush, eraser, and the
+  // mask tool each own their size). Handlers read the store via getState so
+  // they stay referentially stable.
+  // The shape tool isn't a single tool — it has a rectangle/circle/triangle
+  // submenu. The hotkey uses press-again-to-cycle (Adobe/Figma convention):
+  // first press activates with the current shape, further presses cycle.
+  const handleShapeToolKey = useCallback(() => {
+    const scene = useSceneStore.getState();
+    if (scene.activeTool === "shape") {
+      const current = scene.currentShape ?? "rectangle";
+      const index = SHAPE_CYCLE.indexOf(current);
+      scene.setCurrentShape(SHAPE_CYCLE[(index + 1) % SHAPE_CYCLE.length]);
+      return;
+    }
+    scene.selectNode(null);
+    if (!scene.currentShape) scene.setCurrentShape("rectangle");
+    scene.setActiveTool("shape");
+  }, []);
+
+  const handleMaskToolKey = useCallback(() => {
+    if (!supportsMaskedInpainting) return;
+    useSceneStore.getState().setActiveTool("inpaint");
+  }, [supportsMaskedInpainting]);
+
+  const adjustBrushSize = useCallback((direction: 1 | -1) => {
+    const scene = useSceneStore.getState();
+    const step = 2 * direction;
+    if (scene.activeTool === "inpaint") {
+      scene.setInpaintBrushSize(
+        Math.min(100, Math.max(1, scene.inpaintBrushSize + step)),
+      );
+    } else if (scene.activeTool === "eraser") {
+      scene.setEraserSize(Math.min(64, Math.max(1, scene.eraserSize + step)));
+    } else if (scene.activeTool === "draw") {
+      scene.setBrushSize(Math.min(64, Math.max(1, scene.brushSize + step)));
+    }
+  }, []);
+
+  const handleBrushSizeUp = useCallback(
+    () => adjustBrushSize(1),
+    [adjustBrushSize],
+  );
+  const handleBrushSizeDown = useCallback(
+    () => adjustBrushSize(-1),
+    [adjustBrushSize],
+  );
+  const handleSelectToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("select"),
+    [],
+  );
+  const handleBrushToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("draw"),
+    [],
+  );
+  const handleEraserToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("eraser"),
+    [],
+  );
+
+  usePagedrawKeybinds({
+    undo,
+    redo,
     onCopy: copySelectedItems,
     onPaste: pasteItems,
+    onDelete: deleteSelectedItems,
+    onSelectTool: handleSelectToolKey,
+    onShapeTool: handleShapeToolKey,
+    onBrushTool: handleBrushToolKey,
+    onMaskTool: handleMaskToolKey,
+    onEraserTool: handleEraserToolKey,
+    onBrushSizeUp: handleBrushSizeUp,
+    onBrushSizeDown: handleBrushSizeDown,
   });
+  const cheatsheetVisible = useCheatsheetVisibility();
 
   // Read the inpaint mask off the Konva layer and encode it on a worker thread.
   // The Konva readback itself runs on main (Konva is DOM-bound), but everything
@@ -1243,6 +1311,7 @@ const PageDraw = ({
         />
       )}
       <div className="relative z-0">
+        <Cheatsheet surface="pagedraw" visible={cheatsheetVisible} />
         <ContextMenuContainer
           onAction={(e, action) => {
             if (action === "contextMenu") {
@@ -1269,6 +1338,7 @@ const PageDraw = ({
             activeTool={activeTool}
             brushColor={brushColor}
             brushSize={brushSize}
+            eraserSize={eraserSize}
             inpaintOperation={inpaintOperation}
             inpaintBrushSize={inpaintBrushSize}
             onSelectionChange={setIsSelecting}

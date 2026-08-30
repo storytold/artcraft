@@ -1,3 +1,7 @@
+// The deprecated Seedance 2.0 Ultra variants must stay referenced by this
+// enum's own coders, variant lists, and tests; suppress the lint file-wide.
+#![allow(deprecated)]
+
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -129,6 +133,8 @@ pub enum InferenceModelType {
   Seedream5Lite,
   #[serde(rename = "seedream_5p0_pro")]
   Seedream5p0Pro,
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
   #[serde(rename = "midjourney")]
   Midjourney,
   #[serde(rename = "midjourney_v6")]
@@ -162,6 +168,10 @@ pub enum InferenceModelType {
   GrokImagineVideo,
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
+  #[serde(rename = "flux_3")]
+  Flux3,
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2p1_pro")]
@@ -178,6 +188,12 @@ pub enum InferenceModelType {
   Kling3p0Pro,
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -192,8 +208,10 @@ pub enum InferenceModelType {
   Seedance2p0BytePlus,
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u")]
   Seedance2p0Ultra,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
   #[serde(rename = "seedance_2p0_bpu")]
@@ -206,6 +224,12 @@ pub enum InferenceModelType {
   Seedance2p0BytePlusMini,
   #[serde(rename = "seedance_2p0_bpu_mini")]
   Seedance2p0BytePlusUltraMini,
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -337,6 +361,7 @@ impl InferenceModelType {
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
       Self::Seedream5p0Pro => "seedream_5p0_pro",
+      Self::Seedream5p0ProUltra => "seedream_5p0_pro_u",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -353,6 +378,8 @@ impl InferenceModelType {
       Self::GrokVideo => "grok_video",
       Self::GrokImagineVideo => "grok_imagine_video",
       Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
+      Self::Flux3 => "flux_3",
+      Self::Flux3Draft => "flux_3_draft",
       Self::Kling16Pro => "kling_1p6_pro",
       Self::Kling21Pro => "kling_2p1_pro",
       Self::Kling21Master => "kling_2p1_master",
@@ -361,6 +388,9 @@ impl InferenceModelType {
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::MinimaxH3 => "minimax_h3",
+      Self::MinimaxH3Turbo => "minimax_h3_turbo",
+      Self::MinimaxH3Ultra => "minimax_h3_ultra",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -375,6 +405,9 @@ impl InferenceModelType {
       Self::Seedance2p0Mini => "seedance_2p0_mini",
       Self::Seedance2p0BytePlusMini => "seedance_2p0_bp_mini",
       Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
+      Self::Seedance2p5Preview => "seedance_2p5_preview",
+      Self::Seedance2p5 => "seedance_2p5",
+      Self::Seedance2p5Ultra => "seedance_2p5_u",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -466,6 +499,7 @@ impl InferenceModelType {
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
       "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
+      "seedream_5p0_pro_u" => Ok(Self::Seedream5p0ProUltra),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -482,6 +516,8 @@ impl InferenceModelType {
       "grok_video" => Ok(Self::GrokVideo),
       "grok_imagine_video" => Ok(Self::GrokImagineVideo),
       "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
+      "flux_3" => Ok(Self::Flux3),
+      "flux_3_draft" => Ok(Self::Flux3Draft),
       "kling_1p6_pro" => Ok(Self::Kling16Pro),
       "kling_2p1_pro" => Ok(Self::Kling21Pro),
       "kling_2p1_master" => Ok(Self::Kling21Master),
@@ -490,6 +526,9 @@ impl InferenceModelType {
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "minimax_h3" => Ok(Self::MinimaxH3),
+      "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
+      "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -504,6 +543,9 @@ impl InferenceModelType {
       "seedance_2p0_mini" => Ok(Self::Seedance2p0Mini),
       "seedance_2p0_bp_mini" => Ok(Self::Seedance2p0BytePlusMini),
       "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
+      "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
+      "seedance_2p5" => Ok(Self::Seedance2p5),
+      "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -599,6 +641,7 @@ impl InferenceModelType {
       Self::Seedream4p5,
       Self::Seedream5Lite,
       Self::Seedream5p0Pro,
+      Self::Seedream5p0ProUltra,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -615,6 +658,8 @@ impl InferenceModelType {
       Self::GrokVideo,
       Self::GrokImagineVideo,
       Self::GrokImagineVideo1p5,
+      Self::Flux3,
+      Self::Flux3Draft,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -623,6 +668,9 @@ impl InferenceModelType {
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
+      Self::MinimaxH3,
+      Self::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -637,6 +685,9 @@ impl InferenceModelType {
       Self::Seedance2p0Mini,
       Self::Seedance2p0BytePlusMini,
       Self::Seedance2p0BytePlusUltraMini,
+      Self::Seedance2p5Preview,
+      Self::Seedance2p5,
+      Self::Seedance2p5Ultra,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -715,6 +766,7 @@ impl InferenceModelType {
       CommonModelType::Seedream4p5 => Self::Seedream4p5,
       CommonModelType::Seedream5Lite => Self::Seedream5Lite,
       CommonModelType::Seedream5p0Pro => Self::Seedream5p0Pro,
+      CommonModelType::Seedream5p0ProUltra => Self::Seedream5p0ProUltra,
       CommonModelType::Midjourney => Self::Midjourney,
       CommonModelType::MidjourneyV6 => Self::MidjourneyV6,
       CommonModelType::MidjourneyV6p1 => Self::MidjourneyV6p1,
@@ -731,6 +783,8 @@ impl InferenceModelType {
       CommonModelType::GrokVideo => Self::GrokVideo,
       CommonModelType::GrokImagineVideo => Self::GrokImagineVideo,
       CommonModelType::GrokImagineVideo1p5 => Self::GrokImagineVideo1p5,
+      CommonModelType::Flux3 => Self::Flux3,
+      CommonModelType::Flux3Draft => Self::Flux3Draft,
       CommonModelType::Kling16Pro => Self::Kling16Pro,
       CommonModelType::Kling21Pro => Self::Kling21Pro,
       CommonModelType::Kling21Master => Self::Kling21Master,
@@ -739,6 +793,9 @@ impl InferenceModelType {
       CommonModelType::Kling3p0Standard => Self::Kling3p0Standard,
       CommonModelType::Kling3p0Pro => Self::Kling3p0Pro,
       CommonModelType::HappyHorse1p0 => Self::HappyHorse1p0,
+      CommonModelType::MinimaxH3 => Self::MinimaxH3,
+      CommonModelType::MinimaxH3Turbo => Self::MinimaxH3Turbo,
+      CommonModelType::MinimaxH3Ultra => Self::MinimaxH3Ultra,
       CommonModelType::Seedance10Lite => Self::Seedance10Lite,
       CommonModelType::Seedance10Pro => Self::Seedance10Pro,
       CommonModelType::Seedance1p5Pro => Self::Seedance1p5Pro,
@@ -753,6 +810,9 @@ impl InferenceModelType {
       CommonModelType::Seedance2p0Mini => Self::Seedance2p0Mini,
       CommonModelType::Seedance2p0BytePlusMini => Self::Seedance2p0BytePlusMini,
       CommonModelType::Seedance2p0BytePlusUltraMini => Self::Seedance2p0BytePlusUltraMini,
+      CommonModelType::Seedance2p5Preview => Self::Seedance2p5Preview,
+      CommonModelType::Seedance2p5 => Self::Seedance2p5,
+      CommonModelType::Seedance2p5Ultra => Self::Seedance2p5Ultra,
       CommonModelType::Sora2 => Self::Sora2,
       CommonModelType::Sora2Pro => Self::Sora2Pro,
       CommonModelType::Veo2 => Self::Veo2,
@@ -870,6 +930,8 @@ mod tests {
       assert_serialization(InferenceModelType::GrokVideo, "grok_video");
       assert_serialization(InferenceModelType::GrokImagineVideo, "grok_imagine_video");
       assert_serialization(InferenceModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+      assert_serialization(InferenceModelType::Flux3, "flux_3");
+      assert_serialization(InferenceModelType::Flux3Draft, "flux_3_draft");
       assert_serialization(InferenceModelType::Kling16Pro, "kling_1p6_pro");
       assert_serialization(InferenceModelType::Kling21Pro, "kling_2p1_pro");
       assert_serialization(InferenceModelType::Kling21Master, "kling_2p1_master");
@@ -878,6 +940,9 @@ mod tests {
       assert_serialization(InferenceModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(InferenceModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(InferenceModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(InferenceModelType::MinimaxH3, "minimax_h3");
+      assert_serialization(InferenceModelType::MinimaxH3Turbo, "minimax_h3_turbo");
+      assert_serialization(InferenceModelType::MinimaxH3Ultra, "minimax_h3_ultra");
       assert_serialization(InferenceModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(InferenceModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(InferenceModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -892,6 +957,9 @@ mod tests {
       assert_serialization(InferenceModelType::Seedance2p0Mini, "seedance_2p0_mini");
       assert_serialization(InferenceModelType::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
       assert_serialization(InferenceModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+      assert_serialization(InferenceModelType::Seedance2p5Preview, "seedance_2p5_preview");
+      assert_serialization(InferenceModelType::Seedance2p5, "seedance_2p5");
+      assert_serialization(InferenceModelType::Seedance2p5Ultra, "seedance_2p5_u");
       assert_serialization(InferenceModelType::Sora2, "sora_2");
       assert_serialization(InferenceModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(InferenceModelType::Veo2, "veo_2");
@@ -996,6 +1064,8 @@ mod tests {
       assert_eq!(InferenceModelType::GrokVideo.to_str(), "grok_video");
       assert_eq!(InferenceModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
       assert_eq!(InferenceModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
+      assert_eq!(InferenceModelType::Flux3.to_str(), "flux_3");
+      assert_eq!(InferenceModelType::Flux3Draft.to_str(), "flux_3_draft");
       assert_eq!(InferenceModelType::Kling16Pro.to_str(), "kling_1p6_pro");
       assert_eq!(InferenceModelType::Kling21Pro.to_str(), "kling_2p1_pro");
       assert_eq!(InferenceModelType::Kling21Master.to_str(), "kling_2p1_master");
@@ -1004,6 +1074,9 @@ mod tests {
       assert_eq!(InferenceModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(InferenceModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(InferenceModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(InferenceModelType::MinimaxH3.to_str(), "minimax_h3");
+      assert_eq!(InferenceModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
+      assert_eq!(InferenceModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
       assert_eq!(InferenceModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(InferenceModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(InferenceModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -1018,6 +1091,9 @@ mod tests {
       assert_eq!(InferenceModelType::Seedance2p0Mini.to_str(), "seedance_2p0_mini");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusMini.to_str(), "seedance_2p0_bp_mini");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
+      assert_eq!(InferenceModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
+      assert_eq!(InferenceModelType::Seedance2p5.to_str(), "seedance_2p5");
+      assert_eq!(InferenceModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
       assert_eq!(InferenceModelType::Sora2.to_str(), "sora_2");
       assert_eq!(InferenceModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(InferenceModelType::Veo2.to_str(), "veo_2");
@@ -1124,6 +1200,8 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("grok_video").unwrap(), InferenceModelType::GrokVideo);
       assert_eq!(InferenceModelType::from_str("grok_imagine_video").unwrap(), InferenceModelType::GrokImagineVideo);
       assert_eq!(InferenceModelType::from_str("grok_imagine_video_1p5").unwrap(), InferenceModelType::GrokImagineVideo1p5);
+      assert_eq!(InferenceModelType::from_str("flux_3").unwrap(), InferenceModelType::Flux3);
+      assert_eq!(InferenceModelType::from_str("flux_3_draft").unwrap(), InferenceModelType::Flux3Draft);
       assert_eq!(InferenceModelType::from_str("kling_1p6_pro").unwrap(), InferenceModelType::Kling16Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_pro").unwrap(), InferenceModelType::Kling21Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_master").unwrap(), InferenceModelType::Kling21Master);
@@ -1132,6 +1210,9 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("kling_3p0_standard").unwrap(), InferenceModelType::Kling3p0Standard);
       assert_eq!(InferenceModelType::from_str("kling_3p0_pro").unwrap(), InferenceModelType::Kling3p0Pro);
       assert_eq!(InferenceModelType::from_str("happy_horse_1p0").unwrap(), InferenceModelType::HappyHorse1p0);
+      assert_eq!(InferenceModelType::from_str("minimax_h3").unwrap(), InferenceModelType::MinimaxH3);
+      assert_eq!(InferenceModelType::from_str("minimax_h3_turbo").unwrap(), InferenceModelType::MinimaxH3Turbo);
+      assert_eq!(InferenceModelType::from_str("minimax_h3_ultra").unwrap(), InferenceModelType::MinimaxH3Ultra);
       assert_eq!(InferenceModelType::from_str("seedance_1p0_lite").unwrap(), InferenceModelType::Seedance10Lite);
       assert_eq!(InferenceModelType::from_str("seedance_1p0_pro").unwrap(), InferenceModelType::Seedance10Pro);
       assert_eq!(InferenceModelType::from_str("seedance_1p5_pro").unwrap(), InferenceModelType::Seedance1p5Pro);
@@ -1146,6 +1227,9 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("seedance_2p0_mini").unwrap(), InferenceModelType::Seedance2p0Mini);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bp_mini").unwrap(), InferenceModelType::Seedance2p0BytePlusMini);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu_mini").unwrap(), InferenceModelType::Seedance2p0BytePlusUltraMini);
+      assert_eq!(InferenceModelType::from_str("seedance_2p5_preview").unwrap(), InferenceModelType::Seedance2p5Preview);
+      assert_eq!(InferenceModelType::from_str("seedance_2p5").unwrap(), InferenceModelType::Seedance2p5);
+      assert_eq!(InferenceModelType::from_str("seedance_2p5_u").unwrap(), InferenceModelType::Seedance2p5Ultra);
       assert_eq!(InferenceModelType::from_str("sora_2").unwrap(), InferenceModelType::Sora2);
       assert_eq!(InferenceModelType::from_str("sora_2_pro").unwrap(), InferenceModelType::Sora2Pro);
       assert_eq!(InferenceModelType::from_str("veo_2").unwrap(), InferenceModelType::Veo2);

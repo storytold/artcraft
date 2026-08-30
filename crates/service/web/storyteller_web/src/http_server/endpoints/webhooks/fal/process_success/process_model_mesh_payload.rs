@@ -211,6 +211,7 @@ pub(crate) async fn upload_mesh_file(
       .maybe_creator_user(job.maybe_creator_user_token.as_ref())
       .maybe_generation_provider(Some(GenerationProvider::Artcraft))
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .maybe_source_job_token(Some(&job.job_token))
       .maybe_platform_type(job.maybe_platform_type)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .media_file_type(media_file_type)

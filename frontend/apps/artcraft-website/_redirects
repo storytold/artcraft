@@ -58,6 +58,10 @@
 /pricing/ /pricing/index.html 200
 /pricing/* /index.html 200
 
+/beta /beta/index.html 200
+/beta/ /beta/index.html 200
+/beta/* /index.html 200
+
 /faq /index.html 200
 /faq/ /index.html 200
 /faq/* /index.html 200
@@ -107,6 +111,20 @@
 /seedance-2 /seedance-2/index.html 200
 /seedance-2/ /seedance-2/index.html 200
 /seedance-2/* /index.html 200
+
+/minimax-h3 /minimax-h3/index.html 200
+/minimax-h3/ /minimax-h3/index.html 200
+/minimax-h3/* /index.html 200
+
+# Similar URLs: MiniMax H3 aliases
+/minimax        /minimax-h3 301
+/minimax/       /minimax-h3 301
+/minimaxh3      /minimax-h3 301
+/minimaxh3*     /minimax-h3 301
+/minimax-h-3    /minimax-h3 301
+/minimax-h-3*   /minimax-h3 301
+/hailuo         /minimax-h3 301
+/hailuo/        /minimax-h3 301
 
 # Google ads breakage
 /seedance-2{ignore}      /seedance-2 301

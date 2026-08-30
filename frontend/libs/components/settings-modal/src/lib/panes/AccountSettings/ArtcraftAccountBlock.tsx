@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { LoaderCircleIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 
 import { UsersApi } from "@storyteller/api";
@@ -81,10 +80,9 @@ export const ArtcraftAccountBlock = ({
         disabled={isCheckingArtcraftSession}
       >
         {isCheckingArtcraftSession ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-sm"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-sm" />
         ) : isLoggedIn ? (
           "Log Out"
         ) : (

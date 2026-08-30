@@ -1,15 +1,12 @@
-import {
-  faCheckCircle,
-  faDownload,
-  faDesktop,
-  faRocket,
-} from "@fortawesome/pro-solid-svg-icons";
-import { faDiscord } from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CircleCheckIcon, DownloadIcon, MonitorIcon, RocketIcon } from "lucide-react";
+import { DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
 import { isMobile, isMacOs } from "react-device-detect";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 import { SOCIAL_LINKS } from "../../config/links";
 import Seo from "../../components/seo";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
@@ -93,10 +90,9 @@ const CheckoutSuccess = () => {
             {/* Success Icon */}
             <div className="mb-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-5xl text-green-400"
-                />
+                <CircleCheckIcon
+                  
+                  className="text-5xl text-green-400" />
               </div>
             </div>
 
@@ -114,10 +110,9 @@ const CheckoutSuccess = () => {
             <div className="bg-[#252529] rounded-2xl p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <FontAwesomeIcon
-                    icon={faRocket}
-                    className="text-primary text-sm"
-                  />
+                  <RocketIcon
+                    
+                    className="text-primary text-sm" />
                 </div>
                 <h2 className="text-lg font-medium text-white">Next Steps</h2>
               </div>
@@ -142,19 +137,21 @@ const CheckoutSuccess = () => {
             {/* CTA Buttons */}
             {!isMobile ? (
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  as="link"
-                  href={downloadUrl}
-                  className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
-                >
-                  <FontAwesomeIcon icon={faDownload} className="mr-2" />
-                  Download ArtCraft
-                </Button>
+                {DOWNLOADS_ENABLED && (
+                  <Button
+                    as="link"
+                    href={downloadUrl}
+                    className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                  >
+                    <DownloadIcon  className="mr-2" />
+                    Download ArtCraft
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
-                  <FontAwesomeIcon icon={faDesktop} className="text-2xl" />
+                  <MonitorIcon  className="text-2xl" />
                 </div>
                 ArtCraft is a desktop application. <br />
                 Please head to your computer to download and start creating.
@@ -162,7 +159,7 @@ const CheckoutSuccess = () => {
             )}
 
             {/* Download Links */}
-            {!isMobile && (
+            {!isMobile && DOWNLOADS_ENABLED && (
               <div className="mt-6 flex justify-center gap-6 text-sm font-medium text-white/40">
                 <a
                   href={DOWNLOAD_LINKS.WINDOWS}
@@ -194,7 +191,7 @@ const CheckoutSuccess = () => {
                 target="_blank"
                 className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
-                <FontAwesomeIcon icon={faDiscord} />
+                <DiscordIcon />
                 Join Discord
               </Button>
             </div>

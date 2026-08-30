@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use log::{info, warn};
+use log::{error, info, warn};
 use sqlx::mysql::MySqlPoolOptions;
 use tokio::sync::Notify;
 
@@ -23,7 +23,7 @@ use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use server_environment::ServerEnvironment;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 
@@ -33,6 +33,7 @@ use crate::jobs::credits_checking_job::credits_checking_main_loop::credits_check
 use crate::jobs::order_polling_job::order_polling_main_loop::order_polling_main_loop;
 use crate::jobs::order_processing_job::order_processing_main_loop::order_processing_main_loop;
 use crate::job_dependencies::JobDependencies;
+use crate::loop_heartbeats::LoopHeartbeats;
 use crate::order_reconciler::OrderReconciler;
 use crate::startup::build_pager::build_pager;
 use crate::startup::kinovi_setup::{get_kinovi_session, get_kinovi_version};
@@ -42,8 +43,10 @@ pub mod http_server;
 pub mod job_dependencies;
 pub mod jobs;
 pub mod kinovi_version;
+pub mod loop_heartbeats;
 pub mod order_reconciler;
 pub mod startup;
+pub mod with_deadline;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -53,6 +56,20 @@ const ENV_PUBLIC_BUCKET_NAME: &str = "PUBLIC_BUCKET_NAME";
 const ENV_S3_ENDPOINT: &str = "S3_COMPATIBLE_ENDPOINT_URL";
 
 const ENV_MAX_JOB_AGE_THRESHOLD_HOURS: &str = "MAX_JOB_AGE_THRESHOLD_HOURS";
+
+/// Bound on acquiring a pooled MySQL connection (the query itself is bounded
+/// separately by `with_deadline`).
+const MYSQL_ACQUIRE_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Recycle idle MySQL connections well inside any middlebox idle cutoff so a
+/// silently-dropped socket is far less likely to be handed to a query.
+const MYSQL_IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+
+/// Deadline for a single media download from Kinovi's CDN.
+const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+
+/// How long to wait for the remaining loops to wind down once one has exited.
+const LOOP_SHUTDOWN_GRACE: Duration = Duration::from_secs(30);
 
 #[tokio::main]
 async fn main() -> AnyhowResult<()> {
@@ -75,6 +92,8 @@ async fn main() -> AnyhowResult<()> {
 
   let mysql_pool = MySqlPoolOptions::new()
     .max_connections(2)
+    .acquire_timeout(MYSQL_ACQUIRE_TIMEOUT)
+    .idle_timeout(Some(MYSQL_IDLE_TIMEOUT))
     .connect(&db_connection_string)
     .await?;
 
@@ -106,6 +125,10 @@ async fn main() -> AnyhowResult<()> {
     None,
     Some(bucket_timeout),
   )?;
+
+  let download_client = reqwest::Client::builder()
+    .timeout(DOWNLOAD_TIMEOUT)
+    .build()?;
 
   let kinovi_version = get_kinovi_version()?;
   let kinovi_session = get_kinovi_session(kinovi_version)?;
@@ -161,18 +184,23 @@ async fn main() -> AnyhowResult<()> {
   // Shared hand-off between the polling loop (producer) and processing loop (consumer).
   let order_reconciler = OrderReconciler::new();
 
+  // Liveness signal from every loop, read by the health check.
+  let heartbeats = LoopHeartbeats::new();
+
   let pager_for_shutdown = pager.clone();
 
   let create_server_args = CreateServerArgs {
     container_environment: container_environment.clone(),
     job_stats: job_stats.clone(),
+    heartbeats: heartbeats.clone(),
     pager: pager.clone(),
   };
 
   let job_dependencies = JobDependencies {
     mysql_pool,
     public_bucket_client,
-    seedance2pro_session: kinovi_session,
+    download_client,
+    kinovi_web_session: kinovi_session,
     kinovi_version,
     server_environment,
     job_stats,
@@ -185,6 +213,7 @@ async fn main() -> AnyhowResult<()> {
     shutdown_notify: shutdown_notify.clone(),
     pager,
     order_reconciler,
+    heartbeats,
   };
 
   // HTTP server runs on a separate OS thread with its own actix System.
@@ -233,22 +262,73 @@ async fn main() -> AnyhowResult<()> {
     credits_checking_main_loop(credits_deps).await;
   });
 
-  if kinovi_version.has_characters() {
+  let maybe_character_handle = if kinovi_version.has_characters() {
     let character_deps = job_dependencies;
-    let character_handle = tokio::spawn(async move {
+    Some(tokio::spawn(async move {
       character_polling_main_loop(character_deps).await;
-    });
-    let _ = tokio::join!(polling_handle, processing_handle, character_handle, credits_handle);
+    }))
   } else {
     // skip character polling entirely.
     info!("Alternate mode: character polling is disabled.");
-    let _ = tokio::join!(polling_handle, processing_handle, credits_handle);
+    None
+  };
+
+  // Wait for the FIRST loop to exit. If shutdown wasn't requested, that loop
+  // died (panicked, or returned unexpectedly) and the job is silently crippled
+  // — the other loops would happily keep the process alive forever. Fail fast
+  // so Kubernetes restarts us instead.
+  let mut polling_handle = polling_handle;
+  let mut processing_handle = processing_handle;
+  let mut credits_handle = credits_handle;
+  let mut character_handle = maybe_character_handle;
+
+  let (first_exited, first_result) = tokio::select! {
+    result = &mut polling_handle => ("order polling", result),
+    result = &mut processing_handle => ("order processing", result),
+    result = &mut credits_handle => ("credits checking", result),
+    result = async {
+      match character_handle.as_mut() {
+        Some(handle) => handle.await,
+        None => std::future::pending().await,
+      }
+    } => ("character polling", result),
+  };
+
+  let was_shutdown_requested = application_shutdown.get();
+
+  if let Err(join_err) = &first_result {
+    error!("The {} loop panicked or was cancelled: {:?}", first_exited, join_err);
+  } else if !was_shutdown_requested {
+    error!("The {} loop exited without a shutdown request.", first_exited);
+  } else {
+    info!("The {} loop exited after shutdown request.", first_exited);
+  }
+
+  // Make sure the remaining loops wind down, then give them a bounded grace period.
+  application_shutdown.set(true);
+  shutdown_notify.notify_waiters();
+
+  let remaining = async {
+    let _ = polling_handle.await;
+    let _ = processing_handle.await;
+    let _ = credits_handle.await;
+    if let Some(handle) = character_handle {
+      let _ = handle.await;
+    }
+  };
+
+  if tokio::time::timeout(LOOP_SHUTDOWN_GRACE, remaining).await.is_err() {
+    warn!("Remaining loops did not exit within {}s; exiting anyway.", LOOP_SHUTDOWN_GRACE.as_secs());
   }
 
   info!("Shutting down pager worker...");
   pager_for_shutdown.shutdown_worker();
 
-  info!("Seedance2Pro job exiting.");
+  info!("KinoviWeb job exiting.");
+
+  if first_result.is_err() || !was_shutdown_requested {
+    return Err(anyhow!("{} loop terminated unexpectedly; exiting so the pod restarts", first_exited));
+  }
 
   Ok(())
 }

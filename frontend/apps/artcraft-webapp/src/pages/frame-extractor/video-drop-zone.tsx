@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilm, faImages, faUpload } from "@fortawesome/pro-solid-svg-icons";
+import { FilmIcon, ImagesIcon, UploadIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
 
@@ -57,14 +56,14 @@ export const VideoDropZone = ({
           accept="video/*"
           onChange={(e) => handleFiles(e.target.files)}
         />
-        <FontAwesomeIcon icon={faFilm} className="text-2xl text-base-fg/25" />
+        <FilmIcon  className="text-2xl text-base-fg/25" />
         <div className="text-sm text-base-fg/55">
           Drag &amp; drop a video, or
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           <Button
             variant="primary"
-            icon={faUpload}
+            icon={UploadIcon}
             onClick={() => fileInputRef.current?.click()}
             className="px-4 py-1.5 text-sm font-medium"
           >
@@ -72,7 +71,7 @@ export const VideoDropZone = ({
           </Button>
           <Button
             variant="action"
-            icon={faImages}
+            icon={ImagesIcon}
             onClick={onPickFromLibrary}
             className="px-4 py-1.5 text-sm font-medium"
           >

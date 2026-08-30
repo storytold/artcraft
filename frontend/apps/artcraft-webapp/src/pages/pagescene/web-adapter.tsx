@@ -438,6 +438,7 @@ export const useWebAppPageSceneAdapter = (
           onSuccess={props.onSuccess}
           title={props.title}
           titleIcon={props.titleIcon}
+          initialCategory={props.initialCategory}
         />
       ),
       renderImageUploader: (props) => (

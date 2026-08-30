@@ -1,6 +1,10 @@
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::kling_3p0_standard::request::ArtcraftKling3p0StandardRequestState;
 
+// The markup is applied at cent granularity with ceiling rounding.
+const MARKUP_NUMERATOR: u64 = 115;
+const MARKUP_DENOMINATOR: u64 = 100;
+
 #[derive(Clone, Debug)]
 pub struct ArtcraftKling3p0StandardCostState {
   pub duration_seconds: u64,
@@ -16,11 +20,11 @@ impl ArtcraftKling3p0StandardCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client kling_3p0_standard:
-    //   audio off: $0.168/sec  (rate=168)
-    //   audio on:  $0.252/sec  (rate=252)
+    // Base rates in tenths of a cent per second; the total is
+    // ceiling-divided to whole cents, then the markup applied.
     let rate: u64 = if self.generate_audio { 252 } else { 168 };
-    let cost_in_usd_cents = (rate * self.duration_seconds + 9) / 10;
+    let base = (rate * self.duration_seconds + 9) / 10;
+    let cost_in_usd_cents = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -53,26 +57,26 @@ mod tests {
   }
 
   #[test]
-  fn audio_on_5s_is_126() {
-    // rate=252, (252*5 + 9) / 10 = 1269/10 = 126.
-    assert_eq!(cost_cents(Some(5), Some(true)), 126);
+  fn audio_on_5s_is_145() {
+    // rate=252, base (252*5 + 9) / 10 = 126, ×115/100 ceiled = 145.
+    assert_eq!(cost_cents(Some(5), Some(true)), 145);
   }
 
   #[test]
-  fn audio_off_5s_is_84() {
-    // rate=168, (168*5 + 9) / 10 = 849/10 = 84.
-    assert_eq!(cost_cents(Some(5), Some(false)), 84);
+  fn audio_off_5s_is_97() {
+    // rate=168, base (168*5 + 9) / 10 = 84, ×115/100 ceiled = 97.
+    assert_eq!(cost_cents(Some(5), Some(false)), 97);
   }
 
   #[test]
-  fn audio_on_10s_is_252() {
-    assert_eq!(cost_cents(Some(10), Some(true)), 252);
+  fn audio_on_10s_is_290() {
+    assert_eq!(cost_cents(Some(10), Some(true)), 290);
   }
 
   #[test]
-  fn audio_on_15s_is_378() {
-    // (252*15 + 9) / 10 = 3789/10 = 378.
-    assert_eq!(cost_cents(Some(15), Some(true)), 378);
+  fn audio_on_15s_is_435() {
+    // base (252*15 + 9) / 10 = 378, ×115/100 ceiled = 435.
+    assert_eq!(cost_cents(Some(15), Some(true)), 435);
   }
 
   #[test]

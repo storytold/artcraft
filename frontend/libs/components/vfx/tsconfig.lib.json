@@ -51,6 +51,9 @@
     },
     {
       "path": "../button/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

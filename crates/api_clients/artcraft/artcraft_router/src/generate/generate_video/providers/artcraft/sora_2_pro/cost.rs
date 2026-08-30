@@ -19,9 +19,10 @@ impl ArtcraftSora2ProCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Sora 2 Pro: $0.30/sec @ 720p, $0.50/sec @ 1080p. Default 4s.
-    let per_second_cents: u64 = if self.is_ten_eighty_p { 50 } else { 30 };
-    let cost_in_usd_cents = per_second_cents * self.duration_seconds;
+    // Sora 2 Pro: 34.5¢/sec @ 720p, 57.5¢/sec @ 1080p (held in hundredths
+    // of a cent, rounded up to whole cents). Default 4s.
+    let per_second_centi_cents: u64 = if self.is_ten_eighty_p { 5_750 } else { 3_450 };
+    let cost_in_usd_cents = (per_second_centi_cents * self.duration_seconds).div_ceil(100);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -77,30 +78,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn p720_4s_is_120() { assert_eq!(cost_cents(Some(4), Some(RouterResolution::SevenTwentyP), false), 120); }
+    fn p720_4s_is_138() { assert_eq!(cost_cents(Some(4), Some(RouterResolution::SevenTwentyP), false), 138); }
 
     #[test]
-    fn p720_8s_is_240() { assert_eq!(cost_cents(Some(8), Some(RouterResolution::SevenTwentyP), false), 240); }
+    fn p720_8s_is_276() { assert_eq!(cost_cents(Some(8), Some(RouterResolution::SevenTwentyP), false), 276); }
 
     #[test]
-    fn p720_12s_is_360() { assert_eq!(cost_cents(Some(12), Some(RouterResolution::SevenTwentyP), false), 360); }
+    fn p720_12s_is_414() { assert_eq!(cost_cents(Some(12), Some(RouterResolution::SevenTwentyP), false), 414); }
 
     #[test]
-    fn p1080_4s_is_200() { assert_eq!(cost_cents(Some(4), Some(RouterResolution::TenEightyP), false), 200); }
+    fn p1080_4s_is_230() { assert_eq!(cost_cents(Some(4), Some(RouterResolution::TenEightyP), false), 230); }
 
     #[test]
-    fn p1080_12s_is_600() { assert_eq!(cost_cents(Some(12), Some(RouterResolution::TenEightyP), false), 600); }
+    fn p1080_12s_is_690() { assert_eq!(cost_cents(Some(12), Some(RouterResolution::TenEightyP), false), 690); }
 
     #[test]
     fn t2v_default_resolution_priced_as_1080p() {
-      // T2V (no start_frame) with no resolution → 1080p default → 200¢ at 4s.
-      assert_eq!(cost_cents(Some(4), None, false), 200);
+      // T2V (no start_frame) with no resolution → 1080p default → 230¢ at 4s.
+      assert_eq!(cost_cents(Some(4), None, false), 230);
     }
 
     #[test]
     fn i2v_default_resolution_priced_as_720p() {
-      // I2V (with start_frame) with no resolution → 720p default → 120¢ at 4s.
-      assert_eq!(cost_cents(Some(4), None, true), 120);
+      // I2V (with start_frame) with no resolution → 720p default → 138¢ at 4s.
+      assert_eq!(cost_cents(Some(4), None, true), 138);
     }
   }
 

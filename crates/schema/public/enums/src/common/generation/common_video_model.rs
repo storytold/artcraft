@@ -1,3 +1,7 @@
+// The deprecated Seedance 2.0 Ultra variants must stay referenced by this
+// enum's own coders, variant lists, and tests; suppress the lint file-wide.
+#![allow(deprecated)]
+
 use utoipa::ToSchema;
 
 /// Video models available for generation.
@@ -16,6 +20,12 @@ pub enum CommonVideoModel {
 
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
+
+  #[serde(rename = "flux_3")]
+  Flux3,
+
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
 
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
@@ -41,6 +51,15 @@ pub enum CommonVideoModel {
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
+
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
+
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
 
@@ -59,9 +78,11 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
 
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u")]
   Seedance2p0Ultra,
 
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
 
@@ -79,6 +100,15 @@ pub enum CommonVideoModel {
 
   #[serde(rename = "seedance_2p0_bpu_mini")]
   Seedance2p0BytePlusUltraMini,
+
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
 
   #[serde(rename = "sora_2")]
   Sora2,
@@ -128,6 +158,8 @@ impl CommonVideoModel {
       Self::GrokVideo => CommonModelType::GrokVideo,
       Self::GrokImagineVideo => CommonModelType::GrokImagineVideo,
       Self::GrokImagineVideo1p5 => CommonModelType::GrokImagineVideo1p5,
+      Self::Flux3 => CommonModelType::Flux3,
+      Self::Flux3Draft => CommonModelType::Flux3Draft,
       Self::Kling16Pro => CommonModelType::Kling16Pro,
       Self::Kling21Pro => CommonModelType::Kling21Pro,
       Self::Kling21Master => CommonModelType::Kling21Master,
@@ -136,6 +168,9 @@ impl CommonVideoModel {
       Self::Kling3p0Standard => CommonModelType::Kling3p0Standard,
       Self::Kling3p0Pro => CommonModelType::Kling3p0Pro,
       Self::HappyHorse1p0 => CommonModelType::HappyHorse1p0,
+      Self::MinimaxH3 => CommonModelType::MinimaxH3,
+      Self::MinimaxH3Turbo => CommonModelType::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra => CommonModelType::MinimaxH3Ultra,
       Self::Seedance10Lite => CommonModelType::Seedance10Lite,
       Self::Seedance1p5Pro => CommonModelType::Seedance1p5Pro,
       Self::Seedance2p0 => CommonModelType::Seedance2p0,
@@ -149,6 +184,9 @@ impl CommonVideoModel {
       Self::Seedance2p0Mini => CommonModelType::Seedance2p0Mini,
       Self::Seedance2p0BytePlusMini => CommonModelType::Seedance2p0BytePlusMini,
       Self::Seedance2p0BytePlusUltraMini => CommonModelType::Seedance2p0BytePlusUltraMini,
+      Self::Seedance2p5Preview => CommonModelType::Seedance2p5Preview,
+      Self::Seedance2p5 => CommonModelType::Seedance2p5,
+      Self::Seedance2p5Ultra => CommonModelType::Seedance2p5Ultra,
       Self::Sora2 => CommonModelType::Sora2,
       Self::Sora2Pro => CommonModelType::Sora2Pro,
       Self::Veo2 => CommonModelType::Veo2,
@@ -176,6 +214,8 @@ mod tests {
     assert_serialization(CommonVideoModel::GrokVideo, "grok_video");
     assert_serialization(CommonVideoModel::GrokImagineVideo, "grok_imagine_video");
     assert_serialization(CommonVideoModel::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+    assert_serialization(CommonVideoModel::Flux3, "flux_3");
+    assert_serialization(CommonVideoModel::Flux3Draft, "flux_3_draft");
     assert_serialization(CommonVideoModel::Kling16Pro, "kling_1p6_pro");
     assert_serialization(CommonVideoModel::Kling21Pro, "kling_2p1_pro");
     assert_serialization(CommonVideoModel::Kling21Master, "kling_2p1_master");
@@ -184,6 +224,9 @@ mod tests {
     assert_serialization(CommonVideoModel::Kling3p0Standard, "kling_3p0_standard");
     assert_serialization(CommonVideoModel::Kling3p0Pro, "kling_3p0_pro");
     assert_serialization(CommonVideoModel::HappyHorse1p0, "happy_horse_1p0");
+    assert_serialization(CommonVideoModel::MinimaxH3, "minimax_h3");
+    assert_serialization(CommonVideoModel::MinimaxH3Turbo, "minimax_h3_turbo");
+    assert_serialization(CommonVideoModel::MinimaxH3Ultra, "minimax_h3_ultra");
     assert_serialization(CommonVideoModel::Seedance10Lite, "seedance_1p0_lite");
     assert_serialization(CommonVideoModel::Seedance1p5Pro, "seedance_1p5_pro");
     assert_serialization(CommonVideoModel::Seedance2p0, "seedance_2p0");
@@ -197,6 +240,9 @@ mod tests {
     assert_serialization(CommonVideoModel::Seedance2p0Mini, "seedance_2p0_mini");
     assert_serialization(CommonVideoModel::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
     assert_serialization(CommonVideoModel::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+    assert_serialization(CommonVideoModel::Seedance2p5Preview, "seedance_2p5_preview");
+    assert_serialization(CommonVideoModel::Seedance2p5, "seedance_2p5");
+    assert_serialization(CommonVideoModel::Seedance2p5Ultra, "seedance_2p5_u");
     assert_serialization(CommonVideoModel::Sora2, "sora_2");
     assert_serialization(CommonVideoModel::Sora2Pro, "sora_2_pro");
     assert_serialization(CommonVideoModel::Veo2, "veo_2");
@@ -217,6 +263,8 @@ mod tests {
       ("grok_video", CommonVideoModel::GrokVideo),
       ("grok_imagine_video", CommonVideoModel::GrokImagineVideo),
       ("grok_imagine_video_1p5", CommonVideoModel::GrokImagineVideo1p5),
+      ("flux_3", CommonVideoModel::Flux3),
+      ("flux_3_draft", CommonVideoModel::Flux3Draft),
       ("kling_1p6_pro", CommonVideoModel::Kling16Pro),
       ("kling_2p1_pro", CommonVideoModel::Kling21Pro),
       ("kling_2p1_master", CommonVideoModel::Kling21Master),
@@ -225,6 +273,9 @@ mod tests {
       ("kling_3p0_standard", CommonVideoModel::Kling3p0Standard),
       ("kling_3p0_pro", CommonVideoModel::Kling3p0Pro),
       ("happy_horse_1p0", CommonVideoModel::HappyHorse1p0),
+      ("minimax_h3", CommonVideoModel::MinimaxH3),
+      ("minimax_h3_turbo", CommonVideoModel::MinimaxH3Turbo),
+      ("minimax_h3_ultra", CommonVideoModel::MinimaxH3Ultra),
       ("seedance_1p0_lite", CommonVideoModel::Seedance10Lite),
       ("seedance_1p5_pro", CommonVideoModel::Seedance1p5Pro),
       ("seedance_2p0", CommonVideoModel::Seedance2p0),
@@ -238,6 +289,9 @@ mod tests {
       ("seedance_2p0_mini", CommonVideoModel::Seedance2p0Mini),
       ("seedance_2p0_bp_mini", CommonVideoModel::Seedance2p0BytePlusMini),
       ("seedance_2p0_bpu_mini", CommonVideoModel::Seedance2p0BytePlusUltraMini),
+      ("seedance_2p5_preview", CommonVideoModel::Seedance2p5Preview),
+      ("seedance_2p5", CommonVideoModel::Seedance2p5),
+      ("seedance_2p5_u", CommonVideoModel::Seedance2p5Ultra),
       ("sora_2", CommonVideoModel::Sora2),
       ("sora_2_pro", CommonVideoModel::Sora2Pro),
       ("veo_2", CommonVideoModel::Veo2),
@@ -265,6 +319,8 @@ mod tests {
       CommonVideoModel::GrokVideo,
       CommonVideoModel::GrokImagineVideo,
       CommonVideoModel::GrokImagineVideo1p5,
+      CommonVideoModel::Flux3,
+      CommonVideoModel::Flux3Draft,
       CommonVideoModel::Kling16Pro,
       CommonVideoModel::Kling21Pro,
       CommonVideoModel::Kling21Master,
@@ -273,6 +329,9 @@ mod tests {
       CommonVideoModel::Kling3p0Standard,
       CommonVideoModel::Kling3p0Pro,
       CommonVideoModel::HappyHorse1p0,
+      CommonVideoModel::MinimaxH3,
+      CommonVideoModel::MinimaxH3Turbo,
+      CommonVideoModel::MinimaxH3Ultra,
       CommonVideoModel::Seedance10Lite,
       CommonVideoModel::Seedance1p5Pro,
       CommonVideoModel::Seedance2p0,
@@ -286,6 +345,9 @@ mod tests {
       CommonVideoModel::Seedance2p0Mini,
       CommonVideoModel::Seedance2p0BytePlusMini,
       CommonVideoModel::Seedance2p0BytePlusUltraMini,
+      CommonVideoModel::Seedance2p5Preview,
+      CommonVideoModel::Seedance2p5,
+      CommonVideoModel::Seedance2p5Ultra,
       CommonVideoModel::Sora2,
       CommonVideoModel::Sora2Pro,
       CommonVideoModel::Veo2,
@@ -312,6 +374,8 @@ mod tests {
       (CommonVideoModel::GrokVideo, CommonModelType::GrokVideo),
       (CommonVideoModel::GrokImagineVideo, CommonModelType::GrokImagineVideo),
       (CommonVideoModel::GrokImagineVideo1p5, CommonModelType::GrokImagineVideo1p5),
+      (CommonVideoModel::Flux3, CommonModelType::Flux3),
+      (CommonVideoModel::Flux3Draft, CommonModelType::Flux3Draft),
       (CommonVideoModel::Kling16Pro, CommonModelType::Kling16Pro),
       (CommonVideoModel::Kling21Pro, CommonModelType::Kling21Pro),
       (CommonVideoModel::Kling21Master, CommonModelType::Kling21Master),
@@ -320,6 +384,9 @@ mod tests {
       (CommonVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
       (CommonVideoModel::Kling3p0Pro, CommonModelType::Kling3p0Pro),
       (CommonVideoModel::HappyHorse1p0, CommonModelType::HappyHorse1p0),
+      (CommonVideoModel::MinimaxH3, CommonModelType::MinimaxH3),
+      (CommonVideoModel::MinimaxH3Turbo, CommonModelType::MinimaxH3Turbo),
+      (CommonVideoModel::MinimaxH3Ultra, CommonModelType::MinimaxH3Ultra),
       (CommonVideoModel::Seedance10Lite, CommonModelType::Seedance10Lite),
       (CommonVideoModel::Seedance1p5Pro, CommonModelType::Seedance1p5Pro),
       (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
@@ -333,6 +400,9 @@ mod tests {
       (CommonVideoModel::Seedance2p0Mini, CommonModelType::Seedance2p0Mini),
       (CommonVideoModel::Seedance2p0BytePlusMini, CommonModelType::Seedance2p0BytePlusMini),
       (CommonVideoModel::Seedance2p0BytePlusUltraMini, CommonModelType::Seedance2p0BytePlusUltraMini),
+      (CommonVideoModel::Seedance2p5Preview, CommonModelType::Seedance2p5Preview),
+      (CommonVideoModel::Seedance2p5, CommonModelType::Seedance2p5),
+      (CommonVideoModel::Seedance2p5Ultra, CommonModelType::Seedance2p5Ultra),
       (CommonVideoModel::Sora2, CommonModelType::Sora2),
       (CommonVideoModel::Sora2Pro, CommonModelType::Sora2Pro),
       (CommonVideoModel::Veo2, CommonModelType::Veo2),

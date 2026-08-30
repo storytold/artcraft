@@ -1,15 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBorderAll,
-  faChevronRight,
-  faFolder,
-  faFolderOpen,
-  faPlus,
-  faStar,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ChevronRightIcon, FolderIcon, FolderOpenIcon, Grid3x3Icon, PlusIcon, StarIcon } from "lucide-react";
 import { compareFolders } from "@storyteller/ui-gallery-modal";
 import { EASE_EMPHASIS } from "../../lib/motion";
 import {
@@ -91,7 +83,7 @@ export function LibraryFoldersNav({
             aria-label="New folder"
             className="mr-1 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
           >
-            <FontAwesomeIcon icon={faPlus} className="text-xs" />
+            <PlusIcon  className="text-xs" />
           </button>
         )}
       </div>
@@ -100,7 +92,7 @@ export function LibraryFoldersNav({
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={onUnsorted} tooltip="Library">
               <Link to="/library" onClick={onNavClick}>
-                <FontAwesomeIcon icon={faBorderAll} />
+                <Grid3x3Icon />
                 <span>Library</span>
               </Link>
             </SidebarMenuButton>
@@ -112,7 +104,7 @@ export function LibraryFoldersNav({
               tooltip="Unfoldered"
             >
               <Link to="/library/folderless" onClick={onNavClick}>
-                <FontAwesomeIcon icon={faFolderOpen} />
+                <FolderOpenIcon />
                 <span>Unfoldered</span>
               </Link>
             </SidebarMenuButton>
@@ -124,7 +116,7 @@ export function LibraryFoldersNav({
               tooltip="Folders"
             >
               <Link to="/library/folders" onClick={onNavClick}>
-                <FontAwesomeIcon icon={faFolder} />
+                <FolderIcon />
                 <span>Folders</span>
               </Link>
             </SidebarMenuButton>
@@ -135,10 +127,9 @@ export function LibraryFoldersNav({
                 aria-label={expanded ? "Collapse folders" : "Expand folders"}
                 className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
               >
-                <FontAwesomeIcon
-                  icon={faChevronRight}
-                  className={`text-[10px] transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
-                />
+                <ChevronRightIcon
+                  
+                  className={`text-[10px] transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} />
               </button>
             )}
           </SidebarMenuItem>
@@ -171,21 +162,19 @@ export function LibraryFoldersNav({
                         }}
                         className="pl-5 [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-sidebar-foreground"
                       >
-                        <FontAwesomeIcon
-                          icon={faFolder}
+                        <FolderIcon
+                          
                           className={folder.colorCode ? "" : "text-primary"}
                           style={
                             folder.colorCode
                               ? { color: folder.colorCode }
                               : undefined
-                          }
-                        />
+                          } />
                         <span className="truncate">{folder.name}</span>
                         {folder.hasStar && (
-                          <FontAwesomeIcon
-                            icon={faStar}
-                            className="ml-auto text-[10px] text-amber-400"
-                          />
+                          <StarIcon
+                            
+                            className="ml-auto text-[10px] text-amber-400" />
                         )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>

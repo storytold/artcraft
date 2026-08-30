@@ -1,6 +1,6 @@
 //! Provider-flavored wrapper around the inner-most record insert.
 //!
-//! All provider-side inserts (Fal, Beeble, GmiCloud, Seedance2Pro,
+//! All provider-side inserts (Fal, Beeble, GmiCloud, KinoviWeb,
 //! Worldlabs, …) share the same shape:
 //!
 //! - `maybe_external_third_party*` is always present (the external API was

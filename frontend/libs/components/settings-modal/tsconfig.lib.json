@@ -44,10 +44,16 @@
   ],
   "references": [
     {
+      "path": "../keybinds/tsconfig.lib.json"
+    },
+    {
       "path": "../../tauri-utils/tsconfig.lib.json"
     },
     {
       "path": "../../model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../popover/tsconfig.lib.json"
     },
     {
       "path": "../promptbox/tsconfig.lib.json"
@@ -81,6 +87,9 @@
     },
     {
       "path": "../../api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     },
     {
       "path": "../../analytics/google-analytics/tsconfig.lib.json"

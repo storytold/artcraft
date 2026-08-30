@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTag, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { TagIcon, XIcon } from "lucide-react";
 
 export interface TagSuggestion {
   value: string;
@@ -14,6 +13,9 @@ interface TagChipInputProps {
   suggestions: TagSuggestion[];
   /** Read-only mode: chips render without remove affordance or input. */
   disabled?: boolean;
+  /** Open the suggestion dropdown above the input instead of below — for
+   *  hosts anchored to the bottom of the viewport (e.g. the bulk action bar). */
+  dropUp?: boolean;
   onAdd: (values: string[]) => void;
   onRemove: (value: string) => void;
 }
@@ -30,6 +32,7 @@ export function TagChipInput({
   chips,
   suggestions,
   disabled,
+  dropUp,
   onAdd,
   onRemove,
 }: TagChipInputProps) {
@@ -146,7 +149,7 @@ export function TagChipInput({
         {chips.map((value) =>
           disabled ? (
             <span key={value.toLowerCase()} className={chipClass(value)}>
-              <FontAwesomeIcon icon={faTag} className="h-2.5 w-2.5 text-base-fg/40" />
+              <TagIcon  className="h-2.5 w-2.5 text-base-fg/40" />
               {value}
             </span>
           ) : (
@@ -161,7 +164,7 @@ export function TagChipInput({
               className={`group/tag ${chipClass(value)} hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red`}
             >
               {value}
-              <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+              <XIcon  className="h-2.5 w-2.5" />
             </button>
           ),
         )}
@@ -187,7 +190,11 @@ export function TagChipInput({
       </div>
 
       {dropdownOpen && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
+        <div
+          className={`absolute left-0 right-0 z-30 max-h-48 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl ${
+            dropUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+        >
           {filtered.map((suggestion, index) => (
             <button
               key={suggestion.value.toLowerCase()}
@@ -200,7 +207,7 @@ export function TagChipInput({
                 highlight === index ? "bg-ui-controls/60" : "hover:bg-ui-controls/40"
               }`}
             >
-              <FontAwesomeIcon icon={faTag} className="text-[10px] text-base-fg/40" />
+              <TagIcon  className="text-[10px] text-base-fg/40" />
               <span className="truncate">{suggestion.value}</span>
               <span className="ml-auto text-[11px] text-base-fg/40">
                 {suggestion.useCount}

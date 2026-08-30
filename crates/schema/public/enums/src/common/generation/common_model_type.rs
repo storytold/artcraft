@@ -1,3 +1,7 @@
+// The deprecated Seedance 2.0 Ultra variants must stay referenced by this
+// enum's own coders, variant lists, and tests; suppress the lint file-wide.
+#![allow(deprecated)]
+
 use std::collections::BTreeSet;
 
 #[cfg(test)]
@@ -85,6 +89,9 @@ pub enum CommonModelType {
   /// Seedream 5.0 Pro as routed via kinovi
   #[serde(rename = "seedream_5p0_pro")]
   Seedream5p0Pro,
+  /// Seedream 5.0 Pro as routed via the kinovi ultra account
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
 
   /// Midjourney without distinguishing a model type or version
   #[serde(rename = "midjourney")]
@@ -132,6 +139,10 @@ pub enum CommonModelType {
   /// xAI's Grok Imagine video 1.5 preview model (grok-imagine-video-1.5-preview).
   #[serde(rename = "grok_imagine_video_1p5")]
   GrokImagineVideo1p5,
+  #[serde(rename = "flux_3")]
+  Flux3,
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2p1_pro")]
@@ -148,6 +159,12 @@ pub enum CommonModelType {
   Kling3p0Pro,
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -162,8 +179,10 @@ pub enum CommonModelType {
   Seedance2p0BytePlus,
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u")]
   Seedance2p0Ultra,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
   #[serde(rename = "seedance_2p0_bpu")]
@@ -176,6 +195,12 @@ pub enum CommonModelType {
   Seedance2p0BytePlusMini,
   #[serde(rename = "seedance_2p0_bpu_mini")]
   Seedance2p0BytePlusUltraMini,
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -291,6 +316,7 @@ impl CommonModelType {
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
       Self::Seedream5p0Pro => "seedream_5p0_pro",
+      Self::Seedream5p0ProUltra => "seedream_5p0_pro_u",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -307,6 +333,8 @@ impl CommonModelType {
       Self::GrokVideo => "grok_video",
       Self::GrokImagineVideo => "grok_imagine_video",
       Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
+      Self::Flux3 => "flux_3",
+      Self::Flux3Draft => "flux_3_draft",
       Self::Kling16Pro => "kling_1p6_pro",
       Self::Kling21Pro => "kling_2p1_pro",
       Self::Kling21Master => "kling_2p1_master",
@@ -315,6 +343,9 @@ impl CommonModelType {
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::MinimaxH3 => "minimax_h3",
+      Self::MinimaxH3Turbo => "minimax_h3_turbo",
+      Self::MinimaxH3Ultra => "minimax_h3_ultra",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -329,6 +360,9 @@ impl CommonModelType {
       Self::Seedance2p0Mini => "seedance_2p0_mini",
       Self::Seedance2p0BytePlusMini => "seedance_2p0_bp_mini",
       Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
+      Self::Seedance2p5Preview => "seedance_2p5_preview",
+      Self::Seedance2p5 => "seedance_2p5",
+      Self::Seedance2p5Ultra => "seedance_2p5_u",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -403,6 +437,7 @@ impl CommonModelType {
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
       "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
+      "seedream_5p0_pro_u" => Ok(Self::Seedream5p0ProUltra),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -419,6 +454,8 @@ impl CommonModelType {
       "grok_video" => Ok(Self::GrokVideo),
       "grok_imagine_video" => Ok(Self::GrokImagineVideo),
       "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
+      "flux_3" => Ok(Self::Flux3),
+      "flux_3_draft" => Ok(Self::Flux3Draft),
       "kling_1p6_pro" => Ok(Self::Kling16Pro),
       "kling_2p1_pro" => Ok(Self::Kling21Pro),
       "kling_2p1_master" => Ok(Self::Kling21Master),
@@ -427,6 +464,9 @@ impl CommonModelType {
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "minimax_h3" => Ok(Self::MinimaxH3),
+      "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
+      "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -441,6 +481,9 @@ impl CommonModelType {
       "seedance_2p0_mini" => Ok(Self::Seedance2p0Mini),
       "seedance_2p0_bp_mini" => Ok(Self::Seedance2p0BytePlusMini),
       "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
+      "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
+      "seedance_2p5" => Ok(Self::Seedance2p5),
+      "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -519,6 +562,7 @@ impl CommonModelType {
       Self::Seedream4p5,
       Self::Seedream5Lite,
       Self::Seedream5p0Pro,
+      Self::Seedream5p0ProUltra,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -535,6 +579,8 @@ impl CommonModelType {
       Self::GrokVideo,
       Self::GrokImagineVideo,
       Self::GrokImagineVideo1p5,
+      Self::Flux3,
+      Self::Flux3Draft,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -543,6 +589,9 @@ impl CommonModelType {
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
+      Self::MinimaxH3,
+      Self::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -557,6 +606,9 @@ impl CommonModelType {
       Self::Seedance2p0Mini,
       Self::Seedance2p0BytePlusMini,
       Self::Seedance2p0BytePlusUltraMini,
+      Self::Seedance2p5Preview,
+      Self::Seedance2p5,
+      Self::Seedance2p5Ultra,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -632,6 +684,7 @@ impl CommonModelType {
       Self::Seedream4p5 => CommonModelClass::Image,
       Self::Seedream5Lite => CommonModelClass::Image,
       Self::Seedream5p0Pro => CommonModelClass::Image,
+      Self::Seedream5p0ProUltra => CommonModelClass::Image,
       Self::Midjourney => CommonModelClass::Image,
       Self::MidjourneyV6 => CommonModelClass::Image,
       Self::MidjourneyV6p1 => CommonModelClass::Image,
@@ -648,6 +701,8 @@ impl CommonModelType {
       Self::GrokVideo => CommonModelClass::Video,
       Self::GrokImagineVideo => CommonModelClass::Video,
       Self::GrokImagineVideo1p5 => CommonModelClass::Video,
+      Self::Flux3 => CommonModelClass::Video,
+      Self::Flux3Draft => CommonModelClass::Video,
       Self::Kling16Pro => CommonModelClass::Video,
       Self::Kling21Pro => CommonModelClass::Video,
       Self::Kling21Master => CommonModelClass::Video,
@@ -656,6 +711,9 @@ impl CommonModelType {
       Self::Kling3p0Standard => CommonModelClass::Video,
       Self::Kling3p0Pro => CommonModelClass::Video,
       Self::HappyHorse1p0 => CommonModelClass::Video,
+      Self::MinimaxH3 => CommonModelClass::Video,
+      Self::MinimaxH3Turbo => CommonModelClass::Video,
+      Self::MinimaxH3Ultra => CommonModelClass::Video,
       Self::Seedance10Lite => CommonModelClass::Video,
       Self::Seedance10Pro => CommonModelClass::Video,
       Self::Seedance1p5Pro => CommonModelClass::Video,
@@ -670,6 +728,9 @@ impl CommonModelType {
       Self::Seedance2p0Mini => CommonModelClass::Video,
       Self::Seedance2p0BytePlusMini => CommonModelClass::Video,
       Self::Seedance2p0BytePlusUltraMini => CommonModelClass::Video,
+      Self::Seedance2p5Preview => CommonModelClass::Video,
+      Self::Seedance2p5 => CommonModelClass::Video,
+      Self::Seedance2p5Ultra => CommonModelClass::Video,
       Self::Sora2 => CommonModelClass::Video,
       Self::Sora2Pro => CommonModelClass::Video,
       Self::Veo2 => CommonModelClass::Video,
@@ -755,6 +816,7 @@ mod tests {
       assert_serialization(CommonModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(CommonModelType::Seedream5Lite, "seedream_5_lite");
       assert_serialization(CommonModelType::Seedream5p0Pro, "seedream_5p0_pro");
+      assert_serialization(CommonModelType::Seedream5p0ProUltra, "seedream_5p0_pro_u");
       assert_serialization(CommonModelType::Midjourney, "midjourney");
       assert_serialization(CommonModelType::MidjourneyV6, "midjourney_v6");
       assert_serialization(CommonModelType::MidjourneyV6p1, "midjourney_v6p1");
@@ -770,6 +832,8 @@ mod tests {
       assert_serialization(CommonModelType::GrokVideo, "grok_video");
       assert_serialization(CommonModelType::GrokImagineVideo, "grok_imagine_video");
       assert_serialization(CommonModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+      assert_serialization(CommonModelType::Flux3, "flux_3");
+      assert_serialization(CommonModelType::Flux3Draft, "flux_3_draft");
       assert_serialization(CommonModelType::Kling16Pro, "kling_1p6_pro");
       assert_serialization(CommonModelType::Kling21Pro, "kling_2p1_pro");
       assert_serialization(CommonModelType::Kling21Master, "kling_2p1_master");
@@ -778,6 +842,9 @@ mod tests {
       assert_serialization(CommonModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(CommonModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(CommonModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(CommonModelType::MinimaxH3, "minimax_h3");
+      assert_serialization(CommonModelType::MinimaxH3Turbo, "minimax_h3_turbo");
+      assert_serialization(CommonModelType::MinimaxH3Ultra, "minimax_h3_ultra");
       assert_serialization(CommonModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(CommonModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(CommonModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -792,6 +859,9 @@ mod tests {
       assert_serialization(CommonModelType::Seedance2p0Mini, "seedance_2p0_mini");
       assert_serialization(CommonModelType::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
       assert_serialization(CommonModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+      assert_serialization(CommonModelType::Seedance2p5Preview, "seedance_2p5_preview");
+      assert_serialization(CommonModelType::Seedance2p5, "seedance_2p5");
+      assert_serialization(CommonModelType::Seedance2p5Ultra, "seedance_2p5_u");
       assert_serialization(CommonModelType::Sora2, "sora_2");
       assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(CommonModelType::Veo2, "veo_2");
@@ -861,6 +931,7 @@ mod tests {
       assert_eq!(CommonModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(CommonModelType::Seedream5Lite.to_str(), "seedream_5_lite");
       assert_eq!(CommonModelType::Seedream5p0Pro.to_str(), "seedream_5p0_pro");
+      assert_eq!(CommonModelType::Seedream5p0ProUltra.to_str(), "seedream_5p0_pro_u");
       assert_eq!(CommonModelType::Midjourney.to_str(), "midjourney");
       assert_eq!(CommonModelType::MidjourneyV6.to_str(), "midjourney_v6");
       assert_eq!(CommonModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
@@ -877,6 +948,8 @@ mod tests {
       assert_eq!(CommonModelType::GrokVideo.to_str(), "grok_video");
       assert_eq!(CommonModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
       assert_eq!(CommonModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
+      assert_eq!(CommonModelType::Flux3.to_str(), "flux_3");
+      assert_eq!(CommonModelType::Flux3Draft.to_str(), "flux_3_draft");
       assert_eq!(CommonModelType::Kling16Pro.to_str(), "kling_1p6_pro");
       assert_eq!(CommonModelType::Kling21Pro.to_str(), "kling_2p1_pro");
       assert_eq!(CommonModelType::Kling21Master.to_str(), "kling_2p1_master");
@@ -885,6 +958,9 @@ mod tests {
       assert_eq!(CommonModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(CommonModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(CommonModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(CommonModelType::MinimaxH3.to_str(), "minimax_h3");
+      assert_eq!(CommonModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
+      assert_eq!(CommonModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
       assert_eq!(CommonModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(CommonModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(CommonModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -899,6 +975,9 @@ mod tests {
       assert_eq!(CommonModelType::Seedance2p0Mini.to_str(), "seedance_2p0_mini");
       assert_eq!(CommonModelType::Seedance2p0BytePlusMini.to_str(), "seedance_2p0_bp_mini");
       assert_eq!(CommonModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
+      assert_eq!(CommonModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
+      assert_eq!(CommonModelType::Seedance2p5.to_str(), "seedance_2p5");
+      assert_eq!(CommonModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
       assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
       assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
@@ -971,6 +1050,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedream_4p5").unwrap(), CommonModelType::Seedream4p5);
       assert_eq!(CommonModelType::from_str("seedream_5_lite").unwrap(), CommonModelType::Seedream5Lite);
       assert_eq!(CommonModelType::from_str("seedream_5p0_pro").unwrap(), CommonModelType::Seedream5p0Pro);
+      assert_eq!(CommonModelType::from_str("seedream_5p0_pro_u").unwrap(), CommonModelType::Seedream5p0ProUltra);
       assert_eq!(CommonModelType::from_str("midjourney").unwrap(), CommonModelType::Midjourney);
       assert_eq!(CommonModelType::from_str("midjourney_v6").unwrap(), CommonModelType::MidjourneyV6);
       assert_eq!(CommonModelType::from_str("midjourney_v6p1").unwrap(), CommonModelType::MidjourneyV6p1);
@@ -986,6 +1066,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("grok_video").unwrap(), CommonModelType::GrokVideo);
       assert_eq!(CommonModelType::from_str("grok_imagine_video").unwrap(), CommonModelType::GrokImagineVideo);
       assert_eq!(CommonModelType::from_str("grok_imagine_video_1p5").unwrap(), CommonModelType::GrokImagineVideo1p5);
+      assert_eq!(CommonModelType::from_str("flux_3").unwrap(), CommonModelType::Flux3);
+      assert_eq!(CommonModelType::from_str("flux_3_draft").unwrap(), CommonModelType::Flux3Draft);
       assert_eq!(CommonModelType::from_str("kling_1p6_pro").unwrap(), CommonModelType::Kling16Pro);
       assert_eq!(CommonModelType::from_str("kling_2p1_pro").unwrap(), CommonModelType::Kling21Pro);
       assert_eq!(CommonModelType::from_str("kling_2p1_master").unwrap(), CommonModelType::Kling21Master);
@@ -994,6 +1076,9 @@ mod tests {
       assert_eq!(CommonModelType::from_str("kling_3p0_standard").unwrap(), CommonModelType::Kling3p0Standard);
       assert_eq!(CommonModelType::from_str("kling_3p0_pro").unwrap(), CommonModelType::Kling3p0Pro);
       assert_eq!(CommonModelType::from_str("happy_horse_1p0").unwrap(), CommonModelType::HappyHorse1p0);
+      assert_eq!(CommonModelType::from_str("minimax_h3").unwrap(), CommonModelType::MinimaxH3);
+      assert_eq!(CommonModelType::from_str("minimax_h3_turbo").unwrap(), CommonModelType::MinimaxH3Turbo);
+      assert_eq!(CommonModelType::from_str("minimax_h3_ultra").unwrap(), CommonModelType::MinimaxH3Ultra);
       assert_eq!(CommonModelType::from_str("seedance_1p0_lite").unwrap(), CommonModelType::Seedance10Lite);
       assert_eq!(CommonModelType::from_str("seedance_1p0_pro").unwrap(), CommonModelType::Seedance10Pro);
       assert_eq!(CommonModelType::from_str("seedance_1p5_pro").unwrap(), CommonModelType::Seedance1p5Pro);
@@ -1008,6 +1093,9 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedance_2p0_mini").unwrap(), CommonModelType::Seedance2p0Mini);
       assert_eq!(CommonModelType::from_str("seedance_2p0_bp_mini").unwrap(), CommonModelType::Seedance2p0BytePlusMini);
       assert_eq!(CommonModelType::from_str("seedance_2p0_bpu_mini").unwrap(), CommonModelType::Seedance2p0BytePlusUltraMini);
+      assert_eq!(CommonModelType::from_str("seedance_2p5_preview").unwrap(), CommonModelType::Seedance2p5Preview);
+      assert_eq!(CommonModelType::from_str("seedance_2p5").unwrap(), CommonModelType::Seedance2p5);
+      assert_eq!(CommonModelType::from_str("seedance_2p5_u").unwrap(), CommonModelType::Seedance2p5Ultra);
       assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
       assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
       assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
@@ -1052,7 +1140,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 97);
+      assert_eq!(variants.len(), 106);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1080,6 +1168,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4p5));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5Lite));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5p0Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5p0ProUltra));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6p1));
@@ -1095,6 +1184,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokVideo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo1p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux3Draft));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling16Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling21Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling21Master));
@@ -1103,6 +1194,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Standard));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::HappyHorse1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Turbo));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Ultra));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Lite));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance1p5Pro));
@@ -1117,6 +1211,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Mini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusMini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltraMini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Preview));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Ultra));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));

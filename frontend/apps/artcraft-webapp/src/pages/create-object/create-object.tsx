@@ -4,7 +4,7 @@ import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import { faSparkles, faGem, faImage } from "@fortawesome/pro-solid-svg-icons";
+import { GemIcon, ImageIcon, SparklesIcon } from "lucide-react";
 import {
   PromptBox,
   ImagePromptRow,
@@ -341,6 +341,22 @@ export default function CreateObject() {
     [libraryTarget, setReferenceImages, setInputs],
   );
 
+  // The picker replaces a single-image slot, so only that slot's current image
+  // is greyed out; reusing an image across slots stays allowed.
+  const disabledLibraryTokens = useMemo(() => {
+    const slotToken =
+      libraryTarget === "primary"
+        ? referenceImages[0]?.mediaToken
+        : libraryTarget === "front"
+          ? inputs.frontImage?.mediaToken
+          : libraryTarget === "back"
+            ? inputs.backImage?.mediaToken
+            : libraryTarget === "left"
+              ? inputs.leftImage?.mediaToken
+              : inputs.rightImage?.mediaToken;
+    return slotToken ? [slotToken] : [];
+  }, [libraryTarget, referenceImages, inputs]);
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -539,8 +555,8 @@ export default function CreateObject() {
         <Tooltip content="PBR materials" position="top" closeOnClick>
           <ToggleButton
             isActive={enablePbr}
-            icon={faGem}
-            activeIcon={faGem}
+            icon={GemIcon}
+            activeIcon={GemIcon}
             label={enablePbr ? "PBR" : "PBR off"}
             onClick={() => setUi({ enablePbr: !enablePbr })}
           />
@@ -550,8 +566,8 @@ export default function CreateObject() {
         <Tooltip content="Generate textures" position="top" closeOnClick>
           <ToggleButton
             isActive={enableTexture}
-            icon={faImage}
-            activeIcon={faImage}
+            icon={ImageIcon}
+            activeIcon={ImageIcon}
             label={enableTexture ? "Texture" : "No texture"}
             onClick={() => setUi({ enableTexture: !enableTexture })}
           />
@@ -608,7 +624,7 @@ export default function CreateObject() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -704,6 +720,7 @@ export default function CreateObject() {
             isOpen={libraryTarget !== null}
             onClose={() => setLibraryTarget(null)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={disabledLibraryTokens}
             onSelectItem={(id) => setPickerSelectedIds([id])}
             maxSelections={1}
             onUseSelected={handleLibraryImageSelect}

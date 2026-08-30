@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
-import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import {
+  PopoverMenu,
+  type PopoverItem,
+  groupModelItems,
+  useModelPickerStyleStore,
+} from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -61,13 +66,16 @@ import {
 } from "@storyteller/omni-gen";
 import {
   getCreatorIconPathForModelId,
+  getCreatorIconSourceForModelId,
   getModelDescription,
+  getModelFamilyName,
   getModelInfo,
+  modelCreatorFromBackend,
 } from "@storyteller/model-list";
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
-import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
+import { SparklesIcon } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -83,20 +91,25 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  return models.map((model) => ({
-    label: model.full_name || model.model,
-    selected: model.model === selectedId,
-    description: getModelDescription(model.model, model.extra_info_short),
-    info: getModelInfo(model.model, model.extra_info) || undefined,
-    icon: (
-      <img
-        src={getCreatorIconPathForModelId(model.model)}
-        alt={`${model.model} logo`}
-        className="h-4 w-4 icon-auto-contrast"
-      />
-    ),
-    action: model.model, // use action to carry the model id
-  }));
+  return models.map((model) => {
+    const iconSource = getCreatorIconSourceForModelId(model.model);
+    return {
+      label: model.full_name || model.model,
+      selected: model.model === selectedId,
+      description: getModelDescription(model.model, model.extra_info_short),
+      info: getModelInfo(model.model, model.extra_info) || undefined,
+      icon: (
+        <img
+          src={iconSource.src}
+          alt={`${model.model} logo`}
+          className={
+            iconSource.isColor ? "h-4 w-4" : "h-4 w-4 icon-auto-contrast"
+          }
+        />
+      ),
+      action: model.model, // use action to carry the model id
+    };
+  });
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -274,6 +287,25 @@ export default function CreateImage() {
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
     [apiModels, selectedModel?.model],
   );
+  // Family-grouped variant for the desktop picker. The mobile bottom sheet
+  // keeps the flat `modelItems` (no flyouts on touch).
+  const modelPickerStyle = useModelPickerStyleStore((s) => s.style);
+  const groupedModelItems = useMemo(
+    () =>
+      modelPickerStyle === "grouped"
+        ? groupModelItems(modelItems, (item) =>
+            getModelFamilyName(
+              item.action,
+              modelCreatorFromBackend(
+                item.action
+                  ? _modelLookup.get(item.action)?.model_creator
+                  : undefined,
+              ),
+            ),
+          )
+        : modelItems,
+    [modelItems, modelPickerStyle],
+  );
 
   const hasContent =
     jobs.inProgress.length > 0 ||
@@ -394,6 +426,16 @@ export default function CreateImage() {
       setIsImagePickerOpen(false);
     },
     [maxImageRefs, referenceImages, setReferenceImages],
+  );
+
+  // Refs already in the deck, greyed out in the picker so the same media file
+  // can't be added twice to the reference list.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
   );
 
   const handleGenerate = useCallback(async () => {
@@ -637,7 +679,7 @@ export default function CreateImage() {
           <Button
             variant="primary"
             onClick={openSignupCta}
-            icon={faSparkles}
+            icon={SparklesIcon}
             className="h-12 px-6 text-base font-semibold rounded-full"
           >
             Sign up to create
@@ -696,11 +738,11 @@ export default function CreateImage() {
                 closeOnClick
               >
                 <PopoverMenu
-                  items={modelItems}
+                  items={groupedModelItems}
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-[360px]"
+                  panelClassName="w-[280px]"
                   richList
                   triggerIcon={
                     <img
@@ -766,6 +808,7 @@ export default function CreateImage() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}

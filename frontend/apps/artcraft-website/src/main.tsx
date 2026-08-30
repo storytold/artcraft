@@ -6,6 +6,7 @@ import App from "./app/app";
 import { StorytellerApiHostStore, UsersApi } from "@storyteller/api";
 import { captureLandingContext, getReferrer } from "@storyteller/common";
 import { setOmniGenErrorNotifier } from "@storyteller/omni-gen";
+import { setToastDelegate } from "@storyteller/ui-toaster";
 import { toast } from "./components/toast/toast";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -20,15 +21,37 @@ if (import.meta.env.DEV) {
     StorytellerApiHostStore.getInstance().setApiSchemeAndHost(
       window.location.origin,
     );
-    // NB: This is for Brandon to test with storyteller-web locally:
-    StorytellerApiHostStore.getInstance().setDevelopment();
+    // Backend devs: launch with USE_LOCAL_API=1 (see
+    // script/website/unix_frontend_website_dev.sh) to point API calls at a
+    // local storyteller-web (http://localhost:12345). When unset — the
+    // frontend-dev default — this branch never runs and API calls hit
+    // production. Do not comment this in or out; set the env var instead.
+    const useLocalApi = import.meta.env.VITE_USE_LOCAL_API;
+    if (useLocalApi === "1" || useLocalApi === "true") {
+      StorytellerApiHostStore.getInstance().setDevelopment();
+    }
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }
 }
 
 // Surface omni model/generation outages through this app's toast component.
-setOmniGenErrorNotifier((message) => toast.error(message));
+// Marketing landers with an embedded promptbox (e.g. /minimax-h3) fall back
+// to built-in model defaults when the listing fails, so an outage toast there
+// would only alarm visitors.
+setOmniGenErrorNotifier((message) => {
+  if (window.location.pathname.startsWith("/minimax-h3")) return;
+  toast.error(message);
+});
+
+// Shared libs (promptbox deck, gallery modal, ...) fire react-hot-toast
+// toasts, but this app renders its own ToastContainer and never mounts the
+// react-hot-toast container. Route those toasts here so limit/validation
+// errors (e.g. "audio too long") actually show up.
+setToastDelegate({
+  success: (message) => toast.success(message),
+  error: (message) => toast.error(message),
+});
 
 // Persist landing context (referral username, landing URL, referrer) to apex-
 // domain cookies so attribution survives the getartcraft.com →

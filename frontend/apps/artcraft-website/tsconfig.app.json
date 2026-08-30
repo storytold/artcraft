@@ -50,10 +50,16 @@
       "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/toaster/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/omni-gen/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/switch/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/promptbox/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/close-button/tsconfig.lib.json"
@@ -83,19 +89,22 @@
       "path": "../../libs/markdown-content/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/modal/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/components/input/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/button/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/modal/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/common/tsconfig.lib.json"
     },
     {
       "path": "../../libs/api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/icons/tsconfig.lib.json"
     }
   ]
 }

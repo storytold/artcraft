@@ -6,8 +6,7 @@ import {
   getReferralUsername,
   getReferrer,
 } from "@storyteller/common";
-import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LoaderCircleIcon } from "lucide-react";
 import { useState } from "react";
 
 interface GoogleLoginButtonProps {
@@ -61,10 +60,9 @@ export function GoogleLoginButton({
       {/* Custom visual button - shown behind */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors">
         {isLoading ? (
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-lg text-gray-600"
-          />
+          <LoaderCircleIcon
+            
+            className="animate-spin text-lg text-gray-600" />
         ) : (
           <>
             <GoogleIcon />

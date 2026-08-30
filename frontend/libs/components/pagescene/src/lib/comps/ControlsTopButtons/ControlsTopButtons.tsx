@@ -1,14 +1,9 @@
 import React, { useCallback, useContext, useState } from "react";
-import {
-  faCheckSquare,
-  faFile,
-  faKeyboard,
-  faSquare,
-} from "@fortawesome/pro-solid-svg-icons";
+import { FileIcon, KeyboardIcon, SquareCheckIcon, SquareIcon } from "lucide-react";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import { Modal } from "@storyteller/ui-modal";
+import { useCheatsheetPin } from "@storyteller/keybinds";
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
@@ -19,13 +14,13 @@ import {
 import { DEFAULT_CAMERA_ASPECT_RATIO, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
-import { Help } from "./Help/Help";
 
 const isNumberString = (s: string): boolean => /^\d+$/.test(s);
 
 export const ControlsTopButtons = () => {
   const editor = useContext(EngineContext);
-  const [shortcutsIsShowing, setShortcutsIsShowing] = useState(false);
+  const cheatsheetPinned = useCheatsheetPin((s) => s.pinned);
+  const toggleCheatsheet = useCheatsheetPin((s) => s.togglePinned);
 
   const sceneMeta = usePageSceneStore((s) => s.sceneMeta);
   const currentUserToken = usePageSceneStore((s) => s.currentUserToken);
@@ -247,7 +242,7 @@ export const ControlsTopButtons = () => {
       <div className="flex gap-1.5">
         <ButtonDropdown
           label="File"
-          icon={faFile}
+          icon={FileIcon}
           className="shadow-xl"
           options={[
             {
@@ -341,7 +336,6 @@ export const ControlsTopButtons = () => {
                   {
                     disabled: !currentUserToken || !sceneMeta.token,
                     label: "Save scene as copy",
-                    description: "Ctrl+Shift+S",
                     onDialogOpen: bumpCopyCountInTitle,
                     dialogProps: saveAsCopyDialogProps,
                   },
@@ -384,7 +378,7 @@ export const ControlsTopButtons = () => {
         />
 
         <Button
-          icon={outlinerShowing ? faCheckSquare : faSquare}
+          icon={outlinerShowing ? SquareCheckIcon : SquareIcon}
           className="shadow-xl"
           iconClassName={twMerge(
             "text-[16px]",
@@ -396,23 +390,24 @@ export const ControlsTopButtons = () => {
           Outliner
         </Button>
 
+        {/* Pins the live keybinds cheatsheet (rendered by Stage3DBody) open
+            until Esc / click outside / this button again. data-cheatsheet-toggle
+            exempts it from the overlay's click-outside dismissal so the second
+            click reads as "close", not "close then reopen". */}
         <Button
-          icon={faKeyboard}
+          icon={KeyboardIcon}
           variant="secondary"
           className="shadow-xl"
-          onClick={() => setShortcutsIsShowing(true)}
+          iconClassName={twMerge(
+            "text-[16px]",
+            cheatsheetPinned ? "text-white" : "text-white/20",
+          )}
+          onClick={toggleCheatsheet}
+          data-cheatsheet-toggle
         >
           Shortcuts
         </Button>
       </div>
-      <Modal
-        isOpen={shortcutsIsShowing}
-        onClose={() => setShortcutsIsShowing(false)}
-        title="Shortcuts"
-        className="h-[500px] max-w-4xl"
-      >
-        <Help />
-      </Modal>
     </div>
   );
 };

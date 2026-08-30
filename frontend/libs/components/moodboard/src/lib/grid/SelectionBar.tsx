@@ -1,12 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTrashCan,
-  faXmark,
-  faWandMagicSparkles,
-  faLayerGroup,
-  faPlus,
-} from "@fortawesome/pro-regular-svg-icons";
+import { LayersIcon, PlusIcon, Trash2Icon, WandSparklesIcon, XIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { BoardSection } from "../boards/boardTypes";
 
 interface Props {
@@ -59,7 +53,7 @@ export const SelectionBar = ({
             onClick={onUseReference}
             className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <FontAwesomeIcon icon={faWandMagicSparkles} className="text-xs" />
+            <WandSparklesIcon  className="text-xs" />
             Use as reference
           </button>
         )}
@@ -68,7 +62,7 @@ export const SelectionBar = ({
           onClick={onDelete}
           className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
         >
-          <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
+          <Trash2Icon  className="text-xs" />
           Delete
         </button>
         <button
@@ -77,7 +71,7 @@ export const SelectionBar = ({
           onClick={onClear}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <FontAwesomeIcon icon={faXmark} />
+          <XIcon />
         </button>
       </div>
     </div>
@@ -126,7 +120,7 @@ const MoveToMenu = ({
         aria-expanded={open}
         className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
-        <FontAwesomeIcon icon={faLayerGroup} className="text-xs" />
+        <LayersIcon  className="text-xs" />
         Move to
       </button>
 
@@ -153,7 +147,7 @@ const MoveToMenu = ({
           <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
           <MenuItem
             label="New section"
-            icon={faPlus}
+            icon={PlusIcon}
             accent
             onClick={() => pick(onCreateSectionWithSelection)}
           />
@@ -171,7 +165,7 @@ const MenuItem = ({
   onClick,
 }: {
   label: string;
-  icon?: typeof faPlus;
+  icon?: typeof PlusIcon;
   muted?: boolean;
   accent?: boolean;
   onClick: () => void;
@@ -191,7 +185,7 @@ const MenuItem = ({
     ].join(" ")}
   >
     {icon ? (
-      <FontAwesomeIcon icon={icon} className="h-3 w-3 shrink-0 opacity-70" />
+      <DynamicIcon icon={icon} className="h-3 w-3 shrink-0 opacity-70" />
     ) : (
       <span className="h-3 w-3 shrink-0" />
     )}

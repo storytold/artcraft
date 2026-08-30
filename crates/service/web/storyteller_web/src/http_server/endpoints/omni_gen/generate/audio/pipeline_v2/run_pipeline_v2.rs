@@ -22,8 +22,8 @@ use crate::http_server::endpoints::omni_gen::generate::audio::helpers::pipeline_
 use crate::http_server::endpoints::omni_gen::generate::audio::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
-use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
-use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_kinovi_web_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
@@ -57,10 +57,10 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let router_builder = router_builder.clone();
 
   let provider = match router_builder.model {
-    RouterAudioModel::SunoMusic => RouterProvider::Seedance2Pro,
-    RouterAudioModel::SunoRemix => RouterProvider::Seedance2Pro,
-    RouterAudioModel::SunoSounds => RouterProvider::Seedance2Pro,
-    RouterAudioModel::SunoSample => RouterProvider::Seedance2Pro,
+    RouterAudioModel::SunoMusic => RouterProvider::KinoviWeb,
+    RouterAudioModel::SunoRemix => RouterProvider::KinoviWeb,
+    RouterAudioModel::SunoSounds => RouterProvider::KinoviWeb,
+    RouterAudioModel::SunoSample => RouterProvider::KinoviWeb,
     RouterAudioModel::SeedAudio1p0 => RouterProvider::Fal,
   };
 
@@ -157,7 +157,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   // 5. On failure, refund wallet for Kinovi requests.
   if let Err(ref err) = result {
-    if matches!(provider, RouterProvider::Seedance2Pro) {
+    if matches!(provider, RouterProvider::KinoviWeb) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 audio generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
 

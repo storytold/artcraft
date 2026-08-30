@@ -17,7 +17,7 @@ use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::draft:
 /// Drafts hold validated/planned parameters but may still need media
 /// resolution (e.g. uploading local files to a provider) before they can
 /// be sent. Today only the Kinovi models need this — when the caller
-/// supplies reference images, we must upload them to the Seedance2Pro
+/// supplies reference images, we must upload them to the KinoviWeb
 /// CDN before sending the request.
 #[derive(Clone, Debug)]
 pub enum ImageGenerationDraftRequest {
@@ -30,10 +30,10 @@ pub enum ImageGenerationDraftRequest {
 impl ImageGenerationDraftRequest {
   pub fn get_provider(&self) -> RouterProvider {
     match self {
-      Self::KinoviMidjourney7(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviMidjourney7Niji(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviMidjourney8(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedream5p0Pro(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviMidjourney7(_) => RouterProvider::KinoviWeb,
+      Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
+      Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
     }
   }
 

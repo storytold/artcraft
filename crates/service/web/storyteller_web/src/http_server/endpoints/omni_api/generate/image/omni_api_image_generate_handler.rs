@@ -13,12 +13,13 @@ use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -34,9 +35,10 @@ use crate::http_server::endpoints::omni_api::generate::image::check_request::che
 use crate::http_server::endpoints::omni_api::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_api::generate::image::ingest_url_inputs::ingest_url_inputs;
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
-use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_kinovi_web_jobs::{insert_kinovi_web_jobs, InsertKinoviWebJobsArgs};
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_api::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
+use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
 use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -128,12 +130,21 @@ pub async fn omni_api_image_generate_handler(
     &http_request,
     &mut mysql_connection,
     server_state.server_environment,
+server_state.maybe_media_cdn_override_url.as_deref(),
     request.image_media_tokens.as_deref().unwrap_or(&[]),
   ).await?;
 
   // ==================== HYDRATE ROUTER REQUEST ==================== //
 
   let router_builder = hydrate_to_router_request(&request)?;
+
+  // ==================== PIPELINE DISPATCH ==================== //
+
+  let kinovi_account = match request.model {
+    Some(CommonImageModel::Seedream5p0ProUltra) => KinoviAccount::BytePlusUltra,
+    // Everything else goes through Volcengine
+    _ => KinoviAccount::Volcengine,
+  };
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
@@ -170,6 +181,7 @@ pub async fn omni_api_image_generate_handler(
     server_state: &server_state,
     user_token,
     resolved_media: &resolved_media,
+    kinovi_account,
     debug_log_context: &debug_log_context,
     mysql_connection,
   }).await;
@@ -282,19 +294,20 @@ pub async fn omni_api_image_generate_handler(
   // -- Inference job --
   //
   // Each provider has its own queue / worker. Branch by response variant
-  // so the row lands on the correct queue (the Seedance2Pro/Kinovi worker
+  // so the row lands on the correct queue (the KinoviWeb/Kinovi worker
   // for Midjourney; the Fal worker for everything else).
 
   let job_token: InferenceJobToken = match &pipeline_result.response {
-    GenerateImageResponse::Seedance2Pro(payload) => {
-      info!("Inserting seedance2pro image job(s) with token: {:?}", pipeline_result.apriori_job_token);
+    GenerateImageResponse::KinoviWeb(payload) => {
+      info!("Inserting kinovi_web image job(s) with token: {:?}", pipeline_result.apriori_job_token);
 
-      // The image-side omni pipeline always dispatches Midjourney via the
-      // Volcengine Kinovi account today. If we ever route to BytePlus /
-      // BytePlus Ultra here, mirror the video-side `kinovi_account` knob.
-      let kinovi_version = KinoviVersion::Volcengine;
+      let kinovi_version = match kinovi_account {
+        KinoviAccount::Volcengine => KinoviVersion::Volcengine,
+        KinoviAccount::BytePlus => KinoviVersion::BytePlus,
+        KinoviAccount::BytePlusUltra => KinoviVersion::BytePlusUltra,
+      };
 
-      let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+      let result = insert_kinovi_web_jobs(InsertKinoviWebJobsArgs {
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.maybe_wallet_ledger_entry_token.as_ref(),

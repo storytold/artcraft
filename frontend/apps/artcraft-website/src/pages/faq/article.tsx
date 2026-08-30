@@ -3,8 +3,7 @@ import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { getFaqItemBySlug, markdownToHtml } from "@storyteller/markdown-content";
-import { faChevronLeft } from "@fortawesome/pro-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronLeftIcon } from "lucide-react";
 import { useMemo } from "react";
 
 const FaqArticle = () => {
@@ -59,7 +58,7 @@ const FaqArticle = () => {
             to="/faq"
             className="rounded-lg px-4 py-2 text-sm border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2"
           >
-            <FontAwesomeIcon icon={faChevronLeft} />
+            <ChevronLeftIcon />
             Back to FAQ
           </Link>
         </div>

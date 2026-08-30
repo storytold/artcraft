@@ -1,21 +1,43 @@
+use std::path::Path;
+
+use log::{info, warn};
+
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::utils::download_file::download_file;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
+use kinovi_web_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+use kinovi_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url_str, ExtractExtensions};
 
-/// Downloads a file from a source URL and re-uploads it to seedance2pro CDN.
-pub(crate) async fn upload_to_seedance2pro(
-  session: &Seedance2ProSession,
+/// Re-uploads a file to the kinovi_web CDN, reading it from
+/// `maybe_local_path` when the caller already downloaded it (e.g. reference
+/// videos probed for billing), or downloading it from the source URL
+/// otherwise.
+pub(crate) async fn upload_to_kinovi_web(
+  session: &KinoviWebSession,
   source_url: &str,
+  maybe_local_path: Option<&Path>,
 ) -> Result<String, ArtcraftRouterError> {
   let extension = extract_extension_from_url_str(source_url, &ExtractExtensions::All)
       .map(|ext| ext.without_period().to_string())
       .unwrap_or_else(|| "jpg".to_string());
 
-  let file_bytes = download_file(source_url).await?;
+  let file_bytes = match maybe_local_path {
+    Some(local_path) => match std::fs::read(local_path) {
+      Ok(bytes) => {
+        info!("Reusing predownloaded file for kinovi upload: {}", source_url);
+        bytes
+      }
+      Err(err) => {
+        // The file should exist; fall back to downloading rather than fail.
+        warn!("Failed to read predownloaded file {:?} ({:?}); re-downloading {}",
+          local_path, err, source_url);
+        download_file(source_url).await?
+      }
+    },
+    None => download_file(source_url).await?,
+  };
 
   let prepare_response = prepare_file_upload(PrepareFileUploadArgs {
     session,
@@ -23,7 +45,7 @@ pub(crate) async fn upload_to_seedance2pro(
     host_override: None,
   })
       .await
-      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
   let upload_response = upload_file(UploadFileArgs {
     upload_url: prepare_response.upload_url,
@@ -31,7 +53,7 @@ pub(crate) async fn upload_to_seedance2pro(
     host_override: None,
   })
       .await
-      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
   Ok(upload_response.public_url)
 }

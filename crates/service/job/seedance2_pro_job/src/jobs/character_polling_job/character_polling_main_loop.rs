@@ -3,19 +3,28 @@ use std::time::{Duration, Instant};
 
 use log::{error, info, warn};
 
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::list_pending_seedance2pro_character_jobs;
-use seedance2pro_client::requests::poll_characters::poll_characters::{
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_character_jobs::list_pending_kinovi_web_character_jobs;
+use kinovi_web_client::requests::poll_characters::poll_characters::{
   poll_characters, CharacterCreationStatus, CharacterStatus, PollCharactersArgs,
 };
 
 use crate::job_dependencies::JobDependencies;
+use crate::with_deadline::{with_deadline, DATABASE_DEADLINE};
 use super::process_failed_character::process_failed_character;
 use super::process_successful_character::process_successful_character;
 
 const POLL_ALERT_THRESHOLD: Duration = Duration::from_secs(600);
 
+/// Hard ceiling on reconciling one finished character (download + DB writes).
+const CHARACTER_PROCESSING_DEADLINE: Duration = Duration::from_secs(15 * 60);
+
+/// Name under which this loop reports liveness to the health check.
+pub const HEARTBEAT_NAME: &str = "character_polling";
+
 pub async fn character_polling_main_loop(deps: JobDependencies) {
   while !deps.application_shutdown.get() {
+    deps.heartbeats.beat(HEARTBEAT_NAME);
+
     let start = Instant::now();
     let result = run_poll_iteration(&deps).await;
     let elapsed = start.elapsed();
@@ -40,7 +49,11 @@ pub async fn character_polling_main_loop(deps: JobDependencies) {
 
 async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   // 1. Query all pending character creation jobs from DB.
-  let pending_jobs = list_pending_seedance2pro_character_jobs(&deps.mysql_pool).await?;
+  let pending_jobs = with_deadline(
+    "pending character jobs query",
+    DATABASE_DEADLINE,
+    list_pending_kinovi_web_character_jobs(&deps.mysql_pool),
+  ).await?;
 
   if pending_jobs.is_empty() {
     return Ok(());
@@ -56,7 +69,7 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
 
   // 2. Poll characters from Kinovi API.
   let response = poll_characters(PollCharactersArgs {
-    session: &deps.seedance2pro_session,
+    session: &deps.kinovi_web_session,
     cursor: None,
     limit: None,
     host_override: None,
@@ -72,6 +85,8 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
       break;
     }
 
+    deps.heartbeats.beat(HEARTBEAT_NAME);
+
     let job = match job_by_character_id.get(&character.character_id) {
       Some(j) => j,
       None => continue, // Not one of our pending jobs.
@@ -83,7 +98,13 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
           "Character {} completed successfully, processing job {}",
           character.character_id, job.job_token,
         );
-        match process_successful_character(deps, job, character).await {
+        let outcome = with_deadline(
+          "character processing",
+          CHARACTER_PROCESSING_DEADLINE,
+          process_successful_character(deps, job, character),
+        ).await;
+
+        match outcome {
           Ok(()) => {
             let _ = deps.job_stats.increment_success_count();
           }
@@ -101,7 +122,15 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
           "Character {} failed, processing job {}",
           character.character_id, job.job_token,
         );
-        process_failed_character(deps, job, character).await;
+        let outcome = with_deadline(
+          "failed character processing",
+          CHARACTER_PROCESSING_DEADLINE,
+          async { Ok::<(), anyhow::Error>(process_failed_character(deps, job, character).await) },
+        ).await;
+
+        if let Err(err) = outcome {
+          warn!("Error processing failed character {}: {:?}", character.character_id, err);
+        }
       }
       CharacterCreationStatus::Pending => {
         // Still in progress — check again next poll.

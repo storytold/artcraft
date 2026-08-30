@@ -1,6 +1,6 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGrid2, faListUl } from "@fortawesome/pro-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { LayoutGridIcon, ListIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   useGalleryViewStore,
@@ -9,11 +9,11 @@ import {
 
 const OPTIONS: {
   mode: GalleryViewMode;
-  icon: IconDefinition;
+  icon: LucideIcon;
   label: string;
 }[] = [
-  { mode: "grid", icon: faGrid2, label: "Grid view" },
-  { mode: "list", icon: faListUl, label: "List view" },
+  { mode: "grid", icon: LayoutGridIcon, label: "Grid view" },
+  { mode: "list", icon: ListIcon, label: "List view" },
 ];
 
 // Segmented grid/list switch for the create-page galleries. Lives in the
@@ -43,7 +43,7 @@ export function GalleryViewToggle() {
                   : "text-white/45 hover:text-white/80"
               }`}
             >
-              <FontAwesomeIcon icon={icon} />
+              <DynamicIcon icon={icon} />
             </button>
           </Tooltip>
         );

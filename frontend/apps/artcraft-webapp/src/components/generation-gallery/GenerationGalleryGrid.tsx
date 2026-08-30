@@ -1,19 +1,12 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faLink,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
+import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   GenerationGridView,
   type GalleryItem,
-  is3DMediaClass,
   type RecreateSlotContext,
   useGallerySelectionStore,
+  useLastViewedGenerationStore,
 } from "@storyteller/ui-generation-list";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
 import { useGalleryItemActions } from "./useGalleryItemActions";
@@ -41,6 +34,7 @@ export function GenerationGalleryGrid({
 }: GenerationGalleryProps) {
   const selectionActive = useGallerySelectionStore((s) => s.active);
   const selectedIds = useGallerySelectionStore((s) => s.ids);
+  const lastViewedId = useLastViewedGenerationStore((s) => s.id);
   return (
     <GenerationGridView
       inProgressJobs={inProgressJobs}
@@ -61,6 +55,7 @@ export function GenerationGalleryGrid({
       selectionMode={!!selectable && selectionActive}
       selectedIds={selectedIds}
       onToggleSelect={handleToggleSelect}
+      lastViewedId={lastViewedId}
     />
   );
 }
@@ -77,14 +72,16 @@ function CardRecreateButton({
   mediaClass,
   kind,
 }: RecreateSlotContext) {
-  // Recreate only targets the image/video create pages; 3D generations have no
-  // recreate flow, so map to a valid class for the hook and render nothing.
+  // Recreate only targets the image/video create pages; 3D and audio
+  // generations have no recreate flow, so map to a valid class for the hook
+  // (it must run unconditionally) and render nothing.
+  const hasRecreateFlow = mediaClass === "image" || mediaClass === "video";
   const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
     promptToken,
-    is3DMediaClass(mediaClass) ? "image" : mediaClass,
+    hasRecreateFlow ? mediaClass : "image",
   );
 
-  if (is3DMediaClass(mediaClass)) return null;
+  if (!hasRecreateFlow) return null;
 
   if (kind === "failed") {
     return (
@@ -94,8 +91,8 @@ function CardRecreateButton({
         disabled={isRecreating}
         className="flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
       >
-        <FontAwesomeIcon
-          icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+        <DynamicIcon
+          icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
           className={isRecreating ? "animate-spin" : ""}
         />
         Recreate
@@ -112,8 +109,8 @@ function CardRecreateButton({
         aria-label="Recreate"
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 opacity-0 transition hover:bg-white/15 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-60"
       >
-        <FontAwesomeIcon
-          icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+        <DynamicIcon
+          icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
           className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
         />
       </button>
@@ -156,8 +153,8 @@ function CardActions({
             disabled={isRecreating}
             aria-label="Recreate"
           >
-            <FontAwesomeIcon
-              icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+            <DynamicIcon
+              icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
               className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
             />
           </button>
@@ -171,7 +168,7 @@ function CardActions({
             onClick={handleMakeVideo}
             aria-label="Make Video"
           >
-            <FontAwesomeIcon icon={faVideo} className="text-sm" />
+            <VideoIcon  className="text-sm" />
           </button>
         </Tooltip>
       )}
@@ -182,8 +179,8 @@ function CardActions({
           onClick={handleShare}
           aria-label="Share"
         >
-          <FontAwesomeIcon
-            icon={shareCopied ? faCheck : faLink}
+          <DynamicIcon
+            icon={shareCopied ? CheckIcon : LinkIcon}
             className="text-sm"
           />
         </button>
@@ -197,8 +194,8 @@ function CardActions({
             className={buttonClass}
             aria-label="Download"
           >
-            <FontAwesomeIcon
-              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+            <DynamicIcon
+              icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
               className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
             />
           </button>

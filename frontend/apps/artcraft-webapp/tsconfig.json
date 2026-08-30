@@ -21,13 +21,13 @@
       "path": "../../libs/components/slider-v2"
     },
     {
+      "path": "../../libs/components/toaster"
+    },
+    {
       "path": "../../libs/omni-gen"
     },
     {
       "path": "../../libs/components/pricing-modal"
-    },
-    {
-      "path": "../../libs/components/promptbox"
     },
     {
       "path": "../../libs/components/model-selector"
@@ -39,13 +39,22 @@
       "path": "../../libs/components/pagescene"
     },
     {
-      "path": "../../libs/components/gallery-modal"
-    },
-    {
       "path": "../../libs/components/lightbox-modal"
     },
     {
+      "path": "../../libs/components/gallery-modal"
+    },
+    {
       "path": "../../libs/components/switch"
+    },
+    {
+      "path": "../../libs/state/subscription"
+    },
+    {
+      "path": "../../libs/components/promptbox"
+    },
+    {
+      "path": "../../libs/components/audio-player"
     },
     {
       "path": "../../libs/components/viewer-3d"
@@ -69,9 +78,6 @@
       "path": "../../libs/components/generation-list"
     },
     {
-      "path": "../../libs/components/audio-player"
-    },
-    {
       "path": "../../libs/components/tab-selector"
     },
     {
@@ -87,6 +93,9 @@
       "path": "../../libs/components/button"
     },
     {
+      "path": "../../libs/icons"
+    },
+    {
       "path": "../../libs/components/vfx"
     },
     {
@@ -94,6 +103,9 @@
     },
     {
       "path": "../../libs/api"
+    },
+    {
+      "path": "../../libs/components/keybinds"
     },
     {
       "path": "./tsconfig.app.json"

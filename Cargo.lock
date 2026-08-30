@@ -794,9 +794,9 @@ dependencies = [
  "fal_client",
  "gmicloud_client",
  "grok_api_client",
+ "kinovi_web_client",
  "log",
  "reqwest 0.12.23",
- "seedance2pro_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -6399,6 +6399,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "kinovi_web_client"
+version = "0.0.1"
+dependencies = [
+ "chrono",
+ "cloudflare_errors",
+ "env",
+ "env_logger 0.11.9",
+ "errors",
+ "log",
+ "rand 0.9.2",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "test_data",
+ "test_utils",
+ "tokio",
+ "url",
+ "workspace-build-acceleration",
+ "wreq",
+ "wreq-util",
+]
+
+[[package]]
 name = "kubectl-pod-cleanup"
 version = "0.0.1"
 dependencies = [
@@ -7355,6 +7378,22 @@ dependencies = [
  "tokio",
  "uuid_utils",
  "workspace-build-acceleration",
+]
+
+[[package]]
+name = "mysql_testing"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bcrypt",
+ "bucket_paths",
+ "chrono",
+ "enums",
+ "log",
+ "mysql_queries",
+ "sqlx",
+ "tokens",
+ "tokio",
 ]
 
 [[package]]
@@ -10546,13 +10585,13 @@ dependencies = [
  "errors",
  "hashing",
  "jobs_common",
+ "kinovi_web_client",
  "log",
  "mysql_queries",
  "pager",
  "reqwest 0.12.23",
  "rootly_client",
  "rootly_config",
- "seedance2pro_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -10562,29 +10601,6 @@ dependencies = [
  "tokens",
  "tokio",
  "workspace-build-acceleration",
-]
-
-[[package]]
-name = "seedance2pro_client"
-version = "0.0.1"
-dependencies = [
- "chrono",
- "cloudflare_errors",
- "env",
- "env_logger 0.11.9",
- "errors",
- "log",
- "rand 0.9.2",
- "serde",
- "serde_derive",
- "serde_json",
- "test_data",
- "test_utils",
- "tokio",
- "url",
- "workspace-build-acceleration",
- "wreq",
- "wreq-util",
 ]
 
 [[package]]
@@ -11629,6 +11645,7 @@ dependencies = [
  "images",
  "infer 0.16.0",
  "jwt_signer",
+ "kinovi_web_client",
  "language-tags",
  "lexical-sort",
  "limitation",
@@ -11642,6 +11659,7 @@ dependencies = [
  "migration",
  "mimetypes",
  "mysql_queries",
+ "mysql_testing",
  "once_cell",
  "opaque_cursors",
  "pager",
@@ -11660,7 +11678,6 @@ dependencies = [
  "rootly_config",
  "rust-s3",
  "rustls 0.23.36",
- "seedance2pro_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -11837,8 +11854,8 @@ dependencies = [
  "easyenv",
  "enums",
  "errors",
+ "kinovi_web_client",
  "log",
- "seedance2pro_client",
  "serde_json",
  "tokens",
  "tokio",

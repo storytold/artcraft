@@ -23,8 +23,6 @@ export const MODEL_TYPE_GROUPS: SelectGroup[] = [
       { value: 'seedance_2p0_fast', label: 'Seedance 2.0 Fast' },
       { value: 'seedance_2p0_bp', label: 'Seedance 2.0 (BytePlus)' },
       { value: 'seedance_2p0_bp_fast', label: 'Seedance 2.0 Fast (BytePlus)' },
-      { value: 'seedance_2p0_u', label: 'Seedance 2.0 Ultra' },
-      { value: 'seedance_2p0_u_fast', label: 'Seedance 2.0 Ultra Fast' },
       { value: 'seedance_2p0_bpu', label: 'Seedance 2.0 Ultra (BytePlus)' },
       { value: 'seedance_2p0_bpu_fast', label: 'Seedance 2.0 Ultra Fast (BytePlus)' },
     ],

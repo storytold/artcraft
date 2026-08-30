@@ -10,11 +10,11 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_video_jobs::PendingKinoviWebJob;
 use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token_with_executor::{mark_generic_inference_job_successfully_done_by_token_with_executor, MarkGenericInferenceJobSuccessfullyDoneByTokenWithExecutorArgs};
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, MediaResult};
+use kinovi_web_client::requests::poll_orders::poll_orders::{OrderStatus, MediaResult};
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -35,7 +35,7 @@ const MIME_TYPE: &str = "image/png";
 /// result entity.
 pub async fn process_successful_image_job(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProJob,
+  job: &PendingKinoviWebJob,
   order: &OrderStatus,
 ) -> AnyhowResult<()> {
   if order.results.is_empty() {
@@ -173,7 +173,7 @@ pub async fn process_successful_image_job(
 /// and insert a `media_files` row. Returns the new media file token.
 async fn download_and_store_one_image(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProJob,
+  job: &PendingKinoviWebJob,
   order: &OrderStatus,
   result: &MediaResult,
   index: usize,
@@ -186,7 +186,8 @@ async fn download_and_store_one_image(
     index + 1, order.results.len(), order.order_id, image_url,
   );
 
-  let image_bytes: Vec<u8> = reqwest::get(image_url)
+  let image_bytes: Vec<u8> = deps.download_client.get(image_url)
+    .send()
     .await
     .map_err(|err| anyhow!("reqwest error downloading image {}: {:?}", index, err))?
     .bytes()
@@ -228,6 +229,7 @@ async fn download_and_store_one_image(
     .maybe_frame_width(result.maybe_width)
     .maybe_generation_provider(Some(GenerationProvider::Artcraft))
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .maybe_source_job_token(Some(&job.job_token))
     .maybe_platform_type(job.maybe_platform_type)
     .media_file_class(MediaFileClass::Image)
     .media_file_origin_category(MediaFileOriginCategory::Inference)

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::configs::app_startup::username_set::UsernameSet;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::ModelTokensByCategoryToken;
@@ -12,6 +14,7 @@ use crate::state::flags::paging_flags::PagingFlags;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
+use crate::util::internal_api_key::InternalApiKey;
 use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
@@ -56,6 +59,12 @@ pub struct ServerState {
 
   /// Knowing if we're in production will allow us to turn off development-only functionalities.
   pub server_environment: ServerEnvironment,
+
+  /// Optional base URL (scheme + host, no trailing slash) that REPLACES the
+  /// media CDN host wherever the server itself downloads media (reference
+  /// probing, provider upload resolution). For tests and local development
+  /// against a stub server; None in production.
+  pub maybe_media_cdn_override_url: Option<String>,
 
   /// Feature flags will allow us to restart the service with different conditions embedded in the code.
   pub flags: StaticFeatureFlags,
@@ -109,11 +118,19 @@ pub struct ServerState {
 
   pub static_api_token_set: StaticApiTokenSet,
 
+  /// Accepted internal API keys for our own worker fleets (GPU inference).
+  /// Loaded from `INTERNAL_API_KEYS` at startup; empty when unset.
+  pub internal_api_keys: HashSet<InternalApiKey>,
+
   pub caches: InMemoryCaches,
 
   pub google_sign_in_cert: GoogleSignInCert,
 
   pub temp_dir_creator: ScopedTempDirCreator,
+
+  /// Embedded metrics dashboards for the admin dashboard, configured from
+  /// optional env vars at startup.
+  pub dashboards: Dashboards,
 }
 
 #[derive(Clone)]
@@ -275,4 +292,18 @@ pub struct TrollBans {
 #[derive(Clone)]
 pub struct ResendData {
   pub api_key: String,
+}
+
+/// Embedded metrics dashboards surfaced to admins/mods.
+#[derive(Clone)]
+pub struct Dashboards {
+  pub databox: DataboxDashboards,
+}
+
+/// Databox datawall IDs. Each is `None` when its env var isn't configured,
+/// in which case the dashboard is simply omitted from the moderation API.
+#[derive(Clone)]
+pub struct DataboxDashboards {
+  pub daus_id: Option<String>,
+  pub daily_generations_id: Option<String>,
 }

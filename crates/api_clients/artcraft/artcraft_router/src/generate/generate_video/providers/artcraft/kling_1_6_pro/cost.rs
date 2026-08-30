@@ -15,8 +15,8 @@ impl ArtcraftKling16ProCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // 5s = 52¢, 10s = 103¢.
-    let cost_in_usd_cents: u64 = if self.is_ten_seconds { 103 } else { 52 };
+    // 5s = 57¢, 10s = 113¢.
+    let cost_in_usd_cents: u64 = if self.is_ten_seconds { 113 } else { 57 };
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -51,11 +51,11 @@ mod tests {
   }
 
   #[test]
-  fn five_seconds_is_52() { assert_eq!(cost_cents(Some(5)), 52); }
+  fn five_seconds_is_57() { assert_eq!(cost_cents(Some(5)), 57); }
 
   #[test]
-  fn ten_seconds_is_103() { assert_eq!(cost_cents(Some(10)), 103); }
+  fn ten_seconds_is_113() { assert_eq!(cost_cents(Some(10)), 113); }
 
   #[test]
-  fn default_duration_is_5s_priced_at_52() { assert_eq!(cost_cents(None), 52); }
+  fn default_duration_is_5s_priced_at_57() { assert_eq!(cost_cents(None), 57); }
 }

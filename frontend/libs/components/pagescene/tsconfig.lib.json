@@ -51,6 +51,12 @@
   ],
   "references": [
     {
+      "path": "../keybinds/tsconfig.lib.json"
+    },
+    {
+      "path": "../tab-selector/tsconfig.lib.json"
+    },
+    {
       "path": "../button-icon/tsconfig.lib.json"
     },
     {
@@ -60,10 +66,10 @@
       "path": "../label/tsconfig.lib.json"
     },
     {
-      "path": "../button-icon-select/tsconfig.lib.json"
+      "path": "../button-dropdown/tsconfig.lib.json"
     },
     {
-      "path": "../tab-selector/tsconfig.lib.json"
+      "path": "../button-icon-select/tsconfig.lib.json"
     },
     {
       "path": "../badge/tsconfig.lib.json"
@@ -75,16 +81,13 @@
       "path": "../close-button/tsconfig.lib.json"
     },
     {
+      "path": "../button/tsconfig.lib.json"
+    },
+    {
       "path": "../modal/tsconfig.lib.json"
     },
     {
       "path": "../checkbox/tsconfig.lib.json"
-    },
-    {
-      "path": "../button/tsconfig.lib.json"
-    },
-    {
-      "path": "../button-dropdown/tsconfig.lib.json"
     },
     {
       "path": "../promptbox/tsconfig.lib.json"
@@ -118,6 +121,9 @@
     },
     {
       "path": "../../common/tsconfig.lib.json"
+    },
+    {
+      "path": "../../icons/tsconfig.lib.json"
     }
   ]
 }

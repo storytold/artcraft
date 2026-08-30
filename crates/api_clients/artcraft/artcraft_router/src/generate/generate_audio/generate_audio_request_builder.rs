@@ -116,10 +116,10 @@ impl GenerateAudioRequestBuilder {
       // Fal
       (RouterProvider::Fal, RouterAudioModel::SeedAudio1p0) => build_fal_seed_audio_1p0(self),
       // Kinovi
-      (RouterProvider::Seedance2Pro, RouterAudioModel::SunoMusic) => build_kinovi_suno_music(self),
-      (RouterProvider::Seedance2Pro, RouterAudioModel::SunoRemix) => build_kinovi_suno_remix(self),
-      (RouterProvider::Seedance2Pro, RouterAudioModel::SunoSounds) => build_kinovi_suno_sounds(self),
-      (RouterProvider::Seedance2Pro, RouterAudioModel::SunoSample) => build_kinovi_suno_sample(self),
+      (RouterProvider::KinoviWeb, RouterAudioModel::SunoMusic) => build_kinovi_suno_music(self),
+      (RouterProvider::KinoviWeb, RouterAudioModel::SunoRemix) => build_kinovi_suno_remix(self),
+      (RouterProvider::KinoviWeb, RouterAudioModel::SunoSounds) => build_kinovi_suno_sounds(self),
+      (RouterProvider::KinoviWeb, RouterAudioModel::SunoSample) => build_kinovi_suno_sample(self),
       _ => self.unsupported_provider_and_model(),
     }
   }
@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn kinovi_suno_music_dispatches_to_request() {
-      let result = builder(RouterProvider::Seedance2Pro, RouterAudioModel::SunoMusic).build2().expect("build");
+      let result = builder(RouterProvider::KinoviWeb, RouterAudioModel::SunoMusic).build2().expect("build");
       assert!(matches!(
         result,
         AudioGenerationDraftOrRequest::Request(AudioGenerationRequest::KinoviSunoMusic(_))
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn kinovi_suno_sounds_dispatches_to_request() {
-      let result = builder(RouterProvider::Seedance2Pro, RouterAudioModel::SunoSounds).build2().expect("build");
+      let result = builder(RouterProvider::KinoviWeb, RouterAudioModel::SunoSounds).build2().expect("build");
       assert!(matches!(
         result,
         AudioGenerationDraftOrRequest::Request(AudioGenerationRequest::KinoviSunoSounds(_))
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn kinovi_suno_remix_dispatches_to_draft() {
-      let result = builder_with_audio_ref(RouterProvider::Seedance2Pro, RouterAudioModel::SunoRemix).build2().expect("build");
+      let result = builder_with_audio_ref(RouterProvider::KinoviWeb, RouterAudioModel::SunoRemix).build2().expect("build");
       assert!(matches!(
         result,
         AudioGenerationDraftOrRequest::Draft(AudioGenerationDraftRequest::KinoviSunoRemix(_))
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn kinovi_suno_sample_dispatches_to_draft() {
-      let result = builder_with_audio_ref(RouterProvider::Seedance2Pro, RouterAudioModel::SunoSample).build2().expect("build");
+      let result = builder_with_audio_ref(RouterProvider::KinoviWeb, RouterAudioModel::SunoSample).build2().expect("build");
       assert!(matches!(
         result,
         AudioGenerationDraftOrRequest::Draft(AudioGenerationDraftRequest::KinoviSunoSample(_))
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn kinovi_seed_audio_1p0_is_unsupported() {
-      let result = builder(RouterProvider::Seedance2Pro, RouterAudioModel::SeedAudio1p0).build2();
+      let result = builder(RouterProvider::KinoviWeb, RouterAudioModel::SeedAudio1p0).build2();
       assert!(matches!(result, Err(ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(_))));
     }
 

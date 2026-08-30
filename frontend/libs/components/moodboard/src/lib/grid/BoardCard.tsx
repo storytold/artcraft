@@ -1,12 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUpRightAndDownLeftFromCenter,
-  faTrashCan,
-  faCheck,
-  faWandMagicSparkles,
-} from "@fortawesome/pro-regular-svg-icons";
-import { faStar } from "@fortawesome/pro-solid-svg-icons";
+import { CheckIcon, Maximize2Icon, StarIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
 import { PositionedItem } from "./gridLayout";
@@ -155,11 +149,10 @@ const BoardCardInner = ({
           {item.rating > 0 && (
             <div className="absolute bottom-2 left-2 flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-1">
               {Array.from({ length: item.rating }).map((_, i) => (
-                <FontAwesomeIcon
+                <StarIcon
                   key={i}
-                  icon={faStar}
-                  className="h-2.5 w-2.5 text-yellow-400"
-                />
+                  
+                  className="h-2.5 w-2.5 text-yellow-400" />
               ))}
             </div>
           )}
@@ -174,7 +167,7 @@ const BoardCardInner = ({
                 : "border-white/40 bg-black/45 text-white/0 opacity-0 group-hover:opacity-100",
             ].join(" ")}
           >
-            <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
+            <CheckIcon  className="h-3 w-3" />
           </div>
 
           {/* Action rail — solid scrim pill (no blur in the scroll container),
@@ -182,19 +175,19 @@ const BoardCardInner = ({
           <div className="absolute right-2 top-2 flex translate-y-1 items-center gap-1 rounded-full border border-white/15 bg-black/65 p-0.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
             <RailButton
               label="Open"
-              icon={faUpRightAndDownLeftFromCenter}
+              icon={Maximize2Icon}
               onClick={() => onOpen(item.id)}
             />
             {item.kind === "image" && (
               <RailButton
                 label="Use as reference"
-                icon={faWandMagicSparkles}
+                icon={WandSparklesIcon}
                 onClick={() => onUseReference(item.id)}
               />
             )}
             <RailButton
               label="Delete"
-              icon={faTrashCan}
+              icon={Trash2Icon}
               onClick={() => onDelete(item.id)}
             />
           </div>
@@ -210,7 +203,7 @@ const RailButton = ({
   onClick,
 }: {
   label: string;
-  icon: typeof faCheck;
+  icon: typeof CheckIcon;
   onClick: () => void;
 }) => (
   <button
@@ -224,7 +217,7 @@ const RailButton = ({
       onClick();
     }}
   >
-    <FontAwesomeIcon icon={icon} className="h-3.5 w-3.5" />
+    <DynamicIcon icon={icon} className="h-3.5 w-3.5" />
   </button>
 );
 

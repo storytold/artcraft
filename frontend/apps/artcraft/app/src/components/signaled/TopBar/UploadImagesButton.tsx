@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { faUpload, faImages } from "@fortawesome/pro-solid-svg-icons";
+import { ImagesIcon, UploadIcon } from "lucide-react";
 import { UploadModalImage } from "@storyteller/ui-upload-modal";
 
 interface Props {
@@ -16,7 +16,7 @@ export const UploadImagesButton = ({ className }: Props) => {
       <Tooltip content="Upload images" position="bottom" delay={300}>
         <Button
           variant="secondary"
-          icon={faUpload}
+          icon={UploadIcon}
           className={className || "h-[38px] w-[38px]"}
           onClick={() => setIsOpen(true)}
         />
@@ -26,7 +26,7 @@ export const UploadImagesButton = ({ className }: Props) => {
         onClose={() => setIsOpen(false)}
         onSuccess={() => setIsOpen(false)}
         title="Upload an Image"
-        titleIcon={faImages}
+        titleIcon={ImagesIcon}
       />
     </>
   );

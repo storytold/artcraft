@@ -95,6 +95,7 @@ use artcraft_api_defs::moderation::debug_logs::debug_log_entry::*;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_all_debug_logs::*;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_token::*;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_user::*;
+use crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::*;
 use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::*;
@@ -110,12 +111,29 @@ use crate::http_server::endpoints::api_keys::list_api_keys_handler::*;
 use crate::http_server::endpoints::api_keys::get_api_key_handler::*;
 use crate::http_server::endpoints::api_keys::delete_api_key_handler::*;
 use crate::http_server::endpoints::api_keys::update_api_key_handler::*;
+use artcraft_api_defs::internal::minimax_jobs::mark_minimax_job_failure::*;
+use artcraft_api_defs::internal::minimax_jobs::mark_minimax_job_success::*;
+use artcraft_api_defs::internal::minimax_jobs::minimax_worker_model::*;
+use artcraft_api_defs::internal::minimax_jobs::obtain_minimax_job::*;
 use artcraft_api_defs::api_keys::common::*;
 use artcraft_api_defs::api_keys::create_api_key::*;
 use artcraft_api_defs::api_keys::list_api_keys::*;
 use artcraft_api_defs::api_keys::get_api_key::*;
 use artcraft_api_defs::api_keys::delete_api_key::*;
 use artcraft_api_defs::api_keys::update_api_key::*;
+
+// MCP session endpoints
+use crate::http_server::endpoints::mcp_sessions::create_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::refresh_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::revoke_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::delete_mcp_session_handler::*;
+use crate::http_server::endpoints::mcp_sessions::list_mcp_sessions_handler::*;
+use artcraft_api_defs::mcp_sessions::common::*;
+use artcraft_api_defs::mcp_sessions::create_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::refresh_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::revoke_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::delete_mcp_session::*;
+use artcraft_api_defs::mcp_sessions::list_mcp_sessions::*;
 
 // Folder endpoints
 use crate::http_server::endpoints::folders::folder::color_code_folder_handler::*;
@@ -355,6 +373,7 @@ use artcraft_api_defs::credits::get_session_credits::*;
 use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 use artcraft_api_defs::media_file::list::by_type::list_session_common::*;
+use artcraft_api_defs::media_file::job::list_media_files_by_job::*;
 use artcraft_api_defs::media_file::list::by_type::list_session_mesh_media_files::*;
 use artcraft_api_defs::media_file::list::by_type::list_session_splat_media_files::*;
 use artcraft_api_defs::media_file::list_session_project_media_files::*;
@@ -494,6 +513,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::edit::set_media_file_cover_image_handler::set_media_file_cover_image_handler,
     crate::http_server::endpoints::media_files::get::batch_get_media_files_handler::batch_get_media_files_handler,
     crate::http_server::endpoints::media_files::get::get_media_file_handler::get_media_file_handler,
+    crate::http_server::endpoints::media_files::job::list_media_files_by_job_handler::list_media_files_by_job_handler,
     crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::list_featured_media_files_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_by_batch_token_handler::list_media_files_by_batch_token_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_for_user_handler::list_media_files_for_user_handler,
@@ -638,8 +658,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::omni_upload_video_media_file_handler,
     crate::http_server::endpoints::omni_api::job_status::get_job_status_handler::omni_api_get_job_status_handler,
     crate::http_server::endpoints::omni_api::job_status::batch_get_job_status_handler::omni_api_batch_get_job_status_handler,
+    // Internal (worker fleets, internal API key authenticated)
+    crate::http_server::endpoints::internal::minimax_jobs::obtain_minimax_job_handler::obtain_minimax_job_handler,
+    crate::http_server::endpoints::internal::minimax_jobs::mark_minimax_job_failure_handler::mark_minimax_job_failure_handler,
+    crate::http_server::endpoints::internal::minimax_jobs::mark_minimax_job_success_handler::mark_minimax_job_success_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
+    crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::moderator_list_databox_dashboards_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
     crate::http_server::endpoints::moderation::user::moderator_list_subscribing_users_by_signup_date::moderator_list_subscribing_users_by_signup_date_handler,
     crate::http_server::endpoints::moderation::user::moderator_list_users_by_signup_date::moderator_list_users_by_signup_date_handler,
@@ -670,6 +695,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::api_keys::get_api_key_handler::get_api_key_handler,
     crate::http_server::endpoints::api_keys::delete_api_key_handler::delete_api_key_handler,
     crate::http_server::endpoints::api_keys::update_api_key_handler::update_api_key_handler,
+
+    // MCP sessions
+    crate::http_server::endpoints::mcp_sessions::create_mcp_session_handler::create_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::refresh_mcp_session_handler::refresh_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::revoke_mcp_session_handler::revoke_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::delete_mcp_session_handler::delete_mcp_session_handler,
+    crate::http_server::endpoints::mcp_sessions::list_mcp_sessions_handler::list_mcp_sessions_handler,
 
     // Folders
     crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler,
@@ -724,6 +756,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::update_gpt_image_job_status_handler,
   ),
   components(schemas(
+    DataboxDashboardEntry,
+    ListDataboxDashboardsResponse,
     ModeratorGetUserSpendSummaryResponse,
     UserSpendSummaryView,
     ModeratorReengagementListResponse,
@@ -750,6 +784,17 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     UserBookmarkToken,
     UserToken,
     ZsVoiceDatasetToken,
+
+    // Internal (worker fleets)
+    MarkMinimaxJobFailureRequest,
+    MarkMinimaxJobFailureResponse,
+    MarkMinimaxJobSuccessResponse,
+    MinimaxJobMediaReference,
+    MinimaxJobPromptDetails,
+    MinimaxWorkerModel,
+    ObtainMinimaxJobRequest,
+    ObtainMinimaxJobResponse,
+    ObtainedMinimaxJob,
 
     // Enums
     BetaKeyProduct,
@@ -787,6 +832,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 
     // Common response structs
     JobDetailsLivePortraitRequest,
+    JobMediaFileInfo,
     JobDetailsLipsyncRequest,
     MediaFileLivePortraitDetails,
     MediaFileModelDetails,
@@ -958,6 +1004,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     OmniGenSplatModelsResponse,
     OmniGenSplatProviderModelDetails,
     OmniGenVideoCostAndGenerateRequest,
+    EstimateFields,
     OmniGenVideoCostResponse,
     OmniGenVideoGenerateResponse,
     OmniGenVideoModelDetails,
@@ -1121,6 +1168,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListUserImpersonationRequestsSuccessResponse,
     ListMediaFilesByBatchPathInfo,
     ListMediaFilesByBatchSuccessResponse,
+    ListMediaFilesByJobSuccessResponse,
     ListMediaFilesForUserPathInfo,
     ListMediaFilesForUserQueryParams,
     ListMediaFilesForUserSuccessResponse,
@@ -1455,6 +1503,18 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     DeleteApiKeySuccessResponse,
     UpdateApiKeyRequest,
     UpdateApiKeySuccessResponse,
+
+    // MCP sessions
+    McpSessionInfo,
+    McpSessionPathInfo,
+    CreateMcpSessionRequest,
+    CreateMcpSessionSuccessResponse,
+    RefreshMcpSessionRequest,
+    RefreshMcpSessionSuccessResponse,
+    RevokeMcpSessionSuccessResponse,
+    DeleteMcpSessionSuccessResponse,
+    ListMcpSessionsQueryParams,
+    ListMcpSessionsSuccessResponse,
 
     // Folders
     FolderInfo,

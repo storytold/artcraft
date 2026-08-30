@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faPause, faChevronDown } from "@fortawesome/pro-solid-svg-icons";
+import { ChevronUpIcon, PauseIcon, PlayIcon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { pauseTimeline, playTimeline, seekTimeline } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
@@ -34,7 +34,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         onClick={togglePlay}
         className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/80 hover:bg-white/10"
       >
-        <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="h-3.5 w-3.5" />
+        <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="h-3.5 w-3.5" />
       </button>
       <span className="w-9 shrink-0 tabular-nums text-xs text-base-fg/70">
         {formatTimecode(playhead)}
@@ -66,7 +66,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
           onClick={() => setExpanded(true)}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+          <ChevronUpIcon  className="h-3 w-3" />
         </button>
       )}
     </div>

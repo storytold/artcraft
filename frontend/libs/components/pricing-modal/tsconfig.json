@@ -18,16 +18,19 @@
       "path": "../select"
     },
     {
+      "path": "../../icons"
+    },
+    {
       "path": "../modal"
     },
     {
       "path": "../model-selector"
     },
     {
-      "path": "../promptbox"
+      "path": "../../model-list"
     },
     {
-      "path": "../../model-list"
+      "path": "../promptbox"
     },
     {
       "path": "../../api-enums"
