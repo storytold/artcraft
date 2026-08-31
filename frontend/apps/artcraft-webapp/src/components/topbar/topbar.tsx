@@ -35,8 +35,8 @@ export function TopBar() {
               <img
                 src={
                   isMobile
-                    ? "/images/artcraft-icon.png"
-                    : "/images/artcraft-logo.png"
+                    ? "/images/artcraft-icon-2.png"
+                    : "/images/artcraft-logo-2.png"
                 }
                 alt="ArtCraft"
                 className={isMobile ? "h-5 w-auto" : "h-5 w-auto"}

@@ -9,9 +9,9 @@ import HeroViewport from "./hero-viewport";
 export default function Hero() {
   return (
     <section className="relative">
-      {/* Full-bleed block-field wordmark — the brand as an object you can
-          shove apart and watch reassemble, with the Seedance render rail
-          streaming through the same 3D scene along its lower edge. */}
+      {/* Full-bleed hero — crisp display-type wordmark over the render
+          wall: rows of Seedance takes forming one perspective wall that
+          drifts behind the word and answers the cursor. */}
       <HeroWordmark />
 
       <div className="relative mx-auto max-w-[1280px] border-x border-line">

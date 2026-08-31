@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
+import {
+  Archivo,
+  Archivo_Black,
+  Instrument_Serif,
+  Inter,
+  Geist_Mono,
+} from "next/font/google";
 import SiteNav from "@/components/site-nav";
 import SiteFooter from "@/components/site-footer";
 import MotionProvider from "@/components/motion-provider";
@@ -15,6 +21,15 @@ const archivo = Archivo({
   variable: "--font-archivo",
   display: "swap",
   axes: ["wdth"],
+});
+
+// Wordmark face: Archivo Black, the display family's poster-weight cut
+// (a single-weight family of its own, not Archivo at 900).
+const archivoBlack = Archivo_Black({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-archivo-black",
+  display: "swap",
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -94,7 +109,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${archivo.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
+      className={`${archivo.variable} ${archivoBlack.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />

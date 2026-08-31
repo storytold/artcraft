@@ -1,7 +1,24 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { BoxIcon, CircleHelpIcon, DownloadIcon, FilmIcon, GiftIcon, GlobeIcon, GraduationCapIcon, GroupIcon, HouseIcon, ImageIcon, ImagesIcon, MusicIcon, NewspaperIcon, PencilIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  BoxIcon,
+  CircleHelpIcon,
+  DownloadIcon,
+  FilmIcon,
+  GiftIcon,
+  GlobeIcon,
+  GraduationCapIcon,
+  GroupIcon,
+  HouseIcon,
+  ImageIcon,
+  ImagesIcon,
+  MusicIcon,
+  NewspaperIcon,
+  PencilIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
@@ -33,7 +50,9 @@ type NavItem = {
   badge?: string;
 };
 
-const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: HouseIcon }];
+const PRIMARY_ITEMS: NavItem[] = [
+  { label: "Home", href: "/", icon: HouseIcon },
+];
 
 // Generation entries — make something from a prompt.
 const CREATE_ITEMS_STATIC: NavItem[] = [
@@ -261,7 +280,7 @@ export function AppSidebar() {
               className="flex items-center gap-2"
             >
               <img
-                src="/images/artcraft-logo.png"
+                src="/images/artcraft-logo-2.png"
                 alt="ArtCraft"
                 className="h-5 w-auto shrink-0"
               />

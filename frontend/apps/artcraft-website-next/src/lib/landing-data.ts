@@ -72,12 +72,12 @@ export const FEATURES: Feature[] = [
 export const HERO_VIDEO_URL =
   "https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/website-commercial-2026.05.mp4";
 
-// Clips for the hero's in-scene Seedance rail. `aspect` is width/height of
-// the card plane (the texture is cover-fitted, so any source aspect works).
+// Clips for the hero's render wall. `aspect` is width/height of the panel
+// plane (the texture is cover-fitted, so any source aspect works).
 // Served through the /ext-media same-origin proxy (see next.config.ts) —
 // WebGL video textures require CORS-clean sources. PLACEHOLDERS: these
 // currently reuse the feature footage — swap each path for an exported
-// Seedance 2.5 clip when the renders are ready; the rail adapts to any
+// Seedance 2.5 clip when the renders are ready; the wall adapts to any
 // count and mix of aspects.
 export type SeedanceClip = {
   src: string;
@@ -85,13 +85,13 @@ export type SeedanceClip = {
 };
 
 export const SEEDANCE_SHOWCASE: SeedanceClip[] = [
-  { src: "/ext-media/videos/features/WorldLabs_Demo_2.webm", aspect: 16 / 9 },
-  { src: "/ext-media/videos/features/Character-Pose.webm", aspect: 4 / 3 },
-  { src: "/ext-media/videos/features/Panel.webm", aspect: 16 / 9 },
-  { src: "/ext-media/videos/features/Make_3D.webm", aspect: 9 / 16 },
-  { src: "/ext-media/videos/features/Editor.webm", aspect: 16 / 9 },
-  { src: "/ext-media/videos/features/Mixed.webm", aspect: 1 },
-  { src: "/ext-media/videos/features/Background.webm", aspect: 16 / 9 },
+  { src: "/videos/1.mp4", aspect: 16 / 9 },
+  { src: "/videos/2.mp4", aspect: 16 / 9 },
+  { src: "/videos/3.mp4", aspect: 16 / 9 },
+  { src: "/videos/4.mp4", aspect: 16 / 9 },
+  { src: "/videos/5.mp4", aspect: 16 / 9 },
+  { src: "/videos/6.mp4", aspect: 16 / 9 },
+  { src: "/videos/7.mp4", aspect: 16 / 9 },
 ];
 
 export const MADE_WITH_YOUTUBE_IDS = [
