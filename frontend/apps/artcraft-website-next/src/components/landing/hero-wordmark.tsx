@@ -149,7 +149,7 @@ export default function HeroWordmark() {
             x="360"
             y="72"
             textAnchor="middle"
-            textLength="640"
+            textLength="780"
             lengthAdjust="spacingAndGlyphs"
             fill="currentColor"
             style={{
@@ -158,7 +158,7 @@ export default function HeroWordmark() {
               fontSize: "100px",
             }}
           >
-            ArtCraft
+            ARTCRAFT
           </text>
         </svg>
       </div>
