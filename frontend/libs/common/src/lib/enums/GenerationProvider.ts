@@ -5,4 +5,12 @@ export enum GenerationProvider {
   Midjourney = "midjourney",
   Sora = "sora",
   WorldLabs = "world_labs",
+  Higgsfield = "higgsfield",
+  Krea = "krea",
+  Leonardo = "leonardo",
+  Magnific = "magnific",
+  Openart = "openart",
+  Picsart = "picsart",
+  Pixverse = "pixverse",
+  Runway = "runway",
 }

@@ -26,6 +26,14 @@ pub enum GenerationProvider {
   Midjourney,
   Sora,
   WorldLabs,
+  Higgsfield,
+  Krea,
+  Leonardo,
+  Magnific,
+  Openart,
+  Picsart,
+  Pixverse,
+  Runway,
 }
 
 impl_enum_display_and_debug_using_to_str!(GenerationProvider);
@@ -46,6 +54,14 @@ impl GenerationProvider {
       Self::Midjourney => "midjourney",
       Self::Sora => "sora",
       Self::WorldLabs => "world_labs",
+      Self::Higgsfield => "higgsfield",
+      Self::Krea => "krea",
+      Self::Leonardo => "leonardo",
+      Self::Magnific => "magnific",
+      Self::Openart => "openart",
+      Self::Picsart => "picsart",
+      Self::Pixverse => "pixverse",
+      Self::Runway => "runway",
     }
   }
 
@@ -57,6 +73,14 @@ impl GenerationProvider {
       "midjourney" => Ok(Self::Midjourney),
       "sora" => Ok(Self::Sora),
       "world_labs" => Ok(Self::WorldLabs),
+      "higgsfield" => Ok(Self::Higgsfield),
+      "krea" => Ok(Self::Krea),
+      "leonardo" => Ok(Self::Leonardo),
+      "magnific" => Ok(Self::Magnific),
+      "openart" => Ok(Self::Openart),
+      "picsart" => Ok(Self::Picsart),
+      "pixverse" => Ok(Self::Pixverse),
+      "runway" => Ok(Self::Runway),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -71,6 +95,14 @@ impl GenerationProvider {
       Self::Midjourney,
       Self::Sora,
       Self::WorldLabs,
+      Self::Higgsfield,
+      Self::Krea,
+      Self::Leonardo,
+      Self::Magnific,
+      Self::Openart,
+      Self::Picsart,
+      Self::Pixverse,
+      Self::Runway,
     ])
   }
 }
@@ -92,6 +124,14 @@ mod tests {
       assert_serialization(GenerationProvider::Midjourney, "midjourney");
       assert_serialization(GenerationProvider::Sora, "sora");
       assert_serialization(GenerationProvider::WorldLabs, "world_labs");
+      assert_serialization(GenerationProvider::Higgsfield, "higgsfield");
+      assert_serialization(GenerationProvider::Krea, "krea");
+      assert_serialization(GenerationProvider::Leonardo, "leonardo");
+      assert_serialization(GenerationProvider::Magnific, "magnific");
+      assert_serialization(GenerationProvider::Openart, "openart");
+      assert_serialization(GenerationProvider::Picsart, "picsart");
+      assert_serialization(GenerationProvider::Pixverse, "pixverse");
+      assert_serialization(GenerationProvider::Runway, "runway");
     }
 
     #[test]
@@ -102,6 +142,14 @@ mod tests {
       assert_eq!(GenerationProvider::Midjourney.to_str(), "midjourney");
       assert_eq!(GenerationProvider::Sora.to_str(), "sora");
       assert_eq!(GenerationProvider::WorldLabs.to_str(), "world_labs");
+      assert_eq!(GenerationProvider::Higgsfield.to_str(), "higgsfield");
+      assert_eq!(GenerationProvider::Krea.to_str(), "krea");
+      assert_eq!(GenerationProvider::Leonardo.to_str(), "leonardo");
+      assert_eq!(GenerationProvider::Magnific.to_str(), "magnific");
+      assert_eq!(GenerationProvider::Openart.to_str(), "openart");
+      assert_eq!(GenerationProvider::Picsart.to_str(), "picsart");
+      assert_eq!(GenerationProvider::Pixverse.to_str(), "pixverse");
+      assert_eq!(GenerationProvider::Runway.to_str(), "runway");
     }
 
     #[test]
@@ -112,6 +160,14 @@ mod tests {
       assert_eq!(GenerationProvider::from_str("midjourney").unwrap(), GenerationProvider::Midjourney);
       assert_eq!(GenerationProvider::from_str("sora").unwrap(), GenerationProvider::Sora);
       assert_eq!(GenerationProvider::from_str("world_labs").unwrap(), GenerationProvider::WorldLabs);
+      assert_eq!(GenerationProvider::from_str("higgsfield").unwrap(), GenerationProvider::Higgsfield);
+      assert_eq!(GenerationProvider::from_str("krea").unwrap(), GenerationProvider::Krea);
+      assert_eq!(GenerationProvider::from_str("leonardo").unwrap(), GenerationProvider::Leonardo);
+      assert_eq!(GenerationProvider::from_str("magnific").unwrap(), GenerationProvider::Magnific);
+      assert_eq!(GenerationProvider::from_str("openart").unwrap(), GenerationProvider::Openart);
+      assert_eq!(GenerationProvider::from_str("picsart").unwrap(), GenerationProvider::Picsart);
+      assert_eq!(GenerationProvider::from_str("pixverse").unwrap(), GenerationProvider::Pixverse);
+      assert_eq!(GenerationProvider::from_str("runway").unwrap(), GenerationProvider::Runway);
     }
 
     #[test]
@@ -128,13 +184,21 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = GenerationProvider::all_variants();
-      assert_eq!(variants.len(), 6);
+      assert_eq!(variants.len(), 14);
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Midjourney));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Sora));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::WorldLabs));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Higgsfield));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Krea));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Leonardo));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Magnific));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Openart));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Picsart));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Pixverse));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Runway));
       assert_eq!(variants.pop_first(), None);
     }
   }

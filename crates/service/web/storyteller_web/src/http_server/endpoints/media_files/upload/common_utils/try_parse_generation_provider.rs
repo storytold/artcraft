@@ -30,6 +30,14 @@ mod tests {
     assert_eq!(try_parse_generation_provider("midjourney"), Some(GenerationProvider::Midjourney));
     assert_eq!(try_parse_generation_provider("sora"), Some(GenerationProvider::Sora));
     assert_eq!(try_parse_generation_provider("world_labs"), Some(GenerationProvider::WorldLabs));
+    assert_eq!(try_parse_generation_provider("higgsfield"), Some(GenerationProvider::Higgsfield));
+    assert_eq!(try_parse_generation_provider("krea"), Some(GenerationProvider::Krea));
+    assert_eq!(try_parse_generation_provider("leonardo"), Some(GenerationProvider::Leonardo));
+    assert_eq!(try_parse_generation_provider("magnific"), Some(GenerationProvider::Magnific));
+    assert_eq!(try_parse_generation_provider("openart"), Some(GenerationProvider::Openart));
+    assert_eq!(try_parse_generation_provider("picsart"), Some(GenerationProvider::Picsart));
+    assert_eq!(try_parse_generation_provider("pixverse"), Some(GenerationProvider::Pixverse));
+    assert_eq!(try_parse_generation_provider("runway"), Some(GenerationProvider::Runway));
   }
 
   #[test]

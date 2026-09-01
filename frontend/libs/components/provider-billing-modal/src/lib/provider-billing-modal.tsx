@@ -35,6 +35,14 @@ export function ProviderBillingModal({
     case GenerationProvider.Midjourney:
     case GenerationProvider.Sora:
     case GenerationProvider.WorldLabs:
+    case GenerationProvider.Higgsfield:
+    case GenerationProvider.Krea:
+    case GenerationProvider.Leonardo:
+    case GenerationProvider.Magnific:
+    case GenerationProvider.Openart:
+    case GenerationProvider.Picsart:
+    case GenerationProvider.Pixverse:
+    case GenerationProvider.Runway:
       // NB: We're just going to ask users to set up billing on the provider's website.
       block = <GenericProviderBillingBlock provider={provider} />;
       break;

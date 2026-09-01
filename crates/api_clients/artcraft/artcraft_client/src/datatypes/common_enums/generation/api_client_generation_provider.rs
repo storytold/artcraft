@@ -14,6 +14,14 @@ pub enum ApiClientGenerationProvider {
   Midjourney,
   Sora,
   WorldLabs,
+  Higgsfield,
+  Krea,
+  Leonardo,
+  Magnific,
+  Openart,
+  Picsart,
+  Pixverse,
+  Runway,
   /// A value not known to this client build (preserved as-is).
   Unknown(String),
 }
@@ -27,6 +35,14 @@ impl From<String> for ApiClientGenerationProvider {
       "midjourney" => Self::Midjourney,
       "sora" => Self::Sora,
       "world_labs" => Self::WorldLabs,
+      "higgsfield" => Self::Higgsfield,
+      "krea" => Self::Krea,
+      "leonardo" => Self::Leonardo,
+      "magnific" => Self::Magnific,
+      "openart" => Self::Openart,
+      "picsart" => Self::Picsart,
+      "pixverse" => Self::Pixverse,
+      "runway" => Self::Runway,
       _ => Self::Unknown(value),
     }
   }
@@ -41,6 +57,14 @@ impl From<ApiClientGenerationProvider> for String {
       ApiClientGenerationProvider::Midjourney => "midjourney".to_string(),
       ApiClientGenerationProvider::Sora => "sora".to_string(),
       ApiClientGenerationProvider::WorldLabs => "world_labs".to_string(),
+      ApiClientGenerationProvider::Higgsfield => "higgsfield".to_string(),
+      ApiClientGenerationProvider::Krea => "krea".to_string(),
+      ApiClientGenerationProvider::Leonardo => "leonardo".to_string(),
+      ApiClientGenerationProvider::Magnific => "magnific".to_string(),
+      ApiClientGenerationProvider::Openart => "openart".to_string(),
+      ApiClientGenerationProvider::Picsart => "picsart".to_string(),
+      ApiClientGenerationProvider::Pixverse => "pixverse".to_string(),
+      ApiClientGenerationProvider::Runway => "runway".to_string(),
       ApiClientGenerationProvider::Unknown(other) => other,
     }
   }
@@ -73,6 +97,14 @@ mod tests {
       (ApiClientGenerationProvider::Midjourney, "midjourney"),
       (ApiClientGenerationProvider::Sora, "sora"),
       (ApiClientGenerationProvider::WorldLabs, "world_labs"),
+      (ApiClientGenerationProvider::Higgsfield, "higgsfield"),
+      (ApiClientGenerationProvider::Krea, "krea"),
+      (ApiClientGenerationProvider::Leonardo, "leonardo"),
+      (ApiClientGenerationProvider::Magnific, "magnific"),
+      (ApiClientGenerationProvider::Openart, "openart"),
+      (ApiClientGenerationProvider::Picsart, "picsart"),
+      (ApiClientGenerationProvider::Pixverse, "pixverse"),
+      (ApiClientGenerationProvider::Runway, "runway"),
     ];
     for (variant, s) in all {
       assert_eq!(String::from(variant.clone()), s, "serialize mismatch for {:?}", variant);
