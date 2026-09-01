@@ -854,7 +854,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
 
                     {mentionOpen && filteredMentionItems.length > 0 && (
                       <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-controls">
-                        <div className="px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/50">
+                        <div className="px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                           Mentions
                         </div>
                         {filteredMentionItems.map((item, i) => (

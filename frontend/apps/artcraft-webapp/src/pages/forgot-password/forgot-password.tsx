@@ -78,7 +78,7 @@ const ForgotPassword = () => {
                 )}
 
                 <div className="space-y-2">
-                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                     Email or Username
                   </label>
                   <Input
@@ -99,9 +99,7 @@ const ForgotPassword = () => {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <LoaderCircleIcon
-                        
-                        className="animate-spin" />
+                      <LoaderCircleIcon className="animate-spin" />
                     ) : (
                       "Send Reset Code"
                     )}
@@ -112,7 +110,7 @@ const ForgotPassword = () => {
           ) : (
             <div className="text-center py-8">
               <div className="w-16 h-16 border border-white/15 bg-green-500/10 flex items-center justify-center mx-auto mb-4 text-green-500">
-                <MailIcon  className="text-2xl" />
+                <MailIcon className="text-2xl" />
               </div>
               <h3 className="text-xl font-medium mb-2">Check your email</h3>
               <p className="text-white/60 text-sm mb-6">

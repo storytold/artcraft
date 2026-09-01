@@ -1,4 +1,11 @@
-import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import {
+  ArrowDownToLineIcon,
+  CheckIcon,
+  LinkIcon,
+  LoaderCircleIcon,
+  RotateCwIcon,
+  VideoIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -85,7 +92,7 @@ function CardRecreateButton({
         type="button"
         onClick={handleRecreate}
         disabled={isRecreating}
-        className="flex items-center gap-1.5 border border-white/15 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
+        className="flex items-center gap-1.5 border border-white/15 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
       >
         <DynamicIcon
           icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
@@ -164,7 +171,7 @@ function CardActions({
             onClick={handleMakeVideo}
             aria-label="Make Video"
           >
-            <VideoIcon  className="text-sm" />
+            <VideoIcon className="text-sm" />
           </button>
         </Tooltip>
       )}

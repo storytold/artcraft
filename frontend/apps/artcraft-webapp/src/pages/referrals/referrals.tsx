@@ -142,7 +142,7 @@ export default function Referrals() {
       <main className="relative z-10 px-4 sm:px-8 pt-10 pb-10">
         <div className="max-w-3xl mx-auto">
           <header className="text-center mb-8">
-            <span className="inline-block font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-5">
+            <span className="inline-block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 mb-5">
               Share the craft
             </span>
             <h1 className="text-5xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
@@ -157,7 +157,7 @@ export default function Referrals() {
 
           <div className="my-6 sm:my-8 flex items-center justify-center gap-3 text-white/40">
             <div className="h-px w-10 bg-white/20" />
-            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
               Or
             </span>
             <div className="h-px w-10 bg-white/20" />
@@ -166,7 +166,7 @@ export default function Referrals() {
           <section className="bg-[#101014] border border-white/15 p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
-                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-2">
+                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 mb-2">
                   Option 2
                 </div>
                 <h2 className="text-lg font-medium text-white">
@@ -213,7 +213,7 @@ export default function Referrals() {
             <form onSubmit={handleCreate} className="mt-6 space-y-2">
               <label
                 htmlFor="new-referral-code"
-                className="block font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1"
+                className="block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1"
               >
                 New code
               </label>
@@ -236,9 +236,9 @@ export default function Referrals() {
                 <button
                   type="submit"
                   disabled={submitDisabled}
-                  className="inline-flex h-11 items-center justify-center gap-2 bg-white hover:bg-white/80 px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex h-11 items-center justify-center gap-2 bg-white hover:bg-white/80 px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <PlusIcon  className="text-[12px]" />
+                  <PlusIcon className="text-[12px]" />
                   {creating ? "Creating…" : "Create"}
                 </button>
               </div>
@@ -268,7 +268,7 @@ function ProfileLinkPanel({ profileLink }: { profileLink: string }) {
   return (
     <section className="bg-[#101014] border border-white/15 p-6 sm:p-8">
       <div className="mb-4">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-2">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 mb-2">
           Option 1
         </div>
         <h2 className="text-lg font-medium text-white">
@@ -313,7 +313,7 @@ function ReferralCodeRow({
           <div className="text-[15px] font-medium text-white truncate">
             {entry.code}
           </div>
-          <div className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
+          <div className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
             Created {createdLabel}
           </div>
         </div>
@@ -323,7 +323,7 @@ function ReferralCodeRow({
               type="button"
               onClick={onCancelDelete}
               disabled={isDeleting}
-              className="h-9 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+              className="h-9 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -331,7 +331,7 @@ function ReferralCodeRow({
               type="button"
               onClick={onConfirmDelete}
               disabled={isDeleting}
-              className="h-9 px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-red-500/85 hover:bg-red-500 transition-colors disabled:opacity-50"
+              className="h-9 px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white bg-red-500/85 hover:bg-red-500 transition-colors disabled:opacity-50"
             >
               {isDeleting ? "Deleting…" : "Delete"}
             </button>
@@ -343,7 +343,7 @@ function ReferralCodeRow({
             className="h-9 w-9 inline-flex items-center justify-center text-white/45 hover:text-white hover:bg-white/10 transition-colors"
             title="Delete referral code"
           >
-            <Trash2Icon  className="text-[13px]" />
+            <Trash2Icon className="text-[13px]" />
           </button>
         )}
       </div>
@@ -377,7 +377,7 @@ function CopyableLink({ value }: { value: string }) {
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex h-11 items-center gap-2 bg-transparent hover:bg-white/10 border border-white/15 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/85 transition-colors"
+        className="inline-flex h-11 items-center gap-2 bg-transparent hover:bg-white/10 border border-white/15 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 transition-colors"
       >
         <DynamicIcon
           icon={copied ? CheckIcon : CopyIcon}

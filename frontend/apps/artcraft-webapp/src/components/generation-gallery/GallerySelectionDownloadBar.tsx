@@ -83,7 +83,7 @@ export function GallerySelectionDownloadBar({
         type="button"
         onClick={handleDownload}
         disabled={isDownloading || selectedItems.length === 0}
-        className="flex items-center gap-2 border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:opacity-60"
+        className="flex items-center gap-2 border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:opacity-60"
       >
         <DynamicIcon
           icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}

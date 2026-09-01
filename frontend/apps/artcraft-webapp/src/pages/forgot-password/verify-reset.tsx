@@ -1,4 +1,10 @@
-import { ArrowLeftIcon, CircleCheckIcon, EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  CircleCheckIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LoaderCircleIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
@@ -136,7 +142,7 @@ const VerifyReset = () => {
 
                 {/* Verification Code */}
                 <div className="space-y-2">
-                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                     Verification Code
                   </label>
                   <Input
@@ -157,7 +163,7 @@ const VerifyReset = () => {
 
                 {/* New Password */}
                 <div className="space-y-2">
-                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                     New Password
                   </label>
                   <div className="relative">
@@ -189,7 +195,7 @@ const VerifyReset = () => {
 
                 {/* Verify New Password */}
                 <div className="space-y-2">
-                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                     Verify New Password
                   </label>
                   <div className="relative">
@@ -229,9 +235,7 @@ const VerifyReset = () => {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <LoaderCircleIcon
-                        
-                        className="animate-spin" />
+                      <LoaderCircleIcon className="animate-spin" />
                     ) : (
                       "Change Password"
                     )}
@@ -252,7 +256,7 @@ const VerifyReset = () => {
             <>
               <div className="text-center py-8">
                 <div className="w-16 h-16 border border-white/15 bg-green-500/10 flex items-center justify-center mx-auto mb-4 text-green-500">
-                  <CircleCheckIcon  className="text-2xl" />
+                  <CircleCheckIcon className="text-2xl" />
                 </div>
                 <h3 className="text-xl font-medium mb-2">
                   Password Reset Successfully

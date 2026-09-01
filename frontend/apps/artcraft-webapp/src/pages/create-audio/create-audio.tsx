@@ -966,7 +966,7 @@ function MobileSliderRow({
           <button
             type="button"
             onClick={onReset}
-            className="bg-white/5 px-2 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
+            className="bg-white/5 px-2 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
           >
             Auto
           </button>

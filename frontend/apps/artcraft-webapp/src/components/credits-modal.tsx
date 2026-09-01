@@ -86,7 +86,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                   )}
                 >
                   {pack.badge && (
-                    <span className="absolute -top-2.5 right-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-black">
+                    <span className="absolute -top-2.5 right-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-black">
                       {pack.badge}
                     </span>
                   )}
@@ -109,15 +109,11 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                     </span>
                     <span className="flex items-center gap-1.5 text-base font-semibold text-white">
                       {isLoading ? (
-                        <LoaderCircleIcon
-                          
-                          className="animate-spin" />
+                        <LoaderCircleIcon className="animate-spin" />
                       ) : (
                         <>
                           Buy
-                          <ArrowRightIcon
-                            
-                            className="text-xs transition-transform group-hover:translate-x-0.5" />
+                          <ArrowRightIcon className="text-xs transition-transform group-hover:translate-x-0.5" />
                         </>
                       )}
                     </span>

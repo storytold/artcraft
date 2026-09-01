@@ -92,6 +92,8 @@ export const SEEDANCE_SHOWCASE: SeedanceClip[] = [
   { src: "/videos/5.mp4", aspect: 16 / 9 },
   { src: "/videos/6.mp4", aspect: 16 / 9 },
   { src: "/videos/7.mp4", aspect: 16 / 9 },
+  { src: "/videos/8.mp4", aspect: 16 / 9 },
+  { src: "/videos/9.mp4", aspect: 16 / 9 },
 ];
 
 export const MADE_WITH_YOUTUBE_IDS = [

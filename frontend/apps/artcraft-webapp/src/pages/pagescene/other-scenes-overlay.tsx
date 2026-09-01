@@ -63,9 +63,9 @@ function CollapsedPill({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2.5 bg-white px-5 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition-colors hover:bg-white/80 animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className="flex items-center gap-2.5 bg-white px-5 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/80 animate-in fade-in slide-in-from-bottom-2 duration-300"
     >
-      <BoxesIcon  className="h-3.5 w-3.5" />
+      <BoxesIcon className="h-3.5 w-3.5" />
       <span>See other demo scenes</span>
     </button>
   );
@@ -82,10 +82,8 @@ function ExpandedPanel({ scenes, onClose, onPick }: ExpandedPanelProps) {
     <div className="glass w-[860px] max-w-[90vw] overflow-hidden rounded-[3px] border border-ui-controls-border animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="flex items-center justify-between border-b border-ui-controls-border/60 px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <LayersIcon
-
-            className="h-3 w-3 text-primary" />
-          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg">
+          <LayersIcon className="h-3 w-3 text-primary" />
+          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
             Other demo scenes
           </div>
         </div>
@@ -95,7 +93,7 @@ function ExpandedPanel({ scenes, onClose, onPick }: ExpandedPanelProps) {
           aria-label="Close other scenes"
           className="flex h-6 w-6 items-center justify-center text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
         >
-          <XIcon  className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </button>
       </div>
       <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3">

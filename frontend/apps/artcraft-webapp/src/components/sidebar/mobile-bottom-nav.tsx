@@ -32,10 +32,8 @@ export function MobileBottomNav() {
             key={item.href}
             to={item.href}
             className={twMerge(
-              "flex flex-1 flex-col items-center justify-center gap-1 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] transition-colors",
-              active
-                ? "text-white"
-                : "text-base-fg/55 hover:text-base-fg/80",
+              "flex flex-1 flex-col items-center justify-center gap-1 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors",
+              active ? "text-white" : "text-base-fg/55 hover:text-base-fg/80",
             )}
           >
             <DynamicIcon icon={item.icon} className="h-5 w-5" />

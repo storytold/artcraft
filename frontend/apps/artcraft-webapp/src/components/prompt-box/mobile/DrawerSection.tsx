@@ -9,7 +9,7 @@ interface DrawerSectionProps {
 export function DrawerSection({ label, children }: DrawerSectionProps) {
   return (
     <div className="py-1">
-      <span className="px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/45">
+      <span className="px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/45">
         {label}
       </span>
       {children}

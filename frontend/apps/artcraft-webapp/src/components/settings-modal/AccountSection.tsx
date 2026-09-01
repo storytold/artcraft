@@ -450,7 +450,7 @@ function SectionShell({
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
             {title}
           </p>
           <p className="text-xs opacity-70">
@@ -482,7 +482,7 @@ function SectionShell({
 function CurrentValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-2">
-      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
         {label}
       </span>
       <span className="text-sm font-medium text-white truncate">{value}</span>

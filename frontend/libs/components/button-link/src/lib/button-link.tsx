@@ -28,7 +28,7 @@ export const ButtonLink = ({
     }
   }
   const baseClassName =
-    "font-mono text-xs font-semibold uppercase tracking-[0.15em] whitespace-nowrap rounded-[3px] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150";
+    "font-mono text-xs font-semibold uppercase tracking-[0.12em] whitespace-nowrap rounded-[3px] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150";
   const variantClassNames = getVariantClassNames(variant);
   const className = twMerge(baseClassName, variantClassNames, propsClassName);
   // END TODO

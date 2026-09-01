@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { ClapperboardIcon, EllipsisIcon, PenIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ClapperboardIcon,
+  EllipsisIcon,
+  PenIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import type { ProjectMeta } from "@storyteller/ui-video-editor";
@@ -76,13 +82,11 @@ export function VideoProjectCard({
               tintForProject(project.id),
             )}
           >
-            <ClapperboardIcon
-              
-              className="text-3xl text-white/25 transition-colors group-hover:text-white/40" />
+            <ClapperboardIcon className="text-3xl text-white/25 transition-colors group-hover:text-white/40" />
           </div>
         )}
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <span className="bg-white/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
+          <span className="bg-white/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
             Open project
           </span>
         </div>
@@ -105,9 +109,7 @@ export function VideoProjectCard({
           position="bottom"
           align="end"
           mode="default"
-          triggerIcon={
-            <EllipsisIcon  className="text-base-fg" />
-          }
+          triggerIcon={<EllipsisIcon className="text-base-fg" />}
           buttonClassName="h-7 w-7 p-0 bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
           panelClassName="w-max min-w-44 p-1"
           closeOnUnhover
@@ -123,7 +125,7 @@ export function VideoProjectCard({
                   onRename();
                 }}
               >
-                <PenIcon  className="w-3.5" />
+                <PenIcon className="w-3.5" />
                 Rename
               </button>
               <button
@@ -135,7 +137,7 @@ export function VideoProjectCard({
                   onDelete();
                 }}
               >
-                <Trash2Icon  className="w-3.5" />
+                <Trash2Icon className="w-3.5" />
                 Delete
               </button>
             </div>

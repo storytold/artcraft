@@ -1066,7 +1066,7 @@ export default function Library() {
           gridColumns={4}
           scrollRoot={null}
         >
-          <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50 mb-2">
+          <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50 mb-2">
             {date}
           </h3>
           <div className={GRID_CLASS}>
@@ -1123,7 +1123,7 @@ export default function Library() {
                 <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1">
                   <Link
                     to="/library"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "unsorted"
                         ? "text-black"
                         : "text-white/60 hover:text-white"
@@ -1141,7 +1141,7 @@ export default function Library() {
                   </Link>
                   <Link
                     to="/library/folders"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "folders"
                         ? "text-black"
                         : "text-white/60 hover:text-white"
@@ -1159,7 +1159,7 @@ export default function Library() {
                   </Link>
                   <Link
                     to="/library/folderless"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "folderless"
                         ? "text-black"
                         : "text-white/60 hover:text-white"
@@ -1177,7 +1177,7 @@ export default function Library() {
                   </Link>
                   <Link
                     to="/library/tags"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "tags"
                         ? "text-black"
                         : "text-white/60 hover:text-white"
@@ -1214,7 +1214,7 @@ export default function Library() {
                       <button
                         key={filter.id}
                         onClick={() => setFolderlessClass(filter.id)}
-                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                           folderlessClass === filter.id
                             ? "text-black"
                             : "text-white/60 hover:text-white"
@@ -1244,7 +1244,7 @@ export default function Library() {
                       <button
                         key={filter.id}
                         onClick={() => navigate(filter.route)}
-                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                           activeFilter === filter.id
                             ? "text-black"
                             : "text-white/60 hover:text-white"
@@ -1291,7 +1291,7 @@ export default function Library() {
                           <button
                             key={id}
                             onClick={() => setTagSort(id)}
-                            className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                            className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                               tagSort === id
                                 ? "text-black"
                                 : "text-white/60 hover:text-white"
@@ -1323,7 +1323,7 @@ export default function Library() {
                           key={id}
                           onClick={() => setTagView(id)}
                           title={label}
-                          className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors whitespace-nowrap ${
+                          className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                             tagView === id
                               ? "text-black"
                               : "text-white/60 hover:text-white"
@@ -1439,7 +1439,7 @@ export default function Library() {
           {tab === "folders" && currentSubfolders.length > 0 && (
             <div>
               {inFolder && (
-                <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50 mb-2">
+                <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50 mb-2">
                   Folders
                 </h3>
               )}
@@ -2042,7 +2042,7 @@ const SEND_TO_TARGETS: {
 // Shared styling for the bar's action pills. `whitespace-nowrap` keeps labels
 // on a single line — the bar grows instead of squishing buttons into two rows.
 const BAR_BUTTON_CLASS =
-  "flex items-center gap-2 whitespace-nowrap border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white hover:bg-ui-controls/90 transition-colors";
+  "flex items-center gap-2 whitespace-nowrap border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-ui-controls/90 transition-colors";
 
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
@@ -2217,7 +2217,7 @@ function BulkSelectionBar({
                 onClick={() => setSendToOpen(false)}
               />
               <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
-                <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+                <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
                   Use as reference in
                 </div>
                 {SEND_TO_TARGETS.filter(
@@ -2280,7 +2280,7 @@ function BulkSelectionBar({
               onClick={() => setPopoverOpen(false)}
             />
             <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
-              <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+              <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
                 Folders
               </div>
               {sortedFolders.length === 0 ? (
@@ -2354,7 +2354,7 @@ function BulkSelectionBar({
               onClick={() => setTagsOpen(false)}
             />
             <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
-              <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+              <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
                 Add tags
               </div>
               <TagChipInput
@@ -2398,7 +2398,7 @@ function BulkSelectionBar({
       <button
         type="button"
         onClick={onDeleteSelected}
-        className="flex items-center gap-2 whitespace-nowrap bg-red/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white hover:bg-red transition-colors"
+        className="flex items-center gap-2 whitespace-nowrap bg-red/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-red transition-colors"
       >
         <Trash2Icon className="text-xs" />
         Delete

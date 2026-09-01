@@ -54,7 +54,7 @@ function CardThumbnail(props: SceneSplashCardProps) {
     return (
       <div className="flex aspect-video items-center justify-center bg-white/[0.02]">
         <div className="flex h-9 w-9 items-center justify-center bg-white/5 text-white/55 transition-colors group-hover:bg-white/10 group-hover:text-white">
-          <PlusIcon  className="text-sm" />
+          <PlusIcon className="text-sm" />
         </div>
       </div>
     );
@@ -78,10 +78,7 @@ function ExampleThumbnail({
 
   return (
     <div
-      className={twMerge(
-        "relative aspect-video overflow-hidden",
-        accentClass,
-      )}
+      className={twMerge("relative aspect-video overflow-hidden", accentClass)}
     >
       {previewUrl && (
         <img
@@ -99,7 +96,7 @@ function ExampleThumbnail({
           className="absolute inset-0 h-full w-full select-none object-cover opacity-0 transition-opacity duration-200 group-hover:opacity-100"
         />
       )}
-      <span className="absolute top-2 left-2 bg-black/55 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-white/75">
+      <span className="absolute top-2 left-2 bg-black/55 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-white/75">
         Preview
       </span>
     </div>

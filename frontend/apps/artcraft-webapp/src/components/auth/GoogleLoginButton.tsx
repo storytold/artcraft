@@ -66,7 +66,7 @@ export function GoogleLoginButton({
         ) : (
           <>
             <GoogleIcon />
-            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
               Continue with Google
             </span>
           </>

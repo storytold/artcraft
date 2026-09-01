@@ -61,7 +61,7 @@ export function MeshInputsRow({
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
           <DynamicIcon icon={titleIcon} className="h-3.5 w-3.5" />
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
             {title}
           </span>
         </div>
@@ -138,7 +138,7 @@ function SlotShell({
   return (
     <div className="flex flex-col items-center gap-1">
       {children}
-      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60">
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
         {label}
       </span>
     </div>

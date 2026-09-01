@@ -45,7 +45,7 @@ export const ExtractionPanel = ({
   return (
     <div className="flex h-fit flex-col divide-y divide-ui-divider border border-ui-panel-border bg-ui-panel">
       <div className="space-y-3 p-4">
-        <div className="flex items-center justify-between font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/50">
+        <div className="flex items-center justify-between font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
           <span>Playhead</span>
           <span className="font-mono text-xs normal-case tracking-normal text-base-fg/80">
             {disabled ? "--:--.---" : formatTimePrecise(currentTime)}
@@ -72,14 +72,12 @@ export const ExtractionPanel = ({
           className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-base-fg/75 transition-colors hover:text-base-fg disabled:cursor-default disabled:opacity-40"
         >
           <span className="flex items-center gap-2">
-            <LayersIcon
-              
-              className="text-xs text-base-fg/40" />
+            <LayersIcon className="text-xs text-base-fg/40" />
             Burst capture
           </span>
           <ChevronDownIcon
-            
-            className={`text-xs text-base-fg/40 transition-transform ${burstOpen ? "rotate-180" : ""}`} />
+            className={`text-xs text-base-fg/40 transition-transform ${burstOpen ? "rotate-180" : ""}`}
+          />
         </button>
         <AnimatePresence initial={false}>
           {burstOpen && !disabled && burstAvailable && (
@@ -108,7 +106,10 @@ export const ExtractionPanel = ({
                       disabled={isExtracting}
                       onChange={(e) =>
                         onNumFramesChange(
-                          Math.max(1, Math.min(50, parseInt(e.target.value) || 1)),
+                          Math.max(
+                            1,
+                            Math.min(50, parseInt(e.target.value) || 1),
+                          ),
                         )
                       }
                       className="w-full border border-ui-controls-border bg-ui-controls px-2.5 py-1.5 text-sm text-base-fg focus:border-white/40 focus:outline-none"
@@ -126,7 +127,10 @@ export const ExtractionPanel = ({
                       disabled={isExtracting}
                       onChange={(e) =>
                         onSpacingChange(
-                          Math.max(1, Math.min(10000, parseInt(e.target.value) || 1)),
+                          Math.max(
+                            1,
+                            Math.min(10000, parseInt(e.target.value) || 1),
+                          ),
                         )
                       }
                       className="w-full border border-ui-controls-border bg-ui-controls px-2.5 py-1.5 text-sm text-base-fg focus:border-white/40 focus:outline-none"
@@ -151,7 +155,7 @@ export const ExtractionPanel = ({
                       className="flex h-6 w-6 items-center justify-center text-base-fg/50 transition-colors hover:bg-white/10 hover:text-base-fg"
                       aria-label="Cancel extraction"
                     >
-                      <XIcon  className="text-xs" />
+                      <XIcon className="text-xs" />
                     </button>
                   </div>
                 ) : (
@@ -174,13 +178,17 @@ export const ExtractionPanel = ({
         <div className="flex items-center justify-between">
           <span>Duration</span>
           <span className="font-mono text-base-fg/70">
-            {!disabled && Number.isFinite(duration) ? formatTime(duration) : "—"}
+            {!disabled && Number.isFinite(duration)
+              ? formatTime(duration)
+              : "—"}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span>Resolution</span>
           <span className="font-mono text-base-fg/70">
-            {!disabled && resolution ? `${resolution.w} × ${resolution.h}` : "—"}
+            {!disabled && resolution
+              ? `${resolution.w} × ${resolution.h}`
+              : "—"}
           </span>
         </div>
       </div>

@@ -103,7 +103,7 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
             API keys
           </p>
           <p className="text-xs opacity-70">
@@ -357,7 +357,7 @@ function ApiKeyRow({
             <code className="min-w-0 truncate bg-ui-controls px-2 py-1 font-mono text-[11px] text-white/70">
               {item.truncated_api_key}…
             </code>
-            <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/40">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-white/40">
               {formatDate(item.created_at)}
             </span>
           </div>

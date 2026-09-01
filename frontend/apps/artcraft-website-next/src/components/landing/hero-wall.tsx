@@ -166,21 +166,29 @@ export default function HeroWall({
   // Wall structure: per row, panels are laid end to end with a uniform gap
   // until they cover the yawed viewport plus one panel of margin, so the
   // wrap-around teleport always happens offscreen. Rows shrink and recede
-  // with depth; each starts its clip sequence at a different point so the
-  // same footage never stacks vertically.
+  // with depth; each row draws from its own disjoint slice of the clip
+  // pool, so no clip ever appears in more than one row.
   const layout = useMemo(() => {
     const t = wallLayoutTuner.read();
     const nearH = Math.min(320, Math.max(110, size.height * t.rowHeight));
     const yFracs = [t.yNear, t.yMid];
+    const clipCount = SEEDANCE_SHOWCASE.length;
+    const perRow = Math.floor(clipCount / ROW_COUNT);
+    const extra = clipCount % ROW_COUNT;
     const panels: WallPanel[] = [];
     for (let i = 0; i < ROW_COUNT; i++) {
+      // Remainder clips go to the deeper rows: their panels are smaller, so
+      // they need more of them and repeat soonest without the bigger slice.
+      const extraBefore = Math.max(0, i - (ROW_COUNT - extra));
+      const rowStart = i * perRow + extraBefore;
+      const rowClips = Math.max(1, perRow + (i >= ROW_COUNT - extra ? 1 : 0));
       const h = nearH * Math.pow(t.rowScale, i);
       const span = size.width * 1.5 + h * 2.6;
       let x = 0;
       let k = 0;
       const rowPanels: WallPanel[] = [];
       while (x < span) {
-        const clip = (i * 3 + k) % SEEDANCE_SHOWCASE.length;
+        const clip = (rowStart + (k % rowClips)) % clipCount;
         const w = h * SEEDANCE_SHOWCASE[clip].aspect;
         rowPanels.push({
           clip,
@@ -194,6 +202,19 @@ export default function HeroWall({
         });
         x += w + t.gap;
         k++;
+      }
+      // The row is a loop, so the seam (last panel wrapping around to meet
+      // the first) is an adjacency too. When the cycle length doesn't divide
+      // the panel count, the seam can pair a clip with itself — bump the
+      // last panel one step along the slice, which is distinct from both
+      // neighbors whenever the slice holds 3+ clips.
+      const last = rowPanels[rowPanels.length - 1];
+      if (rowPanels.length > 1 && rowClips >= 3 && last.clip === rowPanels[0].clip) {
+        const left = last.x0 - last.w / 2;
+        last.clip = rowStart + ((last.clip - rowStart + 1) % rowClips);
+        last.w = last.h * SEEDANCE_SHOWCASE[last.clip].aspect;
+        last.x0 = left + last.w / 2;
+        x = left + last.w + t.gap;
       }
       for (const p of rowPanels) p.length = x;
       panels.push(...rowPanels);

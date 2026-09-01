@@ -30,7 +30,7 @@ export const AuthShowcase = () => {
 
       {/* Caption */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-8">
-        <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
+        <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
           One of the cheapest
         </p>
         <h2 className="text-2xl font-bold leading-tight">

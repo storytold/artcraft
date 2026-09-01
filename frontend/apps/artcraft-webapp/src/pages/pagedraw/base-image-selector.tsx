@@ -8,14 +8,16 @@
 //   - start from a blank canvas   → BlankCanvasModal (from the lib)
 
 import { useState } from "react";
-import { ImagesIcon, LoaderCircleIcon, MaximizeIcon, PencilIcon } from "lucide-react";
+import {
+  ImagesIcon,
+  LoaderCircleIcon,
+  MaximizeIcon,
+  PencilIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { UploaderStates } from "@storyteller/common";
 import { MediaFilesApi } from "@storyteller/api";
-import {
-  GalleryModal,
-  type GalleryItem,
-} from "@storyteller/ui-gallery-modal";
+import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   BlankCanvasModal,
   type BaseSelectorImage,
@@ -174,7 +176,7 @@ export function BaseImageSelector({
               setIsGalleryOpen(true);
             }}
             disabled={busy}
-            className="flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors hover:bg-ui-controls/80"
+            className="flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors hover:bg-ui-controls/80"
           >
             <ImagesIcon />
             Pick from Library
@@ -186,7 +188,7 @@ export function BaseImageSelector({
               setIsBlankCanvasOpen(true);
             }}
             disabled={busy}
-            className="flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors hover:bg-ui-controls/80"
+            className="flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors hover:bg-ui-controls/80"
           >
             <MaximizeIcon />
             Blank Canvas

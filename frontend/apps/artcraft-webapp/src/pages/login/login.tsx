@@ -5,7 +5,11 @@ import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
-import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
+import {
+  AuthHeader,
+  AuthFooter,
+  GoogleLoginButton,
+} from "../../components/auth";
 import Seo from "../../components/seo";
 import { Reveal, RevealGroup } from "../../components/motion/reveal";
 import { refreshSession } from "../../lib/session";
@@ -93,7 +97,7 @@ const Login = () => {
           className="space-y-4"
         >
           <Reveal className="space-y-2">
-            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 ml-1">
+            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 ml-1">
               Email or Username
             </label>
             <Input
@@ -106,7 +110,7 @@ const Login = () => {
           </Reveal>
           <Reveal className="space-y-2">
             <div className="flex justify-between items-center ml-1">
-              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
                 Password
               </label>
               <Link
@@ -142,7 +146,7 @@ const Login = () => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <LoaderCircleIcon  className="animate-spin" />
+                <LoaderCircleIcon className="animate-spin" />
               ) : (
                 "Log in"
               )}
@@ -159,7 +163,7 @@ const Login = () => {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/15" />
           </div>
-          <span className="relative bg-[#101014] px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+          <span className="relative bg-[#101014] px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
             or
           </span>
         </Reveal>

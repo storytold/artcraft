@@ -66,7 +66,7 @@ export function ReferenceVideoSlot({
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
           <VideoIcon className="h-3.5 w-3.5" />
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
             Reference video
           </span>
         </div>

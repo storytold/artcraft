@@ -14,10 +14,10 @@ import { Reveal } from "../../components/motion/reveal";
 const SeedanceBanner = () => (
   <div className="flex flex-col gap-5">
     <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-white/10 border border-white/30 px-3 py-1">
+      <span className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white bg-white/10 border border-white/30 px-3 py-1">
         Early access
       </span>
-      <span className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/65 bg-white/5 border border-white/15 px-3 py-1">
+      <span className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65 bg-white/5 border border-white/15 px-3 py-1">
         Available today in ArtCraft
       </span>
     </div>
@@ -47,7 +47,7 @@ const SeedanceBanner = () => (
 
     <div className="grid grid-cols-2 gap-3">
       <div className="bg-[#101014] border border-white/30 p-4">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white mb-1">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white mb-1">
           Seedance video credits
         </div>
         <div className="text-white/55 text-sm leading-snug">
@@ -55,7 +55,7 @@ const SeedanceBanner = () => (
         </div>
       </div>
       <div className="bg-[#101014] border border-white/15 p-4">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 mb-1">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 mb-1">
           First in the world
         </div>
         <div className="text-white/55 text-sm leading-snug">
@@ -76,7 +76,7 @@ const BuyMoreCreditsCta = ({ onClick }: { onClick: () => void }) => (
       className="mt-3 gap-2 border border-white/15 bg-transparent hover:bg-white/10 px-5 py-2 h-11 text-white"
       onClick={onClick}
     >
-      <CoinsIcon  className="text-[13px]" />
+      <CoinsIcon className="text-[13px]" />
       Buy more credits
     </Button>
   </div>
@@ -139,7 +139,12 @@ const Pricing = () => {
         ) : (
           <div className="max-w-6xl mx-auto">
             <PricingPromoBanner className="mb-10 sm:mb-12" />
-            <Reveal as="div" inView={false} y={20} className="text-center mb-14">
+            <Reveal
+              as="div"
+              inView={false}
+              y={20}
+              className="text-center mb-14"
+            >
               <h1 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
                 Invest in <span className="font-serif-italic">yourself</span>.
               </h1>
@@ -177,9 +182,7 @@ const Pricing = () => {
             className="mt-4 gap-2 border border-white/15 bg-transparent hover:bg-white/10 px-5 py-2 h-11 text-white"
             onClick={() => setCreditsModalOpen(true)}
           >
-            <CoinsIcon
-
-              className="text-[13px]" />
+            <CoinsIcon className="text-[13px]" />
             Buy Credits
           </Button>
         </div>

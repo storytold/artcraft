@@ -619,7 +619,7 @@ const EditCharacterView = ({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="edit-character-name"
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70"
           >
             Name
           </label>
@@ -637,7 +637,7 @@ const EditCharacterView = ({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="edit-character-description"
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70"
           >
             Description{" "}
             <span className="font-normal text-white/40">(optional)</span>
@@ -921,7 +921,7 @@ const NewCharacterView = ({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="character-name"
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70"
           >
             Name
           </label>
@@ -939,7 +939,7 @@ const NewCharacterView = ({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="character-description"
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70"
           >
             Description{" "}
             <span className="font-normal text-white/40">(optional)</span>

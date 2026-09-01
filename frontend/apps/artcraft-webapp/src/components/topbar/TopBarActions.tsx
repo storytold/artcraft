@@ -106,7 +106,7 @@ export function TopBarActions({ className }: { className?: string }) {
         <>
           <Link
             to="/pricing"
-            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
             <GemIcon className="text-[11px]" />
             Pricing
@@ -135,7 +135,7 @@ export function TopBarActions({ className }: { className?: string }) {
 
           <Link
             to="/library"
-            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-[3px] border border-white/15 hover:bg-white/10 hover:border-white/30 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80 transition-colors"
+            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-[3px] border border-white/15 hover:bg-white/10 hover:border-white/30 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors"
           >
             <ImagesIcon className="text-[11px]" />
             My Library
@@ -251,20 +251,20 @@ export function TopBarActions({ className }: { className?: string }) {
         <>
           <Link
             to="/pricing"
-            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
             <GemIcon className="text-[11px]" />
             Pricing
           </Link>
           <Link
             to="/login"
-            className="h-8 flex items-center px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            className="h-8 flex items-center px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="h-8 flex items-center gap-1.5 px-3.5 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-black bg-white hover:bg-white/80 transition-colors"
+            className="h-8 flex items-center gap-1.5 px-3.5 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black bg-white hover:bg-white/80 transition-colors"
           >
             Sign up
           </Link>

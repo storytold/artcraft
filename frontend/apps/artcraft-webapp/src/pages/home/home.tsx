@@ -133,7 +133,7 @@ export function Home() {
           as="h2"
           inView={false}
           delay={0.08}
-          className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 mb-4"
+          className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 mb-4"
         >
           Create
         </Reveal>
@@ -163,7 +163,7 @@ export function Home() {
                         </h3>
                         {app.badge && (
                           <span
-                            className={`shrink-0 border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.15em] leading-none ${
+                            className={`shrink-0 border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] leading-none ${
                               app.badge === "NEW"
                                 ? "border-purple-400/40 text-purple-300"
                                 : "border-amber-400/40 text-amber-300"

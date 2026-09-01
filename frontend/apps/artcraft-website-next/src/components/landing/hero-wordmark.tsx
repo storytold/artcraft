@@ -107,7 +107,7 @@ export default function HeroWordmark() {
   return (
     <div
       ref={containerRef}
-      className="relative h-[70svh] min-h-110 w-full touch-pan-y select-none"
+      className="relative h-[64svh] min-h-110 w-full touch-pan-y select-none"
     >
       {active && (
         <CanvasBoundary>

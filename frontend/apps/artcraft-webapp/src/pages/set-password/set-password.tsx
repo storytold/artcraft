@@ -26,9 +26,7 @@ const SetPassword = () => {
   if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ui-background">
-        <LoaderCircleIcon
-
-          className="animate-spin text-4xl text-white/80" />
+        <LoaderCircleIcon className="animate-spin text-4xl text-white/80" />
       </div>
     );
   }
@@ -103,7 +101,7 @@ const SetPassword = () => {
             )}
 
             <div className="space-y-2">
-              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                 Password
               </label>
               <div className="relative">
@@ -127,7 +125,7 @@ const SetPassword = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                 Confirm password
               </label>
               <div className="relative">
@@ -158,9 +156,7 @@ const SetPassword = () => {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <LoaderCircleIcon
-                    
-                    className="animate-spin" />
+                  <LoaderCircleIcon className="animate-spin" />
                 ) : (
                   "Set password"
                 )}

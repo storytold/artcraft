@@ -303,9 +303,7 @@ const Onboarding = () => {
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
               <div className="w-20 h-20 mx-auto border border-white/15 bg-green-500/10 flex items-center justify-center">
-                <CircleCheckIcon
-                  
-                  className="text-5xl text-green-400" />
+                <CircleCheckIcon className="text-5xl text-green-400" />
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-medium mb-4 text-white">
@@ -329,13 +327,9 @@ const Onboarding = () => {
         <div className="max-w-md w-full">
           {isNewAccount && (
             <div className="bg-white/5 border border-white/15 p-4 mb-6 flex items-start gap-3 animate-fade-in">
-              <InfoIcon
-
-                className="text-white/70 mt-1 flex-shrink-0 text-lg" />
+              <InfoIcon className="text-white/70 mt-1 flex-shrink-0 text-lg" />
               <div>
-                <h3 className="text-white font-medium mb-1">
-                  Account Created
-                </h3>
+                <h3 className="text-white font-medium mb-1">Account Created</h3>
                 <p className="text-white/60 text-sm leading-relaxed">
                   We've automatically created an account for you. Please
                   complete your setup below to secure it.
@@ -377,7 +371,7 @@ const Onboarding = () => {
               {currentStep === "password" && (
                 <>
                   <div className="space-y-2">
-                    <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                    <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                       Password
                     </label>
                     <Input
@@ -392,7 +386,7 @@ const Onboarding = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                    <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                       Confirm Password
                     </label>
                     <Input
@@ -411,7 +405,7 @@ const Onboarding = () => {
 
               {currentStep === "email" && (
                 <div className="space-y-2">
-                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                     Email Address
                   </label>
                   <Input
@@ -428,7 +422,7 @@ const Onboarding = () => {
 
               {currentStep === "username" && (
                 <div className="space-y-2">
-                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 ml-1">
+                  <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 ml-1">
                     Username
                   </label>
                   <Input
@@ -449,9 +443,7 @@ const Onboarding = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <LoaderCircleIcon
-                      
-                      className="animate-spin" />
+                    <LoaderCircleIcon className="animate-spin" />
                   ) : (
                     "Continue"
                   )}

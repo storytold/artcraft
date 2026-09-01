@@ -77,7 +77,7 @@ export function Breadcrumbs() {
   if (crumbs.length === 0) return null;
 
   return (
-    <nav className="hidden md:flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/45 min-w-0">
+    <nav className="hidden md:flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45 min-w-0">
       {crumbs.map((crumb, i) => {
         const isLast = i === crumbs.length - 1;
         return (

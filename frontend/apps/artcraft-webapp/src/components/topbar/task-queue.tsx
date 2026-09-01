@@ -1050,7 +1050,7 @@ export const TaskQueue = () => {
         <div>
           {inProgress.length > 0 && (
             <div className="mb-4">
-              <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/50">
+              <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                 In Progress
               </div>
               {inProgress.map((t) => (
@@ -1065,7 +1065,7 @@ export const TaskQueue = () => {
           {failed.length > 0 && (
             <div className="mb-4">
               <div className="mb-1 flex items-center justify-between px-1">
-                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-red-400/70">
+                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">
                   Failed
                 </div>
                 <button
@@ -1088,7 +1088,7 @@ export const TaskQueue = () => {
           {completed.length > 0 && (
             <div>
               <div className="mb-1 flex items-center justify-between px-1">
-                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/50">
+                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                   Completed
                 </div>
                 <button

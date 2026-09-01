@@ -1515,7 +1515,7 @@ export default function CreateVideo() {
                     : "border-ui-panel-border bg-ui-controls hover:bg-ui-controls/80"
                 }`}
               >
-                <span className="block font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg">
+                <span className="block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
                   {item.label}
                 </span>
                 <span className="block text-xs text-base-fg/55">
@@ -1656,7 +1656,7 @@ export default function CreateVideo() {
           <button
             type="button"
             onClick={() => setIsCharactersModalOpen(true)}
-            className="flex h-11 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors hover:bg-ui-controls/80"
+            className="flex h-11 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors hover:bg-ui-controls/80"
           >
             @Characters
           </button>
@@ -1961,7 +1961,7 @@ export default function CreateVideo() {
                   <button
                     type="button"
                     onClick={() => setIsCharactersModalOpen(true)}
-                    className="flex h-9 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80"
+                    className="flex h-9 items-center justify-center gap-1 border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80"
                   >
                     @Characters
                   </button>

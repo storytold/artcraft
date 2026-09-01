@@ -123,7 +123,7 @@ export const SignupForm = ({
           className="space-y-4"
         >
           <Reveal className="space-y-2">
-            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
+            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
               Email
             </label>
             <Input
@@ -138,7 +138,7 @@ export const SignupForm = ({
 
           <Reveal className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
                 Password
               </label>
             </div>
@@ -190,7 +190,7 @@ export const SignupForm = ({
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10" />
           </div>
-          <span className="relative bg-[#101014] px-4 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
+          <span className="relative bg-[#101014] px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
             or
           </span>
         </Reveal>

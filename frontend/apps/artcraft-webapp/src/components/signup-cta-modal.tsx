@@ -120,7 +120,7 @@ export function SignupCtaModal() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/10" />
               </div>
-              <span className="relative bg-ui-modal px-4 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
+              <span className="relative bg-ui-modal px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
                 or
               </span>
             </div>

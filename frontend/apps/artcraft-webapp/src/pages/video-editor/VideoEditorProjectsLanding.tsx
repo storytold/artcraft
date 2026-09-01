@@ -137,7 +137,7 @@ export function VideoEditorProjectsLanding({
 
       <div className="relative z-10 mx-auto w-full max-w-[1600px] px-3 pb-16 pt-10 sm:px-4 md:px-8 lg:px-12">
         <header className="animate-fade-in-up">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
             Video editor
           </p>
           <h1 className="mt-1.5 font-display text-3xl font-semibold md:text-4xl">
@@ -195,9 +195,7 @@ export function VideoEditorProjectsLanding({
 
         {status === "error" && (
           <div className="flex flex-col items-center justify-center gap-4 py-28 text-center">
-            <TriangleAlertIcon
-              
-              className="text-3xl text-white/30" />
+            <TriangleAlertIcon className="text-3xl text-white/30" />
             <div>
               <div className="text-lg font-medium">
                 Couldn't load your projects

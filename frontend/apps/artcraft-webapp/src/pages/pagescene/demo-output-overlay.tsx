@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ImageIcon, MaximizeIcon, MinimizeIcon, VideoIcon, WandSparklesIcon, XIcon } from "lucide-react";
+import {
+  ImageIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  VideoIcon,
+  WandSparklesIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
@@ -209,9 +216,9 @@ function ShowOutputPill({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Show rendered output"
-      className="pointer-events-auto absolute right-2 top-16 z-30 flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
+      className="pointer-events-auto absolute right-2 top-16 z-30 flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
     >
-      <ImageIcon  className="h-3 w-3 text-primary" />
+      <ImageIcon className="h-3 w-3 text-primary" />
       Show output
     </button>
   );
@@ -300,11 +307,9 @@ function Card({
     <div className="glass pointer-events-auto overflow-hidden border border-primary">
       <div className="flex items-center justify-between gap-3 border-b border-ui-controls-border/60 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <WandSparklesIcon
-
-            className="h-3 w-3 shrink-0 text-primary" />
+          <WandSparklesIcon className="h-3 w-3 shrink-0 text-primary" />
           <div className="min-w-0 leading-tight">
-            <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg">
+            <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
               Rendered Output
             </div>
             <div className="truncate text-[10px] text-base-fg/50">
@@ -324,7 +329,7 @@ function Card({
             }
             className="flex h-6 w-6 shrink-0 items-center justify-center text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
           >
-            <XIcon  className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -339,8 +344,9 @@ function Card({
             onToggleExpanded();
           }
         }}
-        className={`relative aspect-video w-full bg-black/40 ${isExpanded ? "cursor-zoom-out" : "cursor-zoom-in"
-          }`}
+        className={`relative aspect-video w-full bg-black/40 ${
+          isExpanded ? "cursor-zoom-out" : "cursor-zoom-in"
+        }`}
       >
         {children}
         <button
@@ -349,7 +355,9 @@ function Card({
             e.stopPropagation();
             onToggleExpanded();
           }}
-          aria-label={isExpanded ? "Collapse output view" : "Expand output view"}
+          aria-label={
+            isExpanded ? "Collapse output view" : "Expand output view"
+          }
           className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center border border-white/15 bg-black/60 text-white/80 transition-colors duration-150 hover:bg-black/80 hover:text-white"
         >
           <DynamicIcon

@@ -174,7 +174,7 @@ function NavMenuItem({
       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
         <span
-          className={`ml-auto border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.15em] leading-none group-data-[collapsible=icon]:hidden ${
+          className={`ml-auto border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] leading-none group-data-[collapsible=icon]:hidden ${
             item.badge === "NEW"
               ? "border-purple-400/40 text-purple-300"
               : "border-amber-400/40 text-amber-300"
