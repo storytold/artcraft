@@ -116,6 +116,16 @@
 /minimax-h3/ /minimax-h3/index.html 200
 /minimax-h3/* /index.html 200
 
+/creators/jboogxcreative /creators/jboogxcreative/index.html 200
+/creators/jboogxcreative/ /creators/jboogxcreative/index.html 200
+/creators/* /index.html 200
+
+# Similar URLs — creator spotlight aliases
+/jboogx          /creators/jboogxcreative 301
+/jboogx/         /creators/jboogxcreative 301
+/jboogxcreative  /creators/jboogxcreative 301
+/jboogxcreative/ /creators/jboogxcreative 301
+
 # Similar URLs: MiniMax H3 aliases
 /minimax        /minimax-h3 301
 /minimax/       /minimax-h3 301
