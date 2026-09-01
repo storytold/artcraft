@@ -6,7 +6,13 @@ import {
   type CSSProperties,
   type SyntheticEvent,
 } from "react";
-import { ImageIcon, ImagesIcon, LoaderCircleIcon, PlusIcon, XIcon } from "lucide-react";
+import {
+  ImageIcon,
+  ImagesIcon,
+  LoaderCircleIcon,
+  PlusIcon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Modal } from "@storyteller/ui-modal";
@@ -234,10 +240,7 @@ export const ImagePromptRow = ({
       )}
       <div
         ref={rootRef}
-        className={twMerge(
-          "glass flex flex-col sm:flex-row rounded-2xl sm:rounded-t-2xl sm:rounded-b-none",
-          className,
-        )}
+        className={twMerge("glass flex flex-col sm:flex-row", className)}
         onMouseDown={stopIfInside}
         onClick={stopIfInside}
         onPointerDown={stopIfInside}
@@ -245,8 +248,8 @@ export const ImagePromptRow = ({
         <div className="flex min-w-0 flex-1 gap-2 px-3 py-2">
           <div className="flex grow flex-col gap-1 min-w-32">
             <div className="flex items-center gap-2 text-white/90">
-              <ImageIcon  className="h-3.5 w-3.5" />
-              <span className="flex items-center gap-1.5 text-sm font-medium">
+              <ImageIcon className="h-3.5 w-3.5" />
+              <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
                 {sectionLabel}
                 {showCount && (
                   <span className="font-semibold text-white/60">
@@ -322,10 +325,9 @@ export const ImagePromptRow = ({
               <div className="hidden sm:block w-[1px] bg-white/10" />
               <div className="flex grow flex-col gap-1 sm:p-2">
                 <div className="flex items-center gap-2 text-white/90">
-                  <ImageIcon  className="h-3.5 w-3.5" />
-                  <span className="flex items-center gap-1.5 text-sm font-medium">
-                    End Frame{" "}
-                    <span className="text-xs text-white/60">(optional)</span>
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
+                    End Frame <span className="text-white/60">(optional)</span>
                   </span>
                 </div>
                 <span className="text-[13px] text-white/60">
@@ -336,7 +338,7 @@ export const ImagePromptRow = ({
             <div className="flex items-center gap-2">
               {endFrameImage ? (
                 <div
-                  className="group relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all cursor-pointer hover:border-white/80"
+                  className="group relative aspect-square w-10 sm:w-14 overflow-hidden border border-white/15 transition-all cursor-pointer hover:border-white/40"
                   onClick={() => setPreviewImage(endFrameImage)}
                 >
                   <img
@@ -349,17 +351,14 @@ export const ImagePromptRow = ({
                       e.stopPropagation();
                       setEndFrameImage?.(undefined);
                     }}
-                    className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
+                    className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center bg-black/50 text-white sm:opacity-0 transition-colors hover:bg-black sm:group-hover:opacity-100"
                   >
-                    <XIcon  className="h-2.5 w-2.5" />
+                    <XIcon className="h-2.5 w-2.5" />
                   </button>
                 </div>
               ) : uploadingEndFrame ? (
-                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <LoaderCircleIcon
-                    
-                    spin
-                    className="h-5 w-5 text-white" />
+                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden border border-white/15 bg-white/5">
+                  <LoaderCircleIcon spin className="h-5 w-5 text-white" />
                 </div>
               ) : (
                 <AddButton
@@ -385,7 +384,7 @@ export const ImagePromptRow = ({
             <img
               src={previewImage.fullUrl || previewImage.url}
               alt="Preview"
-              className="max-w-[90vw] max-h-[90vh] object-contain drop-shadow-2xl rounded-lg"
+              className="max-w-[90vw] max-h-[90vh] object-contain"
             />
           </div>
         )}
@@ -397,7 +396,7 @@ export const ImagePromptRow = ({
 // ── Sub-components ───────────────────────────────────────────────────────
 
 const ADD_BUTTON_CLASS =
-  "flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
+  "flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden border border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
 
 // Upload / Pick-from-library affordance. On desktop it's a hover tooltip; on
 // mobile that tooltip auto-opens from the emulated mouseenter fired on
@@ -414,9 +413,7 @@ export const AddButton = ({
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const plus = (
-    <PlusIcon  className="text-2xl text-white/80" />
-  );
+  const plus = <PlusIcon className="text-2xl text-white/80" />;
 
   if (!onPickFromLibrary) {
     return (
@@ -460,7 +457,7 @@ export const AddButton = ({
             <Button
               variant="action"
               icon={ImagesIcon}
-              className="w-full bg-white/15 hover:bg-white/20"
+              className="w-full"
               onClick={() => {
                 setDrawerOpen(false);
                 onPickFromLibrary();
@@ -495,7 +492,7 @@ export const AddButton = ({
             variant="action"
             onClick={onPickFromLibrary}
             icon={ImagesIcon}
-            className="w-full bg-white/15 hover:bg-white/20"
+            className="w-full"
           >
             Pick from library
           </Button>
@@ -519,7 +516,7 @@ const ImageThumbnail = ({
   onPreview?: (image: RefImage) => void;
 }) => (
   <div
-    className="group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all cursor-pointer hover:border-white/80"
+    className="group glass relative aspect-square w-10 sm:w-14 overflow-hidden border border-white/15 transition-all cursor-pointer hover:border-white/40"
     onClick={() => onPreview?.(image)}
   >
     <img
@@ -532,9 +529,9 @@ const ImageThumbnail = ({
         e.stopPropagation();
         onRemove(image.id);
       }}
-      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
+      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center bg-black/50 text-white sm:opacity-0 transition-colors hover:bg-black sm:group-hover:opacity-100"
     >
-      <XIcon  className="h-2.5 w-2.5" />
+      <XIcon className="h-2.5 w-2.5" />
     </button>
   </div>
 );
@@ -572,11 +569,11 @@ const SortableImage = ({
       {...(allowReorder ? { ...attributes, ...listeners } : {})}
       onClick={() => onPreview?.(image)}
       className={twMerge(
-        "group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-opacity",
+        "group glass relative aspect-square w-10 sm:w-14 overflow-hidden border border-white/15 transition-opacity",
         allowReorder
-          ? "cursor-move hover:border-white/80"
-          : "cursor-pointer hover:border-white/80",
-        isDragging && "opacity-50 shadow-lg",
+          ? "cursor-move hover:border-white/40"
+          : "cursor-pointer hover:border-white/40",
+        isDragging && "opacity-50",
       )}
     >
       <img
@@ -591,9 +588,9 @@ const SortableImage = ({
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
+        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center bg-black/50 text-white sm:opacity-0 transition-colors hover:bg-black sm:group-hover:opacity-100"
       >
-        <XIcon  className="h-2.5 w-2.5" />
+        <XIcon className="h-2.5 w-2.5" />
       </button>
     </div>
   );
@@ -603,7 +600,7 @@ const UploadingThumbnail = ({ file }: { file: File }) => {
   const previewUrl = useMemo(() => URL.createObjectURL(file), [file]);
   useEffect(() => () => URL.revokeObjectURL(previewUrl), [previewUrl]);
   return (
-    <div className="glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30">
+    <div className="glass relative aspect-square w-10 sm:w-14 overflow-hidden border border-white/15">
       <div className="absolute inset-0">
         <img
           src={previewUrl}
@@ -612,10 +609,7 @@ const UploadingThumbnail = ({ file }: { file: File }) => {
         />
       </div>
       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-        <LoaderCircleIcon
-          
-          spin
-          className="h-6 w-6 text-white" />
+        <LoaderCircleIcon spin className="h-6 w-6 text-white" />
       </div>
     </div>
   );

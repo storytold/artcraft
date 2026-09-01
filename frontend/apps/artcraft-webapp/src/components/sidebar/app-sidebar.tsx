@@ -1,7 +1,24 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { BoxIcon, CircleHelpIcon, DownloadIcon, FilmIcon, GiftIcon, GlobeIcon, GraduationCapIcon, GroupIcon, HouseIcon, ImageIcon, ImagesIcon, MusicIcon, NewspaperIcon, PencilIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  BoxIcon,
+  CircleHelpIcon,
+  DownloadIcon,
+  FilmIcon,
+  GiftIcon,
+  GlobeIcon,
+  GraduationCapIcon,
+  GroupIcon,
+  HouseIcon,
+  ImageIcon,
+  ImagesIcon,
+  MusicIcon,
+  NewspaperIcon,
+  PencilIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
@@ -33,7 +50,9 @@ type NavItem = {
   badge?: string;
 };
 
-const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: HouseIcon }];
+const PRIMARY_ITEMS: NavItem[] = [
+  { label: "Home", href: "/", icon: HouseIcon },
+];
 
 // Generation entries — make something from a prompt.
 const CREATE_ITEMS_STATIC: NavItem[] = [
@@ -150,13 +169,15 @@ function NavMenuItem({
           interactive, kept subtle to stay within the "restrained chrome" lane. */}
       <DynamicIcon
         icon={item.icon}
-        className="transition-transform duration-200 ease-out group-hover/menu-item:scale-110"
+        className="transition-colors duration-150"
       />
       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
         <span
-          className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full ${
-            item.badge === "NEW" ? "bg-purple-600" : "bg-amber-600"
+          className={`ml-auto border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] leading-none group-data-[collapsible=icon]:hidden ${
+            item.badge === "NEW"
+              ? "border-purple-400/40 text-purple-300"
+              : "border-amber-400/40 text-amber-300"
           }`}
         >
           {item.badge}
@@ -173,7 +194,7 @@ function NavMenuItem({
       {active && (
         <motion.span
           layoutId="sidebar-active-indicator"
-          className="pointer-events-none absolute inset-y-1.5 left-0 z-10 w-1 rounded-full bg-primary"
+          className="pointer-events-none absolute inset-y-1.5 left-0 z-10 w-0.5 bg-white"
           transition={
             reduceMotion
               ? { duration: 0 }
@@ -259,7 +280,7 @@ export function AppSidebar() {
               className="flex items-center gap-2"
             >
               <img
-                src="/images/artcraft-logo.png"
+                src="/images/artcraft-logo-2.png"
                 alt="ArtCraft"
                 className="h-5 w-auto shrink-0"
               />
@@ -318,7 +339,7 @@ export function AppSidebar() {
           onClick={() =>
             window.open(DOWNLOAD_URL, "_blank", "noopener,noreferrer")
           }
-          className="w-full justify-center h-9 text-sm font-semibold rounded-full"
+          className="w-full justify-center h-9"
         >
           Download ArtCraft
         </Button>

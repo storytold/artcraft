@@ -14,7 +14,14 @@ import {
   Transition,
 } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
-import { CoinsIcon, GemIcon, GiftIcon, ImagesIcon, LifeBuoyIcon, SettingsIcon } from "lucide-react";
+import {
+  CoinsIcon,
+  GemIcon,
+  GiftIcon,
+  ImagesIcon,
+  LifeBuoyIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu } from "@storyteller/ui-popover";
@@ -99,9 +106,9 @@ export function TopBarActions({ className }: { className?: string }) {
         <>
           <Link
             to="/pricing"
-            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
+            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
-            <GemIcon  className="text-[11px]" />
+            <GemIcon className="text-[11px]" />
             Pricing
           </Link>
 
@@ -118,7 +125,7 @@ export function TopBarActions({ className }: { className?: string }) {
               variant="primary"
               icon={GemIcon}
               onClick={() => navigate("/pricing")}
-              className="h-8 px-3 text-sm font-semibold rounded-lg"
+              className="h-8 px-3"
             >
               Upgrade
             </Button>
@@ -128,14 +135,14 @@ export function TopBarActions({ className }: { className?: string }) {
 
           <Link
             to="/library"
-            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-sm font-medium text-white/80 transition-colors"
+            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-[3px] border border-white/15 hover:bg-white/10 hover:border-white/30 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors"
           >
-            <ImagesIcon  className="text-[11px]" />
+            <ImagesIcon className="text-[11px]" />
             My Library
           </Link>
 
           <Menu as="div" className="relative ml-1">
-            <MenuButton className="flex h-8 w-8 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/40 ring-offset-2 ring-offset-[#121212]">
+            <MenuButton className="flex h-8 w-8 overflow-hidden border border-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 ring-offset-2 ring-offset-[#0b0b0c]">
               <span className="sr-only">Open user menu</span>
               <img
                 className="h-full w-full object-cover"
@@ -154,9 +161,9 @@ export function TopBarActions({ className }: { className?: string }) {
             >
               <MenuItems
                 modal={false}
-                className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-xl focus:outline-none overflow-hidden"
+                className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-[3px] bg-[#101014] border border-white/15 focus:outline-none overflow-hidden"
               >
-                <div className="px-4 py-3 border-b border-white/[0.06]">
+                <div className="px-4 py-3 border-b border-white/15">
                   <p className="text-sm font-medium text-white truncate">
                     {user.display_name || user.username}
                   </p>
@@ -166,13 +173,11 @@ export function TopBarActions({ className }: { className?: string }) {
                     <button
                       onClick={() => setSettingsOpen(true)}
                       className={twMerge(
-                        active ? "bg-white/[0.04]" : "",
+                        active ? "bg-white/10" : "",
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
-                      <SettingsIcon
-                        
-                        className="text-[11px] text-white/50" />
+                      <SettingsIcon className="text-[11px] text-white/50" />
                       Settings
                     </button>
                   )}
@@ -182,13 +187,11 @@ export function TopBarActions({ className }: { className?: string }) {
                     <button
                       onClick={() => navigate("/support")}
                       className={twMerge(
-                        active ? "bg-white/[0.04]" : "",
+                        active ? "bg-white/10" : "",
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
-                      <LifeBuoyIcon
-                        
-                        className="text-[11px] text-white/50" />
+                      <LifeBuoyIcon className="text-[11px] text-white/50" />
                       Support
                     </button>
                   )}
@@ -201,13 +204,11 @@ export function TopBarActions({ className }: { className?: string }) {
                       <button
                         onClick={() => navigate("/referrals")}
                         className={twMerge(
-                          active ? "bg-white/[0.04]" : "",
+                          active ? "bg-white/10" : "",
                           "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                         )}
                       >
-                        <GiftIcon
-                          
-                          className="text-[11px] text-white/50" />
+                        <GiftIcon className="text-[11px] text-white/50" />
                         Referrals
                       </button>
                     )}
@@ -220,13 +221,11 @@ export function TopBarActions({ className }: { className?: string }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={twMerge(
-                        active ? "bg-white/[0.04]" : "",
+                        active ? "bg-white/10" : "",
                         "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
                       )}
                     >
-                      <DiscordIcon
-                        
-                        className="text-[11px] text-white/50" />
+                      <DiscordIcon className="text-[11px] text-white/50" />
                       Join Discord
                     </a>
                   )}
@@ -252,20 +251,20 @@ export function TopBarActions({ className }: { className?: string }) {
         <>
           <Link
             to="/pricing"
-            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
+            className="hidden lg:flex h-8 items-center gap-1.5 px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
-            <GemIcon  className="text-[11px]" />
+            <GemIcon className="text-[11px]" />
             Pricing
           </Link>
           <Link
             to="/login"
-            className="h-8 flex items-center px-3 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.04] transition-all"
+            className="h-8 flex items-center px-3 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+            className="h-8 flex items-center gap-1.5 px-3.5 rounded-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black bg-white hover:bg-white/80 transition-colors"
           >
             Sign up
           </Link>
@@ -297,16 +296,14 @@ function CreditsChip({
     <PopoverMenu
       position="bottom"
       align="end"
-      triggerIcon={
-        <CoinsIcon  className="text-primary text-[11px]" />
-      }
+      triggerIcon={<CoinsIcon className="text-primary text-[11px]" />}
       triggerLabel={
         <span className="whitespace-nowrap text-sm font-medium">
           {credits.toLocaleString()}
         </span>
       }
-      buttonClassName="h-8 px-3 ps-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-white/80 rounded-lg gap-1.5"
-      panelClassName="mt-2 bg-[#1a1a1a] border border-white/[0.08] text-white rounded-xl"
+      buttonClassName="h-8 px-3 ps-2.5 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-[3px] gap-1.5"
+      panelClassName="mt-2 bg-[#101014] border border-white/15 text-white rounded-[3px]"
     >
       {(close) => (
         <div className="w-72 max-w-[calc(100vw-24px)] p-3 text-white">
@@ -325,7 +322,7 @@ function CreditsChip({
             </button>
           </div>
           <div className="flex items-center gap-2 text-3xl font-semibold text-white tracking-tight">
-            <CoinsIcon  className="text-xl text-primary" />
+            <CoinsIcon className="text-xl text-primary" />
             {credits.toLocaleString()}
           </div>
           <div className="mt-3 flex gap-2">

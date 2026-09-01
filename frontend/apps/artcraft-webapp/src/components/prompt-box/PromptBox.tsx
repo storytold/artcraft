@@ -8,7 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { twMerge } from "tailwind-merge";
-import { ChevronDownIcon, ChevronUpIcon, MusicIcon, UsersIcon, VideoIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  MusicIcon,
+  UsersIcon,
+  VideoIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { GenerateIconButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -231,8 +237,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     // mode renders no video/audio deck, so those kinds only land in
     // reference mode where the user can see (and remove) them.
     const isKeyframeMode = !!isVideo && !isReferenceMode;
-    const dropAcceptsImages =
-      !!supportsImagePrompts && maxImagePromptCount > 0;
+    const dropAcceptsImages = !!supportsImagePrompts && maxImagePromptCount > 0;
     const dropAcceptsVideos =
       !isKeyframeMode && !!videoRefsSupported && !!onReferenceVideosChange;
     const dropAcceptsAudio =
@@ -344,8 +349,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const deckAddActions: DeckAddAction[] = [];
     if (
       supportsImagePrompts &&
-      referenceImages.length + deck.uploadingImages.length <
-        maxImagePromptCount
+      referenceImages.length + deck.uploadingImages.length < maxImagePromptCount
     ) {
       deckAddActions.push({
         key: "upload-image",
@@ -769,8 +773,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
 
           <div
             className={twMerge(
-              "glass rounded-2xl p-3 sm:p-4 !transition-all duration-200",
-              isFocused && "ring-1 ring-primary",
+              "glass p-3 sm:p-4 !transition-all duration-200",
+              isFocused && "border-primary",
             )}
             {...drop.dropZoneProps}
           >
@@ -849,8 +853,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     />
 
                     {mentionOpen && filteredMentionItems.length > 0 && (
-                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-ui-panel-border bg-ui-controls shadow-lg backdrop-blur-xl">
-                        <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-controls">
+                        <div className="px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                           Mentions
                         </div>
                         {filteredMentionItems.map((item, i) => (
@@ -868,7 +872,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                             }}
                             onMouseEnter={() => setMentionIndex(i)}
                           >
-                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-black/20">
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden border border-white/15 bg-black/20">
                               {(item.type === "image" ||
                                 item.type === "character") &&
                               item.preview ? (
@@ -885,13 +889,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                                   className="h-full w-full object-cover"
                                 />
                               ) : item.type === "character" ? (
-                                <UsersIcon
-                                  
-                                  className="h-3.5 w-3.5 text-white/60" />
+                                <UsersIcon className="h-3.5 w-3.5 text-white/60" />
                               ) : (
                                 <DynamicIcon
                                   icon={
-                                    item.type === "video" ? VideoIcon : MusicIcon
+                                    item.type === "video"
+                                      ? VideoIcon
+                                      : MusicIcon
                                   }
                                   className="h-3.5 w-3.5 text-white/60"
                                 />

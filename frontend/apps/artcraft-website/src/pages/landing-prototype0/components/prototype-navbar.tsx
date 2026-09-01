@@ -51,14 +51,14 @@ const NAV_ITEMS: NavEntry[] = [
 
 // Marathon-style: the neon highlight sits on the label only, not the whole cell.
 const NAV_LINK_CLASSES =
-  "group flex h-full items-center px-2.5 font-mono text-xs font-medium uppercase tracking-[0.15em] whitespace-nowrap";
+  "group flex h-full items-center px-2.5 font-mono text-xs font-medium uppercase tracking-[0.12em] whitespace-nowrap";
 const NAV_LABEL_CLASSES =
   "flex items-center gap-1.5 px-1.5 py-0.5 group-hover:bg-white group-hover:text-black";
 const NAV_LABEL_ACTIVE_CLASSES = "bg-white text-black";
 const DROPDOWN_ITEM_CLASSES =
-  "group flex px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-[0.15em] whitespace-nowrap";
+  "group flex px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-[0.12em] whitespace-nowrap";
 const SOLID_CTA_CLASSES =
-  "flex h-full items-center border-l border-white/15 bg-white px-5 font-mono text-xs font-bold uppercase tracking-[0.15em] text-black hover:bg-white/80";
+  "flex h-full items-center border-l border-white/15 bg-white px-5 font-mono text-xs font-bold uppercase tracking-[0.12em] text-black hover:bg-white/80";
 
 const isExternalHref = (href: string) => /^https?:\/\//.test(href);
 
@@ -540,7 +540,7 @@ export default function PrototypeNavbar() {
                   <DisclosureButton
                     as="a"
                     href={WEBAPP_URL}
-                    className="flex h-11 items-center justify-center bg-white px-4 font-mono text-xs font-bold uppercase tracking-[0.15em] text-black active:bg-white/80"
+                    className="flex h-11 items-center justify-center bg-white px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-black active:bg-white/80"
                   >
                     Launch App
                   </DisclosureButton>
@@ -549,7 +549,7 @@ export default function PrototypeNavbar() {
                   <DisclosureButton
                     as={Link}
                     to="/pricing"
-                    className="flex flex-1 h-10 items-center justify-center gap-1.5 border-r border-white/15 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white/70 active:bg-white active:text-black"
+                    className="flex flex-1 h-10 items-center justify-center gap-1.5 border-r border-white/15 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/70 active:bg-white active:text-black"
                   >
                     Pricing
                   </DisclosureButton>
@@ -558,7 +558,7 @@ export default function PrototypeNavbar() {
                     href={SOCIAL_LINKS.DISCORD}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-1 h-10 items-center justify-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white/70 active:bg-white active:text-black"
+                    className="flex flex-1 h-10 items-center justify-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/70 active:bg-white active:text-black"
                   >
                     <DiscordIcon className="text-[10px]" />
                     Discord
@@ -567,7 +567,7 @@ export default function PrototypeNavbar() {
                     <DisclosureButton
                       as="a"
                       href={webappUrl("/referrals")}
-                      className="flex flex-1 h-10 items-center justify-center gap-1.5 border-l border-white/15 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white/70 active:bg-white active:text-black"
+                      className="flex flex-1 h-10 items-center justify-center gap-1.5 border-l border-white/15 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/70 active:bg-white active:text-black"
                     >
                       <GiftIcon className="text-[10px]" />
                       Referrals
@@ -586,7 +586,7 @@ export default function PrototypeNavbar() {
                   <DisclosureButton
                     as="button"
                     onClick={handleLogout}
-                    className="flex h-8 shrink-0 items-center px-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-red-400 active:bg-red-500 active:text-white"
+                    className="flex h-8 shrink-0 items-center px-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-red-400 active:bg-red-500 active:text-white"
                   >
                     Sign out
                   </DisclosureButton>
@@ -597,7 +597,7 @@ export default function PrototypeNavbar() {
                 <DisclosureButton
                   as="a"
                   href={WEBAPP_URL}
-                  className="flex h-11 items-center justify-center bg-white px-4 font-mono text-xs font-bold uppercase tracking-[0.15em] text-black active:bg-white/80"
+                  className="flex h-11 items-center justify-center bg-white px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-black active:bg-white/80"
                 >
                   Launch App
                 </DisclosureButton>
@@ -606,14 +606,14 @@ export default function PrototypeNavbar() {
                   <DisclosureButton
                     as={Link}
                     to="/login"
-                    className="flex h-11 flex-1 items-center justify-center border-r border-white/15 font-mono text-xs font-semibold uppercase tracking-[0.15em] text-white/80 active:bg-white active:text-black"
+                    className="flex h-11 flex-1 items-center justify-center border-r border-white/15 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-white/80 active:bg-white active:text-black"
                   >
                     Login
                   </DisclosureButton>
                   <DisclosureButton
                     as={Link}
                     to="/signup"
-                    className="flex h-11 flex-1 items-center justify-center bg-white font-mono text-xs font-bold uppercase tracking-[0.15em] text-black active:bg-white/80"
+                    className="flex h-11 flex-1 items-center justify-center bg-white font-mono text-xs font-bold uppercase tracking-[0.12em] text-black active:bg-white/80"
                   >
                     Sign up
                   </DisclosureButton>

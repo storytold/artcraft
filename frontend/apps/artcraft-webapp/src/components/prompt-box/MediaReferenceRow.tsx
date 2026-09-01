@@ -1,5 +1,12 @@
 import { useCallback, useRef, useState } from "react";
-import { LoaderCircleIcon, MusicIcon, PlayIcon, SquareIcon, VideoIcon, XIcon } from "lucide-react";
+import {
+  LoaderCircleIcon,
+  MusicIcon,
+  PlayIcon,
+  SquareIcon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
@@ -214,10 +221,7 @@ export const MediaReferenceRow = ({
         onChange={handleAudioUpload}
       />
       <div
-        className={twMerge(
-          "glass flex flex-col sm:flex-row rounded-2xl",
-          className,
-        )}
+        className={twMerge("glass flex flex-col sm:flex-row", className)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
@@ -227,8 +231,8 @@ export const MediaReferenceRow = ({
           <div className="flex grow gap-2 px-3 py-2">
             <div className="flex grow flex-col gap-1">
               <div className="flex items-center gap-2 text-white/90">
-                <VideoIcon  className="h-3.5 w-3.5" />
-                <span className="flex items-center gap-1.5 text-sm font-medium">
+                <VideoIcon className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
                   Video Ref
                   <span className="font-semibold text-white/60">
                     ({referenceVideos.length}/{maxVideoCount})
@@ -248,11 +252,8 @@ export const MediaReferenceRow = ({
                 />
               ))}
               {uploadingVideo && (
-                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <LoaderCircleIcon
-                    
-                    spin
-                    className="h-5 w-5 text-white/60" />
+                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden border border-white/15 bg-white/5">
+                  <LoaderCircleIcon spin className="h-5 w-5 text-white/60" />
                 </div>
               )}
               {canAddVideo && (
@@ -275,8 +276,8 @@ export const MediaReferenceRow = ({
           <div className="flex grow gap-2 px-3 py-2">
             <div className="flex grow flex-col gap-1">
               <div className="flex items-center gap-2 text-white/90">
-                <MusicIcon  className="h-3.5 w-3.5" />
-                <span className="flex items-center gap-1.5 text-sm font-medium">
+                <MusicIcon className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
                   Audio Ref
                   <span className="font-semibold text-white/60">
                     ({referenceAudios.length}/{maxAudioCount})
@@ -297,11 +298,8 @@ export const MediaReferenceRow = ({
                 />
               ))}
               {uploadingAudio && (
-                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                  <LoaderCircleIcon
-                    
-                    spin
-                    className="h-5 w-5 text-white/60" />
+                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden border border-white/15 bg-white/5">
+                  <LoaderCircleIcon spin className="h-5 w-5 text-white/60" />
                 </div>
               )}
               {canAddAudio && (
@@ -328,7 +326,7 @@ const VideoRefTile = ({
   video: RefVideo;
   onRemove: (id: string) => void;
 }) => (
-  <div className="group relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+  <div className="group relative aspect-square w-10 sm:w-14 overflow-hidden border border-white/15 transition-all hover:border-white/40">
     <video
       src={video.url}
       muted
@@ -343,9 +341,9 @@ const VideoRefTile = ({
         e.stopPropagation();
         onRemove(video.id);
       }}
-      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
+      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center bg-black/50 text-white sm:opacity-0 transition-colors hover:bg-black sm:group-hover:opacity-100"
     >
-      <XIcon  className="h-2.5 w-2.5" />
+      <XIcon className="h-2.5 w-2.5" />
     </button>
   </div>
 );
@@ -382,7 +380,7 @@ const AudioRefTile = ({
   );
 
   return (
-    <div className="group relative flex aspect-square w-10 sm:w-14 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+    <div className="group relative flex aspect-square w-10 sm:w-14 cursor-pointer items-center justify-center overflow-hidden border border-white/15 transition-all hover:border-white/40">
       <button
         onClick={handleTogglePlay}
         className="flex h-full w-full items-center justify-center"
@@ -403,9 +401,9 @@ const AudioRefTile = ({
           e.stopPropagation();
           onRemove(audio.id);
         }}
-        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
+        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center bg-black/50 text-white sm:opacity-0 transition-colors hover:bg-black sm:group-hover:opacity-100"
       >
-        <XIcon  className="h-2.5 w-2.5" />
+        <XIcon className="h-2.5 w-2.5" />
       </button>
     </div>
   );

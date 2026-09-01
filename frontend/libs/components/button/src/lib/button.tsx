@@ -39,7 +39,9 @@ export const Button = ({
   function getVariantClassNames(variant: string) {
     switch (variant) {
       case "secondary": {
-        return "bg-transparent text-base-fg border border-ui-controls-border hover:bg-white/10 hover:border-white/30";
+        // Resting bg-white/5 tint (matching the home grid cards) so the
+        // button reads as a surface, not a bare outline on the page bg.
+        return "bg-white/5 text-base-fg border border-ui-controls-border hover:bg-white/10 hover:border-white/30";
       }
       case "action": {
         return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80";
@@ -62,7 +64,7 @@ export const Button = ({
   );
 
   const className = twMerge(
-    "w-fit rounded-none font-mono text-xs font-semibold uppercase tracking-[0.15em] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150 flex gap-2 items-center justify-center",
+    "w-fit rounded-[3px] font-mono text-xs font-semibold uppercase tracking-[0.12em] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150 flex gap-2 items-center justify-center",
     getVariantClassNames(propsVariant),
     propsClassName,
     disabledClass,

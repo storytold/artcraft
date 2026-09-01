@@ -1,4 +1,11 @@
-import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import {
+  ArrowDownToLineIcon,
+  CheckIcon,
+  LinkIcon,
+  LoaderCircleIcon,
+  RotateCwIcon,
+  VideoIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -85,7 +92,7 @@ function CardRecreateButton({
         type="button"
         onClick={handleRecreate}
         disabled={isRecreating}
-        className="flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
+        className="flex items-center gap-1.5 border border-white/15 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
       >
         <DynamicIcon
           icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
@@ -103,7 +110,7 @@ function CardRecreateButton({
         onClick={handleRecreate}
         disabled={isRecreating}
         aria-label="Recreate"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 opacity-0 transition hover:bg-white/15 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-60"
+        className="flex h-7 w-7 shrink-0 items-center justify-center text-white/70 opacity-0 transition hover:bg-white/15 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-60"
       >
         <DynamicIcon
           icon={isRecreating ? LoaderCircleIcon : RotateCwIcon}
@@ -136,7 +143,7 @@ function CardActions({
   } = useGalleryItemActions(item, { enableMakeVideo });
 
   const buttonClass =
-    "flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60";
+    "flex h-7 w-7 items-center justify-center text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60";
 
   return (
     <>
@@ -164,7 +171,7 @@ function CardActions({
             onClick={handleMakeVideo}
             aria-label="Make Video"
           >
-            <VideoIcon  className="text-sm" />
+            <VideoIcon className="text-sm" />
           </button>
         </Tooltip>
       )}

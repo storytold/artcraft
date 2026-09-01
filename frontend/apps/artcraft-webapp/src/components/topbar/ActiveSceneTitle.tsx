@@ -121,7 +121,7 @@ export function ActiveSceneTitle() {
               onClick={startEdit}
               title="Rename scene"
               aria-label="Rename scene"
-              className="flex min-w-0 max-w-[280px] items-center rounded-lg border border-transparent px-3 py-1.5 text-sm font-semibold text-white transition-all hover:cursor-text hover:bg-white/[0.08]"
+              className="flex min-w-0 max-w-[280px] items-center border border-transparent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:cursor-text hover:bg-white/10"
             >
               <span className="truncate">{title}</span>
               <PencilIcon
@@ -129,7 +129,7 @@ export function ActiveSceneTitle() {
                 className="ml-2 shrink-0 text-sm opacity-50" />
             </button>
           ) : (
-            <div className="max-w-[280px] truncate rounded-lg border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
+            <div className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
               {title}
             </div>
           )}
@@ -157,8 +157,8 @@ export function ActiveSceneTitle() {
           disabled={isSubmitting}
           maxLength={120}
           className={twMerge(
-            "h-[34px] w-fit max-w-full rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 text-sm font-semibold text-white outline-none focus:outline focus:outline-2 focus:outline-brand-primary",
-            isSubmitting && "outline outline-2 outline-brand-secondary",
+            "h-[34px] w-fit max-w-full border border-white/15 bg-ui-controls px-3 text-sm font-semibold text-white outline-none focus:outline focus:outline-1 focus:outline-white/60",
+            isSubmitting && "outline outline-1 outline-white/30",
             !isValid && "border-danger focus:outline-danger focus:outline-2",
           )}
         />

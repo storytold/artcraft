@@ -25,7 +25,7 @@ type ButtonVariant =
 type ButtonSize = "sm" | "md" | "lg";
 
 const BASE_CLASSES =
-  "inline-flex w-fit items-center justify-center gap-2 rounded-none font-mono font-bold uppercase tracking-[0.15em] whitespace-nowrap transition-colors duration-150";
+  "inline-flex w-fit items-center justify-center gap-2 rounded-none font-mono font-bold uppercase tracking-[0.12em] whitespace-nowrap transition-colors duration-150";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-invert-bg text-invert-fg transition-opacity hover:opacity-80",
@@ -43,7 +43,8 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    ButtonHTMLAttributes<HTMLButtonElement>,
     Pick<AnchorHTMLAttributes<HTMLAnchorElement>, "target" | "rel"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -86,10 +87,17 @@ export function Button({
   );
 
   if (href) {
-    const anchorProps = rest as unknown as AnchorHTMLAttributes<HTMLAnchorElement>;
+    const anchorProps =
+      rest as unknown as AnchorHTMLAttributes<HTMLAnchorElement>;
     if (external || /^(https?:\/\/|mailto:)/.test(href)) {
       return (
-        <a href={href} target={target} rel={rel} className={classes} {...anchorProps}>
+        <a
+          href={href}
+          target={target}
+          rel={rel}
+          className={classes}
+          {...anchorProps}
+        >
           {content}
         </a>
       );

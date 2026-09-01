@@ -7,24 +7,19 @@ import Seo from "../../components/seo";
 
 const CheckoutCancel = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#101014] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-ui-background text-white">
       <Seo
         title="Checkout Cancelled - ArtCraft"
         description="Your checkout was cancelled. No payment was made."
       />
 
-      {/* Background gradient - subtle/neutral */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-gray-500/20 via-gray-600/10 to-gray-700/5 opacity-40 blur-[120px]"></div>
-      </div>
-
       <main className="relative z-10 pt-20 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         {/* Cancel Card */}
         <div className="max-w-lg w-full">
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-12 text-center">
+          <div className="bg-[#101014] border border-white/15 p-8 md:p-12 text-center">
             {/* Cancel Icon */}
             <div className="mb-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-white/10 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto border border-white/15 bg-white/10 flex items-center justify-center">
                 <CircleXIcon
                   
                   className="text-5xl text-white/50" />
@@ -41,7 +36,7 @@ const CheckoutCancel = () => {
             </p>
 
             {/* Info Box */}
-            <div className="bg-[#252529] rounded-2xl p-5 mb-8 text-left">
+            <div className="bg-ui-controls border border-white/15 p-5 mb-8 text-left">
               <p className="text-white/70 text-sm">
                 <span className="text-white font-medium">
                   Changed your mind?
@@ -56,14 +51,14 @@ const CheckoutCancel = () => {
               <Button
                 as="link"
                 href="/pricing"
-                className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                className="px-8 py-3 justify-center"
               >
                 View Plans Again
               </Button>
             </div>
 
             {/* Discord CTA */}
-            <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-2 items-center">
+            <div className="mt-8 pt-6 border-t border-white/15 flex flex-col gap-2 items-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="text-white/70 text-sm">
                   Need help deciding?
@@ -73,7 +68,7 @@ const CheckoutCancel = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className="bg-white text-black hover:bg-white/80 px-4 py-2 justify-center border-transparent"
               >
                 <DiscordIcon />
                 Join Discord

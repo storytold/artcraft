@@ -81,7 +81,7 @@ export function LibraryFoldersNav({
             type="button"
             onClick={() => openNewFolderModal(null)}
             aria-label="New folder"
-            className="mr-1 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
+            className="mr-1 flex h-5 w-5 items-center justify-center text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
           >
             <PlusIcon  className="text-xs" />
           </button>
@@ -125,7 +125,7 @@ export function LibraryFoldersNav({
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
                 aria-label={expanded ? "Collapse folders" : "Expand folders"}
-                className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
+                className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
               >
                 <ChevronRightIcon
                   

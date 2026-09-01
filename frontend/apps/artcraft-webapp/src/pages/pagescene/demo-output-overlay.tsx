@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ImageIcon, MaximizeIcon, MinimizeIcon, VideoIcon, WandSparklesIcon, XIcon } from "lucide-react";
+import {
+  ImageIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  VideoIcon,
+  WandSparklesIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
@@ -154,7 +161,7 @@ export function DemoOutputOverlay({
 
   if (isExpanded) {
     return (
-      <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-8 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-8 animate-in fade-in duration-200">
         <button
           type="button"
           aria-label="Close expanded view"
@@ -209,9 +216,9 @@ function ShowOutputPill({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Show rendered output"
-      className="pointer-events-auto absolute right-2 top-16 z-30 flex items-center gap-2 rounded-xl border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-xl transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
+      className="pointer-events-auto absolute right-2 top-16 z-30 flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
     >
-      <ImageIcon  className="h-3 w-3 text-primary" />
+      <ImageIcon className="h-3 w-3 text-primary" />
       Show output
     </button>
   );
@@ -223,9 +230,9 @@ interface ViewToggleProps {
 }
 
 // Single-button sliding toggle. The whole pill is the click target —
-// clicking anywhere on it flips between video and image. A primary-
-// coloured indicator translates between the two icons to show which
-// side is currently active.
+// clicking anywhere on it flips between video and image. A white
+// indicator translates between the two icons to show which side is
+// currently active.
 function ViewToggle({ view, onChange }: ViewToggleProps) {
   const next: View = view === "video" ? "image" : "video";
   return (
@@ -233,11 +240,11 @@ function ViewToggle({ view, onChange }: ViewToggleProps) {
       type="button"
       aria-label={view === "video" ? "Switch to image" : "Switch to video"}
       onClick={() => onChange(next)}
-      className="relative flex h-7 w-14 shrink-0 items-center rounded-full border border-ui-controls-border bg-black/30 p-0.5 transition-colors hover:bg-black/40"
+      className="relative flex h-7 w-14 shrink-0 items-center border border-ui-controls-border bg-black/30 p-0.5 transition-colors hover:bg-black/40"
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-0.125rem)] rounded-full bg-primary shadow-sm transition-transform duration-200 ease-out"
+        className="pointer-events-none absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-0.125rem)] bg-white transition-transform duration-200 ease-out"
         style={{
           transform: view === "image" ? "translateX(100%)" : "translateX(0%)",
         }}
@@ -258,7 +265,7 @@ function ToggleIcon({ icon, active }: ToggleIconProps) {
     <span
       className={
         "relative z-10 flex h-full flex-1 items-center justify-center transition-colors " +
-        (active ? "text-white" : "text-base-fg/60")
+        (active ? "text-black" : "text-base-fg/60")
       }
     >
       <DynamicIcon icon={icon} className="h-3 w-3" />
@@ -297,14 +304,12 @@ function Card({
     onToggleExpanded();
   };
   return (
-    <div className="glass pointer-events-auto overflow-hidden rounded-xl shadow-xl border-2 border-primary">
+    <div className="glass pointer-events-auto overflow-hidden border border-primary">
       <div className="flex items-center justify-between gap-3 border-b border-ui-controls-border/60 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <WandSparklesIcon
-            
-            className="h-3 w-3 shrink-0 text-primary" />
+          <WandSparklesIcon className="h-3 w-3 shrink-0 text-primary" />
           <div className="min-w-0 leading-tight">
-            <div className="text-xs font-semibold uppercase tracking-wider text-base-fg">
+            <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
               Rendered Output
             </div>
             <div className="truncate text-[10px] text-base-fg/50">
@@ -322,9 +327,9 @@ function Card({
                 ? "Collapse to picture-in-picture"
                 : "Hide rendered output"
             }
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
+            className="flex h-6 w-6 shrink-0 items-center justify-center text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
           >
-            <XIcon  className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -339,8 +344,9 @@ function Card({
             onToggleExpanded();
           }
         }}
-        className={`relative aspect-video w-full bg-black/40 ${isExpanded ? "cursor-zoom-out" : "cursor-zoom-in"
-          }`}
+        className={`relative aspect-video w-full bg-black/40 ${
+          isExpanded ? "cursor-zoom-out" : "cursor-zoom-in"
+        }`}
       >
         {children}
         <button
@@ -349,8 +355,10 @@ function Card({
             e.stopPropagation();
             onToggleExpanded();
           }}
-          aria-label={isExpanded ? "Collapse output view" : "Expand output view"}
-          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-black/60 text-white/80 shadow-lg backdrop-blur-md transition-colors duration-150 hover:bg-black/80 hover:text-white"
+          aria-label={
+            isExpanded ? "Collapse output view" : "Expand output view"
+          }
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center border border-white/15 bg-black/60 text-white/80 transition-colors duration-150 hover:bg-black/80 hover:text-white"
         >
           <DynamicIcon
             icon={isExpanded ? MinimizeIcon : MaximizeIcon}

@@ -22,9 +22,9 @@ export const CloseButton = ({
     <button
       onClick={onClick}
       className={twMerge(
-        "flex items-center justify-center rounded-none bg-black/40 text-white/60 transition-colors hover:bg-white hover:text-black",
+        "flex items-center justify-center rounded-[3px] bg-black/40 text-white/60 transition-colors hover:bg-white hover:text-black",
         sizeClasses[size],
-        className
+        className,
       )}
     >
       <XIcon />

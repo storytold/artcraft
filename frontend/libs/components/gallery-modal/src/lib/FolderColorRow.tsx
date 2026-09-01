@@ -25,7 +25,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
         onClick={() => onSetColor(c)}
         style={{ backgroundColor: c }}
         className={twMerge(
-          "h-5 w-5 border border-black/20 transition-transform hover:scale-110",
+          "h-5 w-5 rounded-[3px] border border-black/20 transition-transform hover:scale-110",
           colorCode === c &&
             "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
         )}
@@ -37,16 +37,16 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
       aria-label="Clear color"
       onClick={() => onSetColor(null)}
       className={twMerge(
-        "flex h-5 w-5 items-center justify-center border border-ui-panel-border text-base-fg/50 hover:text-base-fg",
+        "flex h-5 w-5 items-center justify-center rounded-[3px] border border-ui-panel-border text-base-fg/50 hover:text-base-fg",
         !colorCode && "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
       )}
     >
-      <XIcon  className="text-[10px]" />
+      <XIcon className="text-[10px]" />
     </button>
     {/* Custom hex (native picker) */}
     <label
       title="Custom color"
-      className="relative h-5 w-5 cursor-pointer overflow-hidden border border-ui-panel-border"
+      className="relative h-5 w-5 cursor-pointer overflow-hidden rounded-[3px] border border-ui-panel-border"
       style={{
         background:
           "conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red)",
@@ -55,7 +55,9 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
       <input
         type="color"
         value={
-          colorCode && /^#[0-9a-fA-F]{6}$/.test(colorCode) ? colorCode : "#888888"
+          colorCode && /^#[0-9a-fA-F]{6}$/.test(colorCode)
+            ? colorCode
+            : "#888888"
         }
         onChange={(e) => onSetColor(e.target.value)}
         className="absolute -inset-1 h-[150%] w-[150%] cursor-pointer opacity-0"

@@ -18,8 +18,26 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        mono: [
+          "Geist Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Consolas",
+          "monospace",
+        ],
         display: [
-          "Outfit",
+          "Archivo",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+        sans: [
           "system-ui",
           "-apple-system",
           "BlinkMacSystemFont",
@@ -159,16 +177,20 @@ module.exports = {
         ring: "var(--sidebar-ring)",
       },
       ui: {
-        // Aligned with artcraft app's theme-gray (frontend/apps/artcraft/app/src/styles/base.css)
-        background: "#242424",
-        panel: "#1F1F1F",
-        "panel-border": "#272727",
-        border: "#3f3f3f",
-        controls: "#3e3e41",
-        "controls-button": "#3E3E41",
-        "controls-border": "#3f3f3f",
-        divider: "#272727",
-        modal: "#1F1F1F",
+        // Brutalist system: near-black surfaces with white/15 hairline
+        // borders, aligned with artcraft-website + artcraft-website-next.
+        background: "#121316",
+        panel: "#0b0b0c",
+        "panel-border": "rgb(255 255 255 / 0.15)",
+        border: "rgb(255 255 255 / 0.15)",
+        // Raised control surface — a step above the #0b0b0c page/panel bg
+        // (matches the sidebar's #1e1f22) so buttons and inputs read as
+        // surfaces instead of blending into the background.
+        controls: "#1e1f22",
+        "controls-button": "#1e1f22",
+        "controls-border": "rgb(255 255 255 / 0.15)",
+        divider: "rgb(255 255 255 / 0.15)",
+        modal: "#0b0b0c",
       },
       "axis-x": "#D33242",
       "axis-y": "#308752",

@@ -51,7 +51,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="rounded-2xl w-full max-w-2xl max-h-[100vh] overflow-y-auto overflow-x-hidden border border-white/5 bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+      className="w-full max-w-2xl max-h-[100vh] overflow-y-auto overflow-x-hidden border border-white/15 bg-ui-modal p-0"
       allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
@@ -60,16 +60,6 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
       backdropClassName="bg-black/80"
     >
       <div className="relative overflow-hidden">
-        {/* Off-center ambient glow, feels designed, not generic */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-primary/25 blur-[80px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
-        />
-
         <div className="relative px-8 pt-10 pb-8 sm:px-10 sm:pt-11 sm:pb-9">
           <h2 className="font-display text-3xl font-semibold tracking-tight text-white sm:text-[34px] sm:leading-[1.1]">
             Buy <span className="text-primary">credits</span>
@@ -89,23 +79,21 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                   onClick={() => handlePurchase(pack)}
                   disabled={purchasingId !== null}
                   className={twMerge(
-                    "group relative flex flex-col gap-6 rounded-2xl border p-6 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                    "group relative flex flex-col gap-6 border p-6 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
                     isPopular
-                      ? "border-primary/50 bg-primary/[0.07] hover:border-primary"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]",
+                      ? "border-white/60 bg-white/[0.06] hover:border-white"
+                      : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]",
                   )}
                 >
                   {pack.badge && (
-                    <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white shadow-lg">
+                    <span className="absolute -top-2.5 right-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-black">
                       {pack.badge}
                     </span>
                   )}
 
                   <div className="flex items-center gap-3">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15">
-                      <CoinsIcon
-                        
-                        className="text-primary text-lg" />
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center bg-white/10">
+                      <CoinsIcon className="text-white text-lg" />
                     </span>
                     <div className="min-w-0">
                       <div className="text-4xl font-bold leading-none tracking-tight text-white">
@@ -119,17 +107,13 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                     <span className="text-2xl font-semibold text-white/80">
                       ${pack.priceUsd}
                     </span>
-                    <span className="flex items-center gap-1.5 text-base font-semibold text-primary-400">
+                    <span className="flex items-center gap-1.5 text-base font-semibold text-white">
                       {isLoading ? (
-                        <LoaderCircleIcon
-                          
-                          className="animate-spin" />
+                        <LoaderCircleIcon className="animate-spin" />
                       ) : (
                         <>
                           Buy
-                          <ArrowRightIcon
-                            
-                            className="text-xs transition-transform group-hover:translate-x-0.5" />
+                          <ArrowRightIcon className="text-xs transition-transform group-hover:translate-x-0.5" />
                         </>
                       )}
                     </span>

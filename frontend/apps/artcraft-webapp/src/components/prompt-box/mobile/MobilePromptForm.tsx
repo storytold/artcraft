@@ -77,7 +77,7 @@ export function MobilePromptForm({
           {frames}
           {mediaRefs}
 
-          <div className="rounded-xl border border-ui-panel-border bg-ui-controls p-3">
+          <div className="border border-ui-panel-border bg-ui-controls p-3">
             <MentionTextarea
               value={prompt}
               onChange={onPromptChange}
@@ -100,7 +100,7 @@ export function MobilePromptForm({
       <div className="flex items-center gap-2 border-t border-ui-panel-border bg-ui-panel px-3 py-3">
         {countField}
         <GenerateButton
-          className="h-11 rounded-xl flex-1 items-center justify-center border-none bg-primary text-base text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 flex-1 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
           onClick={handleCreate}
           disabled={!prompt.trim() || isSubmitting}
           loading={isSubmitting}

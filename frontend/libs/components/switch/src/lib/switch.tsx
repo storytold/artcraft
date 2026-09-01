@@ -9,13 +9,18 @@ interface SwitchProps {
   offClassName?: string;
 }
 
-export function Switch({ enabled, setEnabled, className, offClassName }: SwitchProps) {
+export function Switch({
+  enabled,
+  setEnabled,
+  className,
+  offClassName,
+}: SwitchProps) {
   return (
     <HeadlessSwitch checked={enabled} onChange={setEnabled} as={Fragment}>
       {({ checked, disabled }) => (
         <button
           className={clsx(
-            "group inline-flex h-6 w-11 items-center rounded-none border transition-colors",
+            "group inline-flex h-6 w-11 items-center rounded-[3px] border transition-colors",
             checked
               ? "border-white bg-white"
               : (offClassName ?? "border-ui-controls-border bg-transparent"),
@@ -26,8 +31,10 @@ export function Switch({ enabled, setEnabled, className, offClassName }: SwitchP
           <span className="sr-only">Enable notifications</span>
           <span
             className={clsx(
-              "size-4 rounded-none transition",
-              checked ? "translate-x-[22px] bg-black" : "translate-x-1 bg-white/70",
+              "size-4 rounded-[2px] transition",
+              checked
+                ? "translate-x-[22px] bg-black"
+                : "translate-x-1 bg-white/70",
             )}
           />
         </button>

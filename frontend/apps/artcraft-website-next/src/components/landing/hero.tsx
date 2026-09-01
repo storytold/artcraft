@@ -9,15 +9,16 @@ import HeroViewport from "./hero-viewport";
 export default function Hero() {
   return (
     <section className="relative">
-      {/* Full-bleed ball-field wordmark — the brand as an object you can
-          shove apart and watch reassemble. */}
+      {/* Full-bleed hero — crisp display-type wordmark over the render
+          wall: rows of Seedance takes forming one perspective wall that
+          drifts behind the word and answers the cursor. */}
       <HeroWordmark />
 
       <div className="relative mx-auto max-w-[1280px] border-x border-line">
         <div className="flex items-center justify-between gap-4 border-y border-line px-6 py-3 md:px-10">
           <p className="hud-label text-muted">Open-source AI studio</p>
           <p className="hud-label text-accent-ink">
-            Now with Seedance 2.0, Nano Banana 2 &amp; more
+            Now with Seedance 2.5, Nano Banana 2 &amp; more
           </p>
         </div>
 

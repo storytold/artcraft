@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { ChevronRightIcon, EyeIcon, FolderIcon, FolderMinusIcon, FolderPlusIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  EyeIcon,
+  FolderIcon,
+  FolderMinusIcon,
+  FolderPlusIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { GalleryItem } from "./gallery-modal";
 import { GalleryFolder } from "./GalleryDraggableItem";
@@ -28,7 +37,7 @@ export interface GalleryItemMenuItemsProps {
 }
 
 const ROW =
-  "flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap";
+  "flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap";
 
 /**
  * The gallery-tile menu body (Open / Edit / Add to Folder ▸ / Remove from
@@ -60,7 +69,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             onOpen();
           }}
         >
-          <EyeIcon  className="text-base-fg w-4" />
+          <EyeIcon className="text-base-fg w-4" />
           <span>
             {item.mediaClass === "video"
               ? "View video"
@@ -85,7 +94,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             close();
           }}
         >
-          <PencilIcon  className="text-base-fg w-4" />
+          <PencilIcon className="text-base-fg w-4" />
           <span>Edit image</span>
         </button>
       )}
@@ -103,22 +112,22 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         >
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-2 px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap"
+            className="flex w-full items-center justify-between gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap"
             onClick={(e) => {
               e.stopPropagation();
               setFolderSubmenuOpen((v) => !v);
             }}
           >
             <div className="flex items-center gap-2">
-              <FolderPlusIcon  className="text-base-fg w-4" />
+              <FolderPlusIcon className="text-base-fg w-4" />
               <span>Add to Folder</span>
             </div>
             <ChevronRightIcon
-              
               className={twMerge(
                 "text-[10px] text-base-fg/50 transition-transform",
                 COARSE_POINTER && folderSubmenuOpen && "rotate-90",
-              )} />
+              )}
+            />
           </button>
           {folderSubmenuOpen &&
             (COARSE_POINTER ? (
@@ -138,7 +147,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
               </div>
             ) : (
               <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
-                <div className="max-h-64 overflow-y-auto w-max min-w-36 border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
+                <div className="max-h-64 overflow-y-auto w-max min-w-36 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
                   <FolderList
                     item={item}
                     folders={folders}
@@ -165,7 +174,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             close();
           }}
         >
-          <FolderMinusIcon  className="text-base-fg w-4" />
+          <FolderMinusIcon className="text-base-fg w-4" />
           <span>Remove from folder</span>
         </button>
       )}
@@ -173,14 +182,14 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
       {onDelete && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm whitespace-nowrap"
+          className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm whitespace-nowrap"
           onClick={(e) => {
             e.stopPropagation();
             close();
             onDelete();
           }}
         >
-          <Trash2Icon  className="text-red w-4" />
+          <Trash2Icon className="text-red w-4" />
           <span className="text-red">Delete</span>
         </button>
       )}
@@ -209,7 +218,7 @@ const FolderList = ({
       <button
         key={folder.id}
         type="button"
-        className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg text-sm"
+        className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg text-sm"
         onClick={(e) => {
           e.stopPropagation();
           onAddToFolder?.([item.id], folder.id);
@@ -217,9 +226,9 @@ const FolderList = ({
         }}
       >
         <FolderIcon
-          
           className={folder.colorCode ? "text-xs" : "text-primary text-xs"}
-          style={folder.colorCode ? { color: folder.colorCode } : undefined} />
+          style={folder.colorCode ? { color: folder.colorCode } : undefined}
+        />
         <span className="truncate">{folder.name}</span>
       </button>
     ))}
@@ -228,14 +237,14 @@ const FolderList = ({
     )}
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg/70 text-sm whitespace-nowrap"
+      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg/70 text-sm whitespace-nowrap"
       onClick={(e) => {
         e.stopPropagation();
         closeAll();
         onCreateFolderFromMenu?.();
       }}
     >
-      <PlusIcon  className="text-xs w-4" />
+      <PlusIcon className="text-xs w-4" />
       <span>New Folder</span>
     </button>
   </>

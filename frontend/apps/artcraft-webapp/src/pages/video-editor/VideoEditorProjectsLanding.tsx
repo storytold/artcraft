@@ -18,8 +18,8 @@ import {
 
 // Landing view for /video-editor (no project in the URL): the user's saved
 // video projects plus a "New project" tile. Styled to match the create
-// pages and library: #101014 canvas, glow orbs, eyebrow + display heading,
-// ui-controls cards with primary hover rings, kebab menus, and the app's
+// pages and library: near-black canvas, eyebrow + display heading,
+// ui-controls cards with hairline hover rings, kebab menus, and the app's
 // standard confirm dialog.
 
 const GRID_CLASSES =
@@ -128,14 +128,7 @@ export function VideoEditorProjectsLanding({
   };
 
   return (
-    <div className="relative h-full w-full overflow-y-auto bg-[#101014] text-white">
-      {/* Video-themed glow orbs (create-video recipe; absolute, not fixed,
-          since this page scrolls inside SidebarInset). */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 transform-gpu rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.10] blur-[120px]" />
-        <div className="absolute bottom-[-15%] left-[-10%] h-[500px] w-[500px] transform-gpu rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-purple-600 opacity-[0.07] blur-[120px]" />
-      </div>
-
+    <div className="relative h-full w-full overflow-y-auto bg-ui-background text-white">
       {/* The global topbar is hidden on /video-editor routes; surface its
           actions here like the editor header does. */}
       <div className="absolute right-4 top-3 z-20">
@@ -144,7 +137,7 @@ export function VideoEditorProjectsLanding({
 
       <div className="relative z-10 mx-auto w-full max-w-[1600px] px-3 pb-16 pt-10 sm:px-4 md:px-8 lg:px-12">
         <header className="animate-fade-in-up">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
             Video editor
           </p>
           <h1 className="mt-1.5 font-display text-3xl font-semibold md:text-4xl">
@@ -193,7 +186,7 @@ export function VideoEditorProjectsLanding({
               variant="primary"
               icon={SparklesIcon}
               onClick={onNewProject}
-              className="mt-8 h-12 rounded-full px-6 text-base font-semibold"
+              className="mt-8 h-12 px-6"
             >
               New project
             </Button>
@@ -202,9 +195,7 @@ export function VideoEditorProjectsLanding({
 
         {status === "error" && (
           <div className="flex flex-col items-center justify-center gap-4 py-28 text-center">
-            <TriangleAlertIcon
-              
-              className="text-3xl text-white/30" />
+            <TriangleAlertIcon className="text-3xl text-white/30" />
             <div>
               <div className="text-lg font-medium">
                 Couldn't load your projects

@@ -5,7 +5,11 @@ import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
-import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
+import {
+  AuthHeader,
+  AuthFooter,
+  GoogleLoginButton,
+} from "../../components/auth";
 import Seo from "../../components/seo";
 import { Reveal, RevealGroup } from "../../components/motion/reveal";
 import { refreshSession } from "../../lib/session";
@@ -76,7 +80,7 @@ const Login = () => {
         }}
       >
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 text-sm text-center">
             {error}
           </div>
         )}
@@ -93,7 +97,7 @@ const Login = () => {
           className="space-y-4"
         >
           <Reveal className="space-y-2">
-            <label className="text-xs font-semibold text-white/70 ml-1">
+            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 ml-1">
               Email or Username
             </label>
             <Input
@@ -101,12 +105,12 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com or username"
-              inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+              inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
             />
           </Reveal>
           <Reveal className="space-y-2">
             <div className="flex justify-between items-center ml-1">
-              <label className="text-xs font-semibold text-white/70">
+              <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
                 Password
               </label>
               <Link
@@ -122,7 +126,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Min. 8 characters"
-                inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                inputClassName="w-full bg-ui-controls border border-white/15 focus:border-white/40 px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
               />
               <button
                 type="button"
@@ -137,12 +141,12 @@ const Login = () => {
 
           <Reveal className="pt-2">
             <Button
-              className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+              className="w-full justify-center h-10"
               type="submit"
               disabled={isLoading}
             >
               {isLoading ? (
-                <LoaderCircleIcon  className="animate-spin" />
+                <LoaderCircleIcon className="animate-spin" />
               ) : (
                 "Log in"
               )}
@@ -157,9 +161,9 @@ const Login = () => {
       <RevealGroup inView={false} delayChildren={0.28} stagger={0.08}>
         <Reveal className="relative my-6 flex items-center justify-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10" />
+            <div className="w-full border-t border-white/15" />
           </div>
-          <span className="relative bg-[#1C1C20] px-4 text-xs uppercase tracking-widest text-white/40">
+          <span className="relative bg-[#101014] px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
             or
           </span>
         </Reveal>

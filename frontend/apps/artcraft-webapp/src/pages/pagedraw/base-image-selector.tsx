@@ -8,14 +8,16 @@
 //   - start from a blank canvas   → BlankCanvasModal (from the lib)
 
 import { useState } from "react";
-import { ImagesIcon, LoaderCircleIcon, MaximizeIcon, PencilIcon } from "lucide-react";
+import {
+  ImagesIcon,
+  LoaderCircleIcon,
+  MaximizeIcon,
+  PencilIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { UploaderStates } from "@storyteller/common";
 import { MediaFilesApi } from "@storyteller/api";
-import {
-  GalleryModal,
-  type GalleryItem,
-} from "@storyteller/ui-gallery-modal";
+import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   BlankCanvasModal,
   type BaseSelectorImage,
@@ -141,10 +143,10 @@ export function BaseImageSelector({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
-        className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
+        className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-[3px] border border-dashed p-8 text-center transition-colors ${
           isDragging
-            ? "border-primary-400 bg-primary/10"
-            : "border-ui-panel-border bg-ui-background hover:border-primary-400/50"
+            ? "border-white bg-white/10"
+            : "border-white/15 bg-ui-background hover:border-white/40"
         } ${busy ? "pointer-events-none opacity-60" : ""}`}
       >
         <input
@@ -154,7 +156,7 @@ export function BaseImageSelector({
           onChange={onFileInput}
           disabled={busy}
         />
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary-400/30 bg-primary/30 text-primary-300">
+        <div className="flex h-14 w-14 items-center justify-center border border-primary-400/30 bg-primary/30 text-primary-300">
           <DynamicIcon
             icon={busy ? LoaderCircleIcon : PencilIcon}
             className={`text-xl ${busy ? "animate-spin" : ""}`}
@@ -174,7 +176,7 @@ export function BaseImageSelector({
               setIsGalleryOpen(true);
             }}
             disabled={busy}
-            className="flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-2 text-sm font-medium text-base-fg transition-colors hover:bg-ui-controls/80"
+            className="flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors hover:bg-ui-controls/80"
           >
             <ImagesIcon />
             Pick from Library
@@ -186,7 +188,7 @@ export function BaseImageSelector({
               setIsBlankCanvasOpen(true);
             }}
             disabled={busy}
-            className="flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-2 text-sm font-medium text-base-fg transition-colors hover:bg-ui-controls/80"
+            className="flex items-center gap-2 border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors hover:bg-ui-controls/80"
           >
             <MaximizeIcon />
             Blank Canvas

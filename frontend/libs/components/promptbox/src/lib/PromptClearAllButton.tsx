@@ -16,7 +16,7 @@ import { twMerge } from "tailwind-merge";
 // `buttonClassName` to PopoverMenu triggers (e.g. the generation count
 // picker) so they match this button.
 export const PROMPT_TOOLBAR_ICON_BUTTON_CLASSES =
-  "flex h-9 w-9 items-center justify-center rounded-lg border-0 bg-transparent px-0 text-base-fg/50 shadow-none transition-colors hover:bg-base-fg/10 hover:text-base-fg/90";
+  "flex h-9 w-9 items-center justify-center rounded-[3px] border-0 bg-transparent px-0 text-base-fg/50 shadow-none transition-colors hover:bg-base-fg/10 hover:text-base-fg/90";
 
 interface PromptClearAllButtonProps {
   onClick: () => void;

@@ -142,7 +142,7 @@ export const DeckSlotCard = ({
       type="button"
       onClick={() => enabledActions[0]?.onSelect()}
       className={twMerge(
-        "glass flex aspect-square w-14 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all duration-200 hover:z-10 hover:rotate-0 hover:scale-105 hover:bg-ui-controls/60 dark:border-white/25",
+        "glass flex aspect-square w-14 flex-col items-center justify-center gap-0.5 rounded-[3px] border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all duration-200 hover:z-10 hover:rotate-0 hover:scale-105 hover:bg-ui-controls/60 dark:border-white/25",
         tiltClass,
       )}
     >

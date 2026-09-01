@@ -103,8 +103,8 @@ function RowRecreateButton({
         aria-label="Recreate"
         className={
           kind === "pending"
-            ? "flex h-7 w-7 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
-            : "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
+            ? "flex h-7 w-7 items-center justify-center text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
+            : "flex h-7 w-7 shrink-0 items-center justify-center text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
         }
       >
         <DynamicIcon
@@ -152,7 +152,7 @@ function GalleryRowActions({
   } = actions;
 
   const buttonClass =
-    "flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60";
+    "flex h-8 w-8 items-center justify-center text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60";
 
   return (
     <>

@@ -72,6 +72,30 @@ export const FEATURES: Feature[] = [
 export const HERO_VIDEO_URL =
   "https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/website-commercial-2026.05.mp4";
 
+// Clips for the hero's render wall. `aspect` is width/height of the panel
+// plane (the texture is cover-fitted, so any source aspect works).
+// Served through the /ext-media same-origin proxy (see next.config.ts) —
+// WebGL video textures require CORS-clean sources. PLACEHOLDERS: these
+// currently reuse the feature footage — swap each path for an exported
+// Seedance 2.5 clip when the renders are ready; the wall adapts to any
+// count and mix of aspects.
+export type SeedanceClip = {
+  src: string;
+  aspect: number;
+};
+
+export const SEEDANCE_SHOWCASE: SeedanceClip[] = [
+  { src: "/videos/1.mp4", aspect: 16 / 9 },
+  { src: "/videos/2.mp4", aspect: 16 / 9 },
+  { src: "/videos/3.mp4", aspect: 16 / 9 },
+  { src: "/videos/4.mp4", aspect: 16 / 9 },
+  { src: "/videos/5.mp4", aspect: 16 / 9 },
+  { src: "/videos/6.mp4", aspect: 16 / 9 },
+  { src: "/videos/7.mp4", aspect: 16 / 9 },
+  { src: "/videos/8.mp4", aspect: 16 / 9 },
+  { src: "/videos/9.mp4", aspect: 16 / 9 },
+];
+
 export const MADE_WITH_YOUTUBE_IDS = [
   "HDdsKJl92H4",
   "oqoCWdOwr2U",
@@ -79,7 +103,7 @@ export const MADE_WITH_YOUTUBE_IDS = [
 ];
 
 export const TICKER_ITEMS = [
-  "Seedance 2.0",
+  "Seedance 2.5",
   "Nano Banana 2",
   "Image to Location",
   "3D Compositing",

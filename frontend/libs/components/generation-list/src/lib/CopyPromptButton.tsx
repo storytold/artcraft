@@ -37,7 +37,7 @@ export function CopyPromptButton({
         type="button"
         onClick={handleCopy}
         aria-label="Copy prompt"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] text-white/40 transition-colors hover:bg-white/10 hover:text-white"
       >
         <DynamicIcon icon={copied ? CheckIcon : CopyIcon} className="text-sm" />
       </button>

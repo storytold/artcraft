@@ -357,13 +357,13 @@ export function Lightbox({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className="rounded-xl h-[90vh] sm:h-[680px] w-full sm:w-[1100px] max-w-[95vw] max-h-[90vh] p-0 border-white/5 shadow-2xl"
+        className="h-[90vh] sm:h-[680px] w-full sm:w-[1100px] max-w-[95vw] max-h-[90vh] p-0 border-white/15"
         backdropClassName="!bg-black/80"
         showClose={false}
       >
         <div className="flex flex-col sm:flex-row h-full">
           {/* Media preview panel */}
-          <div className="group/nav relative flex h-[45vh] sm:h-full flex-1 items-center justify-center overflow-hidden rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none bg-black">
+          <div className="group/nav relative flex h-[45vh] sm:h-full flex-1 items-center justify-center overflow-hidden bg-black">
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center">
                 <span className="text-base-fg/60">Media not available</span>
@@ -419,8 +419,8 @@ export function Lightbox({
               </video>
             ) : isAudio ? (
               <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
-                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-10 sm:px-6">
-                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                <div className="w-full max-w-xl border border-white/15 bg-ui-controls px-4 py-10 sm:px-6">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-white/15 bg-white/10">
                     <MusicIcon
                       
                       className="text-2xl text-white/70" />
@@ -485,9 +485,9 @@ export function Lightbox({
                             key={`${url}-thumb-${idx}`}
                             type="button"
                             onClick={() => onThumbClick(idx)}
-                            className={`relative h-16 w-16 flex-[0_0_4rem] overflow-hidden rounded-md border-2 transition-all ${
+                            className={`relative h-16 w-16 flex-[0_0_4rem] overflow-hidden border transition-all ${
                               idx === selectedIndex
-                                ? "border-primary-400 opacity-100"
+                                ? "border-white opacity-100"
                                 : "border-transparent opacity-60 hover:border-white/40 hover:opacity-100"
                             }`}
                           >
@@ -518,7 +518,7 @@ export function Lightbox({
                   e.stopPropagation();
                   onNavigatePrev();
                 }}
-                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
+                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Previous item"
               >
                 <ChevronLeftIcon  className="text-lg" />
@@ -530,7 +530,7 @@ export function Lightbox({
                   e.stopPropagation();
                   onNavigateNext();
                 }}
-                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Next item"
               >
                 <ChevronRightIcon  className="text-lg" />

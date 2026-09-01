@@ -26,7 +26,7 @@ export function MobileFieldButton({
       onClick={onClick}
       disabled={disabled}
       className={twMerge(
-        "flex w-full items-center gap-3 rounded-xl border border-ui-panel-border bg-ui-controls px-3.5 py-3 text-left transition-colors",
+        "flex w-full items-center gap-3 border border-ui-panel-border bg-ui-controls px-3.5 py-3 text-left transition-colors",
         "hover:bg-ui-controls/80 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

@@ -128,7 +128,7 @@ export function InsufficientCreditsModal() {
       <Modal
         isOpen={isOpen}
         onClose={close}
-        className="rounded-2xl w-full max-w-md overflow-hidden border border-white/5 bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+        className="w-full max-w-md overflow-hidden border border-white/15 bg-ui-modal p-0"
         allowBackgroundInteraction={false}
         showClose={true}
         closeOnOutsideClick={true}
@@ -137,16 +137,6 @@ export function InsufficientCreditsModal() {
         backdropClassName="bg-black/80"
       >
         <div className="relative overflow-hidden">
-          {/* Off-center ambient glow, feels designed, not generic */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-primary/25 blur-[80px]"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
-          />
-
           <div className="relative px-8 pt-10 pb-8 sm:px-10 sm:pt-12 sm:pb-10">
             <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-white sm:text-[34px] sm:leading-[1.1]">
               {copy.heading}
@@ -161,10 +151,8 @@ export function InsufficientCreditsModal() {
                   key={perk}
                   className="flex items-start gap-3 text-[14px] text-white/75"
                 >
-                  <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15">
-                    <CheckIcon
-                      
-                      className="text-[9px] text-primary" />
+                  <span className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center bg-white/10">
+                    <CheckIcon className="text-[9px] text-white" />
                   </span>
                   <span>{perk}</span>
                 </li>
@@ -176,10 +164,7 @@ export function InsufficientCreditsModal() {
                 <>
                   {!isOnBiggestPlan && (
                     <Link to="/pricing" onClick={close} className="block">
-                      <Button
-                        variant="primary"
-                        className="w-full h-10 text-sm font-semibold rounded-full"
-                      >
+                      <Button variant="primary" className="w-full h-10">
                         Upgrade plan
                       </Button>
                     </Link>
@@ -187,17 +172,14 @@ export function InsufficientCreditsModal() {
                   <Button
                     variant={isOnBiggestPlan ? "primary" : "secondary"}
                     onClick={handleBuyCredits}
-                    className="w-full h-10 text-sm font-semibold rounded-full"
+                    className="w-full h-10"
                   >
                     Buy more credits
                   </Button>
                 </>
               ) : (
                 <Link to="/pricing" onClick={close} className="block">
-                  <Button
-                    variant="primary"
-                    className="w-full h-10 text-sm font-semibold rounded-full"
-                  >
+                  <Button variant="primary" className="w-full h-10">
                     Upgrade plan
                   </Button>
                 </Link>

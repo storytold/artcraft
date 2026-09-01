@@ -44,7 +44,7 @@ const Support = () => {
     "Get help with ArtCraft: browse the FAQ, join our Discord community, or email us directly.";
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white">
+    <div className="relative min-h-screen bg-ui-background text-white">
       <Seo title={title} description={description} />
 
       <main className="relative z-10 mx-auto w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-32 pb-20">
@@ -58,7 +58,7 @@ const Support = () => {
           </p>
         </header>
 
-        <ul className="divide-y divide-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.02]">
+        <ul className="divide-y divide-white/15 border border-white/15 overflow-hidden bg-[#101014]">
           {ROWS.map((row) => (
             <li key={row.title}>
               <SupportLink row={row} />
@@ -72,13 +72,13 @@ const Support = () => {
 
 const SupportLink = ({ row }: { row: SupportRow }) => {
   const className =
-    "group flex items-center gap-4 px-4 py-4 sm:px-5 sm:py-5 transition-colors duration-150 hover:bg-white/[0.03]";
+    "group flex items-center gap-4 rounded-[3px] px-4 py-4 sm:px-5 sm:py-5 transition-colors duration-150 hover:bg-white/[0.03]";
 
   const content = (
     <>
       <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition-colors ${
-          row.iconBgClass ?? "bg-white/[0.04] border-white/[0.06]"
+        className={`flex h-10 w-10 shrink-0 items-center justify-center border transition-colors ${
+          row.iconBgClass ?? "bg-white/[0.04] border-white/15"
         } ${row.iconColorClass ?? "text-white/70 group-hover:text-white"}`}
       >
         <DynamicIcon icon={row.icon} />

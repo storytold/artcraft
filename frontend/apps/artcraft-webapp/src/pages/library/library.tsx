@@ -35,7 +35,31 @@ import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
-import { ArrowDownToLineIcon, BoxIcon, CloudIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, FolderPlusIcon, GlobeIcon, Grid3x3Icon, ImageIcon, ImagesIcon, ListIcon, LoaderCircleIcon, MusicIcon, PencilIcon, PlusIcon, RefreshCwIcon, StarIcon, TagIcon, TagsIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
+import {
+  ArrowDownToLineIcon,
+  BoxIcon,
+  CloudIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  FolderPlusIcon,
+  GlobeIcon,
+  Grid3x3Icon,
+  ImageIcon,
+  ImagesIcon,
+  ListIcon,
+  LoaderCircleIcon,
+  MusicIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  StarIcon,
+  TagIcon,
+  TagsIcon,
+  Trash2Icon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { toast } from "../../components/toast/toast";
@@ -988,7 +1012,7 @@ export default function Library() {
   // ── Not logged in / loading auth ──────────────────────────────────────────
   if (isLoggedIn === false) {
     return (
-      <div className="relative min-h-full w-full bg-[#101014] flex items-center justify-center px-4">
+      <div className="relative min-h-full w-full bg-ui-background flex items-center justify-center px-4">
         <div className="text-center space-y-6">
           <h1 className="text-3xl font-medium text-white">My Library</h1>
           <p className="text-white/60 text-lg max-w-md mx-auto">
@@ -996,18 +1020,12 @@ export default function Library() {
           </p>
           <div className="flex gap-3 justify-center">
             <Link to="/login">
-              <Button
-                variant="primary"
-                className="rounded-full bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5"
-              >
+              <Button variant="primary" className="px-6 py-2.5">
                 Login
               </Button>
             </Link>
             <Link to="/signup">
-              <Button
-                variant="primary"
-                className="rounded-full text-sm font-semibold px-6 py-2.5"
-              >
+              <Button variant="secondary" className="px-6 py-2.5">
                 Sign up
               </Button>
             </Link>
@@ -1019,7 +1037,7 @@ export default function Library() {
 
   if (isLoggedIn === null) {
     return (
-      <div className="relative min-h-full w-full bg-[#101014] flex items-center justify-center">
+      <div className="relative min-h-full w-full bg-ui-background flex items-center justify-center">
         <LoadingSpinner className="h-10 w-10 text-white/60" />
       </div>
     );
@@ -1048,7 +1066,9 @@ export default function Library() {
           gridColumns={4}
           scrollRoot={null}
         >
-          <h3 className="text-sm font-medium text-white/50 mb-2">{date}</h3>
+          <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50 mb-2">
+            {date}
+          </h3>
           <div className={GRID_CLASS}>
             {dateItems.map((item) => (
               <LibraryTile
@@ -1084,7 +1104,7 @@ export default function Library() {
       // `select-none` blocks the blue text/image highlight when sweeping a
       // marquee or fat-fingering a click; native selection would otherwise also
       // hijack the drag. Form fields opt back in so dialog inputs stay editable.
-      className="relative min-h-full w-full shrink-0 select-none [&_input]:select-text [&_textarea]:select-text bg-[#101014] pb-8 px-3 sm:px-4 md:px-8 lg:px-12"
+      className="relative min-h-full w-full shrink-0 select-none [&_input]:select-text [&_textarea]:select-text bg-ui-background pb-8 px-3 sm:px-4 md:px-8 lg:px-12"
       onPointerDown={handleMarqueePointerDown}
     >
       <div className="mx-auto max-w-[1600px]">
@@ -1094,124 +1114,116 @@ export default function Library() {
           // z-10 keeps the sticky header above the (static) grid tiles while
           // staying below the app topbar (z-20), so topbar popovers (credits,
           // avatar) aren't painted under this bar.
-          className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
+          className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-ui-background mb-4 sm:mb-6"
         >
           <div className="flex flex-col gap-6">
             {/* Tabs + actions */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
+                <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1">
                   <Link
                     to="/library"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "unsorted"
-                        ? "text-white"
+                        ? "text-black"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
                     {tab === "unsorted" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <Grid3x3Icon
-                      
-                      className="relative z-10 text-xs" />
+                    <Grid3x3Icon className="relative z-10 text-xs" />
                     <span className="relative z-10">All Assets</span>
                   </Link>
                   <Link
                     to="/library/folders"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "folders"
-                        ? "text-white"
+                        ? "text-black"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
                     {tab === "folders" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FolderIcon
-                      
-                      className="relative z-10 text-xs" />
+                    <FolderIcon className="relative z-10 text-xs" />
                     <span className="relative z-10">Folders</span>
                   </Link>
                   <Link
                     to="/library/folderless"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "folderless"
-                        ? "text-white"
+                        ? "text-black"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
                     {tab === "folderless" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <FolderOpenIcon
-                      
-                      className="relative z-10 text-xs" />
+                    <FolderOpenIcon className="relative z-10 text-xs" />
                     <span className="relative z-10">Unfoldered</span>
                   </Link>
                   <Link
                     to="/library/tags"
-                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                       tab === "tags"
-                        ? "text-white"
+                        ? "text-black"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
                     {tab === "tags" && (
                       <motion.span
                         layoutId="library-tab-indicator"
-                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        className="absolute inset-0 rounded-[3px] bg-white"
                         transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                       />
                     )}
-                    <TagIcon
-                      
-                      className="relative z-10 text-xs" />
+                    <TagIcon className="relative z-10 text-xs" />
                     <span className="relative z-10">Tags</span>
                   </Link>
                 </div>
                 {(tab === "unsorted" || tab === "folderless") && (
                   <button
                     onClick={refreshRoot}
-                    className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                    className="h-8 w-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                     title="Refresh library"
                   >
                     <RefreshCwIcon
-                      
-                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`} />
+                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`}
+                    />
                   </button>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
                 {tab === "folderless" && (
-                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                  <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
                     {FOLDERLESS_CLASS_FILTERS.map((filter) => (
                       <button
                         key={filter.id}
                         onClick={() => setFolderlessClass(filter.id)}
-                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                           folderlessClass === filter.id
-                            ? "text-white"
+                            ? "text-black"
                             : "text-white/60 hover:text-white"
                         }`}
                       >
                         {folderlessClass === filter.id && (
                           <motion.span
                             layoutId="library-folderless-filter-indicator"
-                            className="absolute inset-0 rounded-md bg-ui-controls"
+                            className="absolute inset-0 rounded-[3px] bg-white"
                             transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                           />
                         )}
@@ -1227,21 +1239,21 @@ export default function Library() {
                   </div>
                 )}
                 {tab === "unsorted" && (
-                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                  <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
                     {FILTERS.map((filter) => (
                       <button
                         key={filter.id}
                         onClick={() => navigate(filter.route)}
-                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                           activeFilter === filter.id
-                            ? "text-white"
+                            ? "text-black"
                             : "text-white/60 hover:text-white"
                         }`}
                       >
                         {activeFilter === filter.id && (
                           <motion.span
                             layoutId="library-filter-indicator"
-                            className="absolute inset-0 rounded-md bg-ui-controls"
+                            className="absolute inset-0 rounded-[3px] bg-white"
                             transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
                           />
                         )}
@@ -1261,7 +1273,7 @@ export default function Library() {
                     variant="primary"
                     icon={FolderPlusIcon}
                     onClick={() => openNewFolderModal(null)}
-                    className="rounded-full text-xs sm:text-sm px-3 sm:px-4 py-2"
+                    className="px-3 sm:px-4 py-2"
                   >
                     New folder
                   </Button>
@@ -1269,7 +1281,7 @@ export default function Library() {
                 {tab === "tags" && !activeTagToken && tags.length > 0 && (
                   <>
                     {tagView === "list" && (
-                      <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                      <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1 overflow-x-auto">
                         {(
                           [
                             ["count", "Most used"],
@@ -1279,16 +1291,16 @@ export default function Library() {
                           <button
                             key={id}
                             onClick={() => setTagSort(id)}
-                            className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                            className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                               tagSort === id
-                                ? "text-white"
+                                ? "text-black"
                                 : "text-white/60 hover:text-white"
                             }`}
                           >
                             {tagSort === id && (
                               <motion.span
                                 layoutId="library-tag-sort-indicator"
-                                className="absolute inset-0 rounded-md bg-ui-controls"
+                                className="absolute inset-0 rounded-[3px] bg-white"
                                 transition={{
                                   duration: 0.32,
                                   ease: EASE_EMPHASIS,
@@ -1300,7 +1312,7 @@ export default function Library() {
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
+                    <div className="flex items-center gap-1 rounded-[3px] border border-white/15 bg-ui-controls/40 p-1">
                       {(
                         [
                           ["cloud", CloudIcon, "Cloud"],
@@ -1311,16 +1323,16 @@ export default function Library() {
                           key={id}
                           onClick={() => setTagView(id)}
                           title={label}
-                          className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                          className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors whitespace-nowrap ${
                             tagView === id
-                              ? "text-white"
+                              ? "text-black"
                               : "text-white/60 hover:text-white"
                           }`}
                         >
                           {tagView === id && (
                             <motion.span
                               layoutId="library-tag-view-indicator"
-                              className="absolute inset-0 rounded-md bg-ui-controls"
+                              className="absolute inset-0 rounded-[3px] bg-white"
                               transition={{
                                 duration: 0.32,
                                 ease: EASE_EMPHASIS,
@@ -1368,17 +1380,17 @@ export default function Library() {
                 </h1>
                 <button
                   onClick={() => startRename(activeFolderId!)}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                  className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="Rename folder"
                 >
-                  <PencilIcon  className="text-xs" />
+                  <PencilIcon className="text-xs" />
                 </button>
                 <button
                   onClick={() => openNewFolderModal(activeFolderId)}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                  className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="New subfolder"
                 >
-                  <FolderPlusIcon  className="text-xs" />
+                  <FolderPlusIcon className="text-xs" />
                 </button>
               </div>
             )}
@@ -1404,17 +1416,17 @@ export default function Library() {
                 )}
                 <button
                   onClick={() => setTagRenameTarget(activeTagToken)}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                  className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                   title="Rename tag"
                 >
-                  <PencilIcon  className="text-xs" />
+                  <PencilIcon className="text-xs" />
                 </button>
                 <button
                   onClick={() => confirmDeleteTag(activeTagToken)}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-red hover:bg-ui-controls/40 transition-colors"
+                  className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-red hover:bg-ui-controls/40 transition-colors"
                   title="Delete tag"
                 >
-                  <Trash2Icon  className="text-xs" />
+                  <Trash2Icon className="text-xs" />
                 </button>
               </div>
             )}
@@ -1427,7 +1439,7 @@ export default function Library() {
           {tab === "folders" && currentSubfolders.length > 0 && (
             <div>
               {inFolder && (
-                <h3 className="text-sm font-medium text-white/50 mb-2">
+                <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50 mb-2">
                   Folders
                 </h3>
               )}
@@ -1451,17 +1463,15 @@ export default function Library() {
             /* ── Folders tab, root: cards only (above) ── */
             currentSubfolders.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ui-controls/30">
-                  <FolderOpenIcon
-                    
-                    className="text-2xl text-white/40" />
+                <div className="flex h-14 w-14 items-center justify-center border border-white/15 bg-ui-controls/30">
+                  <FolderOpenIcon className="text-2xl text-white/40" />
                 </div>
                 <p className="text-white/40 text-sm">No folders yet.</p>
                 <Button
                   variant="primary"
                   icon={FolderPlusIcon}
                   onClick={() => openNewFolderModal(null)}
-                  className="rounded-full text-sm px-4 py-2"
+                  className="px-4 py-2"
                 >
                   New folder
                 </Button>
@@ -1482,18 +1492,12 @@ export default function Library() {
                 </p>
                 <div className="flex gap-3">
                   <Link to="/create-image">
-                    <Button
-                      variant="primary"
-                      className="rounded-full text-sm px-4 py-2"
-                    >
+                    <Button variant="primary" className="px-4 py-2">
                       Create Image
                     </Button>
                   </Link>
                   <Link to="/create-video">
-                    <Button
-                      variant="secondary"
-                      className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
-                    >
+                    <Button variant="secondary" className="px-4 py-2">
                       Create Video
                     </Button>
                   </Link>
@@ -1517,10 +1521,8 @@ export default function Library() {
               </div>
             ) : tags.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ui-controls/30">
-                  <TagsIcon
-                    
-                    className="text-2xl text-white/40" />
+                <div className="flex h-14 w-14 items-center justify-center border border-white/15 bg-ui-controls/30">
+                  <TagsIcon className="text-2xl text-white/40" />
                 </div>
                 <p className="text-white/40 text-sm">No tags yet.</p>
                 <p className="text-white/30 text-xs max-w-xs text-center">
@@ -1541,7 +1543,7 @@ export default function Library() {
                 {sortedTags.map((t) => (
                   <div
                     key={t.token}
-                    className="flex items-center rounded-full bg-ui-controls/40 hover:bg-ui-controls/70 transition-colors"
+                    className="flex items-center rounded-[3px] border border-white/15 bg-ui-controls/40 hover:bg-ui-controls/70 transition-colors"
                   >
                     <button
                       type="button"
@@ -1556,9 +1558,7 @@ export default function Library() {
                       }}
                       className="flex items-center gap-2 pl-4 pr-1 py-2 text-sm font-medium text-white"
                     >
-                      <TagIcon
-                        
-                        className="text-xs text-violet-400" />
+                      <TagIcon className="text-xs text-violet-400" />
                       <span className="max-w-[14rem] truncate">{t.value}</span>
                       <span className="text-xs text-white/40">
                         {t.useCount}
@@ -1576,9 +1576,9 @@ export default function Library() {
                       }}
                       aria-label={`Options for tag "${t.value}"`}
                       title="Rename or delete"
-                      className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+                      className="mr-1.5 flex h-6 w-6 items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors"
                     >
-                      <EllipsisIcon  className="text-xs" />
+                      <EllipsisIcon className="text-xs" />
                     </button>
                   </div>
                 ))}
@@ -1609,7 +1609,7 @@ export default function Library() {
           ) : /* ── Unsorted ── */ initialLoading && allItems.length === 0 ? (
             <div>
               <div
-                className="h-4 w-24 rounded mb-3"
+                className="h-4 w-24 mb-3"
                 style={{
                   background:
                     "linear-gradient(100deg, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 70%)",
@@ -1619,10 +1619,7 @@ export default function Library() {
               />
               <div className={GRID_CLASS}>
                 {Array.from({ length: 15 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-lg overflow-hidden"
-                  >
+                  <div key={i} className="aspect-square overflow-hidden">
                     <div
                       className="h-full w-full"
                       style={{
@@ -1648,18 +1645,12 @@ export default function Library() {
               </p>
               <div className="flex gap-3">
                 <Link to="/create-image">
-                  <Button
-                    variant="primary"
-                    className="rounded-full text-sm px-4 py-2"
-                  >
+                  <Button variant="primary" className="px-4 py-2">
                     Create Image
                   </Button>
                 </Link>
                 <Link to="/create-video">
-                  <Button
-                    variant="secondary"
-                    className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
-                  >
+                  <Button variant="secondary" className="px-4 py-2">
                     Create Video
                   </Button>
                 </Link>
@@ -1687,7 +1678,7 @@ export default function Library() {
         <div
           ref={marqueeRef}
           style={{ display: "none" }}
-          className="pointer-events-none fixed z-40 rounded-sm border border-primary/60 bg-primary/10"
+          className="pointer-events-none fixed z-40 border border-white/60 bg-white/10"
         />
 
         {/* Bulk selection bar — subscribes to the selection store itself so
@@ -1772,7 +1763,7 @@ export default function Library() {
               }}
             />
             <div
-              className="fixed z-[9999] min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              className="fixed z-[9999] min-w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
               {(() => {
@@ -1783,7 +1774,7 @@ export default function Library() {
                   <>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+                      className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
                       onClick={() => {
                         setFolderStar(
                           contextMenu.folderId,
@@ -1793,8 +1784,8 @@ export default function Library() {
                       }}
                     >
                       <StarIcon
-                        
-                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`} />
+                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`}
+                      />
                       <span>{menuFolder?.hasStar ? "Unstar" : "Star"}</span>
                     </button>
                     <FolderColorRow
@@ -1809,32 +1800,32 @@ export default function Library() {
               })()}
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+                className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => {
                   openNewFolderModal(contextMenu.folderId);
                 }}
               >
-                <FolderPlusIcon  className="w-4" />
+                <FolderPlusIcon className="w-4" />
                 <span>New subfolder</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+                className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => startRename(contextMenu.folderId)}
               >
-                <PencilIcon  className="w-4" />
+                <PencilIcon className="w-4" />
                 <span>Rename</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
+                className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-red"
                 onClick={() => {
                   const folderId = contextMenu.folderId;
                   setContextMenu(null);
                   confirmDeleteFolder(folderId);
                 }}
               >
-                <Trash2Icon  className="w-4" />
+                <Trash2Icon className="w-4" />
                 <span>Delete folder</span>
               </button>
             </div>
@@ -1855,27 +1846,27 @@ export default function Library() {
               }}
             />
             <div
-              className="fixed z-[9999] min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              className="fixed z-[9999] min-w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1"
               style={{ left: tagContextMenu.x, top: tagContextMenu.y }}
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+                className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
                 onClick={() => setTagRenameTarget(tagContextMenu.tagToken)}
               >
-                <PencilIcon  className="w-4" />
+                <PencilIcon className="w-4" />
                 <span>Rename</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
+                className="flex w-full items-center gap-2 px-2 py-2 hover:bg-ui-controls/60 text-sm text-red"
                 onClick={() => {
                   const token = tagContextMenu.tagToken;
                   setTagContextMenu(null);
                   confirmDeleteTag(token);
                 }}
               >
-                <Trash2Icon  className="w-4" />
+                <Trash2Icon className="w-4" />
                 <span>Delete tag</span>
               </button>
             </div>
@@ -2051,7 +2042,7 @@ const SEND_TO_TARGETS: {
 // Shared styling for the bar's action pills. `whitespace-nowrap` keeps labels
 // on a single line — the bar grows instead of squishing buttons into two rows.
 const BAR_BUTTON_CLASS =
-  "flex items-center gap-2 whitespace-nowrap rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors";
+  "flex items-center gap-2 whitespace-nowrap border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-ui-controls/90 transition-colors";
 
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
@@ -2180,7 +2171,7 @@ function BulkSelectionBar({
   return (
     <div
       data-no-marquee
-      className="fixed bottom-20 sm:bottom-4 z-30 flex w-fit -translate-x-1/2 items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur"
+      className="fixed bottom-20 sm:bottom-4 z-30 flex w-fit -translate-x-1/2 items-center gap-2 border border-ui-panel-border bg-ui-panel px-2.5 py-2"
       style={{
         // Center within the content area (viewport minus the app sidebar).
         left: "calc(50% + var(--ac-sidebar-offset, 0px) / 2)",
@@ -2191,7 +2182,7 @@ function BulkSelectionBar({
           <BulkThumb key={si.id} item={si} />
         ))}
         {selectedItems.length > 4 && (
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border-2 border-ui-panel bg-black/20">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-ui-panel bg-black/20">
             <span className="text-[11px] text-white/70">
               +{selectedItems.length - 4}
             </span>
@@ -2225,8 +2216,8 @@ function BulkSelectionBar({
                 className="fixed inset-0 z-[59]"
                 onClick={() => setSendToOpen(false)}
               />
-              <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
-                <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+              <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
+                <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
                   Use as reference in
                 </div>
                 {SEND_TO_TARGETS.filter(
@@ -2240,7 +2231,7 @@ function BulkSelectionBar({
                       sendToPrompt(selectedItems, target.destination, navigate);
                       clear();
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
+                    className="flex w-full items-center gap-2.5 px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
                   >
                     <DynamicIcon icon={target.icon} className="w-4 text-xs" />
                     <span>{target.label}</span>
@@ -2265,7 +2256,7 @@ function BulkSelectionBar({
             }}
             className={BAR_BUTTON_CLASS}
           >
-            <ImagesIcon  className="text-xs" />
+            <ImagesIcon className="text-xs" />
             <span className="hidden sm:inline">Extract frames</span>
           </button>
         )}
@@ -2278,7 +2269,7 @@ function BulkSelectionBar({
           onClick={() => setPopoverOpen((v) => !v)}
           className={BAR_BUTTON_CLASS}
         >
-          <FolderPlusIcon  className="text-xs" />
+          <FolderPlusIcon className="text-xs" />
           {/* Icon-only on phones — five labeled buttons overflow the bar. */}
           <span className="hidden sm:inline">Add to folder</span>
         </button>
@@ -2288,8 +2279,8 @@ function BulkSelectionBar({
               className="fixed inset-0 z-[59]"
               onClick={() => setPopoverOpen(false)}
             />
-            <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
-              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+            <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
+              <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
                 Folders
               </div>
               {sortedFolders.length === 0 ? (
@@ -2306,10 +2297,9 @@ function BulkSelectionBar({
                       setPopoverOpen(false);
                       clear();
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
+                    className="flex w-full items-center gap-2.5 px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
                   >
                     <FolderIcon
-                      
                       className={
                         folder.colorCode ? "text-xs" : "text-xs text-primary"
                       }
@@ -2317,7 +2307,8 @@ function BulkSelectionBar({
                         folder.colorCode
                           ? { color: folder.colorCode }
                           : undefined
-                      } />
+                      }
+                    />
                     <span className="truncate">{folder.name}</span>
                   </button>
                 ))
@@ -2329,9 +2320,9 @@ function BulkSelectionBar({
                   setPopoverOpen(false);
                   onNewFolder(activeFolderId, Array.from(ids));
                 }}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
+                className="flex w-full items-center gap-2.5 px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
               >
-                <PlusIcon  className="w-4 text-xs" />
+                <PlusIcon className="w-4 text-xs" />
                 <span>Create new folder</span>
               </button>
             </div>
@@ -2353,7 +2344,7 @@ function BulkSelectionBar({
           }}
           className={BAR_BUTTON_CLASS}
         >
-          <TagsIcon  className="text-xs" />
+          <TagsIcon className="text-xs" />
           <span className="hidden sm:inline">Add tags</span>
         </button>
         {tagsOpen && (
@@ -2362,8 +2353,8 @@ function BulkSelectionBar({
               className="fixed inset-0 z-[59]"
               onClick={() => setTagsOpen(false)}
             />
-            <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
-              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+            <div className="absolute bottom-full right-0 z-[60] mb-2 w-72 rounded-[3px] border border-ui-panel-border bg-ui-panel p-2">
+              <div className="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
                 Add tags
               </div>
               <TagChipInput
@@ -2380,7 +2371,7 @@ function BulkSelectionBar({
                 disabled={tagChips.length === 0}
                 loading={addingTags}
                 onClick={handleAddTags}
-                className="mt-2 w-full justify-center rounded-md text-sm py-1.5"
+                className="mt-2 w-full justify-center py-1.5"
               >
                 Tag {ids.size} {ids.size === 1 ? "item" : "items"}
               </Button>
@@ -2407,16 +2398,16 @@ function BulkSelectionBar({
       <button
         type="button"
         onClick={onDeleteSelected}
-        className="flex items-center gap-2 whitespace-nowrap rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
+        className="flex items-center gap-2 whitespace-nowrap bg-red/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-red transition-colors"
       >
-        <Trash2Icon  className="text-xs" />
+        <Trash2Icon className="text-xs" />
         Delete
       </button>
       <button
         type="button"
         onClick={clear}
         aria-label="Clear selection"
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white hover:bg-ui-controls/90 transition-colors"
+        className="flex h-8 w-8 items-center justify-center border border-white/15 bg-ui-controls/60 text-white hover:bg-ui-controls/90 transition-colors"
       >
         <XIcon />
       </button>
@@ -2438,7 +2429,7 @@ function BulkThumb({ item }: { item: GalleryItem }) {
           : ImageIcon;
   const showImage = !!item.thumbnail && !failed;
   return (
-    <div className="-ml-2 h-8 w-8 flex-shrink-0 overflow-hidden rounded border-2 border-ui-panel bg-black/30 first:ml-0">
+    <div className="-ml-2 h-8 w-8 flex-shrink-0 overflow-hidden border-2 border-ui-panel bg-black/30 first:ml-0">
       {showImage ? (
         <img
           src={item.thumbnail!}

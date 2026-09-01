@@ -81,9 +81,11 @@ export const BoardGrid = ({
   const [viewportH, setViewportH] = useState(0);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const marqueeRef = useRef<{ active: boolean; moved: boolean; additive: boolean }>(
-    { active: false, moved: false, additive: false },
-  );
+  const marqueeRef = useRef<{
+    active: boolean;
+    moved: boolean;
+    additive: boolean;
+  }>({ active: false, moved: false, additive: false });
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
@@ -103,7 +105,10 @@ export const BoardGrid = ({
   const groups = useMemo<SectionGroup[] | null>(() => {
     if (!sections || sections.length === 0) return null;
     const known = new Set(sections.map((s) => s.id));
-    const bySection = new Map<string | null, Array<{ id: string; aspect: number }>>();
+    const bySection = new Map<
+      string | null,
+      Array<{ id: string; aspect: number }>
+    >();
     for (const it of items) {
       const key = it.sectionId && known.has(it.sectionId) ? it.sectionId : null;
       const entry = { id: it.id, aspect: it.aspect };
@@ -119,7 +124,10 @@ export const BoardGrid = ({
     }));
     const ungrouped = bySection.get(null) ?? [];
     return ungrouped.length > 0
-      ? [{ id: null, name: "Ungrouped", collapsed: false, items: ungrouped }, ...named]
+      ? [
+          { id: null, name: "Ungrouped", collapsed: false, items: ungrouped },
+          ...named,
+        ]
       : named;
   }, [items, sections]);
 
@@ -313,7 +321,7 @@ export const BoardGrid = ({
         })}
         {marquee && marqueeRef.current.moved && (
           <div
-            className="pointer-events-none absolute rounded-[4px] border border-primary bg-primary/10"
+            className="pointer-events-none absolute rounded-[3px] border border-primary bg-primary/10"
             style={{
               left: Math.min(marquee.x0, marquee.x1),
               top: Math.min(marquee.y0, marquee.y1),

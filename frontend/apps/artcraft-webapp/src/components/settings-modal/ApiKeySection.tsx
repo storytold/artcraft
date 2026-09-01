@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { Modal } from "@storyteller/ui-modal";
-import { CheckIcon, CopyIcon, KeyIcon, LoaderCircleIcon, TrashIcon } from "lucide-react";
+import {
+  CheckIcon,
+  CopyIcon,
+  KeyIcon,
+  LoaderCircleIcon,
+  TrashIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import {
   UserApiKeysApi,
@@ -17,7 +23,7 @@ const DESCRIPTION_MAX = 512;
 const PAGE_SIZE = 20;
 
 const INPUT_CLASS =
-  "w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none";
+  "w-full bg-ui-controls border border-white/15 focus:border-white/40 rounded-[3px] px-3 py-2 text-sm text-white placeholder-white/30 outline-none";
 
 interface ApiKeySectionProps {
   user: UserInfo;
@@ -97,7 +103,9 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium">API keys</p>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
+            API keys
+          </p>
           <p className="text-xs opacity-70">
             Create and manage keys to access the API programmatically.
           </p>
@@ -131,7 +139,7 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
 
       {loading ? (
         <div className="py-6 text-center text-xs opacity-60">
-          <LoaderCircleIcon  className="animate-spin" />
+          <LoaderCircleIcon className="animate-spin" />
         </div>
       ) : keys.length === 0 ? (
         <div className="py-6 text-center text-xs opacity-60">
@@ -169,7 +177,7 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
             onClick={() => load(false)}
           >
             {loadingMore ? (
-              <LoaderCircleIcon  className="animate-spin" />
+              <LoaderCircleIcon className="animate-spin" />
             ) : (
               "Load more"
             )}
@@ -279,16 +287,16 @@ function NewKeyReveal({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3">
+    <div className="flex flex-col gap-2 border border-white/30 bg-white/[0.06] p-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <KeyIcon  className="opacity-80" />
+        <KeyIcon className="opacity-80" />
         <span>API key created</span>
       </div>
       <p className="text-xs opacity-80">
         Copy your key now. For security, you won't be able to see it again.
       </p>
       <div className="flex items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-md bg-black/40 px-3 py-2 font-mono text-xs text-white">
+        <code className="min-w-0 flex-1 truncate border border-white/15 bg-ui-controls px-3 py-2 font-mono text-xs text-white">
           {created.api_key}
         </code>
         <Button
@@ -334,7 +342,7 @@ function ApiKeyRow({
   onRequestDelete: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-white/[0.14]">
+    <div className="flex flex-col gap-2 border border-white/15 bg-white/[0.03] p-3 transition-colors hover:border-white/30">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="truncate text-sm font-medium">{item.name}</p>
@@ -346,10 +354,10 @@ function ApiKeyRow({
           <div className="flex items-center gap-2 pt-1">
             {/* Truncated prefix, display-only — the full secret is only shown on
                 create. The trailing ellipsis signals it's not the whole value. */}
-            <code className="min-w-0 truncate rounded bg-black/40 px-2 py-1 font-mono text-[11px] text-white/70">
+            <code className="min-w-0 truncate bg-ui-controls px-2 py-1 font-mono text-[11px] text-white/70">
               {item.truncated_api_key}…
             </code>
-            <span className="text-[10px] uppercase tracking-wider text-white/40">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-white/40">
               {formatDate(item.created_at)}
             </span>
           </div>
@@ -497,13 +505,13 @@ function DeleteConfirmModal({
           </Button>
           <Button
             type="button"
-            variant="primary"
-            className="h-9 px-4 bg-red-500 hover:bg-red-600"
+            variant="destructive"
+            className="h-9 px-4"
             onClick={handleConfirm}
             disabled={deleting}
           >
             {deleting ? (
-              <LoaderCircleIcon  className="animate-spin" />
+              <LoaderCircleIcon className="animate-spin" />
             ) : (
               "Delete"
             )}
@@ -543,7 +551,7 @@ function FormActions({
         disabled={submitting || disabled}
       >
         {submitting ? (
-          <LoaderCircleIcon  className="animate-spin" />
+          <LoaderCircleIcon className="animate-spin" />
         ) : (
           submitLabel
         )}

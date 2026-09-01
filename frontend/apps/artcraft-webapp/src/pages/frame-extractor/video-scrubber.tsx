@@ -228,7 +228,7 @@ export const VideoScrubber = ({
   ];
 
   return (
-    <div className="group/scrubber overflow-hidden rounded-xl border border-ui-panel-border bg-ui-panel">
+    <div className="group/scrubber overflow-hidden border border-ui-panel-border bg-ui-panel">
       <div className="relative aspect-video w-full bg-black">
         <video
           ref={videoRef}
@@ -243,7 +243,7 @@ export const VideoScrubber = ({
         {!isPlaying && !disabled && (
           <button
             onClick={togglePlayPause}
-            className="absolute inset-0 m-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover/scrubber:opacity-100"
+            className="absolute inset-0 m-auto flex h-12 w-12 items-center justify-center bg-black/55 text-white opacity-0 transition-opacity group-hover/scrubber:opacity-100"
             aria-label="Play"
           >
             <PlayIcon  className="ml-0.5" />
@@ -261,21 +261,21 @@ export const VideoScrubber = ({
           onPointerCancel={handleTimelinePointerUp}
           onPointerLeave={() => setHoverRatio(null)}
         >
-          <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full bg-white/10 transition-all group-hover/timeline:h-3">
+          <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 bg-white/10 transition-all group-hover/timeline:h-3">
             <div
-              className="h-full rounded-full bg-primary"
+              className="h-full bg-white"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
           <div
-            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow"
+            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 bg-white"
             style={{ left: `${progressPercent}%` }}
           />
           {hoverRatio !== null &&
             Number.isFinite(duration) &&
             duration > 0 && (
               <div
-                className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded-md bg-black/80 px-2 py-0.5 font-mono text-[10px] text-white"
+                className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded-[3px] bg-black/80 px-2 py-0.5 font-mono text-[10px] text-white"
                 style={{ left: `${hoverRatio * 100}%` }}
               >
                 {formatTimePrecise(hoverRatio * duration)}
@@ -289,7 +289,7 @@ export const VideoScrubber = ({
               <Tooltip key={step.label} content={step.tooltip} position="top" className="z-50">
                 <button
                   onClick={() => seekBy(step.delta)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label={step.tooltip}
                 >
                   <DynamicIcon icon={step.icon} className="text-xs" />
@@ -299,7 +299,7 @@ export const VideoScrubber = ({
             <Tooltip content="Play/Pause (Space)" position="top" className="z-50">
               <button
                 onClick={togglePlayPause}
-                className="mx-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                className="mx-0.5 flex h-9 w-9 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20"
                 aria-label="Play or pause"
               >
                 <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} />
@@ -309,7 +309,7 @@ export const VideoScrubber = ({
               <Tooltip key={step.label} content={step.tooltip} position="top" className="z-50">
                 <button
                   onClick={() => seekBy(step.delta)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label={step.tooltip}
                 >
                   <DynamicIcon icon={step.icon} className="text-xs" />
@@ -322,7 +322,7 @@ export const VideoScrubber = ({
             <div className="hidden items-center gap-2 sm:flex">
               <button
                 onClick={toggleMute}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex h-7 w-7 items-center justify-center text-white/60 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label={isMuted ? "Unmute" : "Mute"}
               >
                 <DynamicIcon
@@ -340,7 +340,7 @@ export const VideoScrubber = ({
                   const video = videoRef.current;
                   if (video) video.volume = parseFloat(e.target.value);
                 }}
-                className="w-20 accent-primary"
+                className="w-20 accent-white"
                 aria-label="Volume"
               />
             </div>

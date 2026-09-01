@@ -37,7 +37,6 @@ export const AspectRatioIcon = ({
         y={y}
         width={w}
         height={h}
-        rx={1.5}
         stroke="currentColor"
         strokeWidth={1.5}
       />

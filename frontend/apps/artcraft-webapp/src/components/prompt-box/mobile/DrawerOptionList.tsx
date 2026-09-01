@@ -19,8 +19,8 @@ export function DrawerOptionList({ items, onSelect }: DrawerOptionListProps) {
           disabled={item.disabled}
           onClick={() => !item.disabled && onSelect(item)}
           className={twMerge(
-            "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors",
-            item.selected ? "bg-primary/15" : "hover:bg-white/5",
+            "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors",
+            item.selected ? "bg-white/10" : "hover:bg-white/5",
             item.disabled && "cursor-not-allowed opacity-50",
           )}
         >
@@ -42,8 +42,8 @@ export function DrawerOptionList({ items, onSelect }: DrawerOptionListProps) {
           {item.trailing}
           {item.selected && (
             <CheckIcon
-              
-              className="h-3.5 w-3.5 shrink-0 text-primary" />
+
+              className="h-3.5 w-3.5 shrink-0 text-white" />
           )}
         </button>
       ))}

@@ -2,7 +2,11 @@ import { useRef, useState } from "react";
 import { BoxIcon, ImageIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { AddButton, type RefImage } from "../../../components/prompt-box";
-import { MESH_FILE_ACCEPT, uploadMeshFile, uploadViewImage } from "./mesh-upload";
+import {
+  MESH_FILE_ACCEPT,
+  uploadMeshFile,
+  uploadViewImage,
+} from "./mesh-upload";
 
 // Multi-view side inputs (front/back/left/right) and the mesh-to-mesh input
 // file — the mobile form band. The desktop prompt box renders the same store
@@ -53,59 +57,61 @@ export function MeshInputsRow({
   return (
     // Title on the left, upload slots right-aligned + top-aligned (matches
     // ImagePromptRow).
-    <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2">
+    <div className="glass flex items-start gap-3 px-3 py-2">
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
           <DynamicIcon icon={titleIcon} className="h-3.5 w-3.5" />
-          <span className="text-sm font-medium">{title}</span>
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
+            {title}
+          </span>
         </div>
         <span className="text-[13px] text-white/60">{subtitle}</span>
       </div>
       <div className="flex flex-wrap items-end justify-end gap-3">
         {showMultiView && (
-        <>
-          <ImageSlot
-            label="Front"
-            image={frontImage}
-            onChange={(img) => onChange({ frontImage: img })}
-            onPickFromLibrary={
-              onPickSlotFromLibrary
-                ? () => onPickSlotFromLibrary("front")
-                : undefined
-            }
-          />
-          <ImageSlot
-            label="Back"
-            image={backImage}
-            onChange={(img) => onChange({ backImage: img })}
-            onPickFromLibrary={
-              onPickSlotFromLibrary
-                ? () => onPickSlotFromLibrary("back")
-                : undefined
-            }
-          />
-          <ImageSlot
-            label="Left"
-            image={leftImage}
-            onChange={(img) => onChange({ leftImage: img })}
-            onPickFromLibrary={
-              onPickSlotFromLibrary
-                ? () => onPickSlotFromLibrary("left")
-                : undefined
-            }
-          />
-          <ImageSlot
-            label="Right"
-            image={rightImage}
-            onChange={(img) => onChange({ rightImage: img })}
-            onPickFromLibrary={
-              onPickSlotFromLibrary
-                ? () => onPickSlotFromLibrary("right")
-                : undefined
-            }
-          />
-        </>
-      )}
+          <>
+            <ImageSlot
+              label="Front"
+              image={frontImage}
+              onChange={(img) => onChange({ frontImage: img })}
+              onPickFromLibrary={
+                onPickSlotFromLibrary
+                  ? () => onPickSlotFromLibrary("front")
+                  : undefined
+              }
+            />
+            <ImageSlot
+              label="Back"
+              image={backImage}
+              onChange={(img) => onChange({ backImage: img })}
+              onPickFromLibrary={
+                onPickSlotFromLibrary
+                  ? () => onPickSlotFromLibrary("back")
+                  : undefined
+              }
+            />
+            <ImageSlot
+              label="Left"
+              image={leftImage}
+              onChange={(img) => onChange({ leftImage: img })}
+              onPickFromLibrary={
+                onPickSlotFromLibrary
+                  ? () => onPickSlotFromLibrary("left")
+                  : undefined
+              }
+            />
+            <ImageSlot
+              label="Right"
+              image={rightImage}
+              onChange={(img) => onChange({ rightImage: img })}
+              onPickFromLibrary={
+                onPickSlotFromLibrary
+                  ? () => onPickSlotFromLibrary("right")
+                  : undefined
+              }
+            />
+          </>
+        )}
         {showMeshInput && (
           <MeshFileSlot
             mesh={inputMesh}
@@ -120,7 +126,7 @@ export function MeshInputsRow({
 // ── Slots ──────────────────────────────────────────────────────────────────
 
 const SLOT_CLASS =
-  "flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
+  "flex aspect-square w-14 items-center justify-center overflow-hidden rounded-[3px] border border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
 
 function SlotShell({
   label,
@@ -132,7 +138,9 @@ function SlotShell({
   return (
     <div className="flex flex-col items-center gap-1">
       {children}
-      <span className="text-[11px] text-white/60">{label}</span>
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        {label}
+      </span>
     </div>
   );
 }
@@ -171,7 +179,7 @@ function ImageSlot({
         onChange={handleUpload}
       />
       {image ? (
-        <div className="group relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30">
+        <div className="group relative aspect-square w-14 overflow-hidden rounded-[3px] border border-white/30">
           <img
             src={image.url}
             alt={`${label} view`}
@@ -179,17 +187,14 @@ function ImageSlot({
           />
           <button
             onClick={() => onChange(undefined)}
-            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
+            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center bg-black/50 text-white transition-colors hover:bg-black"
           >
-            <XIcon  className="h-2.5 w-2.5" />
+            <XIcon className="h-2.5 w-2.5" />
           </button>
         </div>
       ) : uploading ? (
         <div className={SLOT_CLASS}>
-          <LoaderCircleIcon
-            
-            spin
-            className="h-5 w-5 text-white" />
+          <LoaderCircleIcon spin className="h-5 w-5 text-white" />
         </div>
       ) : (
         <AddButton
@@ -231,28 +236,25 @@ function MeshFileSlot({
         onChange={handleUpload}
       />
       {mesh ? (
-        <div className="group relative flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/10">
-          <BoxIcon  className="h-5 w-5 text-white/80" />
+        <div className="group relative flex aspect-square w-14 items-center justify-center overflow-hidden rounded-[3px] border border-white/30 bg-white/10">
+          <BoxIcon className="h-5 w-5 text-white/80" />
           <button
             onClick={() => onChange(undefined)}
-            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black"
+            className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center bg-black/50 text-white transition-colors hover:bg-black"
           >
-            <XIcon  className="h-2.5 w-2.5" />
+            <XIcon className="h-2.5 w-2.5" />
           </button>
         </div>
       ) : uploading ? (
         <div className={SLOT_CLASS}>
-          <LoaderCircleIcon
-            
-            spin
-            className="h-5 w-5 text-white" />
+          <LoaderCircleIcon spin className="h-5 w-5 text-white" />
         </div>
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
           className={SLOT_CLASS}
         >
-          <BoxIcon  className="text-xl text-white/80" />
+          <BoxIcon className="text-xl text-white/80" />
         </button>
       )}
     </SlotShell>

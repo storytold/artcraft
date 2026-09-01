@@ -320,7 +320,7 @@ const CharacterListView = ({
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]"
+              className="flex flex-col overflow-hidden rounded-[3px] border border-transparent bg-base-fg/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden">
                 <div
@@ -332,7 +332,7 @@ const CharacterListView = ({
               </div>
               <div className="px-2 py-1.5 flex justify-center bg-base-fg/[0.04]">
                 <div
-                  className="h-3 w-2/3 rounded bg-base-fg/[0.08]"
+                  className="h-3 w-2/3 bg-base-fg/[0.08]"
                   style={{
                     animation: `charPulse 1.8s ease-in-out ${i * 0.07 + 0.1}s infinite`,
                   }}
@@ -352,7 +352,7 @@ const CharacterListView = ({
           {/* Create New card */}
           <button
             onClick={onCreateClick}
-            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-base-fg/10 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/25 hover:text-base-fg/80"
+            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-[3px] border-2 border-dashed border-base-fg/10 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/25 hover:text-base-fg/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
               <PlusIcon  className="text-lg" />
@@ -364,7 +364,7 @@ const CharacterListView = ({
           {pendingCharacters.map((pending) => (
             <div
               key={`pending-${pending.name}`}
-              className="relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]"
+              className="relative flex flex-col overflow-hidden rounded-[3px] border border-transparent bg-base-fg/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
                 {pending.previewUrl ? (
@@ -401,7 +401,7 @@ const CharacterListView = ({
             return (
               <div
                 key={character.token}
-                className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/25 hover:bg-base-fg/10"
+                className="group relative flex flex-col overflow-hidden rounded-[3px] border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/25 hover:bg-base-fg/10"
               >
                 <button
                   onClick={() => onSelectCharacter?.(character)}
@@ -570,7 +570,7 @@ const EditCharacterView = ({
 
         {/* Avatar preview */}
         {character.maybe_avatar?.cdn_url && (
-          <div className="flex h-56 max-h-56 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-fg/[0.05]">
+          <div className="flex h-56 max-h-56 shrink-0 items-center justify-center overflow-hidden bg-base-fg/[0.05]">
             <img
               src={character.maybe_avatar.cdn_url}
               alt={character.name}
@@ -605,7 +605,7 @@ const EditCharacterView = ({
             placeholder="Description..."
             rows={3}
             autoComplete="off"
-            className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
+            className="w-full resize-none rounded-[3px] px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
           />
         </div>
       </div>
@@ -829,7 +829,7 @@ const NewCharacterView = ({
         <div
           ref={dropZoneRef}
           className={twMerge(
-            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-base-fg/20 bg-base-fg/[0.05] transition-colors overflow-hidden",
+            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-base-fg/20 bg-base-fg/[0.05] transition-colors overflow-hidden",
             isDragging && "border-blue-400 bg-blue-500/10",
           )}
           onDragEnter={handleDragEnter}
@@ -880,14 +880,14 @@ const NewCharacterView = ({
               >
                 <button
                   onClick={() => setIsGalleryOpen(true)}
-                  className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
+                  className="flex items-center gap-2 rounded-[3px] bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
                 >
                   <ImagesIcon  className="text-xs" />
                   Choose from Library
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
+                  className="flex items-center gap-2 rounded-[3px] bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
                 >
                   <UploadIcon  className="text-xs" />
                   Upload Image
@@ -931,7 +931,7 @@ const NewCharacterView = ({
             placeholder="Description..."
             rows={3}
             autoComplete="off"
-            className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
+            className="w-full resize-none rounded-[3px] px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
           />
         </div>
       </div>

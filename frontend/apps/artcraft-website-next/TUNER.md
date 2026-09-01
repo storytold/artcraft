@@ -13,8 +13,8 @@ the whole box with `–`, or expand/collapse individual sections.
 
 ## Behavior
 
-- **Live**: physics/lighting/material values are read every frame, so slider
-  changes apply instantly. Formation values (anything that changes the ball
+- **Live**: motion/look values are read every frame, so slider changes
+  apply instantly. Layout values (anything that changes the wall's panel
   arrangement itself) trigger a debounced rebuild (~250 ms after the last
   change).
 - **Persistent**: tuned values are stored in `localStorage`
@@ -48,12 +48,12 @@ Then read values where they're used:
   inside the loop — it's cheap and picks up changes instantly.
 - **Build-time consumers** (values baked into geometry/sampling): read at
   build time and subscribe to `useTunerStore` to trigger a debounced rebuild
-  when the group's values change (see the Formation wiring in
-  `hero-wordmark.tsx`).
+  when the group's values change (see the Wall layout wiring in
+  `hero-wall.tsx`).
 
 The panel picks up new groups automatically — no panel changes needed.
-Registered groups: Formation, Physics, Cursor & Light, Material, Halo (all
-for the hero wordmark; see `src/components/landing/hero-tunables.ts`).
+Registered groups: Wall layout, Wall motion, Wall look (all for the hero
+render wall; see `src/components/landing/hero-tunables.ts`).
 
 ## Shipping tuned values
 

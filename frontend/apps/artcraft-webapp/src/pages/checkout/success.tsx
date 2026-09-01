@@ -1,4 +1,14 @@
-import { ArrowRightIcon, BoxIcon, CircleCheckIcon, DownloadIcon, ImageIcon, MonitorIcon, RocketIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BoxIcon,
+  CircleCheckIcon,
+  DownloadIcon,
+  ImageIcon,
+  MonitorIcon,
+  RocketIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import { DynamicIcon, DiscordIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
@@ -59,35 +69,27 @@ const CheckoutSuccess = () => {
 
   if (isCheckingOnboarding) {
     return (
-      <div className="relative min-h-screen bg-[#101014] text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+      <div className="relative min-h-screen bg-ui-background text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white"></div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-full bg-[#101014] text-white">
+    <div className="relative min-h-full bg-ui-background text-white">
       <Seo
         title="Payment Successful - ArtCraft"
         description="Your ArtCraft subscription is now active. Download and start creating!"
       />
 
-      {/* Background gradient — clipped to its own wrapper so the outer
-          page can grow naturally and let SidebarInset handle scrolling. */}
-      <div className="absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
-      </div>
-
       <main className="relative z-10 pt-12 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         {/* Success Card */}
         <div className="max-w-4xl w-full">
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-12 text-center">
+          <div className="bg-[#101014] border border-white/15 p-8 md:p-12 text-center">
             {/* Success Icon */}
             <div className="mb-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
-                <CircleCheckIcon
-                  
-                  className="text-5xl text-green-400" />
+              <div className="w-20 h-20 mx-auto border border-white/15 bg-green-500/10 flex items-center justify-center">
+                <CircleCheckIcon className="text-5xl text-green-400" />
               </div>
             </div>
 
@@ -102,12 +104,10 @@ const CheckoutSuccess = () => {
             </p>
 
             {/* Start creating in the browser */}
-            <div className="bg-[#252529] rounded-2xl p-6 mb-8 text-left">
+            <div className="bg-ui-controls border border-white/15 p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <WandSparklesIcon
-                    
-                    className="text-primary text-sm" />
+                <div className="w-8 h-8 bg-white/10 flex items-center justify-center">
+                  <WandSparklesIcon className="text-white/70 text-sm" />
                 </div>
                 <h2 className="text-lg font-medium text-white">
                   Start creating right here
@@ -130,30 +130,26 @@ const CheckoutSuccess = () => {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="group flex items-center gap-3 bg-[#1A1A1E] hover:bg-[#222227] border border-white/[0.06] hover:border-white/[0.12] rounded-xl px-4 py-3 transition-all"
+                    className="group flex items-center gap-3 rounded-[3px] bg-ui-background hover:bg-white/10 border border-white/15 hover:border-white/30 px-4 py-3 transition-all"
                   >
                     <DynamicIcon
                       icon={item.icon}
-                      className="text-primary text-base shrink-0"
+                      className="text-white/70 text-base shrink-0"
                     />
                     <span className="text-white/90 font-medium flex-1">
                       {item.label}
                     </span>
-                    <ArrowRightIcon
-                      
-                      className="text-white/30 text-[11px] transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRightIcon className="text-white/30 text-[11px] transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 ))}
               </div>
             </div>
 
             {/* Next Steps */}
-            <div className="bg-[#252529] rounded-2xl p-6 mb-8 text-left">
+            <div className="bg-ui-controls border border-white/15 p-6 mb-8 text-left">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <RocketIcon
-                    
-                    className="text-primary text-sm" />
+                <div className="w-8 h-8 bg-white/10 flex items-center justify-center">
+                  <RocketIcon className="text-white/70 text-sm" />
                 </div>
                 <h2 className="text-lg font-medium text-white">Next Steps</h2>
               </div>
@@ -166,7 +162,7 @@ const CheckoutSuccess = () => {
                   "Start creating with all premium features!",
                 ].map((step, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <div className="w-6 h-6 shrink-0 rounded-full bg-primary/50 flex items-center justify-center text-xs font-bold text-white mt-0.5">
+                    <div className="w-6 h-6 shrink-0 bg-white/10 border border-white/15 flex items-center justify-center font-mono text-[11px] font-semibold text-white mt-0.5">
                       {idx + 1}
                     </div>
                     <span className="text-white/80">{step}</span>
@@ -181,16 +177,16 @@ const CheckoutSuccess = () => {
                 <Button
                   as="link"
                   href={downloadUrl}
-                  className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                  className="px-8 py-3 justify-center"
                 >
-                  <DownloadIcon  className="mr-2" />
+                  <DownloadIcon className="mr-2" />
                   Download ArtCraft
                 </Button>
               </div>
             ) : (
-              <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
+              <div className="bg-[#431407] border border-orange-900/50 p-6 text-orange-200 text-sm leading-relaxed">
                 <div className="flex items-center justify-center mb-3 text-orange-400">
-                  <MonitorIcon  className="text-2xl" />
+                  <MonitorIcon className="text-2xl" />
                 </div>
                 ArtCraft is a desktop application. <br />
                 Please head to your computer to download and start creating.
@@ -204,21 +200,21 @@ const CheckoutSuccess = () => {
                   href={DOWNLOAD_LINKS.WINDOWS}
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  <span className="w-1.5 h-1.5 bg-current"></span>
                   Windows
                 </a>
                 <a
                   href={DOWNLOAD_LINKS.MACOS}
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  <span className="w-1.5 h-1.5 bg-current"></span>
                   Mac
                 </a>
               </div>
             )}
 
             {/* Discord CTA */}
-            <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-2 items-center">
+            <div className="mt-8 pt-6 border-t border-white/15 flex flex-col gap-2 items-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="text-white/70 text-sm">
                   Join our community
@@ -228,7 +224,7 @@ const CheckoutSuccess = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className="bg-white text-black hover:bg-white/80 px-4 py-2 justify-center border-transparent"
               >
                 <DiscordIcon />
                 Join Discord
