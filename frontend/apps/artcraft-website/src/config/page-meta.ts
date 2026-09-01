@@ -67,6 +67,12 @@ export const PAGE_META: Record<string, PageMeta> = {
     description:
       "Generate MiniMax H3 videos for free in ArtCraft. Up to 15 seconds of 2K AI video with native stereo sound. Type a prompt and try MiniMax's new multimodal model right on the page.",
   },
+  "/creators/jboogxcreative": {
+    title: "Jboogx Creative × ArtCraft. Seedance AI Video Creator Spotlight.",
+    ogTitle: "Jboogx Creative × ArtCraft",
+    description:
+      "Tyler Bernabe (@jboogxcreative) makes AI, VFX, and mixed-media work for nearly a million followers, and he directs his Seedance videos in ArtCraft, home of Seedance 2.5. Watch the work and see how it's made.",
+  },
   "/pricing": {
     title: "Pricing - ArtCraft. AI Video and Images.",
     description:
