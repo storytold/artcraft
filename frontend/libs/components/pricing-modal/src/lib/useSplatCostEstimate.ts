@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { Model } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -7,7 +7,7 @@ import {
   isEstimateSplatCostSuccess,
   type CommonSplatModel,
 } from "@storyteller/tauri-api";
-import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
+import { useCostEstimateLifecycle } from "./useCostEstimateLifecycle";
 
 const SPLAT_PAGES = new Set<ModelPage>([ModelPage.ImageTo3DWorld]);
 
@@ -16,19 +16,17 @@ export function useSplatCostEstimate(
   selectedModel: Model | null | undefined,
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
-  const [isLoading, setIsLoading] = useState(false);
-  const setEstimatedCreditsForPage = useCostBreakdownModalStore(
-    (s) => s.setEstimatedCreditsForPage,
-  );
+  const { isLoading, begin, clear } = useCostEstimateLifecycle();
 
   useEffect(() => {
     if (!SPLAT_PAGES.has(activePage) || !selectedModel) {
+      clear(ModelPage.ImageTo3DWorld);
       return;
     }
 
     const commonModel = selectedModel.tauriId as CommonSplatModel;
     if (!commonModel) {
-      setEstimatedCreditsForPage(activePage, null);
+      clear(ModelPage.ImageTo3DWorld);
       return;
     }
 
@@ -36,30 +34,26 @@ export function useSplatCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
-    setIsLoading(true);
+    const request = begin(ModelPage.ImageTo3DWorld);
+    void (async () => {
+      try {
+        const result = await EstimateSplatCost({
+          model: commonModel,
+          provider,
+          has_reference_image: true,
+        });
+        request.settle(
+          isEstimateSplatCostSuccess(result)
+            ? (result.payload.cost_in_credits ?? null)
+            : null,
+        );
+      } catch {
+        request.settle(null);
+      }
+    })();
 
-    EstimateSplatCost({
-      model: commonModel,
-      provider,
-      has_reference_image: true,
-    })
-      .then((result) => {
-        if (isEstimateSplatCostSuccess(result)) {
-          setEstimatedCreditsForPage(
-            activePage,
-            result.payload.cost_in_credits ?? null,
-          );
-        } else {
-          setEstimatedCreditsForPage(activePage, null);
-        }
-      })
-      .catch(() => {
-        setEstimatedCreditsForPage(activePage, null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [activePage, selectedModel?.id, selectedProvider]);
+    return request.cancel;
+  }, [activePage, selectedModel, selectedProvider, begin, clear]);
 
   return { isLoading };
 }

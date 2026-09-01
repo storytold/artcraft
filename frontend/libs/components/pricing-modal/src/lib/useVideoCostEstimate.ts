@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { Model, VideoModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -7,7 +7,7 @@ import {
   EstimateVideoCost,
   isEstimateVideoCostSuccess,
 } from "@storyteller/tauri-api";
-import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
+import { useCostEstimateLifecycle } from "./useCostEstimateLifecycle";
 import {
   videoModelToCommonVideoModel,
   videoAspectRatioToCommonAspectRatio,
@@ -20,10 +20,7 @@ export function useVideoCostEstimate(
   selectedModel: Model | null | undefined,
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
-  const [isLoading, setIsLoading] = useState(false);
-  const setEstimatedCreditsForPage = useCostBreakdownModalStore(
-    (s) => s.setEstimatedCreditsForPage,
-  );
+  const { isLoading, begin, clear } = useCostEstimateLifecycle();
 
   const duration = usePromptVideoStore((s) => s.duration);
   const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
@@ -35,12 +32,13 @@ export function useVideoCostEstimate(
 
   useEffect(() => {
     if (activePage !== ModelPage.ImageToVideo || !selectedModel) {
+      clear(ModelPage.ImageToVideo);
       return;
     }
 
     const commonModel = videoModelToCommonVideoModel(selectedModel.tauriId);
     if (!commonModel) {
-      setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
+      clear(ModelPage.ImageToVideo);
       return;
     }
 
@@ -61,34 +59,32 @@ export function useVideoCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
-    setIsLoading(true);
+    const request = begin(ModelPage.ImageToVideo);
+    void (async () => {
+      try {
+        const result = await EstimateVideoCost({
+          model: commonModel,
+          provider,
+          generation_mode: generationMode,
+          aspect_ratio: commonAspectRatio ?? undefined,
+          resolution: commonResolution ?? undefined,
+          duration_seconds: duration ?? undefined,
+          generate_audio: generateWithSound,
+        });
+        request.settle(
+          isEstimateVideoCostSuccess(result)
+            ? (result.payload.cost_in_credits ?? null)
+            : null,
+        );
+      } catch {
+        request.settle(null);
+      }
+    })();
 
-    EstimateVideoCost({
-      model: commonModel,
-      provider,
-      generation_mode: generationMode,
-      aspect_ratio: commonAspectRatio ?? undefined,
-      resolution: commonResolution ?? undefined,
-      duration_seconds: duration ?? undefined,
-      generate_audio: generateWithSound,
-    })
-      .then((result) => {
-        if (isEstimateVideoCostSuccess(result)) {
-          const credits = result.payload.cost_in_credits ?? null;
-          setEstimatedCreditsForPage(ModelPage.ImageToVideo, credits);
-        } else {
-          setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
-        }
-      })
-      .catch(() => {
-        setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    return request.cancel;
   }, [
     activePage,
-    selectedModel?.id,
+    selectedModel,
     selectedProvider,
     duration,
     aspectRatio,
@@ -97,6 +93,8 @@ export function useVideoCostEstimate(
     referenceImages.length,
     !!endFrameImage,
     generateWithSound,
+    begin,
+    clear,
   ]);
 
   return { isLoading };
