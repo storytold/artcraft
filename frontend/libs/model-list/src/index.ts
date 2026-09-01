@@ -4,6 +4,11 @@ export * from "./lib/classes/VideoModel.js";
 export * from "./lib/classes/properties/CommonAspectRatio.js";
 export * from "./lib/classes/properties/CommonResolution.js";
 export * from "./lib/classes/properties/CommonQuality.js";
+export {
+  resolveVideoAspectRatio,
+  resolveVideoAspectRatioOption,
+  type VideoAspectRatioCapabilities,
+} from "./lib/classes/properties/VideoAspectRatio.js";
 export * from "./lib/classes/metadata/ModelCreator.js";
 export * from "./lib/classes/metadata/ModelCreatorIcons.js";
 export * from "./lib/classes/metadata/ModelCreatorIconForId.js";

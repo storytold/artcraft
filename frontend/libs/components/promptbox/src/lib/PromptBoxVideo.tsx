@@ -12,6 +12,8 @@ import { arrayMove } from "@dnd-kit/sortable";
 import {
   CommonResolution,
   effectivePromptMaxLength,
+  resolveVideoAspectRatio,
+  resolveVideoAspectRatioOption,
   SizeIconOption,
   SizeOption,
   VideoModel,
@@ -257,22 +259,27 @@ export const PromptBoxVideo = ({
   // TODO: Get rid of default resolutions. Just disable it if not present.
   let aspectRatioOptions: PopoverItem[];
 
-  const buildAspectRatioOptions = (options: SizeOption[]): PopoverItem[] => {
-    const currentExists = options.some(
-      (option) => option.textLabel === aspectRatio,
+  const buildAspectRatioOptions = (
+    options: SizeOption[],
+    defaultAspectRatio?: string,
+  ): PopoverItem[] => {
+    const resolvedAspectRatio = resolveVideoAspectRatio(
+      { sizeOptions: options, defaultAspectRatio },
+      aspectRatio,
     );
-    const useFirstOption = !currentExists;
 
-    return options.map((option, index) => ({
+    return options.map((option) => ({
       label: option.textLabel,
-      selected:
-        option.textLabel === aspectRatio || (useFirstOption && index === 0),
+      selected: option.textLabel === resolvedAspectRatio,
       icon: <AspectRatioIcon sizeIcon={option.icon} />,
     }));
   };
 
   if (!!selectedModel?.sizeOptions && selectedModel.sizeOptions.length > 0) {
-    aspectRatioOptions = buildAspectRatioOptions(selectedModel.sizeOptions);
+    aspectRatioOptions = buildAspectRatioOptions(
+      selectedModel.sizeOptions,
+      selectedModel.defaultAspectRatio,
+    );
   } else {
     aspectRatioOptions = buildAspectRatioOptions(DEFAULT_RESOLUTIONS);
   }
@@ -389,6 +396,24 @@ export const PromptBoxVideo = ({
       }
     }
   }, [selectedModel]);
+
+  // The catalog's declared default can differ from the first advertised
+  // option. Resolve synchronously elsewhere as well, but keep the store in
+  // sync so every consumer displays the same legal selection.
+  useEffect(() => {
+    if (!selectedModel?.sizeOptions.length) return;
+    const currentAspectRatio = usePromptVideoStore.getState().aspectRatio;
+    const resolvedAspectRatio = resolveVideoAspectRatio(
+      selectedModel,
+      currentAspectRatio,
+    );
+    if (
+      resolvedAspectRatio !== null &&
+      resolvedAspectRatio !== currentAspectRatio
+    ) {
+      setAspectRatio(resolvedAspectRatio);
+    }
+  }, [selectedModel, setAspectRatio]);
 
   // Reset input mode when switching to a model that doesn't support reference.
   // Read from store directly to avoid stale closure (same as duration above).
@@ -1187,19 +1212,14 @@ export const PromptBoxVideo = ({
       }
 
       if (selectedModel.supportsCommonAspectRatio) {
-        const selectedOption = selectedModel.sizeOptions?.find(
-          (option) => option.textLabel === aspectRatio,
+        const selectedOption = resolveVideoAspectRatioOption(
+          selectedModel,
+          aspectRatio,
         );
 
         if (selectedOption) {
           request.aspect_ratio =
             selectedOption.tauriValue as typeof request.aspect_ratio;
-        } else {
-          const maybeDefault = selectedModel.sizeOptions[0];
-          if (!!maybeDefault) {
-            request.aspect_ratio =
-              maybeDefault.tauriValue as typeof request.aspect_ratio;
-          }
         }
       }
 
@@ -1237,8 +1257,19 @@ export const PromptBoxVideo = ({
   };
 
   const getCurrentAspectRatioIcon = (): SizeIconOption => {
-    const allOptions = selectedModel?.sizeOptions ?? DEFAULT_RESOLUTIONS;
-    const match = allOptions.find((o) => o.textLabel === aspectRatio);
+    const allOptions = selectedModel?.sizeOptions?.length
+      ? selectedModel.sizeOptions
+      : DEFAULT_RESOLUTIONS;
+    const resolvedAspectRatio = resolveVideoAspectRatio(
+      {
+        sizeOptions: allOptions,
+        defaultAspectRatio: selectedModel?.defaultAspectRatio,
+      },
+      aspectRatio,
+    );
+    const match = allOptions.find(
+      (option) => option.textLabel === resolvedAspectRatio,
+    );
     return match?.icon ?? SizeIconOption.Landscape;
   };
 
