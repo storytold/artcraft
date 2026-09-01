@@ -67,6 +67,9 @@ export interface ListingVideoModel extends ListingModelBase {
   audio_references_max_total_duration_seconds?: number | null;
   show_generate_with_sound_toggle?: boolean | null;
   duration_seconds_options?: number[] | null;
+  duration_seconds_min?: number | null;
+  duration_seconds_max?: number | null;
+  duration_seconds_max_with_image_references?: number | null;
   duration_seconds_default?: number | null;
 }
 
@@ -261,6 +264,11 @@ const mergedVideoModel = (
     textToVideoSupported: m.text_to_video_supported ?? o?.textToVideoSupported,
     generateWithSound: m.show_generate_with_sound_toggle ?? o?.generateWithSound,
     durationOptions: m.duration_seconds_options ?? o?.durationOptions,
+    minDuration: m.duration_seconds_min ?? o?.minDuration,
+    maxDuration: m.duration_seconds_max ?? o?.maxDuration,
+    maxDurationWithImageReferences:
+      m.duration_seconds_max_with_image_references ??
+      o?.maxDurationWithImageReferences,
     defaultDuration: m.duration_seconds_default ?? o?.defaultDuration,
     supportsReferenceMode: m.image_references_supported ?? o?.supportsReferenceMode,
     maxReferenceImages: m.image_references_max ?? o?.maxReferenceImages,
