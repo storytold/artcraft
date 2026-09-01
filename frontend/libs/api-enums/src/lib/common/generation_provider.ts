@@ -9,4 +9,12 @@ export enum GenerationProvider {
   Sora = "sora",
   WorldLabs = "world_labs",
   Fal = "fal",
+  Higgsfield = "higgsfield",
+  Krea = "krea",
+  Leonardo = "leonardo",
+  Magnific = "magnific",
+  Openart = "openart",
+  Picsart = "picsart",
+  Pixverse = "pixverse",
+  Runway = "runway",
 }

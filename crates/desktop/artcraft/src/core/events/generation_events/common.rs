@@ -9,6 +9,14 @@ pub enum GenerationServiceProvider {
   Midjourney,
   Sora,
   WorldLabs,
+  Higgsfield,
+  Krea,
+  Leonardo,
+  Magnific,
+  Openart,
+  Picsart,
+  Pixverse,
+  Runway,
 }
 
 #[derive(Debug, Copy, Clone, Serialize)]

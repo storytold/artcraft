@@ -40,6 +40,14 @@ impl TaskEnqueueSuccess{
       GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
       GenerationProvider::Sora => GenerationServiceProvider::Sora,
       GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
+      GenerationProvider::Higgsfield => GenerationServiceProvider::Higgsfield,
+      GenerationProvider::Krea => GenerationServiceProvider::Krea,
+      GenerationProvider::Leonardo => GenerationServiceProvider::Leonardo,
+      GenerationProvider::Magnific => GenerationServiceProvider::Magnific,
+      GenerationProvider::Openart => GenerationServiceProvider::Openart,
+      GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
+      GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
+      GenerationProvider::Runway => GenerationServiceProvider::Runway,
     }
   }
   

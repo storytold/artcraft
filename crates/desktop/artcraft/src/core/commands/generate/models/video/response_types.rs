@@ -34,6 +34,14 @@ pub enum ListVideoModelsProvider {
   Midjourney,
   Sora,
   WorldLabs,
+  Higgsfield,
+  Krea,
+  Leonardo,
+  Magnific,
+  Openart,
+  Picsart,
+  Pixverse,
+  Runway,
   Unknown(String),
 }
 
@@ -46,6 +54,14 @@ impl From<ApiClientGenerationProvider> for ListVideoModelsProvider {
       ApiClientGenerationProvider::Midjourney => Self::Midjourney,
       ApiClientGenerationProvider::Sora => Self::Sora,
       ApiClientGenerationProvider::WorldLabs => Self::WorldLabs,
+      ApiClientGenerationProvider::Higgsfield => Self::Higgsfield,
+      ApiClientGenerationProvider::Krea => Self::Krea,
+      ApiClientGenerationProvider::Leonardo => Self::Leonardo,
+      ApiClientGenerationProvider::Magnific => Self::Magnific,
+      ApiClientGenerationProvider::Openart => Self::Openart,
+      ApiClientGenerationProvider::Picsart => Self::Picsart,
+      ApiClientGenerationProvider::Pixverse => Self::Pixverse,
+      ApiClientGenerationProvider::Runway => Self::Runway,
       ApiClientGenerationProvider::Unknown(other) => Self::Unknown(other),
     }
   }
@@ -60,6 +76,14 @@ impl From<ListVideoModelsProvider> for String {
       ListVideoModelsProvider::Midjourney => "midjourney".to_string(),
       ListVideoModelsProvider::Sora => "sora".to_string(),
       ListVideoModelsProvider::WorldLabs => "world_labs".to_string(),
+      ListVideoModelsProvider::Higgsfield => "higgsfield".to_string(),
+      ListVideoModelsProvider::Krea => "krea".to_string(),
+      ListVideoModelsProvider::Leonardo => "leonardo".to_string(),
+      ListVideoModelsProvider::Magnific => "magnific".to_string(),
+      ListVideoModelsProvider::Openart => "openart".to_string(),
+      ListVideoModelsProvider::Picsart => "picsart".to_string(),
+      ListVideoModelsProvider::Pixverse => "pixverse".to_string(),
+      ListVideoModelsProvider::Runway => "runway".to_string(),
       ListVideoModelsProvider::Unknown(other) => other,
     }
   }
