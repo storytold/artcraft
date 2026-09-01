@@ -277,7 +277,7 @@ const CreatorJboogx = () => {
       <Seo
         title="Jboogx Creative × ArtCraft. Seedance AI Video Creator Spotlight."
         ogTitle="Jboogx Creative × ArtCraft"
-        description="Tyler Bernabe (@jboogxcreative) makes AI, VFX, and mixed-media work for nearly a million followers, and he directs his Seedance videos in ArtCraft, home of Seedance 2.5. Watch the work and see how it's made."
+        description="Tyler Bernabe (@jboogxcreative) makes AI, VFX, and mixed-media work for nearly a million followers, and he directs his Seedance videos in ArtCraft, home of Seedance 2.5. Watch the work, then make your own with the same tools."
         jsonLd={JSON_LD}
       />
       {/* Top primary-blue accent, matching the other landing pages */}
@@ -329,8 +329,9 @@ const CreatorJboogx = () => {
             data-reveal
           >
             Nearly a million people follow Tyler Bernabe for AI, VFX, and
-            mixed-media work that treats the feed like a screening room. The
-            Seedance pieces you've seen there? Directed in ArtCraft.
+            mixed-media work that treats the feed like a screening room. His
+            Seedance pieces are made in ArtCraft, the same app you can open
+            right now.
           </p>
 
           {/* CTAs — creator first, on purpose */}
@@ -338,19 +339,19 @@ const CreatorJboogx = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-3"
             data-reveal
           >
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
-            >
-              <InstagramIcon className="h-4 w-4" />
-              Follow @jboogxcreative
-            </a>
             <CreateNowButton
               isLoggedIn={isLoggedIn}
               hasSubscription={hasSubscription}
             />
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
+            >
+              <InstagramIcon className="h-4 w-4" />
+              Follow @jboogxcreative
+            </a>
           </div>
 
           {/* Reel triptych — his three newest reels, live from Instagram,
@@ -457,7 +458,8 @@ const CreatorJboogx = () => {
               Straight from the <span className="font-serif-italic">feed</span>.
             </h2>
             <p className="text-base sm:text-lg text-white/55">
-              Recent drops from @jboogxcreative. Each one opens on Instagram.
+              Recent drops from @jboogxcreative, all made with ArtCraft. Each
+              one opens on Instagram.
             </p>
           </div>
 
@@ -503,7 +505,8 @@ const CreatorJboogx = () => {
               Tyler's videos are generated with Seedance 2.5 in ArtCraft, and
               the magic is in the writing. His prompts run long and read like
               shot lists, because the model gives back exactly as much
-              direction as you put in.
+              direction as you put in. Learn the writing and the same studio
+              answers to you.
             </p>
           </div>
 
@@ -532,7 +535,8 @@ const CreatorJboogx = () => {
             >
               Seedance 2.5
             </Link>
-            , same tools, no private build. The difference is the writing.
+            , same tools, no private build. The writing is a skill, and you
+            can start learning it today.
           </div>
         </div>
       </section>
@@ -554,8 +558,8 @@ const CreatorJboogx = () => {
                 <span className="font-serif-italic">follow</span>.
               </h2>
               <p className="max-w-xl mx-auto text-base sm:text-lg text-white/60 leading-relaxed mb-10">
-                ArtCraft is an open, artist-built studio for AI video, with
-                Seedance 2.5 ready to direct. Free to start, on the web or
+                Everything in Tyler's toolkit ships in ArtCraft: Seedance 2.5,
+                the canvas, the whole studio. Free to start, on the web or
                 your desktop.
               </p>
 
@@ -591,16 +595,7 @@ const CreatorJboogx = () => {
               </div>
 
               <p className="mt-7 text-sm text-white/35">
-                Or just{" "}
-                <a
-                  href={INSTAGRAM_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4 decoration-white/30 hover:text-white/60 transition-colors"
-                >
-                  follow Tyler
-                </a>
-                {". Honestly, we get it."}
+                Your first drop is one prompt away.
               </p>
             </div>
           </div>
