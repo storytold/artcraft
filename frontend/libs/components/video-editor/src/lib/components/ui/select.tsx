@@ -48,12 +48,12 @@ const selectItemVariants = cva(
 );
 
 const selectTriggerVariants = cva(
-  "border-border ring-offset-background placeholder:text-muted-foreground flex h-7 w-auto cursor-pointer items-center justify-between gap-1 rounded-md border px-2.5 text-sm whitespace-nowrap transition-none focus:border-primary focus:ring-0 focus:ring-primary/10 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+  "border-border ring-offset-background placeholder:text-muted-foreground flex h-7 w-auto cursor-pointer items-center justify-between gap-1 rounded-[3px] border px-2.5 text-sm whitespace-nowrap transition-none focus:border-primary focus:ring-0 focus:ring-primary/10 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
   {
     variants: {
       variant: {
         default: "bg-accent",
-        outline: "bg-background hover:bg-accent/50",
+        outline: "bg-background hover:bg-white/10",
       },
       size: {
         default: "",
@@ -137,7 +137,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "bg-popover text-popover-foreground z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-hidden rounded-md border border-ui-panel-border p-1 shadow-lg",
+        "bg-popover text-popover-foreground z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-hidden rounded-[3px] border border-ui-panel-border p-1",
         className,
       )}
       position={position}

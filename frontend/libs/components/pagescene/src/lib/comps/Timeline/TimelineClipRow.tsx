@@ -192,7 +192,7 @@ export const TimelineClipRow = ({
                       screen bottom, so up always has room). */}
                   <div
                     ref={pickerMenuRef}
-                    className="fixed max-h-40 w-44 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls py-1 shadow-xl"
+                    className="fixed max-h-40 w-44 overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls py-1"
                     style={{
                       zIndex: 9999,
                       left: pickerAnchor.left,
@@ -222,14 +222,14 @@ export const TimelineClipRow = ({
         /* overflow-hidden: strips are engine-clamped into the lane, but any
            transient out-of-range placement must clip here rather than paint
            over the add-button column. */
-        className="relative h-6 flex-1 overflow-hidden rounded-md bg-black/20"
+        className="relative h-6 flex-1 overflow-hidden rounded-[3px] bg-white/5"
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
         onPointerCancel={endDrag}
       >
         {lanes.length === 0 && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md border border-dashed border-white/15 text-[10px] text-base-fg/30">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[3px] border border-dashed border-white/15 text-[10px] text-base-fg/30">
             {droppable
               ? "Drag an animation here"
               : "Add a baked animation with +"}
@@ -253,7 +253,7 @@ export const TimelineClipRow = ({
               data-clip-strip
               /* pe-2.5 keeps the × (and name) clear of the absolute w-1.5
                  trim handle on the right edge */
-              className={`absolute inset-y-0 flex items-center gap-1 rounded-md border pe-2.5 ps-1.5 text-[10px] text-white ${
+              className={`absolute inset-y-0 flex items-center gap-1 rounded-[3px] border pe-2.5 ps-1.5 text-[10px] text-white ${
                 isSelected
                   ? "border-white/80 bg-brand-primary/45"
                   : "border-brand-primary/60 bg-brand-primary/25"
@@ -316,7 +316,7 @@ export const TimelineClipRow = ({
 
               {/* right-edge trim handle */}
               <div
-                className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize rounded-r-md bg-white/40 hover:bg-white/70"
+                className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize rounded-r-[3px] bg-white/40 hover:bg-white/70"
                 title="Trim clip length"
                 onPointerDown={(e) => {
                   e.stopPropagation();
@@ -355,7 +355,7 @@ export const TimelineClipRow = ({
                     ? "Edit transition into the next clip"
                     : "Blend into the next clip"
                 }
-                className={`absolute top-1/2 z-10 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-colors ${
+                className={`absolute top-1/2 z-10 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[3px] border transition-colors ${
                   active
                     ? "border-brand-primary bg-brand-primary text-white"
                     : "border-dashed border-white/30 bg-black/30 text-white/40 hover:border-white/60 hover:text-white/80"

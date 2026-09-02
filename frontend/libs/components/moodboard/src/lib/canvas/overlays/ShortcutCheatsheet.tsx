@@ -32,7 +32,7 @@ export const ShortcutCheatsheet = ({ visible }: Props) => {
       aria-hidden
       className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
     >
-      <div className="max-h-[80%] w-[min(640px,90%)] overflow-auto rounded-xl border border-white/15 bg-black/70 p-6 text-white/90 shadow-2xl backdrop-blur-sm">
+      <div className="max-h-[80%] w-[min(640px,90%)] overflow-auto rounded-[3px] border border-white/15 bg-black/70 p-6 text-white/90 backdrop-blur-sm">
         <div className="mb-3 text-xs uppercase tracking-widest text-white/50">
           Keyboard shortcuts
         </div>
@@ -70,7 +70,7 @@ export const ShortcutCheatsheet = ({ visible }: Props) => {
 };
 
 const Key = ({ label }: { label: string }) => (
-  <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-white/90">
+  <kbd className="rounded-[2px] border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-white/90">
     {label}
   </kbd>
 );

@@ -58,12 +58,12 @@ export const CompletionModal = () => {
 
   return (
     <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
-      <div className="glass glass-no-hover flex w-full max-w-xl flex-col gap-4 rounded-2xl p-5 text-white shadow-2xl">
+      <div className="glass glass-no-hover flex w-full max-w-xl flex-col gap-4 p-5 text-white">
         <div className="text-sm font-semibold text-base-fg/90">
           {isVideo ? "Recording complete" : "Capture complete"}
         </div>
 
-        <div className="flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl bg-black/30">
+        <div className="flex max-h-[52vh] items-center justify-center overflow-hidden rounded-[3px] bg-black/30">
           {isVideo ? (
             <video
               src={artifact.objectUrl}
@@ -105,7 +105,7 @@ export const CompletionModal = () => {
             type="button"
             onClick={() => clearProducedArtifact()}
             disabled={busy}
-            className="flex h-9 items-center gap-2 rounded-full px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-50"
+            className="flex h-9 items-center gap-2 rounded-[3px] px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-50"
           >
             <TrashIcon  className="h-3.5 w-3.5" />
             Discard
@@ -115,7 +115,7 @@ export const CompletionModal = () => {
             <button
               type="button"
               onClick={() => void upload()}
-              className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
+              className="flex h-9 items-center gap-2 rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
             >
               <RotateCwIcon  className="h-3.5 w-3.5" />
               Retry
@@ -124,7 +124,7 @@ export const CompletionModal = () => {
             <button
               type="button"
               onClick={() => void upload()}
-              className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
+              className="flex h-9 items-center gap-2 rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
             >
               <CloudUploadIcon  className="h-3.5 w-3.5" />
               Upload &amp; continue

@@ -229,18 +229,18 @@ export const AnimationsModal = () => {
         <div className="grid h-full grid-cols-12 gap-3">
           <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
             <div className="flex items-center justify-between gap-2.5 py-0.5">
-              <h2 className="text-[18px] font-semibold opacity-80">
+              <h2 className="text-base font-semibold opacity-80">
                 Animations
               </h2>
             </div>
-            <hr className="my-2 w-full border-white/10" />
+            <hr className="my-2 w-full border-white/15" />
             <div className="flex h-full flex-col space-y-2">
               {tabs.map((tab) => (
                 <Button
                   key={tab.id}
                   variant={activeTab === tab.id ? "primary" : "secondary"}
                   className={twMerge(
-                    "w-full justify-start rounded-xl border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
+                    "w-full justify-start rounded-[3px] border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
                     activeTab === tab.id &&
                       "border-primary bg-primary/10 hover:bg-primary/10",
                   )}
@@ -259,7 +259,7 @@ export const AnimationsModal = () => {
                 variant="secondary"
                 icon={ArrowUpFromLineIcon}
                 iconClassName="opacity-70"
-                className="w-full justify-center rounded-xl border border-white/10 bg-white/[6%] px-3.5 py-2.5 hover:bg-white/15"
+                className="w-full justify-center rounded-[3px] border border-white/15 bg-white/[6%] px-3.5 py-2.5 hover:bg-white/15"
                 onClick={handleOpenUpload}
               >
                 Upload animation

@@ -58,7 +58,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
     <div
       role="button"
       className={twMerge(
-        "flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2 outline-none transition-colors duration-100 hover:bg-white/5 focus:outline-none",
+        "flex cursor-pointer items-center justify-between gap-2 rounded-[3px] border border-transparent px-3 py-2 outline-none transition-colors duration-100 hover:bg-white/10 focus:outline-none",
         isSelected &&
           "border-brand-primary bg-brand-primary/15 hover:bg-brand-primary/15",
       )}
@@ -146,7 +146,7 @@ export const Outliner = () => {
       as="div"
       show={showing}
       className={twMerge(
-        "flex h-[45vh] w-[260px] flex-col overflow-hidden rounded-xl border border-ui-panel-border bg-ui-panel shadow-lg",
+        "flex h-[45vh] w-[260px] flex-col overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-panel",
       )}
       enter="transition-opacity duration-150"
       enterFrom="opacity-0"
@@ -156,7 +156,7 @@ export const Outliner = () => {
       leaveTo="opacity-0"
     >
       <div className="flex items-center px-4 pb-1 pt-3">
-        <h1 className="grow text-base font-semibold">Scene</h1>
+        <h1 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/70">Scene</h1>
         <Button
           icon={PlusIcon}
           className="h-6 bg-transparent px-1.5 text-sm font-medium text-white/80 hover:bg-transparent hover:text-white"
@@ -166,7 +166,7 @@ export const Outliner = () => {
         </Button>
         <Button
           icon={XIcon}
-          className="h-5 bg-transparent p-0 text-xl opacity-50 hover:bg-transparent hover:opacity-90"
+          className="h-5 bg-transparent p-0 text-base opacity-50 hover:bg-transparent hover:opacity-90"
           onClick={() => {
             usePageSceneStore.getState().setOutlinerShowing(false);
           }}

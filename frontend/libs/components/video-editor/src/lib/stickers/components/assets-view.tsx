@@ -167,7 +167,7 @@ function EmptyView({ message }: { message: string }) {
         className="text-muted-foreground size-10"
       />
       <div className="flex flex-col gap-2 text-center">
-        <p className="text-lg font-medium">No stickers found</p>
+        <p className="text-base font-medium">No stickers found</p>
         <p className="text-muted-foreground text-sm text-balance">{message}</p>
       </div>
     </div>
@@ -442,7 +442,7 @@ function StickerItem({
         containerClassName={containerClassName ?? "w-full"}
       />
       {isAdding && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-black/60">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[3px] bg-black/60">
           <InlineSpinner className="size-6 text-white" />
         </div>
       )}

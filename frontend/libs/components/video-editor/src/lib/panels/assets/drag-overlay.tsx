@@ -29,7 +29,7 @@ export function MediaDragOverlay({
 
   return (
     <button
-      className="bg-foreground/5 hover:bg-foreground/10 flex flex-col items-center justify-center gap-4 rounded-lg p-8 text-center"
+      className="bg-foreground/5 hover:bg-foreground/10 flex flex-col items-center justify-center gap-4 rounded-[3px] p-8 text-center"
       type="button"
       disabled={isProcessing || !onClick}
       onClick={(event) => handleClick({ event })}
@@ -48,9 +48,9 @@ export function MediaDragOverlay({
 
       {isProcessing && (
         <div className="w-full max-w-xs">
-          <div className="bg-muted/50 h-2 w-full rounded-full">
+          <div className="bg-muted/50 h-2 w-full">
             <div
-              className="bg-primary h-2 rounded-full"
+              className="bg-primary h-2"
               style={{ width: `${progress}%` }}
             />
           </div>

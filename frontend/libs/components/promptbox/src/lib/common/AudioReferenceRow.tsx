@@ -342,7 +342,7 @@ function AudioRefTile({
         type="button"
         aria-label={isPlaying ? "Stop" : "Play"}
         onClick={togglePlay}
-        className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-black transition-transform hover:scale-105"
+        className="flex h-5 w-5 items-center justify-center rounded-[3px] bg-white/90 text-black transition-colors hover:bg-white"
       >
         <DynamicIcon
           icon={isPlaying ? SquareIcon : PlayIcon}

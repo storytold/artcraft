@@ -34,7 +34,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
         type="button"
         aria-label="Exit presentation"
         onClick={onClose}
-        className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-[3px] border border-white/15 bg-white/5 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
       >
         <XIcon  className="h-4 w-4" />
       </button>
@@ -59,7 +59,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
                 side="right"
                 onClick={() => setIndex((i) => (i + 1) % count)}
               />
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium tabular-nums text-white/70 backdrop-blur">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/10 px-3 py-1 text-xs font-medium tabular-nums text-white/70 backdrop-blur">
                 {index + 1} / {count}
               </div>
             </>
@@ -98,7 +98,7 @@ const Stage = ({ item }: { item: BoardItem }) => {
           className="flex h-[60vh] w-[60vh] items-end rounded-3xl p-6"
           style={{ background: item.color }}
         >
-          <span className="rounded-full bg-black/40 px-3 py-1 text-sm font-medium uppercase tracking-wider text-white backdrop-blur">
+          <span className="bg-black/40 px-3 py-1 text-sm font-medium uppercase tracking-wider text-white backdrop-blur">
             {item.color}
           </span>
         </div>
@@ -146,14 +146,14 @@ const Arrow = ({
     aria-label={side === "left" ? "Previous" : "Next"}
     onClick={onClick}
     className={[
-      "absolute top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full",
+      "absolute top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[3px]",
       "border border-white/15 bg-white/5 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
       side === "left" ? "left-5" : "right-5",
     ].join(" ")}
   >
     <DynamicIcon
       icon={side === "left" ? ChevronLeftIcon : ChevronRightIcon}
-      className="h-5 w-5"
+      className="h-4 w-4"
     />
   </button>
 );

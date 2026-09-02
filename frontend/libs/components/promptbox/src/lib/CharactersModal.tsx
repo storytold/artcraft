@@ -355,7 +355,7 @@ const CharacterListView = ({
             className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-[3px] border-2 border-dashed border-base-fg/10 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/25 hover:text-base-fg/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-              <PlusIcon  className="text-lg" />
+              <PlusIcon  className="text-base" />
               <span className="text-sm font-medium">Create New</span>
             </div>
           </button>
@@ -375,7 +375,7 @@ const CharacterListView = ({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-base-fg/20">
-                    <UsersIcon  className="text-2xl" />
+                    <UsersIcon  className="text-xl" />
                   </div>
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
@@ -419,7 +419,7 @@ const CharacterListView = ({
                       <div className="flex h-full w-full items-center justify-center text-base-fg/20">
                         <UsersIcon
                           
-                          className="text-2xl" />
+                          className="text-xl" />
                       </div>
                     )}
                   </div>
@@ -441,7 +441,7 @@ const CharacterListView = ({
                           setPreviewCharacter(character);
                         }}
                         title="View full size"
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                        className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                       >
                         <EyeIcon  className="text-[10px]" />
                       </button>
@@ -453,7 +453,7 @@ const CharacterListView = ({
                             e.stopPropagation();
                             onEditCharacter(character);
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                          className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                         >
                           <PenIcon
                             
@@ -464,7 +464,7 @@ const CharacterListView = ({
                             e.stopPropagation();
                             handleDelete(character);
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                          className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                         >
                           <Trash2Icon
                             
@@ -565,7 +565,7 @@ const EditCharacterView = ({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 className="text-xl font-bold text-base-fg">Edit Character</h2>
+          <h2 className="text-lg font-bold text-base-fg">Edit Character</h2>
         </div>
 
         {/* Avatar preview */}
@@ -822,7 +822,7 @@ const NewCharacterView = ({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 className="text-xl font-bold text-base-fg">New Character</h2>
+          <h2 className="text-lg font-bold text-base-fg">New Character</h2>
         </div>
 
         {/* Image upload area */}
@@ -860,7 +860,7 @@ const NewCharacterView = ({
                   e.stopPropagation();
                   removeImage(0);
                 }}
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
                 <XIcon  className="text-sm" />
               </button>

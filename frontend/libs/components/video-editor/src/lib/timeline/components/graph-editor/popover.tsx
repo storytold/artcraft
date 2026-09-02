@@ -90,16 +90,16 @@ export function GraphEditorPopover({
       >
         {componentOptions.length > 1 && (
           <div className="border-b px-3 py-2">
-            <div className="bg-muted/40 inline-flex rounded-md p-0.5">
+            <div className="bg-muted/40 inline-flex rounded-[3px] p-0.5">
               {componentOptions.map((component) => (
                 <button
                   key={component.key}
                   type="button"
                   onClick={() => onActiveComponentKeyChange?.(component.key)}
                   className={cn(
-                    "cursor-pointer rounded-sm px-2 py-1 text-xs font-medium",
+                    "cursor-pointer rounded-[2px] px-2 py-1 text-xs font-medium",
                     activeComponentKey === component.key
-                      ? "bg-background text-foreground shadow-xs"
+                      ? "bg-background text-foreground"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -286,7 +286,7 @@ function PresetItem({
         <Button
           variant="destructive"
           size="icon"
-          className="absolute -right-0.5 -top-0.5 hidden size-4.5 rounded-full [&_svg]:size-3 group-hover:flex"
+          className="absolute -right-0.5 -top-0.5 hidden size-4.5 rounded-[3px] [&_svg]:size-3 group-hover:flex"
           onClick={(event) => {
             event.stopPropagation();
             onDelete();

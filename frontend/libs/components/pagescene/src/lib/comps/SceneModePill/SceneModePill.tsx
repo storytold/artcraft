@@ -22,9 +22,8 @@ export const SceneModePill = () => {
         activeTab={sceneMode}
         onTabChange={(id) => setSceneMode(id as SceneMode)}
         className="w-auto"
-        listClassName="rounded-full px-1"
-        tabClassName="rounded-full px-5 py-1"
-        indicatorClassName="rounded-full bg-white/95"
+        listClassName="px-1"
+        tabClassName="px-5 py-1"
         selectedTabClassName="text-black"
       />
     </div>

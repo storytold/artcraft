@@ -54,7 +54,7 @@ export const SectionHeader = ({
           type="button"
           aria-label={collapsed ? "Expand section" : "Collapse section"}
           onClick={onToggleCollapse}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-base-fg/45 transition-colors duration-150 hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex h-6 w-6 items-center justify-center rounded-[3px] text-base-fg/45 transition-colors duration-150 hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <ChevronDownIcon
             
@@ -77,7 +77,7 @@ export const SectionHeader = ({
             else if (e.key === "Escape") setEditing(false);
           }}
           onBlur={commit}
-          className="min-w-0 rounded-md bg-base-fg/5 px-2 py-1 text-sm font-semibold text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-w-0 rounded-[3px] bg-base-fg/5 px-2 py-1 text-sm font-semibold text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         />
       ) : (
         <button
@@ -85,7 +85,7 @@ export const SectionHeader = ({
           onClick={startEdit}
           disabled={!editable}
           className={[
-            "truncate rounded-md px-1.5 py-0.5 text-sm font-semibold tracking-[-0.01em] text-base-fg transition-colors",
+            "truncate rounded-[3px] px-1.5 py-0.5 text-sm font-semibold tracking-[-0.01em] text-base-fg transition-colors",
             editable
               ? "hover:bg-base-fg/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               : "cursor-default text-base-fg/55",
@@ -95,7 +95,7 @@ export const SectionHeader = ({
         </button>
       )}
 
-      <span className="rounded-full bg-base-fg/8 px-2 py-0.5 text-[11px] font-medium tabular-nums text-base-fg/50">
+      <span className="bg-base-fg/8 px-2 py-0.5 text-[11px] font-medium tabular-nums text-base-fg/50">
         {count}
       </span>
 
@@ -107,7 +107,7 @@ export const SectionHeader = ({
           aria-label="Delete section"
           title="Delete section (keeps items)"
           onClick={onDelete}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-base-fg/40 opacity-0 transition-all duration-150 hover:bg-danger/10 hover:text-danger focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-danger group-hover/section:opacity-100"
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/40 opacity-0 transition-all duration-150 hover:bg-danger/10 hover:text-danger focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-danger group-hover/section:opacity-100"
         >
           <Trash2Icon  className="h-3 w-3" />
         </button>

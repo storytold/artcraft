@@ -2042,7 +2042,7 @@ const SEND_TO_TARGETS: {
 // Shared styling for the bar's action pills. `whitespace-nowrap` keeps labels
 // on a single line — the bar grows instead of squishing buttons into two rows.
 const BAR_BUTTON_CLASS =
-  "flex items-center gap-2 whitespace-nowrap border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-ui-controls/90 transition-colors";
+  "flex items-center gap-2 whitespace-nowrap border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-white/10 transition-colors";
 
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
@@ -2407,7 +2407,7 @@ function BulkSelectionBar({
         type="button"
         onClick={clear}
         aria-label="Clear selection"
-        className="flex h-8 w-8 items-center justify-center border border-white/15 bg-ui-controls/60 text-white hover:bg-ui-controls/90 transition-colors"
+        className="flex h-8 w-8 items-center justify-center border border-white/15 bg-ui-controls/60 text-white hover:bg-white/10 transition-colors"
       >
         <XIcon />
       </button>

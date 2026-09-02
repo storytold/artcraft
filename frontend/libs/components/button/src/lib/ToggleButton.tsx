@@ -33,8 +33,8 @@ export const ToggleButton = ({
         "flex h-[34px] items-center justify-center rounded-[3px] border border-ui-controls-border bg-ui-controls text-sm text-white transition-colors",
         hasLabel ? "px-3" : "w-[34px]",
         isActive
-          ? "border-white/30 bg-brand-primary/40 hover:bg-brand-primary/40"
-          : "hover:border-white/30 hover:bg-ui-controls/80",
+          ? "border-white/30 bg-brand-primary/40 hover:bg-brand-primary/50"
+          : "hover:border-white/30 hover:bg-white/10",
         className,
       )}
       variant="secondary"
@@ -48,7 +48,7 @@ export const ToggleButton = ({
           />
         )}
         {label && (
-          <span className="text-sm font-medium text-white/90">{label}</span>
+          <span className="text-xs font-medium text-white/90">{label}</span>
         )}
       </span>
     </Button>

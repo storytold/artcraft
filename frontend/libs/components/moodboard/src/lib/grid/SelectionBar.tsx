@@ -31,9 +31,9 @@ export const SelectionBar = ({
   if (count === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center">
-      {/* Styled to match the webapp library's multiselect bar: solid pill, filled
-          control buttons, red delete, round clear. */}
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
+      {/* Styled to match the webapp library's multiselect bar: flat 3px island,
+          filled control buttons, red delete. */}
+      <div className="pointer-events-auto flex items-center gap-2 rounded-[3px] border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 backdrop-blur">
         <span className="px-1 text-sm font-medium text-white/80">
           {count} selected
         </span>
@@ -51,7 +51,7 @@ export const SelectionBar = ({
           <button
             type="button"
             onClick={onUseReference}
-            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex items-center gap-2 rounded-[3px] bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <WandSparklesIcon  className="text-xs" />
             Use as reference
@@ -60,7 +60,7 @@ export const SelectionBar = ({
         <button
           type="button"
           onClick={onDelete}
-          className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
+          className="flex items-center gap-2 rounded-[3px] bg-red/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
         >
           <Trash2Icon  className="text-xs" />
           Delete
@@ -69,7 +69,7 @@ export const SelectionBar = ({
           type="button"
           aria-label="Clear selection"
           onClick={onClear}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-ui-controls/60 text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <XIcon />
         </button>
@@ -118,7 +118,7 @@ const MoveToMenu = ({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex items-center gap-2 rounded-[3px] bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <LayersIcon  className="text-xs" />
         Move to
@@ -127,7 +127,7 @@ const MoveToMenu = ({
       {open && (
         <div
           role="menu"
-          className="absolute bottom-[calc(100%+8px)] left-1/2 z-40 max-h-72 w-52 -translate-x-1/2 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl"
+          className="absolute bottom-[calc(100%+8px)] left-1/2 z-40 max-h-72 w-52 -translate-x-1/2 overflow-y-auto rounded-[3px] border border-ui-panel-border bg-ui-panel p-2"
         >
           <MenuItem
             label="Ungrouped"
@@ -175,7 +175,7 @@ const MenuItem = ({
     role="menuitem"
     onClick={onClick}
     className={[
-      "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+      "flex w-full items-center gap-2.5 rounded-[3px] px-2 py-1.5 text-left text-sm transition-colors",
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       accent
         ? "text-primary hover:bg-ui-controls/50"
@@ -194,7 +194,7 @@ const MenuItem = ({
 );
 
 const Kbd = ({ children }: { children: ReactNode }) => (
-  <kbd className="rounded border border-ui-panel-border bg-white/5 px-1 py-px font-sans text-[10px] text-white/60">
+  <kbd className="rounded-[2px] border border-ui-panel-border bg-white/5 px-1 py-px font-sans text-[10px] text-white/60">
     {children}
   </kbd>
 );

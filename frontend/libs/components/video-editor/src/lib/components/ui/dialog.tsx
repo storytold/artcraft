@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-ui-panel-border shadow-lg duration-200",
+        "bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-[3px] border border-ui-panel-border duration-200",
         className,
       )}
       onCloseAutoFocus={(e) => {
@@ -116,7 +116,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg leading-none font-semibold tracking-tight",
+      "text-base leading-none font-semibold tracking-tight",
       className,
     )}
     {...props}

@@ -72,7 +72,7 @@ export const TimelineTrackRow = ({
 
       <div
         ref={laneRef}
-        className="relative h-9 flex-1 rounded-lg bg-black/30"
+        className="relative h-9 flex-1 rounded-[3px] bg-white/5"
         onPointerMove={(e) => {
           if (!draggingId.current || !editor) return;
           moveKeyframe(
@@ -115,7 +115,7 @@ export const TimelineTrackRow = ({
               type="button"
               title="Edit easing"
               data-easing-chip
-              className={`absolute top-1/2 flex h-5 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border bg-black/60 ${
+              className={`absolute top-1/2 flex h-5 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[3px] border bg-black/60 ${
                 active
                   ? "border-brand-primary text-white"
                   : "border-white/40 text-white/80 hover:border-white/80 hover:text-white"
@@ -165,7 +165,7 @@ export const TimelineTrackRow = ({
       <button
         type="button"
         title="Add keyframe at playhead"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10 hover:text-base-fg"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10 hover:text-base-fg"
         onClick={() => {
           if (editor) addKeyframe(editor, item.id);
         }}

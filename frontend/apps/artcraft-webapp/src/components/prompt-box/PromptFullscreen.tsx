@@ -32,7 +32,7 @@ export const PromptFullscreenButton = ({
           type="button"
           aria-label="Expand prompt to focus mode"
           onClick={onClick}
-          className="flex h-6 w-6 items-center justify-center bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
+          className="flex h-6 w-6 items-center justify-center rounded-[3px] bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
         >
           <Maximize2Icon
             
@@ -102,7 +102,7 @@ export const PromptFullscreenModal = ({
           lets the editor scroll instead of stretching the panel. min-h-0 lets
           the flex children shrink below content size. */}
       <div className="flex min-h-0 flex-col gap-2" style={{ height: "70vh" }}>
-        <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
+        <h2 className="shrink-0 text-base font-semibold text-base-fg">Prompt</h2>
         {/* flex-1 so the editor takes only the space left after the (shrink-0)
             image row + footer — keeps it from overflowing when the window is
             shorter. min-h-0 + overflow-hidden bound the editor area so its own

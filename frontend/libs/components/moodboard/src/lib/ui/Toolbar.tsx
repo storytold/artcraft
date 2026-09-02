@@ -7,7 +7,7 @@ import { twMerge } from "tailwind-merge";
 // Shared chrome for the moodboard's floating top bars. The Grid and Canvas
 // toolbars render inside the same glass island with the same buttons and
 // dividers, so the two views read as one surface — in line with the
-// create-image/video promptbox language (`.glass` + rounded-2xl).
+// create-image/video promptbox language (`.glass` + 3px corners).
 
 interface ToolbarShellProps {
   children: ReactNode;
@@ -17,7 +17,7 @@ interface ToolbarShellProps {
 export const ToolbarShell = ({ children, className }: ToolbarShellProps) => (
   <div
     className={twMerge(
-      "glass pointer-events-auto flex items-center gap-2 rounded-2xl border border-ui-divider p-2 text-base-fg shadow-[0_8px_28px_-12px_rgba(0,0,0,0.45)]",
+      "glass pointer-events-auto flex items-center gap-2 border border-ui-divider p-2 text-base-fg",
       className,
     )}
   >
@@ -56,7 +56,7 @@ export const ToolbarIconButton = ({
       onClick={onClick}
       disabled={disabled}
       className={twMerge(
-        "h-9 w-9 rounded-[10px] border-transparent p-0 shadow-none",
+        "h-9 w-9 rounded-[3px] border-transparent p-0 shadow-none",
         active
           ? "bg-primary/30 text-base-fg hover:bg-primary/40"
           : "bg-transparent text-base-fg/80 hover:bg-base-fg/10 hover:text-base-fg",

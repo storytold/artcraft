@@ -15,7 +15,7 @@ export const PrecisionSelector = () => {
 
   return (
     <div
-      className="fixed z-50 bg-red-600 -translate-x-1/2 -translate-y-1/2 flex-col gap-[1px] shadow-md bg-ui-divider border-ui-divider border-2 rounded-md overflow-clip"
+      className="fixed z-50 -translate-x-1/2 -translate-y-1/2 flex-col gap-[1px] bg-ui-divider border-ui-divider border rounded-[3px] overflow-clip"
       style={{
         top: coords.y,
         left: coords.x,

@@ -89,7 +89,7 @@ export const ItemInspector = ({
       isOpen
       onClose={onClose}
       accessibleTitle="Item details"
-      className="rounded-xl bg-ui-modal h-[760px] w-[1200px] max-w-screen min-w-[1000px] min-h-[600px] p-4"
+      className="bg-ui-modal h-[760px] w-[1200px] max-w-screen min-w-[1000px] min-h-[600px] p-4"
       draggable
       resizable
       expandable
@@ -97,12 +97,12 @@ export const ItemInspector = ({
     >
       {/* Invisible drag strip along the top, matching the shared lightbox. */}
       <Modal.DragHandle>
-        <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+        <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move" />
       </Modal.DragHandle>
 
       <div className="flex h-full gap-4">
         {/* Media panel — flexible width, dark plate, contained media. */}
-        <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
+        <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black/30">
           <Media item={item} />
 
           {hasPrev && <NavArrow side="left" onClick={onPrev} />}
@@ -113,7 +113,7 @@ export const ItemInspector = ({
         <div className="flex h-full w-[280px] shrink-0 flex-col">
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-2 text-base-fg">
             <div className="flex items-center gap-2.5 border-b border-white/5 pb-3 pr-10">
-              <span className="rounded-full border border-ui-panel-border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-base-fg/55">
+              <span className="border border-ui-panel-border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-base-fg/55">
                 {KIND_LABEL[item.kind]}
               </span>
             </div>
@@ -126,7 +126,7 @@ export const ItemInspector = ({
                     type="button"
                     aria-label={`Rate ${n}`}
                     onClick={() => onSetRating(item.rating === n ? 0 : n)}
-                    className="rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="rounded-[3px] p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <StarIcon
                       
@@ -147,7 +147,7 @@ export const ItemInspector = ({
                     key={tag}
                     type="button"
                     onClick={() => onRemoveTag(tag)}
-                    className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
+                    className="group/tag flex items-center gap-1 rounded-[3px] bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
                   >
                     {tag}
                     <XIcon  className="h-2.5 w-2.5" />
@@ -161,7 +161,7 @@ export const ItemInspector = ({
                   }}
                   onBlur={commitTag}
                   placeholder="Add tag"
-                  className="w-20 rounded-full bg-base-fg/5 px-2.5 py-1 text-[11px] text-base-fg placeholder:text-base-fg/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-20 rounded-[3px] bg-base-fg/5 px-2.5 py-1 text-[11px] text-base-fg placeholder:text-base-fg/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
               </div>
             </Section>
@@ -178,7 +178,7 @@ export const ItemInspector = ({
                         void navigator.clipboard?.writeText(hex);
                         toast.success(`Copied ${hex}`);
                       }}
-                      className="h-7 w-7 rounded-md ring-1 ring-inset ring-black/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="h-7 w-7 rounded-[3px] ring-1 ring-inset ring-black/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       style={{ background: hex }}
                     />
                   ))}
@@ -186,7 +186,7 @@ export const ItemInspector = ({
                 <button
                   type="button"
                   onClick={() => onAddPaletteToBoard(palette)}
-                  className="mt-2.5 flex items-center gap-1.5 rounded text-xs font-medium text-base-fg/60 transition-colors hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="mt-2.5 flex items-center gap-1.5 rounded-[3px] text-xs font-medium text-base-fg/60 transition-colors hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <PlusIcon  className="h-3 w-3" />
                   Add swatches to board
@@ -202,7 +202,7 @@ export const ItemInspector = ({
                 variant="primary"
                 icon={WandSparklesIcon}
                 onClick={onUseReference}
-                className="w-full col-span-2 py-1.5 text-[13px]"
+                className="w-full col-span-2 py-1.5 text-xs"
               >
                 Use as reference
               </Button>
@@ -211,7 +211,7 @@ export const ItemInspector = ({
               variant="destructive"
               icon={Trash2Icon}
               onClick={onDelete}
-              className="w-full col-span-2 py-1.5 text-[13px]"
+              className="w-full col-span-2 py-1.5 text-xs"
             >
               Delete
             </Button>
@@ -260,17 +260,17 @@ const Media = ({ item }: { item: BoardItem }) => {
     case "color":
       return (
         <div
-          className="flex h-72 w-72 items-end rounded-2xl p-4 shadow-2xl"
+          className="flex h-72 w-72 items-end p-4"
           style={{ background: item.color }}
         >
-          <span className="rounded-full bg-black/40 px-3 py-1 text-sm font-medium uppercase tracking-wider text-white backdrop-blur">
+          <span className="bg-black/40 px-3 py-1 text-sm font-medium uppercase tracking-wider text-white backdrop-blur">
             {item.color}
           </span>
         </div>
       );
     case "text":
       return (
-        <div className="max-h-full max-w-2xl overflow-auto rounded-2xl bg-ui-panel p-8 shadow-2xl">
+        <div className="max-h-full max-w-2xl overflow-auto bg-ui-panel p-8">
           <p className="whitespace-pre-wrap text-lg leading-relaxed text-base-fg">
             {item.text || "Note"}
           </p>
@@ -282,13 +282,13 @@ const Media = ({ item }: { item: BoardItem }) => {
           href={item.url}
           target="_blank"
           rel="noreferrer"
-          className="flex max-w-lg flex-col overflow-hidden rounded-2xl bg-ui-panel shadow-2xl"
+          className="flex max-w-lg flex-col overflow-hidden bg-ui-panel"
         >
           {item.image && (
             <img src={item.image} alt="" className="w-full object-cover" />
           )}
           <div className="flex items-start gap-3 p-5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-base-fg/8">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] bg-base-fg/8">
               <Favicon url={item.url} className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -321,7 +321,7 @@ const NavArrow = ({
       onClick();
     }}
     className={[
-      "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full",
+      "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[3px]",
       "bg-black/50 text-white/70 opacity-0 transition-opacity duration-200",
       "hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none",
       side === "left" ? "left-3" : "right-3",
@@ -329,7 +329,7 @@ const NavArrow = ({
   >
     <DynamicIcon
       icon={side === "left" ? ChevronLeftIcon : ChevronRightIcon}
-      className="text-lg"
+      className="text-base"
     />
   </button>
 );

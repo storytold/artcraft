@@ -142,7 +142,7 @@ const AudioRefTile = ({
           }
           onRemove(audio.id);
         }}
-        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-[3px] bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors cursor-pointer"
       >
         <XIcon  className="h-2.5 w-2.5" />
       </button>
@@ -284,7 +284,7 @@ export const ImagePromptRow = ({
           onPointerDown={(e) => {
             e.stopPropagation();
           }}
-          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-[3px] bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors cursor-pointer"
         >
           <XIcon  className="h-2.5 w-2.5" />
         </button>
@@ -934,7 +934,7 @@ export const ImagePromptRow = ({
                             e.stopPropagation();
                             handleRemoveReference(image.id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-[3px] bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors cursor-pointer"
                         >
                           <XIcon
                             
@@ -1017,7 +1017,7 @@ export const ImagePromptRow = ({
                     >
                       <PlusIcon
                         
-                        className="text-2xl opacity-80 text-base-fg" />
+                        className="text-xl opacity-80 text-base-fg" />
                     </Button>
                   </Tooltip>
                 )}
@@ -1058,7 +1058,7 @@ export const ImagePromptRow = ({
                           e.stopPropagation();
                           setEndFrameImage?.(undefined);
                         }}
-                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-[3px] bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors cursor-pointer"
                       >
                         <XIcon
                           
@@ -1126,7 +1126,7 @@ export const ImagePromptRow = ({
                       >
                         <PlusIcon
                           
-                          className="text-2xl opacity-80 text-base-fg" />
+                          className="text-xl opacity-80 text-base-fg" />
                       </Button>
                     </Tooltip>
                   )}
@@ -1172,7 +1172,7 @@ export const ImagePromptRow = ({
                           e.stopPropagation();
                           handleRemoveVideo(video.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-[3px] bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors cursor-pointer"
                       >
                         <XIcon
                           
@@ -1236,7 +1236,7 @@ export const ImagePromptRow = ({
                         >
                           <PlusIcon
                             
-                            className="text-2xl opacity-80 text-base-fg" />
+                            className="text-xl opacity-80 text-base-fg" />
                         </Button>
                       </Tooltip>
                     )}
@@ -1286,7 +1286,7 @@ export const ImagePromptRow = ({
                       >
                         <PlusIcon
                           
-                          className="text-2xl opacity-80 text-base-fg" />
+                          className="text-xl opacity-80 text-base-fg" />
                       </Button>
                     )}
                 </div>

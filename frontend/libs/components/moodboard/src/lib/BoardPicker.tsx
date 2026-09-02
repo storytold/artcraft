@@ -72,20 +72,20 @@ export const BoardPicker = () => {
         onClick={() => setOpen((v) => !v)}
         title="Switch board"
         aria-label="Switch board"
-        className="flex max-w-[180px] items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium text-base-fg/70 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex max-w-[180px] items-center gap-2 rounded-[3px] px-3.5 py-1.5 text-sm font-medium text-base-fg/70 transition-colors duration-150 hover:bg-white/5 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <span className="truncate">{activeBoard?.name ?? "Boards"}</span>
         <ChevronDownIcon  className="h-3 w-3 shrink-0" />
       </button>
 
       {open && (
-        <div className="glass absolute left-0 top-full z-50 mt-1.5 w-64 rounded-2xl border border-ui-divider p-1.5 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)]">
+        <div className="glass absolute left-0 top-full z-50 mt-1.5 w-64 border border-ui-divider p-1.5">
           <div className="max-h-72 overflow-y-auto">
             {orderedBoards.map((board) => (
               <div
                 key={board.id}
                 className={[
-                  "group flex items-center gap-1 rounded-xl",
+                  "group flex items-center gap-1 rounded-[3px]",
                   board.id === activeBoardId
                     ? "bg-base-fg/15"
                     : "hover:bg-base-fg/10",
@@ -103,7 +103,7 @@ export const BoardPicker = () => {
                   title={`Delete ${board.name}`}
                   aria-label={`Delete ${board.name}`}
                   onClick={() => void handleDelete(board.id)}
-                  className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-base-fg/40 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                  className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] text-base-fg/40 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
                 >
                   <Trash2Icon  className="h-3 w-3" />
                 </button>
@@ -113,7 +113,7 @@ export const BoardPicker = () => {
           <button
             type="button"
             onClick={handleNewBoard}
-            className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-base-fg/70 transition-colors hover:bg-base-fg/10 hover:text-base-fg focus:outline-none"
+            className="mt-1 flex w-full items-center gap-2 rounded-[3px] px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/70 transition-colors hover:bg-base-fg/10 hover:text-base-fg focus:outline-none"
           >
             <PlusIcon  className="h-3 w-3" />
             New board

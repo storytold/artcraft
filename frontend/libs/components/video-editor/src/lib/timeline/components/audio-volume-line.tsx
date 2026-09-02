@@ -256,7 +256,7 @@ export function AudioVolumeLine({
           tooltipClientPos &&
           createPortal(
             <div
-              className="pointer-events-none fixed left-0 top-0 z-50 -translate-y-full rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-medium text-white whitespace-nowrap"
+              className="pointer-events-none fixed left-0 top-0 z-50 -translate-y-full rounded-[3px] bg-black/75 px-1.5 py-0.5 text-[10px] font-medium text-white whitespace-nowrap"
               style={{
                 transform: `translate(${tooltipClientPos.x}px, ${tooltipClientPos.y}px)`,
               }}

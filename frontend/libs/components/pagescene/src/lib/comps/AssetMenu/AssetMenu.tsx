@@ -20,11 +20,11 @@ export const AssetMenu = () => {
 
   return (
     <>
-      <div className="glass absolute left-2 top-1/2 flex -translate-y-1/2 flex-col gap-1 rounded-lg p-1">
+      <div className="glass absolute left-2 top-1/2 flex -translate-y-1/2 flex-col gap-1 p-1">
         <Tooltip content="Add 3D object to scene" position="right" delay={100}>
           <Button
             icon={BoxIcon}
-            className="h-12 w-12 text-lg"
+            className="h-12 w-12 text-base"
             onClick={handleOpenModal}
           />
         </Tooltip>
@@ -35,7 +35,7 @@ export const AssetMenu = () => {
         >
           <Button
             icon={WandSparklesIcon}
-            className="h-12 w-12 text-lg"
+            className="h-12 w-12 text-base"
             variant="secondary"
             disabled={true}
             onClick={handleOpenModal}

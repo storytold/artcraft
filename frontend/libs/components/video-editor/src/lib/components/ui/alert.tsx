@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-5 py-4.5 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-destructive [&>svg~*]:pl-7",
+  "relative w-full rounded-[3px] border p-5 py-4.5 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-destructive [&>svg~*]:pl-7",
   {
     variants: {
       variant: {
@@ -48,7 +48,7 @@ const AlertTitle = React.forwardRef<
   <h5
     ref={ref}
     className={cn(
-      "mb-2 text-base leading-none font-semibold tracking-tight",
+      "mb-2 text-sm leading-none font-semibold tracking-tight",
       className,
     )}
     {...props}

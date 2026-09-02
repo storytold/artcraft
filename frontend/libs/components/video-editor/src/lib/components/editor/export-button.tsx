@@ -133,7 +133,7 @@ export function ExportButton() {
           }}
         >
           <HugeiconsIcon icon={TransitionTopIcon} className="z-50 size-3.5" />
-          <span className="z-50 text-[0.875rem]">Export</span>
+          <span className="z-50 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">Export</span>
         </Button>
       </PopoverTrigger>
       {hasProject && <ExportPopover onOpenChange={setIsExportPopoverOpen} />}
@@ -416,7 +416,7 @@ function ExportPopover({
 
                 <Button
                   variant="outline"
-                  className="w-full rounded-md"
+                  className="w-full rounded-[3px]"
                   onClick={handleCancel}
                 >
                   Cancel
@@ -477,7 +477,7 @@ function SavePhasePanel({
       {settled && (
         <Button
           variant="outline"
-          className="w-full rounded-md"
+          className="w-full rounded-[3px]"
           onClick={onDismiss}
         >
           Close

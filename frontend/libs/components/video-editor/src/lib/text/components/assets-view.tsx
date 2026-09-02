@@ -28,7 +28,7 @@ export function TextView() {
       <DraggableItem
         name="Default text"
         preview={
-          <div className="bg-accent flex size-full items-center justify-center rounded-lg">
+          <div className="bg-accent flex size-full items-center justify-center rounded-[3px]">
             <span className="text-xs select-none">Default text</span>
           </div>
         }

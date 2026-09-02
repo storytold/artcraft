@@ -8,20 +8,20 @@ import { forwardRef, type ComponentProps } from "react";
 import { useState } from "react";
 
 const inputVariants = cva(
-  "file:text-foreground placeholder:text-muted-foreground border-border bg-input flex w-full min-w-0 rounded-md border shadow-xs outline-none file:inline-flex file:border-0 file:bg-transparent file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-offset-0 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "file:text-foreground placeholder:text-muted-foreground border-border bg-input flex w-full min-w-0 rounded-[3px] border outline-none file:inline-flex file:border-0 file:bg-transparent file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-offset-0 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        default: "selection:bg-primary selection:text-primary-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20",
+        default: "selection:bg-primary selection:text-primary-foreground focus-visible:border-primary/60 focus-visible:ring-0",
         outline: "bg-background",
         destructive:
           "selection:bg-destructive selection:text-destructive-foreground focus-visible:border-destructive focus-visible:ring-destructive/10",
       },
       size: {
-        default: "h-9 px-3 py-1 text-base file:h-7 file:text-sm md:text-sm",
+        default: "h-9 px-3 py-1 text-sm file:h-7 file:text-sm",
         xs: "h-7 px-3 text-xs file:h-6 file:text-xs",
         sm: "h-7 px-3 text-sm file:h-6 file:text-xs",
-        lg: "h-10 px-4 text-base file:h-8 file:text-sm md:text-sm",
+        lg: "h-10 px-4 text-sm file:h-8 file:text-sm",
       },
     },
     defaultVariants: {

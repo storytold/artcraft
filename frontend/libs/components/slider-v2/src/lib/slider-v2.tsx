@@ -113,7 +113,7 @@ export const SliderV2 = ({
       {showDecrement && (
         <Button
           icon={MinusIcon}
-          className="focus-visible:outline-primary my-auto mr-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
+          className="focus-visible:outline-primary my-auto mr-1 size-6 rounded-[3px] bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
           onClick={handleDecrement}
         />
       )}
@@ -122,7 +122,7 @@ export const SliderV2 = ({
         <div
           ref={sliderRef}
           className={twMerge(
-            "glass border-ui-border group relative h-7 w-full cursor-pointer overflow-hidden rounded-lg border",
+            "glass border-ui-border group relative h-7 w-full cursor-pointer overflow-hidden border",
             isDragging && "!bg-ui-controls/90",
             className
           )}
@@ -138,7 +138,7 @@ export const SliderV2 = ({
             {innerLabel && (
               <span
                 className={twMerge(
-                  "absolute top-1/2 ml-2.5 -translate-y-1/2 text-nowrap text-sm font-medium text-white/60 transition-colors duration-300 group-hover:text-white",
+                  "absolute top-1/2 ml-2.5 -translate-y-1/2 text-nowrap text-xs font-medium text-white/60 transition-colors duration-300 group-hover:text-white",
                   isDragging && "!text-white"
                 )}
               >
@@ -165,17 +165,17 @@ export const SliderV2 = ({
           )}
           onMouseDown={handleMouseDown}
         >
-          <div className="absolute left-0 right-0 h-2 bg-ui-border rounded-full bg-white/15" />
+          <div className="absolute left-0 right-0 h-2 bg-white/15" />
           {showProgressBar && (
             <div
-              className="absolute left-0 h-2 bg-white rounded-full transition-all duration-200"
+              className="absolute left-0 h-2 bg-white transition-all duration-200"
               style={{ width: `${percentage}%` }}
             />
           )}
           <div
             className={twMerge(
-              "absolute top-1/2 z-10 size-4 -translate-y-1/2 rounded-full border-2 border-white bg-white shadow transition-colors duration-200 hover:ring-[4px] hover:ring-white/20",
-              isDragging ? "ring-[4px] ring-white/20" : ""
+              "absolute top-1/2 z-10 size-4 -translate-y-1/2 rounded-[2px] bg-white transition-transform duration-150 hover:scale-110",
+              isDragging ? "scale-110" : ""
             )}
             style={{ left: `calc(${percentage}% - 10px)` }}
             onMouseDown={handleMouseDown}
@@ -188,7 +188,7 @@ export const SliderV2 = ({
       {showIncrement && (
         <Button
           icon={PlusIcon}
-          className="focus-visible:outline-primary my-auto ml-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
+          className="focus-visible:outline-primary my-auto ml-1 size-6 rounded-[3px] bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
           onClick={handleIncrement}
         />
       )}
@@ -205,7 +205,7 @@ export const SliderV2 = ({
           leaveTo="opacity-0"
         >
           <div
-            className="absolute -top-8 z-10 rounded-md bg-ui-panel px-2 py-1 text-xs text-black shadow-lg"
+            className="absolute -top-8 z-10 rounded-[3px] border border-ui-panel-border bg-ui-panel px-2 py-1 text-xs text-base-fg"
             style={{ left: `${percentage}%`, transform: "translateX(-50%)" }}
           >
             {tooltipContent ? tooltipContent : displayValue}

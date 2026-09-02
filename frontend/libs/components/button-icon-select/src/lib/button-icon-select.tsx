@@ -50,17 +50,17 @@ export function ButtonIconSelect({
           >
             <button
               className={twMerge(
-                "flex h-9 items-center justify-center rounded-lg border text-sm outline-none transition-all duration-150 focus:outline-none",
+                "flex h-9 items-center justify-center rounded-[3px] border text-sm outline-none transition-colors duration-150 focus:outline-none",
                 text ? "h-auto w-auto gap-2 px-3 py-1.5" : "w-9",
                 internalSelectedOption === value
                   ? "border-brand-primary bg-brand-primary/20"
-                  : "border-transparent hover:bg-ui-panel/[0.4]"
+                  : "border-transparent hover:bg-white/10"
               )}
               onClick={() => handleOptionChange(value)}
             >
               <DynamicIcon icon={icon} />
               {text && (
-                <span className="text-nowrap text-sm font-medium">{text}</span>
+                <span className="text-nowrap text-xs font-medium">{text}</span>
               )}
             </button>
           </Tooltip>
@@ -68,17 +68,17 @@ export function ButtonIconSelect({
           <button
             key={value}
             className={twMerge(
-              `flex h-9 items-center justify-center rounded-lg border text-sm transition-all duration-150`,
+              `flex h-9 items-center justify-center rounded-[3px] border text-sm transition-colors duration-150`,
               text ? "h-auto w-auto gap-2 px-3 py-1.5" : "w-9",
               internalSelectedOption === value
                 ? "border-brand-primary bg-brand-primary/20"
-                : "border-transparent hover:bg-ui-panel/[0.4]"
+                : "border-transparent hover:bg-white/10"
             )}
             onClick={() => handleOptionChange(value)}
           >
             <DynamicIcon icon={icon} />
             {text && (
-              <span className="text-nowrap text-sm font-medium">{text}</span>
+              <span className="text-nowrap text-xs font-medium">{text}</span>
             )}
           </button>
         )

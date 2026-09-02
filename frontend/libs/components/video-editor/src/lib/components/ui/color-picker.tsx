@@ -333,7 +333,7 @@ function ColorPickerContent({
 
         <button
           ref={hueRef}
-          className="relative h-4 w-full rounded-lg appearance-none border-0 bg-transparent p-0"
+          className="relative h-4 w-full rounded-[3px] appearance-none border-0 bg-transparent p-0"
           style={hueStyle}
           type="button"
           onMouseDown={handleHueMouseDown}
@@ -349,13 +349,13 @@ function ColorPickerContent({
 
         <button
           ref={opacityRef}
-          className="relative h-4 w-full overflow-hidden rounded-lg appearance-none border-0 p-0"
+          className="relative h-4 w-full overflow-hidden rounded-[3px] appearance-none border-0 p-0"
           type="button"
           onMouseDown={handleOpacityMouseDown}
         >
           <div className="absolute inset-0 dark:invert" style={CHECKERBOARD_STYLE} />
           <div
-            className="absolute inset-0 rounded-lg"
+            className="absolute inset-0 rounded-[3px]"
             style={{
               background: `linear-gradient(to right, transparent, #${rgbValue})`,
             }}
@@ -488,7 +488,7 @@ const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(
         <div
           ref={ref}
           className={cn(
-            "bg-accent flex h-7 border flex-1 items-center gap-2 rounded-md px-[0.45rem]",
+            "bg-accent flex h-7 border flex-1 items-center gap-2 rounded-[3px] px-[0.45rem]",
             className,
           )}
           {...props}
@@ -545,7 +545,7 @@ const ColorCircle = ({
 }) => (
   <div
     className={cn(
-      "pointer-events-none absolute rounded-full border-3 border-white shadow-lg",
+      "pointer-events-none absolute rounded-full border-2 border-white",
       size === "sm" ? "size-3" : "size-4",
     )}
     style={{

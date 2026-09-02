@@ -77,7 +77,7 @@ export const PromptFullscreenModal = ({
           lets the editor's textarea scroll instead of stretching the panel.
           min-h-0 on the flex children lets them shrink below content size. */}
       <div className="flex min-h-0 flex-col gap-2" style={{ height: "70vh" }}>
-        <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
+        <h2 className="shrink-0 text-base font-semibold text-base-fg">Prompt</h2>
         {/* flex-1 so the editor takes only the space left after the (shrink-0)
             image row + footer — that's what keeps it from overflowing when the
             window is shorter. min-h-0 + overflow-hidden bound the editor area so

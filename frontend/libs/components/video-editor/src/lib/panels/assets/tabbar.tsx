@@ -58,7 +58,7 @@ export function TabBar() {
                   aria-label={tab.label}
                   className={cn(
                     "shrink-0",
-                    "h-8 w-8 rounded-lg border-transparent",
+                    "h-8 w-8 rounded-[3px] border-transparent",
                     activeTab !== tabKey && "text-muted-foreground",
                   )}
                   onClick={() => setActiveTab(tabKey)}

@@ -34,7 +34,7 @@ export function SelectionActionBar({
       className={`pointer-events-none fixed inset-x-0 z-40 flex justify-center ${className ?? "bottom-6"}`}
       style={style}
     >
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-[3px] border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 backdrop-blur">
         <span className="px-1 text-sm font-medium text-white/80">
           {count} selected
         </span>
@@ -43,7 +43,7 @@ export function SelectionActionBar({
           type="button"
           aria-label="Exit selection"
           onClick={() => setActive(false)}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-ui-controls/60 text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <XIcon />
         </button>

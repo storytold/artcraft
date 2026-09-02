@@ -651,7 +651,7 @@ export const PromptBox3D = ({
         {onBuildModeChange && (
           <div className="flex">
             <div
-              className="glass glass-no-hover rounded-full p-1 shadow-xl"
+              className="glass glass-no-hover p-1"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
@@ -992,7 +992,7 @@ export const PromptBox3D = ({
               <button
                 type="button"
                 onClick={toggleExpand}
-                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+                className="text-base-fg/30 hover:text-base-fg/90 rounded-[3px] hover:bg-white/5 transition-colors px-3 py-0.5"
               >
                 <DynamicIcon
                   icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}

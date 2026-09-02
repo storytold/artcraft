@@ -75,7 +75,7 @@ export const MotionPopover = ({
   return (
     <div
       id="motion-popover"
-      className="glass glass-no-hover pointer-events-auto absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 select-none rounded-2xl p-3 shadow-xl backdrop-blur-md"
+      className="glass glass-no-hover pointer-events-auto absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 select-none p-3 backdrop-blur-md"
       style={{ left: `${Math.max(12, Math.min(88, leftPercent))}%` }}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
@@ -95,7 +95,7 @@ export const MotionPopover = ({
               type="button"
               title={p.label}
               onClick={() => commit({ ...preset })}
-              className={`flex h-8 items-center justify-center rounded-md border transition-colors ${
+              className={`flex h-8 items-center justify-center rounded-[3px] border transition-colors ${
                 active
                   ? "border-brand-primary bg-brand-primary/20"
                   : "border-ui-controls-border/60 hover:bg-ui-controls/40"
@@ -118,7 +118,7 @@ export const MotionPopover = ({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${BOX} ${BOX}`}
-        className="w-full touch-none rounded-lg bg-black/20"
+        className="w-full touch-none rounded-[3px] bg-black/20"
         onPointerMove={onPointerMove}
         onPointerUp={() => setDragging(null)}
         onPointerLeave={() => setDragging(null)}

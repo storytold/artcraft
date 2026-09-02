@@ -18,7 +18,7 @@ const SplitButton = forwardRef<HTMLDivElement, SplitButtonProps>(
       <div
         ref={ref}
         className={cn(
-          "border-input bg-accent inline-flex h-7 overflow-hidden rounded-lg border",
+          "border-input bg-accent inline-flex h-7 overflow-hidden rounded-[3px] border",
           className,
         )}
         {...props}

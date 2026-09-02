@@ -498,7 +498,7 @@ function MediaDurationBadge({ duration }: { duration?: number }) {
   if (!duration) return null;
 
   return (
-    <div className="absolute right-1 bottom-1 rounded bg-black/70 px-1 text-xs text-white">
+    <div className="absolute right-1 bottom-1 bg-black/70 px-1 text-xs text-white">
       {formatDuration({ duration })}
     </div>
   );
@@ -528,7 +528,7 @@ function MediaTypePlaceholder({
   return (
     <div
       className={cn(
-        "text-muted-foreground flex size-full flex-col items-center justify-center rounded",
+        "text-muted-foreground flex size-full flex-col items-center justify-center rounded-[3px]",
         variant === "muted" ? "bg-muted/30" : "border",
       )}
     >
@@ -570,7 +570,7 @@ function MediaPreview({
           <img
             src={item.thumbnailUrl}
             alt={item.name}
-            className="absolute inset-0 h-full w-full rounded object-cover"
+            className="absolute inset-0 h-full w-full rounded-[3px] object-cover"
             loading="lazy"
           />
           {shouldShowDurationBadge ? (

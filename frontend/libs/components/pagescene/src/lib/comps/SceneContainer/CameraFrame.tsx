@@ -170,7 +170,7 @@ export const CameraFrame = ({
         <div className="absolute left-0 right-0 top-1/3 h-px bg-white/15" />
         <div className="absolute left-0 right-0 top-2/3 h-px bg-white/15" />
         {focalLength !== undefined && (
-          <div className="absolute left-3 top-2 text-sm font-medium text-white/80 drop-shadow">
+          <div className="absolute left-3 top-2 text-sm font-medium text-white/80">
             {focalLength}mm
           </div>
         )}

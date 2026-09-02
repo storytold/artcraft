@@ -247,7 +247,7 @@ function EditableProjectName() {
       onKeyDown={handleKeyDown}
       style={{ fieldSizing: "content" } as React.CSSProperties}
       className={cn(
-        "text-[0.9rem] h-8 px-2 py-1 rounded-sm bg-transparent outline-none cursor-pointer hover:bg-accent hover:text-accent-foreground",
+        "text-sm h-8 px-2 py-1 rounded-sm bg-transparent outline-none cursor-pointer hover:bg-white/10 hover:text-accent-foreground",
         isEditing && "ring-1 ring-ring cursor-text hover:bg-transparent",
       )}
     />

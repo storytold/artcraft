@@ -13,7 +13,7 @@ export const PreviewImages = () => {
   return (
     <div className="flex justify-center gap-1">
       <div
-        className="block w-full overflow-hidden rounded-lg border border-ui-controls/25 bg-ui-panel"
+        className="block w-full overflow-hidden rounded-[3px] border border-ui-controls/25 bg-ui-panel"
         style={{ height: imageHeight, width: imageWidth }}
       >
         <canvas id="raw-preview" width={imageWidth} height={imageHeight} />
@@ -21,10 +21,10 @@ export const PreviewImages = () => {
       <div className="flex w-[60px] flex-col justify-center">
         <MoveRightIcon
           
-          className="text-3xl opacity-60" />
+          className="text-xl opacity-60" />
       </div>
       <div
-        className="block w-full overflow-hidden rounded-lg border border-ui-controls/25 bg-ui-panel"
+        className="block w-full overflow-hidden rounded-[3px] border border-ui-controls/25 bg-ui-panel"
         style={{ height: imageHeight, width: imageWidth }}
       >
         <img

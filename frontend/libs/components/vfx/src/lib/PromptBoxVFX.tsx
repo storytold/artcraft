@@ -255,15 +255,15 @@ export const PromptBoxVFX = ({
     <div className="relative w-full">
       {showPromptPopover && (
         <div className="absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2">
-          <div className="glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 shadow-2xl sm:px-4 sm:py-3">
+          <div className="glass flex flex-col gap-1.5 px-3 py-2 sm:px-4 sm:py-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/60">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-base-fg/60">
                 Prompt (optional)
               </span>
               <button
                 type="button"
                 onClick={() => setShowPromptPopover(false)}
-                className="flex h-5 w-5 items-center justify-center rounded-full text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
+                className="flex h-5 w-5 items-center justify-center rounded-[3px] text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
                 aria-label="Close prompt"
               >
                 <XIcon  className="h-3 w-3" />
@@ -292,7 +292,7 @@ export const PromptBoxVFX = ({
 
       <div
         className={twMerge(
-          "glass flex w-full flex-col gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 shadow-2xl",
+          "glass flex w-full flex-col gap-3 sm:gap-4 p-3 sm:p-4",
           containerClassName,
         )}
       >
@@ -381,7 +381,7 @@ export const PromptBoxVFX = ({
               type="button"
               onClick={() => setShowPromptPopover((v) => !v)}
               className={twMerge(
-                "flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-sm outline-none transition-all duration-150 hover:bg-ui-controls/80 active:scale-95",
+                "flex items-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-xs font-medium text-base-fg outline-none transition-colors duration-150 hover:bg-white/10 hover:border-white/30",
                 showPromptPopover && "bg-base-fg/15",
                 hasPrompt &&
                   "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
@@ -410,7 +410,7 @@ export const PromptBoxVFX = ({
               onClick={onSubmit}
               disabled={!canSubmit}
               loading={isSubmitting}
-              className="border-none bg-primary px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-primary px-4 text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Generate
             </GenerateButton>
@@ -468,11 +468,11 @@ const UploadTile = ({
   const tileSize = tileClassName ?? "h-12 w-12";
   return (
     <div className="flex shrink-0 flex-col items-center gap-1">
-      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider leading-none text-base-fg/70">
+      <div className="flex items-center gap-1 font-mono text-[10px] font-medium uppercase tracking-[0.15em] leading-none text-base-fg/70">
         <span>{label}</span>
         {required && <span className="text-primary-400">*</span>}
         {optional && (
-          <span className="rounded bg-base-fg/10 px-1 py-px text-[9px] font-medium normal-case tracking-normal text-base-fg/40">
+          <span className="bg-base-fg/10 px-1 py-px font-sans text-[9px] font-medium normal-case tracking-normal text-base-fg/40">
             optional
           </span>
         )}
@@ -509,22 +509,22 @@ const UploadTile = ({
           <Button
             variant="action"
             className={twMerge(
-              "bg-ui-controls/40 hover:bg-ui-controls/60 overflow-hidden rounded-lg border-dashed border-2 border-black/10 dark:border-white/25 transition-all",
+              "bg-white/5 hover:bg-white/10 overflow-hidden rounded-[3px] border border-dashed border-white/25 hover:border-white/40 transition-colors",
               tileSize,
             )}
             onClick={onUpload}
           >
             <DynamicIcon
               icon={icon}
-              className="text-2xl opacity-80 text-base-fg"
+              className="text-lg opacity-80 text-base-fg"
             />
           </Button>
         </Tooltip>
       ) : (
         <div
           className={twMerge(
-            "glass group relative flex items-center justify-center overflow-hidden rounded-lg border-2 transition-all",
-            "border-white/30 hover:border-white/80",
+            "glass group relative flex items-center justify-center overflow-hidden transition-colors",
+            "border-white/15 hover:border-white/50",
             tileSize,
           )}
         >
@@ -551,7 +551,7 @@ const UploadTile = ({
               <button
                 type="button"
                 onClick={onClear}
-                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
+                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
               >
                 <XIcon  className="h-2.5 w-2.5" />
               </button>

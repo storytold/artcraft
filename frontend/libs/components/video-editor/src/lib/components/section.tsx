@@ -68,7 +68,7 @@ export function Section({
     <SectionCtx.Provider value={{ isOpen, toggle, collapsible }}>
       <div
         className={cn(
-          "flex flex-col border-white/5",
+          "flex flex-col border-white/10",
           showTopBorder && "border-t first:border-t-0",
           showBottomBorder && "border-b",
           className,
@@ -173,7 +173,7 @@ export function SectionTitle({
   const isOpen = ctx?.isOpen ?? true;
 
   const titleClass = cn(
-    "text-sm font-medium",
+    "font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground",
     isCollapsible && isOpen ? "text-foreground" : "text-muted-foreground",
     className,
   );

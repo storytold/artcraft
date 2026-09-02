@@ -44,7 +44,7 @@ export const VFXResultCard = ({
         className,
       )}
     >
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
+      <div className="relative aspect-video w-full overflow-hidden rounded-[3px] bg-black ring-1 ring-white/15">
         {data.status === "complete" && data.outputUrl ? (
           <video
             src={data.outputUrl}
@@ -68,7 +68,7 @@ export const VFXResultCard = ({
             {onDismiss && (
               <button
                 onClick={onDismiss}
-                className="mt-1 flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white/80"
+                className="mt-1 flex items-center gap-1.5 rounded-[3px] bg-white/5 px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white/80"
               >
                 <XIcon />
                 Dismiss
@@ -77,7 +77,7 @@ export const VFXResultCard = ({
           </div>
         ) : null}
         {data.title && data.status === "complete" && (
-          <div className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium uppercase tracking-wider text-white/80 backdrop-blur-sm">
+          <div className="absolute left-3 top-3 bg-black/60 px-2 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white/80 backdrop-blur-sm">
             Output
           </div>
         )}
@@ -94,14 +94,14 @@ export const VFXResultCard = ({
         {data.prompt && data.prompt.trim().length > 0 && (
           <div
             className={twMerge(
-              "group relative max-h-44 min-h-0 overflow-y-auto rounded-lg px-3 py-2 text-xs",
+              "group relative max-h-44 min-h-0 overflow-y-auto rounded-[3px] px-3 py-2 text-xs",
               panelGlassClassName,
               promptTextClassName,
             )}
           >
             <div
               className={twMerge(
-                "mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider",
+                "mb-1 flex items-center justify-between gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.15em]",
                 promptLabelClassName,
               )}
             >
@@ -115,7 +115,7 @@ export const VFXResultCard = ({
           <button
             onClick={onTryThis}
             className={twMerge(
-              "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+              "flex items-center justify-center gap-2 rounded-[3px] border px-3 py-2 text-xs font-medium transition-colors",
               tryButtonClassName,
             )}
           >
@@ -167,7 +167,7 @@ interface SidePanelMediaProps {
 }
 
 const SidePanelMedia = ({ label, url, isVideo }: SidePanelMediaProps) => (
-  <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black/40 ring-1 ring-white/10">
+  <div className="relative aspect-video w-full overflow-hidden rounded-[3px] bg-black/40 ring-1 ring-white/15">
     {isVideo ? (
       <video
         src={url}
@@ -180,7 +180,7 @@ const SidePanelMedia = ({ label, url, isVideo }: SidePanelMediaProps) => (
     ) : (
       <img src={url} alt={label} className="h-full w-full object-cover" />
     )}
-    <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/80 backdrop-blur-sm">
+    <span className="absolute left-2 top-2 bg-black/60 px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white/80 backdrop-blur-sm">
       {label}
     </span>
   </div>

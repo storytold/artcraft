@@ -105,7 +105,7 @@ export const BoardGridToolbar = ({
         <ToolbarDivider />
 
         {/* Density segmented control */}
-        <div className="flex items-center gap-0.5 rounded-full bg-base-fg/5 p-0.5">
+        <div className="flex items-center gap-0.5 rounded-[3px] bg-base-fg/5 p-0.5">
           {DENSITY_ORDER.map((d) => {
             const active = d === density;
             return (
@@ -116,11 +116,11 @@ export const BoardGridToolbar = ({
                 aria-label={`${DENSITY_LABEL[d]} density`}
                 onClick={() => onDensityChange(d)}
                 className={[
-                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150",
+                  "flex h-7 w-7 items-center justify-center rounded-[2px] transition-colors duration-150",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   active
                     ? "bg-base-fg/15 text-base-fg"
-                    : "text-base-fg/50 hover:text-base-fg",
+                    : "text-base-fg/50 hover:bg-white/5 hover:text-base-fg",
                 ].join(" ")}
               >
                 <DynamicIcon
@@ -145,7 +145,7 @@ export const BoardGridToolbar = ({
           aria-label="Filter by rating"
           onClick={onCycleRatingFilter}
           className={[
-            "flex h-8 items-center gap-1 rounded-full px-2.5 transition-colors duration-150",
+            "flex h-8 items-center gap-1 rounded-[3px] px-2.5 transition-colors duration-150",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             ratingFilter > 0
               ? "bg-yellow-400/15 text-yellow-500"
@@ -209,7 +209,7 @@ const BoardTitle = ({
           else if (e.key === "Escape") setEditing(false);
         }}
         onBlur={commit}
-        className="min-w-0 rounded-md bg-base-fg/5 px-1.5 py-0.5 text-sm font-semibold leading-tight text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="min-w-0 rounded-[3px] bg-base-fg/5 px-1.5 py-0.5 text-sm font-semibold leading-tight text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       />
     );
   }
@@ -222,7 +222,7 @@ const BoardTitle = ({
         setDraft(name);
         setEditing(true);
       }}
-      className="truncate rounded-md px-1.5 py-0.5 text-left text-sm font-semibold leading-tight text-base-fg transition-colors hover:bg-base-fg/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="truncate rounded-[3px] px-1.5 py-0.5 text-left text-sm font-semibold leading-tight text-base-fg transition-colors hover:bg-base-fg/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       {name}
     </button>

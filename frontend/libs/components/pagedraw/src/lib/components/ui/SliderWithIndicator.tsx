@@ -57,11 +57,12 @@ const SliderWithIndicator: React.FC<SliderWithIndicatorProps> = ({
             className="
               absolute
               top-6 -translate-x-1/2
-              transform rounded
+              transform rounded-[3px]
+              border border-ui-controls-border
               bg-ui-controls
               px-2 py-1
               text-xs font-medium
-              text-white shadow-lg
+              text-white
               transition-all
               duration-150 after:absolute after:-top-1.5 after:left-1/2 after:-translate-x-1/2
             "

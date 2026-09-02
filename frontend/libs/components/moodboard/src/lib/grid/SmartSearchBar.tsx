@@ -19,7 +19,7 @@ export const SmartSearchBar = ({
 }: Props) => {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <div className="bg-ui-controls flex h-9 min-w-[200px] transition-all items-center gap-2 rounded-xl border border-ui-controls px-3 focus-within:ring-2 focus-within:ring-primary/50">
+      <div className="bg-ui-controls flex h-9 min-w-[200px] transition-colors items-center gap-2 rounded-[3px] border border-ui-controls-border px-3 focus-within:ring-2 focus-within:ring-primary/50">
         <SearchIcon
           
           className="h-3.5 w-3.5 text-base-fg/45" />
@@ -34,7 +34,7 @@ export const SmartSearchBar = ({
             type="button"
             aria-label="Clear search"
             onClick={() => onQueryChange("")}
-            className="rounded-full text-base-fg/45 transition-colors hover:text-base-fg focus:outline-none focus-visible:text-base-fg focus-visible:ring-2 focus-visible:ring-primary"
+            className="rounded-[3px] text-base-fg/45 transition-colors hover:text-base-fg focus:outline-none focus-visible:text-base-fg focus-visible:ring-2 focus-visible:ring-primary"
           >
             <XIcon  className="h-3.5 w-3.5" />
           </button>
@@ -51,7 +51,7 @@ export const SmartSearchBar = ({
                 type="button"
                 onClick={() => onToggleTag(tag)}
                 className={[
-                  "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors duration-150",
+                  "shrink-0 rounded-[3px] px-2.5 py-1 text-[11px] font-medium transition-colors duration-150",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   active
                     ? "bg-primary text-white"

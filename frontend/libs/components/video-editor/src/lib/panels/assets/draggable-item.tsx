@@ -179,7 +179,7 @@ export function DraggableItem({
             <div className="w-[80px]">
               <AspectRatio
                 ratio={1}
-                className="ring-primary relative overflow-hidden rounded-md shadow-2xl ring-3"
+                className="ring-primary relative overflow-hidden rounded-[3px] ring-2"
               >
                 <div className="size-full [&_img]:size-full [&_img]:rounded-none [&_img]:object-cover">
                   {preview}

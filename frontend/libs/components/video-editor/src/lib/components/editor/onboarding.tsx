@@ -145,7 +145,7 @@ export function Onboarding() {
 }
 
 function Title({ title }: { title: string }) {
-  return <h2 className="text-lg font-bold md:text-xl">{title}</h2>;
+  return <h2 className="text-base font-bold md:text-lg">{title}</h2>;
 }
 
 function Description({ description }: { description: string }) {

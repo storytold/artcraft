@@ -118,7 +118,7 @@ function ProviderTooltipContent({
               {getProviderDisplayName(p)}
             </span>
             {selectedProvider === p && (
-              <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center">
+              <span className="text-primary text-xs font-bold bg-white rounded-[2px] p-0 h-4 w-4 flex items-center justify-center">
                 <CircleCheckIcon />
               </span>
             )}
@@ -306,14 +306,14 @@ export function ClassyModelSelector({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-base-fg/90 text-base font-semibold">Model</span>
+      <span className="text-base-fg/90 text-sm font-semibold">Model</span>
       <PopoverMenu
         items={modelList}
         onSelect={handleModelSelect}
         mode="hoverSelect"
         maxListHeight={maxListHeight}
         {...popoverProps}
-        buttonClassName="rounded-[3px] bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
+        buttonClassName="rounded-[3px] bg-ui-controls/90 hover:bg-white/10 text-left px-3 py-1 gap-3 border border-ui-controls-border hover:border-white/30"
         renderTrigger={(selectedItem) => {
           const modelTitle =
             selectedItem?.label ?? selectedModel?.selectorName ?? "";
@@ -324,11 +324,11 @@ export function ClassyModelSelector({
             <div className="flex items-center justify-between w-full gap-3">
               <div className="flex min-w-0 flex-col">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="truncate text-base font-semibold text-base-fg">
+                  <span className="truncate text-sm font-semibold text-base-fg">
                     {modelTitle}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-base-fg/60 text-[13px] -mt-[1px]">
+                <div className="flex items-center gap-1.5 text-base-fg/60 text-xs -mt-[1px]">
                   <span>via</span>
                   {providerIcon && (
                     <span className="opacity-70">{providerIcon}</span>
@@ -340,7 +340,7 @@ export function ClassyModelSelector({
                   </span>
                 </div>
               </div>
-              <ChevronUpIcon className="text-base text-base-fg/70 self-center" />
+              <ChevronUpIcon className="text-sm text-base-fg/70 self-center" />
             </div>
           );
         }}

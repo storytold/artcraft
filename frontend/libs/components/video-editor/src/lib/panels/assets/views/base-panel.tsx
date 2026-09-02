@@ -34,7 +34,7 @@ export function PanelView({
       {!hideHeader && (
         <div className="bg-background h-11 shrink-0 pl-3 pr-2 flex items-center justify-between border-b border-ui-panel-border">
           {title && (
-            <span className="text-muted-foreground text-sm">{title}</span>
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">{title}</span>
           )}
           {actions}
         </div>

@@ -408,7 +408,7 @@ function SavedSoundsView() {
           className="text-muted-foreground size-10"
         />
         <div className="flex flex-col gap-2 text-center">
-          <p className="text-lg font-medium">No saved sounds</p>
+          <p className="text-base font-medium">No saved sounds</p>
           <p className="text-muted-foreground text-sm text-balance">
             Click the heart icon on any sound to save it here
           </p>
@@ -513,8 +513,8 @@ function AudioItem({ sound, isPlaying, onPlay }: AudioItemProps) {
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
         onClick={handleClick}
       >
-        <div className="bg-accent relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md">
-          <div className="from-primary/20 absolute inset-0 bg-gradient-to-br to-transparent" />
+        <div className="bg-accent relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[3px]">
+          <div className="absolute inset-0 bg-primary/10" />
           {isPlaying ? (
             <HugeiconsIcon icon={PauseIcon} className="size-5" />
           ) : (

@@ -840,7 +840,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       autoFocus
                       placeholder={placeholder}
                       className={twMerge(
-                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent pr-8 text-md text-base-fg placeholder-base-fg/60 focus:outline-none",
+                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent pr-8 text-sm text-base-fg placeholder-base-fg/60 focus:outline-none",
                         isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         hasMentionItems && "text-transparent caret-white",
                       )}
@@ -973,7 +973,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 <button
                   type="button"
                   onClick={toggleExpand}
-                  className="px-3 py-0.5 text-white/30 transition-colors hover:text-white/90"
+                  className="px-3 py-0.5 text-white/30 rounded-[3px] hover:bg-white/5 transition-colors hover:text-white/90"
                 >
                   <DynamicIcon
                     icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
@@ -1038,7 +1038,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           ) : (
             <textarea
               placeholder={placeholder}
-              className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+              className="promptbox-scrollbar text-sm h-full min-h-0 w-full resize-none overflow-y-auto bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
               value={prompt}
               onChange={handleChange}
               onKeyDown={handleKeyDown}

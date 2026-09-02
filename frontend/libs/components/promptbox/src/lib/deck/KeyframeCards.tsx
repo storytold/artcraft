@@ -68,12 +68,12 @@ export const KeyframeCards = ({
                 type="button"
                 onClick={onSwap}
                 title="Swap frames"
-                className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-black/60 text-[10px] text-white shadow backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80"
+                className="flex h-5 w-5 items-center justify-center rounded-[3px] border border-white/20 bg-black/60 text-[10px] text-white backdrop-blur-md transition-all hover:bg-black/80"
               >
                 <ArrowLeftRightIcon />
               </button>
             ) : (
-              <div className="pointer-events-none flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-black/40 text-[10px] text-white/50 backdrop-blur-md">
+              <div className="pointer-events-none flex h-5 w-5 items-center justify-center rounded-[3px] border border-white/10 bg-black/40 text-[10px] text-white/50 backdrop-blur-md">
                 <ArrowLeftRightIcon />
               </div>
             )}
@@ -146,7 +146,7 @@ export const DeckSlotCard = ({
         tiltClass,
       )}
     >
-      <PlusIcon  className="text-lg opacity-80" />
+      <PlusIcon  className="text-base opacity-80" />
       <span className="px-0.5 text-center text-[8px] font-medium leading-tight opacity-70">
         {label}
       </span>

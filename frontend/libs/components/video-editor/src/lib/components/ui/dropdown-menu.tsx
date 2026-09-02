@@ -36,7 +36,7 @@ const DropdownMenuSub = DropdownMenuPrimitive.Sub;
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
 const dropdownMenuItemVariants = cva(
-  "relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm text-foreground/85 outline-hidden data-[highlighted]:bg-white/5 data-disabled:pointer-events-none data-disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0",
+  "relative flex cursor-pointer select-none items-center gap-2 rounded-[3px] px-2.5 py-1.5 text-sm text-foreground/85 outline-hidden data-[highlighted]:bg-white/10 data-disabled:pointer-events-none data-disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -82,7 +82,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "group/menu bg-popover text-popover-foreground z-50 min-w-32 overflow-hidden rounded-md border p-1 shadow-lg",
+      "group/menu bg-popover text-popover-foreground z-50 min-w-32 overflow-hidden rounded-[3px] border border-ui-panel-border p-1",
       className,
     )}
     {...props}
@@ -104,7 +104,7 @@ const DropdownMenuContent = React.forwardRef<
         e.preventDefault();
       }}
       className={cn(
-        "group/menu bg-popover text-popover-foreground z-50 min-w-32 overflow-hidden rounded-lg border border-ui-panel-border p-1 shadow-lg",
+        "group/menu bg-popover text-popover-foreground z-50 min-w-32 overflow-hidden rounded-[3px] border border-ui-panel-border p-1",
         className,
       )}
       {...props}

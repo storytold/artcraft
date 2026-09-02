@@ -34,7 +34,7 @@ export function EntranceDebugPanel() {
   const splatSec = (ENTRANCE_BASE_DURATIONS.splat * scale).toFixed(2);
 
   return (
-    <div className="pointer-events-auto absolute right-2 top-16 z-50 w-56 rounded-lg border border-white/10 bg-black/70 p-3 text-xs text-white/80 backdrop-blur-md">
+    <div className="pointer-events-auto absolute right-2 top-16 z-50 w-56 rounded-[3px] border border-white/15 bg-black/70 p-3 text-xs text-white/80 backdrop-blur-md">
       <div className="mb-2 flex items-center justify-between font-medium text-white/90">
         <span>Entrance speed</span>
         <span className="tabular-nums">{scale.toFixed(2)}×</span>
@@ -55,7 +55,7 @@ export function EntranceDebugPanel() {
       <button
         type="button"
         onClick={() => apply(1)}
-        className="mt-2 w-full rounded border border-white/10 py-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white/90"
+        className="mt-2 w-full rounded-[3px] border border-white/15 py-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white/90"
       >
         Reset to 1× (real timing)
       </button>

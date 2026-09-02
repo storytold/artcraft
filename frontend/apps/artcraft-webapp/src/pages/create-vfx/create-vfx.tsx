@@ -250,7 +250,7 @@ export default function CreateVFX() {
       <div className="flex h-screen items-center justify-center bg-ui-background">
         <LoaderCircleIcon
 
-          className="animate-spin text-4xl text-primary/80" />
+          className="animate-spin text-2xl text-primary/80" />
       </div>
     );
   }
@@ -339,9 +339,9 @@ interface EmptyStateProps {
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
     <div className="flex h-12 w-12 items-center justify-center border border-white/15 bg-white/5">
-      <SparklesIcon  className="text-2xl text-white/40" />
+      <SparklesIcon  className="text-xl text-white/40" />
     </div>
-    <h3 className="text-2xl font-bold text-white">{title}</h3>
+    <h3 className="text-2xl font-semibold text-white">{title}</h3>
     <p className="text-sm text-white/60 max-w-xs">{subtitle}</p>
   </div>
 );

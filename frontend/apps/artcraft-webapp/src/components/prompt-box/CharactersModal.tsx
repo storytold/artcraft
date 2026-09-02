@@ -368,7 +368,7 @@ const CharacterListView = ({
             className="flex flex-col items-center justify-center gap-2 overflow-hidden border-2 border-dashed border-white/15 bg-white/[0.05] text-white/60 transition-colors hover:border-white/30 hover:text-white/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-              <PlusIcon className="text-lg" />
+              <PlusIcon className="text-base" />
               <span className="text-sm font-medium">Create New</span>
             </div>
           </button>
@@ -392,7 +392,7 @@ const CharacterListView = ({
                   </div>
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
-                  <LoaderCircleIcon className="text-lg text-white/80 animate-spin" />
+                  <LoaderCircleIcon className="text-base text-white/80 animate-spin" />
                   <span className="text-xs font-medium text-white/80">
                     Creating...
                   </span>
@@ -489,7 +489,7 @@ const CharacterListView = ({
       {confirmDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
           <div className="mx-4 w-full max-w-sm border border-white/15 bg-ui-modal p-6">
-            <h3 className="mb-2 text-lg font-semibold text-white">
+            <h3 className="mb-2 text-base font-semibold text-white">
               Delete character?
             </h3>
             <p className="mb-5 text-sm text-white/70">
@@ -601,7 +601,7 @@ const EditCharacterView = ({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 className="text-xl font-bold text-white">Edit Character</h2>
+          <h2 className="text-lg font-bold text-white">Edit Character</h2>
         </div>
 
         {/* Avatar preview */}
@@ -857,7 +857,7 @@ const NewCharacterView = ({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 className="text-xl font-bold text-white">New Character</h2>
+          <h2 className="text-lg font-bold text-white">New Character</h2>
         </div>
 
         {/* Image upload area */}
@@ -900,7 +900,7 @@ const NewCharacterView = ({
             </div>
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
-              <UploadIcon className="mb-2 text-xl text-white/40" />
+              <UploadIcon className="mb-2 text-lg text-white/40" />
               <p className="text-sm">Upload reference image</p>
               <p className="mb-3 text-xs text-white/40">
                 Click or drag an image here

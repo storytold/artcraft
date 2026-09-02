@@ -114,8 +114,8 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
           ]}
           onPanelAction={handleAddAction}
           showIconsInList
-          buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-primary/90 text-lg text-white hover:bg-primary/70"
-          triggerIcon={<PlusIcon  className="text-xl" />}
+          buttonClassName="h-9 w-9 rounded-[3px] border-transparent bg-primary/90 text-white hover:bg-primary/70"
+          triggerIcon={<PlusIcon  className="text-lg" />}
         />
       </Tooltip>
 

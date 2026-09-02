@@ -424,7 +424,7 @@ export function Timeline() {
   return (
     <section
       className={
-        "panel bg-background relative flex h-full flex-col overflow-hidden rounded-lg border border-ui-panel-border"
+        "panel bg-background relative flex h-full flex-col overflow-hidden border border-ui-panel-border"
       }
       {...dragProps}
       aria-label="Timeline"

@@ -551,7 +551,7 @@ export function Viewer3D({
 
   return (
     <div
-      className={`relative h-full w-full overflow-hidden rounded-l-xl bg-[#282828] ${className}`}
+      className={`relative h-full w-full overflow-hidden bg-[#282828] ${className}`}
       onMouseDown={stopPropagation}
       onMouseMove={stopPropagation}
       onMouseUp={stopPropagation}
@@ -577,7 +577,7 @@ export function Viewer3D({
               type="button"
               title={skeletonVisible ? "Hide skeleton" : "Show skeleton"}
               onClick={() => setSkeletonVisible((visible) => !visible)}
-              className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+              className={`flex h-10 w-10 items-center justify-center rounded-[3px] border transition-colors ${
                 skeletonVisible
                   ? "border-primary bg-primary/20 text-white"
                   : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"

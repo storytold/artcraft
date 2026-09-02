@@ -41,7 +41,7 @@ export const DurationLabel = ({ className = "" }: { className?: string }) => {
         }}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`w-12 rounded bg-white/10 px-1 text-center tabular-nums text-base-fg outline-none ${className}`}
+        className={`w-12 rounded-[3px] bg-white/10 px-1 text-center tabular-nums text-base-fg outline-none ${className}`}
       />
     );
   }

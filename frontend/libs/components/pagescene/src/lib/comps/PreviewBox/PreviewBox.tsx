@@ -19,11 +19,11 @@ export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
   if (!imageUrl || dismissed) return null;
 
   return (
-    <div className="glass absolute bottom-6 right-6 z-20 flex w-48 flex-col gap-2 rounded-lg border border-white/10 p-2 shadow-lg">
+    <div className="glass absolute bottom-6 right-6 z-20 flex w-48 flex-col gap-2 border border-white/15 p-2">
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
+        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-[3px] text-white/60 hover:bg-white/10 hover:text-white"
         aria-label="Hide preview"
       >
         <XIcon  className="text-xs" />
@@ -32,7 +32,7 @@ export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
         src={imageUrl}
         crossOrigin="anonymous"
         alt="Author's generation"
-        className="rounded-md"
+        className="rounded-[3px]"
       />
       <span className="text-center text-[11px] text-white/60">
         Author's generation

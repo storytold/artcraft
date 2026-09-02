@@ -251,7 +251,7 @@ function SceneSelector() {
 
   return (
     <div>
-      <SplitButton className="border-foreground/10 border">
+      <SplitButton className="border-white/15 border">
         <SplitButtonLeft>{currentScene?.name || "No Scene"}</SplitButtonLeft>
         <SplitButtonSeparator />
         <ScenesView>
@@ -352,7 +352,7 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick ? (event) => onClick({ event }) : undefined}
       className={cn(
-        "rounded-lg",
+        "rounded-[3px]",
         disabled ? "cursor-not-allowed opacity-50" : "",
       )}
     >

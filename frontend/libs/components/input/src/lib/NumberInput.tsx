@@ -60,21 +60,21 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         value={inputValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        inputClassName="w-[70px] h-[30px] rounded-md text-sm"
+        inputClassName="w-[70px] h-[30px] rounded-[3px] text-sm"
       />
 
-      <div className="absolute right-0 top-0 flex h-[30px] flex-col rounded-r-md border-l border-white/15 bg-gray-800">
+      <div className="absolute right-0 top-0 flex h-[30px] flex-col rounded-r-[3px] border-l border-white/15 bg-gray-800">
         <button
           className={twMerge(
             incrementButtonStyle,
-            "rounded-tr-md border-b border-white/10",
+            "rounded-tr-[3px] border-b border-white/15",
           )}
           onClick={handleIncrement}
         >
           <ChevronUpIcon />
         </button>
         <button
-          className={twMerge(incrementButtonStyle, "rounded-br-md")}
+          className={twMerge(incrementButtonStyle, "rounded-br-[3px]")}
           onClick={handleDecrement}
         >
           <ChevronDownIcon />

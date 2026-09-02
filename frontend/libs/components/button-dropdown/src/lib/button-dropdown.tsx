@@ -101,7 +101,7 @@ export const ButtonDropdown = ({
           <Menu.Items
             static
             className={twMerge(
-              "absolute z-20 mt-1 w-max divide-y divide-gray-100 overflow-hidden rounded-lg bg-brand-secondary py-1.5 shadow-xl focus:outline-none",
+              "absolute z-20 mt-1 w-max divide-y divide-white/10 overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-panel py-1.5 focus:outline-none",
               align === "left" ? "left-0" : "right-0",
             )}
           >
@@ -109,15 +109,15 @@ export const ButtonDropdown = ({
               {options.map((option, index) => (
                 <Fragment key={index}>
                   {option.divider && (
-                    <div className="my-1.5 border-t border-white/5" />
+                    <div className="my-1.5 border-t border-white/10" />
                   )}
                   <Menu.Item>
                     {({ active }) => (
                       <button
                         disabled={option.disabled}
                         className={twMerge(
-                          "duration-50 bg-brand-secondary font-medium text-white transition-all",
-                          active ? "bg-brand-secondary-800" : "",
+                          "duration-50 bg-transparent font-medium text-white transition-colors",
+                          active ? "bg-white/10" : "",
                           option.disabled
                             ? "pointer-events-none opacity-40"
                             : "",

@@ -620,7 +620,7 @@ export const PromptBoxAudio = ({
               <button
                 type="button"
                 onClick={toggleExpand}
-                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+                className="text-base-fg/30 hover:text-base-fg/90 rounded-[3px] hover:bg-white/5 transition-colors px-3 py-0.5"
               >
                 <DynamicIcon
                   icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}

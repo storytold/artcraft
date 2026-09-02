@@ -72,7 +72,7 @@ export const PreviewEngineCamera = () => {
   return (
     <div
       id="preview-engine-camera"
-      className="hidden origin-bottom-left shadow-lg" //hidden right now with css
+      className="hidden origin-bottom-left" //hidden right now with css
     >
       <div
         className={twMerge(
@@ -116,7 +116,7 @@ export const PreviewEngineCamera = () => {
             <Button
               variant="secondary"
               onClick={handleButtonCameraView}
-              className="rounded-md px-2 py-1 text-sm"
+              className="rounded-[3px] px-2 py-1 text-sm"
             >
               {editorState === EditorStates.EDIT ? "Enter View" : "Exit View"}
             </Button>

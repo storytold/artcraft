@@ -15,7 +15,7 @@ export const FocalLengthDisplay = () => {
       leaveTo="opacity-0"
     >
       <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2 transform">
-        <div className="glass rounded-xl px-5 py-2.5 text-center text-2xl font-bold text-white">
+        <div className="glass px-4 py-2 text-center text-lg font-semibold tabular-nums text-white">
           {focalLengthDragging.focalLength}mm
         </div>
       </div>

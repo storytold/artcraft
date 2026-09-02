@@ -636,7 +636,7 @@ function SubmenuFlyout({
             }}
             className="pointer-events-auto w-[340px] rounded-[3px] border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg"
           >
-            <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
+            <div className="mb-1 mt-0.5 px-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-base-fg opacity-60">
               {item.label}
             </div>
             <div className="relative">
@@ -851,10 +851,13 @@ export const PopoverMenu = ({
   };
 
   const className = twMerge(
-    "text-sm font-medium rounded-[3px] px-2.5 py-1.5",
+    "text-xs font-medium rounded-[3px] px-2.5 py-1.5",
     "flex gap-2 items-center justify-center outline-none",
     "transition-colors duration-150",
-    "bg-ui-controls px-3 text-base-fg hover:bg-ui-controls/80 border border-ui-controls-border",
+    // hover:bg-white/10 (not ui-controls/80): the resting fill matches the
+    // glass surface these triggers usually sit on, so an opacity shift of the
+    // same color reads as no hover feedback at all.
+    "bg-ui-controls px-3 text-base-fg hover:bg-white/10 hover:border-white/30 border border-ui-controls-border",
     buttonClassName,
   );
 
@@ -1098,7 +1101,7 @@ export const PopoverMenu = ({
                     onMouseLeave={() => handlePanelMouseLeave(close)}
                   >
                     {panelTitle && (
-                      <div className="mb-2 mt-0.5 flex justify-between px-1.5 text-sm font-normal text-base-fg opacity-70">
+                      <div className="mb-2 mt-0.5 flex items-center justify-between px-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-base-fg opacity-60">
                         {panelTitle}
                         {panelActionLabel && (
                           <button
@@ -1106,7 +1109,7 @@ export const PopoverMenu = ({
                               onPanelAction?.(panelActionLabel);
                               close();
                             }}
-                            className="text-end text-sm text-base-fg/85 hover:underline"
+                            className="text-end font-sans text-xs normal-case tracking-normal text-base-fg/85 hover:underline"
                           >
                             {panelActionLabel}
                           </button>
@@ -1287,13 +1290,13 @@ export const PopoverMenu = ({
                                 <div className="flex items-center gap-2 w-full">
                                   <div className="flex items-start gap-2 grow">
                                     {showIconsInList && (
-                                      <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-base-fg/80">
+                                      <span className="mt-1 flex h-5 w-5 items-center justify-center text-base text-base-fg/80">
                                         {item.icon}
                                       </span>
                                     )}
                                     <div className="flex flex-1 flex-col min-w-0">
                                       <div className="flex items-center gap-2 min-w-0">
-                                        <span className="truncate font-semibold text-base-fg text-base">
+                                        <span className="truncate font-semibold text-base-fg text-sm">
                                           {item.label}
                                         </span>
                                       </div>
@@ -1332,7 +1335,7 @@ export const PopoverMenu = ({
 
                                   {item.selected &&
                                     (item.selectedRight ?? (
-                                      <span className="text-white text-xl flex items-center justify-center mr-1">
+                                      <span className="text-white text-lg flex items-center justify-center mr-1">
                                         <CircleCheckIcon />
                                       </span>
                                     ))}

@@ -21,7 +21,7 @@ export const AnonHintChip = () => {
     <button
       type="button"
       onClick={handleClick}
-      className="glass flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/80 shadow-md transition-colors hover:bg-ui-controls/100 hover:text-white"
+      className="glass flex items-center gap-2 border border-white/15 px-3 py-1.5 text-xs font-medium text-white/80 transition-colors hover:bg-ui-controls/100 hover:text-white"
     >
       <LogInIcon  className="opacity-70" />
       Sign up to save

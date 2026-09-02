@@ -23,7 +23,7 @@ function BookmarkNotesOverlay({
       {bookmarks.map((bookmark) => (
         <div
           key={bookmark.time}
-          className="flex max-w-[min(200px,50vw)] px-2.5 py-1.5 text-left text-white text-xs shadow-md backdrop-blur-sm"
+          className="flex max-w-[min(200px,50vw)] px-2.5 py-1.5 text-left text-white text-xs backdrop-blur-sm"
           style={{
             backgroundColor: "rgb(0 0 0 / 0.5)",
             borderLeft: bookmark.color

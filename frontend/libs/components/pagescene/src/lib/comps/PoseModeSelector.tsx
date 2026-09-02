@@ -44,7 +44,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
             <Button
               icon={FootprintsIcon}
               onClick={handleModeChange}
-              className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
+              className="outline-none focus-visible:outline-none"
             >
               Enter Pose Mode
             </Button>
@@ -52,7 +52,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
             <Button
               icon={CheckIcon}
               onClick={handleModeChange}
-              className="rounded-xl outline-none  focus-visible:outline-none"
+              className="outline-none focus-visible:outline-none"
             >
               Done
             </Button>
@@ -71,7 +71,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
           <Button
             icon={FilmIcon}
             onClick={() => openAnimationsModal()}
-            className="rounded-xl shadow-xl outline-none focus-visible:outline-none"
+            className="outline-none focus-visible:outline-none"
           >
             Add Animation
           </Button>

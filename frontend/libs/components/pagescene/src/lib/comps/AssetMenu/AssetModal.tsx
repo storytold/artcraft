@@ -54,7 +54,7 @@ const AllTabSection = ({
 }) => (
   <div className="mb-0">
     <div className="mb-2 flex items-center justify-between">
-      <h3 className="text-md ml-2 font-semibold opacity-90">{label}</h3>
+      <h3 className="text-sm ml-2 font-semibold opacity-90">{label}</h3>
       <Button
         variant="secondary"
         className="mr-3 flex items-center gap-1 px-2 py-1 text-xs"
@@ -508,18 +508,18 @@ export const AssetModal = () => {
         <div className="grid h-full grid-cols-12 gap-3">
           <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
             <div className="flex items-center justify-between gap-2.5 py-0.5">
-              <h2 className="text-[18px] font-semibold opacity-80">
+              <h2 className="text-base font-semibold opacity-80">
                 ArtCraft Presets
               </h2>
             </div>
-            <hr className="my-2 w-full border-white/10" />
+            <hr className="my-2 w-full border-white/15" />
             <div className="flex h-full flex-col space-y-2">
               {assetTabs.map((tab) => (
                 <Button
                   key={tab.id}
                   variant={activeAssetTab === tab.id ? "primary" : "secondary"}
                   className={twMerge(
-                    "w-full justify-start rounded-xl border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
+                    "w-full justify-start rounded-[3px] border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
                     activeAssetTab === tab.id &&
                       "border-primary bg-primary/10 hover:bg-primary/10",
                   )}

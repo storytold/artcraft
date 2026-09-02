@@ -108,7 +108,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-4 py-4">
           <div className="flex items-center gap-2">
             <Button
-              className="rounded-md"
+              className="rounded-[3px]"
               variant={isSelectMode ? "default" : "outline"}
               size="sm"
               onClick={handleSelectMode}
@@ -123,7 +123,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
                 disabled={isMainSceneSelected}
                 trigger={
                   <Button
-                    className="rounded-md"
+                    className="rounded-[3px]"
                     variant="destructive"
                     disabled={isMainSceneSelected}
                     size="sm"

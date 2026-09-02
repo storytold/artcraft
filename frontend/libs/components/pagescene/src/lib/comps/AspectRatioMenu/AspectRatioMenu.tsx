@@ -52,7 +52,7 @@ export const AspectRatioMenu = () => {
         position="bottom"
         panelTitle="Aspect Ratio"
         showIconsInList
-        buttonClassName="glass glass-no-hover h-[34px] rounded-full px-3 text-xs font-medium shadow-xl"
+        buttonClassName="glass glass-no-hover h-[34px] px-3 text-xs font-medium"
         triggerIcon={<AspectRatioIcon ratio={current.proportions} />}
       />
     </Tooltip>

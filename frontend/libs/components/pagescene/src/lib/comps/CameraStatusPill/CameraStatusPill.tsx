@@ -33,8 +33,8 @@ export const CameraStatusPill = () => {
         onClick={() => editor && toggleCameraView(editor)}
         className={
           inCameraView
-            ? "flex h-[34px] items-center gap-2 rounded-full bg-brand-primary px-3 text-xs font-medium text-white shadow-xl transition-all duration-200"
-            : "glass glass-no-hover flex h-[34px] items-center gap-2 rounded-full px-3 text-xs font-medium text-base-fg/70 shadow-xl transition-all duration-200 hover:text-base-fg"
+            ? "flex h-[34px] items-center gap-2 rounded-[3px] bg-brand-primary px-3 text-xs font-medium text-white transition-all duration-200"
+            : "glass glass-no-hover flex h-[34px] items-center gap-2 px-3 text-xs font-medium text-base-fg/70 transition-all duration-200 hover:text-base-fg"
         }
       >
         <DynamicIcon

@@ -59,7 +59,7 @@ export class EditorErrorBoundary extends Component<
       return (
         <div className="bg-background flex h-full w-full flex-col items-center justify-center gap-4 p-6">
           <div className="flex max-w-md flex-col items-center gap-2 text-center">
-            <h2 className="text-foreground text-base font-semibold">
+            <h2 className="text-foreground text-sm font-semibold">
               The editor ran into a problem
             </h2>
             <p className="text-muted-foreground text-xs">

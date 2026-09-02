@@ -5,7 +5,7 @@ export const ShortcutsGroup = (props: {
   children?: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-1">
-    <Label className="text-md font-semibold" {...props}>
+    <Label className="text-sm font-semibold" {...props}>
       {props.label}
     </Label>
     <div className="relative flex flex-col gap-2.5">
@@ -20,7 +20,7 @@ export const Shortcut = (props: {
   children: React.ReactNode;
 }) => (
   <div className="flex items-center gap-2 ps-4">
-    <span className="text-md w-[280px] font-medium opacity-80">
+    <span className="text-sm w-[280px] font-medium opacity-80">
       {props.label}
     </span>
     {props.children}
@@ -28,7 +28,7 @@ export const Shortcut = (props: {
 );
 
 export const Key = (props: { button: string }) => (
-  <div className="flex h-[30px] w-auto min-w-[30px] items-center justify-center rounded-md border-b-2 border-[#9E9EA6] bg-white px-2 text-center text-sm font-bold text-ui-background">
+  <div className="flex h-[30px] w-auto min-w-[30px] items-center justify-center rounded-[3px] border-b-2 border-[#9E9EA6] bg-white px-2 text-center text-sm font-bold text-ui-background">
     {props.button}
   </div>
 );
@@ -102,7 +102,7 @@ const MouseIcon = ({ active }: { active: "left" | "middle" | "right" }) => (
   </svg>
 );
 
-export const Plus = () => <div className="text-xl font-medium">+</div>;
+export const Plus = () => <div className="text-lg font-medium">+</div>;
 
 const ShortcutsView = () => (
   <div className="grid select-none grid-cols-2 gap-12 ps-4 mt-6">

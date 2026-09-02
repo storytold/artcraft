@@ -243,7 +243,6 @@ export const ControlsTopButtons = () => {
         <ButtonDropdown
           label="File"
           icon={FileIcon}
-          className="shadow-xl"
           options={[
             {
               label: "New scene",
@@ -380,9 +379,8 @@ export const ControlsTopButtons = () => {
 
         <Button
           icon={outlinerShowing ? SquareCheckIcon : SquareIcon}
-          className="shadow-xl"
           iconClassName={twMerge(
-            "text-[16px]",
+            "text-sm",
             outlinerShowing ? "text-white" : "text-white/20",
           )}
           variant="secondary"
@@ -394,7 +392,6 @@ export const ControlsTopButtons = () => {
         <Button
           icon={KeyboardIcon}
           variant="secondary"
-          className="shadow-xl"
           onClick={() => setShortcutsIsShowing(true)}
         >
           Shortcuts

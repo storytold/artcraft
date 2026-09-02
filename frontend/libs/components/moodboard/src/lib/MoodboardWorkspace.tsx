@@ -50,7 +50,7 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
       // Desktop themes set --st-bg (gray/light/black/aurora) so the board follows
       // the active theme. The webapp never defines --st-bg, so it falls back to
       // its own --background token (0 0% 9% / #171717), matching the rest of the app.
-      style={{ background: "var(--st-bg, hsl(0 0% 9%))" }}
+      style={{ background: "var(--st-bg, #0b0b0c)" }}
     >
       {viewMode === "grid" ? (
         <BoardGridView active={!presenting} adapter={adapter} />
@@ -89,7 +89,7 @@ const TopLeftCluster = ({
   mode: ViewMode;
   onChange: (m: ViewMode) => void;
 }) => (
-  <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 rounded-2xl border border-ui-divider p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+  <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 border border-ui-divider p-1">
     <BoardPicker />
     <div className="mx-0.5 h-5 w-px bg-ui-divider" />
     {OPTIONS.map((opt) => {
@@ -100,11 +100,11 @@ const TopLeftCluster = ({
           type="button"
           onClick={() => onChange(opt.mode)}
           className={[
-            "flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium",
+            "flex items-center gap-2 rounded-[3px] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]",
             "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             active
-              ? "bg-base-fg/15 text-base-fg"
-              : "text-base-fg/55 hover:text-base-fg",
+              ? "bg-white/10 text-base-fg"
+              : "text-base-fg/55 hover:bg-white/5 hover:text-base-fg",
           ].join(" ")}
         >
           <DynamicIcon icon={opt.icon} className="h-3.5 w-3.5" />
@@ -149,8 +149,8 @@ const SaveButton = ({
       title="Save board"
       aria-label="Save board"
       className={[
-        "flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium transition-colors duration-150",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        "flex items-center gap-2 rounded-[3px] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors duration-150",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:bg-white/5",
         status === "error"
           ? "text-red-400 hover:text-red-300"
           : "text-base-fg/55 hover:text-base-fg",
@@ -184,7 +184,7 @@ const TopRightCluster = ({
   endSlot?: ReactNode;
 }) => (
   <div className="pointer-events-none absolute right-3 top-3 z-40 flex items-center gap-2">
-    <div className="glass pointer-events-auto flex items-center rounded-xl border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+    <div className="glass pointer-events-auto flex items-center border border-ui-divider p-0.5">
       {saveStatus !== null && onSave && (
         <SaveButton status={saveStatus} onSave={onSave} />
       )}
@@ -193,7 +193,7 @@ const TopRightCluster = ({
         onClick={onPresent}
         title="Present"
         aria-label="Present"
-        className="flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex items-center gap-2 rounded-[3px] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/55 transition-colors duration-150 hover:bg-white/5 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <PlayIcon  className="h-3 w-3" />
         Present
