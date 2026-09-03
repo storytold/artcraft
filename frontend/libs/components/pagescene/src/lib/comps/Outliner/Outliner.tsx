@@ -159,14 +159,16 @@ export const Outliner = () => {
         <h1 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-base-fg/70">Scene</h1>
         <Button
           icon={PlusIcon}
-          className="h-6 bg-transparent px-1.5 text-sm font-medium text-white/80 hover:bg-transparent hover:text-white"
+          className="h-6 gap-1 bg-transparent px-1.5 text-[11px] text-white/80 hover:bg-white/10 hover:text-white"
+          iconClassName="h-3 w-3"
           onClick={openAssetModal}
         >
           Add
         </Button>
         <Button
           icon={XIcon}
-          className="h-5 bg-transparent p-0 text-base opacity-50 hover:bg-transparent hover:opacity-90"
+          className="ml-0.5 h-6 w-6 bg-transparent p-0 text-white/70 hover:bg-white/10 hover:text-white"
+          iconClassName="h-3.5 w-3.5"
           onClick={() => {
             usePageSceneStore.getState().setOutlinerShowing(false);
           }}

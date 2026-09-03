@@ -506,7 +506,7 @@ export const AssetModal = () => {
           <div className="absolute left-0 top-0 z-[50] h-[46px] w-full cursor-move" />
         </Modal.DragHandle>
         <div className="grid h-full grid-cols-12 gap-3">
-          <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
+          <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-white/10">
             <div className="flex items-center justify-between gap-2.5 py-0.5">
               <h2 className="text-base font-semibold opacity-80">
                 ArtCraft Presets
@@ -517,11 +517,11 @@ export const AssetModal = () => {
               {assetTabs.map((tab) => (
                 <Button
                   key={tab.id}
-                  variant={activeAssetTab === tab.id ? "primary" : "secondary"}
+                  variant="secondary"
                   className={twMerge(
                     "w-full justify-start rounded-[3px] border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
                     activeAssetTab === tab.id &&
-                      "border-primary bg-primary/10 hover:bg-primary/10",
+                      "border-primary bg-primary/10 text-white hover:bg-primary/10",
                   )}
                   onClick={() => setActiveAssetTab(tab.id)}
                 >

@@ -116,9 +116,9 @@
 }
 
 @layer base {
-  /* Display face: Archivo — an industrial grotesque that matches the
-     hard-edged HUD system better than Bricolage's editorial quirk.
-     Weights still come from per-usage utilities. */
+  /* Display face: Outfit — a clean geometric sans (replaced Archivo; Outfit
+     has no wdth axis, so the old 118% stretch is gone). Weights still come
+     from per-usage utilities. */
   h1,
   h2,
   h3,
@@ -126,7 +126,7 @@
   h5,
   h6 {
     font-family:
-      "Archivo",
+      "Outfit",
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
@@ -135,15 +135,7 @@
       "Helvetica Neue",
       Arial,
       sans-serif;
-    letter-spacing: -0.03em;
-  }
-
-  /* Only display-scale headings run expanded on the wdth axis; compact
-     headings (card titles, section labels) stay at normal width so they
-     don't truncate in tight layouts. */
-  h1,
-  h2 {
-    font-stretch: 118%;
+    letter-spacing: -0.02em;
   }
 
   body {
@@ -180,12 +172,10 @@
   }
 }
 
-/* Display utility carries the ax-display reference treatment (Archivo at
-   weight 620, 118% width), matching the marketing site. Plain (unlayered)
-   rule so it wins over font-weight utilities like font-semibold, which are
-   emitted at the top of the file. */
+/* Display utility: Outfit at weight 620 (the variable axis supports
+   intermediate weights). Plain (unlayered) rule so it wins over font-weight
+   utilities like font-semibold, which are emitted at the top of the file. */
 .font-display {
-  font-stretch: 118%;
   font-weight: 620;
 }
 

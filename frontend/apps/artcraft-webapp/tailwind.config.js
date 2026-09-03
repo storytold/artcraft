@@ -27,7 +27,7 @@ module.exports = {
           "monospace",
         ],
         display: [
-          "Archivo",
+          "Outfit",
           "system-ui",
           "-apple-system",
           "BlinkMacSystemFont",

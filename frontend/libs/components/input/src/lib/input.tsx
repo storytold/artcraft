@@ -38,7 +38,10 @@ export const Input = React.forwardRef(
           {icon && (
             <DynamicIcon
               icon={icon}
-              className={twMerge("text-md absolute pl-3 pt-3", iconClassName)}
+              className={twMerge(
+                "pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2",
+                iconClassName,
+              )}
             />
           )}
           <input
