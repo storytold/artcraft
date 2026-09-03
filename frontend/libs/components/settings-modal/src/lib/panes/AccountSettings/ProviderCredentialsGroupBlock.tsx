@@ -104,8 +104,6 @@ const ApiKeyRow = ({
     }
   };
 
-  const hasKey = isFocused ? fullKey.length > 0 : redacted.length > 0;
-
   return (
     <div>
       <label className="mb-1 block text-sm">{label}</label>

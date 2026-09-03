@@ -24,11 +24,8 @@ import {
 } from "@storyteller/tauri-api";
 import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
-
-interface ProviderItem {
-  id: Provider;
-  name: string;
-}
+import { buildProviderPriorityItems } from "./provider-priority-items";
+import type { ProviderItem } from "./provider-priority-items";
 
 interface SortableItemProps {
   id: string;
@@ -88,12 +85,6 @@ const SortableItem = ({
   );
 };
 
-const ProviderItemMap = {
-  [Provider.ArtCraft]: { id: Provider.ArtCraft, name: "ArtCraft" },
-  [Provider.Fal]: { id: Provider.Fal, name: "Fal" },
-  [Provider.Sora]: { id: Provider.Sora, name: "Sora / ChatGPT" },
-};
-
 const PROVIDER_TO_CREATOR: Partial<Record<Provider, ModelCreator>> = {
   [Provider.ArtCraft]: ModelCreator.ArtCraft,
   [Provider.Fal]: ModelCreator.Fal,
@@ -125,21 +116,7 @@ export const ProviderPrioritySettingsPane = () => {
     const fetchData = async () => {
       const providers = await GetProviderOrder();
 
-      let items: ProviderItem[] = [];
-
-      // Add providers from backend (in order)
-      for (let provider of providers.payload.providers) {
-        items.push(ProviderItemMap[provider]);
-      }
-
-      // Add providers not in backend (in order)
-      for (const [key, value] of Object.entries(ProviderItemMap)) {
-        if (!providers.payload.providers.includes(key as Provider)) {
-          items.push(value);
-        }
-      }
-
-      setItems(items);
+      setItems(buildProviderPriorityItems(providers.payload.providers));
     };
     fetchData();
   }, []);
