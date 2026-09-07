@@ -34,7 +34,11 @@ import Welcome from "../pages/welcome";
 import Onboarding from "../pages/onboarding";
 import Library from "../pages/library";
 import Referrals from "../pages/referrals";
-import { CheckoutSuccess, CheckoutCancel } from "../pages/checkout";
+import {
+  CheckoutSuccess,
+  CheckoutCancel,
+  CheckoutPortalReturn,
+} from "../pages/checkout";
 import {
   SidebarInset,
   SidebarProvider,
@@ -200,6 +204,14 @@ export function App() {
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+            {/* Stripe billing portal return. The portal has no success/cancel
+                split (plan switches and plain visits both come back here), so
+                this page checks the account's real subscription state instead
+                of assuming a cancellation. */}
+            <Route
+              path="/checkout/portal-return"
+              element={<CheckoutPortalReturn />}
+            />
             <Route
               path="/checkout_success"
               element={<Navigate to="/checkout/success" replace />}
@@ -210,7 +222,7 @@ export function App() {
             />
             <Route
               path="/portal_closed"
-              element={<Navigate to="/checkout/cancel" replace />}
+              element={<Navigate to="/checkout/portal-return" replace />}
             />
           </Route>
 

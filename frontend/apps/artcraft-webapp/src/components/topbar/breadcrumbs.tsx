@@ -39,6 +39,10 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
     { label: "Checkout", href: "/pricing" },
     { label: "Cancelled" },
   ],
+  "/checkout/portal-return": [
+    { label: "Billing", href: "/pricing" },
+    { label: "Updated" },
+  ],
 };
 
 function resolveCrumbs(pathname: string): Crumb[] {

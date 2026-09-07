@@ -165,13 +165,17 @@ export function App() {
             )
           }
         />
+        {/* Stripe billing portal return URL. The portal has no success/cancel
+            split (plan switches and plain visits both land here), so never
+            send these users to the "Checkout Cancelled" page: someone who
+            just upgraded would be told no payment was made. */}
         <Route
           path="/portal_closed"
           element={
             USE_WEBAPP_FOR_APP_FEATURES ? (
-              <WebappRedirect to="/checkout/cancel" />
+              <WebappRedirect to="/checkout/portal-return" />
             ) : (
-              <Navigate to="/checkout/cancel" replace />
+              <Navigate to="/pricing" replace />
             )
           }
         />
