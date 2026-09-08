@@ -38,4 +38,4 @@ test_utils.workspace = true
 test_data.workspace = true
 
 # External Dev
-# (None yet)
+tokio = { workspace = true, features = ["rt", "macros", "net", "io-util"] }
