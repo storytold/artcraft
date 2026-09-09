@@ -64,6 +64,8 @@ export const getModelDisplayName = (
     gpt_image_1: "GPT Image 1",
     gpt_image_1p5: "GPT Image 1.5",
     gpt_image_2: "GPT Image 2",
+    gpt_image_2p5_flare: "GPT Image 2.5 Flare",
+    gpt_image_2p5_sunburst: "GPT Image 2.5 Sunburst",
     sora_2: "Sora 2",
     sora_2_pro: "Sora 2 Pro",
 

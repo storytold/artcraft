@@ -32,6 +32,10 @@ pub enum TauriImageModel {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "gpt_image_2p5_flare")]
+  GptImage2p5Flare,
+  #[serde(rename = "gpt_image_2p5_sunburst")]
+  GptImage2p5Sunburst,
   #[serde(rename = "gemini_25_flash")]
   Gemini25Flash,
   #[serde(rename = "nano_banana")]

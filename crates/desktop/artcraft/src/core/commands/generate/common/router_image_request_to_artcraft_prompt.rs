@@ -48,6 +48,8 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
     RouterImageModel::GptImage1 => Some(CommonModelType::GptImage1),
     RouterImageModel::GptImage1p5 => Some(CommonModelType::GptImage1p5),
     RouterImageModel::GptImage2 => Some(CommonModelType::GptImage2),
+    RouterImageModel::GptImage2p5Flare => Some(CommonModelType::GptImage2p5Flare),
+    RouterImageModel::GptImage2p5Sunburst => Some(CommonModelType::GptImage2p5Sunburst),
     RouterImageModel::NanoBanana => Some(CommonModelType::NanoBanana),
     RouterImageModel::NanoBanana2 => Some(CommonModelType::NanoBanana2),
     RouterImageModel::NanoBananaPro => Some(CommonModelType::NanoBananaPro),

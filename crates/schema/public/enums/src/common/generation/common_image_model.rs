@@ -25,6 +25,10 @@ pub enum CommonImageModel {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "gpt_image_2p5_flare")]
+  GptImage2p5Flare,
+  #[serde(rename = "gpt_image_2p5_sunburst")]
+  GptImage2p5Sunburst,
   #[serde(rename = "grok_imagine_image")]
   GrokImagineImage,
   #[serde(rename = "grok_imagine_image_q")]
@@ -68,6 +72,8 @@ impl CommonImageModel {
       Self::GptImage1 => CommonModelType::GptImage1,
       Self::GptImage1p5 => CommonModelType::GptImage1p5,
       Self::GptImage2 => CommonModelType::GptImage2,
+      Self::GptImage2p5Flare => CommonModelType::GptImage2p5Flare,
+      Self::GptImage2p5Sunburst => CommonModelType::GptImage2p5Sunburst,
       Self::GrokImagineImage => CommonModelType::GrokImagineImage,
       Self::GrokImagineImageQuality => CommonModelType::GrokImagineImageQuality,
       Self::Midjourney7 => CommonModelType::Midjourney7,
@@ -106,6 +112,8 @@ mod tests {
       assert_serialization(CommonImageModel::GptImage1, "gpt_image_1");
       assert_serialization(CommonImageModel::GptImage1p5, "gpt_image_1p5");
       assert_serialization(CommonImageModel::GptImage2, "gpt_image_2");
+      assert_serialization(CommonImageModel::GptImage2p5Flare, "gpt_image_2p5_flare");
+      assert_serialization(CommonImageModel::GptImage2p5Sunburst, "gpt_image_2p5_sunburst");
       assert_serialization(CommonImageModel::GrokImagineImage, "grok_imagine_image");
       assert_serialization(CommonImageModel::GrokImagineImageQuality, "grok_imagine_image_q");
       assert_serialization(CommonImageModel::Midjourney7, "midjourney_7");
@@ -133,6 +141,8 @@ mod tests {
         (CommonImageModel::GptImage1, CommonModelType::GptImage1),
         (CommonImageModel::GptImage1p5, CommonModelType::GptImage1p5),
         (CommonImageModel::GptImage2, CommonModelType::GptImage2),
+        (CommonImageModel::GptImage2p5Flare, CommonModelType::GptImage2p5Flare),
+        (CommonImageModel::GptImage2p5Sunburst, CommonModelType::GptImage2p5Sunburst),
         (CommonImageModel::GrokImagineImage, CommonModelType::GrokImagineImage),
         (CommonImageModel::GrokImagineImageQuality, CommonModelType::GrokImagineImageQuality),
         (CommonImageModel::Midjourney7, CommonModelType::Midjourney7),
@@ -174,7 +184,7 @@ mod tests {
     #[test]
     fn variant_count() {
       use strum::IntoEnumIterator;
-      assert_eq!(CommonImageModel::iter().len(), 22);
+      assert_eq!(CommonImageModel::iter().len(), 24);
     }
 
     #[test]

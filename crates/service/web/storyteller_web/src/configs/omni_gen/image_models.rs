@@ -367,6 +367,82 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   });
 
   models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::GptImage2p5Flare,
+    model_creator: Some(ModelCreator::OpenAi),
+    full_name: Some("GPT Image 2.5 Flare".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    quality_options: Some(vec![
+      CommonQuality::High,
+      CommonQuality::Medium,
+      CommonQuality::Low,
+    ]),
+    default_quality: Some(CommonQuality::High),
+    // NOTE: GPT Image 2.5 does not have "resolution" natively. We're emulating this.
+    resolution_options: Some(vec![
+      CommonResolution::OneK,
+      CommonResolution::TwoK,
+      CommonResolution::ThreeK,
+      CommonResolution::FourK,
+    ]),
+    // NOTE: GPT Image 2.5 does not have "resolution" natively. We're emulating this.
+    resolution_default: Some(CommonResolution::OneK),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::GptImage2p5Sunburst,
+    model_creator: Some(ModelCreator::OpenAi),
+    full_name: Some("GPT Image 2.5 Sunburst".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    quality_options: Some(vec![
+      CommonQuality::High,
+      CommonQuality::Medium,
+      CommonQuality::Low,
+    ]),
+    default_quality: Some(CommonQuality::High),
+    // NOTE: GPT Image 2.5 does not have "resolution" natively. We're emulating this.
+    resolution_options: Some(vec![
+      CommonResolution::OneK,
+      CommonResolution::TwoK,
+      CommonResolution::ThreeK,
+      CommonResolution::FourK,
+    ]),
+    // NOTE: GPT Image 2.5 does not have "resolution" natively. We're emulating this.
+    resolution_default: Some(CommonResolution::OneK),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
     model: CommonImageModel::Seedream4,
     model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedream 4".to_string()),
@@ -535,6 +611,14 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
         overrides: None,
       },
       OmniGenImageProviderModelDetails {
+        model: CommonImageModel::GptImage2p5Flare,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::GptImage2p5Sunburst,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
         model: CommonImageModel::Seedream4,
         overrides: None,
       },
@@ -570,4 +654,41 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
   });
 
   providers
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn gpt_image_2p5_models_are_listed_with_quality_and_resolution_options() {
+    let models = build_omni_gen_image_models();
+    for (model, full_name) in [
+      (CommonImageModel::GptImage2p5Flare, "GPT Image 2.5 Flare"),
+      (CommonImageModel::GptImage2p5Sunburst, "GPT Image 2.5 Sunburst"),
+    ] {
+      let details = models.iter().find(|m| m.model == model).unwrap_or_else(|| panic!("{model:?} missing"));
+      assert_eq!(details.full_name.as_deref(), Some(full_name));
+      assert_eq!(details.model_creator, Some(ModelCreator::OpenAi));
+      assert_eq!(details.text_prompt_supported, Some(true));
+      assert_eq!(details.image_refs_supported, Some(true));
+      assert_eq!(details.default_quality, Some(CommonQuality::High));
+      assert_eq!(details.quality_options.as_ref().map(|q| q.len()), Some(3));
+      assert_eq!(details.resolution_default, Some(CommonResolution::OneK));
+      assert_eq!(details.resolution_options.as_ref().map(|r| r.len()), Some(4));
+      assert_eq!(details.aspect_ratio_default_when_editing, Some(CommonAspectRatio::Auto));
+      assert_eq!(details.batch_size_max, Some(4));
+    }
+  }
+
+  #[test]
+  fn gpt_image_2p5_models_are_served_by_the_artcraft_provider() {
+    let providers = build_omni_gen_image_model_providers();
+    let artcraft = providers.iter()
+      .find(|p| p.provider == GenerationProvider::Artcraft)
+      .expect("artcraft provider");
+    for model in [CommonImageModel::GptImage2p5Flare, CommonImageModel::GptImage2p5Sunburst] {
+      assert!(artcraft.models.iter().any(|m| m.model == model), "{model:?} missing from artcraft provider");
+    }
+  }
 }

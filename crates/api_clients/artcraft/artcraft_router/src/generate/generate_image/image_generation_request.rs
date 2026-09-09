@@ -19,6 +19,10 @@ use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::cost::A
 use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::request::ArtcraftGptImage1p5RequestState;
 use crate::generate::generate_image::providers::artcraft::gpt_image_2::cost::ArtcraftGptImage2CostState;
 use crate::generate::generate_image::providers::artcraft::gpt_image_2::request::ArtcraftGptImage2RequestState;
+use crate::generate::generate_image::providers::artcraft::gpt_image_2p5_flare::cost::ArtcraftGptImage2p5FlareCostState;
+use crate::generate::generate_image::providers::artcraft::gpt_image_2p5_flare::request::ArtcraftGptImage2p5FlareRequestState;
+use crate::generate::generate_image::providers::artcraft::gpt_image_2p5_sunburst::cost::ArtcraftGptImage2p5SunburstCostState;
+use crate::generate::generate_image::providers::artcraft::gpt_image_2p5_sunburst::request::ArtcraftGptImage2p5SunburstRequestState;
 use crate::generate::generate_image::providers::artcraft::midjourney_7::cost::ArtcraftMidjourney7CostState;
 use crate::generate::generate_image::providers::artcraft::midjourney_7::request::ArtcraftMidjourney7RequestState;
 use crate::generate::generate_image::providers::artcraft::midjourney_7_niji::cost::ArtcraftMidjourney7NijiCostState;
@@ -59,6 +63,10 @@ use crate::generate::generate_image::providers::fal::gpt_image_1p5::cost::FalGpt
 use crate::generate::generate_image::providers::fal::gpt_image_1p5::request::FalGptImage1p5RequestState;
 use crate::generate::generate_image::providers::fal::gpt_image_2::cost::FalGptImage2CostState;
 use crate::generate::generate_image::providers::fal::gpt_image_2::request::FalGptImage2RequestState;
+use crate::generate::generate_image::providers::fal::gpt_image_2p5_flare::cost::FalGptImage2p5FlareCostState;
+use crate::generate::generate_image::providers::fal::gpt_image_2p5_flare::request::FalGptImage2p5FlareRequestState;
+use crate::generate::generate_image::providers::fal::gpt_image_2p5_sunburst::cost::FalGptImage2p5SunburstCostState;
+use crate::generate::generate_image::providers::fal::gpt_image_2p5_sunburst::request::FalGptImage2p5SunburstRequestState;
 use crate::generate::generate_image::providers::fal::nano_banana::cost::FalNanoBananaCostState;
 use crate::generate::generate_image::providers::fal::nano_banana::request::FalNanoBananaRequestState;
 use crate::generate::generate_image::providers::fal::nano_banana_2::cost::FalNanoBanana2CostState;
@@ -92,6 +100,8 @@ pub enum ImageGenerationRequest {
   ArtcraftGptImage1(ArtcraftGptImage1RequestState),
   ArtcraftGptImage1p5(ArtcraftGptImage1p5RequestState),
   ArtcraftGptImage2(ArtcraftGptImage2RequestState),
+  ArtcraftGptImage2p5Flare(ArtcraftGptImage2p5FlareRequestState),
+  ArtcraftGptImage2p5Sunburst(ArtcraftGptImage2p5SunburstRequestState),
   ArtcraftNanoBanana(ArtcraftNanoBananaRequestState),
   ArtcraftNanoBanana2(ArtcraftNanoBanana2RequestState),
   ArtcraftNanoBananaPro(ArtcraftNanoBananaProRequestState),
@@ -114,6 +124,8 @@ pub enum ImageGenerationRequest {
   FalGptImage1(FalGptImage1RequestState),
   FalGptImage1p5(FalGptImage1p5RequestState),
   FalGptImage2(FalGptImage2RequestState),
+  FalGptImage2p5Flare(FalGptImage2p5FlareRequestState),
+  FalGptImage2p5Sunburst(FalGptImage2p5SunburstRequestState),
   FalNanoBanana(FalNanoBananaRequestState),
   FalNanoBanana2(FalNanoBanana2RequestState),
   FalNanoBananaPro(FalNanoBananaProRequestState),
@@ -140,6 +152,8 @@ impl ImageGenerationRequest {
       Self::ArtcraftGptImage1(_) => RouterProvider::Artcraft,
       Self::ArtcraftGptImage1p5(_) => RouterProvider::Artcraft,
       Self::ArtcraftGptImage2(_) => RouterProvider::Artcraft,
+      Self::ArtcraftGptImage2p5Flare(_) => RouterProvider::Artcraft,
+      Self::ArtcraftGptImage2p5Sunburst(_) => RouterProvider::Artcraft,
       Self::ArtcraftNanoBanana(_) => RouterProvider::Artcraft,
       Self::ArtcraftNanoBanana2(_) => RouterProvider::Artcraft,
       Self::ArtcraftNanoBananaPro(_) => RouterProvider::Artcraft,
@@ -161,6 +175,8 @@ impl ImageGenerationRequest {
       Self::FalGptImage1(_) => RouterProvider::Fal,
       Self::FalGptImage1p5(_) => RouterProvider::Fal,
       Self::FalGptImage2(_) => RouterProvider::Fal,
+      Self::FalGptImage2p5Flare(_) => RouterProvider::Fal,
+      Self::FalGptImage2p5Sunburst(_) => RouterProvider::Fal,
       Self::FalNanoBanana(_) => RouterProvider::Fal,
       Self::FalNanoBanana2(_) => RouterProvider::Fal,
       Self::FalNanoBananaPro(_) => RouterProvider::Fal,
@@ -200,6 +216,12 @@ impl ImageGenerationRequest {
       }
       Self::ArtcraftGptImage2(request) => {
         Ok(ArtcraftGptImage2CostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftGptImage2p5Flare(request) => {
+        Ok(ArtcraftGptImage2p5FlareCostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftGptImage2p5Sunburst(request) => {
+        Ok(ArtcraftGptImage2p5SunburstCostState::from_request(request).estimate_cost())
       }
       Self::ArtcraftNanoBanana(request) => {
         Ok(ArtcraftNanoBananaCostState::from_request(request).estimate_cost())
@@ -249,6 +271,8 @@ impl ImageGenerationRequest {
       Self::FalGptImage1(request) => Ok(FalGptImage1CostState::from_request(request).estimate_cost()),
       Self::FalGptImage1p5(request) => Ok(FalGptImage1p5CostState::from_request(request).estimate_cost()),
       Self::FalGptImage2(request) => Ok(FalGptImage2CostState::from_request(request).estimate_cost()),
+      Self::FalGptImage2p5Flare(request) => Ok(FalGptImage2p5FlareCostState::from_request(request).estimate_cost()),
+      Self::FalGptImage2p5Sunburst(request) => Ok(FalGptImage2p5SunburstCostState::from_request(request).estimate_cost()),
       Self::FalNanoBanana(request) => Ok(FalNanoBananaCostState::from_request(request).estimate_cost()),
       Self::FalNanoBanana2(request) => Ok(FalNanoBanana2CostState::from_request(request).estimate_cost()),
       Self::FalNanoBananaPro(request) => Ok(FalNanoBananaProCostState::from_request(request).estimate_cost()),
@@ -293,6 +317,14 @@ impl ImageGenerationRequest {
         request.send(artcraft_client).await
       }
       Self::ArtcraftGptImage2(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftGptImage2p5Flare(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftGptImage2p5Sunburst(request) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         request.send(artcraft_client).await
       }
@@ -376,6 +408,14 @@ impl ImageGenerationRequest {
         request.send(fal_client).await
       }
       Self::FalGptImage2(request) => {
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalGptImage2p5Flare(request) => {
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalGptImage2p5Sunburst(request) => {
         let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }

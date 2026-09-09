@@ -135,6 +135,8 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::GptImage1 => RouterImageModel::GptImage1,
     CommonImageModel::GptImage1p5 => RouterImageModel::GptImage1p5,
     CommonImageModel::GptImage2 => RouterImageModel::GptImage2,
+    CommonImageModel::GptImage2p5Flare => RouterImageModel::GptImage2p5Flare,
+    CommonImageModel::GptImage2p5Sunburst => RouterImageModel::GptImage2p5Sunburst,
     CommonImageModel::NanoBanana => RouterImageModel::NanoBanana,
     CommonImageModel::NanoBanana2 => RouterImageModel::NanoBanana2,
     CommonImageModel::NanoBananaPro => RouterImageModel::NanoBananaPro,

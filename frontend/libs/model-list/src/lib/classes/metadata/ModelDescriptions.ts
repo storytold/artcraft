@@ -9,6 +9,8 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   gpt_image_1: "OpenAI's original image model",
   gpt_image_1p5: "OpenAI imagery with reliable text",
   gpt_image_2: "4K images with crisp text rendering",
+  gpt_image_2p5_flare: "Fast, precise edits that keep subjects intact",
+  gpt_image_2p5_sunburst: "Premium detail and fidelity, slower",
   midjourney_7: "Signature artistic, stylized imagery",
   midjourney_7_niji: "Anime and illustration styles",
   midjourney_8: "Midjourney's latest flagship model",
