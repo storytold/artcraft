@@ -129,31 +129,15 @@ const MADE_WITH_VIDEOS = [
 // plays everywhere; 1080p HEVC 10-bit does not play in Firefox and needs a
 // hardware decoder in Chrome and Edge.
 const HERO_WALL_CDN_BASE = "https://frontend-cdn.fakeyou.com/videos";
-const HERO_WALL_CDN_CLIP_COUNT = 2;
+const HERO_WALL_CDN_CLIP_COUNT = 14;
 
-// TEMPORARY, local demo only: raw generation exports dropped into
-// public/videos/demo (1080p HEVC 10-bit masters, 107 MB in total). They are
-// untracked and must not ship; once they're encoded for the wall and
-// uploaded to the CDN, delete this list and raise the CDN count instead.
-const HERO_WALL_DEMO_CLIPS = [
-  "artcraft-m_1zcvqg6face5btkpp0vw9fr2etnhws",
-  "artcraft-m_8h46fp9h0nyzvhzgqvwkrwjs1b50gc",
-  "artcraft-m_dp44z5s4mgd9vh9dvr9d0qrkkjev9p",
-  "artcraft-m_n6k00my1kg1gph3wv9ktzpj8qnbsxd",
-  "artcraft-m_pqcsq07dv4s0jvxz0vms94hx4smx92",
-  "artcraft-m_rd1xw8a84sys0xssnmvcyzy8pqv9x5",
-];
-
-const HERO_WALL_CLIPS: WallClip[] = [
-  ...Array.from({ length: HERO_WALL_CDN_CLIP_COUNT }, (_, i) => ({
+const HERO_WALL_CLIPS: WallClip[] = Array.from(
+  { length: HERO_WALL_CDN_CLIP_COUNT },
+  (_, i) => ({
     src: `${HERO_WALL_CDN_BASE}/${i + 1}.mp4`,
     aspect: 16 / 9,
-  })),
-  ...HERO_WALL_DEMO_CLIPS.map((name) => ({
-    src: `/videos/demo/${name}.mp4`,
-    aspect: 16 / 9,
-  })),
-];
+  }),
+);
 
 // Legibility halo lifting the hero type off the busy footage behind it. Kept
 // to one small blur: large blurred shadows on 140px type are expensive to
@@ -669,7 +653,7 @@ const Landing3 = () => {
           clips={HERO_WALL_CLIPS}
           className="h-[80svh] min-h-[520px] max-h-[860px] w-full"
         >
-          <div className="flex h-full flex-col items-center justify-center px-4 pt-10 text-center sm:px-8">
+          <div className="flex h-full flex-col items-center justify-center px-4 text-center sm:px-8">
             {/* Headline */}
             <h1
               className="text-[46px] leading-[0.98] sm:text-7xl md:text-8xl lg:text-[124px] xl:text-[140px] tracking-[-0.045em] font-semibold text-white will-change-[transform,opacity]"
@@ -722,18 +706,6 @@ const Landing3 = () => {
             className="absolute inset-x-0 bottom-3 flex items-center justify-between px-4 sm:px-8 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
           ></div>
         </HeroVideoWall>
-
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 pt-8 pb-8 text-center">
-          {/* Platform facts */}
-          <div
-            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
-            data-reveal
-          >
-            <span>macOS · Windows · Web</span>
-            <span>Every model, one studio</span>
-            <span>No subscription required</span>
-          </div>
-        </div>
       </section>
       {/* TRY IT: live prompt box + result preview, straight into the webapp */}
       <LandingPromptDemo />

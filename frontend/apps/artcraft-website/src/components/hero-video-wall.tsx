@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -18,9 +19,8 @@ import {
 //   - The edge vignette is a static mask on the container.
 //   - Video decode is the only real cost, so an IntersectionObserver (rooted
 //     at the wall) plays only panels actually on screen. The whole wall
-//     pauses while scrolled away. On first load the wall waits for the
-//     headline, starts decoders one at a time, then shows every panel at
-//     once.
+//     pauses while scrolled away. On first load the wall starts decoders
+//     one at a time immediately, then quickly fades the panels in.
 // Keyframes and the paused state live in styles.css (`hero-wall-*`).
 
 export interface WallClip {
@@ -58,15 +58,12 @@ const EDGE_MASK =
 // How long the hero can be out of view before its decoders are stopped. A
 // quick scroll past the boundary never pays for pausing and resuming them.
 const PAUSE_DELAY_MS = 900;
-// Start-up pacing. The wall does nothing until the headline reveal has
-// finished (gsap: 0.9 s plus stagger, see landing3), then brings decoders up
-// one at a time (near row first, center out) so a fresh load never spins up
-// several in the same frame. Panels stay hidden while that happens and all
-// fade in together once every on-screen clip has its first frame, or after
-// REVEAL_MAX_WAIT_MS, whichever comes first.
-const INITIAL_DELAY_MS = 1100;
-const PLAY_STAGGER_MS = 60;
-const REVEAL_MAX_WAIT_MS = 1500;
+// Start decoding immediately, staggered slightly to avoid a CPU spike.
+// Reveal together as soon as visible clips are ready, with a short cap so
+// one slow download cannot hold back the whole wall.
+const INITIAL_DELAY_MS = 0;
+const PLAY_STAGGER_MS = 30;
+const REVEAL_MAX_WAIT_MS = 400;
 
 type WallPanel = {
   clip: number;
@@ -140,6 +137,24 @@ export const HeroVideoWall = ({
     };
   }, []);
 
+  // New panels must join the existing animation clock after a resize.
+  // Otherwise their zero-time start overlaps older panels and leaves gaps.
+  // Synchronize before paint, without restarting videos or a per-frame loop.
+  useLayoutEffect(() => {
+    const animations = Array.from(
+      containerRef.current?.querySelectorAll(".hero-wall-panel") ?? [],
+    ).flatMap((panel) =>
+      panel.getAnimations().filter(
+        (animation) =>
+          animation instanceof CSSAnimation &&
+          animation.animationName === "hero-wall-slide",
+      ),
+    );
+    const currentTime = animations[0]?.currentTime;
+    if (currentTime == null) return;
+    for (const animation of animations) animation.currentTime = currentTime;
+  }, [size.width, size.height, clips]);
+
   const panels = buildLayout(clips, size.width, size.height);
   const revealedRef = useRef(revealed);
   revealedRef.current = revealed;
@@ -161,7 +176,7 @@ export const HeroVideoWall = ({
 
     const queue: HTMLVideoElement[] = [];
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let started = false;
+    let started = revealedRef.current;
     const pump = () => {
       const video = queue.shift();
       if (!video) {
@@ -227,6 +242,12 @@ export const HeroVideoWall = ({
     panels.filter((panel) => panel.row === row),
   );
 
+  // Center within the rows' combined outer bounds for balanced space above
+  // the headline and below the buttons, including unequal row heights.
+  const nearBottom = size.height * ROW_Y_VH[0] + (rows[0][0]?.h ?? 0) / 2;
+  const backTop = size.height * ROW_Y_VH[1] - (rows[1][0]?.h ?? 0) / 2;
+  const contentOffset = (nearBottom + backTop) / 2;
+
   return (
     <div
       ref={containerRef}
@@ -236,9 +257,8 @@ export const HeroVideoWall = ({
       data-paused={visible ? undefined : "true"}
     >
       {/* Rows render back to front. The whole layer (frames included) stays
-          invisible until the first-appearance gate opens, so nothing moves
-          behind the headline while it animates in; the one group fade after
-          that is a single 700 ms cost. */}
+          invisible until the first-appearance gate opens, then fades in
+          quickly alongside the headline. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -246,7 +266,7 @@ export const HeroVideoWall = ({
           maskImage: EDGE_MASK,
           WebkitMaskImage: EDGE_MASK,
           opacity: revealed ? 1 : 0,
-          transition: "opacity 700ms ease-out",
+          transition: "opacity 300ms ease-out",
         }}
       >
         {[...rows.keys()].reverse().map((row) => {
@@ -283,7 +303,7 @@ export const HeroVideoWall = ({
                   Math.abs(rest) - panel.w / 2 < size.width / 2;
                 return (
                   <div
-                    key={`${row}-${i}`}
+                    key={`${row}-${i}-${clip.src}`}
                     className="hero-wall-panel absolute left-1/2 top-1/2 bg-black border border-white/20"
                     style={
                       {
@@ -326,7 +346,12 @@ export const HeroVideoWall = ({
         }}
       />
 
-      <div className="pointer-events-none absolute inset-0 z-10">{children}</div>
+      <div
+        className="pointer-events-none absolute inset-0 z-10"
+        style={{ transform: `translateY(${contentOffset}px)` }}
+      >
+        {children}
+      </div>
     </div>
   );
 };
@@ -369,7 +394,7 @@ const WallVideo = ({
       }}
       data-wall-row={row}
       data-wall-priority={Math.round(priority)}
-      className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+      className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
       style={{ opacity: ready ? 1 : 0 }}
       loop
       muted
@@ -378,6 +403,8 @@ const WallVideo = ({
       disablePictureInPicture
       disableRemotePlayback
       onLoadedData={(e) => {
+        const panel = e.currentTarget.parentElement;
+        if (panel) panel.style.visibility = "";
         setReady(true);
         onSettled(e.currentTarget);
       }}
@@ -385,61 +412,44 @@ const WallVideo = ({
   );
 };
 
-// Wall structure: per row, panels are laid end to end with a uniform gap
-// until they cover the viewport plus one panel of margin. The back row is
-// smaller; each row draws from its own disjoint slice of the clip pool, so
-// no clip ever appears in more than one row.
+// Each source gets one panel across the entire wall. Extend the track with
+// spacing on wide screens instead of cloning clips to fill the viewport.
+// The track must exceed the viewport by a full panel so wrapping is hidden.
 function buildLayout(
   clips: WallClip[],
   width: number,
   height: number,
 ): WallPanel[] {
-  if (width === 0 || height === 0 || clips.length === 0) return [];
+  if (width <= 0 || height <= 0 || clips.length === 0) return [];
   const nearH = Math.min(320, Math.max(110, height * ROW_HEIGHT_VH));
-  const clipCount = clips.length;
-  const perRow = Math.floor(clipCount / ROW_COUNT);
-  const extra = clipCount % ROW_COUNT;
+  const uniqueClips = clips
+    .map((clip, index) => ({ ...clip, index }))
+    .filter((clip, index, all) =>
+      all.findIndex((candidate) => candidate.src === clip.src) === index,
+    );
+  const perRow = Math.floor(uniqueClips.length / ROW_COUNT);
+  const extra = uniqueClips.length % ROW_COUNT;
   const panels: WallPanel[] = [];
-  for (let i = 0; i < ROW_COUNT; i++) {
-    // Remainder clips go to the deeper rows: their panels are smaller, so
-    // they need more of them and repeat soonest without the bigger slice.
-    const extraBefore = Math.max(0, i - (ROW_COUNT - extra));
-    const rowStart = i * perRow + extraBefore;
-    const rowClips = Math.max(1, perRow + (i >= ROW_COUNT - extra ? 1 : 0));
-    const h = nearH * Math.pow(ROW_SCALE, i);
-    // Cover the viewport plus a panel of margin on each side; the wrap-around
-    // teleport then always happens offscreen. Fewer panels means fewer
-    // decoders, so this stays as tight as the margin allows.
-    const span = width * 1.1 + h * 2.6;
+  for (let row = 0; row < ROW_COUNT; row++) {
+    // The smaller back row gets the remainder because it fits more panels.
+    const rowStart = row * perRow + Math.max(0, row - (ROW_COUNT - extra));
+    const count = perRow + (row >= ROW_COUNT - extra ? 1 : 0);
+    if (count === 0) continue;
+    const rowClips = uniqueClips.slice(rowStart, rowStart + count);
+    const h = nearH * Math.pow(ROW_SCALE, row);
+    const widths = rowClips.map((clip) => h * clip.aspect);
+    const totalWidth = widths.reduce((total, w) => total + w, 0);
+    const length = Math.max(
+      totalWidth + count * GAP_PX,
+      width + Math.max(...widths) + 2 * GAP_PX,
+    );
+    const gap = (length - totalWidth) / count;
     let x = 0;
-    let k = 0;
-    const rowPanels: WallPanel[] = [];
-    while (x < span) {
-      const clip = (rowStart + (k % rowClips)) % clipCount;
-      const w = h * clips[clip].aspect;
-      rowPanels.push({ clip, w, h, x0: x + w / 2, row: i, length: 0 });
-      x += w + GAP_PX;
-      k++;
-    }
-    // The row is a loop, so the seam (last panel wrapping around to meet the
-    // first) is an adjacency too. When the cycle length doesn't divide the
-    // panel count, the seam can pair a clip with itself: bump the last panel
-    // one step along the slice, which is distinct from both neighbors
-    // whenever the slice holds 3+ clips.
-    const last = rowPanels[rowPanels.length - 1];
-    if (
-      rowPanels.length > 1 &&
-      rowClips >= 3 &&
-      last.clip === rowPanels[0].clip
-    ) {
-      const left = last.x0 - last.w / 2;
-      last.clip = rowStart + ((last.clip - rowStart + 1) % rowClips);
-      last.w = last.h * clips[last.clip].aspect;
-      last.x0 = left + last.w / 2;
-      x = left + last.w + GAP_PX;
-    }
-    for (const p of rowPanels) p.length = x;
-    panels.push(...rowPanels);
+    rowClips.forEach((clip, index) => {
+      const w = widths[index];
+      panels.push({ clip: clip.index, w, h, x0: x + w / 2, row, length });
+      x += w + gap;
+    });
   }
   return panels;
 }
