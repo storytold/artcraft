@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use reqwest::IntoUrl;
+use reqwest::{IntoUrl, Url};
 use serde::{de::DeserializeOwned, Serialize};
 use log::{debug, info};
 
@@ -131,14 +131,22 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
   }
 
   /// Submit the request to the Fal queue with a webhook callback URL.
+  ///
+  /// NB: The `fal_webhook` query value MUST be percent-encoded. Since Fal's 2026-09-08 gateway
+  /// change, a raw `fal_webhook=https://host/path` value is silently ignored: the job completes
+  /// but no webhook is ever delivered. `query_pairs_mut` encodes it for us.
   pub async fn queue_webhook<U: IntoUrl>(self, url: U) -> Result<WebhookResponse, FalError> {
     let key = self
       .api_key
       .expect("No fal API key provided, and FAL_API_KEY environment variable is not set");
 
-    let url_encoded = url.into_url()?;
+    let webhook_url = url.into_url()?;
 
-    let request_url = format!("{}/{}?fal_webhook={}", self.queue_base_url, self.endpoint, url_encoded);
+    let mut request_url = Url::parse(&format!("{}/{}", self.queue_base_url, self.endpoint))
+      .map_err(|err| FalError::Other(format!("invalid fal queue url: {}", err)))?;
+    request_url
+      .query_pairs_mut()
+      .append_pair("fal_webhook", webhook_url.as_str());
 
     info!("Sending request to FAL queue webhook: {}", request_url);
 
@@ -281,6 +289,55 @@ mod tests {
 
       assert!(response.ok);
       assert_single_json_content_type_with_params(&captured.await.unwrap());
+    }
+  }
+
+  /// Regression tests for the 2026-09-09 webhook silence: Fal ignores an unencoded
+  /// `fal_webhook` value, so the callback URL must be percent-encoded in the query string.
+  mod webhook_url_encoding_tests {
+    use super::*;
+
+    const ENCODED_WEBHOOK_URL: &str = "https%3A%2F%2Fexample.com%2Fv1%2Fwebhooks%2Ffal";
+
+    #[tokio::test]
+    async fn webhook_url_is_percent_encoded_in_query_string() {
+      let (base_url, captured) = spawn_capture_server(QUEUE_RESPONSE_BODY).await;
+
+      new_request()
+        .with_queue_base_url(base_url)
+        .queue_webhook(WEBHOOK_URL)
+        .await
+        .expect("queue_webhook should succeed");
+
+      let raw = captured.await.unwrap();
+      assert!(
+        raw.request_line.contains(&format!("?fal_webhook={}", ENCODED_WEBHOOK_URL)),
+        "webhook url not percent-encoded: {}", raw.request_line,
+      );
+      assert!(
+        !raw.request_line.contains("fal_webhook=https://"),
+        "webhook url sent raw: {}", raw.request_line,
+      );
+    }
+
+    #[tokio::test]
+    async fn encoded_webhook_url_decodes_back_to_the_original() {
+      let (base_url, captured) = spawn_capture_server(QUEUE_RESPONSE_BODY).await;
+
+      new_request()
+        .with_queue_base_url(base_url)
+        .queue_webhook(WEBHOOK_URL)
+        .await
+        .expect("queue_webhook should succeed");
+
+      let raw = captured.await.unwrap();
+      let path_and_query = raw.request_line.split_whitespace().nth(1).expect("request target");
+      let parsed = Url::parse(&format!("http://localhost{}", path_and_query)).unwrap();
+      let decoded = parsed.query_pairs()
+        .find(|(k, _)| k == "fal_webhook")
+        .map(|(_, v)| v.into_owned())
+        .expect("fal_webhook param");
+      assert_eq!(decoded, WEBHOOK_URL);
     }
   }
 
