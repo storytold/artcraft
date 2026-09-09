@@ -36,9 +36,9 @@ export interface PageMeta {
 // Homepage / fallback metadata. Used for "/" and as the base any page meta is
 // merged onto, so partial overrides still produce a complete tag set.
 export const DEFAULT_META: PageMeta = {
-  title: "ArtCraft. AI Video and Images. Fast and Open Desktop App.",
+  title: "ArtCraft. The Open Platform for Artists. AI Video and Images.",
   description:
-    "ArtCraft is an Open Desktop app for generating AI Video and Images. You own ArtCraft!",
+    "ArtCraft is the open platform for artists: every AI image and video model in one studio you own, on desktop and web.",
   ogImage: DEFAULT_OG_IMAGE,
 };
 

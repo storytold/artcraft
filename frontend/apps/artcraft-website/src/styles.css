@@ -305,3 +305,36 @@
     vertical-align: -0.2em;
   }
 }
+
+/* Landing hero video wall (components/hero-video-wall.tsx). Panels slide the
+   full row length on the compositor thread; per-panel custom properties set
+   the loop length, duration, start offset and direction. */
+@keyframes hero-wall-slide {
+  from {
+    transform: translate3d(var(--wall-from), 0, 0);
+  }
+  to {
+    transform: translate3d(var(--wall-to), 0, 0);
+  }
+}
+
+.hero-wall-panel {
+  animation: hero-wall-slide var(--wall-duration) linear infinite;
+  animation-delay: var(--wall-delay);
+  animation-direction: var(--wall-direction);
+  will-change: transform;
+}
+
+.hero-wall[data-paused="true"] .hero-wall-panel {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-wall-panel {
+    animation: none;
+  }
+
+  .hero-wall-panel {
+    transform: translate3d(var(--wall-rest), 0, 0);
+  }
+}

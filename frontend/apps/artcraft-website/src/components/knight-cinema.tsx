@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import gsap from "gsap";
 
 export interface KnightCinemaHandle {
@@ -31,6 +31,26 @@ export const KnightCinema = forwardRef<KnightCinemaHandle, KnightCinemaProps>(
     const bottomBarRef = useRef<HTMLDivElement>(null);
     const progressBarRef = useRef<HTMLDivElement>(null);
     const timecodeRef = useRef<HTMLSpanElement>(null);
+
+    // The scrub video is large; don't fetch it on page load. Start loading
+    // once the cinema is within a couple of viewports of being seen, which
+    // is still well before the scroll reaches it.
+    useEffect(() => {
+      const cinema = cinemaRef.current;
+      const video = videoRef.current;
+      if (!cinema || !video) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return;
+          video.preload = "auto";
+          video.load();
+          observer.disconnect();
+        },
+        { rootMargin: "200% 0px" },
+      );
+      observer.observe(cinema);
+      return () => observer.disconnect();
+    }, []);
 
     useImperativeHandle(ref, () => ({
       get cinemaEl() {
@@ -71,7 +91,7 @@ export const KnightCinema = forwardRef<KnightCinemaHandle, KnightCinemaProps>(
             src={src}
             muted
             playsInline
-            preload="auto"
+            preload="none"
             className="absolute inset-0 w-full h-full object-cover"
           />
         </div>

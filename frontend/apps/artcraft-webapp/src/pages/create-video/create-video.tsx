@@ -320,6 +320,24 @@ export default function CreateVideo() {
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
 
+  // Prefill from a `?prompt=` query: the marketing site's landing prompt box
+  // hands visitors off here with their text. Consumed once, then stripped
+  // from the URL so a reload doesn't clobber later edits.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const incoming = params.get("prompt");
+    if (!incoming) return;
+    setPrompt(incoming);
+    params.delete("prompt");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Settings are sticky across model switches: the store keeps the user's
   // chosen value untouched; we resolve an *effective* value against the current
   // model here (keep when supported, else fall back to the model default for

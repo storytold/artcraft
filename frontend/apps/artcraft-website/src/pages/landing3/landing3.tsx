@@ -10,26 +10,47 @@ import {
   setupKnightCinemaTimeline,
   type KnightCinemaHandle,
 } from "../../components/knight-cinema";
-import { BoxIcon, CameraIcon, CheckIcon, EraserIcon, FilmIcon, GlobeIcon, LayersIcon, MapPinIcon, PaintbrushIcon, PlayIcon, ShapesIcon, UserIcon, VolumeXIcon, WrenchIcon, XIcon } from "lucide-react";
-import { DynamicIcon, AppleIcon, DiscordIcon, GithubIcon, WindowsIcon } from "@storyteller/icons";
+import {
+  BoxIcon,
+  CameraIcon,
+  CheckIcon,
+  EraserIcon,
+  FilmIcon,
+  GlobeIcon,
+  LayersIcon,
+  MapPinIcon,
+  PaintbrushIcon,
+  PlayIcon,
+  RocketIcon,
+  ShapesIcon,
+  UserIcon,
+  WrenchIcon,
+  XIcon,
+} from "lucide-react";
+import {
+  DynamicIcon,
+  AppleIcon,
+  DiscordIcon,
+  GithubIcon,
+  WindowsIcon,
+} from "@storyteller/icons";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { DownloadModal } from "../../components/download-modal";
 import ModelBadgeGrid from "../../components/model-badge-grid";
 import { getSession } from "../../lib/session";
-import { BillingApi } from "@storyteller/api";
 import {
   DOWNLOAD_LINKS,
   DOWNLOADS_ENABLED,
 } from "../../config/github_download_links";
 import { webappUrl, SOCIAL_LINKS } from "../../config/links";
-import { Button } from "@storyteller/ui-button";
-import { Tooltip } from "@storyteller/ui-tooltip";
 import { Link } from "react-router-dom";
 import {
   TruchetPattern,
   type TruchetVariant,
 } from "../../components/truchet-pattern";
+import { HeroVideoWall, type WallClip } from "../../components/hero-video-wall";
+import { LandingPromptDemo } from "../../components/landing-prompt-demo";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -98,26 +119,71 @@ const MADE_WITH_VIDEOS = [
   "https://www.youtube.com/embed/H4NFXGMuwpY?si=wPuQl5cJOu1v8MJu",
 ];
 
+// Clips for the hero's render wall, served from the frontend CDN as
+// videos/1.mp4, 2.mp4, ... up to HERO_WALL_CDN_CLIP_COUNT. Bump the count as
+// clips are uploaded; a number that isn't there yet leaves its panel blank.
+//
+// Encode CDN clips for the wall, not for full-screen playback: the wall
+// plays about six at once and panels never render taller than 320 CSS px.
+// 960x540 H.264 (8-bit yuv420p, ~1.5 Mbps, +faststart, muted, 8 to 20 s)
+// plays everywhere; 1080p HEVC 10-bit does not play in Firefox and needs a
+// hardware decoder in Chrome and Edge.
+const HERO_WALL_CDN_BASE = "https://frontend-cdn.fakeyou.com/videos";
+const HERO_WALL_CDN_CLIP_COUNT = 2;
+
+// TEMPORARY, local demo only: raw generation exports dropped into
+// public/videos/demo (1080p HEVC 10-bit masters, 107 MB in total). They are
+// untracked and must not ship; once they're encoded for the wall and
+// uploaded to the CDN, delete this list and raise the CDN count instead.
+const HERO_WALL_DEMO_CLIPS = [
+  "artcraft-m_1zcvqg6face5btkpp0vw9fr2etnhws",
+  "artcraft-m_8h46fp9h0nyzvhzgqvwkrwjs1b50gc",
+  "artcraft-m_dp44z5s4mgd9vh9dvr9d0qrkkjev9p",
+  "artcraft-m_n6k00my1kg1gph3wv9ktzpj8qnbsxd",
+  "artcraft-m_pqcsq07dv4s0jvxz0vms94hx4smx92",
+  "artcraft-m_rd1xw8a84sys0xssnmvcyzy8pqv9x5",
+];
+
+const HERO_WALL_CLIPS: WallClip[] = [
+  ...Array.from({ length: HERO_WALL_CDN_CLIP_COUNT }, (_, i) => ({
+    src: `${HERO_WALL_CDN_BASE}/${i + 1}.mp4`,
+    aspect: 16 / 9,
+  })),
+  ...HERO_WALL_DEMO_CLIPS.map((name) => ({
+    src: `/videos/demo/${name}.mp4`,
+    aspect: 16 / 9,
+  })),
+];
+
+// Legibility halo lifting the hero type off the busy footage behind it. Kept
+// to one small blur: large blurred shadows on 140px type are expensive to
+// rasterize and made the reveal animation stutter. The wall's radial
+// vignette does the heavy lifting for contrast.
+const HERO_TEXT_SHADOW = "0 2px 10px rgba(0,0,0,0.55)";
+
 const MANIFESTO_WORDS: ReadonlyArray<string> = [
   "ArtCraft",
-  "brings",
-  "control",
-  "to",
-  "AI",
-  "image",
+  "is",
+  "the",
+  "open",
+  "platform",
+  "for",
+  "artists:",
+  "every",
+  "model,",
+  "your",
+  "own",
+  "files,",
   "and",
-  "video",
-  "generation,",
-  "giving",
-  "artists",
-  "like",
-  "you",
   "full",
-  "power",
+  "control",
   "over",
   "every",
   "shot.",
 ];
+
+// The manifesto word that gets the highlighter sweep.
+const MANIFESTO_HIGHLIGHT_WORD = "open";
 
 // Hand-drawn marker stroke (tapered ends, slight middle bulge, gentle tilt)
 // that sits behind an emphasized word like a highlighter pass. The wrapping
@@ -236,50 +302,35 @@ const TruchetBlob = ({
   </div>
 );
 
-// Primary CTA: routes subscribers straight to the webapp homepage and everyone
-// else (logged out, or logged in without an active subscription) to /pricing.
-const UseOnWebButton = ({
-  isLoggedIn,
-  hasSubscription,
-}: {
-  isLoggedIn: boolean;
-  hasSubscription: boolean;
-}) => {
-  const className =
-    "group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px";
-  const inner = (
-    <>
-      <GlobeIcon  className="text-[13px]" />
-      Use on Web
-    </>
-  );
-  return (
-    <Tooltip
-      content="Use ArtCraft in your browser"
-      position="top"
-      delay={0}
-      className="rounded-full"
-    >
-      {isLoggedIn && hasSubscription ? (
-        <a href={webappUrl("/")} className={className}>
-          {inner}
-        </a>
-      ) : (
-        <Link to="/pricing" className={className}>
-          {inner}
-        </Link>
-      )}
-    </Tooltip>
-  );
-};
+// Primary CTAs: "Use on Web" goes straight to the webapp, "Buy Credits" to
+// pricing. Both are plain web links, so they work on mobile too.
+const UseOnWebButton = () => (
+  <a
+    href={webappUrl("/")}
+    className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
+  >
+    <GlobeIcon className="text-[13px]" />
+    Use on Web
+  </a>
+);
+
+const BuyCreditsButton = () => (
+  <Link
+    to="/pricing"
+    className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
+  >
+    <RocketIcon className="text-[13px]" />
+    Buy Credits
+  </Link>
+);
 
 const Landing3 = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [heroVideoMuted, setHeroVideoMuted] = useState(true);
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  // The manifesto's WebGL scene mounts only once its section is near.
+  const [manifestoNear, setManifestoNear] = useState(false);
+  const manifestoSectionRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const manifestoProgressRef = useRef(0);
   // Separate progress for the character — extends past the text-reveal end so
@@ -294,22 +345,29 @@ const Landing3 = () => {
   // canvas during the video phase — significant savings on high-DPI displays.
   const characterPausedRef = useRef(false);
 
+  // The manifesto's WebGL scene (renderer, environment map, character model)
+  // is heavy to set up, so it mounts only once the section is within two
+  // viewports. On a fresh load the hero gets the main thread to itself.
+  useEffect(() => {
+    const section = manifestoSectionRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setManifestoNear(true);
+        observer.disconnect();
+      },
+      { rootMargin: "200% 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    getSession().then(async (response) => {
+    getSession().then((response) => {
       if (cancelled || !response.success || !response.data?.loggedIn) return;
       setIsLoggedIn(true);
-      try {
-        const subResponse = await new BillingApi().ListActiveSubscriptions();
-        if (
-          !cancelled &&
-          subResponse.success &&
-          subResponse.data &&
-          subResponse.data.active_subscriptions.length > 0
-        ) {
-          setHasSubscription(true);
-        }
-      } catch (e) {}
     });
     return () => {
       cancelled = true;
@@ -419,23 +477,6 @@ const Landing3 = () => {
           },
         );
       });
-
-      // Hero pattern parallax (slower than scroll, drifts upward)
-      const heroPattern = document.querySelector<HTMLElement>(
-        "[data-hero-pattern]",
-      );
-      if (heroPattern) {
-        gsap.to(heroPattern, {
-          yPercent: -25,
-          ease: "none",
-          scrollTrigger: {
-            trigger: heroPattern,
-            start: "top top",
-            end: "bottom top",
-            scrub: true,
-          },
-        });
-      }
 
       // Decorative blob parallax — each drifts at its own speed for an
       // asymmetric, scattered feel as the user scrolls.
@@ -590,8 +631,8 @@ const Landing3 = () => {
       className="relative min-h-screen bg-[#101014] text-white selection:bg-primary/30 selection:text-white overflow-x-clip"
     >
       <Seo
-        title="ArtCraft - Controllable AI for Artists"
-        description="ArtCraft is the opensource desktop app for generating AI video and images - built for artists who want real control."
+        title="ArtCraft - The Open Platform for Artists"
+        description="ArtCraft is the open platform for artists: every AI image and video model in one studio you own, on desktop and web."
       />
       {/* Top primary-blue accent, matches the pricing page */}
       <div
@@ -621,137 +662,81 @@ const Landing3 = () => {
         }}
       />
       {/* HERO */}
-      <section className="relative pt-24 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8 overflow-hidden">
-        {/* Triangle pattern background with parallax */}
-        <div
-          aria-hidden
-          data-hero-pattern
-          className="pointer-events-none absolute inset-0 z-0"
-          style={{
-            maskImage:
-              "radial-gradient(ellipse 80% 70% at 50% 35%, black 35%, transparent 80%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 80% 70% at 50% 35%, black 35%, transparent 80%)",
-          }}
+      <section className="relative overflow-hidden">
+        {/* Full-bleed render wall: rows of clips forming one perspective wall
+            that drifts behind the headline and answers the cursor. */}
+        <HeroVideoWall
+          clips={HERO_WALL_CLIPS}
+          className="h-[80svh] min-h-[520px] max-h-[860px] w-full"
         >
-          <TruchetPattern
-            variant="landing"
-            intensity={0.8}
-            className="absolute inset-0 -top-[10%] w-full h-[120%]"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-6xl mx-auto text-center">
-          {/* Eyebrow chip */}
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 mb-7 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md text-xs sm:text-[13px] font-medium text-white/70"
-            data-reveal
-          >
-            <span className="flex h-1.5 w-1.5 rounded-full bg-primary" />
-            Now with Seedance 2.0, Nano Banana 2 & more
-          </div>
-
-          {/* Headline */}
-          <h1
-            className="text-[44px] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[88px] tracking-[-0.045em] font-medium mb-6 text-white"
-            data-reveal
-          >
-            Controllable AI
-            <br />
-            <span className="font-serif-italic text-white/95">for artists</span>
-            .
-          </h1>
-
-          {/* Subtitle */}
-          <p
-            className="max-w-xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
-            data-reveal
-          >
-            Artists need and deserve unparalleled control and precision.
-            ArtCraft’s got you covered.
-          </p>
-
-          {/* CTAs */}
-          <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4"
-            data-reveal
-          >
-            {isMobile ? (
-              <Button
-                disabled
-                className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white/10 text-white/60 text-[14px] font-semibold"
-              >
-                Download on a desktop
-              </Button>
-            ) : (
-              <>
-                <UseOnWebButton
-                  isLoggedIn={isLoggedIn}
-                  hasSubscription={hasSubscription}
-                />
-                {DOWNLOADS_ENABLED && (
-                  <a
-                    href={downloadUrl}
-                    onClick={onDownloadClick}
-                    className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
-                  >
-                    <DynamicIcon
-                      icon={isMacOs ? AppleIcon : WindowsIcon}
-                      className="text-[13px]"
-                    />
-                    Download for {isMacOs ? "Mac" : "Windows"}
-                  </a>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Spacer below CTAs */}
-          <div className="mb-12 sm:mb-16" />
-
-          {/* Hero video */}
-          <div
-            className="relative rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08]"
-            data-reveal
-          >
-            <div
-              className="relative w-full rounded-xl sm:rounded-[20px] overflow-hidden bg-black"
-              style={{ paddingTop: "56.25%" }}
+          <div className="flex h-full flex-col items-center justify-center px-4 pt-10 text-center sm:px-8">
+            {/* Headline */}
+            <h1
+              className="text-[46px] leading-[0.98] sm:text-7xl md:text-8xl lg:text-[124px] xl:text-[140px] tracking-[-0.045em] font-semibold text-white will-change-[transform,opacity]"
+              style={{ textShadow: HERO_TEXT_SHADOW }}
+              data-reveal
             >
-              <video
-                ref={heroVideoRef}
-                src="https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/website-commercial-2026.05.mp4"
-                className="absolute inset-0 w-full h-full"
-                autoPlay
-                loop
-                muted
-                playsInline
-                controls
-                preload="auto"
-                onVolumeChange={(e) => setHeroVideoMuted(e.currentTarget.muted)}
-              />
-              {heroVideoMuted && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const v = heroVideoRef.current;
-                    if (!v) return;
-                    v.muted = false;
-                    setHeroVideoMuted(false);
-                    void v.play().catch(() => {});
-                  }}
-                  className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-black/65 hover:bg-black/80 backdrop-blur-md text-white text-[12px] font-semibold border border-white/15 transition-colors"
+              Open platform
+              <br />
+              <span className="font-serif-italic font-normal text-white/95">
+                for artists
+              </span>
+              .
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              className="mt-6 max-w-xl sm:max-w-2xl text-base sm:text-lg md:text-xl text-white/80 leading-relaxed will-change-[transform,opacity]"
+              style={{ textShadow: HERO_TEXT_SHADOW }}
+              data-reveal
+            >
+              Every AI image and video model in one studio you own. Bring your
+              own keys, keep your own files, and craft on desktop or web.
+            </p>
+
+            {/* CTAs. The overlay ignores pointer events so drags reach the
+                wall; the buttons opt back in. */}
+            <div
+              className="pointer-events-auto mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 will-change-[transform,opacity]"
+              data-reveal
+            >
+              <UseOnWebButton />
+              <BuyCreditsButton />
+              {DOWNLOADS_ENABLED && !isMobile && (
+                <a
+                  href={downloadUrl}
+                  onClick={onDownloadClick}
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
                 >
-                  <VolumeXIcon
-                    
-                    className="text-[12px]" />
-                  Tap to unmute
-                </button>
+                  <DynamicIcon
+                    icon={isMacOs ? AppleIcon : WindowsIcon}
+                    className="text-[13px]"
+                  />
+                  Download for {isMacOs ? "Mac" : "Windows"}
+                </a>
               )}
             </div>
           </div>
+          <div
+            aria-hidden
+            className="absolute inset-x-0 bottom-3 flex items-center justify-between px-4 sm:px-8 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
+          ></div>
+        </HeroVideoWall>
+
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 pt-8 pb-8 text-center">
+          {/* Platform facts */}
+          <div
+            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
+            data-reveal
+          >
+            <span>macOS · Windows · Web</span>
+            <span>Every model, one studio</span>
+            <span>No subscription required</span>
+          </div>
         </div>
       </section>
+      {/* TRY IT: live prompt box + result preview, straight into the webapp */}
+      <LandingPromptDemo />
       {/* MANIFESTO */}
       {isMobile && (
         // Mobile: simple static version — no sticky, no 3D character, no
@@ -764,7 +749,7 @@ const Landing3 = () => {
             >
               {MANIFESTO_WORDS.map((w, i) => (
                 <span key={i}>
-                  {w === "control" ? (
+                  {w === MANIFESTO_HIGHLIGHT_WORD ? (
                     <MarkerHighlight animate={false}>{w}</MarkerHighlight>
                   ) : (
                     w
@@ -780,6 +765,7 @@ const Landing3 = () => {
         // Desktop: sticky scroll-reveal + 3D character walking across, then a
         // circular wipe to the scroll-scrubbed knight video.
         <section
+          ref={manifestoSectionRef}
           data-manifesto-section
           className="relative"
           style={{ height: "750vh" }}
@@ -804,10 +790,12 @@ const Landing3 = () => {
                 className="absolute inset-0 w-full h-full"
               />
             </div>
-            <ManifestoThreeBackground
-              progressRef={characterProgressRef}
-              pausedRef={characterPausedRef}
-            />
+            {manifestoNear && (
+              <ManifestoThreeBackground
+                progressRef={characterProgressRef}
+                pausedRef={characterPausedRef}
+              />
+            )}
             <h2
               className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 text-center text-2xl sm:text-4xl md:text-5xl lg:text-[60px] tracking-[-0.035em] font-medium text-white"
               style={{
@@ -822,7 +810,11 @@ const Landing3 = () => {
                   data-manifesto-word
                   className="inline-block mr-[0.25em] opacity-15 will-change-[opacity,transform]"
                 >
-                  {w === "control" ? <MarkerHighlight>{w}</MarkerHighlight> : w}
+                  {w === MANIFESTO_HIGHLIGHT_WORD ? (
+                    <MarkerHighlight>{w}</MarkerHighlight>
+                  ) : (
+                    w
+                  )}
                 </span>
               ))}
             </h2>
@@ -834,18 +826,283 @@ const Landing3 = () => {
         </section>
       )}
 
+      {/* OPEN PLATFORM: what "open" means, as a bento */}
+      <section
+        id="reasons"
+        className="relative px-4 sm:px-8 py-16 sm:py-24 overflow-hidden"
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="landing"
+            intensity={0.6}
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto" data-reveal>
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Open platform
+            </span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
+              Open by design.{" "}
+              <span className="font-serif-italic">Yours by default.</span>
+            </h2>
+            <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
+              Every model in one place, your work in your hands, and an app you
+              own on desktop and web. No walled garden, no lock-in.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
+            {/* Open Source */}
+            <div className="xl:col-span-5 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
+              <div className="flex flex-col h-full">
+                <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                  It's Open Source
+                </h3>
+                <p className="text-white/60 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 leading-relaxed flex-1">
+                  The app, its infrastructure, and the roadmap are all{" "}
+                  <a
+                    href="https://github.com/storytold/artcraft"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-400/80 font-semibold hover:text-primary-300 underline underline-offset-2 transition-colors"
+                  >
+                    open source on GitHub.
+                  </a>{" "}
+                  Fork it, extend it, or come contribute.
+                </p>
+                <div className="flex justify-center items-center h-full p-4 lg:p-6 select-none">
+                  <GithubIcon className="text-[80px] md:text-[110px] lg:text-[130px] text-white/85 group-hover:text-white group-hover:scale-105 transition-all" />
+                </div>
+              </div>
+            </div>
+
+            {/* Use Every Model */}
+            <div className="xl:col-span-7 rounded-3xl bg-[#080808] group overflow-hidden">
+              <div className="lg:flex-1 flex flex-col justify-between">
+                <div className="p-6 lg:p-8">
+                  <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                    Use Every Model
+                  </h3>
+                  <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
+                    <span className="text-primary-400/80 font-semibold">
+                      EVERY image and video model
+                    </span>{" "}
+                    in one place. Use our credits, or bring your own API keys
+                    and existing subscriptions.
+                  </p>
+                </div>
+                <ModelBadgeGrid className="mt-3" />
+              </div>
+            </div>
+
+            {/* Desktop and Web */}
+            <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 pb-0 lg:pb-0 group overflow-hidden">
+              <div className="relative flex flex-col h-full">
+                <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                  Desktop and Web
+                </h3>
+                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6 lg:text-lg leading-relaxed">
+                  <span className="text-primary-400/80 font-semibold">
+                    No more hunting for the hundredth tab.
+                  </span>{" "}
+                  A native app for Windows and Mac (Linux and tablets soon), and
+                  the same studio in your browser.
+                </p>
+                <div className="h-20 md:h-24 lg:h-36 xl:h-36 bg-white/[0.02] border-[5px] border-white/[0.02] rounded-t-2xl relative mt-12 lg:mt-16 xl:mt-24 select-none">
+                  <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex gap-9 items-center justify-center drop-shadow-2xl z-20 scale-50 lg:scale-75 xl:scale-100">
+                    <img
+                      src="/images/windows-logo.png"
+                      alt="Windows Logo"
+                      draggable={false}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-32 rotate-6"
+                    />
+                    <img
+                      src="/images/apple-logo.png"
+                      alt="Apple Logo"
+                      draggable={false}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-36 -rotate-6"
+                    />
+                    <img
+                      src="/images/linux-logo.png"
+                      alt="Linux Logo"
+                      draggable={false}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-36 rotate-6"
+                    />
+                  </div>
+                </div>
+                <div className="absolute left-0 bottom-0 w-full h-28 bg-gradient-to-t from-[#000000] via-[#121212]/50 to-transparent z-10 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Created by Artists */}
+            <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-center">
+                <div className="lg:flex-1">
+                  <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                    Created by Artists and Filmmakers
+                  </h3>
+                  <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
+                    <span className="text-primary-400/80 font-semibold">
+                      The other leading platforms were created by the Google ad
+                      team, crypto bros, and other non-artists.
+                    </span>{" "}
+                    <br />
+                    Not us. We're one of you.
+                  </p>
+                </div>
+                <div className="flex justify-center items-center h-24 lg:h-28">
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-pink-900 rounded-full flex items-center justify-center border-2 border-pink-600 shadow-lg z-10">
+                    <FilmIcon className="text-white text-xl lg:text-2xl" />
+                  </div>
+                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-emerald-600 rounded-full flex items-center justify-center border-2 border-emerald-400 shadow-lg -ml-2 z-30">
+                    <PaintbrushIcon className="text-white text-2xl lg:text-3xl" />
+                  </div>
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-purple-900 rounded-full flex items-center justify-center border-2 border-purple-600 shadow-lg -ml-2 z-20">
+                    <CameraIcon className="text-white text-xl lg:text-2xl" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* STOP RENTING SECTION */}
+      <section className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <TruchetBlob
+          className="top-[20%] -right-32 w-[540px] h-[540px]"
+          variant="pricing"
+          intensity={0.75}
+          speed={-15}
+          rotate={-20}
+        />
+        <div className="max-w-6xl mx-auto" data-reveal>
+          <div className="text-center mb-12">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Ownership
+            </span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
+              Stop <span className="font-serif-italic">renting</span> from
+              websites.
+            </h2>
+            <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
+              An open platform means you keep the keys. ArtCraft is yours to own
+              and keep, forever. No subscriptions needed, no aggregator
+              middleman, no rent payments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* Websites column — deliberately styled to feel like a downgrade */}
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] bg-gradient-to-br from-red-500/[0.08] via-[#0a0607] to-[#080808] border border-red-500/20 p-7 sm:p-8">
+              <div
+                className="absolute -top-16 -left-16 w-72 h-72 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(239,68,68,0.18) 0%, transparent 60%)",
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-8">
+                  <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-red-300/70">
+                    <XIcon className="text-red-400 text-[11px]" />
+                    Other tools
+                  </span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/70">
+                  The Rental Trap
+                </h3>
+                <p className="text-[15px] text-white/45 leading-relaxed mb-6">
+                  With browser-based tools, you're paying for access, not a
+                  product. Your work, models, and history live on someone else's
+                  servers, and disappear with them.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["No ownership", "Monthly fees", "Locked in"].map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
+                    >
+                      <XIcon className="text-red-400 text-[10px]" />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ArtCraft column */}
+            <div className="rounded-2xl sm:rounded-[28px] bg-gradient-to-br from-primary/15 via-white/[0.04] to-white/[0.02] border border-primary/25 p-7 sm:p-8 relative overflow-hidden">
+              <div
+                className="absolute -top-16 -right-16 w-72 h-72 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(45,129,255,0.25) 0%, transparent 60%)",
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 mb-8">
+                  <img
+                    src="/images/artcraft-logo.png"
+                    alt="ArtCraft"
+                    aria-hidden
+                    className="h-5 w-auto"
+                  />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white">
+                  Complete ownership
+                </h3>
+                <p className="text-[15px] text-white/80 leading-relaxed mb-6">
+                  Download ArtCraft and it's yours. You own the application,
+                  your files, and everything you create. Bring your own API
+                  keys, or use ours.
+                </p>
+                <div className="flex flex-wrap gap-2 self-end">
+                  {["Yours forever", "BYO keys", "No subscriptions needed"].map(
+                    (tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-lg px-2.5 py-1.5"
+                      >
+                        <CheckIcon className="text-primary text-[10px]" />
+                        {tag}
+                      </span>
+                    ),
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <section id="features" className="relative px-4 sm:px-8 pt-12">
         <div className="max-w-[1100px] mx-auto text-center" data-reveal>
           <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
-            Crafting features
+            Controllable AI
           </span>
           <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
-            We're pulling you{" "}
-            <span className="font-serif-italic">out of prompting.</span>
+            Then go <span className="font-serif-italic">beyond prompting.</span>
           </h2>
           <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
-            Text prompting is neat, but artists crave control. ArtCraft is the
-            control that mere words cannot buy.
+            Text prompting is neat, but artists crave control. Draw on a canvas,
+            block shots in real 3D, pose characters, and render with any model.
+            ArtCraft is the control that mere words cannot buy.
           </p>
         </div>
       </section>
@@ -917,309 +1174,6 @@ const Landing3 = () => {
           ))}
         </div>
       </section>
-      {/* STOP RENTING SECTION */}
-      <section className="relative px-4 sm:px-8 py-16 sm:py-24">
-        <TruchetBlob
-          className="top-[20%] -right-32 w-[540px] h-[540px]"
-          variant="pricing"
-          intensity={0.75}
-          speed={-15}
-          rotate={-20}
-        />
-        <div className="max-w-6xl mx-auto" data-reveal>
-          <div className="text-center mb-12">
-            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
-              Ownership
-            </span>
-            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
-              Stop <span className="font-serif-italic">renting</span> from
-              websites.
-            </h2>
-            <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
-              ArtCraft is yours to own and keep, forever. No subscriptions
-              needed, no aggregator middleman, no rent payments.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Websites column — deliberately styled to feel like a downgrade */}
-            <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] bg-gradient-to-br from-red-500/[0.08] via-[#0a0607] to-[#080808] border border-red-500/20 p-7 sm:p-8">
-              <div
-                className="absolute -top-16 -left-16 w-72 h-72 rounded-full pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(239,68,68,0.18) 0%, transparent 60%)",
-                }}
-              />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-8">
-                  <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-red-300/70">
-                    <XIcon
-                      
-                      className="text-red-400 text-[11px]" />
-                    Other tools
-                  </span>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/70">
-                  The Rental Trap
-                </h3>
-                <p className="text-[15px] text-white/45 leading-relaxed mb-6">
-                  With browser-based tools, you're paying for access, not a
-                  product. Your work, models, and history live on someone else's
-                  servers, and disappear with them.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {["No ownership", "Monthly fees", "Locked in"].map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
-                    >
-                      <XIcon
-                        
-                        className="text-red-400 text-[10px]" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ArtCraft column */}
-            <div className="rounded-2xl sm:rounded-[28px] bg-gradient-to-br from-primary/15 via-white/[0.04] to-white/[0.02] border border-primary/25 p-7 sm:p-8 relative overflow-hidden">
-              <div
-                className="absolute -top-16 -right-16 w-72 h-72 rounded-full pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(45,129,255,0.25) 0%, transparent 60%)",
-                }}
-              />
-              <div className="relative">
-                <div className="flex items-center gap-1.5 mb-8">
-                  <img
-                    src="/images/artcraft-logo.png"
-                    alt="ArtCraft"
-                    aria-hidden
-                    className="h-5 w-auto"
-                  />
-                </div>
-                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white">
-                  Complete ownership
-                </h3>
-                <p className="text-[15px] text-white/80 leading-relaxed mb-6">
-                  Download ArtCraft and it's yours. You own the application,
-                  your files, and everything you create. Bring your own API
-                  keys, or use ours.
-                </p>
-                <div className="flex flex-wrap gap-2 self-end">
-                  {["Yours forever", "BYO keys", "No subscriptions needed"].map(
-                    (tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-lg px-2.5 py-1.5"
-                      >
-                        <CheckIcon
-                          
-                          className="text-primary text-[10px]" />
-                        {tag}
-                      </span>
-                    ),
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* FIVE REASONS: original bento, dark theme */}
-      <section
-        id="reasons"
-        className="relative px-4 sm:px-8 py-16 sm:py-24 overflow-hidden"
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-0"
-          style={{
-            maskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
-          }}
-        >
-          <TruchetPattern
-            variant="landing"
-            intensity={0.6}
-            className="absolute inset-0 w-full h-full"
-          />
-        </div>
-        <div className="relative z-10 max-w-6xl mx-auto" data-reveal>
-          <div className="text-center mb-12 sm:mb-16">
-            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
-              Why ArtCraft
-            </span>
-            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02]">
-              Five reasons it's the{" "}
-              <span className="font-serif-italic">best tool</span>.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
-            {/* Reason #1: PC - Control Beyond Text Prompting */}
-            <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
-              <div className="flex xl:flex-col gap-4 lg:gap-8 h-full flex-col-reverse">
-                <div className="grow h-40">
-                  <img
-                    src="/images/2d-3d.png"
-                    alt="2D and 3D"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover rounded-2xl border border-white/[0.05]"
-                  />
-                </div>
-                <div className="flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                      Control Beyond Text Prompting
-                    </h3>
-                    <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
-                      <span className="text-primary-400/80 font-semibold">
-                        Create images and videos with our easy-to-use AI tool.
-                      </span>{" "}
-                      Draw on a canvas or work in a 3D space as if you're
-                      playing a video game.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Reason #2: Desktop App */}
-            <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 pb-0 lg:pb-0 group overflow-hidden">
-              <div className="relative flex flex-col h-full">
-                <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                  Desktop App
-                </h3>
-                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6 lg:text-lg leading-relaxed">
-                  <span className="text-primary-400/80 font-semibold">
-                    No more hunting for the hundredth tab.
-                  </span>{" "}
-                  Works on Windows, Mac, and soon Linux and Tablets. First class
-                  experience for real artists.
-                </p>
-                <div className="h-20 md:h-24 lg:h-36 xl:h-36 bg-white/[0.02] border-[5px] border-white/[0.02] rounded-t-2xl relative mt-12 lg:mt-16 xl:mt-24 select-none">
-                  <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex gap-9 items-center justify-center drop-shadow-2xl z-20 scale-50 lg:scale-75 xl:scale-100">
-                    <img
-                      src="/images/windows-logo.png"
-                      alt="Windows Logo"
-                      draggable={false}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-32 rotate-6"
-                    />
-                    <img
-                      src="/images/apple-logo.png"
-                      alt="Apple Logo"
-                      draggable={false}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-36 -rotate-6"
-                    />
-                    <img
-                      src="/images/linux-logo.png"
-                      alt="Linux Logo"
-                      draggable={false}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-36 rotate-6"
-                    />
-                  </div>
-                </div>
-                <div className="absolute left-0 bottom-0 w-full h-28 bg-gradient-to-t from-[#000000] via-[#121212]/50 to-transparent z-10 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Reason #3: Open Source */}
-            <div className="xl:col-span-4 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
-              <div className="flex flex-col h-full">
-                <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                  It's Open Source
-                </h3>
-                <p className="text-white/60 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 leading-relaxed flex-1">
-                  Our desktop app's code and infrastructure are all{" "}
-                  <a
-                    href="https://github.com/storytold/artcraft"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-400/80 font-semibold hover:text-primary-300 underline underline-offset-2 transition-colors"
-                  >
-                    open source on GitHub.
-                  </a>{" "}
-                  Join us and contribute!
-                </p>
-                <div className="flex justify-center items-center h-full p-4 lg:p-6 select-none">
-                  <GithubIcon
-                    
-                    className="text-[80px] md:text-[110px] lg:text-[130px] text-white/85 group-hover:text-white group-hover:scale-105 transition-all" />
-                </div>
-              </div>
-            </div>
-
-            {/* Reason #4: Use Every Model */}
-            <div className="xl:col-span-8 rounded-3xl bg-[#080808] group overflow-hidden">
-              <div className="lg:flex-1 flex flex-col justify-between">
-                <div className="p-6 lg:p-8">
-                  <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                    Use Every Model
-                  </h3>
-                  <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
-                    You'll be able to use{" "}
-                    <span className="text-primary-400/80 font-semibold">
-                      EVERY image and video model
-                    </span>{" "}
-                    all in one place. Log in with your existing subscriptions.
-                  </p>
-                </div>
-                <ModelBadgeGrid className="mt-3" />
-              </div>
-            </div>
-
-            {/* Reason #5: Created by Artists */}
-            <div className="xl:col-span-12 md:col-span-2 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
-              <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-center">
-                <div className="lg:flex-1">
-                  <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                    Created by Artists and Filmmakers
-                  </h3>
-                  <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
-                    <span className="text-primary-400/80 font-semibold">
-                      The other leading platforms were created by the Google ad
-                      team, crypto bros, and other non-artists.
-                    </span>{" "}
-                    <br />
-                    Not us. We're one of you.
-                  </p>
-                </div>
-                <div className="flex justify-center items-center h-24 lg:h-28">
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-pink-900 rounded-full flex items-center justify-center border-2 border-pink-600 shadow-lg z-10">
-                    <FilmIcon
-                      
-                      className="text-white text-xl lg:text-2xl" />
-                  </div>
-                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-emerald-600 rounded-full flex items-center justify-center border-2 border-emerald-400 shadow-lg -ml-2 z-30">
-                    <PaintbrushIcon
-                      
-                      className="text-white text-2xl lg:text-3xl" />
-                  </div>
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-purple-900 rounded-full flex items-center justify-center border-2 border-purple-600 shadow-lg -ml-2 z-20">
-                    <CameraIcon
-                      
-                      className="text-white text-xl lg:text-2xl" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
       {/* MADE WITH ARTCRAFT */}
       <section id="made-with" className="relative px-4 sm:px-8 py-16 sm:py-24">
         <TruchetBlob
@@ -1272,9 +1226,7 @@ const Landing3 = () => {
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="h-14 w-14 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                            <PlayIcon
-                              
-                              className="text-black text-base translate-x-0.5" />
+                            <PlayIcon className="text-black text-base translate-x-0.5" />
                           </div>
                         </div>
                       </>
@@ -1299,8 +1251,8 @@ const Landing3 = () => {
                   Join our <span className="font-serif-italic">community</span>
                 </h2>
                 <p className="text-sm sm:text-base text-white/55 leading-relaxed mt-2 max-w-md">
-                  ArtCraft is open source and community-driven. Come build with
-                  us.
+                  ArtCraft is open source and community-driven. Come build the
+                  platform with us.
                 </p>
               </div>
             </div>
@@ -1311,7 +1263,7 @@ const Landing3 = () => {
                 rel="noopener noreferrer"
                 className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
               >
-                <DiscordIcon  className="text-[13px]" />
+                <DiscordIcon className="text-[13px]" />
                 Join Discord
               </a>
               <a
@@ -1320,7 +1272,7 @@ const Landing3 = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
               >
-                <GithubIcon  className="text-[13px]" />
+                <GithubIcon className="text-[13px]" />
                 Star on GitHub
               </a>
             </div>
@@ -1359,38 +1311,25 @@ const Landing3 = () => {
                 Ready to <span className="font-serif-italic">craft</span>?
               </h2>
               <p className="max-w-xl mx-auto text-base sm:text-lg text-white/60 leading-relaxed mb-10">
-                Join thousands of artists and filmmakers using ArtCraft to bring
-                their vision to life. Free to download.
+                Join thousands of artists and filmmakers creating on the open
+                platform. Free to download, yours to keep.
               </p>
 
               <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3">
-                {isMobile ? (
-                  <button
-                    disabled
-                    className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white/10 text-white/60 text-[14px] font-semibold"
+                <UseOnWebButton />
+                <BuyCreditsButton />
+                {DOWNLOADS_ENABLED && !isMobile && (
+                  <a
+                    href={downloadUrl}
+                    onClick={onDownloadClick}
+                    className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
                   >
-                    Download on a desktop
-                  </button>
-                ) : (
-                  <>
-                    <UseOnWebButton
-                      isLoggedIn={isLoggedIn}
-                      hasSubscription={hasSubscription}
+                    <DynamicIcon
+                      icon={isMacOs ? AppleIcon : WindowsIcon}
+                      className="text-[13px]"
                     />
-                    {DOWNLOADS_ENABLED && (
-                      <a
-                        href={downloadUrl}
-                        onClick={onDownloadClick}
-                        className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
-                      >
-                        <DynamicIcon
-                          icon={isMacOs ? AppleIcon : WindowsIcon}
-                          className="text-[13px]"
-                        />
-                        Download for {isMacOs ? "Mac" : "Windows"}
-                      </a>
-                    )}
-                  </>
+                    Download for {isMacOs ? "Mac" : "Windows"}
+                  </a>
                 )}
               </div>
             </div>

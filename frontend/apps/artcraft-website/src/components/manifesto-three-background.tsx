@@ -221,13 +221,23 @@ export const ManifestoThreeBackground = ({
     let rafId = 0;
     // CAPTURE MODE: also track `let lastFrame = performance.now();` and
     // `const dt = (now - lastFrame) / 1000; lastFrame = now;` for mixer.update.
+    // Only render while the canvas is actually on screen. The sticky
+    // manifesto sits below the hero, and without this gate the full-screen
+    // WebGL pass (shadows, 2x DPR) kept running while the visitor was still
+    // up at the hero, competing with the video wall for the GPU.
+    let inView = true;
+    const visibility = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+    });
+    visibility.observe(container);
+
     const start = performance.now();
     const tick = () => {
-      // Skip the entire render pass when the parent flags us as paused.
-      // We still loop rAF (cheap) so resuming is instantaneous, but the
-      // expensive WebGL render + mixer update are gated. Saves 5-15ms per
-      // frame on high-DPI / large displays once the character is off-screen.
-      if (pausedRef?.current) {
+      // Skip the entire render pass when the parent flags us as paused or
+      // the canvas is off screen. We still loop rAF (cheap) so resuming is
+      // instantaneous, but the expensive WebGL render + mixer update are
+      // gated. Saves 5-15ms per frame on high-DPI / large displays.
+      if (pausedRef?.current || !inView) {
         rafId = requestAnimationFrame(tick);
         return;
       }
@@ -283,6 +293,7 @@ export const ManifestoThreeBackground = ({
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
+      visibility.disconnect();
       // CAPTURE MODE: if (recorder && recorder.state === "recording") recorder.stop();
       window.removeEventListener("resize", handleResize);
       if (renderer.domElement.parentNode === container) {
