@@ -98,3 +98,41 @@ fn convert_quality(
     )
   })
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use artcraft_router::api::router_image_model::RouterImageModel;
+  use enums::common::generation::common_image_model::CommonImageModel as CommonImageModelEnum;
+
+  #[test]
+  fn gpt_image_2p5_models_convert_to_router_models() {
+    assert_eq!(convert_model(&CommonImageModelEnum::GptImage2p5Flare).unwrap(), RouterImageModel::GptImage2p5Flare);
+    assert_eq!(convert_model(&CommonImageModelEnum::GptImage2p5Sunburst).unwrap(), RouterImageModel::GptImage2p5Sunburst);
+  }
+
+  #[test]
+  fn gpt_image_2p5_request_hydrates_to_artcraft_router_builder() {
+    let request = OmniGenImageCostAndGenerateRequest {
+      idempotency_token: Some("idem".to_string()),
+      model: Some(CommonImageModelEnum::GptImage2p5Sunburst),
+      prompt: Some("a cat in space".to_string()),
+      image_media_tokens: None,
+      resolution: Some(CommonResolutionEnum::TwoK),
+      aspect_ratio: Some(CommonAspectRatioEnum::WideSixteenByNine),
+      quality: Some(CommonQualityEnum::Medium),
+      image_batch_count: Some(2),
+      adjust_horizontal_angle: None,
+      adjust_vertical_angle: None,
+      adjust_zoom: None,
+    };
+    let builder = hydrate_to_router_request(&request).unwrap();
+    assert_eq!(builder.model, RouterImageModel::GptImage2p5Sunburst);
+    assert!(matches!(builder.provider, RouterProvider::Artcraft));
+    assert_eq!(builder.prompt.as_deref(), Some("a cat in space"));
+    assert_eq!(format!("{:?}", builder.resolution), "Some(TwoK)");
+    assert_eq!(format!("{:?}", builder.aspect_ratio), "Some(WideSixteenByNine)");
+    assert_eq!(format!("{:?}", builder.quality), "Some(Medium)");
+    assert_eq!(builder.image_batch_count, Some(2));
+  }
+}

@@ -298,6 +298,8 @@ fn task_model_type_to_generation_model(model: TaskModelType) -> Option<Generatio
     TaskModelType::GptImage1 => Some(GenerationModel::GptImage1),
     TaskModelType::GptImage1p5 => Some(GenerationModel::GptImage1p5),
     TaskModelType::GptImage2 => Some(GenerationModel::GptImage2),
+    TaskModelType::GptImage2p5Flare => Some(GenerationModel::GptImage2p5Flare),
+    TaskModelType::GptImage2p5Sunburst => Some(GenerationModel::GptImage2p5Sunburst),
     TaskModelType::NanoBanana => Some(GenerationModel::NanoBanana),
     TaskModelType::NanoBanana2 => Some(GenerationModel::NanoBanana2),
     TaskModelType::NanoBananaPro => Some(GenerationModel::NanoBananaPro),

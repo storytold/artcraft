@@ -10,6 +10,8 @@ export enum CommonImageModel {
   GptImage1 = "gpt_image_1",
   GptImage1p5 = "gpt_image_1p5",
   GptImage2 = "gpt_image_2",
+  GptImage2p5Flare = "gpt_image_2p5_flare",
+  GptImage2p5Sunburst = "gpt_image_2p5_sunburst",
   NanaBanana = "nano_banana",
   NanaBanana2 = "nano_banana_2",
   NanaBananaPro = "nano_banana_pro",

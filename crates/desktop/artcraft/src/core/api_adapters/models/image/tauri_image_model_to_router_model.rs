@@ -14,6 +14,8 @@ pub fn tauri_image_model_to_router_model(model: TauriImageModel) -> Option<Route
     TauriImageModel::GptImage1 => Some(RouterImageModel::GptImage1), // Text-to-Image
     TauriImageModel::GptImage1p5 => Some(RouterImageModel::GptImage1p5), // Text-to-Image
     TauriImageModel::GptImage2 => Some(RouterImageModel::GptImage2), // Text-to-Image
+    TauriImageModel::GptImage2p5Flare => Some(RouterImageModel::GptImage2p5Flare), // Text-to-Image
+    TauriImageModel::GptImage2p5Sunburst => Some(RouterImageModel::GptImage2p5Sunburst), // Text-to-Image
     TauriImageModel::NanoBanana => Some(RouterImageModel::NanoBanana), // Text-to-Image
     TauriImageModel::NanoBanana2 => Some(RouterImageModel::NanoBanana2), // Text-to-Image
     TauriImageModel::NanoBananaPro => Some(RouterImageModel::NanoBananaPro), // Text-to-Image

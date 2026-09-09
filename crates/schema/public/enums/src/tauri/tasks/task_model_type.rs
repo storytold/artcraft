@@ -41,6 +41,10 @@ pub enum TaskModelType {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "gpt_image_2p5_flare")]
+  GptImage2p5Flare,
+  #[serde(rename = "gpt_image_2p5_sunburst")]
+  GptImage2p5Sunburst,
   #[serde(rename = "seedream_4")]
   Seedream4,
   #[serde(rename = "seedream_4p5")]
@@ -149,6 +153,8 @@ impl TaskModelType {
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
       Self::GptImage2 => "gpt_image_2",
+      Self::GptImage2p5Flare => "gpt_image_2p5_flare",
+      Self::GptImage2p5Sunburst => "gpt_image_2p5_sunburst",
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
@@ -209,6 +215,8 @@ impl TaskModelType {
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
       "gpt_image_2" => Ok(Self::GptImage2),
+      "gpt_image_2p5_flare" => Ok(Self::GptImage2p5Flare),
+      "gpt_image_2p5_sunburst" => Ok(Self::GptImage2p5Sunburst),
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
@@ -272,6 +280,8 @@ impl TaskModelType {
       Self::GptImage1,
       Self::GptImage1p5,
       Self::GptImage2,
+      Self::GptImage2p5Flare,
+      Self::GptImage2p5Sunburst,
       Self::Seedream4,
       Self::Seedream4p5,
       Self::Seedream5Lite,
@@ -342,6 +352,8 @@ mod tests {
       assert_serialization(TaskModelType::GptImage1, "gpt_image_1");
       assert_serialization(TaskModelType::GptImage1p5, "gpt_image_1p5");
       assert_serialization(TaskModelType::GptImage2, "gpt_image_2");
+      assert_serialization(TaskModelType::GptImage2p5Flare, "gpt_image_2p5_flare");
+      assert_serialization(TaskModelType::GptImage2p5Sunburst, "gpt_image_2p5_sunburst");
       assert_serialization(TaskModelType::Seedream4, "seedream_4");
       assert_serialization(TaskModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(TaskModelType::Seedream5Lite, "seedream_5_lite");
@@ -401,6 +413,8 @@ mod tests {
       assert_eq!(TaskModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(TaskModelType::GptImage1p5.to_str(), "gpt_image_1p5");
       assert_eq!(TaskModelType::GptImage2.to_str(), "gpt_image_2");
+      assert_eq!(TaskModelType::GptImage2p5Flare.to_str(), "gpt_image_2p5_flare");
+      assert_eq!(TaskModelType::GptImage2p5Sunburst.to_str(), "gpt_image_2p5_sunburst");
       assert_eq!(TaskModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(TaskModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(TaskModelType::Seedream5Lite.to_str(), "seedream_5_lite");
@@ -457,6 +471,8 @@ mod tests {
       assert_eq!(TaskModelType::from_str("gpt_image_1").unwrap(), TaskModelType::GptImage1);
       assert_eq!(TaskModelType::from_str("gpt_image_1p5").unwrap(), TaskModelType::GptImage1p5);
       assert_eq!(TaskModelType::from_str("gpt_image_2").unwrap(), TaskModelType::GptImage2);
+      assert_eq!(TaskModelType::from_str("gpt_image_2p5_flare").unwrap(), TaskModelType::GptImage2p5Flare);
+      assert_eq!(TaskModelType::from_str("gpt_image_2p5_sunburst").unwrap(), TaskModelType::GptImage2p5Sunburst);
       assert_eq!(TaskModelType::from_str("seedream_4").unwrap(), TaskModelType::Seedream4);
       assert_eq!(TaskModelType::from_str("seedream_4p5").unwrap(), TaskModelType::Seedream4p5);
       assert_eq!(TaskModelType::from_str("seedream_5_lite").unwrap(), TaskModelType::Seedream5Lite);
@@ -510,7 +526,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 52);
+      assert_eq!(variants.len(), 54);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -526,6 +542,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::GptImage1));
       assert_eq!(variants.pop_first(), Some(TaskModelType::GptImage1p5));
       assert_eq!(variants.pop_first(), Some(TaskModelType::GptImage2));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::GptImage2p5Flare));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::GptImage2p5Sunburst));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedream4));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedream4p5));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedream5Lite));

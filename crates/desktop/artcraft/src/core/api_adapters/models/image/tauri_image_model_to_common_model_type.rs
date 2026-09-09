@@ -14,6 +14,8 @@ pub fn tauri_image_model_to_common_model_type(model: TauriImageModel) -> CommonM
     TauriImageModel::GptImage1 => CommonModelType::GptImage1,
     TauriImageModel::GptImage1p5 => CommonModelType::GptImage1p5,
     TauriImageModel::GptImage2 => CommonModelType::GptImage2,
+    TauriImageModel::GptImage2p5Flare => CommonModelType::GptImage2p5Flare,
+    TauriImageModel::GptImage2p5Sunburst => CommonModelType::GptImage2p5Sunburst,
     TauriImageModel::Gemini25Flash => CommonModelType::NanoBanana,
     TauriImageModel::NanoBanana => CommonModelType::NanoBanana,
     TauriImageModel::NanoBanana2 => CommonModelType::NanoBanana2,

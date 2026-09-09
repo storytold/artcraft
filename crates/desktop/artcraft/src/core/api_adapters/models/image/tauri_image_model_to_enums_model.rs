@@ -14,6 +14,8 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::GptImage1 => Some(CommonImageModel::GptImage1),
     TauriImageModel::GptImage1p5 => Some(CommonImageModel::GptImage1p5),
     TauriImageModel::GptImage2 => Some(CommonImageModel::GptImage2),
+    TauriImageModel::GptImage2p5Flare => Some(CommonImageModel::GptImage2p5Flare),
+    TauriImageModel::GptImage2p5Sunburst => Some(CommonImageModel::GptImage2p5Sunburst),
     TauriImageModel::NanoBanana => Some(CommonImageModel::NanoBanana),
     TauriImageModel::NanoBanana2 => Some(CommonImageModel::NanoBanana2),
     TauriImageModel::NanoBananaPro => Some(CommonImageModel::NanoBananaPro),
