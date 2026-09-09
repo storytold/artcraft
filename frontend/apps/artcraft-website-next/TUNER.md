@@ -52,8 +52,9 @@ Then read values where they're used:
   `hero-wall.tsx`).
 
 The panel picks up new groups automatically — no panel changes needed.
-Registered groups: Wall layout, Wall motion, Wall look (all for the hero
-render wall; see `src/components/landing/hero-tunables.ts`).
+Registered groups: Wall layout, Wall motion, Wall look (hero render wall;
+`src/components/landing/hero-tunables.ts`) and Ruler layout, Ruler motion,
+Ruler look (scroll ruler; `src/components/ruler/ruler-tunables.ts`).
 
 ## Shipping tuned values
 

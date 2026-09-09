@@ -96,6 +96,25 @@ export const SEEDANCE_SHOWCASE: SeedanceClip[] = [
   { src: "/videos/9.mp4", aspect: 16 / 9 },
 ];
 
+// The scroll ruler's section roster, in document order. `id` must match a
+// DOM id on the page; sections missing from the DOM are silently skipped so
+// the ruler still works on future pages. The hero is special-cased by id
+// (its heading is the wordmark itself — see heading-flow.tsx).
+export type RulerSection = {
+  id: string;
+  label: string;
+};
+
+export const HERO_SECTION_ID = "hero";
+
+export const RULER_SECTIONS: RulerSection[] = [
+  { id: HERO_SECTION_ID, label: "ARTCRAFT" },
+  { id: "features", label: "FEATURES" },
+  { id: "ownership", label: "OWNERSHIP" },
+  { id: "made-with", label: "MADE WITH" },
+  { id: "start", label: "GET STARTED" },
+];
+
 export const MADE_WITH_YOUTUBE_IDS = [
   "HDdsKJl92H4",
   "oqoCWdOwr2U",
