@@ -16,6 +16,8 @@ use crate::generate::generate_image::providers::artcraft::flux_pro_1p1_ultra::bu
 use crate::generate::generate_image::providers::artcraft::gpt_image_1::build::build_artcraft_gpt_image_1;
 use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::build::build_artcraft_gpt_image_1p5;
 use crate::generate::generate_image::providers::artcraft::gpt_image_2::build::build_artcraft_gpt_image_2;
+use crate::generate::generate_image::providers::artcraft::gpt_image_2p5_flare::build::build_artcraft_gpt_image_2p5_flare;
+use crate::generate::generate_image::providers::artcraft::gpt_image_2p5_sunburst::build::build_artcraft_gpt_image_2p5_sunburst;
 use crate::generate::generate_image::providers::artcraft::midjourney_7::build::build_artcraft_midjourney_7;
 use crate::generate::generate_image::providers::artcraft::midjourney_7_niji::build::build_artcraft_midjourney_7_niji;
 use crate::generate::generate_image::providers::artcraft::midjourney_8::build::build_artcraft_midjourney_8;
@@ -36,6 +38,8 @@ use crate::generate::generate_image::providers::fal::flux_pro_1p1_ultra::build::
 use crate::generate::generate_image::providers::fal::gpt_image_1::build::build_fal_gpt_image_1;
 use crate::generate::generate_image::providers::fal::gpt_image_1p5::build::build_fal_gpt_image_1p5;
 use crate::generate::generate_image::providers::fal::gpt_image_2::build::build_fal_gpt_image_2;
+use crate::generate::generate_image::providers::fal::gpt_image_2p5_flare::build::build_fal_gpt_image_2p5_flare;
+use crate::generate::generate_image::providers::fal::gpt_image_2p5_sunburst::build::build_fal_gpt_image_2p5_sunburst;
 use crate::generate::generate_image::providers::fal::nano_banana::build::build_fal_nano_banana;
 use crate::generate::generate_image::providers::fal::nano_banana_2::build::build_fal_nano_banana_2;
 use crate::generate::generate_image::providers::fal::nano_banana_pro::build::build_fal_nano_banana_pro;
@@ -116,6 +120,8 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Artcraft, RouterImageModel::GptImage1) => build_artcraft_gpt_image_1(self),
       (RouterProvider::Artcraft, RouterImageModel::GptImage1p5) => build_artcraft_gpt_image_1p5(self),
       (RouterProvider::Artcraft, RouterImageModel::GptImage2) => build_artcraft_gpt_image_2(self),
+      (RouterProvider::Artcraft, RouterImageModel::GptImage2p5Flare) => build_artcraft_gpt_image_2p5_flare(self),
+      (RouterProvider::Artcraft, RouterImageModel::GptImage2p5Sunburst) => build_artcraft_gpt_image_2p5_sunburst(self),
       (RouterProvider::Artcraft, RouterImageModel::NanoBanana) => build_artcraft_nano_banana(self),
       (RouterProvider::Artcraft, RouterImageModel::NanoBanana2) => build_artcraft_nano_banana_2(self),
       (RouterProvider::Artcraft, RouterImageModel::NanoBananaPro) => build_artcraft_nano_banana_pro(self),
@@ -137,6 +143,8 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Fal, RouterImageModel::GptImage1) => build_fal_gpt_image_1(self),
       (RouterProvider::Fal, RouterImageModel::GptImage1p5) => build_fal_gpt_image_1p5(self),
       (RouterProvider::Fal, RouterImageModel::GptImage2) => build_fal_gpt_image_2(self),
+      (RouterProvider::Fal, RouterImageModel::GptImage2p5Flare) => build_fal_gpt_image_2p5_flare(self),
+      (RouterProvider::Fal, RouterImageModel::GptImage2p5Sunburst) => build_fal_gpt_image_2p5_sunburst(self),
       (RouterProvider::Fal, RouterImageModel::NanoBanana) => build_fal_nano_banana(self),
       (RouterProvider::Fal, RouterImageModel::NanoBanana2) => build_fal_nano_banana_2(self),
       (RouterProvider::Fal, RouterImageModel::NanoBananaPro) => build_fal_nano_banana_pro(self),

@@ -54,6 +54,10 @@ pub enum CommonModelType {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "gpt_image_2p5_flare")]
+  GptImage2p5Flare,
+  #[serde(rename = "gpt_image_2p5_sunburst")]
+  GptImage2p5Sunburst,
   // Generic grok image model without a version
   #[serde(rename = "grok_image")]
   GrokImage,
@@ -301,6 +305,8 @@ impl CommonModelType {
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
       Self::GptImage2 => "gpt_image_2",
+      Self::GptImage2p5Flare => "gpt_image_2p5_flare",
+      Self::GptImage2p5Sunburst => "gpt_image_2p5_sunburst",
       Self::GrokImage => "grok_image",
       Self::GrokImagineImage => "grok_imagine_image",
       Self::GrokImagineImageQuality => "grok_imagine_image_q",
@@ -422,6 +428,8 @@ impl CommonModelType {
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
       "gpt_image_2" => Ok(Self::GptImage2),
+      "gpt_image_2p5_flare" => Ok(Self::GptImage2p5Flare),
+      "gpt_image_2p5_sunburst" => Ok(Self::GptImage2p5Sunburst),
       "grok_image" => Ok(Self::GrokImage),
       "grok_imagine_image" => Ok(Self::GrokImagineImage),
       "grok_imagine_image_q" => Ok(Self::GrokImagineImageQuality),
@@ -547,6 +555,8 @@ impl CommonModelType {
       Self::GptImage1,
       Self::GptImage1p5,
       Self::GptImage2,
+      Self::GptImage2p5Flare,
+      Self::GptImage2p5Sunburst,
       Self::GrokImage,
       Self::GrokImagineImage,
       Self::GrokImagineImageQuality,
@@ -669,6 +679,8 @@ impl CommonModelType {
       Self::GptImage1 => CommonModelClass::Image,
       Self::GptImage1p5 => CommonModelClass::Image,
       Self::GptImage2 => CommonModelClass::Image,
+      Self::GptImage2p5Flare => CommonModelClass::Image,
+      Self::GptImage2p5Sunburst => CommonModelClass::Image,
       Self::GrokImage => CommonModelClass::Image,
       Self::GrokImagineImage => CommonModelClass::Image,
       Self::GrokImagineImageQuality => CommonModelClass::Image,
@@ -801,6 +813,8 @@ mod tests {
       assert_serialization(CommonModelType::GptImage1, "gpt_image_1");
       assert_serialization(CommonModelType::GptImage1p5, "gpt_image_1p5");
       assert_serialization(CommonModelType::GptImage2, "gpt_image_2");
+      assert_serialization(CommonModelType::GptImage2p5Flare, "gpt_image_2p5_flare");
+      assert_serialization(CommonModelType::GptImage2p5Sunburst, "gpt_image_2p5_sunburst");
       assert_serialization(CommonModelType::GrokImage, "grok_image");
       assert_serialization(CommonModelType::GrokImagineImage, "grok_imagine_image");
       assert_serialization(CommonModelType::GrokImagineImageQuality, "grok_imagine_image_q");
@@ -916,6 +930,8 @@ mod tests {
       assert_eq!(CommonModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(CommonModelType::GptImage1p5.to_str(), "gpt_image_1p5");
       assert_eq!(CommonModelType::GptImage2.to_str(), "gpt_image_2");
+      assert_eq!(CommonModelType::GptImage2p5Flare.to_str(), "gpt_image_2p5_flare");
+      assert_eq!(CommonModelType::GptImage2p5Sunburst.to_str(), "gpt_image_2p5_sunburst");
       assert_eq!(CommonModelType::GrokImage.to_str(), "grok_image");
       assert_eq!(CommonModelType::GrokImagineImage.to_str(), "grok_imagine_image");
       assert_eq!(CommonModelType::GrokImagineImageQuality.to_str(), "grok_imagine_image_q");
@@ -1035,6 +1051,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("gpt_image_1").unwrap(), CommonModelType::GptImage1);
       assert_eq!(CommonModelType::from_str("gpt_image_1p5").unwrap(), CommonModelType::GptImage1p5);
       assert_eq!(CommonModelType::from_str("gpt_image_2").unwrap(), CommonModelType::GptImage2);
+      assert_eq!(CommonModelType::from_str("gpt_image_2p5_flare").unwrap(), CommonModelType::GptImage2p5Flare);
+      assert_eq!(CommonModelType::from_str("gpt_image_2p5_sunburst").unwrap(), CommonModelType::GptImage2p5Sunburst);
       assert_eq!(CommonModelType::from_str("grok_image").unwrap(), CommonModelType::GrokImage);
       assert_eq!(CommonModelType::from_str("grok_imagine_image").unwrap(), CommonModelType::GrokImagineImage);
       assert_eq!(CommonModelType::from_str("grok_imagine_image_q").unwrap(), CommonModelType::GrokImagineImageQuality);
@@ -1140,7 +1158,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 106);
+      assert_eq!(variants.len(), 108);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1153,6 +1171,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1p5));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2p5Flare));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2p5Sunburst));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImage));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineImage));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineImageQuality));

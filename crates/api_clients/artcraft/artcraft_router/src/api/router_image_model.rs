@@ -19,6 +19,10 @@ pub enum RouterImageModel {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "gpt_image_2p5_flare")]
+  GptImage2p5Flare,
+  #[serde(rename = "gpt_image_2p5_sunburst")]
+  GptImage2p5Sunburst,
   #[serde(rename = "grok_imagine_image")]
   GrokImagineImage,
   #[serde(rename = "grok_imagine_image_q")]
@@ -86,5 +90,15 @@ mod tests {
   #[test]
   fn seedream_5p0_pro_ultra_serializes_to_seedream_5p0_pro_u() {
     assert_round_trip(RouterImageModel::Seedream5p0ProUltra, "seedream_5p0_pro_u");
+  }
+
+  #[test]
+  fn gpt_image_2p5_flare_serializes_to_gpt_image_2p5_flare() {
+    assert_round_trip(RouterImageModel::GptImage2p5Flare, "gpt_image_2p5_flare");
+  }
+
+  #[test]
+  fn gpt_image_2p5_sunburst_serializes_to_gpt_image_2p5_sunburst() {
+    assert_round_trip(RouterImageModel::GptImage2p5Sunburst, "gpt_image_2p5_sunburst");
   }
 }
