@@ -289,6 +289,7 @@ function GalaxyScene({
     lastP: 0,
     holdTarget: 0,
     holdRest: 0,
+    fieldK: 1,
     targetI: -1,
     useCounter: 10000,
   });
@@ -700,6 +701,11 @@ function GalaxyScene({
     st.holdRest +=
       ((targeting ? 1 : 0) - st.holdRest) *
       (1 - Math.exp(-dt / Math.max(0.01, pt.restTau)));
+    // Field strength eases off when a target locks (and back on release)
+    // instead of hard-gating — a snapping tug/warp at the lock boundary
+    // reads as the card ghosting between its straight and warped poses.
+    st.fieldK +=
+      ((targeting ? 0 : 1) - st.fieldK) * (1 - Math.exp(-dt / 0.12));
 
     clipBest.fill(-1);
 
@@ -778,8 +784,9 @@ function GalaxyScene({
 
       // The tug: cards inside the field are actually displaced toward the
       // cursor (world delta rotated back into rig space). Baked into
-      // cardPos BEFORE sizing, so the collision guarantee sees it.
-      if (ptr.active && st.targetI < 0 && pt.tugPx > 0) {
+      // cardPos BEFORE sizing, so the collision guarantee sees it. Scaled
+      // by the eased field strength so the lock never snaps positions.
+      if (ptr.active && pt.tugPx > 0 && st.fieldK > 0.001) {
         const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
         const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
         const dx = ptr.x - wxp;
@@ -788,6 +795,7 @@ function GalaxyScene({
         const tug =
           pt.tugPx *
           Math.exp(-d2 / (pt.fieldPx * pt.fieldPx)) *
+          st.fieldK *
           (1 - cardTargetK[i]);
         const inv = tug / Math.max(1, Math.sqrt(d2));
         cardPos[i * 2] += (cosS * dx + sinS * dy) * inv;
@@ -802,20 +810,42 @@ function GalaxyScene({
     let target = -1;
     let bestC = -1;
     if (ptr.active) {
-      for (let k = 0; k < liveN; k++) {
-        const i = liveOrder[k];
-        const c = cardCyc[i];
-        if (c < 0.04 || c <= bestC) continue;
-        const H = cardH[i];
-        if (H < 8) continue;
-        const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
-        const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
+      // Retention first, with hysteresis: the current target keeps the
+      // lock while the pointer stays within its rect grown by the tug
+      // distance — as the field releases, the card slides back by at most
+      // tugPx, and without this margin the lock would flap at the edge
+      // (acquire → tug off → card slides out from under the pointer →
+      // release → tug on → reacquire, every few frames).
+      const cur = st.targetI;
+      if (cur >= 0 && liveRank[cur] < liveN) {
+        const H = cardH[cur];
+        const margin = pt.tugPx + 8;
+        const wxp = cosS * cardPos[cur * 2] - sinS * cardPos[cur * 2 + 1];
+        const wyp = sinS * cardPos[cur * 2] + cosS * cardPos[cur * 2 + 1];
         if (
-          Math.abs(ptr.x - wxp) <= (H * 8) / 9 &&
-          Math.abs(ptr.y - wyp) <= H / 2
+          H >= 8 &&
+          Math.abs(ptr.x - wxp) <= (H * 8) / 9 + margin &&
+          Math.abs(ptr.y - wyp) <= H / 2 + margin
         ) {
-          bestC = c;
-          target = i;
+          target = cur;
+        }
+      }
+      if (target < 0) {
+        for (let k = 0; k < liveN; k++) {
+          const i = liveOrder[k];
+          const c = cardCyc[i];
+          if (c < 0.04 || c <= bestC) continue;
+          const H = cardH[i];
+          if (H < 8) continue;
+          const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
+          const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
+          if (
+            Math.abs(ptr.x - wxp) <= (H * 8) / 9 &&
+            Math.abs(ptr.y - wyp) <= H / 2
+          ) {
+            bestC = c;
+            target = i;
+          }
         }
       }
     }
@@ -847,31 +877,50 @@ function GalaxyScene({
       const x = cardPos[i * 2];
       const y = cardPos[i * 2 + 1];
 
+      // Target-lock ease, needed by the sizing below (a held card sizes
+      // differently), so it resolves before anything else.
+      const tk = (cardTargetK[i] +=
+        ((i === st.targetI ? 1 : 0) - cardTargetK[i]) *
+        (1 - Math.exp(-dt / Math.max(0.01, pt.targetTau))));
+
       // Pass 2: exact collision-free sizing against the actual nearest
       // neighbor. For upright 16:9 rectangles, two cards clear each other
       // iff their center gap beats their half-extents on either axis; when
       // every card takes density × its nearest such separation, no pair
       // can ever overlap (each contributes at most half the gap). Growth
       // is eased so freed space fills organically; shrinking is instant so
-      // the guarantee never breaks mid-frame.
+      // the guarantee never breaks mid-frame. Exception: a locked card must
+      // not pulse with its neighbors' wobble, so its size is pinned on a
+      // smooth ease and NEIGHBORS yield the exact remainder against its
+      // actual height instead.
       let sep = Infinity;
+      let capVsHeld = Infinity;
       for (let k = 0; k < liveN; k++) {
         const j = liveOrder[k];
         if (j === i) continue;
-        const s = Math.max(
+        const m = Math.max(
           (Math.abs(cardPos[j * 2] - x) * 9) / 16,
           Math.abs(cardPos[j * 2 + 1] - y),
         );
-        if (s < sep) sep = s;
+        if (j === st.targetI && cardTargetK[j] > 0.3) {
+          const rem = Math.max(0, 2 * m - cardH[j]) * 0.98;
+          if (rem < capVsHeld) capVsHeld = rem;
+        } else if (m < sep) {
+          sep = m;
+        }
       }
       // Inner cards stay smaller than outer ones even when space would
       // allow more: the size ceiling itself ramps up over the journey.
       const capEff = L.cardHCap * (lk.innerCap + (1 - lk.innerCap) * c);
-      const target = Math.min(capEff, lk.density * sep);
-      cardH[i] =
-        target < cardH[i]
-          ? target
-          : cardH[i] + (target - cardH[i]) * (1 - Math.exp(-3 * dt));
+      const goalH = Math.min(capEff, lk.density * sep, capVsHeld);
+      if (tk > 0.3) {
+        cardH[i] += (goalH - cardH[i]) * (1 - Math.exp(-6 * dt));
+      } else {
+        cardH[i] =
+          goalH < cardH[i]
+            ? goalH
+            : cardH[i] + (goalH - cardH[i]) * (1 - Math.exp(-3 * dt));
+      }
       const H = Math.max(0.001, cardH[i]);
       // Newborns are rounded squares that morph into 16:9 as they grow.
       // The neighbor separation above assumes the full 16:9 width, so the
@@ -883,21 +932,19 @@ function GalaxyScene({
       // focused view (and back on release); the cursor field tilts its
       // neighbors toward the hand and leaves a dispersion trail behind
       // sweeps; click ripples add rings of dispersion that stack.
-      const tk = (cardTargetK[i] +=
-        ((i === st.targetI ? 1 : 0) - cardTargetK[i]) *
-        (1 - Math.exp(-dt / Math.max(0.01, pt.targetTau))));
       const wxp = cosS * x - sinS * y;
       const wyp = sinS * x + cosS * y;
       let fall = 0;
       let tiltGX = 0;
       let tiltGY = 0;
-      // The field only acts while no card is targeted: on target, everyone
-      // else returns to usual (tilts ease home, flare trail decays out).
-      if (ptr.active && st.targetI < 0) {
+      // The field eases off while a card is targeted (everyone else
+      // returns to usual) and back on release — via the smoothed fieldK,
+      // never a hard gate.
+      if (ptr.active && st.fieldK > 0.001) {
         const dx = ptr.x - wxp;
         const dy = ptr.y - wyp;
         const d2 = dx * dx + dy * dy;
-        fall = Math.exp(-d2 / (pt.fieldPx * pt.fieldPx));
+        fall = Math.exp(-d2 / (pt.fieldPx * pt.fieldPx)) * st.fieldK;
         const inv = 1 / Math.max(1, Math.sqrt(d2));
         // Lean toward the cursor, like being gently pulled at.
         tiltGY = maxTilt * dx * inv * fall;
