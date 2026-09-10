@@ -383,7 +383,9 @@ export default function ScrollRuler() {
                       ? y - spn.bottom
                       : 0;
                 if (d < lk.yieldPad) {
-                  const f = d / lk.yieldPad;
+                  // Distance-graded, scaled by the span's on-rail strength
+                  // so the yield ramps with the word's own transitions.
+                  const f = 1 - spn.k * (1 - d / lk.yieldPad);
                   if (f < fade) fade = f;
                 }
               }

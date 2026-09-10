@@ -33,11 +33,15 @@ export type MeasuredSection = {
  * 1 = compressed full-page map. */
 export const rulerZoom = { target: 0, p: 0, dragging: false };
 
-/** Screen-space y-spans currently occupied by heading words on the rail.
+/** Screen-space y-spans of the heading words' settled riding columns.
  * HeadingFlow rewrites it every frame; the tick loop fades percent labels
  * within a margin of any span (proximity yield — the scale gets out of a
- * passing word's way). */
-export const railOccupancy: { spans: { top: number; bottom: number }[] } = {
+ * passing word's way). `k` ramps 0→1 with how on-rail the word is, so the
+ * yield eases in/out with the detach/flip transitions instead of blinking
+ * as letters fly past. */
+export const railOccupancy: {
+  spans: { top: number; bottom: number; k: number }[];
+} = {
   spans: [],
 };
 

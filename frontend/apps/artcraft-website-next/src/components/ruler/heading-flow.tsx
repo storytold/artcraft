@@ -47,8 +47,6 @@ import {
 // progress-driven pose, so the morph only has to replace the "from" pose.
 const HERO_ENTRY_INWARD_PX = 48;
 
-const SECTION_TICK_LEN = 12;
-
 // A letter's pose on screen. x/y are the letter center in viewport px.
 type Pose = {
   x: number;
@@ -69,8 +67,6 @@ type WordMetrics = {
 type WordRefs = {
   letters: (HTMLSpanElement | null)[];
   hit: HTMLAnchorElement | null;
-  tickEl: HTMLSpanElement | null;
-  idxEl: HTMLSpanElement | null;
 };
 
 export default function HeadingFlow({
@@ -382,11 +378,14 @@ export default function HeadingFlow({
           if (y + yHalf > maxY) maxY = y + yHalf;
         }
 
-        // Publish the word's rail footprint so the tick loop can fade
-        // percent labels out of its way (skip fully queued/stacked words —
-        // those live off the tick lane).
-        if (detachP > 0.02 && flipP < 0.98 && isFinite(minY)) {
-          railOccupancy.spans.push({ top: minY, bottom: maxY });
+        // Publish the word's riding footprint — the settled column span,
+        // NOT the in-flight letter bbox (that swept across labels during
+        // detach/flip flights and made them flicker) — with a strength
+        // that ramps smoothly with how on-rail the word is, so labels fade
+        // in proportion instead of blinking.
+        const onRail = detachP * (1 - flipP);
+        if (onRail > 0.02) {
+          railOccupancy.spans.push({ top: v, bottom: v + rideLen, k: onRail });
         }
 
         // Hit box hugs the word wherever it is; a fully invisible word
@@ -399,29 +398,6 @@ export default function HeadingFlow({
           refs.hit.style.pointerEvents = maxAlpha > 0.05 ? "auto" : "none";
         }
 
-        // Section tick + index on the rail's inner edge, riding at the
-        // word's anchor while the word rides.
-        const presence =
-          detachP *
-          (1 - flipP) *
-          (1 - zoomE) *
-          (v > -80 && v < vh + 80 ? 1 : 0);
-        if (refs.tickEl) {
-          const x =
-            side === "right" ? vw - lay.railW - SECTION_TICK_LEN : lay.railW;
-          refs.tickEl.style.transform = `translate3d(${x}px, ${v}px, 0)`;
-          refs.tickEl.style.opacity = String(presence * lk.majorAlpha);
-        }
-        if (refs.idxEl) {
-          const x =
-            side === "right"
-              ? vw - lay.railW - SECTION_TICK_LEN - 4
-              : lay.railW + SECTION_TICK_LEN + 4;
-          refs.idxEl.style.transform = `translate3d(${x}px, ${v}px, 0) translate(${
-            side === "right" ? "-100%" : "0"
-          }, -50%)`;
-          refs.idxEl.style.opacity = String(presence * lk.labelAlpha);
-        }
       }
 
       // Snap: scroll resting with a top flip half-done resolves to the
@@ -543,8 +519,6 @@ export default function HeadingFlow({
         const refs = (wordRefs.current[wi] ??= {
           letters: [],
           hit: null,
-          tickEl: null,
-          idxEl: null,
         });
         return (
           <Fragment key={s.id}>
@@ -556,22 +530,6 @@ export default function HeadingFlow({
               onClick={jump(s)}
               aria-label={`Jump to ${s.label}`}
               className="pointer-events-auto absolute cursor-pointer"
-            />
-            <span
-              ref={(el) => {
-                refs.tickEl = el;
-              }}
-              aria-hidden
-              className="absolute top-0 left-0 block bg-ink"
-              style={{ width: SECTION_TICK_LEN, height: 1, opacity: 0 }}
-            />
-            <span
-              ref={(el) => {
-                refs.idxEl = el;
-              }}
-              aria-hidden
-              className="absolute top-0 left-0 font-mono text-ink"
-              style={{ fontSize: 9, letterSpacing: "0.08em", opacity: 0 }}
             />
             {s.label.split("").map((ch, li) => (
               <span
