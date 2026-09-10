@@ -63,7 +63,7 @@ export const galaxyLayoutTuner = defineTunables(
       min: 0.08,
       max: 0.35,
       step: 0.005,
-      default: 0.185,
+      default: 0.25,
       info: "Absolute card height ceiling as a fraction of the viewport height — the track-gap math sizes cards below this so they never collide.",
     },
     armJitter: {
@@ -79,7 +79,7 @@ export const galaxyLayoutTuner = defineTunables(
       min: 0,
       max: 40,
       step: 1,
-      default: 14,
+      default: 16,
       info: "Tick marks straddling each arm's outer half in the line underlay (0 = none).",
     },
     circFrac: {
@@ -194,12 +194,28 @@ export const galaxyPointerTuner = defineTunables(
       default: 8,
       info: "Maximum lean of a card toward the cursor at the field's center — the pulled-at feel. The targeted card straightens to zero.",
     },
+    tugPx: {
+      label: "Tug px",
+      min: 0,
+      max: 40,
+      step: 1,
+      default: 14,
+      info: "How far cards inside the field are actually displaced toward the cursor — the translation pull. Collision-safe: sizing measures the tugged positions.",
+    },
+    mouseWarp: {
+      label: "Mouse warp px",
+      min: 0,
+      max: 80,
+      step: 1,
+      default: 26,
+      info: "The cursor's weight on nearby card surfaces: a local bulge toward the camera at the point of the card nearest the mouse, on top of the base curve warp.",
+    },
     flareAdd: {
       label: "Flare add",
       min: 0,
       max: 0.08,
       step: 0.002,
-      default: 0.022,
+      default: 0.032,
       info: "Extra chromatic dispersion picked up by cards the cursor sweeps near, on top of the base aberration.",
     },
     flareDecay: {
@@ -231,7 +247,7 @@ export const galaxyPointerTuner = defineTunables(
       min: 1,
       max: 3,
       step: 0.1,
-      default: 1.5,
+      default: 1.2,
       info: "Wobble multiplier on the rest of the spiral while a card is held — the flow strains gently against the freeze.",
     },
     targetTau: {
@@ -372,7 +388,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 160,
     step: 1,
-    default: 50,
+    default: 32,
     info: "How far each card's center bows toward the camera — the slight lens-warp of the plane.",
   },
   frameAlpha: {

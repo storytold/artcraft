@@ -51,6 +51,9 @@ const TICK_LEN = 12;
 
 const CARD_VERT = /* glsl */ `
   uniform float uCurve;
+  uniform float uWarp;
+  uniform vec2 uMouse;
+  uniform vec2 uSize;
   out vec2 vUv;
   void main() {
     vUv = uv;
@@ -59,6 +62,12 @@ const CARD_VERT = /* glsl */ `
     // flat at the edges. Applied in world space so it reads in px.
     float d2 = dot(position.xy, position.xy);
     world.z += uCurve * (0.25 - d2) * 2.0;
+    // The cursor's weight: a local bulge toward the camera at the point of
+    // the card nearest the mouse (uMouse in card-local units, may lie
+    // outside the card) — the surface leans into the hand.
+    vec2 dpx = (position.xy - uMouse) * uSize;
+    float rr = max(uSize.x, uSize.y) * 0.6;
+    world.z += uWarp * exp(-dot(dpx, dpx) / (rr * rr));
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `;
@@ -553,6 +562,8 @@ function GalaxyScene({
               uAber: { value: 0 },
               uCurve: { value: 0 },
               uSize: { value: new THREE.Vector2(160, 90) },
+              uMouse: { value: new THREE.Vector2(0, 0) },
+              uWarp: { value: 0 },
               uRadius: { value: 0 },
               uFrameCol: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
               uFrameA: { value: 0 },
@@ -668,7 +679,10 @@ function GalaxyScene({
     const L = layout;
 
     st.idleP += (dt * mv.idleSpeed) / 60;
-    st.spin += (dt * THREE.MathUtils.degToRad(mv.spinDeg)) / 60;
+    // The global spin brakes with the rest of the spiral while a card is
+    // held — the whole instrument stops under the hand.
+    st.spin +=
+      ((dt * THREE.MathUtils.degToRad(mv.spinDeg)) / 60) * (1 - st.holdRest);
     const P = st.idleP + (window.scrollY * mv.scrub) / 1000;
     if (rigRef.current) rigRef.current.rotation.z = st.spin;
 
@@ -706,6 +720,10 @@ function GalaxyScene({
       st.perfScale = 1;
     }
     const liveN = Math.max(6, Math.round(cards.length * st.perfScale));
+
+    const cosS = Math.cos(st.spin);
+    const sinS = Math.sin(st.spin);
+    const ptr = pointer.current;
 
     // Pass 1: place every live card along its arm (in permuted order — the
     // live set is the first liveN entries of liveOrder). All positions must
@@ -757,15 +775,30 @@ function GalaxyScene({
       const wobR = Math.cos(t * mv.wobbleFreq * Math.PI * 2 * 0.7 + i * 1.713);
       cardPos[i * 2] = r * ux + wobAmp * (wobT * -uy + 0.6 * wobR * ux);
       cardPos[i * 2 + 1] = r * uy + wobAmp * (wobT * ux + 0.6 * wobR * uy);
+
+      // The tug: cards inside the field are actually displaced toward the
+      // cursor (world delta rotated back into rig space). Baked into
+      // cardPos BEFORE sizing, so the collision guarantee sees it.
+      if (ptr.active && st.targetI < 0 && pt.tugPx > 0) {
+        const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
+        const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
+        const dx = ptr.x - wxp;
+        const dy = ptr.y - wyp;
+        const d2 = dx * dx + dy * dy;
+        const tug =
+          pt.tugPx *
+          Math.exp(-d2 / (pt.fieldPx * pt.fieldPx)) *
+          (1 - cardTargetK[i]);
+        const inv = tug / Math.max(1, Math.sqrt(d2));
+        cardPos[i * 2] += (cosS * dx + sinS * dy) * inv;
+        cardPos[i * 2 + 1] += (-sinS * dx + cosS * dy) * inv;
+      }
     }
 
     // Target pick: the card under the cursor — outermost wins on overlap,
     // and only that card is the target; everyone else returns to normal.
     // World-space point-in-rect test: the rig is spun, but cards stay
     // upright, so their rects are axis-aligned in world coordinates.
-    const cosS = Math.cos(st.spin);
-    const sinS = Math.sin(st.spin);
-    const ptr = pointer.current;
     let target = -1;
     let bestC = -1;
     if (ptr.active) {
@@ -930,6 +963,14 @@ function GalaxyScene({
       u.uTexA.value = va;
       u.uAber.value = (lk.aberration + cardFlare[i] + rippleBoost) * (1 - tk);
       u.uCurve.value = lk.curvePx * (1 - tk);
+      // The cursor's weight on the surface: local bulge toward the mouse
+      // point in card-local units (cards are upright, so world axes are
+      // card axes).
+      (u.uMouse.value as THREE.Vector2).set(
+        (ptr.x - wxp) / Math.max(1, W),
+        (ptr.y - wyp) / Math.max(1, H),
+      );
+      u.uWarp.value = pt.mouseWarp * fall * (1 - tk);
       (u.uSize.value as THREE.Vector2).set(W, H);
       u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
       u.uFrameA.value = lk.frameAlpha;
