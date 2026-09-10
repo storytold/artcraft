@@ -239,6 +239,22 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     default: 0.18,
     info: "How tightly the page chases the cursor while thumb-dragging the zoomed rail.",
   },
+  formSpacing: {
+    label: "Form spacing",
+    min: 0.15,
+    max: 1,
+    step: 0.05,
+    default: 0.35,
+    info: "Letter spacing of the vertical word at the moment it forms at the queue line — 1 = full column immediately (can hang past the viewport), smaller = tight cluster that unspools while riding.",
+  },
+  unspool: {
+    label: "Unspool ×len",
+    min: 0.5,
+    max: 5,
+    step: 0.25,
+    default: 2,
+    info: "How much scroll (in word-lengths) the formed cluster takes to expand to full letter spacing as it rides up the rail.",
+  },
 });
 
 // Ink knobs — read per frame.
