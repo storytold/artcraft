@@ -860,36 +860,42 @@ function GalaxyScene({
     // upright, so their rects are axis-aligned in world coordinates.
     let target = -1;
     let bestC = -1;
-    // Hit tests must see the click-boosted size, or the pointer could sit
-    // inside the enlarged card yet outside its base rect and drop the lock.
     const boostF = 1 + (pt.boostScale - 1) * st.boostK;
     if (ptr.active) {
-      // Retention first, with hysteresis: the current target keeps the
-      // lock while the pointer stays within its rect grown by the tug
-      // distance — as the field releases, the card slides back by at most
-      // tugPx, and without this margin the lock would flap at the edge
-      // (acquire → tug off → card slides out from under the pointer →
-      // release → tug on → reacquire, every few frames).
+      // Priority order — the boost is a display overlay, not a logical
+      // footprint:
+      //   1. The current target's TRUE (unboosted) rect + hysteresis
+      //      margin retains unconditionally (the margin covers the
+      //      tug-release slide so the lock can't flap at the edge).
+      //   2. Outside that core, any OTHER card under the pointer wins —
+      //      a card peeking from under an enlarged neighbor must take the
+      //      focus the moment the pointer reaches its territory.
+      //   3. The boosted rect retains only over empty space, so the lock
+      //      still doesn't drop while viewing the outer half of a big
+      //      card with nothing behind it.
       const cur = st.targetI;
-      if (cur >= 0 && liveRank[cur] < liveN) {
-        const H = cardH[cur] * (cur === st.boostCard ? boostF : 1);
-        const margin = pt.tugPx + 8;
+      const margin = pt.tugPx + 8;
+      let inCore = false;
+      let inBoost = false;
+      if (cur >= 0 && liveRank[cur] < liveN && cardH[cur] >= 8) {
         const wxp = cosS * cardPos[cur * 2] - sinS * cardPos[cur * 2 + 1];
         const wyp = sinS * cardPos[cur * 2] + cosS * cardPos[cur * 2 + 1];
-        if (
-          H >= 8 &&
-          Math.abs(ptr.x - wxp) <= (H * 8) / 9 + margin &&
-          Math.abs(ptr.y - wyp) <= H / 2 + margin
-        ) {
-          target = cur;
-        }
+        const dxa = Math.abs(ptr.x - wxp);
+        const dya = Math.abs(ptr.y - wyp);
+        const Hc = cardH[cur];
+        inCore = dxa <= (Hc * 8) / 9 + margin && dya <= Hc / 2 + margin;
+        const Hb = Hc * (cur === st.boostCard ? boostF : 1);
+        inBoost = dxa <= (Hb * 8) / 9 + margin && dya <= Hb / 2 + margin;
       }
-      if (target < 0) {
+      if (inCore) {
+        target = cur;
+      } else {
         for (let k = 0; k < liveN; k++) {
           const i = liveOrder[k];
+          if (i === cur) continue;
           const c = cardCyc[i];
           if (c < 0.04 || c <= bestC) continue;
-          const H = cardH[i] * (i === st.boostCard ? boostF : 1);
+          const H = cardH[i];
           if (H < 8) continue;
           const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
           const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
@@ -901,6 +907,7 @@ function GalaxyScene({
             target = i;
           }
         }
+        if (target < 0 && inBoost) target = cur;
       }
     }
     st.targetI = target;
