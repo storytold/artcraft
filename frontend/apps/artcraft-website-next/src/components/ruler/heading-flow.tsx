@@ -109,6 +109,13 @@ export default function HeadingFlow({
     vel: 0,
     snapSince: null as number | null,
     snapping: false,
+    // Snap arming: at most ONE snap per organic-scroll episode. Snaps and
+    // heading jumps disarm; only real user scrolling re-arms. Without
+    // this, overlapping flip zones (a threshold flip next to an
+    // end-of-page flip) can ping-pong forever: resolving one word un-
+    // resolves the other, and each snap's own settling triggers the next.
+    armed: true,
+    jumping: false,
   });
 
   const layout = useMemo(
@@ -505,10 +512,22 @@ export default function HeadingFlow({
       const midIdx = phases.findIndex(
         (ph) => ph.flipP > 0.04 && ph.flipP < 0.96,
       );
+      // Re-arm only on organic scroll: meaningful velocity while no
+      // programmatic animation (jump or snap) is driving the page.
+      if (
+        !st.armed &&
+        !st.snapping &&
+        !st.jumping &&
+        Math.abs(st.vel) > 40
+      ) {
+        st.armed = true;
+      }
       if (st.snapping) {
         if (midIdx < 0) st.snapping = false;
       } else if (
         midIdx >= 0 &&
+        st.armed &&
+        !st.jumping &&
         Math.abs(st.vel) < 30 &&
         lenis &&
         !rulerZoom.dragging &&
@@ -532,6 +551,7 @@ export default function HeadingFlow({
           }
           const target = Math.max(0, Math.min(maxScroll, raw));
           st.snapping = true;
+          st.armed = false; // one snap per organic-scroll episode
           st.snapSince = null;
           lenis.scrollTo(target, {
             duration: mt.snapDur,
@@ -605,6 +625,9 @@ export default function HeadingFlow({
     e.preventDefault();
     e.stopPropagation();
     pressUntil[wi] = performance.now() + 350;
+    // A jump lands exactly where the user asked — no snap may fight it.
+    fs.current.armed = false;
+    fs.current.jumping = true;
     const lenis = lenisRef.current;
     const el = document.getElementById(s.id);
     const target = s.isHero
@@ -616,9 +639,13 @@ export default function HeadingFlow({
       lenis.scrollTo(target, {
         duration: rulerMotionTuner.read().jumpDur,
         easing: easeOutExpo,
+        onComplete: () => {
+          fs.current.jumping = false;
+        },
       });
     } else {
       window.scrollTo({ top: target });
+      fs.current.jumping = false;
     }
   };
 
