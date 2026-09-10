@@ -9,6 +9,7 @@ import {
 import SiteNav from "@/components/site-nav";
 import SiteFooter from "@/components/site-footer";
 import MotionProvider from "@/components/motion-provider";
+import ScrollRuler from "@/components/ruler/scroll-ruler";
 import TunerPanel from "@/components/dev/tuner-panel";
 import "./globals.css";
 
@@ -121,8 +122,9 @@ export default function RootLayout({
         />
         <MotionProvider>
           <SiteNav />
-          <main>{children}</main>
+          <main id="main">{children}</main>
           <SiteFooter />
+          <ScrollRuler />
         </MotionProvider>
         <TunerPanel />
       </body>

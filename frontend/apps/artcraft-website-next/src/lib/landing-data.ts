@@ -1,4 +1,4 @@
-import { mediaUrl } from "./links";
+import { cdnMediaUrl, mediaUrl } from "./links";
 
 // Product feature roster, ported from the shipping landing page. Copy is the
 // approved marketing copy — edit deliberately, not casually.
@@ -73,27 +73,45 @@ export const HERO_VIDEO_URL =
   "https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/website-commercial-2026.05.mp4";
 
 // Clips for the hero's render wall. `aspect` is width/height of the panel
-// plane (the texture is cover-fitted, so any source aspect works).
-// Served through the /ext-media same-origin proxy (see next.config.ts) —
-// WebGL video textures require CORS-clean sources. PLACEHOLDERS: these
-// currently reuse the feature footage — swap each path for an exported
-// Seedance 2.5 clip when the renders are ready; the wall adapts to any
-// count and mix of aspects.
+// plane (the texture is cover-fitted, so any source aspect works), and the
+// wall adapts to any count and mix of aspects, so the count below is the
+// only thing to change when clips are added or dropped.
+//
+// Sources live on the FakeYou CDN as /videos/001.mp4 .. /videos/014.mp4 and
+// reach the page through the same-origin /cdn-media proxy, since WebGL video
+// textures require CORS-clean sources.
+const SHOWCASE_CLIP_COUNT = 14;
+
 export type SeedanceClip = {
   src: string;
   aspect: number;
 };
 
-export const SEEDANCE_SHOWCASE: SeedanceClip[] = [
-  { src: "/videos/1.mp4", aspect: 16 / 9 },
-  { src: "/videos/2.mp4", aspect: 16 / 9 },
-  { src: "/videos/3.mp4", aspect: 16 / 9 },
-  { src: "/videos/4.mp4", aspect: 16 / 9 },
-  { src: "/videos/5.mp4", aspect: 16 / 9 },
-  { src: "/videos/6.mp4", aspect: 16 / 9 },
-  { src: "/videos/7.mp4", aspect: 16 / 9 },
-  { src: "/videos/8.mp4", aspect: 16 / 9 },
-  { src: "/videos/9.mp4", aspect: 16 / 9 },
+export const SEEDANCE_SHOWCASE: SeedanceClip[] = Array.from(
+  { length: SHOWCASE_CLIP_COUNT },
+  (_, i) => ({
+    src: cdnMediaUrl(`/videos/${String(i + 1).padStart(3, "0")}.mp4`),
+    aspect: 16 / 9,
+  }),
+);
+
+// The scroll ruler's section roster, in document order. `id` must match a
+// DOM id on the page; sections missing from the DOM are silently skipped so
+// the ruler still works on future pages. The hero is special-cased by id
+// (its heading is the wordmark itself — see heading-flow.tsx).
+export type RulerSection = {
+  id: string;
+  label: string;
+};
+
+export const HERO_SECTION_ID = "hero";
+
+export const RULER_SECTIONS: RulerSection[] = [
+  { id: HERO_SECTION_ID, label: "ARTCRAFT" },
+  { id: "features", label: "FEATURES" },
+  { id: "ownership", label: "OWNERSHIP" },
+  { id: "made-with", label: "MADE WITH" },
+  { id: "start", label: "GET STARTED" },
 ];
 
 export const MADE_WITH_YOUTUBE_IDS = [

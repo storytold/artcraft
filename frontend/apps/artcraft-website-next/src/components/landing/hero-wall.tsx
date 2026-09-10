@@ -44,6 +44,29 @@ export function createWallDrag(): WallDrag {
 const ROW_COUNT = 2;
 const FOV = 30; // must match FittedCamera in hero-wordmark.tsx
 
+// Decode budget. A wall of 1080p clips all decoding at once is what makes
+// the hero feel heavy, so only the clips whose panels are near the viewport
+// keep a decoder; the rest pause on their last frame (already invisible
+// behind the edge vignette). Playback decisions run on their own slow tick,
+// since play/pause churn at 60 Hz would cost more than it saves, and a clip
+// holds its slot briefly after leaving so one hovering at the edge does not
+// stutter. Panels beyond CULL_EDGE half-widths are fully off screen: a panel
+// is clear of the edge once its center passes ~1.25.
+const CULL_EDGE = 1.4;
+const CULL_TICK_S = 0.25;
+const CULL_HOLD_S = 1.2;
+const MAX_DECODING = 12;
+// Starting a decoder is the expensive moment (demux, buffer, first keyframe),
+// so only a couple are started per tick. Scrolling back to the hero would
+// otherwise restart a dozen at once and hitch the frame it lands on; instead
+// the wall refills over about a second, behind the panels' own fade-in.
+const RESUME_PER_TICK = 3;
+// Grace period before a scrolled-away wall gives up its decoders. The frame
+// loop is already stopped by then, so a few seconds of idle decoding is
+// cheaper than the restart a quick scroll down and back would otherwise pay.
+const PARK_DELAY_MS = 2500;
+const FAR_EDGE = 1e6; // stand-in distance for a clip with no panel this frame
+
 type WallPanel = {
   clip: number;
   w: number;
@@ -64,10 +87,14 @@ export default function HeroWall({
   pointer,
   drag,
   colors,
+  onScreen,
 }: {
   pointer: React.RefObject<{ x: number; y: number; active: boolean }>;
   drag: React.RefObject<WallDrag>;
   colors: ThemeColors;
+  // False once the hero has scrolled away or the tab went to the background.
+  // The frame loop is stopped then, so playback is parked from an effect.
+  onScreen: boolean;
 }) {
   const size = useThree((s) => s.size);
   const rigRef = useRef<THREE.Group>(null);
@@ -77,6 +104,7 @@ export default function HeroWall({
     speed: 0,
     wasDragging: false,
     started: false,
+    cullTimer: 0,
   });
   const tilt = useRef({ x: 0, y: 0 });
 
@@ -95,7 +123,11 @@ export default function HeroWall({
         v.loop = true;
         v.playsInline = true;
         v.crossOrigin = "anonymous";
-        v.preload = "auto";
+        v.disableRemotePlayback = true;
+        // Metadata only: fetching every clip up front stalls the whole page
+        // on load. The decode budget below calls play() as panels approach,
+        // which pulls each clip down roughly in the order it is needed.
+        v.preload = "metadata";
         return v;
       }),
     [],
@@ -133,7 +165,6 @@ export default function HeroWall({
         v.src = SEEDANCE_SHOWCASE[i].src;
         v.load();
       }
-      v.play().catch(() => {});
     });
     return () => {
       textures.forEach((t) => t.dispose());
@@ -144,6 +175,18 @@ export default function HeroWall({
       });
     };
   }, [videos, textures]);
+
+  // Scrolled away or backgrounded: the frame loop is stopped, so nothing
+  // would ever pause these. Park them all after a grace period; the budget
+  // re-grants slots on the first frame after the hero comes back.
+  useEffect(() => {
+    if (onScreen) return;
+    const timer = setTimeout(
+      () => videos.forEach((v) => v.pause()),
+      PARK_DELAY_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [onScreen, videos]);
 
   // Layout tunables change the wall's structure — debounce a rebuild.
   const [layoutVersion, setLayoutVersion] = useState(0);
@@ -170,7 +213,7 @@ export default function HeroWall({
   // pool, so no clip ever appears in more than one row.
   const layout = useMemo(() => {
     const t = wallLayoutTuner.read();
-    const nearH = Math.min(320, Math.max(110, size.height * t.rowHeight));
+    const nearH = Math.min(460, Math.max(110, size.height * t.rowHeight));
     const yFracs = [t.yNear, t.yMid];
     const clipCount = SEEDANCE_SHOWCASE.length;
     const perRow = Math.floor(clipCount / ROW_COUNT);
@@ -267,6 +310,19 @@ export default function HeroWall({
     [layout],
   );
 
+  // Per-clip decode bookkeeping, reused every frame so the budget allocates
+  // nothing: closest panel edge, seconds since the clip last held a slot,
+  // and a scratch permutation the budget sorts in place.
+  const clipEdge = useMemo(
+    () => new Float32Array(SEEDANCE_SHOWCASE.length).fill(FAR_EDGE),
+    [],
+  );
+  const clipIdle = useMemo(
+    () => new Float32Array(SEEDANCE_SHOWCASE.length),
+    [],
+  );
+  const clipOrder = useMemo(() => SEEDANCE_SHOWCASE.map((_, i) => i), []);
+
   useFrame((st3, delta) => {
     const dt = Math.min(delta, 0.05);
     const st = state.current;
@@ -320,6 +376,7 @@ export default function HeroWall({
     const cosY = Math.cos(yaw);
     const sinY = Math.sin(yaw);
     const dims = [lk.dimNear, lk.dimMid];
+    clipEdge.fill(FAR_EDGE);
 
     for (let i = 0; i < layout.panels.length; i++) {
       const g = groupRefs.current[i];
@@ -342,6 +399,7 @@ export default function HeroWall({
       const projX = wx * (dist / (dist - wz));
       const edge = Math.abs(projX) / (size.width / 2);
       const vig = 1 - lk.edgeFade * smoothstep(0.72, 1.3, edge);
+      if (edge < clipEdge[c.clip]) clipEdge[c.clip] = edge;
 
       const ready = videos[c.clip].readyState >= 2 ? 1 : 0;
       videoAlpha[i] += (ready - videoAlpha[i]) * (1 - Math.exp(-3 * dt));
@@ -352,8 +410,11 @@ export default function HeroWall({
       const dim = dims[c.row];
       const mat = materials[i];
       if (dark) {
-        mat.color.setScalar(dim * vig * va);
-        mat.opacity = intro;
+        // Fade the unloaded panel out with alpha, not toward black: clips
+        // now load on demand, and an opaque black rectangle reads as a hole
+        // in the wall against the dark background.
+        mat.color.setScalar(dim * vig);
+        mat.opacity = intro * va;
       } else {
         // Light theme recedes via opacity toward the paper — but only for
         // depth: the near row keeps nearly full ink (sqrt softens its dim)
@@ -363,6 +424,12 @@ export default function HeroWall({
           intro * Math.sqrt(dim) * vig * va * (1 - lk.washLight * c.row);
       }
       frameMaterials[i].opacity = lk.frameAlpha * vig * intro;
+    }
+
+    st.cullTimer -= dt;
+    if (st.cullTimer <= 0) {
+      st.cullTimer = CULL_TICK_S;
+      applyDecodeBudget(videos, clipEdge, clipIdle, clipOrder, CULL_TICK_S);
     }
   });
 
@@ -385,4 +452,36 @@ export default function HeroWall({
       ))}
     </group>
   );
+}
+
+// Hand the scarce decoders to the clips nearest the viewport and pause the
+// rest. Clips are ranked by their closest panel, so when the cap bites it is
+// always the outermost panels that freeze: the ones the edge vignette has
+// already dissolved. `elapsed` is the time since the previous call, not the
+// frame delta: this runs on the cull tick, not every frame.
+function applyDecodeBudget(
+  videos: HTMLVideoElement[],
+  clipEdge: Float32Array,
+  clipIdle: Float32Array,
+  clipOrder: number[],
+  elapsed: number,
+) {
+  clipOrder.sort((a, b) => clipEdge[a] - clipEdge[b]);
+  let started = 0;
+  for (let rank = 0; rank < clipOrder.length; rank++) {
+    const clip = clipOrder[rank];
+    const v = videos[clip];
+    if (rank < MAX_DECODING && clipEdge[clip] < CULL_EDGE) {
+      clipIdle[clip] = 0;
+      // Nearest clips are first in the ranking, so the stagger always
+      // spends its budget on the panels closest to the middle of frame.
+      if (v.paused && started < RESUME_PER_TICK) {
+        started++;
+        v.play().catch(() => {});
+      }
+      continue;
+    }
+    clipIdle[clip] += elapsed;
+    if (clipIdle[clip] >= CULL_HOLD_S && !v.paused) v.pause();
+  }
 }

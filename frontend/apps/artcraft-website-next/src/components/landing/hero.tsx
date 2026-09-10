@@ -8,7 +8,7 @@ import HeroViewport from "./hero-viewport";
 
 export default function Hero() {
   return (
-    <section className="relative">
+    <section id="hero" className="relative">
       {/* Full-bleed hero — crisp display-type wordmark over the render
           wall: rows of Seedance takes forming one perspective wall that
           drifts behind the word and answers the cursor. */}

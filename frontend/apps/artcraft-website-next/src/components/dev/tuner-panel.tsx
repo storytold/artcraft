@@ -197,17 +197,37 @@ function Row({
   const value = useTunerStore((s) => s.values[storeKey] ?? def.default);
   const setValue = useTunerStore((s) => s.setValue);
   const modified = value !== def.default;
+  const [showInfo, setShowInfo] = useState(false);
 
   return (
     <label className="flex flex-col gap-1">
-      <span className="flex items-center justify-between">
+      <span className="relative flex items-center justify-between">
         <span
-          className={`font-mono text-[10px] tracking-[0.08em] uppercase ${
+          className={`flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase ${
             modified ? "text-accent-ink" : "text-muted"
           }`}
         >
           {def.label}
+          {def.info && (
+            <span
+              aria-label={def.info}
+              onMouseEnter={() => setShowInfo(true)}
+              onMouseLeave={() => setShowInfo(false)}
+              // A click on anything inside <label> would focus the number
+              // input — the mark is informational, so swallow it.
+              onClick={(e) => e.preventDefault()}
+              onPointerDown={(e) => e.preventDefault()}
+              className="inline-flex h-3 w-3 cursor-help items-center justify-center border border-line text-[8px] leading-none text-faint normal-case"
+            >
+              i
+            </span>
+          )}
         </span>
+        {def.info && showInfo && (
+          <span className="pointer-events-none absolute inset-x-0 top-full z-10 mt-1 border border-line-strong bg-bg-raised p-2 font-mono text-[10px] leading-snug tracking-normal normal-case text-ink shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+            {def.info}
+          </span>
+        )}
         <input
           type="number"
           value={round(value)}

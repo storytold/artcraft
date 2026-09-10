@@ -4,7 +4,7 @@ import { SectionShell } from "./section-shell";
 
 export default function FinalCta() {
   return (
-    <SectionShell>
+    <SectionShell id="start">
       <div className="flex flex-col items-center px-6 py-20 text-center md:py-28">
         <p className="hud-label text-faint">Free to start · No subscription</p>
         <h2
