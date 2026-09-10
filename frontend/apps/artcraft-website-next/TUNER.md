@@ -37,10 +37,21 @@ iteration/build round-trip.
 import { defineTunables } from "@/lib/tuner";
 
 export const glowTuner = defineTunables("glow", "Glow", {
-  radius: { label: "Radius px", min: 0, max: 400, step: 5, default: 120 },
-  strength: { label: "Strength", min: 0, max: 2, step: 0.05, default: 0.8 },
+  radius: {
+    label: "Radius px", min: 0, max: 400, step: 5, default: 120,
+    info: "Blur radius of the glow behind the hero card.",
+  },
+  strength: {
+    label: "Strength", min: 0, max: 2, step: 0.05, default: 0.8,
+    info: "Peak intensity of the glow (0 = off).",
+  },
 });
 ```
+
+**Every tunable must carry an `info` one-liner.** It renders as the row's
+`i`-mark hover in the panel — a slider nobody can decipher ("Ghost alpha"?)
+costs more than the sentence explaining it. Write what the knob visibly
+does, not what the variable is named.
 
 Then read values where they're used:
 

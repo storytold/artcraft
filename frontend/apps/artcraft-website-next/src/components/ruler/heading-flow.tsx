@@ -237,6 +237,7 @@ export default function HeadingFlow({
         let p: number;
         let from: (i: number) => Pose;
         let to: (i: number) => Pose;
+        let reverseStagger = false;
         if (flipP > 0) {
           p = flipP;
           from = (i) => ridePose(m, i, v, rideLen);
@@ -264,6 +265,10 @@ export default function HeadingFlow({
           }
         } else if (detachP < 1) {
           p = detachP;
+          // Mirrored stagger: the rail-adjacent tail letter peels first, so
+          // letters lift off in sequence from the rail side instead of the
+          // lead letter sweeping across the ones still resting in the queue.
+          reverseStagger = true;
           // The morph target is STATIONARY: the riding pose the word will
           // hold the instant detach completes (column bottom at its queue
           // slot). At p=1 this equals the true riding pose, which then
@@ -298,10 +303,12 @@ export default function HeadingFlow({
         let maxX = -Infinity;
         let minY = Infinity;
         let maxY = -Infinity;
+        let maxAlpha = 0;
         for (let i = 0; i < n; i++) {
           const el = refs.letters[i];
           if (!el) continue;
-          const pi = clamp01(p * span - i * sf);
+          const si = reverseStagger ? n - 1 - i : i;
+          const pi = clamp01(p * span - si * sf);
           const e = easeInOutCubic(pi);
           const a = from(i);
           const b = to(i);
@@ -315,19 +322,30 @@ export default function HeadingFlow({
           const alpha = a.alpha + (b.alpha - a.alpha) * e;
           el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
           el.style.opacity = String(alpha);
-          const half = (m.adv[i] * hp * scale) / 2 + hp * scale * 0.6;
-          if (x - half < minX) minX = x - half;
-          if (x + half > maxX) maxX = x + half;
-          if (y - half < minY) minY = y - half;
-          if (y + half > maxY) maxY = y + half;
+          if (alpha > maxAlpha) maxAlpha = alpha;
+          // Per-axis extents (swapped when the glyph is rotated toward
+          // vertical) so hit boxes stay tight: a shared radius made
+          // neighboring queue links overlap, and the topmost sibling ate
+          // clicks meant for the one above it.
+          const wHalf = (m.adv[i] * hp * scale) / 2 + 2;
+          const hHalf = (hp * scale) / 2 + 2;
+          const vertical = Math.abs(rot) > 45;
+          const xHalf = vertical ? hHalf : wHalf;
+          const yHalf = vertical ? wHalf : hHalf;
+          if (x - xHalf < minX) minX = x - xHalf;
+          if (x + xHalf > maxX) maxX = x + xHalf;
+          if (y - yHalf < minY) minY = y - yHalf;
+          if (y + yHalf > maxY) maxY = y + yHalf;
         }
 
-        // Hit box hugs the word wherever it is.
+        // Hit box hugs the word wherever it is; a fully invisible word
+        // (the hero before its entrance) must not capture clicks.
         if (refs.hit && isFinite(minX)) {
-          refs.hit.style.left = `${minX - 4}px`;
-          refs.hit.style.top = `${minY - 4}px`;
-          refs.hit.style.width = `${maxX - minX + 8}px`;
-          refs.hit.style.height = `${maxY - minY + 8}px`;
+          refs.hit.style.left = `${minX - 2}px`;
+          refs.hit.style.top = `${minY - 2}px`;
+          refs.hit.style.width = `${maxX - minX + 4}px`;
+          refs.hit.style.height = `${maxY - minY + 4}px`;
+          refs.hit.style.pointerEvents = maxAlpha > 0.05 ? "auto" : "none";
         }
 
         // Section tick + index on the rail's inner edge, riding at the
