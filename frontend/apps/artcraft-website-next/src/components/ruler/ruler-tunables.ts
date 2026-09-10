@@ -11,8 +11,8 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
   headingPx: { label: "Heading px", min: 12, max: 34, step: 1, default: 20 },
   ridingPx: { label: "Riding px", min: 9, max: 24, step: 1, default: 13 },
   queuePx: { label: "Queue px", min: 9, max: 24, step: 1, default: 12 },
-  stackReserve: { label: "Stack top px", min: 40, max: 240, step: 4, default: 108 },
-  olderSlot: { label: "Older slot px", min: 12, max: 48, step: 2, default: 22 },
+  topPad: { label: "Top pad px", min: 4, max: 120, step: 4, default: 20 },
+  currentGap: { label: "Current gap px", min: 8, max: 80, step: 2, default: 26 },
   queueSlot: { label: "Queue slot px", min: 12, max: 48, step: 2, default: 22 },
   queuePad: { label: "Queue bottom px", min: 8, max: 120, step: 4, default: 28 },
   textPad: { label: "Text pad px", min: 0, max: 48, step: 2, default: 14 },
@@ -43,6 +43,4 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
   majorLen: { label: "Major len px", min: 4, max: 28, step: 1, default: 15 },
   ghostAlpha: { label: "Ghost alpha", min: 0, max: 1, step: 0.05, default: 0.9 },
   queueAlpha: { label: "Queue alpha", min: 0, max: 1, step: 0.05, default: 0.55 },
-  stackFade: { label: "Stack fade", min: 0, max: 0.5, step: 0.02, default: 0.22 },
-  stackShrink: { label: "Stack shrink", min: 0, max: 0.4, step: 0.02, default: 0.14 },
 });

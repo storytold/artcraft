@@ -25,8 +25,12 @@ import {
 //             where you're going),
 //   riding  — vertical (reading upward) on the tick rail, 1:1 with the
 //             document, annotating its section as it scrolls,
-//   stacked — horizontal at the top, newest at the fixed "current" line
-//             pushing older headings up (where you've been).
+//   stacked — horizontal at the top (where you've been): passed sections
+//             pin under the nav as a compact pile mirroring the bottom
+//             queue, and the current section's heading sits just below the
+//             pile at full size. When the next word flips in, the current
+//             one demotes up into the pile — the two edges read as one
+//             symmetric sectional navbar.
 //
 // Transitions between homes are scrub-bound letter-by-letter curves. Every
 // word's pose is a pure function of scroll position, so everything is
@@ -137,7 +141,7 @@ export default function HeadingFlow({
       st.vel += (raw - st.vel) * (1 - Math.exp(-6 * dt));
 
       const T = (lay.thresholdPct / 100) * vh;
-      const yCur = NAV_H + lay.stackReserve;
+      const yTopLine = NAV_H + lay.topPad;
       const yQueueLine = vh - lay.queuePad;
       const hp = lay.headingPx;
       const rs = lay.ridingPx / hp;
@@ -219,10 +223,28 @@ export default function HeadingFlow({
         if (flipP > 0) {
           p = flipP;
           from = (i) => ridePose(m, i, v, rideLen);
-          const pos = 0 + (flipP >= 1 ? stackedCount - 1 - wi + flipShift : 0);
-          const scale = Math.max(0.5, 1 - lk.stackShrink * pos);
-          const alpha = Math.max(0.15, 1 - lk.stackFade * pos);
-          to = (i) => horizPose(m, i, yCur - lay.olderSlot * pos, scale, alpha);
+          // Stacked words keep their document-order slot in the top pile
+          // (wi is the index from the top, since stacked words are always
+          // a prefix). The newest fully-stacked word holds the "current"
+          // pose — full size, offset below the pile — and demotes into a
+          // compact pile entry as the next word flips in.
+          if (flipP >= 1) {
+            const demote = wi === stackedCount - 1 ? flipShift : 1;
+            const y =
+              yTopLine + wi * lay.queueSlot + lay.currentGap * (1 - demote);
+            const scale = 1 - (1 - qs) * demote;
+            const alpha = 1 - (1 - lk.queueAlpha) * demote;
+            to = (i) => horizPose(m, i, y, scale, alpha);
+          } else {
+            to = (i) =>
+              horizPose(
+                m,
+                i,
+                yTopLine + wi * lay.queueSlot + lay.currentGap,
+                1,
+                1,
+              );
+          }
         } else if (detachP < 1) {
           p = detachP;
           to = (i) => ridePose(m, i, v, rideLen);
