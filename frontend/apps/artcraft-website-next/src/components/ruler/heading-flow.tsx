@@ -8,6 +8,7 @@ import {
   clamp01,
   easeInOutCubic,
   easeOutExpo,
+  railOccupancy,
   rulerMap,
   rulerZoom,
   type MeasuredSection,
@@ -210,6 +211,8 @@ export default function HeadingFlow({
         }
       }
 
+      railOccupancy.spans.length = 0;
+
       let stackedCount = 0;
       let flipShift = 0;
       for (const p of phases) {
@@ -377,6 +380,13 @@ export default function HeadingFlow({
           if (x + xHalf > maxX) maxX = x + xHalf;
           if (y - yHalf < minY) minY = y - yHalf;
           if (y + yHalf > maxY) maxY = y + yHalf;
+        }
+
+        // Publish the word's rail footprint so the tick loop can fade
+        // percent labels out of its way (skip fully queued/stacked words —
+        // those live off the tick lane).
+        if (detachP > 0.02 && flipP < 0.98 && isFinite(minY)) {
+          railOccupancy.spans.push({ top: minY, bottom: maxY });
         }
 
         // Hit box hugs the word wherever it is; a fully invisible word

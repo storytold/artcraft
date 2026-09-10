@@ -33,6 +33,14 @@ export type MeasuredSection = {
  * 1 = compressed full-page map. */
 export const rulerZoom = { target: 0, p: 0, dragging: false };
 
+/** Screen-space y-spans currently occupied by heading words on the rail.
+ * HeadingFlow rewrites it every frame; the tick loop fades percent labels
+ * within a margin of any span (proximity yield — the scale gets out of a
+ * passing word's way). */
+export const railOccupancy: { spans: { top: number; bottom: number }[] } = {
+  spans: [],
+};
+
 /** The ruler's vertical mapping: progress/percent p ∈ [0,1] maps onto
  * [NAV_H + pad, vh − pad] — in BOTH the 1:1 and compact states, so the
  * needle-meets-its-tick invariant stays exact and the endpoint ticks

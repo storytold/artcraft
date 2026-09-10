@@ -10,6 +10,7 @@ import {
   NAV_H,
   clamp01,
   easeOutExpo,
+  railOccupancy,
   rulerMap,
   rulerZoom,
   type MeasuredSection,
@@ -55,6 +56,7 @@ export default function ScrollRuler() {
   const bracketRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const tickRowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const labelRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const digitRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   // Mutable per-frame state, never triggering React.
@@ -218,6 +220,7 @@ export default function ScrollRuler() {
     }
     lineRefs.current.length = out.length;
     tickRowRefs.current.length = out.length;
+    labelRefs.current.length = out.length;
     return out;
   }, [mode, geom.docH, layout, look]);
 
@@ -350,18 +353,46 @@ export default function ScrollRuler() {
         const needleDocY = progress * docH;
         const velNorm = clamp01(Math.abs(st.vel) / 3000);
         const writeZoom = z > 0 || st.zoomWrote;
+        const spans = railOccupancy.spans;
         for (let i = 0; i < ticks.length; i++) {
+          const liveY = ticks[i].docY - scrollY + drift;
+          const compactY = map.base + (ticks[i].pct / 100) * map.span;
           if (writeZoom) {
             const row = tickRowRefs.current[i];
             if (row) {
-              const liveY = ticks[i].docY - scrollY + drift;
-              const compactY = map.base + (ticks[i].pct / 100) * map.span;
               row.style.transform =
                 z > 0
                   ? `translate3d(0, ${z * (compactY - liveY)}px, 0)`
                   : "";
             }
           }
+
+          // Proximity yield: percent labels fade under a passing word and
+          // recover behind it. Fully zoomed, words leave the rail, so the
+          // yield eases out with z.
+          const lab = labelRefs.current[i];
+          if (lab) {
+            const y = liveY + z * (compactY - liveY);
+            let fade = 1;
+            if (lk.yieldPad > 0 && z < 1) {
+              for (const spn of spans) {
+                const d =
+                  y < spn.top
+                    ? spn.top - y
+                    : y > spn.bottom
+                      ? y - spn.bottom
+                      : 0;
+                if (d < lk.yieldPad) {
+                  const f = d / lk.yieldPad;
+                  if (f < fade) fade = f;
+                }
+              }
+            }
+            lab.style.opacity = String(
+              lk.labelAlpha * (1 - (1 - fade) * (1 - z)),
+            );
+          }
+
           const el = lineRefs.current[i];
           if (!el) continue;
           const dist = Math.abs(ticks[i].docY - needleDocY);
@@ -548,6 +579,9 @@ export default function ScrollRuler() {
               />
               {t.major && (
                 <span
+                  ref={(el) => {
+                    labelRefs.current[i] = el;
+                  }}
                   className="absolute -translate-y-1/2 font-mono text-ink"
                   style={{
                     [outerProp]: look.majorLen + 4,

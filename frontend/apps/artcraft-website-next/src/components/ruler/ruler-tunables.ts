@@ -315,6 +315,14 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     default: 0.35,
     info: "Opacity of the compact heading links (bottom queue and top pile) and of the in-transit riding word — everything that isn't the active top heading.",
   },
+  yieldPad: {
+    label: "Yield margin px",
+    min: 0,
+    max: 80,
+    step: 2,
+    default: 24,
+    info: "Distance around a riding word within which the tick percent labels fade out of its way (proximity yield).",
+  },
   needleFadePct: {
     label: "Needle fade %",
     min: 0,
