@@ -14,9 +14,9 @@ the whole box with `–`, or expand/collapse individual sections.
 ## Behavior
 
 - **Live**: motion/look values are read every frame, so slider changes
-  apply instantly. Layout values (anything that changes the wall's panel
-  arrangement itself) trigger a debounced rebuild (~250 ms after the last
-  change).
+  apply instantly. Layout values (anything that changes an element's
+  structure or arrangement itself) trigger a debounced rebuild (~250 ms
+  after the last change).
 - **Persistent**: tuned values are stored in `localStorage`
   (`artcraft-tuner`), so a refresh keeps your tuning. Panel position and
   section collapse state persist too (`artcraft-tuner-ui`).
@@ -59,13 +59,14 @@ Then read values where they're used:
   inside the loop — it's cheap and picks up changes instantly.
 - **Build-time consumers** (values baked into geometry/sampling): read at
   build time and subscribe to `useTunerStore` to trigger a debounced rebuild
-  when the group's values change (see the Wall layout wiring in
-  `hero-wall.tsx`).
+  when the group's values change (see the Spiral layout wiring in
+  `hero-spiral.tsx`).
 
 The panel picks up new groups automatically — no panel changes needed.
-Registered groups: Wall layout, Wall motion, Wall look (hero render wall;
-`src/components/landing/hero-tunables.ts`) and Ruler layout, Ruler motion,
-Ruler look (scroll ruler; `src/components/ruler/ruler-tunables.ts`).
+Registered groups: Spiral layout, Spiral motion, Spiral look (hero blueprint
+spiral; `src/components/landing/hero-spiral-tunables.ts`) and Ruler layout,
+Ruler motion, Ruler look (scroll ruler;
+`src/components/ruler/ruler-tunables.ts`).
 
 ## Shipping tuned values
 
