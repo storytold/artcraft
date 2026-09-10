@@ -138,8 +138,9 @@ const CARD_FRAG = /* glsl */ `
 `;
 
 // Pointer state in world px (origin at the hero center, y up), fed by the
-// container's handlers and consumed by the scene every frame.
-type GalaxyPointer = { x: number; y: number; active: boolean };
+// container's handlers and consumed by the scene every frame. `clicks` is a
+// monotonic press counter the scene diffs to detect new clicks.
+type GalaxyPointer = { x: number; y: number; active: boolean; clicks: number };
 
 // A click's dispersion ripple. `start` is stamped with the scene clock the
 // first frame the scene sees it (-1 until then).
@@ -150,7 +151,12 @@ export default function HeroGalaxy() {
   const [colors, setColors] = useState<ThemeColors | null>(null);
   const [onScreen, setOnScreen] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  const pointerRef = useRef<GalaxyPointer>({ x: 0, y: 0, active: false });
+  const pointerRef = useRef<GalaxyPointer>({
+    x: 0,
+    y: 0,
+    active: false,
+    clicks: 0,
+  });
   const ripplesRef = useRef<GalaxyRipple[]>([]);
 
   // Pointer in world coordinates; a press anywhere in the hero spawns a
@@ -173,6 +179,7 @@ export default function HeroGalaxy() {
     };
     const onDown = (e: PointerEvent) => {
       toWorld(e);
+      pointerRef.current.clicks++;
       const r = ripplesRef.current;
       r.push({ x: pointerRef.current.x, y: pointerRef.current.y, start: -1 });
       if (r.length > 8) r.shift();
@@ -292,6 +299,10 @@ function GalaxyScene({
     fieldK: 1,
     targetI: -1,
     useCounter: 10000,
+    lastClicks: 0,
+    boostOn: false,
+    boostK: 0,
+    boostCard: -1,
   });
 
   const dark = useMemo(() => {
@@ -809,6 +820,9 @@ function GalaxyScene({
     // upright, so their rects are axis-aligned in world coordinates.
     let target = -1;
     let bestC = -1;
+    // Hit tests must see the click-boosted size, or the pointer could sit
+    // inside the enlarged card yet outside its base rect and drop the lock.
+    const boostF = 1 + (pt.boostScale - 1) * st.boostK;
     if (ptr.active) {
       // Retention first, with hysteresis: the current target keeps the
       // lock while the pointer stays within its rect grown by the tug
@@ -818,7 +832,7 @@ function GalaxyScene({
       // release → tug on → reacquire, every few frames).
       const cur = st.targetI;
       if (cur >= 0 && liveRank[cur] < liveN) {
-        const H = cardH[cur];
+        const H = cardH[cur] * (cur === st.boostCard ? boostF : 1);
         const margin = pt.tugPx + 8;
         const wxp = cosS * cardPos[cur * 2] - sinS * cardPos[cur * 2 + 1];
         const wyp = sinS * cardPos[cur * 2] + cosS * cardPos[cur * 2 + 1];
@@ -835,7 +849,7 @@ function GalaxyScene({
           const i = liveOrder[k];
           const c = cardCyc[i];
           if (c < 0.04 || c <= bestC) continue;
-          const H = cardH[i];
+          const H = cardH[i] * (i === st.boostCard ? boostF : 1);
           if (H < 8) continue;
           const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
           const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
@@ -850,6 +864,27 @@ function GalaxyScene({
       }
     }
     st.targetI = target;
+
+    // Click consumption: a press on the held card toggles its scale boost;
+    // leaving the card cancels it (non-persistent — the next hold needs a
+    // fresh click). The boost eases both ways, so release scales the card
+    // back down first.
+    if (ptr.clicks !== st.lastClicks) {
+      st.lastClicks = ptr.clicks;
+      if (st.targetI >= 0) {
+        if (st.boostCard === st.targetI) {
+          st.boostOn = !st.boostOn;
+        } else {
+          st.boostCard = st.targetI;
+          st.boostOn = true;
+        }
+      }
+    }
+    if (st.boostOn && st.targetI !== st.boostCard) st.boostOn = false;
+    st.boostK +=
+      ((st.boostOn ? 1 : 0) - st.boostK) *
+      (1 - Math.exp(-dt / Math.max(0.01, pt.boostTau)));
+    if (!st.boostOn && st.boostK < 0.001) st.boostCard = -1;
 
     // Ripples: stamp newcomers with the scene clock, expire the spent.
     const rip = ripples.current;
@@ -921,7 +956,11 @@ function GalaxyScene({
             ? goalH
             : cardH[i] + (goalH - cardH[i]) * (1 - Math.exp(-3 * dt));
       }
-      const H = Math.max(0.001, cardH[i]);
+      // The click boost enlarges only the display size — cardH (the sizing
+      // state neighbors yield against) stays unboosted, so the enlarged
+      // card may overlap its neighbors by design.
+      const H =
+        Math.max(0.001, cardH[i]) * (i === st.boostCard ? boostF : 1);
       // Newborns are rounded squares that morph into 16:9 as they grow.
       // The neighbor separation above assumes the full 16:9 width, so the
       // narrower young cards are strictly safer.
@@ -1009,7 +1048,11 @@ function GalaxyScene({
       );
       u.uTexA.value = va;
       u.uAber.value = (lk.aberration + cardFlare[i] + rippleBoost) * (1 - tk);
-      u.uCurve.value = lk.curvePx * (1 - tk);
+      // Click-ripple feedback is physical as well as chromatic: the
+      // surface pops toward the camera as the ring passes (normalized so
+      // tuning the amp doesn't change the pop height).
+      const ringK = Math.min(2, rippleBoost / Math.max(0.002, pt.rippleAmp));
+      u.uCurve.value = (lk.curvePx + pt.rippleWarp * ringK) * (1 - tk);
       // The cursor's weight on the surface: local bulge toward the mouse
       // point in card-local units (cards are upright, so world axes are
       // card axes).
