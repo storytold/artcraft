@@ -86,6 +86,11 @@ const CARD_FRAG = /* glsl */ `
   uniform float uRadius;
   uniform vec3 uFrameCol;
   uniform float uFrameA;
+  // Local click punches: xy = ring center (card UV), z = ring radius px,
+  // w = displacement amplitude px (0 = slot unused). uClickW is the ring
+  // thickness in px — the "blur" of the circle driving the displacement.
+  uniform vec4 uClick[4];
+  uniform float uClickW;
   in vec2 vUv;
   out vec4 outColor;
 
@@ -97,9 +102,22 @@ const CARD_FRAG = /* glsl */ `
   );
 
   void main() {
+    // Local click punches: a soft gaussian ring pushes the texture
+    // radially outward from the click point — the classic blurred-circle
+    // displacement, evaluated inline. Stackable across the four slots.
+    vec2 uvL = vUv;
+    for (int k = 0; k < 4; k++) {
+      if (uClick[k].w > 0.001) {
+        vec2 q = (vUv - uClick[k].xy) * uSize;
+        float dq = length(q);
+        float ring = (dq - uClick[k].z) / max(1.0, uClickW);
+        uvL += (q / max(1.0, dq)) *
+          (uClick[k].w * exp(-ring * ring)) / uSize;
+      }
+    }
     // Cover-fit crop window; samples clamp inside it so blur taps never
     // bleed past the crop.
-    vec2 uv = vUv * uRepeat + uOffset;
+    vec2 uv = uvL * uRepeat + uOffset;
     vec2 lo = uOffset;
     vec2 hi = uOffset + uRepeat;
     vec3 col;
@@ -576,6 +594,15 @@ function GalaxyScene({
               uSize: { value: new THREE.Vector2(160, 90) },
               uMouse: { value: new THREE.Vector2(0, 0) },
               uWarp: { value: 0 },
+              uClick: {
+                value: [
+                  new THREE.Vector4(),
+                  new THREE.Vector4(),
+                  new THREE.Vector4(),
+                  new THREE.Vector4(),
+                ],
+              },
+              uClickW: { value: 20 },
               uRadius: { value: 0 },
               uFrameCol: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
               uFrameA: { value: 0 },
@@ -660,6 +687,12 @@ function GalaxyScene({
     a.fill(NaN);
     return a;
   }, [cards]);
+  // Local click punches in flight: which card, where on it (card UV), and
+  // when. Only the clicked card renders them.
+  const clickPool = useRef<
+    { card: number; u: number; v: number; start: number }[]
+  >([]);
+
   // Least-recently-shown ordering for clip reassignment at rebirth. Seeded
   // to match the initial round-robin deal.
   const clipLastUsed = useMemo(() => {
@@ -872,6 +905,25 @@ function GalaxyScene({
     if (ptr.clicks !== st.lastClicks) {
       st.lastClicks = ptr.clicks;
       if (st.targetI >= 0) {
+        // The local punch: capture the click point in the card's UV space
+        // (sized as displayed at this instant, boost included).
+        const ti = st.targetI;
+        const twx = cosS * cardPos[ti * 2] - sinS * cardPos[ti * 2 + 1];
+        const twy = sinS * cardPos[ti * 2] + cosS * cardPos[ti * 2 + 1];
+        const tH = Math.max(
+          1,
+          cardH[ti] * (ti === st.boostCard ? boostF : 1),
+        );
+        const tAspect =
+          1 + (16 / 9 - 1) * smoothstep(0, lk.aspectEnd, cardCyc[ti]);
+        clickPool.current.push({
+          card: ti,
+          u: 0.5 + (ptr.x - twx) / (tH * tAspect),
+          v: 0.5 + (ptr.y - twy) / tH,
+          start: t,
+        });
+        if (clickPool.current.length > 8) clickPool.current.shift();
+
         if (st.boostCard === st.targetI) {
           st.boostOn = !st.boostOn;
         } else {
@@ -891,6 +943,10 @@ function GalaxyScene({
     for (let k = rip.length - 1; k >= 0; k--) {
       if (rip[k].start < 0) rip[k].start = t;
       if (t - rip[k].start > pt.rippleLife) rip.splice(k, 1);
+    }
+    const punches = clickPool.current;
+    for (let k = punches.length - 1; k >= 0; k--) {
+      if (t - punches[k].start > pt.clickDur) punches.splice(k, 1);
     }
     const maxTilt = (pt.tiltDeg * Math.PI) / 180;
 
@@ -1062,6 +1118,25 @@ function GalaxyScene({
       );
       u.uWarp.value = pt.mouseWarp * fall * (1 - tk);
       (u.uSize.value as THREE.Vector2).set(W, H);
+      // Local click punches: fill this card's slots (newest four), zero
+      // the rest. Ring radius travels click-point → past the edges over
+      // the punch duration; amplitude dies with it.
+      const clickArr = u.uClick.value as THREE.Vector4[];
+      let slot = 0;
+      for (let k = 0; k < punches.length && slot < 4; k++) {
+        const cr = punches[k];
+        if (cr.card !== i) continue;
+        const e = (t - cr.start) / Math.max(0.05, pt.clickDur);
+        if (e >= 1) continue;
+        clickArr[slot++].set(
+          cr.u,
+          cr.v,
+          e * 0.85 * Math.max(W, H),
+          pt.clickAmp * (1 - e),
+        );
+      }
+      for (; slot < 4; slot++) clickArr[slot].w = 0;
+      u.uClickW.value = pt.clickWidth * Math.max(W, H);
       u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
       u.uFrameA.value = lk.frameAlpha;
       if (dark) {
