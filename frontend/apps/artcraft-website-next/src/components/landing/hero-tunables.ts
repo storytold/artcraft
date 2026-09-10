@@ -11,7 +11,7 @@ export const wallLayoutTuner = defineTunables("wallLayout", "Wall layout", {
     min: 0.14,
     max: 0.42,
     step: 0.01,
-    default: 0.31,
+    default: 0.18,
     info: "Panel height of the near row, as a fraction of the viewport height.",
   },
   rowScale: {
@@ -19,7 +19,7 @@ export const wallLayoutTuner = defineTunables("wallLayout", "Wall layout", {
     min: 0.5,
     max: 1,
     step: 0.01,
-    default: 0.78,
+    default: 0.73,
     info: "How much each deeper row's panels shrink relative to the row in front.",
   },
   gap: {
@@ -27,7 +27,7 @@ export const wallLayoutTuner = defineTunables("wallLayout", "Wall layout", {
     min: 8,
     max: 80,
     step: 1,
-    default: 22,
+    default: 25,
     info: "Horizontal gap between panels within a row.",
   },
   zStep: {

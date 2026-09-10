@@ -24,7 +24,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 32,
     max: 96,
     step: 2,
-    default: 48,
+    default: 60,
     info: "Width of the tick rail at the viewport edge; also the gutter reserved from page content.",
   },
   minorPct: {
@@ -40,7 +40,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 5,
     max: 25,
     step: 5,
-    default: 10,
+    default: 5,
     info: "Scroll-percent spacing between the longer, number-labeled major ticks.",
   },
   thresholdPct: {
@@ -56,7 +56,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 12,
     max: 34,
     step: 1,
-    default: 20,
+    default: 34,
     info: "Font size of the full-size current-section heading below the top pile.",
   },
   ridingPx: {
@@ -64,7 +64,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 9,
     max: 24,
     step: 1,
-    default: 13,
+    default: 20,
     info: "Font size of the vertical word riding the rail with its section.",
   },
   queuePx: {
@@ -72,7 +72,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 9,
     max: 24,
     step: 1,
-    default: 12,
+    default: 16,
     info: "Font size of the compact heading links (bottom queue and top pile).",
   },
   topPad: {
@@ -80,7 +80,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 4,
     max: 120,
     step: 4,
-    default: 20,
+    default: 28,
     info: "Gap between the nav bar and the first heading in the top pile.",
   },
   currentGap: {
@@ -96,7 +96,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 12,
     max: 48,
     step: 2,
-    default: 22,
+    default: 20,
     info: "Vertical spacing between stacked heading links, top pile and bottom queue alike.",
   },
   queuePad: {
@@ -104,7 +104,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 8,
     max: 120,
     step: 4,
-    default: 28,
+    default: 36,
     info: "Gap between the viewport bottom and the lowest queued heading.",
   },
   textPad: {
@@ -112,7 +112,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 0,
     max: 48,
     step: 2,
-    default: 14,
+    default: 0,
     info: "Horizontal gap between the tick rail and the heading text.",
   },
   heroOffset: {
@@ -120,7 +120,7 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     min: 0,
     max: 900,
     step: 20,
-    default: 260,
+    default: 380,
     info: "How far above the hero section's bottom the ARTCRAFT word anchors — larger = the wordmark handoff starts earlier.",
   },
 });
@@ -132,7 +132,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 60,
     max: 600,
     step: 10,
-    default: 180,
+    default: 200,
     info: "Scroll distance over which the vertical-to-horizontal top flip plays out.",
   },
   detachZone: {
@@ -140,7 +140,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 60,
     max: 600,
     step: 10,
-    default: 220,
+    default: 240,
     info: "Scroll distance over which a queued heading morphs onto the rail beside its slot.",
   },
   stagger: {
@@ -148,7 +148,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 0,
     max: 0.3,
     step: 0.01,
-    default: 0.1,
+    default: 0.16,
     info: "Per-letter delay fraction in flips — higher = letters travel more one-by-one.",
   },
   arc: {
@@ -156,7 +156,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 0,
     max: 200,
     step: 4,
-    default: 56,
+    default: 28,
     info: "How far each letter's flight path bows inward (toward the page) mid-flip.",
   },
   jumpDur: {
@@ -164,7 +164,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 0.2,
     max: 2.5,
     step: 0.05,
-    default: 1,
+    default: 1.25,
     info: "Max duration of a click jump (rail or heading link); short hops scale it down.",
   },
   snapDelay: {
@@ -188,7 +188,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 0.1,
     max: 2,
     step: 0.05,
-    default: 0.7,
+    default: 1,
     info: "Draw-in duration of each tick during the page-load cascade.",
   },
   introStagger: {
@@ -196,7 +196,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 0,
     max: 0.02,
     step: 0.001,
-    default: 0.004,
+    default: 0.01,
     info: "Delay between successive ticks in the load cascade (top-down).",
   },
   velRadius: {
@@ -220,7 +220,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 0,
     max: 800,
     step: 25,
-    default: 200,
+    default: 150,
     info: "Hover intent time on the rail before the full-page zoom engages — accidental edge grazes don't fire.",
   },
   zoomOutDelay: {
@@ -236,7 +236,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 2,
     max: 16,
     step: 0.5,
-    default: 7,
+    default: 8,
     info: "Damping rate of the zoom morph — higher = snappier compression onto the needle.",
   },
   dragLerp: {
@@ -256,7 +256,7 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     min: 0,
     max: 1,
     step: 0.05,
-    default: 0.3,
+    default: 0.4,
     info: "Opacity of the minor ticks.",
   },
   majorAlpha: {
@@ -272,7 +272,7 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     min: 0,
     max: 1,
     step: 0.05,
-    default: 0.55,
+    default: 0.5,
     info: "Opacity of the mono percent numbers and section index labels.",
   },
   minorLen: {
@@ -280,7 +280,7 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     min: 2,
     max: 20,
     step: 1,
-    default: 8,
+    default: 10,
     info: "Length of minor ticks, drawn from the outer edge.",
   },
   majorLen: {
@@ -288,7 +288,7 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     min: 4,
     max: 28,
     step: 1,
-    default: 15,
+    default: 20,
     info: "Length of labeled major ticks, drawn from the outer edge.",
   },
   ghostAlpha: {
@@ -296,15 +296,23 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     min: 0,
     max: 1,
     step: 0.05,
-    default: 0.9,
+    default: 1,
     info: "Opacity of the hover ghost line previewing where a rail click will jump.",
+  },
+  ghostThick: {
+    label: "Ghost thick px",
+    min: 1,
+    max: 8,
+    step: 1,
+    default: 3,
+    info: "Thickness of the hover ghost line.",
   },
   queueAlpha: {
     label: "Queue alpha",
     min: 0,
     max: 1,
     step: 0.05,
-    default: 0.55,
+    default: 0.35,
     info: "Opacity of the compact heading links (bottom queue and top pile) and of the in-transit riding word — everything that isn't the active top heading.",
   },
   needleFadePct: {

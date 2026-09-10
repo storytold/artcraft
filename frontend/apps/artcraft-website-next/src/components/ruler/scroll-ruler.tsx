@@ -649,9 +649,9 @@ export default function ScrollRuler() {
             className="absolute block bg-ink"
             style={{
               [outerProp]: 0,
-              top: 0,
+              top: -look.ghostThick / 2,
               width: railW,
-              height: 1,
+              height: look.ghostThick,
               opacity: look.ghostAlpha,
             }}
           />
