@@ -202,11 +202,20 @@ function Row({
     <label className="flex flex-col gap-1">
       <span className="flex items-center justify-between">
         <span
-          className={`font-mono text-[10px] tracking-[0.08em] uppercase ${
+          className={`flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase ${
             modified ? "text-accent-ink" : "text-muted"
           }`}
         >
           {def.label}
+          {def.info && (
+            <span
+              title={def.info}
+              aria-label={def.info}
+              className="inline-flex h-3 w-3 cursor-help items-center justify-center border border-line text-[8px] leading-none text-faint normal-case"
+            >
+              i
+            </span>
+          )}
         </span>
         <input
           type="number"

@@ -158,11 +158,28 @@ export default function HeadingFlow({
         const rideLen = (m?.total ?? 0) * hp * rs;
         const v = s.anchor - scrollY + drift;
         const flipP = clamp01((T + mt.flipZone - v) / mt.flipZone);
-        const detachP = clamp01(
-          (vh + mt.detachZone - (v + rideLen)) / mt.detachZone,
-        );
-        return { v, rideLen, flipP, detachP };
+        return { v, rideLen, flipP, detachP: 0, yq: yQueueLine };
       });
+
+      // Backward pass: a word's queue slot depends on the occupancy of the
+      // words below it, and its detach completes when its riding column's
+      // bottom reaches that very slot — so the word forms on the rail right
+      // beside its queue entry, fully on-screen, instead of chasing a
+      // riding target that starts below the viewport. yq is stable during
+      // the word's own morph because later words detach much later.
+      {
+        let below = 0;
+        for (let wi = sections.length - 1; wi >= 0; wi--) {
+          const ph = phases[wi];
+          const isHero = sections[wi].isHero;
+          ph.yq = yQueueLine - lay.queueSlot * below;
+          const formBottom = isHero ? yQueueLine : ph.yq;
+          ph.detachP = clamp01(
+            (formBottom + mt.detachZone - (ph.v + ph.rideLen)) / mt.detachZone,
+          );
+          if (!isHero) below += 1 - ph.detachP;
+        }
+      }
 
       let stackedCount = 0;
       let flipShift = 0;
@@ -213,7 +230,7 @@ export default function HeadingFlow({
         const m = metrics[s.label];
         const refs = wordRefs.current[wi];
         if (!m || !refs) continue;
-        const { v, rideLen, flipP, detachP } = phases[wi];
+        const { v, rideLen, flipP, detachP, yq } = phases[wi];
         const n = m.adv.length;
 
         // Word-level from/to homes for the active transition.
@@ -247,12 +264,18 @@ export default function HeadingFlow({
           }
         } else if (detachP < 1) {
           p = detachP;
-          to = (i) => ridePose(m, i, v, rideLen);
+          // The morph target is STATIONARY: the riding pose the word will
+          // hold the instant detach completes (column bottom at its queue
+          // slot). At p=1 this equals the true riding pose, which then
+          // takes over seamlessly — and the whole transition plays beside
+          // the queue entry instead of dipping below the viewport.
+          const vForm = (s.isHero ? yQueueLine : yq) - rideLen;
+          to = (i) => ridePose(m, i, vForm, rideLen);
           if (s.isHero) {
             // Hero entrance: fade in from slightly inward of the rail —
             // the slot the future hero-morph will land the wordmark in.
             from = (i) => {
-              const pose = ridePose(m, i, v, rideLen);
+              const pose = ridePose(m, i, vForm, rideLen);
               return {
                 ...pose,
                 x: pose.x + inwardSign * HERO_ENTRY_INWARD_PX,
@@ -260,16 +283,6 @@ export default function HeadingFlow({
               };
             };
           } else {
-            // Queue slot: later sections sit below; a detaching word above
-            // leaves the others where they are (the queue shortens from
-            // its top).
-            let below = 0;
-            for (let mi = wi + 1; mi < sections.length; mi++) {
-              if (!sections[mi].isHero) {
-                below += 1 - phases[mi].detachP;
-              }
-            }
-            const yq = yQueueLine - lay.queueSlot * below;
             from = (i) => horizPose(m, i, yq, qs, lk.queueAlpha);
           }
         } else {

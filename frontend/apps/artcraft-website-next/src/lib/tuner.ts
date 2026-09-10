@@ -16,6 +16,8 @@ export type TunableDef = {
   max: number;
   step: number;
   default: number;
+  /** One-liner shown behind the row's ⓘ hover — what the knob actually does. */
+  info?: string;
 };
 
 export type TunableGroup = {
