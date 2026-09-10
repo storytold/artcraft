@@ -52,7 +52,6 @@ export default function ScrollRuler() {
   const readoutRef = useRef<HTMLSpanElement>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
   const ghostLineRef = useRef<HTMLDivElement>(null);
-  const ghostLabelRef = useRef<HTMLDivElement>(null);
   const bracketRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const tickRowRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -66,7 +65,6 @@ export default function ScrollRuler() {
     prevDigits: [-1, -1, -1],
     prevPct: -1,
     readoutAbove: false,
-    sections: [] as MeasuredSection[],
     geom: { docH: 0, vh: 0, vw: 0 },
     zoomIntent: false,
     zoomTimer: 0,
@@ -76,7 +74,6 @@ export default function ScrollRuler() {
     dragStartY: 0,
     dragMoved: 0,
   });
-  fs.current.sections = sections;
   fs.current.geom = geom;
 
   // Capability gate. Media changes mid-session are rare enough that a
@@ -456,15 +453,6 @@ export default function ScrollRuler() {
     const p = clamp01((y - map.base) / map.span);
     st.ghostActive = true;
     st.ghostY = y;
-    if (ghostLabelRef.current) {
-      const pct = Math.round(p * 100);
-      const docY = p * st.geom.docH;
-      let label = `${pct}`;
-      for (const s of st.sections) {
-        if (s.anchor <= docY) label = `${pct} — ${s.label}`;
-      }
-      ghostLabelRef.current.textContent = label;
-    }
     // Absolute thumb drag: the page chases the cursor through Lenis's
     // damping; release stops (no momentum).
     if (rulerZoom.dragging) {
@@ -665,16 +653,6 @@ export default function ScrollRuler() {
               width: railW,
               height: 1,
               opacity: look.ghostAlpha,
-            }}
-          />
-          <div
-            ref={ghostLabelRef}
-            className="absolute -translate-y-1/2 whitespace-nowrap bg-invert-bg px-1.5 py-0.5 font-mono text-invert-fg"
-            style={{
-              [outerProp]: railW + 6,
-              top: 0,
-              fontSize: 9,
-              letterSpacing: "0.08em",
             }}
           />
         </div>
