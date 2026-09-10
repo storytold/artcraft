@@ -1,35 +1,43 @@
 import { AppleIcon, MonitorIcon } from "lucide-react";
 import { SOCIAL_LINKS, WEBAPP_URL } from "@/lib/links";
-import { HERO_VIDEO_URL, SEEDANCE_SHOWCASE } from "@/lib/landing-data";
+import { HERO_VIDEO_URL } from "@/lib/landing-data";
 import { GitHubIcon } from "@/components/icons";
 import { Button } from "@/components/ui";
 import HeroMasthead from "./hero-wordmark";
-import HeroSpiral from "./hero-spiral";
+import HeroGalaxy from "./hero-galaxy";
 import HeroViewport from "./hero-viewport";
 
 export default function Hero() {
   return (
     <section id="hero" className="relative">
-      {/* Single-stage poster: everything that sells fits in the first
-          viewport — masthead, headline, CTAs, proof line — over the
-          blueprint spiral. The spiral bleeds full-bleed past the content
-          rails; the copy respects them. */}
+      {/* Single-stage radial poster: the wordmark at the center is the
+          emanation point of the galaxy — showcase cards born blurred behind
+          the brand mark, swirling out along the arms. Everything that sells
+          (headline, CTAs, proof) stacks beneath the mark, all above the
+          fold. The galaxy bleeds full-bleed past the content rails. */}
       <div className="relative flex min-h-[calc(100svh-3rem)] flex-col">
-        <HeroSpiral clips={SEEDANCE_SHOWCASE} />
+        <HeroGalaxy />
 
-        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1280px] flex-1 flex-col border-x border-line px-6 pt-8 md:px-10 md:pt-12">
-          <HeroMasthead />
-
-          {/* The spiral's field — the drawing owns this space. */}
-          <div className="flex-1" />
-
+        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1280px] flex-1 flex-col items-center justify-center border-x border-line px-6 py-10 md:px-10">
           <div
             data-reveal-group
-            className="pointer-events-auto max-w-xl pb-10 md:pb-14"
+            className="relative flex w-full max-w-2xl flex-col items-center text-center"
           >
+            {/* Soft pocket in the nebula so the sales layer always reads. */}
+            <div
+              aria-hidden
+              className="absolute -inset-x-20 -inset-y-14"
+              style={{
+                background:
+                  "radial-gradient(closest-side, color-mix(in srgb, var(--bg) 72%, transparent), transparent)",
+              }}
+            />
+
+            <HeroMasthead />
+
             <h1
               data-reveal
-              className="font-display text-3xl font-medium leading-[1.05] tracking-[-0.03em] text-ink-strong sm:text-4xl md:text-5xl"
+              className="relative mt-8 font-display text-3xl font-medium leading-[1.05] tracking-[-0.03em] text-ink-strong sm:text-4xl"
             >
               Controllable AI{" "}
               <span className="font-serif italic font-normal text-muted">
@@ -39,14 +47,17 @@ export default function Hero() {
 
             <p
               data-reveal
-              className="mt-5 max-w-md text-lg leading-relaxed text-muted"
+              className="relative mt-4 max-w-md text-lg leading-relaxed text-muted"
             >
               Artists need and deserve unparalleled control and precision.
               ArtCraft&rsquo;s got you covered — compose in real 3D, then
               render with AI.
             </p>
 
-            <div data-reveal className="mt-7 flex flex-wrap items-center gap-3">
+            <div
+              data-reveal
+              className="pointer-events-auto relative mt-7 flex flex-wrap items-center justify-center gap-3"
+            >
               <Button href="/download" size="lg">
                 <AppleIcon aria-hidden className="h-4 w-4" />
                 <MonitorIcon aria-hidden className="h-4 w-4" />
@@ -59,7 +70,7 @@ export default function Hero() {
 
             <div
               data-reveal
-              className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2"
+              className="pointer-events-auto relative mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
             >
               <a
                 href={SOCIAL_LINKS.GITHUB}

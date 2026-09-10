@@ -59,13 +59,13 @@ Then read values where they're used:
   inside the loop — it's cheap and picks up changes instantly.
 - **Build-time consumers** (values baked into geometry/sampling): read at
   build time and subscribe to `useTunerStore` to trigger a debounced rebuild
-  when the group's values change (see the Spiral layout wiring in
-  `hero-spiral.tsx`).
+  when the group's values change (see the Galaxy layout wiring in
+  `hero-galaxy.tsx`).
 
 The panel picks up new groups automatically — no panel changes needed.
-Registered groups: Spiral layout, Spiral motion, Spiral look (hero blueprint
-spiral; `src/components/landing/hero-spiral-tunables.ts`) and Ruler layout,
-Ruler motion, Ruler look (scroll ruler;
+Registered groups: Galaxy layout, Galaxy motion, Galaxy look (hero galaxy;
+`src/components/landing/hero-galaxy-tunables.ts`) and Ruler layout, Ruler
+motion, Ruler look (scroll ruler;
 `src/components/ruler/ruler-tunables.ts`).
 
 ## Shipping tuned values
