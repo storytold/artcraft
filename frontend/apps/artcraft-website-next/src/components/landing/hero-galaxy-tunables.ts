@@ -127,7 +127,7 @@ export const galaxyMotionTuner = defineTunables(
       min: 0,
       max: 40,
       step: 1,
-      default: 10,
+      default: 6,
       info: "How far cards drift off their exact arm position — the floating-in-space noise. Collision-safe: sizing measures the real wobbled positions.",
     },
     wobbleFreq: {
@@ -191,7 +191,7 @@ export const galaxyPointerTuner = defineTunables(
       min: 0,
       max: 25,
       step: 0.5,
-      default: 8,
+      default: 0,
       info: "Maximum lean of a card toward the cursor at the field's center — the pulled-at feel. The targeted card straightens to zero.",
     },
     tugPx: {
@@ -199,15 +199,15 @@ export const galaxyPointerTuner = defineTunables(
       min: 0,
       max: 40,
       step: 1,
-      default: 14,
+      default: 8,
       info: "How far cards inside the field are actually displaced toward the cursor — the translation pull. Collision-safe: sizing measures the tugged positions.",
     },
     mouseWarp: {
       label: "Mouse warp px",
       min: 0,
-      max: 80,
+      max: 400,
       step: 1,
-      default: 26,
+      default: 200,
       info: "The cursor's weight on nearby card surfaces: a local bulge toward the camera at the point of the card nearest the mouse, on top of the base curve warp.",
     },
     flareAdd: {
@@ -237,9 +237,9 @@ export const galaxyPointerTuner = defineTunables(
     restTau: {
       label: "Rest tau s",
       min: 0.1,
-      max: 2,
+      max: 4,
       step: 0.05,
-      default: 0.55,
+      default: 1,
       info: "How quickly the rest of the spiral follows the target to a stop — deliberately slower, so the hold reads as spreading outward from the hand.",
     },
     holdWobble: {
@@ -253,9 +253,9 @@ export const galaxyPointerTuner = defineTunables(
     targetTau: {
       label: "Target tau s",
       min: 0.05,
-      max: 1,
+      max: 12,
       step: 0.05,
-      default: 0.18,
+      default: 10,
       info: "Ease time for the targeted card to clear its VFX (blur, warp, dispersion) into a straight, focused card — and back on release.",
     },
     rippleSpeed: {
@@ -279,7 +279,7 @@ export const galaxyPointerTuner = defineTunables(
       min: 0,
       max: 0.1,
       step: 0.002,
-      default: 0.05,
+      default: 0.016,
       info: "Peak dispersion the ripple adds to cards it crosses. Multiple clicks stack.",
     },
     rippleWarp: {
@@ -303,7 +303,7 @@ export const galaxyPointerTuner = defineTunables(
       min: 0,
       max: 30,
       step: 1,
-      default: 10,
+      default: 20,
       info: "Peak texture displacement of the local click punch — the circular wave that grows from the click point across the clicked card only. Clicks stack.",
     },
     clickDur: {
@@ -311,7 +311,7 @@ export const galaxyPointerTuner = defineTunables(
       min: 0.2,
       max: 1.5,
       step: 0.05,
-      default: 0.6,
+      default: 0.75,
       info: "Time for the punch ring to travel from the click point to the card edges and die.",
     },
     clickWidth: {
@@ -452,7 +452,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 1,
     step: 0.02,
-    default: 0.26,
+    default: 0.15,
     info: "Opacity of the arm guide curves and construction circle in the underlay — 0 kills the geometric layer entirely.",
   },
   tickAlpha: {
@@ -460,7 +460,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 1,
     step: 0.02,
-    default: 0.5,
+    default: 0.3,
     info: "Opacity of the tick marks along the arms.",
   },
 });
