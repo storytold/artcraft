@@ -10,6 +10,7 @@ import {
   NAV_H,
   clamp01,
   easeOutExpo,
+  rulerMap,
   rulerZoom,
   type MeasuredSection,
   type RulerMode,
@@ -246,17 +247,10 @@ export default function ScrollRuler() {
         },
       },
     );
-    let needleTween: gsap.core.Tween | undefined;
-    if (needleRef.current) {
-      needleTween = gsap.fromTo(
-        needleRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.5, delay: mt.introDur * 0.5 },
-      );
-    }
+    // No intro tween for the needle: its opacity is owned per-frame by the
+    // sub-N% progress fade (hidden at page top anyway).
     return () => {
       tween.kill();
-      needleTween?.kill();
       fs.current.introDone = true;
     };
   }, [mode, ticks]);
@@ -278,15 +272,23 @@ export default function ScrollRuler() {
       st.lastY = scrollY;
       st.vel += (raw - st.vel) * (1 - Math.exp(-6 * dt));
 
+      const map = rulerMap(vh, rulerLayoutTuner.read().edgePad);
+      const drift = map.drift(progress);
       if (trackRef.current) {
         trackRef.current.style.transform = `translate3d(0, ${
-          -scrollY + NAV_H * (1 - progress)
+          -scrollY + drift
         }px, 0)`;
       }
 
-      const ny = NAV_H + progress * (vh - NAV_H);
+      const lk = rulerLookTuner.read();
+      const ny = map.base + progress * map.span;
       if (needleRef.current) {
         needleRef.current.style.transform = `translate3d(0, ${ny}px, 0)`;
+        // Quiet at the very top: the needle (and readout) fade in over the
+        // first few percent of progress instead of overlapping the hero.
+        needleRef.current.style.opacity = String(
+          clamp01(progress / Math.max(0.001, lk.needleFadePct / 100)),
+        );
       }
       const above = ny > vh - 26;
       if (readoutRef.current && above !== st.readoutAbove) {
@@ -321,15 +323,14 @@ export default function ScrollRuler() {
         if (rulerZoom.target === 1 && rulerZoom.p > 0.9995) rulerZoom.p = 1;
       }
       const z = full ? rulerZoom.p : 0;
-      const compactSpan = vh - NAV_H;
 
       // Visible-span bracket, only meaningful in map space.
       if (bracketRef.current) {
         const b = bracketRef.current;
         b.style.transform = `translate3d(0, ${
-          NAV_H + (scrollY / docH) * compactSpan
+          map.base + (scrollY / docH) * map.span
         }px, 0)`;
-        b.style.height = `${(vh / docH) * compactSpan}px`;
+        b.style.height = `${(vh / docH) * map.span}px`;
         b.style.opacity = String(z);
       }
 
@@ -339,9 +340,7 @@ export default function ScrollRuler() {
         const g = ghostRef.current;
         if (st.ghostActive) {
           g.style.transform = `translate3d(0, ${st.ghostY}px, 0)`;
-          g.style.opacity = String(
-            rulerLookTuner.read().ghostAlpha * (0.2 + 0.8 * z),
-          );
+          g.style.opacity = String(lk.ghostAlpha * (0.2 + 0.8 * z));
         } else {
           g.style.opacity = "0";
         }
@@ -358,8 +357,8 @@ export default function ScrollRuler() {
           if (writeZoom) {
             const row = tickRowRefs.current[i];
             if (row) {
-              const liveY = ticks[i].docY - scrollY + NAV_H * (1 - progress);
-              const compactY = NAV_H + (ticks[i].pct / 100) * compactSpan;
+              const liveY = ticks[i].docY - scrollY + drift;
+              const compactY = map.base + (ticks[i].pct / 100) * map.span;
               row.style.transform =
                 z > 0
                   ? `translate3d(0, ${z * (compactY - liveY)}px, 0)`
@@ -412,7 +411,8 @@ export default function ScrollRuler() {
 
   const jumpTo = (clientY: number) => {
     const st = fs.current;
-    const p = clamp01((clientY - NAV_H) / Math.max(1, st.geom.vh - NAV_H));
+    const map = rulerMap(st.geom.vh, rulerLayoutTuner.read().edgePad);
+    const p = clamp01((clientY - map.base) / map.span);
     const target = p * Math.max(1, st.geom.docH - st.geom.vh);
     const lenis = lenisRef.current;
     if (lenis) {
@@ -451,8 +451,9 @@ export default function ScrollRuler() {
 
   const railPointerMove = (e: React.PointerEvent) => {
     const st = fs.current;
-    const y = Math.max(NAV_H, Math.min(st.geom.vh, e.clientY));
-    const p = clamp01((y - NAV_H) / Math.max(1, st.geom.vh - NAV_H));
+    const map = rulerMap(st.geom.vh, rulerLayoutTuner.read().edgePad);
+    const y = Math.max(map.base, Math.min(map.base + map.span, e.clientY));
+    const p = clamp01((y - map.base) / map.span);
     st.ghostActive = true;
     st.ghostY = y;
     if (ghostLabelRef.current) {

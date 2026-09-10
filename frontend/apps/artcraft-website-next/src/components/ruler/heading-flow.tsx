@@ -8,6 +8,7 @@ import {
   clamp01,
   easeInOutCubic,
   easeOutExpo,
+  rulerMap,
   rulerZoom,
   type MeasuredSection,
   type RulerMode,
@@ -135,7 +136,8 @@ export default function HeadingFlow({
       const scrollY = window.scrollY;
       const maxScroll = Math.max(1, docH - vh);
       const progress = clamp01(scrollY / maxScroll);
-      const drift = NAV_H * (1 - progress);
+      const map = rulerMap(vh, lay.edgePad);
+      const drift = map.drift(progress);
 
       const raw = (scrollY - st.lastY) / dt;
       st.lastY = scrollY;
@@ -153,7 +155,6 @@ export default function HeadingFlow({
       // Zoomed map blend: every word converges on a horizontal label at
       // its section's true percent position while the rail compresses.
       const zoomE = easeInOutCubic(rulerZoom.p);
-      const compactSpan = vh - NAV_H;
 
       // Phase pass: flip/detach progress per word. Anchors increase with
       // index, so stacked words are always a prefix and at most one word is
@@ -330,7 +331,7 @@ export default function HeadingFlow({
         // quadratic curve between the two homes.
         const sf = mt.stagger;
         const span = 1 + (n - 1) * sf;
-        const mapY = NAV_H + ((s.isHero ? 0 : s.anchor) / docH) * compactSpan;
+        const mapY = map.base + ((s.isHero ? 0 : s.anchor) / docH) * map.span;
         let minX = Infinity;
         let maxX = -Infinity;
         let minY = Infinity;

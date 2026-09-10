@@ -33,6 +33,21 @@ export type MeasuredSection = {
  * 1 = compressed full-page map. */
 export const rulerZoom = { target: 0, p: 0, dragging: false };
 
+/** The ruler's vertical mapping: progress/percent p ∈ [0,1] maps onto
+ * [NAV_H + pad, vh − pad] — in BOTH the 1:1 and compact states, so the
+ * needle-meets-its-tick invariant stays exact and the endpoint ticks
+ * (with their 0/100 labels) always rest fully inside the viewport.
+ * `drift(p)` is the track offset reconciling the 1:1 layout with the
+ * needle's travel; pad = 0 degenerates to the old NAV_H·(1−p). */
+export function rulerMap(vh: number, pad: number) {
+  const base = NAV_H + pad;
+  return {
+    base,
+    span: Math.max(1, vh - NAV_H - 2 * pad),
+    drift: (p: number) => base - p * (NAV_H + 2 * pad),
+  };
+}
+
 export const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 export const easeOutExpo = (t: number) =>

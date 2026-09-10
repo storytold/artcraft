@@ -11,6 +11,14 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     default: 1,
     info: "Which viewport edge the ruler lives on: 0 = left, 1 = right.",
   },
+  edgePad: {
+    label: "Edge pad px",
+    min: 0,
+    max: 40,
+    step: 2,
+    default: 12,
+    info: "Vertical inset of the ruler's whole mapping (needle travel, clicks, compact map) from the nav bottom and viewport bottom — keeps the 0/100 ticks and labels fully visible.",
+  },
   railW: {
     label: "Rail width px",
     min: 32,
@@ -298,6 +306,14 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     step: 0.05,
     default: 0.55,
     info: "Opacity of the compact heading links (bottom queue and top pile) and of the in-transit riding word — everything that isn't the active top heading.",
+  },
+  needleFadePct: {
+    label: "Needle fade %",
+    min: 0,
+    max: 10,
+    step: 0.5,
+    default: 3,
+    info: "Progress percent below which the needle and its readout fade out — the instrument stays quiet at the very top of the page.",
   },
   bracketAlpha: {
     label: "Bracket alpha",
