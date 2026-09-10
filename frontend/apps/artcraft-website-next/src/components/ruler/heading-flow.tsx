@@ -241,6 +241,9 @@ export default function HeadingFlow({
         let reverseStagger = false;
         if (flipP > 0) {
           p = flipP;
+          // Tail-first here too: the tail letter sits at the column's top
+          // and lands nearest the rail — shortest flight leads the peel.
+          reverseStagger = true;
           from = (i) => ridePose(m, i, v, rideLen);
           // Stacked words keep their document-order slot in the top pile
           // (wi is the index from the top, since stacked words are always
