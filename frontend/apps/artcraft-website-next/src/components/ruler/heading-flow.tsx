@@ -93,6 +93,17 @@ export default function HeadingFlow({
   const wordRefs = useRef<WordRefs[]>([]);
   const topPoolRef = useRef<HTMLDivElement>(null);
   const bottomPoolRef = useRef<HTMLDivElement>(null);
+  // Link affordances: which word the pointer is over (its letters brighten
+  // to full ink), eased per word, and a per-word press pulse deadline.
+  const hoverWi = useRef(-1);
+  const hoverK = useMemo(
+    () => new Float32Array(sections.length),
+    [sections.length],
+  );
+  const pressUntil = useMemo(
+    () => new Float32Array(sections.length),
+    [sections.length],
+  );
   const fs = useRef({
     lastY: 0,
     vel: 0,
@@ -382,6 +393,13 @@ export default function HeadingFlow({
         const letterEls = heroDrive ? heroWordmark.els : refs.letters;
         const scaleFix = heroDrive ? hp / heroWordmark.fontPx : 1;
         const wz = heroDrive ? zoomE * Math.min(1, flipP) : zoomE;
+        // Link affordances, word-level: a hovered link's letters brighten
+        // to full ink; a click pulses the word toward the accent as the
+        // jump takes off.
+        const hk = (hoverK[wi] +=
+          ((hoverWi.current === wi ? 1 : 0) - hoverK[wi]) *
+          (1 - Math.exp(-dt / 0.08)));
+        const pk = clamp01((pressUntil[wi] - performance.now()) / 350);
         let minX = Infinity;
         let maxX = -Infinity;
         let minY = Infinity;
@@ -423,11 +441,17 @@ export default function HeadingFlow({
           // Dimming is a solid ink-toward-paper mix, not translucency:
           // dimmed headings must still mask the footage passing beneath
           // them, and translucent gray over video reads as no contrast.
+          // Hover lifts the mix to full ink; a press tints toward accent.
           el.style.opacity = "1";
-          el.style.color =
-            alpha >= 0.995
+          const aEff = alpha + (1 - alpha) * hk;
+          const baseCol =
+            aEff >= 0.995
               ? "var(--ink-strong)"
-              : `color-mix(in srgb, var(--ink-strong) ${(clamp01(alpha) * 100).toFixed(1)}%, var(--bg))`;
+              : `color-mix(in srgb, var(--ink-strong) ${(clamp01(aEff) * 100).toFixed(1)}%, var(--bg))`;
+          el.style.color =
+            pk > 0.01
+              ? `color-mix(in srgb, var(--accent-ink) ${(pk * 70).toFixed(0)}%, ${baseCol})`
+              : baseCol;
           if (alpha > maxAlpha) maxAlpha = alpha;
           // Per-axis extents (swapped when the glyph is rotated toward
           // vertical) so hit boxes stay tight: a shared radius made
@@ -563,7 +587,7 @@ export default function HeadingFlow({
             <li key={s.id}>
               <a
                 href={`#${s.id}`}
-                className="font-display text-ink hover:text-ink-strong"
+                className="font-display text-ink hover:text-ink-strong active:text-accent-ink"
                 style={{ fontSize: layout.queuePx + 2 }}
               >
                 {s.label}
@@ -577,9 +601,10 @@ export default function HeadingFlow({
 
   if (!metrics) return null;
 
-  const jump = (s: MeasuredSection) => (e: React.MouseEvent) => {
+  const jump = (s: MeasuredSection, wi: number) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    pressUntil[wi] = performance.now() + 350;
     const lenis = lenisRef.current;
     const el = document.getElementById(s.id);
     const target = s.isHero
@@ -676,7 +701,13 @@ export default function HeadingFlow({
               ref={(el) => {
                 refs.hit = el;
               }}
-              onClick={jump(s)}
+              onClick={jump(s, wi)}
+              onPointerEnter={() => {
+                hoverWi.current = wi;
+              }}
+              onPointerLeave={() => {
+                if (hoverWi.current === wi) hoverWi.current = -1;
+              }}
               aria-label={`Jump to ${s.label}`}
               className="pointer-events-auto absolute cursor-pointer"
             />
