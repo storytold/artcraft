@@ -91,6 +91,8 @@ export default function HeadingFlow({
     null,
   );
   const wordRefs = useRef<WordRefs[]>([]);
+  const topPoolRef = useRef<HTMLDivElement>(null);
+  const bottomPoolRef = useRef<HTMLDivElement>(null);
   const fs = useRef({
     lastY: 0,
     vel: 0,
@@ -238,6 +240,26 @@ export default function HeadingFlow({
       for (const p of phases) {
         if (p.flipP >= 1) stackedCount++;
         else if (p.flipP > 0) flipShift += p.flipP;
+      }
+
+      // Pool presence follows real occupancy: the top pool fades in as the
+      // first word (the wordmark) settles into the stack; the bottom pool
+      // fades out as the last queued word climbs onto the rail. The hero
+      // never holds the bottom pool — it has no queue home.
+      let topK = 0;
+      let botK = 0;
+      for (let wi = 0; wi < phases.length; wi++) {
+        if (phases[wi].flipP > topK) topK = phases[wi].flipP;
+        if (!sections[wi].isHero) {
+          const q = 1 - phases[wi].detachP;
+          if (q > botK) botK = q;
+        }
+      }
+      if (topPoolRef.current) {
+        topPoolRef.current.style.opacity = String(lk.poolAlpha * topK);
+      }
+      if (bottomPoolRef.current) {
+        bottomPoolRef.current.style.opacity = String(lk.poolAlpha * botK);
       }
 
       // Horizontal home for a word: letters run inward from the rail, with
@@ -594,46 +616,54 @@ export default function HeadingFlow({
     layout.headingPx +
     pools.poolPad;
   const bottomPoolH = layout.queuePad + n * layout.queueSlot + pools.poolPad;
+  // Masks complete their fade INSIDE the pool's box (transparent by 97% of
+  // the box, not of an oversized ellipse), so the rectangle bounds never
+  // read as a cut.
   const poolMask = (cornerY: string) =>
-    `radial-gradient(115% 115% at ${side === "right" ? "100%" : "0%"} ${cornerY}, black 45%, rgba(0,0,0,0.8) 62%, rgba(0,0,0,0.45) 78%, rgba(0,0,0,0.15) 91%, transparent 100%)`;
+    `radial-gradient(100% 100% at ${side === "right" ? "100%" : "0%"} ${cornerY}, black 38%, rgba(0,0,0,0.82) 56%, rgba(0,0,0,0.48) 72%, rgba(0,0,0,0.2) 86%, rgba(0,0,0,0.05) 94%, transparent 97%)`;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-40">
+    <>
       {/* Contrast pools: frosted page-bg fades pinned to the rail's top and
           bottom corners, so the top stack and the bottom queue always read
           over whatever content scrolls beneath them. Blur level matches the
           rail frost, so a letter flying between rail and stack stays in one
-          continuous frosted world. */}
-      <div
-        aria-hidden
-        className="absolute top-0"
-        style={{
-          ...(side === "right" ? { right: 0 } : { left: 0 }),
-          width: poolW,
-          height: topPoolH,
-          opacity: pools.poolAlpha,
-          backdropFilter: "blur(9px)",
-          WebkitBackdropFilter: "blur(9px)",
-          backgroundColor: "color-mix(in srgb, var(--bg) 80%, transparent)",
-          maskImage: poolMask("0%"),
-          WebkitMaskImage: poolMask("0%"),
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute bottom-0"
-        style={{
-          ...(side === "right" ? { right: 0 } : { left: 0 }),
-          width: poolW,
-          height: bottomPoolH,
-          opacity: pools.poolAlpha,
-          backdropFilter: "blur(9px)",
-          WebkitBackdropFilter: "blur(9px)",
-          backgroundColor: "color-mix(in srgb, var(--bg) 80%, transparent)",
-          maskImage: poolMask("100%"),
-          WebkitMaskImage: poolMask("100%"),
-        }}
-      />
+          continuous frosted world. Below z-40: everything — rail, section
+          letters, AND the hero wordmark's z-40 spans — draws above them.
+          Opacity is occupancy-driven from the frame loop (starts empty). */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-[39]">
+        <div
+          ref={topPoolRef}
+          className="absolute top-0"
+          style={{
+            ...(side === "right" ? { right: 0 } : { left: 0 }),
+            width: poolW,
+            height: topPoolH,
+            opacity: 0,
+            backdropFilter: "blur(9px)",
+            WebkitBackdropFilter: "blur(9px)",
+            backgroundColor: "color-mix(in srgb, var(--bg) 80%, transparent)",
+            maskImage: poolMask("0%"),
+            WebkitMaskImage: poolMask("0%"),
+          }}
+        />
+        <div
+          ref={bottomPoolRef}
+          className="absolute bottom-0"
+          style={{
+            ...(side === "right" ? { right: 0 } : { left: 0 }),
+            width: poolW,
+            height: bottomPoolH,
+            opacity: 0,
+            backdropFilter: "blur(9px)",
+            WebkitBackdropFilter: "blur(9px)",
+            backgroundColor: "color-mix(in srgb, var(--bg) 80%, transparent)",
+            maskImage: poolMask("100%"),
+            WebkitMaskImage: poolMask("100%"),
+          }}
+        />
+      </div>
+      <div className="pointer-events-none fixed inset-0 z-40">
       {sections.map((s, wi) => {
         const refs = (wordRefs.current[wi] ??= {
           letters: [],
@@ -675,7 +705,8 @@ export default function HeadingFlow({
           </Fragment>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }
 

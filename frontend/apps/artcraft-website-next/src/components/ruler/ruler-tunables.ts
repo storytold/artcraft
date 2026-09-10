@@ -363,6 +363,22 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     default: 1,
     info: "Strength of the page-bg contrast pools behind the top stack and the bottom queue (0 = none).",
   },
+  frostSolid: {
+    label: "Frost solid %",
+    min: 0,
+    max: 80,
+    step: 5,
+    default: 40,
+    info: "Portion of the rail (from the outer edge) where the frost is at full strength before the feather begins.",
+  },
+  frostGamma: {
+    label: "Frost ease",
+    min: 0.5,
+    max: 4,
+    step: 0.1,
+    default: 2.2,
+    info: "Falloff curve of the frost's inner feather — higher eases in longer toward the page (a slower, less visible tail).",
+  },
   poolPad: {
     label: "Pool pad px",
     min: 0,

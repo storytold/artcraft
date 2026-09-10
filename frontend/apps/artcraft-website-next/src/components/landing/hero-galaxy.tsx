@@ -453,6 +453,22 @@ function GalaxyScene({
       })),
     [layout],
   );
+  // Index order is arm-aligned (arms deal round-robin), so anything that
+  // reveals cards sequentially by index — the intro stagger, the governor
+  // regrowing shed cards — would paint aligned rings. This golden-ratio
+  // permutation scatters that order across arms and slots.
+  const liveOrder = useMemo(() => {
+    const idx = cards.map((_, i) => i);
+    idx.sort((a, b) => ((a * 0.618034) % 1) - ((b * 0.618034) % 1));
+    return idx;
+  }, [cards]);
+  const liveRank = useMemo(() => {
+    const r = new Int32Array(cards.length);
+    liveOrder.forEach((ci, k) => {
+      r[ci] = k;
+    });
+    return r;
+  }, [cards, liveOrder]);
   const materials = useMemo(
     () =>
       cards.map(
@@ -577,24 +593,28 @@ function GalaxyScene({
     clipBest.fill(-1);
 
     // Perf governor: EMA of the real frame time. Sustained drops below the
-    // FPS floor shed the highest-index cards (and their decode pressure)
-    // quickly; recovery regrows slowly so it never oscillates.
+    // FPS floor shed cards (and their decode pressure) quickly; recovery
+    // regrows slowly so it never oscillates. The first seconds are a grace
+    // period — page load always stutters (shader compile, video priming)
+    // and shedding the intro looks like a broken spawn.
     st.frameEma += (Math.min(delta, 0.25) - st.frameEma) * 0.05;
-    if (mv.perfFloor > 0) {
+    if (mv.perfFloor > 0 && t > 4) {
       const budget = 1 / mv.perfFloor;
       if (st.frameEma > budget) {
         st.perfScale = Math.max(0.35, st.perfScale - dt * 0.3);
       } else if (st.frameEma < budget * 0.7) {
         st.perfScale = Math.min(1, st.perfScale + dt * 0.05);
       }
-    } else {
+    } else if (mv.perfFloor === 0) {
       st.perfScale = 1;
     }
     const liveN = Math.max(6, Math.round(cards.length * st.perfScale));
 
-    // Pass 1: place every live card along its arm. All positions must be
-    // known before any card can size itself against its neighbors.
-    for (let i = 0; i < liveN; i++) {
+    // Pass 1: place every live card along its arm (in permuted order — the
+    // live set is the first liveN entries of liveOrder). All positions must
+    // be known before any card can size itself against its neighbors.
+    for (let k = 0; k < liveN; k++) {
+      const i = liveOrder[k];
       const card = cards[i];
       const c = cycle(
         (card.slot + 0.5) / L.slotsPerArm + P + card.arm * L.armJitter,
@@ -618,7 +638,7 @@ function GalaxyScene({
     for (let i = 0; i < cards.length; i++) {
       const mesh = cardRefs.current[i];
       if (!mesh) continue;
-      if (i >= liveN) {
+      if (liveRank[i] >= liveN) {
         mesh.visible = false;
         continue;
       }
@@ -641,7 +661,8 @@ function GalaxyScene({
       // is eased so freed space fills organically; shrinking is instant so
       // the guarantee never breaks mid-frame.
       let sep = Infinity;
-      for (let j = 0; j < liveN; j++) {
+      for (let k = 0; k < liveN; k++) {
+        const j = liveOrder[k];
         if (j === i) continue;
         const s = Math.max(
           (Math.abs(cardPos[j * 2] - x) * 9) / 16,
@@ -673,7 +694,8 @@ function GalaxyScene({
       const lifecycle = clamp01(c / lk.fadeBand);
       const solid = lk.washInner + (1 - lk.washInner) * c;
       const intro = clamp01(
-        (t - mv.introDelay - i * mv.introStagger) / Math.max(0.05, mv.introDur),
+        (t - mv.introDelay - liveRank[i] * mv.introStagger) /
+          Math.max(0.05, mv.introDur),
       );
 
       const ready = videos[card.clip].readyState >= 2 ? 1 : 0;

@@ -550,9 +550,9 @@ export default function ScrollRuler() {
       >
         {/* Frost underlay: content flows under the rail (no reserved
             gutter); this pane blurs and tints whatever passes beneath so
-            the instrumentation always reads. The inner edge feathers on a
-            smoothstep-like curve — soft enough that letters flying in and
-            out never read a seam. */}
+            the instrumentation always reads. The inner feather follows a
+            tunable power curve easing in toward the outer edge, so no seam
+            reads while letters fly in and out. */}
         <div
           aria-hidden
           className="absolute inset-0"
@@ -560,8 +560,8 @@ export default function ScrollRuler() {
             backdropFilter: "blur(9px)",
             WebkitBackdropFilter: "blur(9px)",
             backgroundColor: "color-mix(in srgb, var(--bg) 55%, transparent)",
-            maskImage: `linear-gradient(${side === "right" ? "to left" : "to right"}, black 50%, rgba(0,0,0,0.86) 64%, rgba(0,0,0,0.6) 76%, rgba(0,0,0,0.32) 86%, rgba(0,0,0,0.1) 94%, transparent 100%)`,
-            WebkitMaskImage: `linear-gradient(${side === "right" ? "to left" : "to right"}, black 50%, rgba(0,0,0,0.86) 64%, rgba(0,0,0,0.6) 76%, rgba(0,0,0,0.32) 86%, rgba(0,0,0,0.1) 94%, transparent 100%)`,
+            maskImage: frostMask(side, look.frostSolid, look.frostGamma),
+            WebkitMaskImage: frostMask(side, look.frostSolid, look.frostGamma),
           }}
         />
 
@@ -719,4 +719,22 @@ export default function ScrollRuler() {
       />
     </>
   );
+}
+
+// The frost's inner feather: full strength for the first `solid` percent
+// from the outer edge, then a power-curve falloff — alpha = (1 - x)^gamma
+// over the remaining span, sampled into gradient stops. Higher gamma spends
+// its fade early and approaches the page on a long, invisible tail.
+function frostMask(side: RulerSide, solid: number, gamma: number): string {
+  const dir = side === "right" ? "to left" : "to right";
+  const stops = [`black ${solid.toFixed(0)}%`];
+  const steps = 8;
+  for (let k = 1; k < steps; k++) {
+    const x = k / steps;
+    const a = Math.pow(1 - x, gamma);
+    const pos = solid + x * (100 - solid);
+    stops.push(`rgba(0,0,0,${a.toFixed(3)}) ${pos.toFixed(1)}%`);
+  }
+  stops.push("transparent 100%");
+  return `linear-gradient(${dir}, ${stops.join(", ")})`;
 }
