@@ -49,6 +49,12 @@ const PARK_DELAY_MS = 2500;
 // Length of the tick marks straddling the arm curves, world px.
 const TICK_LEN = 12;
 
+// The target's OPTICAL clear (dispersion, blur, warp, wash) always runs at
+// this fast fixed pace — a focused card must look clean immediately. The
+// Target tau knob governs only the behavioral ease (sizing pin, paint
+// order, decode priority, wobble kill), which is what slow tunings want.
+const CLEAR_TAU_S = 0.12;
+
 const CARD_VERT = /* glsl */ `
   uniform float uCurve;
   uniform float uWarp;
@@ -679,6 +685,7 @@ function GalaxyScene({
   // tilt, and last cycle (NaN until first placed) for wrap detection.
   const cardFlare = useMemo(() => new Float32Array(cards.length), [cards]);
   const cardTargetK = useMemo(() => new Float32Array(cards.length), [cards]);
+  const cardClearK = useMemo(() => new Float32Array(cards.length), [cards]);
   const cardPhase = useMemo(() => new Float32Array(cards.length), [cards]);
   const cardTiltX = useMemo(() => new Float32Array(cards.length), [cards]);
   const cardTiltY = useMemo(() => new Float32Array(cards.length), [cards]);
@@ -968,11 +975,15 @@ function GalaxyScene({
       const x = cardPos[i * 2];
       const y = cardPos[i * 2 + 1];
 
-      // Target-lock ease, needed by the sizing below (a held card sizes
-      // differently), so it resolves before anything else.
+      // Target-lock eases, needed by the sizing below (a held card sizes
+      // differently), so they resolve before anything else. tk (Target
+      // tau) is the behavioral ease; ck is the fixed fast optical clear.
       const tk = (cardTargetK[i] +=
         ((i === st.targetI ? 1 : 0) - cardTargetK[i]) *
         (1 - Math.exp(-dt / Math.max(0.01, pt.targetTau))));
+      const ck = (cardClearK[i] +=
+        ((i === st.targetI ? 1 : 0) - cardClearK[i]) *
+        (1 - Math.exp(-dt / CLEAR_TAU_S)));
 
       // Pass 2: exact collision-free sizing against the actual nearest
       // neighbor. For upright 16:9 rectangles, two cards clear each other
@@ -1046,8 +1057,8 @@ function GalaxyScene({
         tiltGX = maxTilt * dy * inv * fall;
       }
       const tiltK = 1 - Math.exp(-10 * dt);
-      cardTiltX[i] += (tiltGX * (1 - tk) - cardTiltX[i]) * tiltK;
-      cardTiltY[i] += (tiltGY * (1 - tk) - cardTiltY[i]) * tiltK;
+      cardTiltX[i] += (tiltGX * (1 - ck) - cardTiltX[i]) * tiltK;
+      cardTiltY[i] += (tiltGY * (1 - ck) - cardTiltY[i]) * tiltK;
       cardFlare[i] = Math.max(
         cardFlare[i] * Math.exp(-pt.flareDecay * dt),
         pt.flareAdd * fall,
@@ -1099,16 +1110,16 @@ function GalaxyScene({
       // target lock racks everything clean: blur, dispersion, and warp all
       // clear as the card straightens into focus.
       u.uBlur.value = Math.max(
-        lk.blurMax * (1 - smoothstep(0, lk.blurEnd, c)) * (1 - tk),
+        lk.blurMax * (1 - smoothstep(0, lk.blurEnd, c)) * (1 - ck),
         (1 - va) * lk.blurMax,
       );
       u.uTexA.value = va;
-      u.uAber.value = (lk.aberration + cardFlare[i] + rippleBoost) * (1 - tk);
+      u.uAber.value = (lk.aberration + cardFlare[i] + rippleBoost) * (1 - ck);
       // Click-ripple feedback is physical as well as chromatic: the
       // surface pops toward the camera as the ring passes (normalized so
       // tuning the amp doesn't change the pop height).
       const ringK = Math.min(2, rippleBoost / Math.max(0.002, pt.rippleAmp));
-      u.uCurve.value = (lk.curvePx + pt.rippleWarp * ringK) * (1 - tk);
+      u.uCurve.value = (lk.curvePx + pt.rippleWarp * ringK) * (1 - ck);
       // The cursor's weight on the surface: local bulge toward the mouse
       // point in card-local units (cards are upright, so world axes are
       // card axes).
@@ -1116,7 +1127,7 @@ function GalaxyScene({
         (ptr.x - wxp) / Math.max(1, W),
         (ptr.y - wyp) / Math.max(1, H),
       );
-      u.uWarp.value = pt.mouseWarp * fall * (1 - tk);
+      u.uWarp.value = pt.mouseWarp * fall * (1 - ck);
       (u.uSize.value as THREE.Vector2).set(W, H);
       // Local click punches: fill this card's slots (newest four), zero
       // the rest. Ring radius travels click-point → past the edges over
@@ -1140,11 +1151,11 @@ function GalaxyScene({
       u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
       u.uFrameA.value = lk.frameAlpha;
       if (dark) {
-        u.uDim.value = lk.dim * solid + (1 - lk.dim * solid) * tk;
+        u.uDim.value = lk.dim * solid + (1 - lk.dim * solid) * ck;
         u.uAlpha.value = lifecycle * intro;
       } else {
         const wash = solid * Math.sqrt(lk.dim);
-        u.uAlpha.value = lifecycle * intro * (wash + (1 - wash) * tk);
+        u.uAlpha.value = lifecycle * intro * (wash + (1 - wash) * ck);
         u.uDim.value = 1;
       }
 

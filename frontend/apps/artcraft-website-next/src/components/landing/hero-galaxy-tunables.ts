@@ -256,7 +256,7 @@ export const galaxyPointerTuner = defineTunables(
       max: 12,
       step: 0.05,
       default: 10,
-      info: "Ease time for the targeted card to clear its VFX (blur, warp, dispersion) into a straight, focused card — and back on release.",
+      info: "Behavioral ease of the target lock (sizing pin, paint order, decode priority, wobble kill). The optical clear — dispersion, blur, warp, wash — always runs at a fixed fast pace regardless.",
     },
     rippleSpeed: {
       label: "Ripple px/s",
