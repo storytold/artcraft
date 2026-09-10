@@ -189,20 +189,21 @@ export default function HeadingFlow({
 
       // Backward pass: a word's queue slot depends on the occupancy of the
       // words below it, and its detach completes when its riding column's
-      // TOP reaches that very slot — the tail letter (which leads the
-      // mirrored stagger) lands at queue-heading height, so the peel stays
-      // local to the queue entry; the rest of the column hangs below and is
-      // revealed as the word rides up. yq is stable during the word's own
-      // morph because later words detach much later.
+      // BOTTOM reaches that very slot — the whole column ends up above the
+      // queue line, fully on-screen, and the tail-led letters sweep upward
+      // in the ease-out arc. (Chosen deliberately over tail-at-the-line
+      // variants: those either hung letters past the viewport or pinned
+      // the word at the line until the morph finished.) yq is stable
+      // during the word's own morph because later words detach much later.
       {
         let below = 0;
         for (let wi = sections.length - 1; wi >= 0; wi--) {
           const ph = phases[wi];
           const isHero = sections[wi].isHero;
           ph.yq = yQueueLine - lay.queueSlot * below;
-          const formTop = isHero ? yQueueLine : ph.yq;
+          const formBottom = isHero ? yQueueLine : ph.yq;
           ph.detachP = clamp01(
-            (formTop + mt.detachZone - ph.v) / mt.detachZone,
+            (formBottom + mt.detachZone - (ph.v + ph.rideLen)) / mt.detachZone,
           );
           if (!isHero) below += 1 - ph.detachP;
         }
@@ -239,28 +240,16 @@ export default function HeadingFlow({
         };
       };
 
-      // Vertical column with its TOP at `top`. `sp` is the letter-spacing
-      // factor: the word forms compressed (mt.formSpacing) at the queue
-      // line so no letter hangs past the viewport, then unspools to full
-      // spacing as it rides up.
-      const ridePose = (
-        m: WordMetrics,
-        i: number,
-        top: number,
-        sp: number,
-      ): Pose => {
-        const spacedLen = m.total * hp * rs * sp;
-        return {
-          x: railCenterX,
-          y: top + spacedLen - (m.cum[i] + m.adv[i] / 2) * hp * rs * sp,
-          rot: -90,
-          scale: rs,
-          // In transit, not active — the top heading keeps full strength
-          // until this word flips in and displaces it (the flip lerps
-          // this toward the stack pose's alpha, so it brightens on arrival).
-          alpha: lk.ridingAlpha,
-        };
-      };
+      // Vertical column with its top at `top`. In transit it shares the
+      // queue links' alpha — only the top heading is active-bright; the
+      // flip lerps toward the stack pose, so a word brightens on arrival.
+      const ridePose = (m: WordMetrics, i: number, top: number): Pose => ({
+        x: railCenterX,
+        y: top + (m.total - m.cum[i] - m.adv[i] / 2) * hp * rs,
+        rot: -90,
+        scale: rs,
+        alpha: lk.queueAlpha,
+      });
 
       for (let wi = 0; wi < sections.length; wi++) {
         const s = sections[wi];
@@ -270,16 +259,7 @@ export default function HeadingFlow({
         const { v, rideLen, flipP, detachP, yq } = phases[wi];
         const n = m.adv.length;
 
-        // Riding spacing: compressed at the formation line, expanding to
-        // full over `unspool` word-lengths of ride. At detach completion
-        // (v = formation line) this equals formSpacing exactly, so the
-        // morph hands off with no jump — and the column top rides 1:1
-        // immediately (no pinned-then-release velocity step).
         const formLine = s.isHero ? yQueueLine : yq;
-        const unspoolZone = Math.max(1, rideLen * mt.unspool);
-        const sp =
-          mt.formSpacing +
-          (1 - mt.formSpacing) * clamp01((formLine - v) / unspoolZone);
 
         // Word-level from/to homes for the active transition.
         let p: number;
@@ -291,7 +271,7 @@ export default function HeadingFlow({
           // Tail-first here too: the tail letter sits at the column's top
           // and lands nearest the rail — shortest flight leads the peel.
           reverseStagger = true;
-          from = (i) => ridePose(m, i, v, sp);
+          from = (i) => ridePose(m, i, v);
           // Stacked words keep their document-order slot in the top pile
           // (wi is the index from the top, since stacked words are always
           // a prefix). The newest fully-stacked word holds the "current"
@@ -320,18 +300,18 @@ export default function HeadingFlow({
           // letters lift off in sequence from the rail side instead of the
           // lead letter sweeping across the ones still resting in the queue.
           reverseStagger = true;
-          // The morph target is STATIONARY but COMPRESSED: a tight cluster
-          // with the tail letter exactly at the queue line and the rest
-          // tucked a fraction of a column below — every flight stays local
-          // and on-screen. At p=1 this equals the spaced riding pose
-          // (sp = formSpacing there), which takes over seamlessly and
-          // unspools as it rides.
-          to = (i) => ridePose(m, i, formLine, mt.formSpacing);
+          // The morph target is STATIONARY: the riding pose the word holds
+          // the instant detach completes — full column resting just above
+          // its queue slot (bottom at the line). Letters sweep up in the
+          // ease-out arc, fully on-screen; at p=1 this equals the true
+          // riding pose, which takes over seamlessly.
+          const vForm = formLine - rideLen;
+          to = (i) => ridePose(m, i, vForm);
           if (s.isHero) {
             // Hero entrance: fade in from slightly inward of the rail —
             // the slot the future hero-morph will land the wordmark in.
             from = (i) => {
-              const pose = ridePose(m, i, formLine, mt.formSpacing);
+              const pose = ridePose(m, i, vForm);
               return {
                 ...pose,
                 x: pose.x + inwardSign * HERO_ENTRY_INWARD_PX,
@@ -343,7 +323,7 @@ export default function HeadingFlow({
           }
         } else {
           p = 1;
-          from = to = (i) => ridePose(m, i, v, sp);
+          from = to = (i) => ridePose(m, i, v);
         }
 
         // Letter pass: staggered eased progress along an inward-bowed
