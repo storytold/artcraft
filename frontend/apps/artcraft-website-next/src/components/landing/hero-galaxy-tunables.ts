@@ -55,7 +55,7 @@ export const galaxyLayoutTuner = defineTunables(
       min: 0.5,
       max: 12,
       step: 0.1,
-      default: 5,
+      default: 1.65,
       info: "Viewport area (CSS megapixels) the card count was tuned at. Smaller viewports get proportionally fewer cards — never more than the count knob.",
     },
     cardHFrac: {

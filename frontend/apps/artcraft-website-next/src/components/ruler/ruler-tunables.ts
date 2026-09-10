@@ -363,12 +363,12 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     default: 1,
     info: "Strength of the page-bg contrast pools behind the top stack and the bottom queue (0 = none).",
   },
-  poolVh: {
-    label: "Pool size vh",
-    min: 10,
-    max: 60,
-    step: 2,
-    default: 36,
-    info: "Height of the top contrast pool in viewport-height percent; the bottom pool runs slightly smaller.",
+  poolPad: {
+    label: "Pool pad px",
+    min: 0,
+    max: 160,
+    step: 8,
+    default: 64,
+    info: "Feather margin the contrast pools extend beyond the top stack's and bottom queue's actual bounding boxes.",
   },
 });

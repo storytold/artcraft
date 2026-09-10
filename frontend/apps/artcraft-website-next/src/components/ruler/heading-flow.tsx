@@ -398,7 +398,14 @@ export default function HeadingFlow({
           } else {
             el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
           }
-          el.style.opacity = String(alpha);
+          // Dimming is a solid ink-toward-paper mix, not translucency:
+          // dimmed headings must still mask the footage passing beneath
+          // them, and translucent gray over video reads as no contrast.
+          el.style.opacity = "1";
+          el.style.color =
+            alpha >= 0.995
+              ? "var(--ink-strong)"
+              : `color-mix(in srgb, var(--ink-strong) ${(clamp01(alpha) * 100).toFixed(1)}%, var(--bg))`;
           if (alpha > maxAlpha) maxAlpha = alpha;
           // Per-axis extents (swapped when the glyph is rotated toward
           // vertical) so hit boxes stay tight: a shared radius made
@@ -514,13 +521,19 @@ export default function HeadingFlow({
         className="fixed z-40"
         style={{ bottom: layout.queuePad, ...sideStyle }}
       >
-        {/* Same contrast pool as the full instrument's queue. */}
+        {/* Same frosted contrast pool as the full instrument's queue. */}
         <div
           aria-hidden
           className="absolute -inset-x-16 -inset-y-10"
           style={{
             opacity: pools.poolAlpha,
-            background: `radial-gradient(closest-side, color-mix(in srgb, var(--bg) 85%, transparent), transparent)`,
+            backdropFilter: "blur(9px)",
+            WebkitBackdropFilter: "blur(9px)",
+            backgroundColor: "color-mix(in srgb, var(--bg) 82%, transparent)",
+            maskImage:
+              "radial-gradient(closest-side, black 55%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(closest-side, black 55%, transparent 100%)",
           }}
         />
         <ul className="relative flex flex-col gap-1.5">
@@ -562,29 +575,63 @@ export default function HeadingFlow({
     }
   };
 
+  // Contrast-pool geometry derived from the stacks' worst-case bounding
+  // boxes: the top pool covers a full pile plus the current heading, the
+  // bottom pool a full queue, and both fit the longest label at full size —
+  // no viewport-relative guessing.
+  const n = sections.length;
+  let poolW = 260;
+  for (const s of sections) {
+    const m = metrics[s.label];
+    if (m) poolW = Math.max(poolW, m.total * layout.headingPx);
+  }
+  poolW += layout.railW + layout.textPad + pools.poolPad;
+  const topPoolH =
+    NAV_H +
+    layout.topPad +
+    Math.max(0, n - 1) * layout.queueSlot +
+    layout.currentGap +
+    layout.headingPx +
+    pools.poolPad;
+  const bottomPoolH = layout.queuePad + n * layout.queueSlot + pools.poolPad;
+  const poolMask = (cornerY: string) =>
+    `radial-gradient(115% 115% at ${side === "right" ? "100%" : "0%"} ${cornerY}, black 45%, rgba(0,0,0,0.8) 62%, rgba(0,0,0,0.45) 78%, rgba(0,0,0,0.15) 91%, transparent 100%)`;
+
   return (
     <div className="pointer-events-none fixed inset-0 z-40">
-      {/* Contrast pools: page-bg radial fades pinned to the rail's top and
+      {/* Contrast pools: frosted page-bg fades pinned to the rail's top and
           bottom corners, so the top stack and the bottom queue always read
-          over whatever content scrolls beneath them. */}
+          over whatever content scrolls beneath them. Blur level matches the
+          rail frost, so a letter flying between rail and stack stays in one
+          continuous frosted world. */}
       <div
         aria-hidden
-        className="absolute top-0 w-[clamp(220px,24vw,400px)]"
+        className="absolute top-0"
         style={{
           ...(side === "right" ? { right: 0 } : { left: 0 }),
-          height: `${pools.poolVh}vh`,
+          width: poolW,
+          height: topPoolH,
           opacity: pools.poolAlpha,
-          background: `radial-gradient(110% 100% at ${side === "right" ? "100%" : "0%"} 0%, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 48%, transparent) 52%, transparent 78%)`,
+          backdropFilter: "blur(9px)",
+          WebkitBackdropFilter: "blur(9px)",
+          backgroundColor: "color-mix(in srgb, var(--bg) 80%, transparent)",
+          maskImage: poolMask("0%"),
+          WebkitMaskImage: poolMask("0%"),
         }}
       />
       <div
         aria-hidden
-        className="absolute bottom-0 w-[clamp(220px,24vw,400px)]"
+        className="absolute bottom-0"
         style={{
           ...(side === "right" ? { right: 0 } : { left: 0 }),
-          height: `${pools.poolVh * 0.9}vh`,
+          width: poolW,
+          height: bottomPoolH,
           opacity: pools.poolAlpha,
-          background: `radial-gradient(110% 100% at ${side === "right" ? "100%" : "0%"} 100%, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 48%, transparent) 52%, transparent 78%)`,
+          backdropFilter: "blur(9px)",
+          WebkitBackdropFilter: "blur(9px)",
+          backgroundColor: "color-mix(in srgb, var(--bg) 80%, transparent)",
+          maskImage: poolMask("100%"),
+          WebkitMaskImage: poolMask("100%"),
         }}
       />
       {sections.map((s, wi) => {
