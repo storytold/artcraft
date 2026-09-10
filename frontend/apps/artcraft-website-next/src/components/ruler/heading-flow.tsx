@@ -163,19 +163,20 @@ export default function HeadingFlow({
 
       // Backward pass: a word's queue slot depends on the occupancy of the
       // words below it, and its detach completes when its riding column's
-      // bottom reaches that very slot — so the word forms on the rail right
-      // beside its queue entry, fully on-screen, instead of chasing a
-      // riding target that starts below the viewport. yq is stable during
-      // the word's own morph because later words detach much later.
+      // TOP reaches that very slot — the tail letter (which leads the
+      // mirrored stagger) lands at queue-heading height, so the peel stays
+      // local to the queue entry; the rest of the column hangs below and is
+      // revealed as the word rides up. yq is stable during the word's own
+      // morph because later words detach much later.
       {
         let below = 0;
         for (let wi = sections.length - 1; wi >= 0; wi--) {
           const ph = phases[wi];
           const isHero = sections[wi].isHero;
           ph.yq = yQueueLine - lay.queueSlot * below;
-          const formBottom = isHero ? yQueueLine : ph.yq;
+          const formTop = isHero ? yQueueLine : ph.yq;
           ph.detachP = clamp01(
-            (formBottom + mt.detachZone - (ph.v + ph.rideLen)) / mt.detachZone,
+            (formTop + mt.detachZone - ph.v) / mt.detachZone,
           );
           if (!isHero) below += 1 - ph.detachP;
         }
@@ -270,11 +271,12 @@ export default function HeadingFlow({
           // lead letter sweeping across the ones still resting in the queue.
           reverseStagger = true;
           // The morph target is STATIONARY: the riding pose the word will
-          // hold the instant detach completes (column bottom at its queue
-          // slot). At p=1 this equals the true riding pose, which then
-          // takes over seamlessly — and the whole transition plays beside
-          // the queue entry instead of dipping below the viewport.
-          const vForm = (s.isHero ? yQueueLine : yq) - rideLen;
+          // hold the instant detach completes (column TOP at its queue
+          // slot, so the tail letter finishes at queue-heading height and
+          // the head letters hang below — partly past the viewport edge is
+          // fine, riding reveals them immediately). At p=1 this equals the
+          // true riding pose, which then takes over seamlessly.
+          const vForm = s.isHero ? yQueueLine : yq;
           to = (i) => ridePose(m, i, vForm, rideLen);
           if (s.isHero) {
             // Hero entrance: fade in from slightly inward of the rail —
