@@ -18,6 +18,14 @@ export function mediaUrl(path: string): string {
   return `${MEDIA_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+// Showcase clips live on the FakeYou CDN, which serves no
+// Access-Control-Allow-Origin header. The hero wall draws them as WebGL
+// video textures, which require CORS-clean sources, so they go through the
+// same-origin /cdn-media rewrite (see next.config.ts).
+export function cdnMediaUrl(path: string): string {
+  return `/cdn-media${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export const SOCIAL_LINKS = {
   DISCORD: "https://discord.gg/artcraft",
   YOUTUBE: "https://www.youtube.com/@OfficialArtCraftStudios",

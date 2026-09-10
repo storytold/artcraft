@@ -9,9 +9,9 @@ export const wallLayoutTuner = defineTunables("wallLayout", "Wall layout", {
   rowHeight: {
     label: "Near row × vh",
     min: 0.14,
-    max: 0.42,
+    max: 0.55,
     step: 0.01,
-    default: 0.18,
+    default: 0.33,
     info: "Panel height of the near row, as a fraction of the viewport height.",
   },
   rowScale: {
@@ -153,7 +153,7 @@ export const wallLookTuner = defineTunables("wallLook", "Wall look", {
     min: 0,
     max: 1,
     step: 0.02,
-    default: 0.9,
+    default: 0.18,
     info: "Opacity of the hairline frames around each panel.",
   },
 });

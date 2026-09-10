@@ -31,6 +31,7 @@ export default function HeroWordmark() {
   const containerRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef<PointerState>({ x: 0, y: 0, active: false });
   const wallDragRef = useRef(createWallDrag());
+  const [onScreen, setOnScreen] = useState(true);
 
   // Gate: motion allowed and the tab actually foregrounded (a canvas born in
   // a hidden tab can come up blank).
@@ -107,6 +108,33 @@ export default function HeroWordmark() {
     };
   }, []);
 
+  // The hero sits at the top of a long page. Once it scrolls away there is
+  // nothing to look at, so stop the render loop and let the wall park its
+  // video decoders. Same when the tab goes to the background, which the
+  // observer alone would not catch.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    let intersecting = true;
+    const sync = () => setOnScreen(intersecting && !document.hidden);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        intersecting = entry.isIntersecting;
+        sync();
+      },
+      // Generous margin: the wall refills its decoders a few at a time, so
+      // it needs a head start to be at full speed by the time a scroll back
+      // up actually brings it into view.
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(container);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, []);
+
   const active = ready && colors !== null;
 
   return (
@@ -119,7 +147,11 @@ export default function HeroWordmark() {
           <Canvas
             aria-hidden
             tabIndex={-1}
-            dpr={[1, 2]}
+            // Video panels gain nothing from a 2x framebuffer; the hairline
+            // frames are the only detail that wants the extra samples, and
+            // 1.5x plus MSAA keeps them clean for a lot less fill.
+            dpr={[1, 1.5]}
+            frameloop={onScreen ? "always" : "never"}
             gl={{
               antialias: true,
               alpha: true,
@@ -128,7 +160,12 @@ export default function HeroWordmark() {
             style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
           >
             <FittedCamera />
-            <HeroWall pointer={pointerRef} drag={wallDragRef} colors={colors} />
+            <HeroWall
+              pointer={pointerRef}
+              drag={wallDragRef}
+              colors={colors}
+              onScreen={onScreen}
+            />
           </Canvas>
         </CanvasBoundary>
       )}
@@ -258,8 +295,15 @@ function MorphWordmark() {
               className="inline-block"
               style={{
                 willChange: "transform, opacity",
-                textShadow:
-                  "0 0 0.3vw color-mix(in srgb, var(--bg) 60%, transparent), 0 0.2vw 1.2vw color-mix(in srgb, var(--bg) 45%, transparent)",
+                // Three stacked halos in the page background color: a tight
+                // contact edge, a mid falloff, and a wide pool that sinks
+                // the busiest footage behind the letters. Sized in vw so the
+                // spread tracks the type as the wordmark scales.
+                textShadow: [
+                  "0 0 0.6vw color-mix(in srgb, var(--bg) 92%, transparent)",
+                  "0 0.25vw 2.4vw color-mix(in srgb, var(--bg) 78%, transparent)",
+                  "0 0.4vw 5vw color-mix(in srgb, var(--bg) 55%, transparent)",
+                ].join(", "),
               }}
             >
               {ch}
