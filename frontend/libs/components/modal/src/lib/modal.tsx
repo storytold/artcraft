@@ -26,6 +26,10 @@ declare global {
 // If several modals are stacked, Esc will dismiss the one visually on top (highest z-index).
 // ---------------------------------------------------------------------------
 
+// Upper bound on the close (leave) spring, after which the panel is gone and no
+// legitimate owner should still be holding the body pointer-events lock.
+const LEAVE_ANIMATION_SETTLE_MS = 500;
+
 interface ModalRegistryEntry {
   id: number;
   zIndex: number;
@@ -35,6 +39,47 @@ interface ModalRegistryEntry {
 
 const modalRegistry: ModalRegistryEntry[] = [];
 
+// ---------------------------------------------------------------------------
+// Stranded body-lock recovery
+//
+// `Dialog.Overlay`/`Dialog.Content` are `forceMount`ed here so react-spring owns
+// the enter/leave animation instead of Radix's `Presence`. The side effect is
+// that `Dialog.Root`'s `open` flips to false the instant a modal closes, while
+// the layer stays mounted for the leave spring. Radix derives
+// `disableOutsidePointerEvents` from that same `open` flag, so its
+// DismissableLayer tears down through the "was never disabled" branch and never
+// restores the `pointer-events: none` it put on <body> when the modal opened.
+//
+// Closing slowly hides this (a later render clears it), but opening and
+// dismissing fast interrupts the leave spring mid-flight and the lock is left
+// behind — an invisible, page-wide click blocker.
+//
+// Radix reference-counts its own layers correctly, so we only step in once no
+// registered modal is left to legitimately own a lock.
+let strandedLockCheck: number | undefined;
+
+const releaseStrandedBodyLock = () => {
+  if (typeof document === "undefined") return;
+
+  // The check has to outlive the current commit: Radix's own layer cleanup and
+  // the leave spring's final renders both run after this, and either can set the
+  // lock again. Re-checking on a later frame means we only ever clear a lock
+  // that nothing came back to claim.
+  if (strandedLockCheck !== undefined) {
+    window.clearTimeout(strandedLockCheck);
+  }
+  strandedLockCheck = window.setTimeout(() => {
+    strandedLockCheck = undefined;
+    if (modalRegistry.length > 0) return;
+    // Another Radix dialog (one not built on this Modal) may legitimately hold
+    // the lock; it tags its overlay/content data-state="open" while it does.
+    if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+    if (document.body.style.pointerEvents === "none") {
+      document.body.style.pointerEvents = "";
+    }
+  }, LEAVE_ANIMATION_SETTLE_MS);
+};
+
 const registerModal = (entry: ModalRegistryEntry) => {
   modalRegistry.push(entry);
 };
@@ -42,6 +87,7 @@ const registerModal = (entry: ModalRegistryEntry) => {
 const unregisterModal = (id: number) => {
   const idx = modalRegistry.findIndex((m) => m.id === id);
   if (idx !== -1) modalRegistry.splice(idx, 1);
+  releaseStrandedBodyLock();
 };
 
 const updateModal = (
