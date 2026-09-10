@@ -545,7 +545,44 @@ export default function HeadingFlow({
             const vTarget = ph.flipP >= 0.5 ? T - 4 : T + mt.flipZone + 4;
             raw = sMid.anchor + drift - vTarget;
           }
-          const target = Math.max(0, Math.min(maxScroll, raw));
+          // Per-word scroll bounds: the min y keeping a word fully flipped
+          // and the max y keeping it fully unflipped. End-of-page words
+          // flip via EITHER driver (min of flip bounds) but unflip only
+          // when BOTH agree (min of unflip bounds).
+          const boundsFor = (
+            sec: MeasuredSection,
+            p: (typeof phases)[number],
+          ) => {
+            const yFlipTh = sec.anchor + drift - T - 0.04 * mt.flipZone;
+            const yUnflipTh = sec.anchor + drift - T - 0.96 * mt.flipZone;
+            if (!p.scrollFlip) return { yFlip: yFlipTh, yUnflip: yUnflipTh };
+            const span = p.scrollFlip.end - p.scrollFlip.start;
+            const yFlipSf = p.scrollFlip.start + 0.96 * span;
+            const yUnflipSf = p.scrollFlip.start + 0.04 * span;
+            if (sec.isHero) return { yFlip: yFlipSf, yUnflip: yUnflipSf };
+            return {
+              yFlip: Math.min(yFlipTh, yFlipSf),
+              yUnflip: Math.min(yUnflipTh, yUnflipSf),
+            };
+          };
+          // Neighbor-aware nudge: the ±4 margin alone can overshoot into
+          // an adjacent word's flip zone (resolving GET STARTED upward
+          // left MADE WITH's lead letter hanging in early flight). Shift
+          // the target inside the window where every other currently-
+          // resolved word STAYS resolved; if the windows conflict, the
+          // original target stands — a sliver beats a fight.
+          let adj = raw;
+          for (let wj = 0; wj < phases.length; wj++) {
+            if (wj === midIdx) continue;
+            const bw = boundsFor(sections[wj], phases[wj]);
+            if (phases[wj].flipP >= 0.96) adj = Math.max(adj, bw.yFlip + 2);
+            else if (phases[wj].flipP <= 0.04) {
+              adj = Math.min(adj, bw.yUnflip - 2);
+            }
+          }
+          const bm = boundsFor(sMid, ph);
+          const midOk = ph.flipP >= 0.5 ? adj >= bm.yFlip : adj <= bm.yUnflip;
+          const target = Math.max(0, Math.min(maxScroll, midOk ? adj : raw));
           st.snapping = true;
           st.armed = false; // one snap per organic-scroll episode
           st.snapSince = null;
