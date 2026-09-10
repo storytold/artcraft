@@ -10,6 +10,7 @@ import {
   galaxyLayoutTuner,
   galaxyMotionTuner,
   galaxyLookTuner,
+  galaxyPointerTuner,
 } from "./hero-galaxy-tunables";
 
 // The hero galaxy: showcase cards swirling out of the centered wordmark
@@ -127,11 +128,57 @@ const CARD_FRAG = /* glsl */ `
   }
 `;
 
+// Pointer state in world px (origin at the hero center, y up), fed by the
+// container's handlers and consumed by the scene every frame.
+type GalaxyPointer = { x: number; y: number; active: boolean };
+
+// A click's dispersion ripple. `start` is stamped with the scene clock the
+// first frame the scene sees it (-1 until then).
+type GalaxyRipple = { x: number; y: number; start: number };
+
 export default function HeroGalaxy() {
   const [ready, setReady] = useState(false);
   const [colors, setColors] = useState<ThemeColors | null>(null);
   const [onScreen, setOnScreen] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const pointerRef = useRef<GalaxyPointer>({ x: 0, y: 0, active: false });
+  const ripplesRef = useRef<GalaxyRipple[]>([]);
+
+  // Pointer in world coordinates; a press anywhere in the hero spawns a
+  // dispersion ripple (they stack). The content layer above is
+  // pointer-events-none except the CTAs, so events land here.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const toWorld = (e: PointerEvent) => {
+      const rect = el.getBoundingClientRect();
+      pointerRef.current.x = e.clientX - rect.left - rect.width / 2;
+      pointerRef.current.y = -(e.clientY - rect.top - rect.height / 2);
+    };
+    const onMove = (e: PointerEvent) => {
+      toWorld(e);
+      pointerRef.current.active = true;
+    };
+    const onLeave = () => {
+      pointerRef.current.active = false;
+    };
+    const onDown = (e: PointerEvent) => {
+      toWorld(e);
+      const r = ripplesRef.current;
+      r.push({ x: pointerRef.current.x, y: pointerRef.current.y, start: -1 });
+      if (r.length > 8) r.shift();
+    };
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    el.addEventListener("pointercancel", onLeave);
+    el.addEventListener("pointerdown", onDown);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+      el.removeEventListener("pointercancel", onLeave);
+      el.removeEventListener("pointerdown", onDown);
+    };
+  }, []);
 
   // Gate: motion allowed and the tab actually foregrounded (a canvas born in
   // a hidden tab can come up blank).
@@ -197,7 +244,12 @@ export default function HeroGalaxy() {
             style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
           >
             <FittedCamera />
-            <GalaxyScene colors={colors} onScreen={onScreen} />
+            <GalaxyScene
+              colors={colors}
+              onScreen={onScreen}
+              pointer={pointerRef}
+              ripples={ripplesRef}
+            />
           </Canvas>
         </CanvasBoundary>
       )}
@@ -208,9 +260,13 @@ export default function HeroGalaxy() {
 function GalaxyScene({
   colors,
   onScreen,
+  pointer,
+  ripples,
 }: {
   colors: ThemeColors;
   onScreen: boolean;
+  pointer: React.RefObject<GalaxyPointer>;
+  ripples: React.RefObject<GalaxyRipple[]>;
 }) {
   const size = useThree((s) => s.size);
   const rigRef = useRef<THREE.Group>(null);
@@ -221,6 +277,11 @@ function GalaxyScene({
     cullTimer: 0,
     frameEma: 1 / 60,
     perfScale: 1,
+    lastP: 0,
+    holdTarget: 0,
+    holdRest: 0,
+    targetI: -1,
+    useCounter: 10000,
   });
 
   const dark = useMemo(() => {
@@ -563,6 +624,26 @@ function GalaxyScene({
   const cardPos = useMemo(() => new Float32Array(cards.length * 2), [cards]);
   const cardCyc = useMemo(() => new Float32Array(cards.length), [cards]);
   const cardH = useMemo(() => new Float32Array(cards.length), [cards]);
+  // Pointer-interaction scratch: sweep flare, target-lock ease, per-card
+  // conveyor phase offsets (the hold brake accumulates here), smoothed
+  // tilt, and last cycle (NaN until first placed) for wrap detection.
+  const cardFlare = useMemo(() => new Float32Array(cards.length), [cards]);
+  const cardTargetK = useMemo(() => new Float32Array(cards.length), [cards]);
+  const cardPhase = useMemo(() => new Float32Array(cards.length), [cards]);
+  const cardTiltX = useMemo(() => new Float32Array(cards.length), [cards]);
+  const cardTiltY = useMemo(() => new Float32Array(cards.length), [cards]);
+  const prevC = useMemo(() => {
+    const a = new Float32Array(cards.length);
+    a.fill(NaN);
+    return a;
+  }, [cards]);
+  // Least-recently-shown ordering for clip reassignment at rebirth. Seeded
+  // to match the initial round-robin deal.
+  const clipLastUsed = useMemo(() => {
+    const a = new Float32Array(SEEDANCE_SHOWCASE.length);
+    for (let i = 0; i < a.length; i++) a[i] = i;
+    return a;
+  }, []);
 
   // Per-card readiness easing and per-clip decode bookkeeping, reused every
   // frame so the loop allocates nothing.
@@ -582,6 +663,7 @@ function GalaxyScene({
     const st = state.current;
     const mv = galaxyMotionTuner.read();
     const lk = galaxyLookTuner.read();
+    const pt = galaxyPointerTuner.read();
     const t = st3.clock.elapsedTime;
     const L = layout;
 
@@ -589,6 +671,21 @@ function GalaxyScene({
     st.spin += (dt * THREE.MathUtils.degToRad(mv.spinDeg)) / 60;
     const P = st.idleP + (window.scrollY * mv.scrub) / 1000;
     if (rigRef.current) rigRef.current.rotation.z = st.spin;
+
+    // The hold brake: while a card is targeted, its own conveyor motion
+    // stops almost immediately and the rest of the spiral eases to a stop
+    // just behind it — the cursor holds the whole instrument still. The
+    // brake accumulates into per-card phase offsets, so releasing resumes
+    // from wherever things stand (no snap-back).
+    const dP = P - st.lastP;
+    st.lastP = P;
+    const targeting = st.targetI >= 0;
+    st.holdTarget +=
+      ((targeting ? 1 : 0) - st.holdTarget) *
+      (1 - Math.exp(-dt / Math.max(0.01, pt.holdTau)));
+    st.holdRest +=
+      ((targeting ? 1 : 0) - st.holdRest) *
+      (1 - Math.exp(-dt / Math.max(0.01, pt.restTau)));
 
     clipBest.fill(-1);
 
@@ -616,24 +713,88 @@ function GalaxyScene({
     for (let k = 0; k < liveN; k++) {
       const i = liveOrder[k];
       const card = cards[i];
+      cardPhase[i] -=
+        dP *
+        (i === st.targetI
+          ? Math.max(st.holdTarget, st.holdRest)
+          : st.holdRest);
       const c = cycle(
-        (card.slot + 0.5) / L.slotsPerArm + P + card.arm * L.armJitter,
+        (card.slot + 0.5) / L.slotsPerArm +
+          P +
+          card.arm * L.armJitter +
+          cardPhase[i],
       );
       cardCyc[i] = c;
+
+      // Rebirth (the wrap always happens offscreen or at zero alpha): hand
+      // the card the least-recently-shown clip, so repeats spread as far
+      // apart as the pool allows.
+      if (!Number.isNaN(prevC[i]) && Math.abs(c - prevC[i]) > 0.5) {
+        let lru = 0;
+        for (let cl = 1; cl < clipLastUsed.length; cl++) {
+          if (clipLastUsed[cl] < clipLastUsed[lru]) lru = cl;
+        }
+        card.clip = lru;
+        clipLastUsed[lru] = ++st.useCounter;
+        materials[i].uniforms.uMap.value = textures[lru];
+      }
+      prevC[i] = c;
+
       const theta = L.thetaBirth + c * (L.thetaExit - L.thetaBirth);
       const r = L.b * theta;
       const a = theta + (card.arm * Math.PI * 2) / L.arms;
       const ux = Math.cos(a);
       const uy = Math.sin(a);
       // Floating noise: tangential + a lighter radial component, phased per
-      // card. Off by default; safe to enable — sizing measures the real
-      // wobbled positions.
+      // card; safe at any amp — sizing measures the real wobbled positions.
+      // It swells while the spiral is held (the flow strains against the
+      // brake) and dies on the targeted card so it can't slip the cursor.
+      const wobAmp =
+        mv.wobbleAmp *
+        (1 + (pt.holdWobble - 1) * st.holdRest) *
+        (1 - cardTargetK[i]);
       const wobT = Math.sin(t * mv.wobbleFreq * Math.PI * 2 + i * 2.399);
       const wobR = Math.cos(t * mv.wobbleFreq * Math.PI * 2 * 0.7 + i * 1.713);
-      cardPos[i * 2] = r * ux + mv.wobbleAmp * (wobT * -uy + 0.6 * wobR * ux);
-      cardPos[i * 2 + 1] =
-        r * uy + mv.wobbleAmp * (wobT * ux + 0.6 * wobR * uy);
+      cardPos[i * 2] = r * ux + wobAmp * (wobT * -uy + 0.6 * wobR * ux);
+      cardPos[i * 2 + 1] = r * uy + wobAmp * (wobT * ux + 0.6 * wobR * uy);
     }
+
+    // Target pick: the card under the cursor — outermost wins on overlap,
+    // and only that card is the target; everyone else returns to normal.
+    // World-space point-in-rect test: the rig is spun, but cards stay
+    // upright, so their rects are axis-aligned in world coordinates.
+    const cosS = Math.cos(st.spin);
+    const sinS = Math.sin(st.spin);
+    const ptr = pointer.current;
+    let target = -1;
+    let bestC = -1;
+    if (ptr.active) {
+      for (let k = 0; k < liveN; k++) {
+        const i = liveOrder[k];
+        const c = cardCyc[i];
+        if (c < 0.04 || c <= bestC) continue;
+        const H = cardH[i];
+        if (H < 8) continue;
+        const wxp = cosS * cardPos[i * 2] - sinS * cardPos[i * 2 + 1];
+        const wyp = sinS * cardPos[i * 2] + cosS * cardPos[i * 2 + 1];
+        if (
+          Math.abs(ptr.x - wxp) <= (H * 8) / 9 &&
+          Math.abs(ptr.y - wyp) <= H / 2
+        ) {
+          bestC = c;
+          target = i;
+        }
+      }
+    }
+    st.targetI = target;
+
+    // Ripples: stamp newcomers with the scene clock, expire the spent.
+    const rip = ripples.current;
+    for (let k = rip.length - 1; k >= 0; k--) {
+      if (rip[k].start < 0) rip[k].start = t;
+      if (t - rip[k].start > pt.rippleLife) rip.splice(k, 1);
+    }
+    const maxTilt = (pt.tiltDeg * Math.PI) / 180;
 
     for (let i = 0; i < cards.length; i++) {
       const mesh = cardRefs.current[i];
@@ -685,10 +846,54 @@ function GalaxyScene({
       const aspect = 1 + (16 / 9 - 1) * smoothstep(0, lk.aspectEnd, c);
       const W = H * aspect;
 
+      // Interaction: the target lock eases the card into a straight, clean,
+      // focused view (and back on release); the cursor field tilts its
+      // neighbors toward the hand and leaves a dispersion trail behind
+      // sweeps; click ripples add rings of dispersion that stack.
+      const tk = (cardTargetK[i] +=
+        ((i === st.targetI ? 1 : 0) - cardTargetK[i]) *
+        (1 - Math.exp(-dt / Math.max(0.01, pt.targetTau))));
+      const wxp = cosS * x - sinS * y;
+      const wyp = sinS * x + cosS * y;
+      let fall = 0;
+      let tiltGX = 0;
+      let tiltGY = 0;
+      // The field only acts while no card is targeted: on target, everyone
+      // else returns to usual (tilts ease home, flare trail decays out).
+      if (ptr.active && st.targetI < 0) {
+        const dx = ptr.x - wxp;
+        const dy = ptr.y - wyp;
+        const d2 = dx * dx + dy * dy;
+        fall = Math.exp(-d2 / (pt.fieldPx * pt.fieldPx));
+        const inv = 1 / Math.max(1, Math.sqrt(d2));
+        // Lean toward the cursor, like being gently pulled at.
+        tiltGY = maxTilt * dx * inv * fall;
+        tiltGX = maxTilt * dy * inv * fall;
+      }
+      const tiltK = 1 - Math.exp(-10 * dt);
+      cardTiltX[i] += (tiltGX * (1 - tk) - cardTiltX[i]) * tiltK;
+      cardTiltY[i] += (tiltGY * (1 - tk) - cardTiltY[i]) * tiltK;
+      cardFlare[i] = Math.max(
+        cardFlare[i] * Math.exp(-pt.flareDecay * dt),
+        pt.flareAdd * fall,
+      );
+      let rippleBoost = 0;
+      for (let k = 0; k < rip.length; k++) {
+        const age = t - rip[k].start;
+        const band =
+          (Math.hypot(wxp - rip[k].x, wyp - rip[k].y) -
+            age * pt.rippleSpeed) /
+          pt.rippleWidth;
+        rippleBoost +=
+          pt.rippleAmp * Math.exp(-band * band) * (1 - age / pt.rippleLife);
+      }
+
       mesh.position.set(x, y, 0);
-      mesh.rotation.z = -st.spin; // cards stay upright while the system spins
+      // Upright while the system spins, plus the cursor-field lean.
+      mesh.rotation.set(cardTiltX[i], cardTiltY[i], -st.spin);
       mesh.scale.set(W, H, 1);
-      mesh.renderOrder = 10 + Math.round(c * 100); // outer paints over inner
+      // Outer paints over inner; the target lifts above everything.
+      mesh.renderOrder = 10 + Math.round(c * 100) + Math.round(tk * 500);
 
       // Birth fade only: the death happens fully offscreen past thetaExit.
       const lifecycle = clamp01(c / lk.fadeBand);
@@ -715,27 +920,33 @@ function GalaxyScene({
         off.set(0, (1 - srcA / aspect) / 2);
       }
       // Blur by journey position; a still-loading card holds max blur so
-      // footage resolves through the same unblur it was born with.
+      // footage resolves through the same unblur it was born with. The
+      // target lock racks everything clean: blur, dispersion, and warp all
+      // clear as the card straightens into focus.
       u.uBlur.value = Math.max(
-        lk.blurMax * (1 - smoothstep(0, lk.blurEnd, c)),
+        lk.blurMax * (1 - smoothstep(0, lk.blurEnd, c)) * (1 - tk),
         (1 - va) * lk.blurMax,
       );
       u.uTexA.value = va;
-      u.uAber.value = lk.aberration;
-      u.uCurve.value = lk.curvePx;
+      u.uAber.value = (lk.aberration + cardFlare[i] + rippleBoost) * (1 - tk);
+      u.uCurve.value = lk.curvePx * (1 - tk);
       (u.uSize.value as THREE.Vector2).set(W, H);
       u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
       u.uFrameA.value = lk.frameAlpha;
       if (dark) {
-        u.uDim.value = lk.dim * solid;
+        u.uDim.value = lk.dim * solid + (1 - lk.dim * solid) * tk;
         u.uAlpha.value = lifecycle * intro;
       } else {
+        const wash = solid * Math.sqrt(lk.dim);
+        u.uAlpha.value = lifecycle * intro * (wash + (1 - wash) * tk);
         u.uDim.value = 1;
-        u.uAlpha.value = lifecycle * solid * intro * Math.sqrt(lk.dim);
       }
 
-      if (u.uAlpha.value > 0.04 && c > clipBest[card.clip]) {
-        clipBest[card.clip] = c;
+      // A targeted card's clip outranks everything in the decode budget so
+      // it plays immediately, wherever it is on the journey.
+      const pri = tk > 0.05 ? 2 : c;
+      if ((u.uAlpha.value > 0.04 || tk > 0.05) && pri > clipBest[card.clip]) {
+        clipBest[card.clip] = pri;
       }
     }
 

@@ -173,6 +173,110 @@ export const galaxyMotionTuner = defineTunables(
   },
 );
 
+// Pointer interaction knobs — read per frame.
+export const galaxyPointerTuner = defineTunables(
+  "galaxyPointer",
+  "Galaxy pointer",
+  {
+    fieldPx: {
+      label: "Field px",
+      min: 80,
+      max: 800,
+      step: 10,
+      default: 320,
+      info: "Radius of the cursor's influence — cards inside it tilt toward the pointer and pick up dispersion flare.",
+    },
+    tiltDeg: {
+      label: "Tilt °",
+      min: 0,
+      max: 25,
+      step: 0.5,
+      default: 8,
+      info: "Maximum lean of a card toward the cursor at the field's center — the pulled-at feel. The targeted card straightens to zero.",
+    },
+    flareAdd: {
+      label: "Flare add",
+      min: 0,
+      max: 0.08,
+      step: 0.002,
+      default: 0.022,
+      info: "Extra chromatic dispersion picked up by cards the cursor sweeps near, on top of the base aberration.",
+    },
+    flareDecay: {
+      label: "Flare decay /s",
+      min: 0.5,
+      max: 8,
+      step: 0.1,
+      default: 3,
+      info: "How fast the sweep flare fades behind the cursor — lower leaves a longer lens trail.",
+    },
+    holdTau: {
+      label: "Hold tau s",
+      min: 0.05,
+      max: 1,
+      step: 0.05,
+      default: 0.15,
+      info: "How quickly the targeted card's conveyor motion brakes to a stop under the cursor.",
+    },
+    restTau: {
+      label: "Rest tau s",
+      min: 0.1,
+      max: 2,
+      step: 0.05,
+      default: 0.55,
+      info: "How quickly the rest of the spiral follows the target to a stop — deliberately slower, so the hold reads as spreading outward from the hand.",
+    },
+    holdWobble: {
+      label: "Hold wobble ×",
+      min: 1,
+      max: 3,
+      step: 0.1,
+      default: 1.5,
+      info: "Wobble multiplier on the rest of the spiral while a card is held — the flow strains gently against the freeze.",
+    },
+    targetTau: {
+      label: "Target tau s",
+      min: 0.05,
+      max: 1,
+      step: 0.05,
+      default: 0.18,
+      info: "Ease time for the targeted card to clear its VFX (blur, warp, dispersion) into a straight, focused card — and back on release.",
+    },
+    rippleSpeed: {
+      label: "Ripple px/s",
+      min: 200,
+      max: 3000,
+      step: 50,
+      default: 900,
+      info: "Expansion speed of a click's dispersion ring.",
+    },
+    rippleWidth: {
+      label: "Ripple width",
+      min: 40,
+      max: 400,
+      step: 10,
+      default: 140,
+      info: "Thickness of the ripple's dispersion band.",
+    },
+    rippleAmp: {
+      label: "Ripple amp",
+      min: 0,
+      max: 0.1,
+      step: 0.002,
+      default: 0.03,
+      info: "Peak dispersion the ripple adds to cards it crosses. Multiple clicks stack.",
+    },
+    rippleLife: {
+      label: "Ripple life s",
+      min: 0.4,
+      max: 4,
+      step: 0.1,
+      default: 1.8,
+      info: "How long a ripple keeps its strength as it travels before fading out.",
+    },
+  },
+);
+
 // Ink and lens knobs — read per frame.
 export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
   density: {
