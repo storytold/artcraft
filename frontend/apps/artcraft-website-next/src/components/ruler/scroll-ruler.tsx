@@ -548,6 +548,23 @@ export default function ScrollRuler() {
         onPointerUp={mode === "full" ? railPointerUp : undefined}
         onPointerCancel={mode === "full" ? railPointerUp : undefined}
       >
+        {/* Frost underlay: content flows under the rail (no reserved
+            gutter); this pane blurs and tints whatever passes beneath so
+            the instrumentation always reads. Masked so the tint feathers
+            toward the page instead of ending in a hard edge — the ticks
+            and needle above it stay at full ink. */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            backdropFilter: "blur(9px)",
+            WebkitBackdropFilter: "blur(9px)",
+            backgroundColor: "color-mix(in srgb, var(--bg) 55%, transparent)",
+            maskImage: `linear-gradient(${side === "right" ? "to left" : "to right"}, black 60%, transparent)`,
+            WebkitMaskImage: `linear-gradient(${side === "right" ? "to left" : "to right"}, black 60%, transparent)`,
+          }}
+        />
+
         {/* Tick track — 1:1 with the document, translated per frame. */}
         <div
           ref={trackRef}

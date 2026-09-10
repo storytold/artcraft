@@ -241,38 +241,25 @@ function GalaxyScene({
       }),
     [],
   );
-  const clipFit = useMemo(
-    () =>
-      SEEDANCE_SHOWCASE.map(() => ({
-        rep: new THREE.Vector2(1, 1),
-        off: new THREE.Vector2(0, 0),
-      })),
-    [],
-  );
+  // Native aspect per clip — the per-frame cover-fit needs it because each
+  // card's own panel aspect morphs over its journey (square at birth).
+  const clipVA = useMemo(() => {
+    const a = new Float32Array(SEEDANCE_SHOWCASE.length);
+    a.fill(16 / 9);
+    return a;
+  }, []);
   const textures = useMemo(
     () =>
       videos.map((v, i) => {
         const t = new THREE.VideoTexture(v);
-        // Cover-fit the source into a 16:9 card (GL has no object-cover):
-        // crop the longer axis via a repeat/offset window the shader
-        // samples through. Shared Vector2s, so late metadata propagates to
-        // every material without re-wiring uniforms.
-        const fit = () => {
-          const va = v.videoWidth / v.videoHeight || 16 / 9;
-          const pa = 16 / 9;
-          if (va > pa) {
-            clipFit[i].rep.set(pa / va, 1);
-            clipFit[i].off.set((1 - pa / va) / 2, 0);
-          } else {
-            clipFit[i].rep.set(1, va / pa);
-            clipFit[i].off.set(0, (1 - va / pa) / 2);
-          }
+        const record = () => {
+          clipVA[i] = v.videoWidth / v.videoHeight || 16 / 9;
         };
-        if (v.readyState >= 1) fit();
-        else v.addEventListener("loadedmetadata", fit, { once: true });
+        if (v.readyState >= 1) record();
+        else v.addEventListener("loadedmetadata", record, { once: true });
         return t;
       }),
-    [videos, clipFit],
+    [videos, clipVA],
   );
 
   // Video lifecycle keyed to the pool alone. Re-arm sources on every run:
@@ -466,8 +453,8 @@ function GalaxyScene({
             depthWrite: false,
             uniforms: {
               uMap: { value: textures[c.clip] },
-              uRepeat: { value: clipFit[c.clip].rep },
-              uOffset: { value: clipFit[c.clip].off },
+              uRepeat: { value: new THREE.Vector2(1, 1) },
+              uOffset: { value: new THREE.Vector2(0, 0) },
               uBg: { value: new THREE.Vector3(0.9, 0.9, 0.9) },
               uBlur: { value: 0 },
               uTexA: { value: 0 },
@@ -482,7 +469,7 @@ function GalaxyScene({
             },
           }),
       ),
-    [cards, textures, clipFit],
+    [cards, textures],
   );
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
 
@@ -623,13 +610,20 @@ function GalaxyScene({
         );
         if (s < sep) sep = s;
       }
-      const target = Math.min(L.cardHCap, lk.density * sep);
+      // Inner cards stay smaller than outer ones even when space would
+      // allow more: the size ceiling itself ramps up over the journey.
+      const capEff = L.cardHCap * (lk.innerCap + (1 - lk.innerCap) * c);
+      const target = Math.min(capEff, lk.density * sep);
       cardH[i] =
         target < cardH[i]
           ? target
           : cardH[i] + (target - cardH[i]) * (1 - Math.exp(-3 * dt));
       const H = Math.max(0.001, cardH[i]);
-      const W = (H * 16) / 9;
+      // Newborns are rounded squares that morph into 16:9 as they grow.
+      // The neighbor separation above assumes the full 16:9 width, so the
+      // narrower young cards are strictly safer.
+      const aspect = 1 + (16 / 9 - 1) * smoothstep(0, lk.aspectEnd, c);
+      const W = H * aspect;
 
       mesh.position.set(x, y, 0);
       mesh.rotation.z = -st.spin; // cards stay upright while the system spins
@@ -648,6 +642,17 @@ function GalaxyScene({
       const va = videoAlpha[i];
 
       const u = materials[i].uniforms;
+      // Cover-fit the clip into the card's current (morphing) aspect.
+      const srcA = clipVA[card.clip];
+      const rep = u.uRepeat.value as THREE.Vector2;
+      const off = u.uOffset.value as THREE.Vector2;
+      if (srcA > aspect) {
+        rep.set(aspect / srcA, 1);
+        off.set((1 - aspect / srcA) / 2, 0);
+      } else {
+        rep.set(1, srcA / aspect);
+        off.set(0, (1 - srcA / aspect) / 2);
+      }
       // Blur by journey position; a still-loading card holds max blur so
       // footage resolves through the same unblur it was born with.
       u.uBlur.value = Math.max(

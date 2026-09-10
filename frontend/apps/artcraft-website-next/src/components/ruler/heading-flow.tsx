@@ -506,7 +506,15 @@ export default function HeadingFlow({
         className="fixed z-40"
         style={{ bottom: layout.queuePad, ...sideStyle }}
       >
-        <ul className="flex flex-col gap-1.5">
+        {/* Same contrast pool as the full instrument's queue. */}
+        <div
+          aria-hidden
+          className="absolute -inset-x-16 -inset-y-10"
+          style={{
+            background: `radial-gradient(closest-side, color-mix(in srgb, var(--bg) 85%, transparent), transparent)`,
+          }}
+        />
+        <ul className="relative flex flex-col gap-1.5">
           {sections.map((s) => (
             <li key={s.id}>
               <a
@@ -547,6 +555,25 @@ export default function HeadingFlow({
 
   return (
     <div className="pointer-events-none fixed inset-0 z-40">
+      {/* Contrast pools: page-bg radial fades pinned to the rail's top and
+          bottom corners, so the top stack and the bottom queue always read
+          over whatever content scrolls beneath them. */}
+      <div
+        aria-hidden
+        className="absolute top-0 h-[36vh] w-[clamp(220px,24vw,400px)]"
+        style={{
+          ...(side === "right" ? { right: 0 } : { left: 0 }),
+          background: `radial-gradient(110% 100% at ${side === "right" ? "100%" : "0%"} 0%, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 48%, transparent) 52%, transparent 78%)`,
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute bottom-0 h-[32vh] w-[clamp(220px,24vw,400px)]"
+        style={{
+          ...(side === "right" ? { right: 0 } : { left: 0 }),
+          background: `radial-gradient(110% 100% at ${side === "right" ? "100%" : "0%"} 100%, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 48%, transparent) 52%, transparent 78%)`,
+        }}
+      />
       {sections.map((s, wi) => {
         const refs = (wordRefs.current[wi] ??= {
           letters: [],

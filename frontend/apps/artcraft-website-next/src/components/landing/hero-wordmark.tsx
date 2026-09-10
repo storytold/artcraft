@@ -97,10 +97,26 @@ export default function HeroMasthead() {
 
   return (
     <div ref={boxRef} className="pointer-events-none relative z-40 w-full">
+      {/* Focus pocket: a feathered backdrop blur over the wordmark's
+          bounding box (plus breathing room), so the nebula's newborn cards
+          soften further right where the type sits — the mark always floats
+          above the swirl. */}
+      <div
+        aria-hidden
+        className="absolute -inset-x-[6%] -inset-y-[34%]"
+        style={{
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          maskImage:
+            "radial-gradient(closest-side, black 45%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(closest-side, black 45%, transparent 100%)",
+        }}
+      />
       <div
         role="img"
         aria-label={WORDMARK_TEXT}
-        className="whitespace-pre text-ink-strong"
+        className="relative whitespace-pre text-ink-strong"
         style={{
           fontFamily: WORDMARK_FONT,
           fontSize: fontPx || "13vw",
