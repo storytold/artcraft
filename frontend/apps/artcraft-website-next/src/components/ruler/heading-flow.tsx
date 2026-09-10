@@ -512,16 +512,12 @@ export default function HeadingFlow({
       const midIdx = phases.findIndex(
         (ph) => ph.flipP > 0.04 && ph.flipP < 0.96,
       );
-      // Re-arm only on organic scroll: meaningful velocity while no
-      // programmatic animation (jump or snap) is driving the page.
-      if (
-        !st.armed &&
-        !st.snapping &&
-        !st.jumping &&
-        Math.abs(st.vel) > 40
-      ) {
-        st.armed = true;
-      }
+      // Re-arming lives on real input events (see the listeners below) —
+      // NEVER on velocity: `snapping` clears early once no word is
+      // mid-flip, while the snap's scroll is still moving, so a velocity
+      // check mistakes the snap's own tail for user scrolling and lets
+      // snap chains re-arm themselves. Rail thumb drags count as intent.
+      if (rulerZoom.dragging) st.armed = true;
       if (st.snapping) {
         if (midIdx < 0) st.snapping = false;
       } else if (
@@ -566,8 +562,21 @@ export default function HeadingFlow({
       }
     };
 
+    // Organic input is the ONLY thing that re-arms the snap. Wheel, touch,
+    // and keyboard are unambiguous user intent; every programmatic scroll
+    // (jump, snap) produces none of these.
+    const rearm = () => {
+      fs.current.armed = true;
+    };
+    window.addEventListener("wheel", rearm, { passive: true });
+    window.addEventListener("touchmove", rearm, { passive: true });
+    window.addEventListener("keydown", rearm);
+
     gsap.ticker.add(tick);
     return () => {
+      window.removeEventListener("wheel", rearm);
+      window.removeEventListener("touchmove", rearm);
+      window.removeEventListener("keydown", rearm);
       gsap.ticker.remove(tick);
     };
   }, [mode, metrics, sections, geom, side, layoutVersion]);
