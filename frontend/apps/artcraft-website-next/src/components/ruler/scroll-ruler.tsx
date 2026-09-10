@@ -10,6 +10,7 @@ import {
   NAV_H,
   clamp01,
   easeOutExpo,
+  rulerZoom,
   type MeasuredSection,
   type RulerMode,
   type RulerSide,
@@ -51,7 +52,9 @@ export default function ScrollRuler() {
   const ghostRef = useRef<HTMLDivElement>(null);
   const ghostLineRef = useRef<HTMLDivElement>(null);
   const ghostLabelRef = useRef<HTMLDivElement>(null);
+  const bracketRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const tickRowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const digitRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   // Mutable per-frame state, never triggering React.
@@ -64,6 +67,13 @@ export default function ScrollRuler() {
     readoutAbove: false,
     sections: [] as MeasuredSection[],
     geom: { docH: 0, vh: 0, vw: 0 },
+    zoomIntent: false,
+    zoomTimer: 0,
+    zoomWrote: false,
+    ghostActive: false,
+    ghostY: 0,
+    dragStartY: 0,
+    dragMoved: 0,
   });
   fs.current.sections = sections;
   fs.current.geom = geom;
@@ -79,6 +89,18 @@ export default function ScrollRuler() {
       "(prefers-reduced-motion: no-preference)",
     ).matches;
     setMode(motionOk ? "full" : "static");
+  }, []);
+
+  // Reset the shared zoom state (and its pending intent timer) on unmount
+  // so a remount never inherits a half-engaged zoom.
+  useEffect(() => {
+    const st = fs.current;
+    return () => {
+      window.clearTimeout(st.zoomTimer);
+      rulerZoom.target = 0;
+      rulerZoom.p = 0;
+      rulerZoom.dragging = false;
+    };
   }, []);
 
   // Structural tunables (layout + look) rebuild the rendered rail —
@@ -169,7 +191,14 @@ export default function ScrollRuler() {
       const anchor = isHero
         ? rect.bottom + window.scrollY - heroOffset
         : rect.top + window.scrollY;
-      out.push({ id: s.id, label: s.label, index: out.length, anchor, isHero });
+      out.push({
+        id: s.id,
+        label: s.label,
+        index: out.length,
+        anchor,
+        bottom: rect.bottom + window.scrollY,
+        isHero,
+      });
     }
     setSections(out);
   }, [mode, geom, layoutVersion]);
@@ -190,6 +219,7 @@ export default function ScrollRuler() {
       });
     }
     lineRefs.current.length = out.length;
+    tickRowRefs.current.length = out.length;
     return out;
   }, [mode, geom.docH, layout, look]);
 
@@ -279,12 +309,63 @@ export default function ScrollRuler() {
         }
       }
 
-      // Velocity response: ticks near the needle stretch with scroll speed.
+      // Zoom morph: hover intent (or an active drag) compresses the
+      // document-scale ruler onto the stationary needle — the needle's
+      // travel position IS tick p's compact position, so it never moves.
+      const mt = rulerMotionTuner.read();
+      if (full) {
+        rulerZoom.target = st.zoomIntent || rulerZoom.dragging ? 1 : 0;
+        rulerZoom.p +=
+          (rulerZoom.target - rulerZoom.p) * (1 - Math.exp(-mt.zoomLerp * dt));
+        if (rulerZoom.target === 0 && rulerZoom.p < 0.0005) rulerZoom.p = 0;
+        if (rulerZoom.target === 1 && rulerZoom.p > 0.9995) rulerZoom.p = 1;
+      }
+      const z = full ? rulerZoom.p : 0;
+      const compactSpan = vh - NAV_H;
+
+      // Visible-span bracket, only meaningful in map space.
+      if (bracketRef.current) {
+        const b = bracketRef.current;
+        b.style.transform = `translate3d(0, ${
+          NAV_H + (scrollY / docH) * compactSpan
+        }px, 0)`;
+        b.style.height = `${(vh / docH) * compactSpan}px`;
+        b.style.opacity = String(z);
+      }
+
+      // Ghost follows the cursor; faint in 1:1 (its numbers are map-space),
+      // full strength once the map has formed.
+      if (ghostRef.current) {
+        const g = ghostRef.current;
+        if (st.ghostActive) {
+          g.style.transform = `translate3d(0, ${st.ghostY}px, 0)`;
+          g.style.opacity = String(
+            rulerLookTuner.read().ghostAlpha * (0.2 + 0.8 * z),
+          );
+        } else {
+          g.style.opacity = "0";
+        }
+      }
+
+      // Tick layout + velocity response in one pass: each tick blends from
+      // its live 1:1 position toward its compact map position by z, and
+      // ticks near the needle stretch with scroll speed.
       if (full && st.introDone && ticks.length) {
-        const mt = rulerMotionTuner.read();
         const needleDocY = progress * docH;
         const velNorm = clamp01(Math.abs(st.vel) / 3000);
+        const writeZoom = z > 0 || st.zoomWrote;
         for (let i = 0; i < ticks.length; i++) {
+          if (writeZoom) {
+            const row = tickRowRefs.current[i];
+            if (row) {
+              const liveY = ticks[i].docY - scrollY + NAV_H * (1 - progress);
+              const compactY = NAV_H + (ticks[i].pct / 100) * compactSpan;
+              row.style.transform =
+                z > 0
+                  ? `translate3d(0, ${z * (compactY - liveY)}px, 0)`
+                  : "";
+            }
+          }
           const el = lineRefs.current[i];
           if (!el) continue;
           const dist = Math.abs(ticks[i].docY - needleDocY);
@@ -300,6 +381,7 @@ export default function ScrollRuler() {
             el.style.opacity = String(ticks[i].alpha);
           }
         }
+        st.zoomWrote = z > 0;
       }
     };
     gsap.ticker.add(tick);
@@ -314,9 +396,23 @@ export default function ScrollRuler() {
     side === "right" ? { right: 0 as const } : { left: 0 as const };
   const outerProp = side === "right" ? "right" : "left";
 
-  const railClick = (e: React.MouseEvent) => {
+  // Hover intent: the zoom engages/relaxes after a short beat so grazing
+  // the viewport edge doesn't fire it.
+  const scheduleZoom = (on: boolean) => {
     const st = fs.current;
-    const p = clamp01((e.clientY - NAV_H) / Math.max(1, st.geom.vh - NAV_H));
+    window.clearTimeout(st.zoomTimer);
+    const mt = rulerMotionTuner.read();
+    st.zoomTimer = window.setTimeout(
+      () => {
+        st.zoomIntent = on;
+      },
+      on ? mt.zoomInDelay : mt.zoomOutDelay,
+    );
+  };
+
+  const jumpTo = (clientY: number) => {
+    const st = fs.current;
+    const p = clamp01((clientY - NAV_H) / Math.max(1, st.geom.vh - NAV_H));
     const target = p * Math.max(1, st.geom.docH - st.geom.vh);
     const lenis = lenisRef.current;
     if (lenis) {
@@ -330,6 +426,11 @@ export default function ScrollRuler() {
     } else {
       window.scrollTo({ top: target });
     }
+  };
+
+  const railClick = (e: React.MouseEvent) => {
+    if (fs.current.dragMoved > 4) return; // that was a drag, not a click
+    jumpTo(e.clientY);
     if (mode === "full" && ghostLineRef.current) {
       gsap.fromTo(
         ghostLineRef.current,
@@ -339,14 +440,21 @@ export default function ScrollRuler() {
     }
   };
 
-  const railMove = (e: React.MouseEvent) => {
+  const railPointerEnter = () => {
+    scheduleZoom(true);
+  };
+
+  const railPointerLeave = () => {
+    fs.current.ghostActive = false;
+    if (!rulerZoom.dragging) scheduleZoom(false);
+  };
+
+  const railPointerMove = (e: React.PointerEvent) => {
     const st = fs.current;
-    const ghost = ghostRef.current;
-    if (!ghost) return;
     const y = Math.max(NAV_H, Math.min(st.geom.vh, e.clientY));
     const p = clamp01((y - NAV_H) / Math.max(1, st.geom.vh - NAV_H));
-    ghost.style.opacity = "1";
-    ghost.style.transform = `translate3d(0, ${y}px, 0)`;
+    st.ghostActive = true;
+    st.ghostY = y;
     if (ghostLabelRef.current) {
       const pct = Math.round(p * 100);
       const docY = p * st.geom.docH;
@@ -356,10 +464,45 @@ export default function ScrollRuler() {
       }
       ghostLabelRef.current.textContent = label;
     }
+    // Absolute thumb drag: the page chases the cursor through Lenis's
+    // damping; release stops (no momentum).
+    if (rulerZoom.dragging) {
+      st.dragMoved = Math.max(
+        st.dragMoved,
+        Math.abs(e.clientY - st.dragStartY),
+      );
+      lenisRef.current?.scrollTo(
+        p * Math.max(1, st.geom.docH - st.geom.vh),
+        { lerp: rulerMotionTuner.read().dragLerp },
+      );
+    }
   };
 
-  const railLeave = () => {
-    if (ghostRef.current) ghostRef.current.style.opacity = "0";
+  const railPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const st = fs.current;
+    st.dragStartY = e.clientY;
+    st.dragMoved = 0;
+    rulerZoom.dragging = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const railPointerUp = (e: React.PointerEvent) => {
+    if (!rulerZoom.dragging) return;
+    rulerZoom.dragging = false;
+    // Capture suppressed enter/leave while dragging — if the pointer let
+    // go outside the rail, relax the zoom ourselves.
+    const rect = railRef.current?.getBoundingClientRect();
+    const inside =
+      !!rect &&
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom;
+    if (!inside) {
+      fs.current.ghostActive = false;
+      scheduleZoom(false);
+    }
   };
 
   return (
@@ -377,8 +520,12 @@ export default function ScrollRuler() {
         className="fixed inset-y-0 z-40 cursor-crosshair overflow-hidden"
         style={{ ...sideStyle, width: railW }}
         onClick={railClick}
-        onMouseMove={mode === "full" ? railMove : undefined}
-        onMouseLeave={mode === "full" ? railLeave : undefined}
+        onPointerEnter={mode === "full" ? railPointerEnter : undefined}
+        onPointerLeave={mode === "full" ? railPointerLeave : undefined}
+        onPointerMove={mode === "full" ? railPointerMove : undefined}
+        onPointerDown={mode === "full" ? railPointerDown : undefined}
+        onPointerUp={mode === "full" ? railPointerUp : undefined}
+        onPointerCancel={mode === "full" ? railPointerUp : undefined}
       >
         {/* Tick track — 1:1 with the document, translated per frame. */}
         <div
@@ -390,6 +537,9 @@ export default function ScrollRuler() {
           {ticks.map((t, i) => (
             <div
               key={t.pct}
+              ref={(el) => {
+                tickRowRefs.current[i] = el;
+              }}
               className="absolute inset-x-0"
               style={{ top: t.docY, height: 0 }}
             >
@@ -424,6 +574,30 @@ export default function ScrollRuler() {
             </div>
           ))}
         </div>
+
+        {/* Visible-span bracket: the current viewport's slice of the page,
+            shown only while the zoomed map is formed. */}
+        {mode === "full" && (
+          <div
+            ref={bracketRef}
+            aria-hidden
+            className="absolute inset-x-0 top-0"
+            style={{ height: 0, opacity: 0 }}
+          >
+            <div
+              className="absolute inset-0 bg-ink"
+              style={{ opacity: look.bracketAlpha }}
+            />
+            <span
+              className="absolute inset-x-0 top-0 block bg-ink"
+              style={{ height: 1, opacity: 0.5 }}
+            />
+            <span
+              className="absolute inset-x-0 bottom-0 block bg-ink"
+              style={{ height: 1, opacity: 0.5 }}
+            />
+          </div>
+        )}
 
         {/* Needle: travels [NAV_H, vh] with progress, meeting its tick. */}
         <div

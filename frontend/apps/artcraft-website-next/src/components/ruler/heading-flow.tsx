@@ -8,6 +8,7 @@ import {
   clamp01,
   easeInOutCubic,
   easeOutExpo,
+  rulerZoom,
   type MeasuredSection,
   type RulerMode,
   type RulerSide,
@@ -149,6 +150,10 @@ export default function HeadingFlow({
       const inwardSign = side === "right" ? -1 : 1;
       const railCenterX =
         side === "right" ? vw - lay.railW / 2 : lay.railW / 2;
+      // Zoomed map blend: every word converges on a horizontal label at
+      // its section's true percent position while the rail compresses.
+      const zoomE = easeInOutCubic(rulerZoom.p);
+      const compactSpan = vh - NAV_H;
 
       // Phase pass: flip/detach progress per word. Anchors increase with
       // index, so stacked words are always a prefix and at most one word is
@@ -157,8 +162,29 @@ export default function HeadingFlow({
         const m = metrics[s.label];
         const rideLen = (m?.total ?? 0) * hp * rs;
         const v = s.anchor - scrollY + drift;
-        const flipP = clamp01((T + mt.flipZone - v) / mt.flipZone);
-        return { v, rideLen, flipP, detachP: 0, yq: yQueueLine };
+        let flipP = clamp01((T + mt.flipZone - v) / mt.flipZone);
+        // End-of-page driver: a section too short to ever carry its word
+        // up to the threshold (its best reachable v is still below the
+        // flip line) flips over a span derived from its own geometry —
+        // from "section fully in view" to "no more scroll". At page
+        // bottom the pile is complete; still scrub-bound and reversible.
+        let endDriven = false;
+        let endStart = 0;
+        if (s.anchor - maxScroll > T) {
+          endDriven = true;
+          endStart = Math.min(s.bottom - vh, maxScroll - 24);
+          const zone = Math.max(24, maxScroll - endStart);
+          flipP = Math.max(flipP, clamp01((scrollY - endStart) / zone));
+        }
+        return {
+          v,
+          rideLen,
+          flipP,
+          endDriven,
+          endStart,
+          detachP: 0,
+          yq: yQueueLine,
+        };
       });
 
       // Backward pass: a word's queue slot depends on the occupancy of the
@@ -304,6 +330,7 @@ export default function HeadingFlow({
         // quadratic curve between the two homes.
         const sf = mt.stagger;
         const span = 1 + (n - 1) * sf;
+        const mapY = NAV_H + ((s.isHero ? 0 : s.anchor) / docH) * compactSpan;
         let minX = Infinity;
         let maxX = -Infinity;
         let minY = Infinity;
@@ -320,11 +347,19 @@ export default function HeadingFlow({
           const cx = (a.x + b.x) / 2 + inwardSign * mt.arc;
           const cy = (a.y + b.y) / 2;
           const u = 1 - e;
-          const x = u * u * a.x + 2 * u * e * cx + e * e * b.x;
-          const y = u * u * a.y + 2 * u * e * cy + e * e * b.y;
-          const rot = a.rot + (b.rot - a.rot) * e;
-          const scale = a.scale + (b.scale - a.scale) * e;
-          const alpha = a.alpha + (b.alpha - a.alpha) * e;
+          let x = u * u * a.x + 2 * u * e * cx + e * e * b.x;
+          let y = u * u * a.y + 2 * u * e * cy + e * e * b.y;
+          let rot = a.rot + (b.rot - a.rot) * e;
+          let scale = a.scale + (b.scale - a.scale) * e;
+          let alpha = a.alpha + (b.alpha - a.alpha) * e;
+          if (zoomE > 0) {
+            const mp = horizPose(m, i, mapY, qs, lk.mapAlpha);
+            x += (mp.x - x) * zoomE;
+            y += (mp.y - y) * zoomE;
+            rot *= 1 - zoomE;
+            scale += (mp.scale - scale) * zoomE;
+            alpha += (mp.alpha - alpha) * zoomE;
+          }
           el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
           el.style.opacity = String(alpha);
           if (alpha > maxAlpha) maxAlpha = alpha;
@@ -356,7 +391,10 @@ export default function HeadingFlow({
         // Section tick + index on the rail's inner edge, riding at the
         // word's anchor while the word rides.
         const presence =
-          detachP * (1 - flipP) * (v > -80 && v < vh + 80 ? 1 : 0);
+          detachP *
+          (1 - flipP) *
+          (1 - zoomE) *
+          (v > -80 && v < vh + 80 ? 1 : 0);
         if (refs.tickEl) {
           const x =
             side === "right" ? vw - lay.railW - SECTION_TICK_LEN : lay.railW;
@@ -384,17 +422,35 @@ export default function HeadingFlow({
       );
       if (st.snapping) {
         if (midIdx < 0) st.snapping = false;
-      } else if (midIdx >= 0 && Math.abs(st.vel) < 30 && lenis) {
+      } else if (
+        midIdx >= 0 &&
+        Math.abs(st.vel) < 30 &&
+        lenis &&
+        !rulerZoom.dragging &&
+        rulerZoom.p < 0.3
+      ) {
         if (st.snapSince === null) {
           st.snapSince = now;
         } else if (now - st.snapSince > mt.snapDelay) {
           const ph = phases[midIdx];
-          const vTarget =
-            ph.flipP >= 0.5 ? T - 4 : T + mt.flipZone + 4;
-          const target = Math.max(
-            0,
-            Math.min(maxScroll, sections[midIdx].anchor + drift - vTarget),
-          );
+          const sMid = sections[midIdx];
+          // End-driven flips resolve in scroll space (their v never
+          // reaches the threshold): complete = page bottom, revert = back
+          // before both drivers engage.
+          let raw: number;
+          if (ph.endDriven) {
+            raw =
+              ph.flipP >= 0.5
+                ? maxScroll
+                : Math.min(
+                    ph.endStart - 4,
+                    sMid.anchor + drift - (T + mt.flipZone + 4),
+                  );
+          } else {
+            const vTarget = ph.flipP >= 0.5 ? T - 4 : T + mt.flipZone + 4;
+            raw = sMid.anchor + drift - vTarget;
+          }
+          const target = Math.max(0, Math.min(maxScroll, raw));
           st.snapping = true;
           st.snapSince = null;
           lenis.scrollTo(target, {

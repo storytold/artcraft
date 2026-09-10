@@ -207,6 +207,38 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     default: 0.6,
     info: "How much fast scrolling stretches the ticks nearest the needle.",
   },
+  zoomInDelay: {
+    label: "Zoom delay ms",
+    min: 0,
+    max: 800,
+    step: 25,
+    default: 200,
+    info: "Hover intent time on the rail before the full-page zoom engages — accidental edge grazes don't fire.",
+  },
+  zoomOutDelay: {
+    label: "Unzoom delay ms",
+    min: 0,
+    max: 800,
+    step: 25,
+    default: 150,
+    info: "Grace period after leaving the rail before the zoom relaxes back to 1:1.",
+  },
+  zoomLerp: {
+    label: "Zoom damping",
+    min: 2,
+    max: 16,
+    step: 0.5,
+    default: 7,
+    info: "Damping rate of the zoom morph — higher = snappier compression onto the needle.",
+  },
+  dragLerp: {
+    label: "Drag lerp",
+    min: 0.05,
+    max: 0.6,
+    step: 0.01,
+    default: 0.18,
+    info: "How tightly the page chases the cursor while thumb-dragging the zoomed rail.",
+  },
 });
 
 // Ink knobs — read per frame.
@@ -266,5 +298,21 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     step: 0.05,
     default: 0.55,
     info: "Opacity of the compact heading links (bottom queue and top pile).",
+  },
+  bracketAlpha: {
+    label: "Bracket alpha",
+    min: 0,
+    max: 0.5,
+    step: 0.02,
+    default: 0.1,
+    info: "Opacity of the shaded bracket marking the visible page span while zoomed.",
+  },
+  mapAlpha: {
+    label: "Map alpha",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 0.85,
+    info: "Opacity of the section labels in the zoomed full-page map.",
   },
 });

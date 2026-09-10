@@ -15,14 +15,23 @@ export type RulerSide = "left" | "right";
 /** A ruler section resolved against the live DOM. `anchor` is the document Y
  * the section's word rides at (the section top — except the hero, whose
  * anchor hangs `heroOffset` above the hero's bottom so the wordmark handoff
- * happens as the visitor leaves the landing area). */
+ * happens as the visitor leaves the landing area). `bottom` is the document
+ * Y of the section's end, used to derive the end-of-page flip for sections
+ * too short to ever reach the threshold. */
 export type MeasuredSection = {
   id: string;
   label: string;
   index: number;
   anchor: number;
+  bottom: number;
   isHero: boolean;
 };
+
+/** The zoom morph's shared per-frame state: ScrollRuler drives it (hover
+ * intent, drag, damped integration of `p`), HeadingFlow reads `p` to blend
+ * the heading lifecycle toward the compact map. 0 = 1:1 instrument,
+ * 1 = compressed full-page map. */
+export const rulerZoom = { target: 0, p: 0, dragging: false };
 
 export const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
