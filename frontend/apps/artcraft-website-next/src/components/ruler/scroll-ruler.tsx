@@ -178,19 +178,18 @@ export default function ScrollRuler() {
     };
   }, [mode]);
 
-  // Section anchors, resolved against the live DOM.
+  // Section anchors, resolved against the live DOM. (The hero's anchor is
+  // unused for motion — its morph is driven by the wordmark's own position
+  // in heading-flow — but measured uniformly anyway.)
   useEffect(() => {
     if (!mode || !geom.docH) return;
-    const { heroOffset } = rulerLayoutTuner.read();
     const out: MeasuredSection[] = [];
     for (const s of RULER_SECTIONS) {
       const el = document.getElementById(s.id);
       if (!el) continue;
       const rect = el.getBoundingClientRect();
       const isHero = s.id === HERO_SECTION_ID;
-      const anchor = isHero
-        ? rect.bottom + window.scrollY - heroOffset
-        : rect.top + window.scrollY;
+      const anchor = rect.top + window.scrollY;
       out.push({
         id: s.id,
         label: s.label,

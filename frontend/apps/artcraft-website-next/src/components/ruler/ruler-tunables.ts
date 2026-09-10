@@ -115,14 +115,6 @@ export const rulerLayoutTuner = defineTunables("rulerLayout", "Ruler layout", {
     default: 0,
     info: "Horizontal gap between the tick rail and the heading text.",
   },
-  heroOffset: {
-    label: "Hero anchor up px",
-    min: 0,
-    max: 900,
-    step: 20,
-    default: 380,
-    info: "How far above the hero section's bottom the ARTCRAFT word anchors — larger = the wordmark handoff starts earlier.",
-  },
 });
 
 // Feel knobs — read per frame.
@@ -246,6 +238,22 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     step: 0.01,
     default: 0.18,
     info: "How tightly the page chases the cursor while thumb-dragging the zoomed rail.",
+  },
+  heroLead: {
+    label: "Hero lead px",
+    min: 0,
+    max: 400,
+    step: 10,
+    default: 100,
+    info: "How many scroll px before the wordmark would duck under the nav the hero-to-header morph begins.",
+  },
+  heroZone: {
+    label: "Hero morph px",
+    min: 100,
+    max: 900,
+    step: 20,
+    default: 320,
+    info: "Scroll distance the hero wordmark's flight to the top heading slot spans.",
   },
 });
 

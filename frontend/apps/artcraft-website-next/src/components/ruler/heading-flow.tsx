@@ -41,13 +41,15 @@ import {
 // reversible; when scroll rests with a top flip half-done, a damped snap
 // resolves it to the nearest side.
 //
-// The hero is special: its queued home doesn't exist — the hero wordmark IS
-// its heading, literally: HeadingFlow drives the wordmark's own letter
-// spans (published via the shared heroWordmark channel), so the resting
-// title peels tail-first off the page onto the rail with no clone or
-// handoff, then flips into the stack like any other section. The hero
-// letters keep their Archivo Black wordmark face through the whole
-// lifecycle — brand identity, and font families can't interpolate.
+// The hero is special: it IS the current section from load, so its whole
+// lifecycle is one flip — the wordmark's own letter spans (published via
+// the shared heroWordmark channel) fly STRAIGHT from the resting title to
+// the top current-heading slot as the wordmark is about to duck under the
+// nav (title-condenses-into-header), no queue home and no rail ride. From
+// the stack onward it behaves like any section (demotes when FEATURES
+// flips in). The hero letters keep their Archivo Black wordmark face
+// through the whole lifecycle — brand identity, and font families can't
+// interpolate.
 
 // A letter's pose on screen. x/y are the letter center in viewport px.
 type Pose = {
@@ -165,29 +167,39 @@ export default function HeadingFlow({
             : metrics[s.label];
         const rideLen = (m?.total ?? 0) * hp * rs;
         const v = s.anchor - scrollY + drift;
-        let flipP = clamp01((T + mt.flipZone - v) / mt.flipZone);
-        // End-of-page driver: a section too short to ever carry its word
-        // up to the threshold (its best reachable v is still below the
-        // flip line) flips over a span derived from its own geometry —
-        // from "section fully in view" to "no more scroll". At page
-        // bottom the pile is complete; still scrub-bound and reversible.
-        let endDriven = false;
-        let endStart = 0;
-        if (s.anchor - maxScroll > T) {
-          endDriven = true;
-          endStart = Math.min(s.bottom - vh, maxScroll - 24);
-          const zone = Math.max(24, maxScroll - endStart);
-          flipP = Math.max(flipP, clamp01((scrollY - endStart) / zone));
+        let flipP: number;
+        let detachP = 0;
+        // Some flips run in scroll space instead of anchor space; snap
+        // resolves those against these bounds.
+        let scrollFlip: { start: number; end: number } | null = null;
+        if (s.isHero) {
+          // The hero IS the current section from load — its heading goes
+          // STRAIGHT to the top slot (no queue, no ride): the whole
+          // lifecycle is one flip, driven by the wordmark about to duck
+          // under the nav (title-condenses-into-header), begun heroLead px
+          // early and spanning heroZone px of scroll.
+          detachP = 1;
+          const wordTop = heroWordmark.ready
+            ? Math.min(...heroWordmark.baseDocY) - heroWordmark.fontPx * 0.5
+            : 0;
+          const start = Math.max(0, wordTop - NAV_H - mt.heroLead);
+          const zone = Math.max(1, mt.heroZone);
+          flipP = clamp01((scrollY - start) / zone);
+          scrollFlip = { start, end: start + zone };
+        } else {
+          flipP = clamp01((T + mt.flipZone - v) / mt.flipZone);
+          // End-of-page driver: a section too short to ever carry its
+          // word up to the threshold (its best reachable v is still below
+          // the flip line) flips from "section fully in view" to "no more
+          // scroll". At page bottom the pile is complete.
+          if (s.anchor - maxScroll > T) {
+            const endStart = Math.min(s.bottom - vh, maxScroll - 24);
+            const zone = Math.max(24, maxScroll - endStart);
+            flipP = Math.max(flipP, clamp01((scrollY - endStart) / zone));
+            scrollFlip = { start: endStart, end: maxScroll };
+          }
         }
-        return {
-          v,
-          rideLen,
-          flipP,
-          endDriven,
-          endStart,
-          detachP: 0,
-          yq: yQueueLine,
-        };
+        return { v, rideLen, flipP, scrollFlip, detachP, yq: yQueueLine };
       });
 
       // Backward pass: a word's queue slot depends on the occupancy of the
@@ -201,14 +213,13 @@ export default function HeadingFlow({
       {
         let below = 0;
         for (let wi = sections.length - 1; wi >= 0; wi--) {
+          if (sections[wi].isHero) continue; // no queue home, detachP = 1
           const ph = phases[wi];
-          const isHero = sections[wi].isHero;
           ph.yq = yQueueLine - lay.queueSlot * below;
-          const formBottom = isHero ? yQueueLine : ph.yq;
           ph.detachP = clamp01(
-            (formBottom + mt.detachZone - (ph.v + ph.rideLen)) / mt.detachZone,
+            (ph.yq + mt.detachZone - (ph.v + ph.rideLen)) / mt.detachZone,
           );
-          if (!isHero) below += 1 - ph.detachP;
+          below += 1 - ph.detachP;
         }
       }
 
@@ -265,7 +276,16 @@ export default function HeadingFlow({
         const { v, rideLen, flipP, detachP, yq } = phases[wi];
         const n = m.adv.length;
 
-        const formLine = s.isHero ? yQueueLine : yq;
+        // The hero's flip "from" home is the wordmark's own resting
+        // layout — identity transform at rest, so it's pixel-perfect and
+        // crisp, and the title flies STRAIGHT to the top heading slot.
+        const heroBase = (i: number): Pose => ({
+          x: heroWordmark.baseX[i],
+          y: heroWordmark.baseDocY[i] - scrollY,
+          rot: 0,
+          scale: heroWordmark.fontPx / hp,
+          alpha: 1,
+        });
 
         // Word-level from/to homes for the active transition.
         let p: number;
@@ -275,9 +295,10 @@ export default function HeadingFlow({
         if (flipP > 0) {
           p = flipP;
           // Tail-first here too: the tail letter sits at the column's top
-          // and lands nearest the rail — shortest flight leads the peel.
+          // (or, for the hero, nearest the rail) and lands nearest the
+          // rail — shortest flight leads the peel.
           reverseStagger = true;
-          from = (i) => ridePose(m, i, v);
+          from = heroDrive ? heroBase : (i) => ridePose(m, i, v);
           // Stacked words keep their document-order slot in the top pile
           // (wi is the index from the top, since stacked words are always
           // a prefix). The newest fully-stacked word holds the "current"
@@ -311,26 +332,12 @@ export default function HeadingFlow({
           // its queue slot (bottom at the line). Letters sweep up in the
           // ease-out arc, fully on-screen; at p=1 this equals the true
           // riding pose, which takes over seamlessly.
-          const vForm = formLine - rideLen;
+          const vForm = yq - rideLen;
           to = (i) => ridePose(m, i, vForm);
-          if (s.isHero) {
-            // THE hero morph: the "from" pose is each letter's natural
-            // resting spot in the hero wordmark itself — the title peels
-            // tail-first off the page onto the rail, one set of elements,
-            // identity transform at rest so it's pixel-perfect and crisp.
-            from = (i) => ({
-              x: heroWordmark.baseX[i],
-              y: heroWordmark.baseDocY[i] - scrollY,
-              rot: 0,
-              scale: heroWordmark.fontPx / hp,
-              alpha: 1,
-            });
-          } else {
-            from = (i) => horizPose(m, i, yq, qs, lk.queueAlpha);
-          }
+          from = (i) => horizPose(m, i, yq, qs, lk.queueAlpha);
         } else {
           p = 1;
-          from = to = (i) => ridePose(m, i, v);
+          from = to = heroDrive ? heroBase : (i) => ridePose(m, i, v);
         }
 
         // Letter pass: staggered eased progress along an inward-bowed
@@ -344,7 +351,7 @@ export default function HeadingFlow({
         // the rail at page top never dismantles the resting wordmark.
         const letterEls = heroDrive ? heroWordmark.els : refs.letters;
         const scaleFix = heroDrive ? hp / heroWordmark.fontPx : 1;
-        const wz = heroDrive ? zoomE * Math.min(1, detachP) : zoomE;
+        const wz = heroDrive ? zoomE * Math.min(1, flipP) : zoomE;
         let minX = Infinity;
         let maxX = -Infinity;
         let minY = Infinity;
@@ -405,7 +412,9 @@ export default function HeadingFlow({
         // detach/flip flights and made them flicker) — with a strength
         // that ramps smoothly with how on-rail the word is, so labels fade
         // in proportion instead of blinking.
-        const onRail = detachP * (1 - flipP);
+        // (The hero never rides the rail — it flies straight to the top —
+        // so it never occupies the tick lane.)
+        const onRail = s.isHero ? 0 : detachP * (1 - flipP);
         if (onRail > 0.02) {
           railOccupancy.spans.push({ top: v, bottom: v + rideLen, k: onRail });
         }
@@ -421,7 +430,7 @@ export default function HeadingFlow({
           // wall's drag lives underneath it) — its link only arms once the
           // morph is underway.
           refs.hit.style.pointerEvents =
-            maxAlpha > 0.05 && (!s.isHero || detachP > 0.05)
+            maxAlpha > 0.05 && (!s.isHero || flipP > 0.05)
               ? "auto"
               : "none";
         }
@@ -449,18 +458,13 @@ export default function HeadingFlow({
         } else if (now - st.snapSince > mt.snapDelay) {
           const ph = phases[midIdx];
           const sMid = sections[midIdx];
-          // End-driven flips resolve in scroll space (their v never
-          // reaches the threshold): complete = page bottom, revert = back
-          // before both drivers engage.
+          // Scroll-space flips (the hero's straight-to-header morph, and
+          // end-of-page flips whose v never reaches the threshold) resolve
+          // against their own bounds; threshold flips resolve in v space.
           let raw: number;
-          if (ph.endDriven) {
+          if (ph.scrollFlip) {
             raw =
-              ph.flipP >= 0.5
-                ? maxScroll
-                : Math.min(
-                    ph.endStart - 4,
-                    sMid.anchor + drift - (T + mt.flipZone + 4),
-                  );
+              ph.flipP >= 0.5 ? ph.scrollFlip.end + 4 : ph.scrollFlip.start - 4;
           } else {
             const vTarget = ph.flipP >= 0.5 ? T - 4 : T + mt.flipZone + 4;
             raw = sMid.anchor + drift - vTarget;
