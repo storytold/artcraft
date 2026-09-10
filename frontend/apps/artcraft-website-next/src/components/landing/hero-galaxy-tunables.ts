@@ -27,12 +27,12 @@ export const galaxyLayoutTuner = defineTunables(
       info: "How many revolutions each arm makes from origin to outer end — lower is straighter rays, higher is a tighter swirl.",
     },
     rMaxFrac: {
-      label: "Outer radius",
+      label: "Track pitch",
       min: 0.4,
       max: 1.2,
       step: 0.02,
       default: 0.72,
-      info: "Radius where cards exit, as a fraction of the viewport half-diagonal — above ~0.7 the outermost cards leave through the corners.",
+      info: "Sets the spiral's tightness: the radius the drawn windings span, as a fraction of the viewport half-diagonal. Larger = wider winding gaps = bigger cards. Cards travel past it until fully offscreen.",
     },
     birthFrac: {
       label: "Birth radius",
@@ -51,20 +51,12 @@ export const galaxyLayoutTuner = defineTunables(
       info: "Total cards riding the arms at once.",
     },
     cardHFrac: {
-      label: "Card h × vh",
+      label: "Card h cap",
       min: 0.08,
-      max: 0.3,
+      max: 0.35,
       step: 0.005,
-      default: 0.16,
-      info: "Full-grown card height as a fraction of the viewport height (cards are 16:9).",
-    },
-    minScale: {
-      label: "Birth scale",
-      min: 0.15,
-      max: 1,
-      step: 0.01,
-      default: 0.32,
-      info: "Card scale at birth near the center; cards grow to full size as they swirl outward.",
+      default: 0.2,
+      info: "Absolute card height ceiling as a fraction of the viewport height — the track-gap math sizes cards below this so they never collide.",
     },
     armJitter: {
       label: "Arm desync",
@@ -127,8 +119,8 @@ export const galaxyMotionTuner = defineTunables(
       min: 0,
       max: 40,
       step: 1,
-      default: 10,
-      info: "How far cards drift off their exact arm position — the floating-in-space noise.",
+      default: 0,
+      info: "How far cards drift off their exact arm position. Off by default — the layout owes its collision guarantee to cards staying on track; a fallback flavor knob only.",
     },
     wobbleFreq: {
       label: "Wobble Hz",
@@ -167,6 +159,22 @@ export const galaxyMotionTuner = defineTunables(
 
 // Ink and lens knobs — read per frame.
 export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
+  density: {
+    label: "Density",
+    min: 0.3,
+    max: 1,
+    step: 0.02,
+    default: 0.82,
+    info: "Fraction of the gap to its nearest neighbor each card may fill — higher packs the screen tighter, lower gives more air. Collision-free across the whole range (at 1.0 cards may kiss edges).",
+  },
+  cornerPx: {
+    label: "Corner px",
+    min: 0,
+    max: 24,
+    step: 1,
+    default: 10,
+    info: "Corner radius of each card (and its hairline frame), in px — the one deliberate exception to the site's zero-radius rule.",
+  },
   blurMax: {
     label: "Blur max",
     min: 0,
@@ -200,12 +208,12 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     info: "Card presence at birth — newborn cards sit faint near the origin and solidify as they emerge.",
   },
   fadeBand: {
-    label: "Fade band",
+    label: "Birth fade",
     min: 0.02,
     max: 0.3,
     step: 0.01,
     default: 0.09,
-    info: "Fraction of the journey over which cards fade in at birth and out at the edge — also hides the conveyor wrap.",
+    info: "Fraction of the journey over which a newborn card fades in at the center. There is no exit fade — cards die fully offscreen.",
   },
   dim: {
     label: "Footage dim",
@@ -237,7 +245,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     max: 1,
     step: 0.02,
     default: 0.35,
-    info: "Opacity of the hairline frames around each card.",
+    info: "Strength of the hairline frame drawn along each card's (rounded) edge.",
   },
   lineAlpha: {
     label: "Line alpha",

@@ -72,6 +72,10 @@ const CARD_FRAG = /* glsl */ `
   uniform float uDim;
   uniform float uAlpha;
   uniform float uAber;
+  uniform vec2 uSize;
+  uniform float uRadius;
+  uniform vec3 uFrameCol;
+  uniform float uFrameA;
   in vec2 vUv;
   out vec4 outColor;
 
@@ -110,7 +114,16 @@ const CARD_FRAG = /* glsl */ `
       );
     }
     col = mix(uBg, col, uTexA) * uDim;
-    outColor = vec4(col, uAlpha);
+
+    // Rounded-rect SDF in card px: antialiased corner cut, plus the
+    // hairline frame drawn as a ~1px band riding the same edge (so it
+    // follows the radius exactly).
+    vec2 q = abs((vUv - 0.5) * uSize) - (0.5 * uSize - vec2(uRadius));
+    float dEdge = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - uRadius;
+    float frameBand = 1.0 - smoothstep(0.5, 1.5, abs(dEdge + 1.0));
+    col = mix(col, uFrameCol, frameBand * uFrameA);
+    float aa = 1.0 - smoothstep(-0.75, 0.75, dEdge);
+    outColor = vec4(col, uAlpha * aa);
   }
 `;
 
@@ -272,13 +285,16 @@ function GalaxyScene({
         v.load();
       }
     });
-    // Prime a frozen first frame per clip, staggered so page load never
-    // fights a burst of range requests. A paused seek decodes one frame —
-    // exactly what the inner blurred cards need, no decoder kept.
+    // Prime a frozen frame per clip, staggered so page load never fights a
+    // burst of range requests. The seek target is a per-clip offset spread
+    // across each clip's duration, so playback phases — and therefore loop
+    // resets — never line up across the wall (most clips share a length).
     const timers = videos.map((v, i) =>
       setTimeout(() => {
         const seek = () => {
-          if (v.paused && v.currentTime === 0) v.currentTime = 0.1;
+          if (!v.paused || v.currentTime !== 0) return;
+          const usable = Math.max(0.2, (v.duration || 8) - 0.5);
+          v.currentTime = 0.1 + ((i * 2.618) % usable);
         };
         if (v.readyState >= 1) seek();
         else v.addEventListener("loadedmetadata", seek, { once: true });
@@ -331,21 +347,25 @@ function GalaxyScene({
     const t = galaxyLayoutTuner.read();
     const arms = Math.max(1, Math.round(t.arms));
     const cardN = Math.round(t.cardN);
-    const rMax = (t.rMaxFrac * Math.hypot(size.width, size.height)) / 2;
+    const halfDiag = Math.hypot(size.width, size.height) / 2;
+    const rMax = t.rMaxFrac * halfDiag;
     const thetaMax = t.turns * Math.PI * 2;
     const b = rMax / thetaMax;
-    const cardH = Math.min(320, Math.max(70, size.height * t.cardHFrac));
+    const cardHCap = Math.min(340, Math.max(70, size.height * t.cardHFrac));
     const slotsPerArm = Math.max(1, Math.ceil(cardN / arms));
-
-    // Arm guide curves.
+    const thetaBirth = t.birthFrac * thetaMax;
+    // Cards travel until fully past the viewport corner (plus a card of
+    // margin) before wrapping — the death is never on screen.
+    const thetaExit = (halfDiag + cardHCap * 1.5) / b;
+    // Arm guide curves, drawn out past the exit so cards never outrun the
+    // linework.
     const armGeoms: THREE.BufferGeometry[] = [];
     for (let j = 0; j < arms; j++) {
       const phase = (j * Math.PI * 2) / arms;
       const pts: number[] = [];
-      const steps = 140;
+      const steps = 160;
       for (let k = 0; k <= steps; k++) {
-        const theta = t.birthFrac * thetaMax * 0.3 + (k / steps) * thetaMax;
-        if (theta > thetaMax) break;
+        const theta = thetaBirth * 0.3 + (k / steps) * (thetaExit - thetaBirth * 0.3);
         const r = b * theta;
         pts.push(r * Math.cos(theta + phase), r * Math.sin(theta + phase), -2);
       }
@@ -401,11 +421,10 @@ function GalaxyScene({
       cardN,
       rMax,
       thetaMax,
-      thetaBirth: t.birthFrac * thetaMax,
+      thetaBirth,
+      thetaExit,
       b,
-      cardH,
-      cardW: (cardH * 16) / 9,
-      minScale: t.minScale,
+      cardHCap,
       armJitter: t.armJitter,
       slotsPerArm,
       armGeoms,
@@ -456,29 +475,16 @@ function GalaxyScene({
               uAlpha: { value: 0 },
               uAber: { value: 0 },
               uCurve: { value: 0 },
+              uSize: { value: new THREE.Vector2(160, 90) },
+              uRadius: { value: 0 },
+              uFrameCol: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+              uFrameA: { value: 0 },
             },
           }),
       ),
     [cards, textures, clipFit],
   );
-  const frameMaterials = useMemo(
-    () =>
-      cards.map(
-        () =>
-          new THREE.LineBasicMaterial({
-            transparent: true,
-            depthTest: false,
-            depthWrite: false,
-            opacity: 0,
-          }),
-      ),
-    [cards],
-  );
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
-  useEffect(
-    () => () => frameMaterials.forEach((m) => m.dispose()),
-    [frameMaterials],
-  );
 
   // Underlay materials (shared across arms/ticks/circle instances).
   const lineMat = useMemo(
@@ -511,28 +517,18 @@ function GalaxyScene({
   // would churn every mesh for nothing.
   useEffect(() => {
     const bg = hexToVec3(colors.bg);
+    const frame = hexToVec3(colors.lineStrong);
     materials.forEach((m) => {
       (m.uniforms.uBg.value as THREE.Vector3).copy(bg);
+      (m.uniforms.uFrameCol.value as THREE.Vector3).copy(frame);
     });
-    frameMaterials.forEach((m) => m.color.set(colors.lineStrong));
     lineMat.color.set(colors.lineStrong);
     tickMat.color.set(colors.lineStrong);
-  }, [colors, materials, frameMaterials, lineMat, tickMat]);
+  }, [colors, materials, lineMat, tickMat]);
 
-  // Shared unit geometries: the card plane (segmented for the curve warp)
-  // and its hairline frame, both scaled per mesh.
+  // Shared unit card plane, segmented for the curve warp and scaled per mesh.
   const unitPlane = useMemo(() => new THREE.PlaneGeometry(1, 1, 12, 12), []);
-  const unitFrame = useMemo(
-    () => new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
-    [],
-  );
-  useEffect(
-    () => () => {
-      unitPlane.dispose();
-      unitFrame.dispose();
-    },
-    [unitPlane, unitFrame],
-  );
+  useEffect(() => () => unitPlane.dispose(), [unitPlane]);
 
   // Underlay objects: arm curves as THREE.Line (r3f has no line intrinsic —
   // it collides with the SVG element), ticks and circle as segments.
@@ -544,6 +540,13 @@ function GalaxyScene({
     ],
     [layout, lineMat, tickMat],
   );
+
+  // Per-card scratch state reused every frame so the loop allocates
+  // nothing: positions and cycle for the two-pass sizing, plus the smoothed
+  // heights (cards grow in from 0, shrink instantly when space demands).
+  const cardPos = useMemo(() => new Float32Array(cards.length * 2), [cards]);
+  const cardCyc = useMemo(() => new Float32Array(cards.length), [cards]);
+  const cardH = useMemo(() => new Float32Array(cards.length), [cards]);
 
   // Per-card readiness easing and per-clip decode bookkeeping, reused every
   // frame so the loop allocates nothing.
@@ -573,33 +576,68 @@ function GalaxyScene({
 
     clipBest.fill(-1);
 
+    // Pass 1: place every card along its arm. All positions must be known
+    // before any card can size itself against its neighbors.
     for (let i = 0; i < cards.length; i++) {
-      const mesh = cardRefs.current[i];
-      if (!mesh) continue;
       const card = cards[i];
-
       const c = cycle(
         (card.slot + 0.5) / L.slotsPerArm + P + card.arm * L.armJitter,
       );
-      const theta = L.thetaBirth + c * (L.thetaMax - L.thetaBirth);
+      cardCyc[i] = c;
+      const theta = L.thetaBirth + c * (L.thetaExit - L.thetaBirth);
       const r = L.b * theta;
       const a = theta + (card.arm * Math.PI * 2) / L.arms;
       const ux = Math.cos(a);
       const uy = Math.sin(a);
       // Floating noise: tangential + a lighter radial component, phased per
-      // card so the cloud never moves in lockstep.
+      // card. Off by default; safe to enable — sizing measures the real
+      // wobbled positions.
       const wobT = Math.sin(t * mv.wobbleFreq * Math.PI * 2 + i * 2.399);
       const wobR = Math.cos(t * mv.wobbleFreq * Math.PI * 2 * 0.7 + i * 1.713);
-      const wx = mv.wobbleAmp * (wobT * -uy + 0.6 * wobR * ux);
-      const wy = mv.wobbleAmp * (wobT * ux + 0.6 * wobR * uy);
-      mesh.position.set(r * ux + wx, r * uy + wy, 0);
+      cardPos[i * 2] = r * ux + mv.wobbleAmp * (wobT * -uy + 0.6 * wobR * ux);
+      cardPos[i * 2 + 1] =
+        r * uy + mv.wobbleAmp * (wobT * ux + 0.6 * wobR * uy);
+    }
+
+    for (let i = 0; i < cards.length; i++) {
+      const mesh = cardRefs.current[i];
+      if (!mesh) continue;
+      const card = cards[i];
+      const c = cardCyc[i];
+      const x = cardPos[i * 2];
+      const y = cardPos[i * 2 + 1];
+
+      // Pass 2: exact collision-free sizing against the actual nearest
+      // neighbor. For upright 16:9 rectangles, two cards clear each other
+      // iff their center gap beats their half-extents on either axis; when
+      // every card takes density × its nearest such separation, no pair
+      // can ever overlap (each contributes at most half the gap). Growth
+      // is eased so freed space fills organically; shrinking is instant so
+      // the guarantee never breaks mid-frame.
+      let sep = Infinity;
+      for (let j = 0; j < cards.length; j++) {
+        if (j === i) continue;
+        const s = Math.max(
+          (Math.abs(cardPos[j * 2] - x) * 9) / 16,
+          Math.abs(cardPos[j * 2 + 1] - y),
+        );
+        if (s < sep) sep = s;
+      }
+      const target = Math.min(L.cardHCap, lk.density * sep);
+      cardH[i] =
+        target < cardH[i]
+          ? target
+          : cardH[i] + (target - cardH[i]) * (1 - Math.exp(-3 * dt));
+      const H = Math.max(0.001, cardH[i]);
+      const W = (H * 16) / 9;
+
+      mesh.position.set(x, y, 0);
       mesh.rotation.z = -st.spin; // cards stay upright while the system spins
-      const s = L.minScale + (1 - L.minScale) * c;
-      mesh.scale.set(L.cardW * s, L.cardH * s, 1);
+      mesh.scale.set(W, H, 1);
       mesh.renderOrder = 10 + Math.round(c * 100); // outer paints over inner
 
-      const lifecycle =
-        clamp01(c / lk.fadeBand) * clamp01((1 - c) / lk.fadeBand);
+      // Birth fade only: the death happens fully offscreen past thetaExit.
+      const lifecycle = clamp01(c / lk.fadeBand);
       const solid = lk.washInner + (1 - lk.washInner) * c;
       const intro = clamp01(
         (t - mv.introDelay - i * mv.introStagger) / Math.max(0.05, mv.introDur),
@@ -619,6 +657,9 @@ function GalaxyScene({
       u.uTexA.value = va;
       u.uAber.value = lk.aberration;
       u.uCurve.value = lk.curvePx;
+      (u.uSize.value as THREE.Vector2).set(W, H);
+      u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
+      u.uFrameA.value = lk.frameAlpha;
       if (dark) {
         u.uDim.value = lk.dim * solid;
         u.uAlpha.value = lifecycle * intro;
@@ -626,7 +667,6 @@ function GalaxyScene({
         u.uDim.value = 1;
         u.uAlpha.value = lifecycle * solid * intro * Math.sqrt(lk.dim);
       }
-      frameMaterials[i].opacity = lk.frameAlpha * lifecycle * intro;
 
       if (u.uAlpha.value > 0.04 && c > clipBest[card.clip]) {
         clipBest[card.clip] = c;
@@ -666,10 +706,7 @@ function GalaxyScene({
           geometry={unitPlane}
           material={materials[i]}
           scale={[1, 1, 1]}
-        >
-          {/* Hairline frame, matching the site's bordered viewport idiom. */}
-          <lineSegments geometry={unitFrame} material={frameMaterials[i]} />
-        </mesh>
+        />
       ))}
     </group>
   );
