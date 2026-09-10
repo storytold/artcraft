@@ -45,10 +45,18 @@ export const galaxyLayoutTuner = defineTunables(
     cardN: {
       label: "Card count",
       min: 8,
-      max: 48,
+      max: 96,
       step: 1,
-      default: 32,
-      info: "Total cards riding the arms at once.",
+      default: 64,
+      info: "Cards riding the arms at the reference viewport size; smaller viewports scale this down proportionally (see Tuned @ Mpx).",
+    },
+    tunedMpx: {
+      label: "Tuned @ Mpx",
+      min: 0.5,
+      max: 12,
+      step: 0.1,
+      default: 5,
+      info: "Viewport area (CSS megapixels) the card count was tuned at. Smaller viewports get proportionally fewer cards — never more than the count knob.",
     },
     cardHFrac: {
       label: "Card h cap",
@@ -119,8 +127,8 @@ export const galaxyMotionTuner = defineTunables(
       min: 0,
       max: 40,
       step: 1,
-      default: 0,
-      info: "How far cards drift off their exact arm position. Off by default — the layout owes its collision guarantee to cards staying on track; a fallback flavor knob only.",
+      default: 10,
+      info: "How far cards drift off their exact arm position — the floating-in-space noise. Collision-safe: sizing measures the real wobbled positions.",
     },
     wobbleFreq: {
       label: "Wobble Hz",
@@ -153,6 +161,14 @@ export const galaxyMotionTuner = defineTunables(
       step: 0.05,
       default: 0.6,
       info: "Fade-in duration of each card during the intro.",
+    },
+    perfFloor: {
+      label: "FPS floor",
+      min: 0,
+      max: 60,
+      step: 5,
+      default: 45,
+      info: "When sustained frame rate drops below this, the galaxy sheds cards (and their decoders) until smooth, then slowly regrows. 0 disables the governor.",
     },
   },
 );
@@ -196,7 +212,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 0.25,
     step: 0.005,
-    default: 0.09,
+    default: 0.12,
     info: "Blur radius (in card-UV units) at birth — the nebula softness at the center; also the blur a still-loading card holds.",
   },
   blurEnd: {
@@ -212,7 +228,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 1,
     step: 0.02,
-    default: 0.42,
+    default: 0.14,
     info: "Journey fraction past which a card's clip earns a live decoder — inner blurred cards hold a frozen frame.",
   },
   washInner: {
@@ -220,7 +236,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 1,
     step: 0.05,
-    default: 0.7,
+    default: 0.85,
     info: "Card presence at birth — newborn cards sit faint near the origin and solidify as they emerge.",
   },
   fadeBand: {
@@ -228,7 +244,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0.02,
     max: 0.3,
     step: 0.01,
-    default: 0.09,
+    default: 0.15,
     info: "Fraction of the journey over which a newborn card fades in at the center. There is no exit fade — cards die fully offscreen.",
   },
   dim: {
@@ -252,7 +268,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 160,
     step: 1,
-    default: 80,
+    default: 50,
     info: "How far each card's center bows toward the camera — the slight lens-warp of the plane.",
   },
   frameAlpha: {

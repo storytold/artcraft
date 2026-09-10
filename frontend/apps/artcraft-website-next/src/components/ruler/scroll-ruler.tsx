@@ -550,9 +550,9 @@ export default function ScrollRuler() {
       >
         {/* Frost underlay: content flows under the rail (no reserved
             gutter); this pane blurs and tints whatever passes beneath so
-            the instrumentation always reads. Masked so the tint feathers
-            toward the page instead of ending in a hard edge — the ticks
-            and needle above it stay at full ink. */}
+            the instrumentation always reads. Hard cutoff at the inner
+            edge, finished with a hairline — the same edge treatment as
+            the galaxy cards' frames. */}
         <div
           aria-hidden
           className="absolute inset-0"
@@ -560,8 +560,16 @@ export default function ScrollRuler() {
             backdropFilter: "blur(9px)",
             WebkitBackdropFilter: "blur(9px)",
             backgroundColor: "color-mix(in srgb, var(--bg) 55%, transparent)",
-            maskImage: `linear-gradient(${side === "right" ? "to left" : "to right"}, black 60%, transparent)`,
-            WebkitMaskImage: `linear-gradient(${side === "right" ? "to left" : "to right"}, black 60%, transparent)`,
+          }}
+        />
+        <span
+          aria-hidden
+          className="absolute inset-y-0 block"
+          style={{
+            ...(side === "right" ? { left: 0 } : { right: 0 }),
+            width: 1,
+            backgroundColor: "var(--line-strong)",
+            opacity: 0.35,
           }}
         />
 

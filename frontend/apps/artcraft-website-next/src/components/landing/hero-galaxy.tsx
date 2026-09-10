@@ -215,7 +215,13 @@ function GalaxyScene({
   const size = useThree((s) => s.size);
   const rigRef = useRef<THREE.Group>(null);
   const cardRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const state = useRef({ idleP: 0, spin: 0, cullTimer: 0 });
+  const state = useRef({
+    idleP: 0,
+    spin: 0,
+    cullTimer: 0,
+    frameEma: 1 / 60,
+    perfScale: 1,
+  });
 
   const dark = useMemo(() => {
     const c = hexToVec3(colors.bg);
@@ -333,7 +339,14 @@ function GalaxyScene({
   const layout = useMemo(() => {
     const t = galaxyLayoutTuner.read();
     const arms = Math.max(1, Math.round(t.arms));
-    const cardN = Math.round(t.cardN);
+    // Responsive count: the knob is tuned at a reference viewport area;
+    // smaller viewports get proportionally fewer cards (the neighbor-gap
+    // sizing then grows the survivors, so the field stays filled).
+    const area = (size.width * size.height) / 1e6;
+    const cardN = Math.max(
+      6,
+      Math.min(Math.round(t.cardN), Math.round((t.cardN * area) / t.tunedMpx)),
+    );
     const halfDiag = Math.hypot(size.width, size.height) / 2;
     const rMax = t.rMaxFrac * halfDiag;
     const thetaMax = t.turns * Math.PI * 2;
@@ -563,9 +576,25 @@ function GalaxyScene({
 
     clipBest.fill(-1);
 
-    // Pass 1: place every card along its arm. All positions must be known
-    // before any card can size itself against its neighbors.
-    for (let i = 0; i < cards.length; i++) {
+    // Perf governor: EMA of the real frame time. Sustained drops below the
+    // FPS floor shed the highest-index cards (and their decode pressure)
+    // quickly; recovery regrows slowly so it never oscillates.
+    st.frameEma += (Math.min(delta, 0.25) - st.frameEma) * 0.05;
+    if (mv.perfFloor > 0) {
+      const budget = 1 / mv.perfFloor;
+      if (st.frameEma > budget) {
+        st.perfScale = Math.max(0.35, st.perfScale - dt * 0.3);
+      } else if (st.frameEma < budget * 0.7) {
+        st.perfScale = Math.min(1, st.perfScale + dt * 0.05);
+      }
+    } else {
+      st.perfScale = 1;
+    }
+    const liveN = Math.max(6, Math.round(cards.length * st.perfScale));
+
+    // Pass 1: place every live card along its arm. All positions must be
+    // known before any card can size itself against its neighbors.
+    for (let i = 0; i < liveN; i++) {
       const card = cards[i];
       const c = cycle(
         (card.slot + 0.5) / L.slotsPerArm + P + card.arm * L.armJitter,
@@ -589,6 +618,16 @@ function GalaxyScene({
     for (let i = 0; i < cards.length; i++) {
       const mesh = cardRefs.current[i];
       if (!mesh) continue;
+      if (i >= liveN) {
+        mesh.visible = false;
+        continue;
+      }
+      if (!mesh.visible) {
+        // Shed card returning: grow back in from nothing rather than
+        // popping at full size.
+        cardH[i] = 0;
+        mesh.visible = true;
+      }
       const card = cards[i];
       const c = cardCyc[i];
       const x = cardPos[i * 2];
@@ -602,7 +641,7 @@ function GalaxyScene({
       // is eased so freed space fills organically; shrinking is instant so
       // the guarantee never breaks mid-frame.
       let sep = Infinity;
-      for (let j = 0; j < cards.length; j++) {
+      for (let j = 0; j < liveN; j++) {
         if (j === i) continue;
         const s = Math.max(
           (Math.abs(cardPos[j * 2] - x) * 9) / 16,

@@ -355,4 +355,20 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     default: 0.85,
     info: "Opacity of the section labels in the zoomed full-page map.",
   },
+  poolAlpha: {
+    label: "Pool alpha",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 1,
+    info: "Strength of the page-bg contrast pools behind the top stack and the bottom queue (0 = none).",
+  },
+  poolVh: {
+    label: "Pool size vh",
+    min: 10,
+    max: 60,
+    step: 2,
+    default: 36,
+    info: "Height of the top contrast pool in viewport-height percent; the bottom pool runs slightly smaller.",
+  },
 });

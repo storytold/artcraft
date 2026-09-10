@@ -16,6 +16,7 @@ import {
   type RulerMode,
   type RulerSide,
 } from "./ruler-shared";
+import { useTunerStore } from "@/lib/tuner";
 import {
   rulerLayoutTuner,
   rulerLookTuner,
@@ -102,6 +103,13 @@ export default function HeadingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [layoutVersion],
   );
+
+  // Re-render on any tuner change so render-applied look values (the
+  // contrast pools) respond to their sliders live. The letters' per-frame
+  // imperative styles survive re-renders — React only patches JSX
+  // attributes that changed.
+  void useTunerStore((s) => s.version);
+  const pools = rulerLookTuner.read();
 
   const labelsKey = sections.map((s) => s.label).join("|");
 
@@ -511,6 +519,7 @@ export default function HeadingFlow({
           aria-hidden
           className="absolute -inset-x-16 -inset-y-10"
           style={{
+            opacity: pools.poolAlpha,
             background: `radial-gradient(closest-side, color-mix(in srgb, var(--bg) 85%, transparent), transparent)`,
           }}
         />
@@ -560,17 +569,21 @@ export default function HeadingFlow({
           over whatever content scrolls beneath them. */}
       <div
         aria-hidden
-        className="absolute top-0 h-[36vh] w-[clamp(220px,24vw,400px)]"
+        className="absolute top-0 w-[clamp(220px,24vw,400px)]"
         style={{
           ...(side === "right" ? { right: 0 } : { left: 0 }),
+          height: `${pools.poolVh}vh`,
+          opacity: pools.poolAlpha,
           background: `radial-gradient(110% 100% at ${side === "right" ? "100%" : "0%"} 0%, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 48%, transparent) 52%, transparent 78%)`,
         }}
       />
       <div
         aria-hidden
-        className="absolute bottom-0 h-[32vh] w-[clamp(220px,24vw,400px)]"
+        className="absolute bottom-0 w-[clamp(220px,24vw,400px)]"
         style={{
           ...(side === "right" ? { right: 0 } : { left: 0 }),
+          height: `${pools.poolVh * 0.9}vh`,
+          opacity: pools.poolAlpha,
           background: `radial-gradient(110% 100% at ${side === "right" ? "100%" : "0%"} 100%, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 48%, transparent) 52%, transparent 78%)`,
         }}
       />
