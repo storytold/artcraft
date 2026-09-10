@@ -315,6 +315,14 @@ export const rulerLookTuner = defineTunables("rulerLook", "Ruler look", {
     default: 0.55,
     info: "Opacity of the compact heading links (bottom queue and top pile).",
   },
+  ridingAlpha: {
+    label: "Riding alpha",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 0.6,
+    info: "Opacity of the vertical in-transit word on the rail — dimmer than the active top heading, brightening to full as it flips in and displaces it.",
+  },
   bracketAlpha: {
     label: "Bracket alpha",
     min: 0,

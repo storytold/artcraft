@@ -255,7 +255,10 @@ export default function HeadingFlow({
           y: top + spacedLen - (m.cum[i] + m.adv[i] / 2) * hp * rs * sp,
           rot: -90,
           scale: rs,
-          alpha: 1,
+          // In transit, not active — the top heading keeps full strength
+          // until this word flips in and displaces it (the flip lerps
+          // this toward the stack pose's alpha, so it brightens on arrival).
+          alpha: lk.ridingAlpha,
         };
       };
 
