@@ -33,6 +33,29 @@ export type MeasuredSection = {
  * 1 = compressed full-page map. */
 export const rulerZoom = { target: 0, p: 0, dragging: false };
 
+/** The hero wordmark's live letter roster, published by HeroWordmark and
+ * driven per-frame by HeadingFlow: the SAME spans render the resting hero
+ * title (identity transform, crisp at full size) and then morph tail-first
+ * onto the rail as the visitor scrolls out of the landing — one element
+ * from hero to riding word to top stack. `baseX`/`baseDocY` are each
+ * letter's natural center (x viewport, y document); `metrics` are advances
+ * normalized per 1px of font, measured from the rendered letters. */
+export const heroWordmark: {
+  ready: boolean;
+  els: HTMLSpanElement[];
+  baseX: number[];
+  baseDocY: number[];
+  fontPx: number;
+  metrics: { adv: number[]; cum: number[]; total: number };
+} = {
+  ready: false,
+  els: [],
+  baseX: [],
+  baseDocY: [],
+  fontPx: 0,
+  metrics: { adv: [], cum: [], total: 0 },
+};
+
 /** Screen-space y-spans of the heading words' settled riding columns.
  * HeadingFlow rewrites it every frame; the tick loop fades percent labels
  * within a margin of any span (proximity yield — the scale gets out of a

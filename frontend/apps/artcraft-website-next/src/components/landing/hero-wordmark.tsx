@@ -4,7 +4,12 @@ import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { watchThemeColors, type ThemeColors } from "@/lib/theme-colors";
+import { heroWordmark } from "@/components/ruler/ruler-shared";
 import HeroWall, { createWallDrag } from "./hero-wall";
+
+const WORDMARK_TEXT = "ARTCRAFT";
+const WORDMARK_FONT =
+  "var(--font-archivo-black), var(--font-archivo), system-ui, sans-serif";
 
 type PointerState = {
   x: number;
@@ -129,39 +134,13 @@ export default function HeroWordmark() {
       )}
 
       {/* The wordmark, justified flush to the hero width (the big-type
-          poster treatment): SVG text with textLength stretches the word
-          edge-to-edge at any viewport, so the height rides the width via
-          the viewBox aspect. Still real selectable/crawlable text. The
-          soft drop-shadow is a legibility halo lifting the type off the
-          busy footage, not decoration (vw units so it scales with the
-          word). */}
-      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4 text-ink-strong md:px-6">
-        <svg
-          className="w-[62%]"
-          viewBox="0 0 720 74"
-          style={{
-            overflow: "visible",
-            filter:
-              "drop-shadow(0 0 0.3vw color-mix(in srgb, var(--bg) 60%, transparent)) drop-shadow(0 0.2vw 1.2vw color-mix(in srgb, var(--bg) 45%, transparent))",
-          }}
-        >
-          <text
-            x="360"
-            y="72"
-            textAnchor="middle"
-            textLength="780"
-            lengthAdjust="spacingAndGlyphs"
-            fill="currentColor"
-            style={{
-              fontFamily:
-                "var(--font-archivo-black), var(--font-archivo), system-ui, sans-serif",
-              fontSize: "100px",
-            }}
-          >
-            ARTCRAFT
-          </text>
-        </svg>
-      </div>
+          poster treatment) — per-letter spans instead of SVG text, because
+          these very spans ARE the ruler's hero heading: the scroll ruler's
+          HeadingFlow drives their transforms so the resting title peels
+          tail-first onto the rail as the visitor scrolls out of the
+          landing. Crawlable via role="img" + aria-label; z-40 so letters
+          in transit ride above later sections (below the z-50 nav). */}
+      <MorphWordmark />
 
       {active && (
         <div
@@ -172,6 +151,122 @@ export default function HeroWordmark() {
           <p className="hud-label hidden text-faint sm:block">drag to scroll</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// The justified wordmark letters. Font size is derived so the word's
+// natural advance run spans the 62% column exactly (the spacingAndGlyphs
+// stretch of the old SVG, minus the SVG). After layout, each letter's
+// natural center and advance are measured and published to the shared
+// heroWordmark channel for the ruler to drive; transforms are reset before
+// measuring so a mid-morph resize re-baselines cleanly.
+function MorphWordmark() {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const letterRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [fontPx, setFontPx] = useState(0);
+
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    let cancelled = false;
+
+    const compute = () => {
+      if (cancelled) return;
+      const probe = document.createElement("span");
+      probe.style.cssText =
+        "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;font-size:100px;line-height:1;";
+      probe.style.fontFamily = WORDMARK_FONT;
+      probe.textContent = WORDMARK_TEXT;
+      document.body.appendChild(probe);
+      const w100 = probe.getBoundingClientRect().width;
+      probe.remove();
+      const target = box.clientWidth;
+      if (w100 > 0 && target > 0) {
+        setFontPx(Math.round((target / w100) * 1000) / 10);
+      }
+    };
+
+    const ready = document.fonts?.ready;
+    if (ready) ready.then(compute).catch(compute);
+    else compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(box);
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+    };
+  }, []);
+
+  // Publish letter geometry once the real size is applied.
+  useEffect(() => {
+    if (!fontPx) return;
+    const els = letterRefs.current.filter(
+      (el): el is HTMLSpanElement => !!el,
+    );
+    if (els.length !== WORDMARK_TEXT.length) return;
+
+    const measure = () => {
+      for (const el of els) el.style.transform = "";
+      const rects = els.map((el) => el.getBoundingClientRect());
+      heroWordmark.els = els;
+      heroWordmark.baseX = rects.map((r) => r.left + r.width / 2);
+      heroWordmark.baseDocY = rects.map(
+        (r) => r.top + r.height / 2 + window.scrollY,
+      );
+      const adv = rects.map((r) => r.width / fontPx);
+      const cum: number[] = [];
+      let total = 0;
+      for (const a of adv) {
+        cum.push(total);
+        total += a;
+      }
+      heroWordmark.metrics = { adv, cum, total };
+      heroWordmark.fontPx = fontPx;
+      heroWordmark.ready = true;
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      heroWordmark.ready = false;
+      heroWordmark.els = [];
+    };
+  }, [fontPx]);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center px-4 md:px-6">
+      <div ref={boxRef} className="w-[62%]">
+        <div
+          role="img"
+          aria-label={WORDMARK_TEXT}
+          className="whitespace-pre text-ink-strong"
+          style={{
+            fontFamily: WORDMARK_FONT,
+            fontSize: fontPx || "10.5vw",
+            lineHeight: 1,
+          }}
+        >
+          {WORDMARK_TEXT.split("").map((ch, i) => (
+            <span
+              key={i}
+              aria-hidden
+              ref={(el) => {
+                letterRefs.current[i] = el;
+              }}
+              className="inline-block"
+              style={{
+                willChange: "transform, opacity",
+                textShadow:
+                  "0 0 0.3vw color-mix(in srgb, var(--bg) 60%, transparent), 0 0.2vw 1.2vw color-mix(in srgb, var(--bg) 45%, transparent)",
+              }}
+            >
+              {ch}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

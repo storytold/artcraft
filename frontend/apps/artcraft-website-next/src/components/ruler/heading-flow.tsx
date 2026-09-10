@@ -8,6 +8,7 @@ import {
   clamp01,
   easeInOutCubic,
   easeOutExpo,
+  heroWordmark,
   railOccupancy,
   rulerMap,
   rulerZoom,
@@ -40,12 +41,13 @@ import {
 // reversible; when scroll rests with a top flip half-done, a damped snap
 // resolves it to the nearest side.
 //
-// The hero is special: its queued home doesn't exist (the hero wordmark IS
-// its heading), so it fades into the riding phase as the visitor leaves the
-// landing area. `HERO_ENTRY_INWARD_PX` is the slot the future hero-morph
-// will fly the real wordmark into — the entrance is already expressed as a
-// progress-driven pose, so the morph only has to replace the "from" pose.
-const HERO_ENTRY_INWARD_PX = 48;
+// The hero is special: its queued home doesn't exist — the hero wordmark IS
+// its heading, literally: HeadingFlow drives the wordmark's own letter
+// spans (published via the shared heroWordmark channel), so the resting
+// title peels tail-first off the page onto the rail with no clone or
+// handoff, then flips into the stack like any other section. The hero
+// letters keep their Archivo Black wordmark face through the whole
+// lifecycle — brand identity, and font families can't interpolate.
 
 // A letter's pose on screen. x/y are the letter center in viewport px.
 type Pose = {
@@ -157,7 +159,10 @@ export default function HeadingFlow({
       // index, so stacked words are always a prefix and at most one word is
       // mid-flip at a time.
       const phases = sections.map((s) => {
-        const m = metrics[s.label];
+        const m =
+          s.isHero && heroWordmark.ready
+            ? heroWordmark.metrics
+            : metrics[s.label];
         const rideLen = (m?.total ?? 0) * hp * rs;
         const v = s.anchor - scrollY + drift;
         let flipP = clamp01((T + mt.flipZone - v) / mt.flipZone);
@@ -253,9 +258,10 @@ export default function HeadingFlow({
 
       for (let wi = 0; wi < sections.length; wi++) {
         const s = sections[wi];
-        const m = metrics[s.label];
+        const heroDrive = s.isHero && heroWordmark.ready;
+        const m = heroDrive ? heroWordmark.metrics : metrics[s.label];
         const refs = wordRefs.current[wi];
-        if (!m || !refs) continue;
+        if (!m || !refs || (s.isHero && !heroDrive)) continue;
         const { v, rideLen, flipP, detachP, yq } = phases[wi];
         const n = m.adv.length;
 
@@ -308,16 +314,17 @@ export default function HeadingFlow({
           const vForm = formLine - rideLen;
           to = (i) => ridePose(m, i, vForm);
           if (s.isHero) {
-            // Hero entrance: fade in from slightly inward of the rail —
-            // the slot the future hero-morph will land the wordmark in.
-            from = (i) => {
-              const pose = ridePose(m, i, vForm);
-              return {
-                ...pose,
-                x: pose.x + inwardSign * HERO_ENTRY_INWARD_PX,
-                alpha: 0,
-              };
-            };
+            // THE hero morph: the "from" pose is each letter's natural
+            // resting spot in the hero wordmark itself — the title peels
+            // tail-first off the page onto the rail, one set of elements,
+            // identity transform at rest so it's pixel-perfect and crisp.
+            from = (i) => ({
+              x: heroWordmark.baseX[i],
+              y: heroWordmark.baseDocY[i] - scrollY,
+              rot: 0,
+              scale: heroWordmark.fontPx / hp,
+              alpha: 1,
+            });
           } else {
             from = (i) => horizPose(m, i, yq, qs, lk.queueAlpha);
           }
@@ -331,13 +338,20 @@ export default function HeadingFlow({
         const sf = mt.stagger;
         const span = 1 + (n - 1) * sf;
         const mapY = map.base + ((s.isHero ? 0 : s.anchor) / docH) * map.span;
+        // Hero letters are the wordmark's own spans (base-relative
+        // transforms, rendered at fontPx so scale writes need the hp/fontPx
+        // correction). Its zoom-map blend scales with detachP so hovering
+        // the rail at page top never dismantles the resting wordmark.
+        const letterEls = heroDrive ? heroWordmark.els : refs.letters;
+        const scaleFix = heroDrive ? hp / heroWordmark.fontPx : 1;
+        const wz = heroDrive ? zoomE * Math.min(1, detachP) : zoomE;
         let minX = Infinity;
         let maxX = -Infinity;
         let minY = Infinity;
         let maxY = -Infinity;
         let maxAlpha = 0;
         for (let i = 0; i < n; i++) {
-          const el = refs.letters[i];
+          const el = letterEls[i];
           if (!el) continue;
           const si = reverseStagger ? n - 1 - i : i;
           const pi = clamp01(p * span - si * sf);
@@ -352,15 +366,23 @@ export default function HeadingFlow({
           let rot = a.rot + (b.rot - a.rot) * e;
           let scale = a.scale + (b.scale - a.scale) * e;
           let alpha = a.alpha + (b.alpha - a.alpha) * e;
-          if (zoomE > 0) {
+          if (wz > 0) {
             const mp = horizPose(m, i, mapY, qs, lk.mapAlpha);
-            x += (mp.x - x) * zoomE;
-            y += (mp.y - y) * zoomE;
-            rot *= 1 - zoomE;
-            scale += (mp.scale - scale) * zoomE;
-            alpha += (mp.alpha - alpha) * zoomE;
+            x += (mp.x - x) * wz;
+            y += (mp.y - y) * wz;
+            rot *= 1 - wz;
+            scale += (mp.scale - scale) * wz;
+            alpha += (mp.alpha - alpha) * wz;
           }
-          el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
+          if (heroDrive) {
+            el.style.transform = `translate3d(${
+              x - heroWordmark.baseX[i]
+            }px, ${
+              y - (heroWordmark.baseDocY[i] - scrollY)
+            }px, 0) rotate(${rot}deg) scale(${scale * scaleFix})`;
+          } else {
+            el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
+          }
           el.style.opacity = String(alpha);
           if (alpha > maxAlpha) maxAlpha = alpha;
           // Per-axis extents (swapped when the glyph is rotated toward
@@ -395,7 +417,13 @@ export default function HeadingFlow({
           refs.hit.style.top = `${minY - 2}px`;
           refs.hit.style.width = `${maxX - minX + 4}px`;
           refs.hit.style.height = `${maxY - minY + 4}px`;
-          refs.hit.style.pointerEvents = maxAlpha > 0.05 ? "auto" : "none";
+          // The resting hero wordmark must stay click-transparent (the
+          // wall's drag lives underneath it) — its link only arms once the
+          // morph is underway.
+          refs.hit.style.pointerEvents =
+            maxAlpha > 0.05 && (!s.isHero || detachP > 0.05)
+              ? "auto"
+              : "none";
         }
 
       }
@@ -531,7 +559,10 @@ export default function HeadingFlow({
               aria-label={`Jump to ${s.label}`}
               className="pointer-events-auto absolute cursor-pointer"
             />
-            {s.label.split("").map((ch, li) => (
+            {/* Hero letters live in the hero wordmark itself and are
+                driven via the shared channel — render none here. */}
+            {!s.isHero &&
+              s.label.split("").map((ch, li) => (
               <span
                 key={li}
                 ref={(el) => {
