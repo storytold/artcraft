@@ -446,32 +446,8 @@ export const PromptBox3D = ({
     }
   };
 
-  // Helper to show Sora login reminder and wait for login
-  // const handleSoraLoginReminder = async () => {
-  //   return new Promise<void>((resolve) => {
-  //     showActionReminder({
-  //       reminderType: "soraLogin",
-  //       onPrimaryAction: async () => {
-  //         await invoke("open_sora_login_command");
-  //         await waitForSoraLogin();
-  //         toast.success("Logged in to Sora!");
-  //         resolve();
-  //       },
-  //     });
-  //   });
-  // };
-
   const handleTauriEnqueue = async () => {
     if (!prompt.trim()) return;
-
-    // NB(bt): This needs to move to an error handler.
-    // // Check if the Sora session is valid
-    // const soraSession = await CheckSoraSession();
-    // if (soraSession.state !== SoraSessionState.Valid) {
-    //   setIsEnqueueing(false);
-    //   await handleSoraLoginReminder();
-    //   return;
-    // }
 
     setIsEnqueueing(true);
 

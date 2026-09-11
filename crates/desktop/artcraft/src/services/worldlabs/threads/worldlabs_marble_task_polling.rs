@@ -61,6 +61,7 @@ use worldlabs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBe
 use worldlabs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
 use worldlabs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
 
+#[deprecated(note = "Retained to poll legacy direct-provider tasks; new generations use ArtCraft.")]
 pub async fn worldlabs_marble_task_polling(
   app_handle: AppHandle,
   app_env_configs: AppEnvConfigs,

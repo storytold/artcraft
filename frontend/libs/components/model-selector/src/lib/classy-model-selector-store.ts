@@ -31,7 +31,7 @@ export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
           ...state.selectedProviders,
           [page]: {
             ...(state.selectedProviders[page] ?? {}),
-            [modelId]: provider,
+            [modelId]: resolveSelectedProvider(provider)!,
           },
         },
       })),
@@ -77,7 +77,7 @@ export const getSelectedProviderForModel = (
   const { selectedProviders } = useClassyModelSelectorStore.getState();
   const byPage = selectedProviders[page];
   if (!byPage) return undefined;
-  return byPage[modelId];
+  return resolveSelectedProvider(byPage[modelId]);
 };
 
 // Reactive hooks for UI subscriptions
@@ -110,5 +110,19 @@ export const useSelectedProviderForModel = (
   modelId: string | undefined
 ): GenerationProvider | undefined =>
   useClassyModelSelectorStore((s) =>
-    modelId ? s.selectedProviders[page]?.[modelId] : undefined
+    modelId ? resolveSelectedProvider(s.selectedProviders[page]?.[modelId]) : undefined
   );
+
+function resolveSelectedProvider(
+  provider: GenerationProvider | undefined,
+): GenerationProvider | undefined {
+  // Retired direct accounts must not reach generation or pricing requests,
+  // including when an older selection is still in state.
+  if (
+    provider === GenerationProvider.Sora ||
+    provider === GenerationProvider.WorldLabs
+  ) {
+    return GenerationProvider.Artcraft;
+  }
+  return provider;
+}

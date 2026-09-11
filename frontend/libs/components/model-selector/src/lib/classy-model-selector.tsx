@@ -80,10 +80,10 @@ function ProviderTooltipContent({
     useClassyModelSelectorStore();
   const selectedProvider = useSelectedProviderForModel(page, modelId);
 
-  // Initialize provider for this model if missing
+  // Reset selections that are no longer offered for this model.
   useEffect(() => {
     if (!modelId) return;
-    if (!selectedProvider && allowedProviders.length > 0) {
+    if ((!selectedProvider || !allowedProviders.includes(selectedProvider)) && allowedProviders.length > 0) {
       setSelectedProvider(page, modelId, allowedProviders[0]);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);
@@ -173,13 +173,13 @@ export function ClassyModelSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, selectedModels, page]);
 
-  // Initialize a default provider for each model so we can render icons even when not selected
+  // Initialize defaults and replace providers removed from the catalog.
   useEffect(() => {
     for (const item of items) {
       const modelId = item.model?.id;
       if (!modelId) continue;
-      if (selectedProvidersByModel[modelId]) continue;
       const allowed = item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
+      if (allowed.includes(selectedProvidersByModel[modelId])) continue;
       if (allowed.length > 0) {
         setSelectedProvider(page, modelId, allowed[0]);
       }

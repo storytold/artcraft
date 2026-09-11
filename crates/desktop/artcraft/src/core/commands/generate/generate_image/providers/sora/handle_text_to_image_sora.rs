@@ -6,6 +6,7 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use tauri::AppHandle;
 
+#[deprecated(note = "Legacy direct-provider handler; desktop generation now uses ArtCraft.")]
 pub async fn handle_text_to_image_sora(
   request: &EnqueueTextToImageRequest,
   app: &AppHandle,

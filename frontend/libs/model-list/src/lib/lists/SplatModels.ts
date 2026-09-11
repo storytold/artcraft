@@ -14,10 +14,7 @@ export const SPLAT_MODELS : SplatModel [] = [
     selectorName: "Marble Mini",
     selectorDescription: "Fast generation, good for quick drafts",
     selectorBadges: ["~30 sec."],
-    providers: [
-      GenerationProvider.Artcraft,
-      GenerationProvider.WorldLabs,
-    ],
+    providers: [GenerationProvider.Artcraft],
     progressBarTime: 45000,
   }),
   new SplatModel({
@@ -29,10 +26,7 @@ export const SPLAT_MODELS : SplatModel [] = [
     selectorName: "Marble Plus",
     selectorDescription: "High quality, best for final renders",
     selectorBadges: ["~5 min."],
-    providers: [
-      GenerationProvider.Artcraft,
-      GenerationProvider.WorldLabs,
-    ],
+    providers: [GenerationProvider.Artcraft],
     progressBarTime: 300000,
   }),
 ];

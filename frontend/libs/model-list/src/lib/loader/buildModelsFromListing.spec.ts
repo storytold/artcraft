@@ -12,6 +12,7 @@ import {
 } from "../classes/videoOptions.js";
 import { IMAGE_MODELS } from "../lists/ImageModels.js";
 import { VIDEO_MODELS } from "../lists/VideoModels.js";
+import { SPLAT_MODELS } from "../lists/SplatModels.js";
 
 describe("desktop catalog", () => {
   it("offers enabled models without compiled overlay or provider entries", () => {
@@ -67,6 +68,29 @@ describe("desktop catalog", () => {
     for (const model of [...IMAGE_MODELS, ...VIDEO_MODELS].filter((model) =>
       model.tauriId.startsWith("grok_"),
     )) {
+      expect(model.getProviders()).toEqual([GenerationProvider.Artcraft]);
+    }
+  });
+
+  it("keeps Sora and Marble models available through ArtCraft after hydration", () => {
+    const images = buildImageModelsFromListing(IMAGE_MODELS, [
+      { model: "gpt_image_1", image_refs_supported: true },
+    ]);
+    const videos = buildVideoModelsFromListing(VIDEO_MODELS, [
+      { model: "sora_2", duration_seconds_options: [4, 8, 12] },
+    ]);
+    expect(images.find((model) => model.tauriId === "gpt_image_1")?.getProviders())
+      .toEqual([GenerationProvider.Artcraft]);
+    expect(videos.find((model) => model.tauriId === "sora_2")?.getProviders())
+      .toEqual([GenerationProvider.Artcraft]);
+    expect(SPLAT_MODELS.map((model) => model.tauriId)).toEqual([
+      "marble_0p1_mini", "marble_0p1_plus",
+    ]);
+    for (const model of [...images, ...videos, ...SPLAT_MODELS]) {
+      expect(model.getProviders()).not.toContain(GenerationProvider.Sora);
+      expect(model.getProviders()).not.toContain(GenerationProvider.WorldLabs);
+    }
+    for (const model of SPLAT_MODELS) {
       expect(model.getProviders()).toEqual([GenerationProvider.Artcraft]);
     }
   });

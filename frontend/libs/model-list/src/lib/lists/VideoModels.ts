@@ -466,7 +466,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     fullName: "Sora 2",
     category: "video",
     creator: ModelCreator.OpenAi,
-    providers: [GenerationProvider.Artcraft, GenerationProvider.Sora],
+    providers: [GenerationProvider.Artcraft],
     selectorName: "Sora 2",
     selectorDescription: "Smart video model",
     selectorBadges: ["2 min."],
