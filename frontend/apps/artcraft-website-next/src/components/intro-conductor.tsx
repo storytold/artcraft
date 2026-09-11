@@ -89,6 +89,8 @@ export default function IntroConductor() {
       // Done once the last beat plus its longest consumer has played out.
       if (!introClock.done && introClock.t > introTuner.read().cardsAt + 3) {
         introClock.done = true;
+        // Drop the pre-paint letter-hide rule (inline styles already won).
+        document.documentElement.removeAttribute("data-intro");
         try {
           localStorage.setItem(INTRO_SEEN_KEY, "1");
         } catch {

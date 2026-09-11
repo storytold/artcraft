@@ -95,8 +95,12 @@ const JSON_LD = {
 
 // Applies the stored theme before first paint so neither theme flashes.
 // System preference is the default; an explicit user choice is persisted
-// as "light" | "dark" under this key by the navbar toggle.
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("artcraft-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
+// as "light" | "dark" under this key by the navbar toggle. Also stamps
+// data-intro when the intro will play (JS + motion allowed), so the
+// wordmark letters are CSS-hidden BEFORE first paint — without it, the
+// full word flashes for the frames between paint and hydration, then
+// snaps into the logo-only formation start.
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("artcraft-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.setAttribute("data-intro","");}}catch(e){}})();`;
 
 export default function RootLayout({
   children,

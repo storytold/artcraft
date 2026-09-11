@@ -30,7 +30,7 @@ const BASE_CLASSES =
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-invert-bg text-invert-fg transition-opacity hover:opacity-80",
   secondary:
-    "invert-block border border-line-strong text-ink hover:border-transparent",
+    "invert-block border border-line-strong bg-bg text-ink hover:border-transparent",
   action: "border border-line bg-bg-raised text-ink hover:border-line-strong",
   destructive: "bg-danger text-white transition-opacity hover:opacity-80",
   ghost: "text-muted hover:bg-invert-bg hover:text-invert-fg",

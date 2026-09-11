@@ -167,6 +167,14 @@ html.theme-anim {
     --scanline 0.4s ease;
 }
 
+/* Intro-pending letter hide: stamped pre-paint by the head script when the
+   intro will play, so the wordmark never flashes complete before the
+   formation takes the letters. The formation and HeadingFlow write inline
+   opacity (which wins) from their first frame on. */
+html[data-intro] .wm-letter {
+  opacity: 0;
+}
+
 /* Signature interaction: label blocks invert on hover/active. */
 .invert-block {
   transition:

@@ -366,7 +366,9 @@ export default function HeroMasthead() {
       if (done) {
         for (const el of els) {
           el.style.transform = "";
-          el.style.opacity = "";
+          // Explicit "1", not "": the pre-paint data-intro rule hides
+          // .wm-letter via class, and only inline opacity outranks it.
+          el.style.opacity = "1";
           el.style.clipPath = "";
         }
         heroWordmark.forming = false;
@@ -379,7 +381,12 @@ export default function HeroMasthead() {
     const start = () => {
       const it0 = introTuner.read();
       const total = it0.wordAt + it0.wordDur + 0.5;
-      if (introClock.t > total) return;
+      if (introClock.t > total) {
+        // No formation to run, but the pre-paint data-intro rule may
+        // still be hiding the letters — unhide inline.
+        for (const el of els) el.style.opacity = "1";
+        return;
+      }
       gsap.ticker.remove(tick);
       heroWordmark.forming = true;
       for (const el of els) el.style.opacity = "0";
@@ -402,7 +409,11 @@ export default function HeroMasthead() {
   }, [fontPx]);
 
   return (
-    <div ref={boxRef} className="pointer-events-none relative z-40 w-full">
+    <div
+      ref={boxRef}
+      className="pointer-events-none relative z-40 w-full"
+      style={{ containerType: "inline-size" }}
+    >
       {/* Focus pocket: a feathered backdrop blur over the wordmark's
           bounding box (plus breathing room), so the nebula's newborn cards
           soften further right where the type sits — the mark always floats
@@ -427,7 +438,12 @@ export default function HeroMasthead() {
           fontFamily: WORDMARK_FONT,
           fontWeight: WORDMARK_WEIGHT,
           fontStretch: WORDMARK_STRETCH,
-          fontSize: fontPx || "13vw",
+          // Pre-measure fallback: analytically ≈ box width / the word's
+          // advance run (~5.6em), so even the first server-rendered frame
+          // sits at the right scale — a bare vw fallback rendered the
+          // word several times too large on wide screens until the probe
+          // measured, and the correction read as a jarring snap.
+          fontSize: fontPx || "17.8cqw",
           lineHeight: 1,
         }}
       >
@@ -438,7 +454,7 @@ export default function HeroMasthead() {
             ref={(el) => {
               letterRefs.current[i] = el;
             }}
-            className="inline-block text-center"
+            className="wm-letter inline-block text-center"
             style={{
               ...(i === 0 ? { paddingRight: `${wm.logoPad}em` } : null),
               willChange: "transform, opacity",
