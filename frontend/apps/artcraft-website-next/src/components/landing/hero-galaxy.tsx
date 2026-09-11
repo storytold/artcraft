@@ -335,10 +335,9 @@ function GalaxyScene({
     boostCard: -1,
   });
 
-  const dark = useMemo(() => {
-    const c = hexToVec3(colors.bg);
-    return c.x + c.y + c.z < 1.5;
-  }, [colors.bg]);
+  // NOTE: no boolean dark flag — the light/dark wash treatment blends
+  // continuously by the LERPED background's luminance in the frame loop,
+  // so a theme fade never snaps between wash modes.
 
   // One <video>, one shared texture, and one cover-fit window per clip.
   const videos = useMemo(
@@ -808,6 +807,10 @@ function GalaxyScene({
     cs.line.lerp(cs.tLine, themeK);
     lineMat.color.copy(cs.line);
     tickMat.color.copy(cs.line);
+    // Wash-mode blend: light theme washes cards via opacity, dark theme
+    // dims via color. Driven continuously by the LERPED background's
+    // luminance — a binary flag snapped the treatment mid-fade.
+    const darkK = smoothstep(1.95, 1.05, cs.bg.x + cs.bg.y + cs.bg.z);
 
     // Perf governor: EMA of the real frame time. Sustained drops below the
     // FPS floor shed cards (and their decode pressure) quickly; recovery
@@ -1238,14 +1241,12 @@ function GalaxyScene({
       u.uClickW.value = pt.clickWidth * Math.max(W, H);
       u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
       u.uFrameA.value = lk.frameAlpha;
-      if (dark) {
-        u.uDim.value = lk.dim * solid + (1 - lk.dim * solid) * ck;
-        u.uAlpha.value = lifecycle * waveK;
-      } else {
-        const wash = solid * Math.sqrt(lk.dim);
-        u.uAlpha.value = lifecycle * waveK * (wash + (1 - wash) * ck);
-        u.uDim.value = 1;
-      }
+      const dimDark = lk.dim * solid + (1 - lk.dim * solid) * ck;
+      const wash = solid * Math.sqrt(lk.dim);
+      const alphaLight = lifecycle * waveK * (wash + (1 - wash) * ck);
+      const alphaDark = lifecycle * waveK;
+      u.uDim.value = 1 + (dimDark - 1) * darkK;
+      u.uAlpha.value = alphaLight + (alphaDark - alphaLight) * darkK;
 
       // A targeted card's clip outranks everything in the decode budget so
       // it plays immediately, wherever it is on the journey.
