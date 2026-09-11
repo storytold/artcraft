@@ -228,7 +228,7 @@ export const rulerMotionTuner = defineTunables("rulerMotion", "Ruler motion", {
     min: 2,
     max: 16,
     step: 0.5,
-    default: 8,
+    default: 10,
     info: "Damping rate of the zoom morph — higher = snappier compression onto the needle.",
   },
   dragLerp: {

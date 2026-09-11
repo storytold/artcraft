@@ -102,6 +102,7 @@ function wordmarkDefaults(): { [K in keyof typeof wordmarkTuner.defs]: number } 
 // tuner group.
 export function HeroScrim() {
   const [tv, setTv] = useState(-1);
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const apply = () => setTv(useTunerStore.getState().version);
@@ -115,9 +116,32 @@ export function HeroScrim() {
       unsub();
     };
   }, []);
+
+  // Choreography: the scrim's job is contrast AGAINST the canvas, so it
+  // fades up with the galaxy's arrival (the cards beat) instead of
+  // sitting there from frame zero. Clock-driven, so fast-forward and the
+  // tuner replay handle themselves; reduced motion keeps it settled.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const tick = () => {
+      const iv = introTuner.read();
+      const k = Math.max(
+        0,
+        Math.min(1, (introClock.t - iv.cardsAt) / 0.9),
+      );
+      if (ref.current) ref.current.style.opacity = String(k);
+    };
+    gsap.ticker.add(tick);
+    return () => {
+      gsap.ticker.remove(tick);
+      if (ref.current) ref.current.style.opacity = "";
+    };
+  }, []);
+
   const wm = tv < 0 ? wordmarkDefaults() : wordmarkTuner.read();
   return (
     <div
+      ref={ref}
       aria-hidden
       className="absolute"
       style={{
