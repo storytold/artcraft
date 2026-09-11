@@ -453,7 +453,7 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     max: 1,
     step: 0.02,
     default: 1,
-    info: "Overall footage strength — dims via color multiply, the same in both themes.",
+    info: "Overall footage strength (dark theme dims via color, light theme washes via opacity).",
   },
   aberration: {
     label: "Dispersion",
