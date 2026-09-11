@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
   Archivo,
-  Archivo_Black,
   Instrument_Serif,
   Inter,
   Geist_Mono,
@@ -15,22 +14,17 @@ import "./globals.css";
 
 const SITE_URL = "https://getartcraft.com";
 
-// Display face: Archivo with its width axis loaded, so headings can run
-// slightly expanded (font-stretch) for the industrial-grotesque look.
+// Display face: variable Archivo with its width axis loaded — headings run
+// slightly expanded (font-stretch) for the industrial-grotesque look, and
+// the hero wordmark renders the same family at its poster extreme
+// (wght 900 / wdth 125%, the Archivo Black look) so the ruler's hero flip
+// can interpolate weight and width down to the heading setting. A separate
+// Archivo Black cut could never interpolate.
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-archivo",
   display: "swap",
   axes: ["wdth"],
-});
-
-// Wordmark face: Archivo Black, the display family's poster-weight cut
-// (a single-weight family of its own, not Archivo at 900).
-const archivoBlack = Archivo_Black({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-archivo-black",
-  display: "swap",
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -110,7 +104,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${archivo.variable} ${archivoBlack.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
+      className={`${archivo.variable} ${instrumentSerif.variable} ${inter.variable} ${geistMono.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />

@@ -48,9 +48,10 @@ import {
 // the top current-heading slot as the wordmark is about to duck under the
 // nav (title-condenses-into-header), no queue home and no rail ride. From
 // the stack onward it behaves like any section (demotes when FEATURES
-// flips in). The hero letters keep their Archivo Black wordmark face
-// through the whole lifecycle — brand identity, and font families can't
-// interpolate.
+// flips in). The hero letters render variable Archivo at the poster
+// extreme (wght 900 / wdth 125% — the Archivo Black look) and morph to
+// the headings' display setting (620 / 118%) during the flip: one
+// variable family, so weight and width genuinely interpolate.
 
 // A letter's pose on screen. x/y are the letter center in viewport px.
 type Pose = {
@@ -442,6 +443,12 @@ export default function HeadingFlow({
             }px, ${
               y - (heroWordmark.baseDocY[i] - scrollY)
             }px, 0) rotate(${rot}deg) scale(${scale * scaleFix})`;
+            // Variable-font morph: the wordmark's poster cut (wght 900,
+            // wdth 125%) eases into the headings' display setting
+            // (620, 118%) letter by letter with the flight — the weight
+            // difference lands unnoticed inside the motion.
+            el.style.fontWeight = String(Math.round(900 - 280 * e));
+            el.style.fontStretch = `${(125 - 7 * e).toFixed(1)}%`;
           } else {
             el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
           }

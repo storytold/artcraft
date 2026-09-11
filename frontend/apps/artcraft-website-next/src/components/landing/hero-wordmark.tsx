@@ -4,8 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { heroWordmark } from "@/components/ruler/ruler-shared";
 
 const WORDMARK_TEXT = "ARTCRAFT";
-const WORDMARK_FONT =
-  "var(--font-archivo-black), var(--font-archivo), system-ui, sans-serif";
+// Variable Archivo at its poster extreme — the Archivo Black look, but on
+// the same variable family as every heading, so HeadingFlow can
+// interpolate weight/width down to the display setting (620 / 118%)
+// during the hero flip.
+const WORDMARK_FONT = "var(--font-archivo), system-ui, sans-serif";
+const WORDMARK_WEIGHT = 900;
+const WORDMARK_STRETCH = "125%";
 
 // The poster masthead: the wordmark justified flush across the hero rails in
 // the site's display type — per-letter spans instead of one text node,
@@ -37,6 +42,8 @@ export default function HeroMasthead() {
       probe.style.cssText =
         "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;font-size:100px;line-height:1;";
       probe.style.fontFamily = WORDMARK_FONT;
+      probe.style.fontWeight = String(WORDMARK_WEIGHT);
+      probe.style.fontStretch = WORDMARK_STRETCH;
       probe.textContent = WORDMARK_TEXT;
       document.body.appendChild(probe);
       const w100 = probe.getBoundingClientRect().width;
@@ -67,7 +74,13 @@ export default function HeroMasthead() {
     if (els.length !== WORDMARK_TEXT.length) return;
 
     const measure = () => {
-      for (const el of els) el.style.transform = "";
+      for (const el of els) {
+        // Reset transforms AND the variable-font morph to the resting cut
+        // before measuring, so a mid-flip resize re-baselines cleanly.
+        el.style.transform = "";
+        el.style.fontWeight = "";
+        el.style.fontStretch = "";
+      }
       const rects = els.map((el) => el.getBoundingClientRect());
       heroWordmark.els = els;
       heroWordmark.baseX = rects.map((r) => r.left + r.width / 2);
@@ -119,6 +132,8 @@ export default function HeroMasthead() {
         className="relative whitespace-pre text-ink-strong"
         style={{
           fontFamily: WORDMARK_FONT,
+          fontWeight: WORDMARK_WEIGHT,
+          fontStretch: WORDMARK_STRETCH,
           fontSize: fontPx || "13vw",
           lineHeight: 1,
         }}
