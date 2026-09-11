@@ -793,6 +793,19 @@ function GalaxyScene({
     // live set is the first liveN entries of liveOrder). All positions must
     // be known before any card can size itself against its neighbors.
     const iv = introTuner.read();
+    // Intro rollout: a single global offset R runs −1 → 0 with one ease,
+    // and every card's cycle is max(0, target + R) — the CONVEYOR streams
+    // out of the center as one train. At any instant every moving card has
+    // the identical path speed, spacing between train members is the true
+    // slot spacing, unborn cards wait invisibly at the origin, and the
+    // whole field settles into live drift simultaneously. (Per-card
+    // interpolation was chaos: far-destined cards screamed across the
+    // spiral while near ones crawled, and the speed spread churned the
+    // neighbor sizing.)
+    const rollT = clamp01(
+      (introClock.t - iv.cardsAt) / Math.max(0.1, mv.introDur),
+    );
+    const R = -(1 - easeOutCubic(rollT));
     for (let k = 0; k < liveN; k++) {
       const i = liveOrder[k];
       const card = cards[i];
@@ -807,23 +820,15 @@ function GalaxyScene({
           card.arm * L.armJitter +
           cardPhase[i],
       );
-      // Intro rollout: each card rides its own arm from the center out to
-      // its conveyor position (scattered stagger), passing through the
-      // birth styling — tiny, blurred, faint — it already has. At roll
-      // completion this is exactly the live cycle: seamless handoff.
-      const rollP = clamp01(
-        (introClock.t - iv.cardsAt - liveRank[i] * mv.introStagger) /
-          Math.max(0.05, mv.introDur),
-      );
-      const c = cFull * easeOutCubic(rollP);
+      const c = Math.max(0, cFull + R);
       cardCyc[i] = c;
 
       // Rebirth (the wrap always happens offscreen or at zero alpha): hand
       // the card the least-recently-shown clip, so repeats spread as far
       // apart as the pool allows. Suspended during the rollout — the fast
-      // ramp would read as false wraps.
+      // stream would read as false wraps.
       if (
-        rollP >= 1 &&
+        rollT >= 1 &&
         !Number.isNaN(prevC[i]) &&
         Math.abs(c - prevC[i]) > 0.5
       ) {
@@ -1113,13 +1118,10 @@ function GalaxyScene({
       // Birth fade only: the death happens fully offscreen past thetaExit.
       const lifecycle = clamp01(c / lk.fadeBand);
       const solid = lk.washInner + (1 - lk.washInner) * c;
-      // Presence gate on the rollout beat: a card is simply absent until
-      // its roll starts (position/blur/size do the real intro work).
-      const intro = clamp01(
-        ((introClock.t - iv.cardsAt - liveRank[i] * mv.introStagger) /
-          Math.max(0.05, mv.introDur)) *
-          4,
-      );
+      // No separate intro gate: an unborn card sits at c = 0 where the
+      // birth fade already holds it invisible, and it fades up along the
+      // same ramp every rebirth uses.
+      const intro = 1;
 
       const ready = videos[card.clip].readyState >= 2 ? 1 : 0;
       videoAlpha[i] += (ready - videoAlpha[i]) * (1 - Math.exp(-3 * dt));
