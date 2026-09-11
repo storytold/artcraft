@@ -734,10 +734,23 @@ function GalaxyScene({
     const mv = galaxyMotionTuner.read();
     const lk = galaxyLookTuner.read();
     const pt = galaxyPointerTuner.read();
+    const iv = introTuner.read();
     const t = st.time;
     const L = layout;
 
-    st.idleP += (dt * mv.idleSpeed) / 60;
+    // Intro clocks: the reveal wave sweeps from the logo past the edge
+    // over introDur, and the conveyor opens at burst speed easing down to
+    // its normal drift — the field arrives moving.
+    const rollT = clamp01(
+      (introClock.t - iv.cardsAt) / Math.max(0.1, mv.introDur),
+    );
+    const waveEase = easeOutCubic(rollT);
+    const burstT = clamp01(
+      (introClock.t - iv.cardsAt) / Math.max(0.1, mv.burstDur),
+    );
+    const burstK = 1 + (mv.burstX - 1) * (1 - easeOutCubic(burstT));
+
+    st.idleP += (dt * mv.idleSpeed * burstK) / 60;
     // The global spin brakes with the rest of the spiral while a card is
     // held — the whole instrument stops under the hand.
     st.spin +=
@@ -792,20 +805,10 @@ function GalaxyScene({
     // Pass 1: place every live card along its arm (in permuted order — the
     // live set is the first liveN entries of liveOrder). All positions must
     // be known before any card can size itself against its neighbors.
-    const iv = introTuner.read();
-    // Intro rollout: a single global offset R runs −1 → 0 with one ease,
-    // and every card's cycle is max(0, target + R) — the CONVEYOR streams
-    // out of the center as one train. At any instant every moving card has
-    // the identical path speed, spacing between train members is the true
-    // slot spacing, unborn cards wait invisibly at the origin, and the
-    // whole field settles into live drift simultaneously. (Per-card
-    // interpolation was chaos: far-destined cards screamed across the
-    // spiral while near ones crawled, and the speed spread churned the
-    // neighbor sizing.)
-    const rollT = clamp01(
-      (introClock.t - iv.cardsAt) / Math.max(0.1, mv.introDur),
-    );
-    const R = -(1 - easeOutCubic(rollT));
+    // Intro drift: cards start a small chunk short of their spread
+    // positions and slide the remainder in as the wave uncovers them —
+    // real outward motion everywhere, no long travel, no big rotation.
+    const R = -mv.rollChunk * (1 - waveEase);
     for (let k = 0; k < liveN; k++) {
       const i = liveOrder[k];
       const card = cards[i];
@@ -1118,10 +1121,19 @@ function GalaxyScene({
       // Birth fade only: the death happens fully offscreen past thetaExit.
       const lifecycle = clamp01(c / lk.fadeBand);
       const solid = lk.washInner + (1 - lk.washInner) * c;
-      // No separate intro gate: an unborn card sits at c = 0 where the
-      // birth fade already holds it invisible, and it fades up along the
-      // same ramp every rebirth uses.
-      const intro = 1;
+      // The reveal wave: a front expanding from the logo uncovers cards in
+      // radius order — fade + rack-from-blur as it crosses (waveK), with a
+      // dispersion flash riding the front itself (waveG).
+      let waveK = 1;
+      let waveG = 0;
+      if (rollT < 1) {
+        const rr = L.b * (L.thetaBirth + c * (L.thetaExit - L.thetaBirth));
+        const waveR = waveEase * L.b * L.thetaExit;
+        const band = Math.max(1, mv.waveBand);
+        waveK = clamp01((waveR - rr) / band + 1);
+        const fr = (rr - waveR) / band;
+        waveG = Math.exp(-fr * fr);
+      }
 
       const ready = videos[card.clip].readyState >= 2 ? 1 : 0;
       videoAlpha[i] += (ready - videoAlpha[i]) * (1 - Math.exp(-3 * dt));
@@ -1146,9 +1158,12 @@ function GalaxyScene({
       u.uBlur.value = Math.max(
         lk.blurMax * (1 - smoothstep(0, lk.blurEnd, c)) * (1 - ck),
         (1 - va) * lk.blurMax,
+        (1 - waveK) * lk.blurMax,
       );
       u.uTexA.value = va;
-      u.uAber.value = (lk.aberration + cardFlare[i] + rippleBoost) * (1 - ck);
+      u.uAber.value =
+        (lk.aberration + cardFlare[i] + rippleBoost + mv.waveAber * waveG) *
+        (1 - ck);
       // Click-ripple feedback is physical as well as chromatic: the
       // surface pops toward the camera as the ring passes (normalized so
       // tuning the amp doesn't change the pop height).
@@ -1186,10 +1201,10 @@ function GalaxyScene({
       u.uFrameA.value = lk.frameAlpha;
       if (dark) {
         u.uDim.value = lk.dim * solid + (1 - lk.dim * solid) * ck;
-        u.uAlpha.value = lifecycle * intro;
+        u.uAlpha.value = lifecycle * waveK;
       } else {
         const wash = solid * Math.sqrt(lk.dim);
-        u.uAlpha.value = lifecycle * intro * (wash + (1 - wash) * ck);
+        u.uAlpha.value = lifecycle * waveK * (wash + (1 - wash) * ck);
         u.uDim.value = 1;
       }
 
