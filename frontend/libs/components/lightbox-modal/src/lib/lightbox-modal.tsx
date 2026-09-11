@@ -584,7 +584,11 @@ export function LightboxModal({
                 controls
                 loop={true}
                 autoPlay={true}
+                playsInline
                 className="h-full w-full object-contain"
+                // Give WebKit a dedicated compositing layer for paused frames,
+                // independent of the modal's transform/opacity animation.
+                style={{ transform: "translateZ(0)" }}
                 onLoadedData={(e) => {
                   setMediaLoaded(true);
                   const el = e.currentTarget;
