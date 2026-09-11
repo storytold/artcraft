@@ -431,14 +431,6 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     default: 0.14,
     info: "Journey fraction past which a card's clip earns a live decoder — inner blurred cards hold a frozen frame.",
   },
-  washInner: {
-    label: "Inner wash",
-    min: 0,
-    max: 1,
-    step: 0.05,
-    default: 1,
-    info: "Card presence at birth — newborn cards sit faint near the origin and solidify as they emerge. At 1 (the default) it's inert: the birth fade already covers the fade-in; kept as a knob for deeper washes.",
-  },
   fadeBand: {
     label: "Birth fade",
     min: 0.02,
@@ -446,14 +438,6 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     step: 0.01,
     default: 0.15,
     info: "Fraction of the journey over which a newborn card fades in at the center. There is no exit fade — cards die fully offscreen.",
-  },
-  dim: {
-    label: "Footage dim",
-    min: 0,
-    max: 1,
-    step: 0.02,
-    default: 1,
-    info: "Overall footage strength (dark theme dims via color, light theme washes via opacity).",
   },
   aberration: {
     label: "Dispersion",

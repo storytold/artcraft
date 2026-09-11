@@ -86,7 +86,6 @@ const CARD_FRAG = /* glsl */ `
   uniform vec3 uBg;
   uniform float uBlur;
   uniform float uTexA;
-  uniform float uDim;
   uniform float uAlpha;
   uniform float uAber;
   uniform vec2 uSize;
@@ -148,7 +147,7 @@ const CARD_FRAG = /* glsl */ `
         texture(uMap, clamp(uv - shift, lo, hi)).b
       );
     }
-    col = mix(uBg, col, uTexA) * uDim;
+    col = mix(uBg, col, uTexA);
 
     // Rounded-rect SDF in card px: antialiased corner cut, plus the
     // hairline frame drawn as a ~1px band riding the same edge (so it
@@ -334,10 +333,6 @@ function GalaxyScene({
     boostK: 0,
     boostCard: -1,
   });
-
-  // NOTE: no boolean dark flag — the light/dark wash treatment blends
-  // continuously by the LERPED background's luminance in the frame loop,
-  // so a theme fade never snaps between wash modes.
 
   // One <video>, one shared texture, and one cover-fit window per clip.
   const videos = useMemo(
@@ -598,7 +593,6 @@ function GalaxyScene({
               uBg: { value: new THREE.Vector3(0.9, 0.9, 0.9) },
               uBlur: { value: 0 },
               uTexA: { value: 0 },
-              uDim: { value: 1 },
               uAlpha: { value: 0 },
               uAber: { value: 0 },
               uCurve: { value: 0 },
@@ -807,11 +801,6 @@ function GalaxyScene({
     cs.line.lerp(cs.tLine, themeK);
     lineMat.color.copy(cs.line);
     tickMat.color.copy(cs.line);
-    // Wash-mode blend: light theme washes cards via opacity, dark theme
-    // dims via color. Driven continuously by the LERPED background's
-    // luminance — a binary flag snapped the treatment mid-fade.
-    const darkK = smoothstep(1.95, 1.05, cs.bg.x + cs.bg.y + cs.bg.z);
-
     // Perf governor: EMA of the real frame time. Sustained drops below the
     // FPS floor shed cards (and their decode pressure) quickly; recovery
     // regrows slowly so it never oscillates. The first seconds are a grace
@@ -1152,7 +1141,6 @@ function GalaxyScene({
 
       // Birth fade only: the death happens fully offscreen past thetaExit.
       const lifecycle = clamp01(c / lk.fadeBand);
-      const solid = lk.washInner + (1 - lk.washInner) * c;
       // The reveal wave: a front expanding from the logo uncovers cards in
       // radius order — fade + rack-from-blur as it crosses (waveK), with a
       // dispersion flash riding the front itself (waveG).
@@ -1241,12 +1229,7 @@ function GalaxyScene({
       u.uClickW.value = pt.clickWidth * Math.max(W, H);
       u.uRadius.value = Math.min(lk.cornerPx, H * 0.49);
       u.uFrameA.value = lk.frameAlpha;
-      const dimDark = lk.dim * solid + (1 - lk.dim * solid) * ck;
-      const wash = solid * Math.sqrt(lk.dim);
-      const alphaLight = lifecycle * waveK * (wash + (1 - wash) * ck);
-      const alphaDark = lifecycle * waveK;
-      u.uDim.value = 1 + (dimDark - 1) * darkK;
-      u.uAlpha.value = alphaLight + (alphaDark - alphaLight) * darkK;
+      u.uAlpha.value = lifecycle * waveK;
 
       // A targeted card's clip outranks everything in the decode budget so
       // it plays immediately, wherever it is on the journey.
