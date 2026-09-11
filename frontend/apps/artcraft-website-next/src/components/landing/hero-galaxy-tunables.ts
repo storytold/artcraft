@@ -436,8 +436,8 @@ export const galaxyLookTuner = defineTunables("galaxyLook", "Galaxy look", {
     min: 0,
     max: 1,
     step: 0.05,
-    default: 0.85,
-    info: "Card presence at birth — newborn cards sit faint near the origin and solidify as they emerge.",
+    default: 1,
+    info: "Card presence at birth — newborn cards sit faint near the origin and solidify as they emerge. At 1 (the default) it's inert: the birth fade already covers the fade-in; kept as a knob for deeper washes.",
   },
   fadeBand: {
     label: "Birth fade",
