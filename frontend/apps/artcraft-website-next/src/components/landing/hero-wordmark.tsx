@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { heroWordmark } from "@/components/ruler/ruler-shared";
 import { introClock, introTuner, onIntroReplay } from "@/lib/intro";
+import { defineTunables, useTunerStore } from "@/lib/tuner";
 
 const WORDMARK_TEXT = "ARTCRAFT";
 // Variable Archivo at its poster extreme — the Archivo Black look, but on
@@ -16,15 +17,55 @@ const WORDMARK_STRETCH = "125%";
 
 // The leading A is the brand mark, not the glyph — an inline SVG in
 // currentColor, so the ruler's solid-ink dimming, hover, and press states
-// drive it exactly like a letter. Sized to the caps' visual height; its
-// advance (width + a side-bearing pad) is measured like any letter's, so
-// all downstream metrics just work. It rides the entire heading lifecycle.
+// drive it exactly like a letter. Its advance (width + a side-bearing pad)
+// is measured like any letter's, so all downstream metrics just work, and
+// it rides the entire heading lifecycle.
 const LOGO_ASPECT = 116.34 / 97.5;
-const LOGO_CAP_EM = 0.73;
-const LOGO_ADV_EM = LOGO_CAP_EM * LOGO_ASPECT;
-const LOGO_PAD_EM = 0.05;
 
-function LogoGlyph() {
+// The logo's optical fit against the glyphs is dialed by eye: the browser
+// aligns an inline SVG's BOX bottom to the text baseline, but glyph ink is
+// placed from font metrics (baseline overshoot, cap forms sitting a hair
+// off the geometric lines in heavy masters) — there is no CSS auto-sync
+// between SVG geometry and type ink, so cap height, baseline lift, and
+// side bearing are live knobs to tune and bake.
+const wordmarkTuner = defineTunables("wordmark", "Wordmark", {
+  logoCap: {
+    label: "Logo cap em",
+    min: 0.5,
+    max: 1,
+    step: 0.005,
+    default: 0.73,
+    info: "Height of the logo-A relative to the font size — match it to the caps' visual height.",
+  },
+  logoLift: {
+    label: "Logo lift em",
+    min: -0.1,
+    max: 0.1,
+    step: 0.002,
+    default: 0.02,
+    info: "Vertical baseline correction of the logo-A: positive raises it. Syncs the SVG's box-bottom alignment with the glyphs' ink baseline.",
+  },
+  logoPad: {
+    label: "Logo pad em",
+    min: 0,
+    max: 0.15,
+    step: 0.005,
+    default: 0.05,
+    info: "Side bearing between the logo-A and the R, standing in for the glyph spacing the SVG doesn't have.",
+  },
+});
+
+function wordmarkDefaults(): { [K in keyof typeof wordmarkTuner.defs]: number } {
+  const out = {} as { [K in keyof typeof wordmarkTuner.defs]: number };
+  for (const key of Object.keys(wordmarkTuner.defs) as Array<
+    keyof typeof wordmarkTuner.defs
+  >) {
+    out[key] = wordmarkTuner.defs[key].default;
+  }
+  return out;
+}
+
+function LogoGlyph({ cap, lift }: { cap: number; lift: number }) {
   return (
     <svg
       viewBox="0 0 116.34 97.5"
@@ -32,8 +73,9 @@ function LogoGlyph() {
       aria-hidden
       style={{
         display: "inline-block",
-        width: `${LOGO_ADV_EM}em`,
-        height: `${LOGO_CAP_EM}em`,
+        width: `${cap * LOGO_ASPECT}em`,
+        height: `${cap}em`,
+        verticalAlign: `${lift}em`,
         // The letters carry a bg-colored text-shadow halo; text-shadow
         // can't touch an SVG, so the mark gets the same treatment as
         // drop-shadows.
@@ -65,6 +107,25 @@ export default function HeroMasthead() {
   const letterRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const [fontPx, setFontPx] = useState(0);
 
+  // Live wordmark optics: -1 = SSR/hydration render (registered defaults)
+  // so server and client agree; tuner overrides apply after mount. The
+  // logo's advance feeds the fontPx derivation, so sizing follows knobs.
+  const [tv, setTv] = useState(-1);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const apply = () => setTv(useTunerStore.getState().version);
+    apply();
+    const unsub = useTunerStore.subscribe(() => {
+      clearTimeout(timer);
+      timer = setTimeout(apply, 150);
+    });
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
+  }, []);
+  const wm = tv < 0 ? wordmarkDefaults() : wordmarkTuner.read();
+
   useEffect(() => {
     const box = boxRef.current;
     if (!box) return;
@@ -86,7 +147,7 @@ export default function HeroMasthead() {
       probe.remove();
       const target = box.clientWidth;
       if (w100 > 0 && target > 0) {
-        const perPx = w100 / 100 + LOGO_ADV_EM + LOGO_PAD_EM;
+        const perPx = w100 / 100 + wm.logoCap * LOGO_ASPECT + wm.logoPad;
         setFontPx(Math.round((target / perPx) * 10) / 10);
       }
     };
@@ -100,7 +161,8 @@ export default function HeroMasthead() {
       cancelled = true;
       ro.disconnect();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tv]);
 
   // Publish letter geometry once the real size is applied.
   useEffect(() => {
@@ -185,22 +247,35 @@ export default function HeroMasthead() {
       const fLogo = easeInOut(
         clamp01((t - it.wordAt) / Math.max(0.1, it.wordDur)),
       );
-      els[0].style.transform = `translate3d(${((center - bx[0]) * (1 - fLogo)).toFixed(1)}px, 0, 0)`;
+      const logoCx = bx[0] + (center - bx[0]) * (1 - fLogo);
+      els[0].style.transform = `translate3d(${(logoCx - bx[0]).toFixed(1)}px, 0, 0)`;
       els[0].style.opacity = String(clamp01(t / 0.3));
+      // The blade edge: everything left of the logo's right edge is
+      // clipped away, so letters EXTRUDE from behind the mark — one
+      // surface sliding out — instead of fading in around it.
+      const logoRight = logoCx + (adv[0] * F) / 2;
 
       let done = fLogo >= 1 && t > 0.35;
       const letterDur = Math.max(0.2, it.wordDur * 0.55);
       for (let i = 1; i < n; i++) {
         const fi = clamp01((t - it.wordAt - i * it.wordStagger) / letterDur);
         const e = easeOut(fi);
-        els[i].style.transform = `translate3d(${((center - bx[i]) * (1 - e)).toFixed(1)}px, 0, 0)`;
-        els[i].style.opacity = String(clamp01(fi * 2.5));
+        // Un-released letters ride hidden WITH the gliding logo; released
+        // ones travel from wherever the logo currently is to their slot,
+        // emerging through the blade edge as they clear it.
+        const x = logoCx + (bx[i] - logoCx) * e;
+        els[i].style.transform = `translate3d(${(x - bx[i]).toFixed(1)}px, 0, 0)`;
+        els[i].style.opacity = "1";
+        const clipL = logoRight - (x - (adv[i] * F) / 2);
+        els[i].style.clipPath =
+          clipL > 0.5 ? `inset(-20% 0 -20% ${clipL.toFixed(1)}px)` : "";
         if (fi < 1) done = false;
       }
       if (done) {
         for (const el of els) {
           el.style.transform = "";
           el.style.opacity = "";
+          el.style.clipPath = "";
         }
         heroWordmark.forming = false;
         gsap.ticker.remove(tick);
@@ -229,6 +304,7 @@ export default function HeroMasthead() {
         if (el) {
           el.style.transform = "";
           el.style.opacity = "";
+          el.style.clipPath = "";
         }
       }
     };
@@ -273,7 +349,7 @@ export default function HeroMasthead() {
             }}
             className="inline-block text-center"
             style={{
-              ...(i === 0 ? { paddingRight: `${LOGO_PAD_EM}em` } : null),
+              ...(i === 0 ? { paddingRight: `${wm.logoPad}em` } : null),
               willChange: "transform, opacity",
               // Three stacked halos in the page background color: a tight
               // contact edge, a mid falloff, and a wide pool that sinks
@@ -286,7 +362,7 @@ export default function HeroMasthead() {
               ].join(", "),
             }}
           >
-            {i === 0 ? <LogoGlyph /> : ch}
+            {i === 0 ? <LogoGlyph cap={wm.logoCap} lift={wm.logoLift} /> : ch}
           </span>
         ))}
       </div>

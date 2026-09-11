@@ -143,7 +143,7 @@ export const galaxyMotionTuner = defineTunables(
       min: 0.4,
       max: 4,
       step: 0.05,
-      default: 1.4,
+      default: 4,
       info: "Duration of the intro reveal wave sweeping from the logo past the outer edge. Starts at the master Intro group's Cards beat.",
     },
     rollChunk: {
@@ -181,9 +181,9 @@ export const galaxyMotionTuner = defineTunables(
     waveAber: {
       label: "Wave flare",
       min: 0,
-      max: 0.15,
+      max: 0.3,
       step: 0.002,
-      default: 0.05,
+      default: 0.2,
       info: "Dispersion flare of the chromatic ring trailing the reveal wave — cards flash as it crosses them.",
     },
     waveLag: {
@@ -191,7 +191,7 @@ export const galaxyMotionTuner = defineTunables(
       min: 0,
       max: 1,
       step: 0.05,
-      default: 0.2,
+      default: 0.4,
       info: "How far behind the reveal front the dispersion ring launches — it sweeps the already-revealed field as a second pass.",
     },
     perfFloor: {
@@ -199,7 +199,7 @@ export const galaxyMotionTuner = defineTunables(
       min: 0,
       max: 60,
       step: 5,
-      default: 45,
+      default: 30,
       info: "When sustained frame rate drops below this, the galaxy sheds cards (and their decoders) until smooth, then slowly regrows. 0 disables the governor.",
     },
   },
@@ -287,7 +287,7 @@ export const galaxyPointerTuner = defineTunables(
       min: 0.05,
       max: 12,
       step: 0.05,
-      default: 10,
+      default: 0.25,
       info: "Behavioral ease of the target lock (sizing pin, paint order, decode priority, wobble kill). The optical clear — dispersion, blur, warp, wash — always runs at a fixed fast pace regardless.",
     },
     rippleSpeed: {

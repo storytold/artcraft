@@ -66,7 +66,7 @@ export const introTuner = defineTunables("intro", "Intro", {
     min: 0,
     max: 3,
     step: 0.05,
-    default: 1.15,
+    default: 1,
     info: "When the galaxy cards start rolling out from the center along their arms.",
   },
   ffScale: {
@@ -82,7 +82,7 @@ export const introTuner = defineTunables("intro", "Intro", {
     min: 1,
     max: 6,
     step: 0.5,
-    default: 2.5,
+    default: 1,
     info: "Timeline acceleration for repeat visitors (localStorage flag) — they get the whole intro, much shorter.",
   },
 });
