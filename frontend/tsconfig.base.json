@@ -25,12 +25,185 @@
     "baseUrl": ".",
     "paths": {
       "~/*": [
-        // Uncomment if 2D ever gets used
-        // "apps/editor2d/app/src/*",
         "apps/artcraft/app/src/*"
       ],
-      "@storyteller/api": ["libs/api/src/index.ts"],
-      "@storyteller/markdown-content": ["libs/markdown-content/src/index.ts"]
+      "@storyteller/google-analytics": [
+        "libs/analytics/google-analytics/src/index.ts"
+      ],
+      "@storyteller/api": [
+        "libs/api/src/index.ts"
+      ],
+      "@storyteller/api-enums": [
+        "libs/api-enums/src/index.ts"
+      ],
+      "@storyteller/common": [
+        "libs/common/src/index.ts"
+      ],
+      "@storyteller/ui-action-reminder-modal": [
+        "libs/components/action-reminder-modal/src/index.ts"
+      ],
+      "@storyteller/ui-audio-player": [
+        "libs/components/audio-player/src/index.ts"
+      ],
+      "@storyteller/ui-badge": [
+        "libs/components/badge/src/index.ts"
+      ],
+      "@storyteller/ui-button": [
+        "libs/components/button/src/index.ts"
+      ],
+      "@storyteller/ui-button-dropdown": [
+        "libs/components/button-dropdown/src/index.ts"
+      ],
+      "@storyteller/ui-button-icon": [
+        "libs/components/button-icon/src/index.ts"
+      ],
+      "@storyteller/ui-button-icon-select": [
+        "libs/components/button-icon-select/src/index.ts"
+      ],
+      "@storyteller/ui-camera-settings-modal": [
+        "libs/components/camera-settings-modal/src/index.ts"
+      ],
+      "@storyteller/ui-checkbox": [
+        "libs/components/checkbox/src/index.ts"
+      ],
+      "@storyteller/ui-close-button": [
+        "libs/components/close-button/src/index.ts"
+      ],
+      "@storyteller/ui-file-uploader": [
+        "libs/components/file-uploader/src/index.ts"
+      ],
+      "@storyteller/ui-gallery-modal": [
+        "libs/components/gallery-modal/src/index.ts"
+      ],
+      "@storyteller/ui-generation-list": [
+        "libs/components/generation-list/src/index.ts"
+      ],
+      "@storyteller/ui-gravatar": [
+        "libs/components/gravatar/src/index.ts"
+      ],
+      "@storyteller/ui-help-menu": [
+        "libs/components/help-menu/src/index.ts"
+      ],
+      "@storyteller/ui-input": [
+        "libs/components/input/src/index.ts"
+      ],
+      "@storyteller/keybinds": [
+        "libs/components/keybinds/src/index.ts"
+      ],
+      "@storyteller/ui-label": [
+        "libs/components/label/src/index.ts"
+      ],
+      "@storyteller/ui-lightbox-modal": [
+        "libs/components/lightbox-modal/src/index.ts"
+      ],
+      "@storyteller/ui-list-dropdown": [
+        "libs/components/list-dropdown/src/index.ts"
+      ],
+      "@storyteller/ui-loading": [
+        "libs/components/loading/src/index.ts"
+      ],
+      "@storyteller/ui-loading-spinner": [
+        "libs/components/loading-spinner/src/index.ts"
+      ],
+      "@storyteller/ui-login-modal": [
+        "libs/components/login-modal/src/index.ts"
+      ],
+      "@storyteller/ui-menu-icon-selector": [
+        "libs/components/menu-icon-selector/src/index.ts"
+      ],
+      "@storyteller/ui-modal": [
+        "libs/components/modal/src/index.ts"
+      ],
+      "@storyteller/ui-model-selector": [
+        "libs/components/model-selector/src/index.ts"
+      ],
+      "@storyteller/ui-moodboard": [
+        "libs/components/moodboard/src/index.ts"
+      ],
+      "@storyteller/ui-pagedraw": [
+        "libs/components/pagedraw/src/index.ts"
+      ],
+      "@storyteller/ui-pagescene": [
+        "libs/components/pagescene/src/index.ts"
+      ],
+      "@storyteller/ui-popover": [
+        "libs/components/popover/src/index.ts"
+      ],
+      "@storyteller/ui-pricing-modal": [
+        "libs/components/pricing-modal/src/index.ts"
+      ],
+      "@storyteller/ui-promptbox": [
+        "libs/components/promptbox/src/index.ts"
+      ],
+      "@storyteller/provider-billing-modal": [
+        "libs/components/provider-billing-modal/src/index.ts"
+      ],
+      "@storyteller/provider-setup-modal": [
+        "libs/components/provider-setup-modal/src/index.ts"
+      ],
+      "@storyteller/ui-select": [
+        "libs/components/select/src/index.ts"
+      ],
+      "@storyteller/ui-settings-modal": [
+        "libs/components/settings-modal/src/index.ts"
+      ],
+      "@storyteller/ui-sliderv2": [
+        "libs/components/slider-v2/src/index.ts"
+      ],
+      "@storyteller/ui-switch": [
+        "libs/components/switch/src/index.ts"
+      ],
+      "@storyteller/ui-tab-selector": [
+        "libs/components/tab-selector/src/index.ts"
+      ],
+      "@storyteller/ui-toaster": [
+        "libs/components/toaster/src/index.ts"
+      ],
+      "@storyteller/ui-tooltip": [
+        "libs/components/tooltip/src/index.ts"
+      ],
+      "@storyteller/ui-upload-modal": [
+        "libs/components/upload-modal/src/index.ts"
+      ],
+      "@storyteller/ui-vfx": [
+        "libs/components/vfx/src/index.ts"
+      ],
+      "@storyteller/ui-video-editor": [
+        "libs/components/video-editor/src/index.ts"
+      ],
+      "@storyteller/ui-viewer-3d": [
+        "libs/components/viewer-3d/src/index.ts"
+      ],
+      "@storyteller/icons": [
+        "libs/icons/src/index.ts"
+      ],
+      "@storyteller/markdown-content": [
+        "libs/markdown-content/src/index.ts"
+      ],
+      "@storyteller/model-list": [
+        "libs/model-list/src/index.ts"
+      ],
+      "@storyteller/omni-gen": [
+        "libs/omni-gen/src/index.ts"
+      ],
+      "@storyteller/soundboard": [
+        "libs/soundboard/src/index.ts"
+      ],
+      "@storyteller/credits": [
+        "libs/state/credits/src/index.ts"
+      ],
+      "@storyteller/subscription": [
+        "libs/state/subscription/src/index.ts"
+      ],
+      "@storyteller/tauri-api": [
+        "libs/tauri-api/src/index.ts"
+      ],
+      "@storyteller/tauri-events": [
+        "libs/tauri-events/src/index.ts"
+      ],
+      "@storyteller/tauri-utils": [
+        "libs/tauri-utils/src/index.ts"
+      ]
     }
   }
 }

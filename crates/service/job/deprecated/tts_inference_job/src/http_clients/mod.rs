@@ -1,2 +1,0 @@
-pub mod tts_inference_sidecar_client;
-pub mod tts_sidecar_health_check_client;

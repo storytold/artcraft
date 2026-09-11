@@ -1,2 +1,0 @@
-pub mod insert_generic_inference_job_for_gmicloud;
-pub mod list_pending_gmicloud_jobs;

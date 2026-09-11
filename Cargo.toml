@@ -1,359 +1,104 @@
 [workspace]
 resolver = "2"
 
-# This block defines the workspace members.
-# When we add a library or binary crate, it needs an entry here.
+# Desktop application and its local build/test dependencies.
 members = [
-  # API clients for external services
-  # These might be custom implementations or wrappers over other client libraries.
   "crates/api_clients/artcraft/artcraft_api_defs",
-  "crates/api_clients/artcraft/artcraft_api_keys",
   "crates/api_clients/artcraft/artcraft_client",
   "crates/api_clients/artcraft/artcraft_router",
-  "crates/api_clients/bucket_client",
-  "crates/api_clients/cloud_storage",
-  "crates/api_clients/comet_api_client",
-  "crates/api_clients/datadog_client",
   "crates/api_clients/fal_client",
-  "crates/api_clients/google_drive_downloader",
-  "crates/api_clients/google_sign_in",
+  "crates/api_clients/gmicloud_client",
   "crates/api_clients/grok_api_client",
   "crates/api_clients/grok_consumer_client",
-  "crates/api_clients/gmicloud_client",
-  "crates/api_clients/midjourney_client",
-  "crates/api_clients/muapi_client",
-  "crates/api_clients/beeble_client",
-  "crates/api_clients/openai_sora_client",
-  "crates/api_clients/openart_client",
-  "crates/api_clients/rootly_client",
-  "crates/api_clients/runwayml_client",
   "crates/api_clients/kinovi_web_client",
-  "crates/api_clients/thumbnail_generator",
+  "crates/api_clients/midjourney_client",
+  "crates/api_clients/openai_sora_client",
   "crates/api_clients/worldlabs_api_client",
   "crates/api_clients/worldlabs_consumer_client",
-
-  # CLI tools for operations, etc.
-  "crates/cli/devenv/dev-database-seed",
-  "crates/cli/devenv/dev-upload-media-file",
-  "crates/cli/production/db-backfill",
-  "crates/cli/production/db-backup",
-  "crates/cli/production/db-cleanup",
-  "crates/cli/production/elasticsearch-cli",
-  "crates/cli/production/kubectl-pod-cleanup",
-  "crates/cli/production/lru-delete-models",
-  "crates/cli/production/migration-tool",
-  "crates/cli/production/support-tool",
-
-  # Desktop apps
   "crates/desktop/artcraft",
-
-  # Shared libraries
-  "crates/lib/actix_artcraft",
-  "crates/lib/actix_cors_configs",
-  "crates/lib/actix_helpers",
-  "crates/lib/bootstrap",
   "crates/lib/build_metadata",
-  "crates/lib/caching/memory_caching",
   "crates/lib/caching/memory_store",
-  "crates/lib/caching/redis_caching",
   "crates/lib/cloudflare_errors",
   "crates/lib/cloudflare_mitigation",
-  "crates/lib/concurrency",
   "crates/lib/cookie_store",
-  "crates/lib/data/collections",
-  "crates/lib/data/crockford",
-  "crates/lib/data/datetimes",
   "crates/lib/data/primitives",
   "crates/lib/data/web_base64",
-  "crates/lib/easyenv", # NB: Vendored version of https://github.com/echelon/easyenv.rs that we'll improve.
-  "crates/lib/error_utils",
   "crates/lib/errors",
-  "crates/lib/ffmpeg_utils",
   "crates/lib/files/file_to_base64_url",
   "crates/lib/files/filesys",
-  "crates/lib/files/hashing",
   "crates/lib/files/images",
-  "crates/lib/files/media",
   "crates/lib/files/mimetypes",
-  "crates/lib/files/videos",
-  "crates/lib/files/zip_archives",
   "crates/lib/http_headers",
-  "crates/lib/jobs_common",
   "crates/lib/jwt_light",
-  "crates/lib/opaque_cursors",
-  "crates/lib/jwt_signer",
-  "crates/lib/logging",
-  "crates/lib/markdown",
-  "crates/lib/metrics",
-  "crates/lib/pager",
-  "crates/lib/password",
-  "crates/lib/server_environment",
-  "crates/lib/sha1_hash",
-  "crates/lib/sqlx_mysql_helpers",
-  "crates/lib/storyteller_root",
-  "crates/lib/url_config",
   "crates/lib/url_utils",
-  "crates/lib/user_input_common",
-  "crates/lib/users",
   "crates/lib/uuid_utils",
-  "crates/lib/video_info",
-  #"crates/lib/api_clients/fakeyou_client",
-  #"crates/lib/deprecated/machine_learning/ml_models",
-
-  # Shared libraries (Deprecated)
-  "crates/lib/deprecated/config", # TODO(bt, 2023-02-13): Deprecate or repurpose
-  "crates/lib/deprecated/email_sender",
-  "crates/lib/deprecated/http_server_common", # TODO(bt, 2023-03-20): Move useful pieces to actix_helpers
-  "crates/lib/deprecated/image_algorithms",
-  "crates/lib/deprecated/machine_learning/ml_weights_registry",
-  "crates/lib/deprecated/subprocess_common",
-  "crates/lib/deprecated/tts_common",
-
-  # Schema (buckets): S3/R2 topology
-  "crates/schema/buckets/bucket_paths",
-
-  # Schema (config): configuration constants for external services
-  "crates/schema/config/rootly_config",
-  "crates/schema/config/shared_env_var_config",
-
-  # Schema (database): queries, database layouts, Redis keys, etc.
-  "crates/schema/database/elasticsearch_schema",
-  "crates/schema/database/migration",
-  "crates/schema/database/mysql_queries",
-  "crates/schema/database/mysql_testing",
-  "crates/schema/database/redis_common",
-  "crates/schema/database/redis_schema",
   "crates/schema/database/sqlite_tasks",
-  #"crates/schema/database/sqlite_queries",
-
-  # Schema (public): common strongly-typed tokens, ids, payloads, etc.
-  "crates/schema/public/composite_identifiers",
   "crates/schema/public/enums",
-  "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
   "crates/schema/public/tokens",
-  "crates/schema/trace_id",
-
-  # Services: API servers, jobs, workers, etc.
-  "crates/service/job/gmicloud_job",
-  "crates/service/job/grok_api_job",
-  "crates/service/job/seedance2_pro_job",
-  "crates/service/job/video_thumbnail_job",
-  "crates/service/job/user_spend_analytics_job",
-  "crates/service/job/worldlabs_job",
-  "crates/service/web/dummy_service",
-  "crates/service/web/storyteller_web",
-
-  # Services (Deprecated) - may still have some use
-  "crates/service/job/deprecated/analytics_job",
-  "crates/service/job/deprecated/download_job",
-  "crates/service/job/deprecated/email_sender_job",
-  "crates/service/job/deprecated/es-update-job",
-  "crates/service/job/deprecated/inference_job",
-  "crates/service/job/deprecated/tts_download_job",
-  "crates/service/job/deprecated/tts_inference_job",
-
-  # Service Plugins: complete subsystems that can be plugged into services (users, billing, etc.)
-  "crates/service/plugins/billing",
-  "crates/service/plugins/billing_artcraft",
-  "crates/service/plugins/component_traits",
-  "crates/service/plugins/user_traits_component",
-
-  # Testing code
   "crates/testing/test_data",
   "crates/testing/test_utils",
-
-  # Standalone tool servers
-  "crates/tools/servers/agent_notify_server",
-
-  # Vendored code
-  "crates/vendor/limitation",
   "crates/vendor/tauri-plugin-http",
-  "crates/vendor/Symphonia/symphonia",
-  "crates/vendor/Symphonia/symphonia-bundle-flac",
-  "crates/vendor/Symphonia/symphonia-bundle-mp3",
-  "crates/vendor/Symphonia/symphonia-codec-aac",
-  "crates/vendor/Symphonia/symphonia-codec-alac",
-  "crates/vendor/Symphonia/symphonia-codec-opus",
-  "crates/vendor/Symphonia/symphonia-codec-pcm",
-  "crates/vendor/Symphonia/symphonia-codec-vorbis",
-  "crates/vendor/Symphonia/symphonia-codec-wavpack",
-  "crates/vendor/Symphonia/symphonia-core",
-  "crates/vendor/Symphonia/symphonia-format-isomp4",
-  "crates/vendor/Symphonia/symphonia-format-mkv",
-  "crates/vendor/Symphonia/symphonia-format-ogg",
-  "crates/vendor/Symphonia/symphonia-format-wav",
-  "crates/vendor/Symphonia/symphonia-metadata",
-  "crates/vendor/Symphonia/symphonia-play",
-  "crates/vendor/Symphonia/symphonia-utils-xiph",
-  # NB(bt,2025-05-25): Too many failures on Mac. Disable for now.
-  #"crates/vendor/candle/candle-core",
-  #"crates/vendor/candle/candle-datasets",
-  #"crates/vendor/candle/candle-examples",
-  #"crates/vendor/candle/candle-flash-attn",
-  #"crates/vendor/candle/candle-kernels",
-  #"crates/vendor/candle/candle-metal-kernels",
-  #"crates/vendor/candle/candle-nn",
-  #"crates/vendor/candle/candle-onnx",
-  #"crates/vendor/candle/candle-pyo3",
-  #"crates/vendor/candle/candle-transformers",
-  #"crates/vendor/candle/tensor-tools",
-  # NB(bt,2023-12-12): Newrelic keeps breaking with upgrades. Kill for now.
-  #"crates/vendor/newrelic-telemetry-sdk-rust",
-
-  # cargo-hakari workspace hack (compilation speedup hack)
-  # see usage: https://crates.io/crates/cargo-hakari
-  "crates/workspace-build-acceleration",
 ]
+default-members = ["crates/desktop/artcraft"]
 
 [workspace.package]
-# Common inheritable settings for monorepo packages
 publish = false
 
 [workspace.dependencies]
-# Hakari workspace hack (faster compile times)
-#
-# If an unrelated leaf package starts causing general build problems,
-# for packages including hakari, look up what depends on the bad package:
-#
-#   `cargo tree --target all  -p {BAD_PACKAGE_NAME} -i`
-#
-# Packages to remove from hakari to ensure we can build in Netlify,
-# Github Actions (without package installs), etc.:
-#
-#  - cudarc
-#  - esaxx-rs
-#  - ort
-#  - tauri
-#  - tauri-runtime-wry
-#  - tauri-utils
-#
-# Broken on Windows:
-#  - core-foundation
-#  - core-foundation-sys
-#
-workspace-build-acceleration = { path = "crates/workspace-build-acceleration" }
-
-# Internal libs
-# Setting paths here ensures we don't need to do so in every crate's Cargo.toml
-# It makes refactoring much easier.
-actix_artcraft = { path = "crates/lib/actix_artcraft" }
-actix_helpers = { path = "crates/lib/actix_helpers" }
 artcraft_api_defs = { path = "crates/api_clients/artcraft/artcraft_api_defs" }
-artcraft_api_keys = { path = "crates/api_clients/artcraft/artcraft_api_keys" }
 artcraft_client = { path = "crates/api_clients/artcraft/artcraft_client" }
 artcraft_router = { path = "crates/api_clients/artcraft/artcraft_router" }
-bootstrap = { path = "crates/lib/bootstrap" }
-bucket_client = { path = "crates/api_clients/bucket_client" }
-bucket_paths = { path = "crates/schema/buckets/bucket_paths" }
 build_metadata = { path = "crates/lib/build_metadata" }
-cloud_storage = { path = "crates/api_clients/cloud_storage" }
 cloudflare_errors = { path = "crates/lib/cloudflare_errors" }
 cloudflare_mitigation = { path = "crates/lib/cloudflare_mitigation" }
-collections = { path = "crates/lib/data/collections" }
-component_traits = { path = "crates/service/plugins/component_traits" }
-concurrency = { path = "crates/lib/concurrency" }
 cookie_store = { path = "crates/lib/cookie_store" }
-crockford = { path = "crates/lib/data/crockford" }
-datadog_client = { path = "crates/api_clients/datadog_client" }
-easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
-error_utils = { path = "crates/lib/error_utils" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
 gmicloud_client = { path = "crates/api_clients/gmicloud_client" }
-ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }
-beeble_client = { path = "crates/api_clients/beeble_client" }
 grok_api_client = { path = "crates/api_clients/grok_api_client" }
 grok_consumer_client = { path = "crates/api_clients/grok_consumer_client" }
-rootly_client = { path = "crates/api_clients/rootly_client" }
-rootly_config = { path = "crates/schema/config/rootly_config" }
-shared_env_var_config = { path = "crates/schema/config/shared_env_var_config" }
 http_headers = { path = "crates/lib/http_headers" }
 images = { path = "crates/lib/files/images" }
-jobs_common = { path = "crates/lib/jobs_common" }
 jwt_light = { path = "crates/lib/jwt_light" }
-jwt_signer = { path = "crates/lib/jwt_signer" }
-opaque_cursors = { path = "crates/lib/opaque_cursors" }
-memory_caching = { path = "crates/lib/caching/memory_caching" }
 memory_store = { path = "crates/lib/caching/memory_store" }
 midjourney_client = { path = "crates/api_clients/midjourney_client" }
 mimetypes = { path = "crates/lib/files/mimetypes" }
-muapi_client = { path = "crates/api_clients/muapi_client" }
-metrics = { path = "crates/lib/metrics" }
-mysql_queries = { path = "crates/schema/database/mysql_queries" }
-mysql_testing = { path = "crates/schema/database/mysql_testing" }
-pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
 kinovi_web_client = { path = "crates/api_clients/kinovi_web_client" }
-server_environment = { path = "crates/lib/server_environment" }
-sha1_hash = { path = "crates/lib/sha1_hash" }
-shared_service_components = { path = "crates/lib/shared_service_components" }
 sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
-subprocess_common = { path = "crates/lib/deprecated/subprocess_common" }
 test_data = { path = "crates/testing/test_data" }
 test_utils = { path = "crates/testing/test_utils" }
 tokens = { path = "crates/schema/public/tokens" }
-trace_id = { path = "crates/schema/trace_id" }
 url_utils = { path = "crates/lib/url_utils" }
-users = { path = "crates/lib/users" }
 uuid_utils = { path = "crates/lib/uuid_utils" }
-video_info = { path = "crates/lib/video_info" }
 web_base64 = { path = "crates/lib/data/web_base64" }
 worldlabs_api_client = { path = "crates/api_clients/worldlabs_api_client" }
 worldlabs_consumer_client = { path = "crates/api_clients/worldlabs_consumer_client" }
-
-# External libs
-# Centrally pinned versions so that we can uniformly upgrade/downgrade versions across the workspace
-# If a crate needs to use an older/newer version, the dependency should be managed in that crate's own Cargo.toml
-actix-cors = "0.7.1"
-actix-http = "3.12.1"
-actix-multipart = "0.7.2"
-actix-rt = "2.11.0"
-actix-service = "2.0.3"
-actix-utils = "3.0.1"
-actix-web = "4.13.0"
-actix-web-lab = "0.26.0"
 anyhow = "1.0.102"
 assertor = "0.0.3"
 base64 = "0.22.1"
-bcrypt = "0.15"
 bstr = "1.12.1"
 byteorder = "1.5.0"
-bytes = "1.11.1"
 chrono = { version = "0.4.44", features = ["serde"] }
-clap = { version = "=4.5.60", features = ["derive"] }
 cookie = "0.18.1"
-dotenv = "0.15.0"
-elasticsearch = { version = "8.5.0-alpha.1", default-features = false, features = ["rustls-tls"] }
 env = "1.0.1"
 env_logger = "0.11.9"
 futures = { version = "0.3.32" }
-hex-literal = "1.1.0"
-hostname = "0.4.0"
 indexmap = "2.13.0"
 log = "0.4.29"
-md-5 = "0.10.6" # insecure but used for gravatar
-mockall = "0.12.1"
 once_cell = "1.21.4"
-r2d2 = "0.8.10"
-r2d2_redis = "0.14.0"
 rand = "0.9.1"
-redis = { version = "1.0.2", features = ["r2d2", "tokio-rustls-comp", "tokio-comp", "cluster-async", "aio"] }
 regex = "1.12.3"
 reqwest = { version = "0.12.23", default-features = false, features = [ "charset", "http2", "system-proxy", "json", "cookies", "rustls-tls", "gzip" ] }
-reqwest-websocket = {  version = "0.5.0" }
-rust-s3 = { version = "0.36.0-beta.2", default-features = false, features = ["fail-on-err", "tags", "tokio-rustls-tls"] }
-erased-serde = "0.4"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_derive = "1.0.228"
 serde_json = "1.0.149"
-serde_yaml = "0.9.34+deprecated"
 sha2 = "0.11.0-rc.5"
 sha3 = "0.10.8"
-speculoos = "0.11.0"
 strum = { version = "0.28.0", features = ["derive"] }
 tauri = { version = "2.11.2", features = ["unstable", "devtools", "protocol-asset"] } # NB: "devtools" prevents App Store distribution; "ubstable" is needed for window access
 tauri-plugin-dialog = "2.7.1"
@@ -363,7 +108,6 @@ tauri-plugin-upload = "2.4.0"
 tempdir = "0.3.7"
 tempfile = "3.27.0"
 thiserror = "2.0.18"
-time = "0.3.36"
 tokio = { version = "1.50.0", features = ["macros"] }
 tokio-util = "0.7.12"
 toml = "1.0.7+spec-1.1.0"
@@ -371,17 +115,8 @@ url = { version = "2.5.8", features = ["serde"] }
 utoipa = { version = "5.4.0", features = ["chrono", "actix_extras", "url"] }
 uuid = "1.22.0"
 walkdir = "2.4.0"
-
-# NB: wreq gets past fingerprinting, but we have to deal with platform-specific build issues.
-#
-# Mac:
-#   brew install --formula cmake pkg-config llvm
-# Windows:
-#   choco install cmake -y
-#   choco install strawberryperl -y
-#   choco install pkgconfiglite -y
-#   choco install llvm -y
-#   choco install nasm -y
+# wreq native prerequisites:
+# macOS: brew install cmake pkg-config llvm
+# Windows: choco install cmake strawberryperl pkgconfiglite llvm nasm
 wreq-util = "3.0.0-rc.10"
 wreq = { version = "6.0.0-rc.28", features = ["json", "query", "form", "multipart", "cookies", "ws", "stream", "gzip", "brotli", "zstd", "deflate"] }
-

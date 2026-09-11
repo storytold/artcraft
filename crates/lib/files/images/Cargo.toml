@@ -14,12 +14,7 @@ publish = false
 name = "images"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { workspace =  true }
 
 # Internal
 errors = { workspace = true}

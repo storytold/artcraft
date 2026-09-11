@@ -1,2 +1,0 @@
-pub mod moderator_change_user_email_handler;
-pub mod moderator_list_email_address_changes_for_user_handler;

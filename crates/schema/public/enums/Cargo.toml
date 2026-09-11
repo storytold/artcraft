@@ -8,9 +8,6 @@ authors = [
 ]
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [lib]
 name = "enums"
 path = "src/lib.rs"
@@ -20,8 +17,6 @@ default = []
 database = ["sqlx", "sqlx-core", "sqlx-mysql"]
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 # (None yet)

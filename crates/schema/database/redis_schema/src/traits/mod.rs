@@ -1,1 +1,0 @@
-pub mod hkey_store_adapter;

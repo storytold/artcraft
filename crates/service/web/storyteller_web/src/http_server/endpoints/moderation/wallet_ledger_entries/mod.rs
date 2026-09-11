@@ -1,2 +1,0 @@
-pub mod list_wallet_ledger_entries_by_wallet_handler;
-pub mod moderator_get_wallet_ledger_entry_handler;

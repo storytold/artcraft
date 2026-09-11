@@ -1,4 +1,0 @@
-pub mod stripe_create_checkout_session_error;
-pub mod stripe_create_checkout_session_json_handler;
-pub mod stripe_create_checkout_session_redirect_handler;
-pub mod stripe_create_checkout_session_shared;

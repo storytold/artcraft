@@ -8,16 +8,11 @@ authors = [
 ]
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [lib]
 name = "artcraft_api_defs"
 path = "src/lib.rs"
 
 [dependencies]
-# Hackari workspace (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 enums.workspace = true

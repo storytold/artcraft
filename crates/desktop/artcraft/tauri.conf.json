@@ -7,7 +7,7 @@
     "frontendDist": "../../../frontend/apps/artcraft/dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "nx run artcraft:dev",
-    "beforeBuildCommand": "npx run artcraft:build"
+    "beforeBuildCommand": "npx nx run artcraft:build"
   },
   "app": {
     "withGlobalTauri": true,

@@ -59,10 +59,7 @@ jobs:
           echo "NPM version:"
           npm --version
 
-          # Remove mismatched @nx packages and reinstall with correct versions
-          npm install --save-dev @nx/remix@21.1.1 @nx/js@21.1.1 @nx/react@21.1.1 @nx/vite@21.1.1 @nx/eslint@21.1.1
-
-          echo "=== Nx versions after adjustment ==="
+          echo "=== Nx versions from lockfile ==="
           npm list --depth=0 | findstr nx
 
       - name: Pre-build frontend to avoid Tauri build issues

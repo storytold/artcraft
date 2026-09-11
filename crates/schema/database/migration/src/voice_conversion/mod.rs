@@ -1,3 +1,0 @@
-pub mod list_vc_models_for_migration;
-pub mod query_vc_model_for_migration;
-pub mod query_vc_model_info_lite_for_migration;

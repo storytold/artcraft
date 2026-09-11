@@ -13,12 +13,7 @@ publish = false
 name = "errors"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
-# cargo-hakari workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # NB: This is one of the most central crates in the monorepo and everything depends on it.
 # Consider the dependencies here wisely.

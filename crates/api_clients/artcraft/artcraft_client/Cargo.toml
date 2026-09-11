@@ -8,9 +8,6 @@ authors = [
 ]
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 # [lints.rust]
 # unused_imports = "forbid"
 
@@ -19,8 +16,6 @@ name = "artcraft_client"
 path = "src/lib.rs"
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 artcraft_api_defs.workspace = true

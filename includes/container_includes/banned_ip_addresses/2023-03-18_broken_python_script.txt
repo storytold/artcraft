@@ -1,6 +1,0 @@
-# This broken Python script has been around since at least the DDoS time
-# But now it's actively spamming the logs at 100QPS on single nodes!
-# It's from a single IP address, which we'll block:
-
-# Unbanning for now as the code fix should resolve the issue.
-# 104.251.211.22

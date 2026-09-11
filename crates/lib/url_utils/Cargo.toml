@@ -4,17 +4,12 @@ edition = "2024"
 version = "0.0.1"
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [lib]
 name = "url_utils"
 path = "src/lib.rs"
 
 [dependencies]
 
-# Workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 # NB: DO NOT ALLOW ANY OTHER DEPS - THIS IS URL LOGIC ONLY
