@@ -67,35 +67,28 @@ export function watchThemeColors(
   onChange: (colors: ThemeColors) => void,
 ): () => void {
   const derive = () => onChange(deriveThemeColors());
-  // Theme flips animate the tokens over 0.4s (see globals.css). Sampling
-  // just the endpoints left WebGL consumers chasing a stale target until
-  // the fade ended (a visible late shift); instead, sample the computed
-  // colors EVERY FRAME through the transition window so canvas layers
-  // track the DOM's animated tokens exactly.
-  let raf = 0;
-  let until = 0;
-  const sampleLoop = () => {
+  // Theme flips animate the tokens over 0.4s (see globals.css), so a
+  // derive at flip time reads MID-transition values. Deliver both: the
+  // immediate read (consumers that lerp start moving at once) and a final
+  // read after the fade settles so targets land on the true colors.
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  const deriveTwice = () => {
     derive();
-    if (performance.now() < until) raf = requestAnimationFrame(sampleLoop);
-  };
-  const onFlip = () => {
-    until = performance.now() + 550;
-    cancelAnimationFrame(raf);
-    derive();
-    raf = requestAnimationFrame(sampleLoop);
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(derive, 500);
   };
   derive();
 
-  const observer = new MutationObserver(onFlip);
+  const observer = new MutationObserver(deriveTwice);
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
   const mq = window.matchMedia("(prefers-color-scheme: dark)");
-  mq.addEventListener("change", onFlip);
+  mq.addEventListener("change", deriveTwice);
   return () => {
-    cancelAnimationFrame(raf);
+    clearTimeout(settleTimer);
     observer.disconnect();
-    mq.removeEventListener("change", onFlip);
+    mq.removeEventListener("change", deriveTwice);
   };
 }
