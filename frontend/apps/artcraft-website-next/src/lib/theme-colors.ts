@@ -67,7 +67,7 @@ export function watchThemeColors(
   onChange: (colors: ThemeColors) => void,
 ): () => void {
   const derive = () => onChange(deriveThemeColors());
-  // Theme flips animate the tokens over 0.75s (see globals.css), so a
+  // Theme flips animate the tokens over 0.4s (see globals.css), so a
   // derive at flip time reads MID-transition values. Deliver both: the
   // immediate read (consumers that lerp start moving at once) and a final
   // read after the fade settles so targets land on the true colors.
@@ -75,7 +75,7 @@ export function watchThemeColors(
   const deriveTwice = () => {
     derive();
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(derive, 850);
+    settleTimer = setTimeout(derive, 500);
   };
   derive();
 

@@ -32,14 +32,13 @@ export default function ThemeToggle({ className }: { className?: string }) {
   const toggle = () => {
     const next: Theme = resolveCurrentTheme() === "dark" ? "light" : "dark";
     const root = document.documentElement;
-    // Transient class: every themed property (colors, backgrounds, rules,
-    // SVG fills) cross-fades over 0.75s, then the blanket transition is
-    // lifted so per-frame color writes and hover states stay instant.
+    // Transient class: the theme tokens cross-fade over 0.4s (see the
+    // @property transitions in globals.css), then the class lifts.
     root.classList.add("theme-anim");
     window.clearTimeout(themeAnimTimer);
     themeAnimTimer = window.setTimeout(
       () => root.classList.remove("theme-anim"),
-      800,
+      450,
     );
     // Commit the transition property in its own style pass BEFORE the
     // token flip — same-recalc changes can skip the transition entirely.

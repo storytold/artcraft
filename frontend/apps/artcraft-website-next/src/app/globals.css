@@ -127,7 +127,7 @@ body {
 /* Theme switch cross-fade. The tokens are registered as typed <color>
    custom properties so the VARIABLES THEMSELVES can transition: when the
    toggle stamps .theme-anim on <html>, the root transitions every token
-   over 0.75s and every consumer — utilities, borders, SVG fills,
+   over 0.4s and every consumer — utilities, borders, SVG fills,
    color-mix() strings, and gradients (background-image is not animatable,
    so element-level transitions could never cover the scrims and pools) —
    re-resolves each animated frame. No per-element transitions exist, so
@@ -150,21 +150,21 @@ body {
 
 html.theme-anim {
   transition:
-    --bg 0.75s ease,
-    --bg-raised 0.75s ease,
-    --bg-sunken 0.75s ease,
-    --ink 0.75s ease,
-    --ink-strong 0.75s ease,
-    --muted 0.75s ease,
-    --faint 0.75s ease,
-    --line 0.75s ease,
-    --line-strong 0.75s ease,
-    --accent 0.75s ease,
-    --accent-ink 0.75s ease,
-    --invert-bg 0.75s ease,
-    --invert-fg 0.75s ease,
-    --danger 0.75s ease,
-    --scanline 0.75s ease;
+    --bg 0.4s ease,
+    --bg-raised 0.4s ease,
+    --bg-sunken 0.4s ease,
+    --ink 0.4s ease,
+    --ink-strong 0.4s ease,
+    --muted 0.4s ease,
+    --faint 0.4s ease,
+    --line 0.4s ease,
+    --line-strong 0.4s ease,
+    --accent 0.4s ease,
+    --accent-ink 0.4s ease,
+    --invert-bg 0.4s ease,
+    --invert-fg 0.4s ease,
+    --danger 0.4s ease,
+    --scanline 0.4s ease;
 }
 
 /* Signature interaction: label blocks invert on hover/active. */

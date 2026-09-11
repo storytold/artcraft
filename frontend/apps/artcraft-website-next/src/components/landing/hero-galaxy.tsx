@@ -799,10 +799,10 @@ function GalaxyScene({
 
     clipBest.fill(-1);
 
-    // Theme cross-fade: WebGL colors chase their targets at ~0.75s settle,
+    // Theme cross-fade: WebGL colors chase their targets at ~0.4s settle,
     // matching the DOM's theme transition.
     const cs = colorState.current;
-    const themeK = 1 - Math.exp(-dt / 0.25);
+    const themeK = 1 - Math.exp(-dt / 0.13);
     cs.bg.lerp(cs.tBg, themeK);
     cs.frame.lerp(cs.tFrame, themeK);
     cs.line.lerp(cs.tLine, themeK);
@@ -1160,7 +1160,11 @@ function GalaxyScene({
         const band = Math.max(1, mv.waveBand);
         if (rollT < 1) {
           const waveR = waveEase * L.b * L.thetaExit;
-          waveK = clamp01((waveR - rr) / band + 1);
+          // The band TRAILS the front: a card stays fully hidden until the
+          // front reaches it, then resolves over the band behind it. (As a
+          // leading edge, the band covered the innermost cards at radius
+          // zero — partly-visible center cards before the beat.)
+          waveK = clamp01((waveR - rr) / band);
         }
         if (flareT > 0 && flareT < 1) {
           const fr = (rr - flareEase * L.b * L.thetaExit) / band;
