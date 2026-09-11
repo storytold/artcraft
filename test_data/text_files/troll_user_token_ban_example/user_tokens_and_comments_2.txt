@@ -1,7 +1,0 @@
-# this is test data
-
-# more example user tokens
-U:STEVE
-U:JIM
-U:BOB
-

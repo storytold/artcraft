@@ -1,0 +1,14 @@
+hakari-package = "workspace-build-acceleration"
+
+resolver = "1"
+
+dep-format-version = "4"
+workspace-hack-line-style = "workspace-dotted"
+
+platforms = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+]
+
+exact-versions = true

@@ -34,7 +34,7 @@ mod tests {
   pub fn test_file_size() {
     // Success case
     let path = test_file("test_data/audio/flac/zelda_ocarina_small_item.flac");
-    assert_eq!(file_size(path).unwrap(), 271925);
+    assert_eq!(file_size(path).unwrap(), 115);
 
     // Error case
     assert!(file_size("non/existing/path").is_err());

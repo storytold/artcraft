@@ -1,4 +1,0 @@
-# This file contains only comments
-
-# No user tokens
-
