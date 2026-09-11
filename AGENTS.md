@@ -1,0 +1,97 @@
+# AGENTS.md
+
+This file provides guidance for coding agents when working with the Artcraft monorepo.
+
+## Project Overview
+
+Artcraft is a web and desktop application for generating AI image and video. It is written in 
+Rust and TypeScript and contains desktop, server, and frontend components.
+
+## Project Structure
+
+```
+artcraft/
+├── _database/                           # Schema definitions and migrations (MySQL, SQLite, Elasticsearch, etc.)
+│   ├── elasticsearch/                   # Elasticsearch schema and queries
+│   └── sql/                             # MySQL and SQLite schema definitions and migrations
+│       ├── artcraft_migrations/         # ArtCraft desktop app SQLite migrations
+│       ├── migrations/                  # Server MySQL migrations
+│       └── migrations_squashed/         # Fully materialized MySQL schema definitions for most tables
+├── _tools/                              # Various 3rd party tool integrations and configurations
+│   └── postman/                         # Postman configs for test HTTP requests against development and production
+├── build/                               # Dockerfile build instructions for server components
+├── crates/                              # Rust workspace
+│   ├── api_clients/                     # HTTP clients for calling internal and 3rd party services
+│   ├── cli/                             # Command line tools
+│   ├── desktop/                         # Desktop (Tauri) apps
+│   │   └── artcraft/                    # (Important) ArtCraft, the desktop app. This is one of our main pieces of software
+│   ├── lib/                             # Various utility libraries for servers, CLI tools, desktop, etc.
+│   ├── schema/                          # Data definition layer: MySQL, SQlite, Redis, S3/R2 buckets, etc.
+│   │   ├── buckets/                     # Declares R2 cloud bucket topology
+│   │   ├── database/                    # MySQL, SQLite, Elasticsearch, Redis, etc.
+│   │   │   ├── elasticsearch_schema/    # Elasticsearch
+│   │   │   ├── migration/               # (deprecated) Online schema adapters for MySQL 
+│   │   │   ├── mysql_queries/           # Sqlx MySQL queries for our backend monolith `storyteller-web`, jobs, etc.
+│   │   │   ├── redis_common/            # Redis support
+│   │   │   ├── redis_schema/            # Redis key and HKEY topology
+│   │   │   ├── sqlite_queries/          # (deprecated) Sqlite queries
+│   │   │   └── sqlite_tasks/            # Queries for the ArtCraft desktop app's "tasks" database.
+│   │   ├── public/                      # Token identifier and enum variant definitions
+│   │   │   ├── composite_identifier/    # MySQL composite key system
+│   │   │   ├── enums/                   # MySQL "enums" stored in VARCHAR fields.
+│   │   │   └── tokens/                  # Primary database identifiers with Stripe-like ID prefixes, eg. "user_{entropy}"
+│   │   └── service/                     # Backend HTTP services and jobs
+│   │       ├── job/                     # Backend jobs.
+│   │       │   └── video_thumbnail_job/ # Render video thumbnails
+│   │       ├── plugins/                 # Collections of reusable Actix-Web HTTP functions (user and billing systems)
+│   │       └── web/                     # HTTP web servers
+│   │           └── storyteller_web/     # (Important) Our main HTTP API monolith and backend.
+│   └── frontend/                        # Nx typescript monorepo for our websites and Tauri desktop apps
+│       ├── apps/                        # Websites and Tauri desktop apps
+│       │   ├── artcraft/                # ArtCraft the Tauri app's frontend. Used in conjunction with `artcraft` the Rust crate.
+│       │   └── artcraft-website/        # The website for https://getartcraft.com
+│       └── libs/                        # Support libraries, reusable React components, etc.
+└── Cargo.toml                           # Rust monorepo workspace
+```
+
+## Code Style
+
+- Rust with no minimum supported version
+- Actix-web for HTTP services
+- SQLx for MySQL and SQLite; prefer `sqlx::query!` / `sqlx::query_as!` compile-time checked macros over runtime `sqlx::query()` whenever possible
+- MySQL queries belong in the `mysql_queries` crate, not in application/service crates like `storyteller-web` — call those query functions instead of embedding `sqlx::query!` / `sqlx::query()` in handlers. (Query-writing conventions live in `crates/schema/database/mysql_queries/AGENTS.md`.)
+- A mix of wreq and reqwest for Rust HTTP clients
+- Never use `println!` or `eprintln!` outside of tests; use `log` crate macros instead
+- When two crates export the same type name, alias imports with a suffix: `use foo::Bar as BarFoo;`
+- Prefer `use` imports over inline fully-qualified paths; only qualify inline for true one-offs or std collisions
+- TypeScript with Nx, React, Vite, Zustand, and Three.js
+- Use two spaces for indentation
+
+### File Layout
+
+Organize for top-to-bottom reading. Important things first, details later.
+
+- **Constants** at the top (after imports)
+- **Structs/enums** next; outer structs above inner sub-structs
+- **API types** in order: Request, Response, Error
+- **In impl blocks**: constructors first, then public methods, then private helpers
+- Private helpers go *below* the methods that call them
+- Among helpers: meatier logic above leaf-level formatters
+- **In test modules**: constants first, then test cases (grouped into sub-modules when 2+), then helper functions last
+
+## Markdown
+
+- **Tables must be space-padded so columns align in plain text.** Markdown
+  tables are read raw (terminals, diffs, editors) at least as often as
+  rendered, and condensed tables are unreadable there. Pad every cell to its
+  column width:
+
+  ```markdown
+  | Model        | Configuration | Credits    | Speed | Score   |
+  |--------------|---------------|--------------------|---------|
+  | Meshy 6      | text or image | 104        | 80.0  | +24     |
+  | Rodin 2.5    | text or image | 13         | 10.0  | +3      |
+  ```
+
+  Not: `| Model | Configuration | Credits | Speed | Score |` packed tight
+  with varying widths per row.
