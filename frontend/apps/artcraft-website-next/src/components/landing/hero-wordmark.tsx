@@ -80,8 +80,17 @@ export default function HeroMasthead() {
         el.style.transform = "";
         el.style.fontWeight = "";
         el.style.fontStretch = "";
+        el.style.width = "";
       }
       const rects = els.map((el) => el.getBoundingClientRect());
+      // Pin each letter to its resting advance width: the flip morphs
+      // font-weight per frame, and on inline spans that would REFLOW the
+      // word — every base-relative transform downstream assumes the
+      // measured layout. With widths pinned, lighter glyphs simply center
+      // in their boxes and flow never moves.
+      els.forEach((el, i) => {
+        el.style.width = `${rects[i].width}px`;
+      });
       heroWordmark.els = els;
       heroWordmark.baseX = rects.map((r) => r.left + r.width / 2);
       heroWordmark.baseDocY = rects.map(
@@ -145,7 +154,7 @@ export default function HeroMasthead() {
             ref={(el) => {
               letterRefs.current[i] = el;
             }}
-            className="inline-block"
+            className="inline-block text-center"
             style={{
               willChange: "transform, opacity",
               // Three stacked halos in the page background color: a tight

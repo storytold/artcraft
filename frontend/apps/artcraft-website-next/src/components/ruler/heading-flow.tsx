@@ -446,9 +446,13 @@ export default function HeadingFlow({
             // Variable-font morph: the wordmark's poster cut (wght 900,
             // wdth 125%) eases into the headings' display setting
             // (620, 118%) letter by letter with the flight — the weight
-            // difference lands unnoticed inside the motion.
-            el.style.fontWeight = String(Math.round(900 - 280 * e));
-            el.style.fontStretch = `${(125 - 7 * e).toFixed(1)}%`;
+            // difference lands unnoticed inside the motion. Gated on real
+            // flip progress: the REST branch also runs this pass with
+            // e = 1 (from == to), and ungated it rendered the resting
+            // wordmark at 620, snapping to 900 the instant a flip began.
+            const wp = flipP > 0 ? e : 0;
+            el.style.fontWeight = String(Math.round(900 - 280 * wp));
+            el.style.fontStretch = `${(125 - 7 * wp).toFixed(1)}%`;
           } else {
             el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
           }
