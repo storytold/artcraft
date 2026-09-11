@@ -653,17 +653,30 @@ function GalaxyScene({
   );
 
   // Theme colors follow imperatively — recreating materials on a theme flip
-  // would churn every mesh for nothing.
+  // would churn every mesh for nothing. A theme change only retargets;
+  // the frame loop lerps toward the target so the WebGL layer cross-fades
+  // in step with the DOM's 0.75s theme transition instead of snapping.
+  const colorState = useRef({
+    init: false,
+    bg: new THREE.Vector3(0.9, 0.9, 0.9),
+    frame: new THREE.Vector3(0.5, 0.5, 0.5),
+    line: new THREE.Color("#888888"),
+    tBg: new THREE.Vector3(0.9, 0.9, 0.9),
+    tFrame: new THREE.Vector3(0.5, 0.5, 0.5),
+    tLine: new THREE.Color("#888888"),
+  });
   useEffect(() => {
-    const bg = hexToVec3(colors.bg);
-    const frame = hexToVec3(colors.lineStrong);
-    materials.forEach((m) => {
-      (m.uniforms.uBg.value as THREE.Vector3).copy(bg);
-      (m.uniforms.uFrameCol.value as THREE.Vector3).copy(frame);
-    });
-    lineMat.color.set(colors.lineStrong);
-    tickMat.color.set(colors.lineStrong);
-  }, [colors, materials, lineMat, tickMat]);
+    const cs = colorState.current;
+    cs.tBg.copy(hexToVec3(colors.bg));
+    cs.tFrame.copy(hexToVec3(colors.lineStrong));
+    cs.tLine.set(colors.lineStrong);
+    if (!cs.init) {
+      cs.init = true;
+      cs.bg.copy(cs.tBg);
+      cs.frame.copy(cs.tFrame);
+      cs.line.copy(cs.tLine);
+    }
+  }, [colors]);
 
   // Shared unit card plane, segmented for the curve warp and scaled per mesh.
   const unitPlane = useMemo(() => new THREE.PlaneGeometry(1, 1, 12, 12), []);
@@ -785,6 +798,16 @@ function GalaxyScene({
       ((targeting ? 0 : 1) - st.fieldK) * (1 - Math.exp(-dt / 0.12));
 
     clipBest.fill(-1);
+
+    // Theme cross-fade: WebGL colors chase their targets at ~0.75s settle,
+    // matching the DOM's theme transition.
+    const cs = colorState.current;
+    const themeK = 1 - Math.exp(-dt / 0.25);
+    cs.bg.lerp(cs.tBg, themeK);
+    cs.frame.lerp(cs.tFrame, themeK);
+    cs.line.lerp(cs.tLine, themeK);
+    lineMat.color.copy(cs.line);
+    tickMat.color.copy(cs.line);
 
     // Perf governor: EMA of the real frame time. Sustained drops below the
     // FPS floor shed cards (and their decode pressure) quickly; recovery
@@ -1150,6 +1173,8 @@ function GalaxyScene({
       const va = videoAlpha[i];
 
       const u = materials[i].uniforms;
+      (u.uBg.value as THREE.Vector3).copy(cs.bg);
+      (u.uFrameCol.value as THREE.Vector3).copy(cs.frame);
       // Cover-fit the clip into the card's current (morphing) aspect.
       const srcA = clipVA[card.clip];
       const rep = u.uRepeat.value as THREE.Vector2;

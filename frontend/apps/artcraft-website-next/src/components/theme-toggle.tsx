@@ -5,6 +5,8 @@ import { MoonIcon, SunIcon } from "lucide-react";
 
 const STORAGE_KEY = "artcraft-theme";
 
+let themeAnimTimer = 0;
+
 type Theme = "light" | "dark";
 
 function resolveCurrentTheme(): Theme {
@@ -29,7 +31,17 @@ export default function ThemeToggle({ className }: { className?: string }) {
 
   const toggle = () => {
     const next: Theme = resolveCurrentTheme() === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
+    const root = document.documentElement;
+    // Transient class: every themed property (colors, backgrounds, rules,
+    // SVG fills) cross-fades over 0.75s, then the blanket transition is
+    // lifted so per-frame color writes and hover states stay instant.
+    root.classList.add("theme-anim");
+    window.clearTimeout(themeAnimTimer);
+    themeAnimTimer = window.setTimeout(
+      () => root.classList.remove("theme-anim"),
+      800,
+    );
+    root.setAttribute("data-theme", next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {

@@ -34,7 +34,7 @@ const wordmarkTuner = defineTunables("wordmark", "Wordmark", {
     min: 0.5,
     max: 1,
     step: 0.005,
-    default: 0.73,
+    default: 0.7,
     info: "Height of the logo-A relative to the font size — match it to the caps' visual height.",
   },
   logoLift: {
@@ -42,7 +42,7 @@ const wordmarkTuner = defineTunables("wordmark", "Wordmark", {
     min: -0.1,
     max: 0.1,
     step: 0.002,
-    default: 0.02,
+    default: -0.006,
     info: "Vertical baseline correction of the logo-A: positive raises it. Syncs the SVG's box-bottom alignment with the glyphs' ink baseline.",
   },
   logoPad: {
@@ -52,6 +52,38 @@ const wordmarkTuner = defineTunables("wordmark", "Wordmark", {
     step: 0.005,
     default: 0.05,
     info: "Side bearing between the logo-A and the R, standing in for the glyph spacing the SVG doesn't have.",
+  },
+  bladeTuck: {
+    label: "Blade tuck em",
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    default: 0.12,
+    info: "Extra distance the sliding word starts tucked behind the blade edge — kills any sliver peeking past the clip at rest.",
+  },
+  scrimPadX: {
+    label: "Scrim pad x",
+    min: 0,
+    max: 320,
+    step: 8,
+    default: 128,
+    info: "How far the contrast scrim behind the center stack extends horizontally beyond the content.",
+  },
+  scrimPadY: {
+    label: "Scrim pad y",
+    min: 0,
+    max: 240,
+    step: 8,
+    default: 88,
+    info: "How far the contrast scrim extends vertically beyond the content.",
+  },
+  scrimBg: {
+    label: "Scrim peak %",
+    min: 40,
+    max: 95,
+    step: 1,
+    default: 78,
+    info: "Peak page-background strength at the scrim's center — the contrast pocket the wordmark and copy sit in over the galaxy.",
   },
 });
 
@@ -63,6 +95,37 @@ function wordmarkDefaults(): { [K in keyof typeof wordmarkTuner.defs]: number } 
     out[key] = wordmarkTuner.defs[key].default;
   }
   return out;
+}
+
+// The contrast pocket behind the center stack — a radial page-bg gradient
+// over the galaxy, live-tunable (pads + peak strength) in the Wordmark
+// tuner group.
+export function HeroScrim() {
+  const [tv, setTv] = useState(-1);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const apply = () => setTv(useTunerStore.getState().version);
+    apply();
+    const unsub = useTunerStore.subscribe(() => {
+      clearTimeout(timer);
+      timer = setTimeout(apply, 150);
+    });
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
+  }, []);
+  const wm = tv < 0 ? wordmarkDefaults() : wordmarkTuner.read();
+  return (
+    <div
+      aria-hidden
+      className="absolute"
+      style={{
+        inset: `-${wm.scrimPadY}px -${wm.scrimPadX}px`,
+        background: `radial-gradient(closest-side, color-mix(in srgb, var(--bg) ${wm.scrimBg}%, transparent), transparent)`,
+      }}
+    />
+  );
 }
 
 function LogoGlyph({ cap, lift }: { cap: number; lift: number }) {
@@ -125,6 +188,8 @@ export default function HeroMasthead() {
     };
   }, []);
   const wm = tv < 0 ? wordmarkDefaults() : wordmarkTuner.read();
+  const wmRef = useRef(wm);
+  wmRef.current = wm;
 
   useEffect(() => {
     const box = boxRef.current;
@@ -250,26 +315,29 @@ export default function HeroMasthead() {
       const logoCx = bx[0] + (center - bx[0]) * (1 - fLogo);
       els[0].style.transform = `translate3d(${(logoCx - bx[0]).toFixed(1)}px, 0, 0)`;
       els[0].style.opacity = String(clamp01(t / 0.3));
-      // The blade edge: everything left of the logo's right edge is
-      // clipped away, so letters EXTRUDE from behind the mark — one
-      // surface sliding out — instead of fading in around it.
+      // The blade edge: everything left of the logo's live right edge is
+      // clipped away.
       const logoRight = logoCx + (adv[0] * F) / 2;
 
-      let done = fLogo >= 1 && t > 0.35;
-      const letterDur = Math.max(0.2, it.wordDur * 0.55);
+      // The word is ONE sliding surface: a single shared offset animates
+      // to zero, so the letters never move relative to each other. It
+      // starts far enough left that the whole block (plus a tunable tuck)
+      // hides behind the blade edge, and emerges through it as it slides.
+      const wordRight = bx[n - 1] + (adv[n - 1] * F) / 2;
+      const o0 =
+        -(wordRight - (bx[0] + (adv[0] * F) / 2)) -
+        wmRef.current.bladeTuck * F;
+      const f = clamp01((t - it.wordAt) / Math.max(0.1, it.wordDur));
+      const o = o0 * (1 - easeOut(f));
+
+      let done = fLogo >= 1 && f >= 1 && t > 0.35;
       for (let i = 1; i < n; i++) {
-        const fi = clamp01((t - it.wordAt - i * it.wordStagger) / letterDur);
-        const e = easeOut(fi);
-        // Un-released letters ride hidden WITH the gliding logo; released
-        // ones travel from wherever the logo currently is to their slot,
-        // emerging through the blade edge as they clear it.
-        const x = logoCx + (bx[i] - logoCx) * e;
-        els[i].style.transform = `translate3d(${(x - bx[i]).toFixed(1)}px, 0, 0)`;
+        const x = bx[i] + o;
+        els[i].style.transform = `translate3d(${o.toFixed(1)}px, 0, 0)`;
         els[i].style.opacity = "1";
         const clipL = logoRight - (x - (adv[i] * F) / 2);
         els[i].style.clipPath =
           clipL > 0.5 ? `inset(-20% 0 -20% ${clipL.toFixed(1)}px)` : "";
-        if (fi < 1) done = false;
       }
       if (done) {
         for (const el of els) {
@@ -286,8 +354,7 @@ export default function HeroMasthead() {
     // tuner's debug replay (the clock is already rewound by then).
     const start = () => {
       const it0 = introTuner.read();
-      const total =
-        it0.wordAt + it0.wordDur + WORDMARK_TEXT.length * it0.wordStagger + 0.5;
+      const total = it0.wordAt + it0.wordDur + 0.5;
       if (introClock.t > total) return;
       gsap.ticker.remove(tick);
       heroWordmark.forming = true;

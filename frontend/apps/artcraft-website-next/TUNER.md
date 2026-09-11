@@ -24,6 +24,9 @@ the whole box with `–`, or expand/collapse individual sections.
 - **Copy** puts a JSON snapshot of all current values on the clipboard —
   paste it into a message or use it to update defaults in code.
 - **Reset** clears every override back to the in-code defaults.
+- **Per-section actions**: every section header carries its own ⧉ (copy
+  just that group's JSON) and ↺ (reset just that group's overrides), so
+  iterating one feature never means copying or resetting the world.
 
 ## Adding tunables (POLICY: always do this)
 
@@ -64,7 +67,9 @@ Then read values where they're used:
 
 The panel picks up new groups automatically — no panel changes needed.
 Registered groups: Intro (page-intro choreography beats; `src/lib/intro.ts`),
-Galaxy layout, Galaxy motion, Galaxy pointer, Galaxy look (hero galaxy;
+Wordmark (logo-A optics, blade tuck, contrast scrim;
+`src/components/landing/hero-wordmark.tsx`), Galaxy layout, Galaxy motion,
+Galaxy pointer, Galaxy look (hero galaxy;
 `src/components/landing/hero-galaxy-tunables.ts`) and Ruler layout, Ruler
 motion, Ruler look (scroll ruler;
 `src/components/ruler/ruler-tunables.ts`).

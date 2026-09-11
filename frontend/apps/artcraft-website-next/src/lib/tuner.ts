@@ -40,6 +40,8 @@ type TunerState = {
   ) => void;
   setValue: (groupId: string, key: string, value: number) => void;
   resetAll: () => void;
+  /** Clears overrides for one group only, leaving the rest tuned. */
+  resetGroup: (groupId: string) => void;
 };
 
 const STORAGE_KEY = "artcraft-tuner";
@@ -87,6 +89,15 @@ export const useTunerStore = create<TunerState>((set) => ({
     set((s) => {
       save({});
       return { values: {}, version: s.version + 1 };
+    }),
+  resetGroup: (groupId) =>
+    set((s) => {
+      const values: Record<string, number> = {};
+      for (const [k, v] of Object.entries(s.values)) {
+        if (!k.startsWith(groupId + ".")) values[k] = v;
+      }
+      save(values);
+      return { values, version: s.version + 1 };
     }),
 }));
 

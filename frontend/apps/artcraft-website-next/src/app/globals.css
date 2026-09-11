@@ -124,6 +124,21 @@ body {
   outline-offset: 2px;
 }
 
+/* Theme switch cross-fade: the toggle stamps .theme-anim on <html> for
+   ~0.8s so every themed property (text, backgrounds, hairlines, SVG fills
+   — the wordmark's logo-A included) transitions together over 0.75s, then
+   lifts the blanket so hover states and per-frame color writes stay
+   instant. */
+html.theme-anim,
+html.theme-anim * {
+  transition:
+    background-color 0.75s ease,
+    color 0.75s ease,
+    border-color 0.75s ease,
+    fill 0.75s ease,
+    stroke 0.75s ease;
+}
+
 /* Signature interaction: label blocks invert on hover/active. */
 .invert-block {
   transition:

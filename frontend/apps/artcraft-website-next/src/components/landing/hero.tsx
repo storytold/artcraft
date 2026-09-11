@@ -3,7 +3,7 @@ import { SOCIAL_LINKS, WEBAPP_URL } from "@/lib/links";
 import { HERO_VIDEO_URL } from "@/lib/landing-data";
 import { GitHubIcon } from "@/components/icons";
 import { Button } from "@/components/ui";
-import HeroMasthead from "./hero-wordmark";
+import HeroMasthead, { HeroScrim } from "./hero-wordmark";
 import HeroGalaxy from "./hero-galaxy";
 import HeroViewport from "./hero-viewport";
 
@@ -26,15 +26,9 @@ export default function Hero() {
             data-reveal-group
             className="relative flex w-full max-w-2xl flex-col items-center text-center"
           >
-            {/* Soft pocket in the nebula so the sales layer always reads. */}
-            <div
-              aria-hidden
-              className="absolute -inset-x-20 -inset-y-14"
-              style={{
-                background:
-                  "radial-gradient(closest-side, color-mix(in srgb, var(--bg) 72%, transparent), transparent)",
-              }}
-            />
+            {/* Soft pocket in the nebula so the sales layer always reads
+                (tunable in the Wordmark tuner group). */}
+            <HeroScrim />
 
             <HeroMasthead />
 

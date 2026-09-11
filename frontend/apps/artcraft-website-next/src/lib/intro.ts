@@ -37,14 +37,6 @@ export const introTuner = defineTunables("intro", "Intro", {
     default: 0.85,
     info: "How long the whole word-formation takes — the logo's glide to its slot spans this window.",
   },
-  wordStagger: {
-    label: "Word stag s",
-    min: 0,
-    max: 0.2,
-    step: 0.01,
-    default: 0.06,
-    info: "Delay between successive letters emerging from behind the logo, left to right.",
-  },
   instrAt: {
     label: "Instrument s",
     min: 0,

@@ -164,19 +164,51 @@ function Section({
   open: boolean;
   onToggle: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+  const copyGroup = () => {
+    const snap = tunerSnapshot()[group.id];
+    navigator.clipboard
+      ?.writeText(JSON.stringify({ [group.id]: snap }, null, 2))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      })
+      .catch(() => {});
+  };
+
   return (
     <div className="border-b border-line last:border-b-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="hud-label flex w-full items-center justify-between px-3 py-2 text-muted hover:text-ink"
-        aria-expanded={open}
-      >
-        {group.title}
-        <span aria-hidden className="text-faint">
-          {open ? "–" : "+"}
-        </span>
-      </button>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="hud-label flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-muted hover:text-ink"
+          aria-expanded={open}
+        >
+          {group.title}
+          <span aria-hidden className="text-faint">
+            {open ? "–" : "+"}
+          </span>
+        </button>
+        {/* Section-scoped actions: copy just this group's JSON, or reset
+            just this group's overrides. */}
+        <button
+          type="button"
+          onClick={copyGroup}
+          title={`Copy ${group.title} values`}
+          className="hud-label px-1.5 py-2 text-faint hover:text-ink"
+        >
+          {copied ? "✓" : "⧉"}
+        </button>
+        <button
+          type="button"
+          onClick={() => useTunerStore.getState().resetGroup(group.id)}
+          title={`Reset ${group.title} to defaults`}
+          className="hud-label pr-3 pl-1.5 py-2 text-faint hover:text-ink"
+        >
+          ↺
+        </button>
+      </div>
       {open && (
         <div className="flex flex-col gap-2 px-3 pb-3">
           {Object.entries(group.defs).map(([key, def]) => (
