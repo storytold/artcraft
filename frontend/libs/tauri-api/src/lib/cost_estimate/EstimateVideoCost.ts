@@ -1,22 +1,30 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult, CommandSuccessStatus } from "../common/CommandStatus";
 import {
-  CommonVideoModel,
-  CommonAspectRatio,
-  CommonVideoResolution,
   GenerationMode,
   GenerationProvider,
 } from "@storyteller/api-enums";
 
 export interface EstimateVideoCostRequest {
-  model: CommonVideoModel;
-  provider: GenerationProvider;
-  generation_mode: GenerationMode;
-  aspect_ratio?: CommonAspectRatio;
-  resolution?: CommonVideoResolution;
+  [key: string]: unknown;
+  model: string;
+  provider?: GenerationProvider;
+  generation_mode?: GenerationMode;
+  aspect_ratio?: string;
+  resolution?: string;
   duration_seconds?: number;
   video_batch_count?: number;
   generate_audio?: boolean;
+  bitrate?: string;
+  start_frame_image_media_token?: string;
+  end_frame_image_media_token?: string;
+  reference_image_media_tokens?: string[];
+  reference_video_media_tokens?: string[];
+  reference_audio_media_tokens?: string[];
+  estimate_only?: {
+    total_input_video_duration_millis?: number;
+    total_input_audio_duration_millis?: number;
+  };
 }
 
 export interface EstimateVideoCostPayload {

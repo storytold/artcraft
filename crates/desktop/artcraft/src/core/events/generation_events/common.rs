@@ -19,7 +19,7 @@ pub enum GenerationServiceProvider {
   Runway,
 }
 
-#[derive(Debug, Copy, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationModel {
   #[serde(rename = "flux_1_dev")]
@@ -143,6 +143,10 @@ pub enum GenerationModel {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+
+  /// An API model ID that does not need a compiled desktop variant.
+  #[serde(untagged)]
+  Unknown(String),
 }
 
 #[derive(Debug, Copy, Clone, Serialize)]
@@ -150,6 +154,7 @@ pub enum GenerationModel {
 pub enum GenerationAction {
   GenerateImage,
   GenerateVideo,
+  GenerateAudio,
   RemoveBackground,
   #[serde(rename = "image_to_3d")]
   ImageTo3d,

@@ -10,7 +10,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     fullName: "Grok Video",
     category: "video",
     creator: ModelCreator.Grok,
-    providers: [GenerationProvider.Grok],
+    providers: [GenerationProvider.Artcraft],
     selectorName: "Grok Video",
     selectorDescription: "Fastest video model",
     selectorBadges: ["20 sec."],

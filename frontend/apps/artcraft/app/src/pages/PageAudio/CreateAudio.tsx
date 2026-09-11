@@ -1,3 +1,5 @@
+import { GenerateAudio, EstimateAudioCost } from "@storyteller/tauri-api";
+import type { OmniGenAudioRequest } from "@storyteller/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PromptBoxAudio, usePromptAudioStore } from "@storyteller/ui-promptbox";
 import {
@@ -25,6 +27,9 @@ import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsern
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
 
+const generateAudio = async (request: OmniGenAudioRequest) => (await GenerateAudio(request)).payload;
+const estimateAudio = async (request: OmniGenAudioRequest) => (await EstimateAudioCost(request)).payload;
+
 const AUDIO_FILTER = [FilterMediaClasses.AUDIO];
 
 const CreateAudio = () => {
@@ -51,7 +56,7 @@ const CreateAudio = () => {
     sampleRateHz: selectedModel?.sample_rate_hz_options?.length
       ? (selectedModel.sample_rate_hz_default ?? undefined)
       : undefined,
-  });
+  }, estimateAudio);
 
   // Track the promptbox height so the feed can pad past it.
   useEffect(() => {
@@ -64,9 +69,8 @@ const CreateAudio = () => {
     return () => ro.disconnect();
   }, []);
 
-  // The merged generation feed. Audio enqueues over HTTP (no Tauri task
-  // queue), so in-progress/failed come from the shared jobs poller and the
-  // completed history from the library — exactly like the webapp.
+  // Tauri enqueues and persists audio jobs; the shared session poller and
+  // library provide the same generation feed used by the webapp.
   const username = useDesktopUsername();
   const feed = useGenerationJobs({ mediaType: "audio", enabled: !!username });
   const gallery = useGalleryData({
@@ -167,6 +171,7 @@ const CreateAudio = () => {
         <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
           <div ref={promptContentRef}>
             <PromptBoxAudio
+              generateAudio={generateAudio}
               models={models}
               uploadAudio={UploadAudioMedia}
               uploadImage={UploadImageMedia}

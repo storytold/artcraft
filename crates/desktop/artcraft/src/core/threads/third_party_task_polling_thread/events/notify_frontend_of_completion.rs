@@ -55,7 +55,7 @@ pub async fn notify_frontend_of_completion(
 ) {
   // Fire the generic generation-complete event (for the task queue UI).
   let generation_action = task_type_to_generation_action(task.task_type);
-  let generation_model = task.model_type.and_then(task_model_type_to_generation_model);
+  let generation_model = task.model_type.clone().and_then(task_model_type_to_generation_model);
   let generation_service = provider_to_generation_service(task.provider);
 
   let complete_event = GenerationCompleteEvent {
@@ -67,6 +67,8 @@ pub async fn notify_frontend_of_completion(
 
   // Fire the typed frontend notification (for the specific page/component that initiated the job).
   let result = match task.task_type {
+    // Audio pages consume the common completion event and refresh their feed.
+    TaskType::AudioGeneration => Ok(()),
     TaskType::ImageGeneration => {
       notify_image_generation(app, api_host, maybe_creds, task, completion).await
     }
@@ -259,6 +261,7 @@ fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
   match task_type {
     TaskType::ImageGeneration => GenerationAction::GenerateImage,
     TaskType::VideoGeneration => GenerationAction::GenerateVideo,
+    TaskType::AudioGeneration => GenerationAction::GenerateAudio,
     TaskType::BackgroundRemoval => GenerationAction::RemoveBackground,
     TaskType::ObjectGeneration => GenerationAction::ImageTo3d,
     TaskType::GaussianGeneration => GenerationAction::GenerateGaussian,
@@ -287,6 +290,7 @@ fn provider_to_generation_service(provider: GenerationProvider) -> GenerationSer
 
 fn task_model_type_to_generation_model(model: TaskModelType) -> Option<GenerationModel> {
   match model {
+    TaskModelType::Unknown(model) => Some(GenerationModel::Unknown(model)),
     TaskModelType::Flux1Dev => Some(GenerationModel::Flux1Dev),
     TaskModelType::Flux1Schnell => Some(GenerationModel::Flux1Schnell),
     TaskModelType::FluxPro1 => Some(GenerationModel::FluxPro1),

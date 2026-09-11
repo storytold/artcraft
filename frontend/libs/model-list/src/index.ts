@@ -25,3 +25,5 @@ export * from "./lib/lists/SplatModels.js";
 export * from "./lib/classes/Object3DModel.js";
 export * from "./lib/lists/Object3DModels.js";
 export * from "./lib/loader/buildModelsFromListing.js";
+
+export * from "./lib/classes/videoOptions.js";

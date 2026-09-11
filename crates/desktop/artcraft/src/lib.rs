@@ -1,3 +1,8 @@
+use crate::core::commands::cost_estimate::estimate_audio_cost_command::estimate_audio_cost_command;
+use crate::core::commands::cost_estimate::estimate_mesh_cost_command::estimate_mesh_cost_command;
+use crate::core::commands::generate::generate_splat_command::generate_splat_command;
+use crate::core::commands::generate::generate_audio_command::generate_audio_command;
+use crate::core::commands::generate::generate_mesh_command::generate_mesh_command;
 pub mod core;
 pub mod services;
 pub mod version;
@@ -221,11 +226,16 @@ pub fn run() {
     estimate_image_cost_command,
     estimate_splat_cost_command,
     estimate_video_cost_command,
+    estimate_audio_cost_command,
+    estimate_mesh_cost_command,
     list_image_models_command,
     list_video_models_command,
     flip_image,
     generate_image_command,
     generate_video_command,
+    generate_splat_command,
+    generate_audio_command,
+    generate_mesh_command,
     get_app_info_command,
     get_app_preferences_command,
     get_provider_order_command,

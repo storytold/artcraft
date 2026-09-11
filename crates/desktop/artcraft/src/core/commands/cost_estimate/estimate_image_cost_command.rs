@@ -1,3 +1,6 @@
+use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
+use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
+use tauri::{AppHandle, Manager};
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::ResponseOrError;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
@@ -13,7 +16,14 @@ use tauri::State;
 impl SerializeMarker for EstimateImageCostResponse {}
 
 #[tauri::command]
-pub async fn estimate_image_cost_command(
+pub async fn estimate_image_cost_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  if request.uses_artcraft() && !request.uses_legacy_image_endpoint() {
+    return omni::estimate(request, Modality::Image, &app).await;
+  }
+  adapt_legacy_response(estimate_image_cost_native(decode_native(request)?, app.state()).await)
+}
+
+async fn estimate_image_cost_native(
   request: EstimateImageCostRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
 ) -> ResponseOrError<EstimateImageCostResponse, EstimateImageCostError> {

@@ -13,6 +13,7 @@ export enum GenerationModel {
 export enum GenerationAction {
   GenerateImage = "generate_image",
   GenerateVideo = "generate_video",
+  GenerateAudio = "generate_audio",
   RemoveBackground = "remove_background",
   ImageTo3d = "image_to_3d",
   GenerateGaussian = "generate_gaussian",

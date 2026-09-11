@@ -1,3 +1,6 @@
+use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
+use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
+use tauri::Manager;
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
@@ -28,7 +31,17 @@ use log::{error, info, warn};
 use tauri::{AppHandle, State};
 
 #[tauri::command]
-pub async fn generate_video_command(
+pub async fn generate_video_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  if request.uses_artcraft() {
+    return omni::generate(request, Modality::Video, &app).await;
+  }
+  adapt_legacy_response(generate_video_native(
+    decode_native(request)?, app.clone(),
+    app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(),
+  ).await)
+}
+
+async fn generate_video_native(
   mut request: TauriGenerateVideoRequest,
   app: AppHandle,
   app_env_configs: State<'_, AppEnvConfigs>,

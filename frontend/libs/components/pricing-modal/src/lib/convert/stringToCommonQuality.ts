@@ -7,7 +7,7 @@ import { CommonQuality } from "@storyteller/api-enums";
  */
 export function stringToCommonQuality(
   quality: string | undefined,
-): CommonQuality | null {
+): string | null {
   switch (quality) {
     case "high":
       return CommonQuality.High;
@@ -16,6 +16,6 @@ export function stringToCommonQuality(
     case "low":
       return CommonQuality.Low;
     default:
-      return null;
+      return quality ?? null;
   }
 }

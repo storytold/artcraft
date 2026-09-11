@@ -1,3 +1,4 @@
+import { findDesktopModel } from "@storyteller/tauri-api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { GetTaskQueue, MarkTaskAsDismissed } from "@storyteller/tauri-api";
@@ -270,7 +271,7 @@ function getTaskMediaType(t: TaskQueueItem): "image" | "video" | "other" {
 
 function getTaskModelLabel(t: TaskQueueItem): string {
   const modelType = t.model_type ? String(t.model_type) : "";
-  const modelDisplay = modelType ? getModelDisplayName(modelType) : undefined;
+  const modelDisplay = modelType ? findDesktopModel(modelType)?.fullName ?? getModelDisplayName(modelType) : undefined;
   const provider = t.provider
     ? getProviderDisplayName(String(t.provider).toLowerCase())
     : undefined;

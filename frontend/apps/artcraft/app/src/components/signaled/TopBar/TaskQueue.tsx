@@ -1,3 +1,4 @@
+import { findDesktopModel } from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon } from "lucide-react";
@@ -648,6 +649,8 @@ export const TaskQueue = () => {
         kind = "Image to 3D";
       } else if (is3DModel) {
         kind = "3D Model";
+      } else if (taskTypeStr.includes("audio")) {
+        kind = "Audio";
       } else if (taskTypeStr.includes("video")) {
         kind = "Video";
       } else if (taskTypeStr.includes("image")) {
@@ -655,7 +658,7 @@ export const TaskQueue = () => {
       }
 
       const modelDisplay = t.model_type
-        ? getModelDisplayName(String(t.model_type))
+        ? findDesktopModel(String(t.model_type))?.fullName ?? getModelDisplayName(String(t.model_type))
         : undefined;
 
       const title = kind || "Task";

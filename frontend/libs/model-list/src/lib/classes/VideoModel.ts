@@ -36,6 +36,13 @@ export class VideoModel extends Model {
 
   // Default duration in seconds
   readonly defaultDuration?: number;
+  readonly minDuration?: number;
+  readonly maxDuration?: number;
+  readonly maxDurationWithImageReferences?: number;
+  readonly bitrateOptions?: string[];
+  readonly defaultBitrate?: string;
+  readonly defaultAspectRatio?: string;
+
 
   // Whether the model supports multi-image reference mode
   readonly supportsReferenceMode?: boolean;
@@ -90,6 +97,13 @@ export class VideoModel extends Model {
     providers?: GenerationProvider[];
     durationOptions?: number[];
     defaultDuration?: number;
+    minDuration?: number;
+    maxDuration?: number;
+    maxDurationWithImageReferences?: number;
+    bitrateOptions?: string[];
+    defaultBitrate?: string;
+    defaultAspectRatio?: string;
+
     supportsReferenceMode?: boolean;
     maxReferenceImages?: number;
     maxReferenceVideos?: number;
@@ -111,6 +125,13 @@ export class VideoModel extends Model {
     this.generateWithSound = args.generateWithSound || false;
     this.durationOptions = args.durationOptions;
     this.defaultDuration = args.defaultDuration;
+    this.minDuration = args.minDuration;
+    this.maxDuration = args.maxDuration;
+    this.maxDurationWithImageReferences = args.maxDurationWithImageReferences;
+    this.bitrateOptions = args.bitrateOptions;
+    this.defaultBitrate = args.defaultBitrate;
+    this.defaultAspectRatio = args.defaultAspectRatio;
+
     this.supportsReferenceMode = args.supportsReferenceMode;
     this.maxReferenceImages = args.maxReferenceImages;
     this.maxReferenceVideos = args.maxReferenceVideos;

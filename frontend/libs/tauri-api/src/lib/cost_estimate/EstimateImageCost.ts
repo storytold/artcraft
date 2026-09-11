@@ -1,22 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult, CommandSuccessStatus } from "../common/CommandStatus";
 import {
-  CommonImageModel,
-  CommonAspectRatio,
-  CommonQuality,
-  CommonVideoResolution,
   ImageGenerationMode,
   GenerationProvider,
 } from "@storyteller/api-enums";
 
 export interface EstimateImageCostRequest {
-  model: CommonImageModel;
-  provider: GenerationProvider;
-  generation_mode: ImageGenerationMode;
-  aspect_ratio?: CommonAspectRatio;
-  resolution?: CommonVideoResolution;
-  quality?: CommonQuality;
+  [key: string]: unknown;
+  model: string;
+  provider?: GenerationProvider;
+  generation_mode?: ImageGenerationMode;
+  aspect_ratio?: string;
+  resolution?: string;
+  quality?: string;
   image_batch_count?: number;
+  image_media_tokens?: string[];
 }
 
 export interface EstimateImageCostPayload {

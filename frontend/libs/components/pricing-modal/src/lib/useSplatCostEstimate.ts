@@ -23,6 +23,7 @@ export function useSplatCostEstimate(
 
   useEffect(() => {
     if (!SPLAT_PAGES.has(activePage) || !selectedModel) {
+      setIsLoading(false);
       return;
     }
 
@@ -36,14 +37,18 @@ export function useSplatCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
+    let cancelled = false;
     setIsLoading(true);
+    setEstimatedCreditsForPage(activePage, null);
 
     EstimateSplatCost({
       model: commonModel,
       provider,
       has_reference_image: true,
+      reference_image_media_tokens: ["mf_estimate_reference"],
     })
       .then((result) => {
+        if (cancelled) return;
         if (isEstimateSplatCostSuccess(result)) {
           setEstimatedCreditsForPage(
             activePage,
@@ -54,11 +59,13 @@ export function useSplatCostEstimate(
         }
       })
       .catch(() => {
+        if (cancelled) return;
         setEstimatedCreditsForPage(activePage, null);
       })
       .finally(() => {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       });
+    return () => { cancelled = true; };
   }, [activePage, selectedModel?.id, selectedProvider]);
 
   return { isLoading };

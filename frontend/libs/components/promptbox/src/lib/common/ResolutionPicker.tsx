@@ -42,7 +42,7 @@ export const ResolutionPicker = ({
   };
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const resolution = popOverLabelToResolution(item.label, model);
+    const resolution = (item.action ?? item.label) as CommonResolution;
     handleCommonResolutionSelect(resolution);
   };
 
@@ -51,8 +51,8 @@ export const ResolutionPicker = ({
   model.resolutions?.forEach((resolution: CommonResolution) => {
     resolutionList.push({
       label: getResolutionTextLabel(resolution),
+      action: resolution,
       selected: useResolution === resolution,
-      description: `foo ${resolution}`,
       icon: (
         <DynamicIcon
           icon={getResolutionIcon(resolution)}
@@ -125,35 +125,6 @@ const getResolutionTextLabel = (resolution: CommonResolution): string => {
     case CommonResolution.FourK:
       return "4K";
     default:
-      console.error("Unknown resolution:", resolution);
-      return "1K"; // Fail open-ish
+      return resolution;
   }
-};
-
-// Note: We only need this to deal with turning PopOverItems back into typesafe aspect ratios
-const popOverLabelToResolution = (
-  label: string,
-  model: ImageModel,
-): CommonResolution => {
-  switch (label) {
-    case "0.5K":
-      return CommonResolution.HalfK;
-    case "480p":
-      return CommonResolution.FourEightyP;
-    case "720p":
-      return CommonResolution.SevenTwentyP;
-    case "1K":
-      return CommonResolution.OneK;
-    case "1080p":
-      return CommonResolution.TenEightyP;
-    case "2K":
-      return CommonResolution.TwoK;
-    case "3K":
-      return CommonResolution.ThreeK;
-    case "4K":
-      return CommonResolution.FourK;
-  }
-  console.error("Unknown resolution label:", label, "for model:", model.id);
-  // If we can't find it, return the model's default resolution or 1K as fallback
-  return model.defaultResolution || CommonResolution.OneK;
 };

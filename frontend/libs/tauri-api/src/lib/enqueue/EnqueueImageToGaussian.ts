@@ -82,7 +82,7 @@ export const EnqueueImageToGaussian = async (
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  const result = await invoke("enqueue_image_to_gaussian_command", {
+  const result = await invoke("generate_splat_command", {
     request: mutableRequest,
   });
 

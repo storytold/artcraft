@@ -5,7 +5,7 @@ import { toast } from "@storyteller/ui-toaster";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
-import { GenerateImage, GenerateImageRequest } from "@storyteller/tauri-api";
+import { GenerateImage, GenerateImageRequest, commandErrorMessage } from "@storyteller/tauri-api";
 import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { ImageModel } from "@storyteller/model-list";
@@ -429,7 +429,7 @@ export const PromptBoxImage = ({
       await onEnqueuePressed?.(prompt, generationCount, subscriberId);
     } catch (err) {
       console.error("PromptBoxImage - enqueue failed", err);
-      toast.error("Failed to start image generation. Please try again.");
+      toast.error(commandErrorMessage(err, "Failed to start image generation. Please try again."));
     } finally {
       setIsEnqueueing(false);
     }

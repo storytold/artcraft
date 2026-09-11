@@ -32,7 +32,7 @@ pub async fn create_task(
   let task_id_temp = task_id.as_str();
   let status_temp = args.status.to_str();
   let task_type_temp = args.task_type.to_str();
-  let model_type_temp = args.model_type.map(|s| s.to_str());
+  let model_type_temp = args.model_type.as_ref().map(|s| s.to_str());
   let provider_temp = args.provider.to_string();
   let prompt_token_temp = args.prompt_token.map(|t| t.as_str());
   let frontend_caller_temp = args.frontend_caller.map(|s| s.to_str());

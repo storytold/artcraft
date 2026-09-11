@@ -9,7 +9,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateButton, ToggleButton } from "@storyteller/ui-button";
 import { ChevronDownIcon, ChevronUpIcon, MicIcon, MicOffIcon, RepeatIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import type { OmniGenAudioModelDetails, UploadMediaFn } from "@storyteller/api";
+import type { OmniGenAudioModelDetails, OmniGenAudioRequest, OmniGenAudioGenerateResponse, UploadMediaFn } from "@storyteller/api";
 import {
   enqueueAudioGeneration,
   AUDIO_MODELS_REQUIRING_AUDIO_REF,
@@ -69,6 +69,7 @@ interface PromptBoxAudioProps {
   // Audio models from GET /v1/omni_gen/models/audio (useOmniGenAudioModels).
   models: OmniGenAudioModelDetails[];
   uploadAudio?: UploadMediaFn;
+  generateAudio?: (request: OmniGenAudioRequest) => Promise<OmniGenAudioGenerateResponse>;
   uploadImage?: UploadMediaFn;
   // Fired after a successful enqueue with every created job token (one
   // request can create several Suno clips).
@@ -77,6 +78,7 @@ interface PromptBoxAudioProps {
 }
 
 export const PromptBoxAudio = ({
+  generateAudio,
   models,
   uploadAudio,
   uploadImage,
@@ -400,7 +402,7 @@ export const PromptBoxAudio = ({
         pitch,
       };
 
-      const result = await enqueueAudioGeneration(selectedModel, settings);
+      const result = await enqueueAudioGeneration(selectedModel, settings, generateAudio);
 
       if (!result.success) {
         if (result.errorCode === 402) {

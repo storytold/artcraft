@@ -49,3 +49,7 @@ export * from "./lib/cost_estimate/EstimateImageCost.js";
 export * from "./lib/cost_estimate/EstimateSplatCost.js";
 export * from "./lib/cost_estimate/EstimateVideoCost.js";
 export * from "./lib/models/modelsStore.js";
+
+export * from "./lib/common/commandErrorMessage.js";
+
+export * from "./lib/generate/GenerateOmni.js";

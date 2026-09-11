@@ -15,7 +15,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Grok",
     category: "image",
     creator: ModelCreator.Grok,
-    providers: [GenerationProvider.Grok],
+    providers: [GenerationProvider.Artcraft],
     selectorName: "Grok",
     selectorDescription: "Fast af",
     selectorBadges: ["10 sec."],

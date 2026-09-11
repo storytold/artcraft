@@ -70,7 +70,7 @@ export const EnqueueImageTo3dObject = async (
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  let result = await invoke("enqueue_image_to_3d_object_command", {
+  let result = await invoke("generate_mesh_command", {
     request: mutableRequest,
   });
 

@@ -5,12 +5,14 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
-import { GenerateVideo, GenerateVideoRequest } from "@storyteller/tauri-api";
+import { GenerateVideo, GenerateVideoRequest, commandErrorMessage } from "@storyteller/tauri-api";
 import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
-  CommonResolution,
+  resolveVideoDuration,
+  videoDurationRange,
+  videoResolutionValue,
   effectivePromptMaxLength,
   SizeIconOption,
   SizeOption,
@@ -66,27 +68,6 @@ declare global {
 type GROK_ASPECT_RATIO = "landscape" | "portrait" | "square";
 
 const EMPTY_CHARACTERS: StoredCharacter[] = [];
-
-// The video store keeps resolution as a legacy display string ("480p" / "720p"
-// / "1080p") taken from the model's `resolutionOptions`. The generate request,
-// however, needs the `CommonResolution` enum. Map here so the user's resolution
-// choice is actually sent: omitting it makes the backend fall back to the
-// model's default resolution (and bill for it), which is what made the charge
-// disagree with the cost preview — the preview reads the same store value and
-// converts it correctly. Snake_case forms are accepted too for robustness.
-const RESOLUTION_STRING_TO_COMMON: Record<string, CommonResolution> = {
-  "480p": CommonResolution.FourEightyP,
-  "720p": CommonResolution.SevenTwentyP,
-  "1080p": CommonResolution.TenEightyP,
-  half_k: CommonResolution.HalfK,
-  one_k: CommonResolution.OneK,
-  two_k: CommonResolution.TwoK,
-  three_k: CommonResolution.ThreeK,
-  four_k: CommonResolution.FourK,
-  four_eighty_p: CommonResolution.FourEightyP,
-  seven_twenty_p: CommonResolution.SevenTwentyP,
-  ten_eighty_p: CommonResolution.TenEightyP,
-};
 
 const DEFAULT_RESOLUTIONS: SizeOption[] = [
   {
@@ -160,6 +141,8 @@ export const PromptBoxVideo = ({
   const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
   const setAspectRatio = usePromptVideoStore((s) => s.setAspectRatio);
   const duration = usePromptVideoStore((s) => s.duration);
+  const bitrate = usePromptVideoStore((s) => s.bitrate);
+  const setBitrate = usePromptVideoStore((s) => s.setBitrate);
   const setDuration = usePromptVideoStore((s) => s.setDuration);
   const inputMode = usePromptVideoStore((s) => s.inputMode);
   const setInputMode = usePromptVideoStore((s) => s.setInputMode);
@@ -360,22 +343,31 @@ export const PromptBoxVideo = ({
     );
   };
 
-  // Sync duration with model default when switching models.
-  // Read duration from the store directly to avoid stale closure issues
-  // when the model and duration are updated together (e.g. during recreate).
+  // Follow the web app's range and sparse-option behavior, including the
+  // lower duration cap some models apply in image-reference mode.
   useEffect(() => {
-    const currentDuration = usePromptVideoStore.getState().duration;
-    if (selectedModel?.durationOptions && selectedModel.defaultDuration) {
-      if (
-        currentDuration === null ||
-        !selectedModel.durationOptions.includes(currentDuration)
-      ) {
-        setDuration(selectedModel.defaultDuration);
-      }
-    } else if (currentDuration !== null) {
-      setDuration(null);
+    const current = usePromptVideoStore.getState().duration;
+    const next = selectedModel
+      ? resolveVideoDuration(selectedModel, current, inputMode === "reference")
+      : null;
+    if (next !== current) setDuration(next);
+  }, [selectedModel, inputMode, setDuration]);
+
+  useEffect(() => {
+    const current = usePromptVideoStore.getState().bitrate;
+    const options = selectedModel?.bitrateOptions;
+    if (!current || !options?.includes(current)) {
+      setBitrate(selectedModel?.defaultBitrate ?? options?.[0] ?? null);
     }
-  }, [selectedModel]);
+  }, [selectedModel, setBitrate]);
+
+  useEffect(() => {
+    const current = usePromptVideoStore.getState().aspectRatio;
+    if (selectedModel?.sizeOptions.some((option) => option.textLabel === current)) return;
+    const option = selectedModel?.sizeOptions.find((option) => option.tauriValue === selectedModel.defaultAspectRatio)
+      ?? selectedModel?.sizeOptions[0];
+    if (option) setAspectRatio(option.textLabel);
+  }, [selectedModel, setAspectRatio]);
 
   // Sync resolution with model default when switching models.
   // Read from store directly to avoid stale closure (same as duration above).
@@ -414,26 +406,14 @@ export const PromptBoxVideo = ({
     }
   }, [selectedModel]);
 
-  const durationRange = selectedModel?.durationOptions?.length
-    ? {
-        min: selectedModel.durationOptions[0]!,
-        max: selectedModel.durationOptions[
-          selectedModel.durationOptions.length - 1
-        ]!,
-      }
+  const durationRange = selectedModel
+    ? videoDurationRange(selectedModel, inputMode === "reference")
     : null;
-  const effectiveDuration = duration ?? selectedModel?.defaultDuration ?? 5;
-  const [localDuration, setLocalDuration] = useState(effectiveDuration);
-  const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => {
-    clearTimeout(durationTimerRef.current);
-    setLocalDuration(effectiveDuration);
-    return () => clearTimeout(durationTimerRef.current);
-  }, [effectiveDuration]);
-  const handleDurationSlide = (v: number) => {
-    setLocalDuration(v);
-    clearTimeout(durationTimerRef.current);
-    durationTimerRef.current = setTimeout(() => setDuration(v), 300);
+  const effectiveDuration = selectedModel
+    ? resolveVideoDuration(selectedModel, duration, inputMode === "reference") ?? selectedModel.defaultDuration ?? 5
+    : 5;
+  const handleDurationSlide = (value: number) => {
+    if (selectedModel) setDuration(resolveVideoDuration(selectedModel, value, inputMode === "reference"));
   };
 
   const resolutionPickerOptions: PopoverItem[] | null =
@@ -1159,19 +1139,18 @@ export const PromptBoxVideo = ({
       }
 
       // Pass duration if model supports it
-      if (selectedModel.durationOptions && duration !== null) {
-        request.duration_seconds = duration;
+      if (durationRange || selectedModel.defaultDuration != null) {
+        request.duration_seconds = effectiveDuration;
+      }
+      if (selectedModel.bitrateOptions?.length) {
+        request.bitrate = bitrate ?? selectedModel.defaultBitrate ?? selectedModel.bitrateOptions[0];
       }
 
       // Pass the chosen resolution when the model exposes a resolution picker.
       // Guarded on `resolutionOptions` so a stale store value (left over from a
       // model that did support resolution) isn't sent for one that doesn't.
       if (selectedModel.resolutionOptions?.length) {
-        const mappedResolution =
-          RESOLUTION_STRING_TO_COMMON[resolution as string];
-        if (mappedResolution) {
-          request.resolution = mappedResolution;
-        }
+        request.resolution = videoResolutionValue(resolution);
       }
 
       switch (selectedModel?.tauriId) {
@@ -1195,7 +1174,8 @@ export const PromptBoxVideo = ({
           request.aspect_ratio =
             selectedOption.tauriValue as typeof request.aspect_ratio;
         } else {
-          const maybeDefault = selectedModel.sizeOptions[0];
+          const maybeDefault = selectedModel.sizeOptions.find((option) => option.tauriValue === selectedModel.defaultAspectRatio)
+            ?? selectedModel.sizeOptions[0];
           if (!!maybeDefault) {
             request.aspect_ratio =
               maybeDefault.tauriValue as typeof request.aspect_ratio;
@@ -1224,14 +1204,14 @@ export const PromptBoxVideo = ({
       enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }
 
-    try {
-      await Promise.all(enqueuePromises);
-    } catch (err) {
-      console.error("PromptBoxVideo - enqueue failed", err);
-      toast.error("Failed to start video generation. Please try again.");
+    const outcomes = await Promise.allSettled(enqueuePromises);
+    const acceptedIds = subscriberIds.filter((_, index) => outcomes[index].status === "fulfilled");
+    const failure = outcomes.find((outcome) => outcome.status === "rejected");
+    if (failure?.status === "rejected") {
+      console.error("PromptBoxVideo - enqueue failed", failure.reason);
+      toast.error(commandErrorMessage(failure.reason, "Failed to start video generation. Please try again."));
     }
-
-    onEnqueuePressed?.(prompt, subscriberIds);
+    if (acceptedIds.length) onEnqueuePressed?.(prompt, acceptedIds);
 
     setIsEnqueueing(false);
   };
@@ -1459,7 +1439,22 @@ export const PromptBoxVideo = ({
                 </Tooltip>
               )}
 
-              {durationRange && (
+              {!!selectedModel?.bitrateOptions?.length && (
+                <Tooltip content="Bitrate" position="top" className="z-50">
+                  <PopoverMenu
+                    panelTitle="Bitrate"
+                    mode="toggle"
+                    items={selectedModel.bitrateOptions.map((value) => ({
+                      label: value === "normal" ? "Normal" : value === "high" ? "High" : value,
+                      action: value,
+                      selected: value === bitrate,
+                    }))}
+                    onSelect={(item) => setBitrate(item.action ?? item.label)}
+                  />
+                </Tooltip>
+              )}
+
+              {durationRange && durationRange.max > durationRange.min && (
                 <Tooltip content="Duration" position="top" className="z-50">
                   <PopoverMenu
                     mode="default"
@@ -1475,7 +1470,7 @@ export const PromptBoxVideo = ({
                           <SliderV2
                             min={durationRange.min}
                             max={durationRange.max}
-                            value={localDuration}
+                            value={effectiveDuration}
                             onChange={handleDurationSlide}
                             step={1}
                             suffix="s"
@@ -1483,7 +1478,7 @@ export const PromptBoxVideo = ({
                           />
                         </div>
                         <span className="min-w-6 shrink-0 text-sm font-medium tabular-nums text-base-fg">
-                          {localDuration}s
+                          {effectiveDuration}s
                         </span>
                       </div>
                       <div className="mt-1.5 flex justify-between px-0.5 text-[11px] text-base-fg/40">

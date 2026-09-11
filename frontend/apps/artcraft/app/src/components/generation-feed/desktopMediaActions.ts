@@ -7,7 +7,7 @@ import {
   promptDownloadLocationIfNeeded,
 } from "@storyteller/api";
 import type { Prompts } from "@storyteller/api";
-import { DownloadUrl } from "@storyteller/tauri-api";
+import { DownloadUrl, useModelsStore } from "@storyteller/tauri-api";
 import {
   RefImage,
   RefVideo,
@@ -24,6 +24,7 @@ import {
   VIDEO_MODELS_BY_ID,
   CommonAspectRatio,
   CommonResolution,
+  videoResolutionValue,
 } from "@storyteller/model-list";
 import {
   galleryModalLightboxVisible,
@@ -249,7 +250,8 @@ export function applyRecreateFromPromptData(data: {
 
       // Set model first so the UI syncs sizeOptions / durationOptions
       const videoModel = promptData.maybe_model_type
-        ? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type)
+        ? useModelsStore.getState().videoModels.find((model) => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type)
+          ?? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type)
         : undefined;
       if (videoModel) {
         modelStore.setSelectedModel(ModelPage.ImageToVideo, videoModel);
@@ -281,16 +283,9 @@ export function applyRecreateFromPromptData(data: {
 
       // Map API resolution (like "one_k") → video store format (like "1080p")
       if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
-        const resolutionMap: Record<string, string> = {
-          one_k: "1080p",
-          two_k: "2k",
-          three_k: "3k",
-          four_k: "4k",
-        };
-        const mapped = resolutionMap[promptData.maybe_resolution];
-        if (mapped && videoModel.resolutionOptions.includes(mapped)) {
-          videoStore.setResolution(mapped);
-        }
+        const value = videoResolutionValue(promptData.maybe_resolution);
+        const option = videoModel.resolutionOptions.find((option) => videoResolutionValue(option) === value);
+        videoStore.setResolution(option ?? value);
       }
 
       videoStore.setInputMode(inputMode);
@@ -315,7 +310,8 @@ export function applyRecreateFromPromptData(data: {
       }
 
       if (promptData.maybe_model_type) {
-        const model = IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
+        const model = useModelsStore.getState().imageModels.find((model) => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type)
+          ?? IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
         if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
       }
       useTabStore.getState().setActiveTab("IMAGE");

@@ -3,11 +3,13 @@ import { OmniGenApi } from "@storyteller/api";
 import type {
   OmniGenAudioModelDetails,
   OmniGenAudioRequest,
+  OmniGenAudioGenerateResponse,
+  OmniGenAudioCostResponse,
   OmniGenMusicalKey,
 } from "@storyteller/api";
 
 // Audio request building + enqueue + cost estimation, shared by the webapp
-// create-audio page and the desktop PromptBoxAudio (both enqueue over HTTP).
+// create-audio page and desktop. Desktop injects its Tauri transport.
 
 // Server rule (validate_audio_request): these models require exactly one
 // audio reference (the remix/sample source). The models API has no
@@ -95,6 +97,7 @@ export function buildAudioRequest(
 export async function enqueueAudioGeneration(
   model: OmniGenAudioModelDetails,
   settings: AudioGenerationSettings,
+  generate: (body: OmniGenAudioRequest) => Promise<OmniGenAudioGenerateResponse> = generateAudioOverHttp,
 ): Promise<{
   success: boolean;
   // One request can create several jobs (Suno-style multi-clip) — callers
@@ -106,8 +109,7 @@ export async function enqueueAudioGeneration(
   const body = buildAudioRequest(model, settings);
 
   try {
-    const api = new OmniGenApi();
-    const response = await api.generateAudio(body);
+    const response = await generate(body);
     if (response.success && response.inference_job_token) {
       const jobTokens = response.all_job_tokens?.length
         ? response.all_job_tokens
@@ -119,7 +121,7 @@ export async function enqueueAudioGeneration(
     return {
       success: false,
       jobTokens: [],
-      error: err.message ?? "Request failed",
+      error: err.error_message ?? err.message ?? "Request failed",
       errorCode: parseAudioHttpStatusCode(err),
     };
   }
@@ -143,17 +145,22 @@ export interface AudioCostParams {
   sampleRateHz?: number | null;
 }
 
-export function useAudioCostEstimate(params: AudioCostParams): number | null {
+const generateAudioOverHttp = (body: OmniGenAudioRequest) => new OmniGenApi().generateAudio(body);
+const estimateAudioOverHttp = (body: OmniGenAudioRequest) => new OmniGenApi().estimateAudioCost(body);
+
+export function useAudioCostEstimate(
+  params: AudioCostParams,
+  estimate: (body: OmniGenAudioRequest) => Promise<OmniGenAudioCostResponse> = estimateAudioOverHttp,
+): number | null {
   const [credits, setCredits] = useState<number | null>(null);
   const abortRef = useRef(0);
 
   useEffect(() => {
+    const id = ++abortRef.current;
     if (!params.model) {
       setCredits(null);
       return;
     }
-
-    const id = ++abortRef.current;
 
     const body: OmniGenAudioRequest = {
       model: params.model,
@@ -164,8 +171,7 @@ export function useAudioCostEstimate(params: AudioCostParams): number | null {
       sample_rate_hz: params.sampleRateHz ?? null,
     };
 
-    const api = new OmniGenApi();
-    api.estimateAudioCost(body).then(
+    estimate(body).then(
       (response) => {
         if (id !== abortRef.current) return;
         if (response.success && response.cost_in_credits != null) {
@@ -179,7 +185,9 @@ export function useAudioCostEstimate(params: AudioCostParams): number | null {
         setCredits(null);
       },
     );
+    return () => { abortRef.current++; };
   }, [
+    estimate,
     params.model,
     params.audioReferenceCount,
     params.hasImageReference,

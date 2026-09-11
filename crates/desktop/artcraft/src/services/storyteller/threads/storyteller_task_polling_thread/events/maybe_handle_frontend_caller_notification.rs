@@ -37,6 +37,8 @@ pub async fn maybe_handle_frontend_caller_notification(
   };
 
   match task.task_type {
+    // Audio uses the session-job feed and the common task completion event.
+    TaskType::AudioGeneration => {},
     TaskType::ImageGeneration => {
       let _r = handle_image_generation(
         app,

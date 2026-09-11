@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model } from "@storyteller/model-list";
+import { Model, ImageModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   usePromptImageStore,
@@ -14,7 +14,6 @@ import {
 } from "@storyteller/tauri-api";
 import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
 import {
-  imageModelToCommonImageModel,
   imageAspectRatioToCommonAspectRatio,
   stringToCommonQuality,
   stringToCommonVideoResolution,
@@ -40,9 +39,7 @@ export function useImageCostEstimate(
 
   // TextToImage store
   const imageAspectRatio = usePromptImageStore((s) => s.commonAspectRatio);
-  const imageLegacyAspectRatio = usePromptImageStore((s) => s.aspectRatio);
   const imageResolution = usePromptImageStore((s) => s.commonResolution);
-  const imageLegacyResolution = usePromptImageStore((s) => s.resolution);
   const imageReferenceImages = usePromptImageStore((s) => s.referenceImages);
   const imageGenerationCount = usePromptImageStore((s) => s.generationCount);
   const imageQuality = usePromptImageStore((s) => s.commonQuality);
@@ -64,15 +61,11 @@ export function useImageCostEstimate(
 
   useEffect(() => {
     if (!IMAGE_PAGES.has(activePage) || !selectedModel) {
+      setIsLoading(false);
       return;
     }
 
-    const commonModel = imageModelToCommonImageModel(selectedModel.tauriId);
-    if (!commonModel) {
-      setEstimatedCreditsForPage(activePage, null);
-      return;
-    }
-
+    const imageModel = selectedModel as ImageModel;
     let aspectRatioStr: string | undefined;
     let legacyAspectRatioStr: string | undefined;
     let resolutionStr: string | undefined;
@@ -82,28 +75,29 @@ export function useImageCostEstimate(
 
     switch (activePage) {
       case ModelPage.TextToImage:
-        aspectRatioStr = imageAspectRatio;
-        legacyAspectRatioStr = imageLegacyAspectRatio;
-        resolutionStr = imageResolution ?? imageLegacyResolution;
-        qualityStr = imageQuality;
-        referenceImageCount = imageReferenceImages.length;
+        // Match GenerateImage exactly; omitted values use the API defaults.
+        aspectRatioStr = imageModel.supportsNewAspectRatio() ? imageAspectRatio : undefined;
+        resolutionStr = imageModel.supportsNewResolution() ? imageResolution : undefined;
+        qualityStr = imageModel.supportsQuality() ? imageQuality ?? imageModel.defaultQuality : undefined;
+        referenceImageCount = imageModel.canUseImagePrompt
+          ? imageReferenceImages.filter((image) => image.mediaToken.length > 0).length : 0;
         generationCount = imageGenerationCount;
         break;
       case ModelPage.Canvas2D:
         legacyAspectRatioStr = prompt2DAspectRatio;
         resolutionStr = prompt2DResolution;
-        referenceImageCount = prompt2DReferenceImages.length;
+        referenceImageCount = prompt2DReferenceImages.length + 1;
         generationCount = prompt2DGenerationCount;
         break;
       case ModelPage.Stage3D:
         resolutionStr = prompt3DResolution;
-        referenceImageCount = prompt3DReferenceImages.length;
+        referenceImageCount = prompt3DReferenceImages.length + 1;
         generationCount = 1;
         break;
       case ModelPage.ImageEditor:
         legacyAspectRatioStr = editAspectRatio;
         resolutionStr = editResolution;
-        referenceImageCount = editReferenceImages.length;
+        referenceImageCount = editReferenceImages.length + 1;
         generationCount = 1;
         break;
       case ModelPage.Angles:
@@ -128,10 +122,14 @@ export function useImageCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
+    let cancelled = false;
     setIsLoading(true);
+    setEstimatedCreditsForPage(activePage, null);
 
     EstimateImageCost({
-      model: commonModel,
+      model: selectedModel.tauriId,
+      image_media_tokens: referenceImageCount ? Array.from({ length: referenceImageCount }, (_, i) => `mf_estimate_${i}`) : undefined,
+      image_batch_count: generationCount,
       provider,
       generation_mode: generationMode,
       aspect_ratio: commonAspectRatio ?? undefined,
@@ -139,31 +137,27 @@ export function useImageCostEstimate(
       quality: commonQuality ?? undefined,
     })
       .then((result) => {
+        if (cancelled) return;
         if (isEstimateImageCostSuccess(result)) {
-          const creditsPerGeneration = result.payload.cost_in_credits ?? null;
-          const totalCredits =
-            creditsPerGeneration != null
-              ? creditsPerGeneration * generationCount
-              : null;
-          setEstimatedCreditsForPage(activePage, totalCredits);
+          setEstimatedCreditsForPage(activePage, result.payload.cost_in_credits ?? null);
         } else {
           setEstimatedCreditsForPage(activePage, null);
         }
       })
       .catch(() => {
+        if (cancelled) return;
         setEstimatedCreditsForPage(activePage, null);
       })
       .finally(() => {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       });
+    return () => { cancelled = true; };
   }, [
     activePage,
-    selectedModel?.id,
+    selectedModel,
     selectedProvider,
     imageAspectRatio,
-    imageLegacyAspectRatio,
     imageResolution,
-    imageLegacyResolution,
     imageReferenceImages.length,
     imageGenerationCount,
     imageQuality,

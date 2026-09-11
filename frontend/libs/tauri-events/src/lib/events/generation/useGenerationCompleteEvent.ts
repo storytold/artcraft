@@ -8,7 +8,7 @@ import { BasicEventWrapper } from "../../common/BasicEventWrapper";
 type GenerationCompleteEvent = {
   action?: GenerationAction,
   service: GenerationServiceProvider,
-  model?: GenerationModel,
+  model?: GenerationModel | string,
 };
 
 export const useGenerationCompleteEvent = () => {

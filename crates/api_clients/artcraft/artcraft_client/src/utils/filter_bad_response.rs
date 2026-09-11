@@ -37,6 +37,7 @@ pub async fn filter_bad_response(response: reqwest::Response) -> Result<reqwest:
   filter_cloudflare_errors(status_code, &response_body)?;
 
   match status_code {
+    STATUS_400_BAD_REQUEST => Err(ApiError::InvalidRequest(response_body)),
     STATUS_401_UNAUTHORIZED => Err(ApiError::Unauthorized(response_body)),
     STATUS_402_PAYMENT_REQUIRED => Err(ApiError::PaymentRequired(response_body)),
     STATUS_403_FORBIDDEN => Err(ApiError::Forbidden(response_body)),

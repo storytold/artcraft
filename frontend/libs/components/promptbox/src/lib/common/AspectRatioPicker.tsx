@@ -50,7 +50,7 @@ export const AspectRatioPicker = ({
     useAspectRatio === CommonAspectRatio.Auto4k;
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const ratio = popOverLabelToAspectRatio(item.label, model);
+    const ratio = (item.action ?? item.label) as CommonAspectRatio;
     handleCommonAspectRatioSelect(ratio);
   };
 
@@ -68,6 +68,7 @@ export const AspectRatioPicker = ({
   model.aspectRatios?.forEach((ratio: CommonAspectRatio) => {
     aspectRatioList.push({
       label: getAspectRatioTextLabel(ratio),
+      action: ratio,
       selected: useAspectRatio === ratio,
       icon: isAutoAspectRatio(ratio) ? (
         <AutoIcon />
@@ -152,56 +153,6 @@ const getAspectRatioTextLabel = (aspectRatio: CommonAspectRatio): string => {
       return "Tall";
 
     default:
-      console.error("Unknown aspect ratio:", aspectRatio);
-      return "Square"; // Fail open-ish
+      return aspectRatio;
   }
-};
-
-// Note: We only need this to deal with turning PopOverItems back into typesafe aspect ratios
-const popOverLabelToAspectRatio = (
-  label: string,
-  model: ImageModel,
-): CommonAspectRatio => {
-  switch (label) {
-    case "Auto":
-      return CommonAspectRatio.Auto;
-    case "Square":
-      return CommonAspectRatio.Square;
-    case "Wide":
-      return CommonAspectRatio.Wide;
-    case "Tall":
-      return CommonAspectRatio.Tall;
-    case "5:4 (Wide)":
-      return CommonAspectRatio.WideFiveByFour;
-    case "4:3 (Wide)":
-      return CommonAspectRatio.WideFourByThree;
-    case "3:2 (Wide)":
-      return CommonAspectRatio.WideThreeByTwo;
-    case "16:9 (Wide)":
-      return CommonAspectRatio.WideSixteenByNine;
-    case "21:9 (Wide)":
-      return CommonAspectRatio.WideTwentyOneByNine;
-    case "4:5 (Tall)":
-      return CommonAspectRatio.TallFourByFive;
-    case "3:4 (Tall)":
-      return CommonAspectRatio.TallThreeByFour;
-    case "2:3 (Tall)":
-      return CommonAspectRatio.TallTwoByThree;
-    case "9:16 (Tall)":
-      return CommonAspectRatio.TallNineBySixteen;
-    case "9:21 (Tall)":
-      return CommonAspectRatio.TallNineByTwentyOne;
-    case "Auto (2K)":
-      return CommonAspectRatio.Auto2k;
-    case "Auto (3K)":
-      return CommonAspectRatio.Auto3k;
-    case "Auto (4K)":
-      return CommonAspectRatio.Auto4k;
-    case "Square (HD)":
-      return CommonAspectRatio.SquareHd;
-
-  }
-  console.error("Unknown aspect ratio label:", label, "for model:", model.id);
-  // If we can't find it, return the model's default aspect ratio or Square as fallback
-  return model.defaultAspectRatio || CommonAspectRatio.Square;
 };
