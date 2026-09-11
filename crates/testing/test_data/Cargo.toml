@@ -1,0 +1,21 @@
+[package]
+name = "test_data"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[lib]
+# NB: Did not look for public-facing crate with same name.
+name = "test_data"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+errors.workspace = true
+
+# External
+anyhow.workspace = true
+
+[dev-dependencies]
+# None yet

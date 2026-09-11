@@ -1,0 +1,30 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019d475a-291a-7681-81dc-b27d2489beae",
+  "payload": {
+    "detail": [
+      {
+        "input": {
+          "aspect_ratio": "16:9",
+          "enable_web_search": false,
+          "limit_generations": false,
+          "num_images": 1,
+          "output_format": "png",
+          "prompt": "[nsfw prompt redacted]",
+          "resolution": "1K",
+          "safety_tolerance": "4",
+          "seed": null,
+          "sync_mode": false
+        },
+        "loc": [
+          "body"
+        ],
+        "msg": "The model did not generate the expected output for this prompt. This may occur for several reasons, including unsafe content, a prompt that is incompatible with the selected media type (e.g., prompting an image model to generate audio), references to missing attachments, or other cases where the input cannot be processed as the requested output type. Please review your inputs and try again. If the issue persists, contact support.",
+        "type": "no_media_generated",
+        "url": "https://docs.fal.ai/errors#no_media_generated"
+      }
+    ]
+  },
+  "request_id": "019d475a-291a-7681-81dc-b27d2489beae",
+  "status": "ERROR"
+}

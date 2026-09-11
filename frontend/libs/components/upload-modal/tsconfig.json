@@ -1,0 +1,43 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../viewer-3d"
+    },
+    {
+      "path": "../gallery-modal"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../loading"
+    },
+    {
+      "path": "../checkbox"
+    },
+    {
+      "path": "../file-uploader"
+    },
+    {
+      "path": "../select"
+    },
+    {
+      "path": "../list-dropdown"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

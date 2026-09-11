@@ -1,0 +1,1 @@
+pub mod featured_item_entity_type;

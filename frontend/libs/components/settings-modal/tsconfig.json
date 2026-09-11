@@ -1,0 +1,76 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../keybinds"
+    },
+    {
+      "path": "../../tauri-utils"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../promptbox"
+    },
+    {
+      "path": "../../state/subscription"
+    },
+    {
+      "path": "../../state/credits"
+    },
+    {
+      "path": "../pricing-modal"
+    },
+    {
+      "path": "../switch"
+    },
+    {
+      "path": "../select"
+    },
+    {
+      "path": "../../soundboard"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../../tauri-events"
+    },
+    {
+      "path": "../login-modal"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
+      "path": "../../analytics/google-analytics"
+    },
+    {
+      "path": "../label"
+    },
+    {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

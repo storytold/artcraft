@@ -1,0 +1,11 @@
+pub mod auth_bearer;
+pub mod auth_sentinel;
+pub mod auth_sentinel_2;
+pub mod common;
+pub mod deprecated;
+pub mod generate_sora2_video;
+pub mod image_gen;
+pub mod list_classic_tasks;
+pub mod list_sora2_drafts;
+pub mod upload;
+pub mod upload_sora2;

@@ -1,0 +1,58 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../checkbox"
+    },
+    {
+      "path": "../slider-v2"
+    },
+    {
+      "path": "../generation-list"
+    },
+    {
+      "path": "../close-button"
+    },
+    {
+      "path": "../lightbox-modal"
+    },
+    {
+      "path": "../../common"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../toaster"
+    },
+    {
+      "path": "../action-reminder-modal"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../loading-spinner"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

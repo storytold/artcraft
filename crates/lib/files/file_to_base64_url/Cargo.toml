@@ -1,0 +1,23 @@
+[package]
+name = "file_to_base64_url"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "fal_client"
+path = "src/lib.rs"
+
+[dependencies]
+
+
+# Internal
+errors.workspace = true
+
+# External
+anyhow.workspace = true
+base64.workspace = true
+mimetypes.workspace = true
+
+[dev-dependencies]
+test_utils = { path = "../../../testing/test_utils" }

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    UPDATE tasks\n    SET task_status = \"cancelled_by_user\"\n    WHERE task_status NOT IN (\n        \"complete_success\",\n        \"complete_failure\",\n        \"dead\",\n        \"cancelled_by_user\",\n        \"cancelled_by_provider\",\n        \"cancelled_by_us\"\n    )\n  ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "30272128d83543d9fbfca930b7cdd4af30adfb4d90f2de044463a111c6340495"
+}

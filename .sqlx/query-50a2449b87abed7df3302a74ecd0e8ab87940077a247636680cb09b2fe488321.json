@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    UPDATE tasks\n    SET\n      task_status = ?,\n      on_complete_batch_token = ?,\n      on_complete_primary_media_file_token = ?,\n      on_complete_primary_media_file_class = ?,\n      on_complete_primary_media_file_cdn_url = ?,\n      on_complete_primary_media_file_thumbnail_url_template = ?\n    WHERE id = ?\n  ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "50a2449b87abed7df3302a74ecd0e8ab87940077a247636680cb09b2fe488321"
+}

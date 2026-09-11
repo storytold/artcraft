@@ -1,0 +1,29 @@
+[package]
+name = "build_metadata"
+resolver = "2" # NB: Required by `build-info`
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "build_metadata"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+# (None yet)
+
+# External
+build-info = "0.0.40"
+
+[dev-dependencies]
+# None yet
+
+[build-dependencies]
+build-info-build = "0.0.40"
+

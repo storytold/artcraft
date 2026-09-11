@@ -1,0 +1,15 @@
+{
+  "error": null,
+  "gateway_request_id": "019d8032-38cb-7161-8dd8-0b4adf10fa72",
+  "payload": {
+    "model_mesh": {
+      "content_type": "application/octet-stream",
+      "file_name": "mesh-1775972273-765284.glb",
+      "file_size": 3886928,
+      "url": "https://v3b.fal.media/files/b/0a95eb2d/XCpH7fk-tZVXr1XMUr7DY_mesh-1775972273-765284.glb"
+    },
+    "seed": 765284
+  },
+  "request_id": "019d8032-38cb-7161-8dd8-0b4adf10fa72",
+  "status": "OK"
+}

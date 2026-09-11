@@ -1,0 +1,2 @@
+export { ImageWatermarkRemover } from "./ImageWatermarkRemover";
+

@@ -1,0 +1,40 @@
+use crate::requests::core_api::fal_request::FalRequest;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Veo3ImageToVideoInput {
+  pub image_url: String,
+
+  pub prompt: String,
+
+  /// Options: "auto", "16:9", "9:16"
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub aspect_ratio: Option<String>,
+
+  /// Options: "720p", "1080p"
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub resolution: Option<String>,
+
+  /// Options: "4s", "6s", "8s"
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub duration: Option<String>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub generate_audio: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Veo3ImageToVideoVideoFile {
+  pub url: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Veo3ImageToVideoOutput {
+  pub video: Veo3ImageToVideoVideoFile,
+}
+
+pub fn veo_3_image_to_video(
+  params: Veo3ImageToVideoInput,
+) -> FalRequest<Veo3ImageToVideoInput, Veo3ImageToVideoOutput> {
+  FalRequest::new("fal-ai/veo3/image-to-video", params)
+}

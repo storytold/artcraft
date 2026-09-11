@@ -1,0 +1,254 @@
+use std::collections::BTreeSet;
+
+use serde::Deserialize;
+use serde::Serialize;
+#[cfg(test)]
+use strum::EnumCount;
+#[cfg(test)]
+use strum::EnumIter;
+use utoipa::ToSchema;
+
+/// Used in the `users` table in a `VARCHAR` field (stored as comma separated set).
+///
+/// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
+#[cfg_attr(test, derive(EnumIter, EnumCount))]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum UserFeatureFlag {
+  /// Grants a user the ability to list media
+  /// (For now, it's hidden until we get an NSFW filter.)
+  ExploreMedia,
+
+
+  /// Access to studio features
+  Studio,
+
+  /// Whether users are allowed to upload 3D models
+  #[serde(rename = "upload_3d")]
+  Upload3d,
+
+  /// Access to video style transfer
+  VideoStyleTransfer,
+
+  /// Access to the faster Seedance 2.0 whitelist
+  #[serde(rename = "sd_wl")]
+  SeedanceWhitelist,
+
+  /// Access to Happy Horse
+  #[serde(rename = "hh")]
+  HappyHorse,
+
+  /// Access to Happy Horse (with a rate limit)
+  #[serde(rename = "hh_rl")]
+  HappyHorseRateLimit,
+
+  /// Access to the referrals program
+  #[serde(rename = "referrals")]
+  ReferralsProgram,
+
+  /// Access to API key creation
+  #[serde(rename = "api_key")]
+  ApiKey,
+
+  /// Access to Minimax
+  #[serde(rename = "minimax")]
+  Minimax,
+
+  /// Access to Minimax with debugging priority (admins)
+  #[serde(rename = "minimax_p")]
+  MinimaxPriority,
+}
+
+// TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
+impl_enum_display_and_debug_using_to_str!(UserFeatureFlag);
+impl_mysql_enum_coders!(UserFeatureFlag);
+impl_mysql_from_row!(UserFeatureFlag);
+
+/// NB: Legacy API for older code.
+impl UserFeatureFlag {
+  pub fn to_str(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "explore_media",
+      Self::Studio => "studio",
+      Self::Upload3d => "upload_3d",
+      Self::VideoStyleTransfer => "video_style_transfer",
+      Self::SeedanceWhitelist => "sd_wl",
+      Self::HappyHorse => "hh",
+      Self::HappyHorseRateLimit => "hh_rl",
+      Self::ReferralsProgram => "referrals",
+      Self::ApiKey => "api_key",
+      Self::Minimax => "minimax",
+      Self::MinimaxPriority => "minimax_p",
+    }
+  }
+
+  pub fn from_str(value: &str) -> Result<Self, String> {
+    match value {
+      "explore_media" => Ok(Self::ExploreMedia),
+      "studio" => Ok(Self::Studio),
+      "upload_3d" => Ok(Self::Upload3d),
+      "video_style_transfer" => Ok(Self::VideoStyleTransfer),
+      "sd_wl" => Ok(Self::SeedanceWhitelist),
+      "hh" => Ok(Self::HappyHorse),
+      "hh_rl" => Ok(Self::HappyHorseRateLimit),
+      "referrals" => Ok(Self::ReferralsProgram),
+      "api_key" => Ok(Self::ApiKey),
+      "minimax" => Ok(Self::Minimax),
+      "minimax_p" => Ok(Self::MinimaxPriority),
+      _ => Err(format!("invalid value: {:?}", value)),
+    }
+  }
+
+  pub fn name(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "Explore Media",
+      Self::Studio => "Storyteller Studio",
+      Self::Upload3d => "Upload 3D",
+      Self::VideoStyleTransfer => "Video Style Transfer",
+      Self::SeedanceWhitelist => "DO NOT USE: Seedance Whitelist (legacy)",
+      Self::HappyHorse => "Happy Horse (no Rate Limit)",
+      Self::HappyHorseRateLimit => "Happy Horse (with Rate Limit)",
+      Self::ReferralsProgram => "Referrals Program",
+      Self::ApiKey => "API Keys",
+      Self::Minimax => "Minimax",
+      Self::MinimaxPriority => "Minimax (Debugging Priority)",
+    }
+  }
+
+  pub fn description(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "Grants a user the ability to list media on FakeYou (admin permission)",
+      Self::Studio => "Access to Storyteller Studio product",
+      Self::Upload3d => "Whether users are allowed to upload 3D models",
+      Self::VideoStyleTransfer => "Access to video style transfer on Storyteller",
+      Self::SeedanceWhitelist => "DO NOT USE THIS. IT WILL BREAK ACCOUNTS.",
+      Self::HappyHorse => "Access to Happy Horse (without a rate limit - dangerous)",
+      Self::HappyHorseRateLimit => "Access to Happy Horse (with a rate limit)",
+      Self::ReferralsProgram => "Access to the referrals program",
+      Self::ApiKey => "Access to API key creation",
+      Self::Minimax => "Access to Minimax",
+      Self::MinimaxPriority => "Access to Minimax with debugging priority (admins)",
+    }
+  }
+
+  pub fn all_variants() -> BTreeSet<Self> {
+    // NB: BTreeSet is sorted
+    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
+    BTreeSet::from([
+      Self::ExploreMedia,
+      Self::Studio,
+      Self::Upload3d,
+      Self::VideoStyleTransfer,
+      Self::SeedanceWhitelist,
+      Self::HappyHorse,
+      Self::HappyHorseRateLimit,
+      Self::ReferralsProgram,
+      Self::ApiKey,
+      Self::Minimax,
+      Self::MinimaxPriority,
+    ])
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::by_table::users::user_feature_flag::UserFeatureFlag;
+  use crate::test_helpers::assert_serialization;
+
+  mod explicit_checks {
+    use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserFeatureFlag::ExploreMedia, "explore_media");
+      assert_serialization(UserFeatureFlag::Studio, "studio");
+      assert_serialization(UserFeatureFlag::Upload3d, "upload_3d");
+      assert_serialization(UserFeatureFlag::VideoStyleTransfer, "video_style_transfer");
+      assert_serialization(UserFeatureFlag::SeedanceWhitelist, "sd_wl");
+      assert_serialization(UserFeatureFlag::HappyHorse, "hh");
+      assert_serialization(UserFeatureFlag::HappyHorseRateLimit, "hh_rl");
+      assert_serialization(UserFeatureFlag::ReferralsProgram, "referrals");
+      assert_serialization(UserFeatureFlag::ApiKey, "api_key");
+      assert_serialization(UserFeatureFlag::Minimax, "minimax");
+      assert_serialization(UserFeatureFlag::MinimaxPriority, "minimax_p");
+    }
+
+    #[test]
+    fn test_to_str() {
+      assert_eq!(UserFeatureFlag::ExploreMedia.to_str(), "explore_media");
+      assert_eq!(UserFeatureFlag::Studio.to_str(), "studio");
+      assert_eq!(UserFeatureFlag::Upload3d.to_str(), "upload_3d");
+      assert_eq!(UserFeatureFlag::VideoStyleTransfer.to_str(), "video_style_transfer");
+      assert_eq!(UserFeatureFlag::SeedanceWhitelist.to_str(), "sd_wl");
+      assert_eq!(UserFeatureFlag::HappyHorse.to_str(), "hh");
+      assert_eq!(UserFeatureFlag::HappyHorseRateLimit.to_str(), "hh_rl");
+      assert_eq!(UserFeatureFlag::ReferralsProgram.to_str(), "referrals");
+      assert_eq!(UserFeatureFlag::ApiKey.to_str(), "api_key");
+      assert_eq!(UserFeatureFlag::Minimax.to_str(), "minimax");
+      assert_eq!(UserFeatureFlag::MinimaxPriority.to_str(), "minimax_p");
+    }
+
+    #[test]
+    fn test_from_str() {
+      assert_eq!(UserFeatureFlag::from_str("explore_media").unwrap(), UserFeatureFlag::ExploreMedia);
+      assert_eq!(UserFeatureFlag::from_str("studio").unwrap(), UserFeatureFlag::Studio);
+      assert_eq!(UserFeatureFlag::from_str("upload_3d").unwrap(), UserFeatureFlag::Upload3d);
+      assert_eq!(UserFeatureFlag::from_str("video_style_transfer").unwrap(), UserFeatureFlag::VideoStyleTransfer);
+      assert_eq!(UserFeatureFlag::from_str("sd_wl").unwrap(), UserFeatureFlag::SeedanceWhitelist);
+      assert_eq!(UserFeatureFlag::from_str("hh").unwrap(), UserFeatureFlag::HappyHorse);
+      assert_eq!(UserFeatureFlag::from_str("hh_rl").unwrap(), UserFeatureFlag::HappyHorseRateLimit);
+      assert_eq!(UserFeatureFlag::from_str("referrals").unwrap(), UserFeatureFlag::ReferralsProgram);
+      assert_eq!(UserFeatureFlag::from_str("api_key").unwrap(), UserFeatureFlag::ApiKey);
+      assert_eq!(UserFeatureFlag::from_str("minimax").unwrap(), UserFeatureFlag::Minimax);
+      assert_eq!(UserFeatureFlag::from_str("minimax_p").unwrap(), UserFeatureFlag::MinimaxPriority);
+      assert!(UserFeatureFlag::from_str("foo").is_err());
+    }
+
+    #[test]
+    fn all_variants() {
+      let mut variants = UserFeatureFlag::all_variants();
+      assert_eq!(variants.len(), 11);
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ExploreMedia));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Studio));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Upload3d));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::VideoStyleTransfer));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::SeedanceWhitelist));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorse));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorseRateLimit));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ReferralsProgram));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ApiKey));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Minimax));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::MinimaxPriority));
+      assert_eq!(variants.pop_first(), None);
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn variant_length() {
+      use strum::IntoEnumIterator;
+      assert_eq!(UserFeatureFlag::all_variants().len(), UserFeatureFlag::iter().len());
+    }
+
+    #[test]
+    fn round_trip() {
+      for variant in UserFeatureFlag::all_variants() {
+        assert_eq!(variant, UserFeatureFlag::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, UserFeatureFlag::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, UserFeatureFlag::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH : usize = 32;
+      for variant in UserFeatureFlag::all_variants() {
+        let serialized = variant.to_str();
+        assert!(serialized.len() > 0, "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+  }
+}

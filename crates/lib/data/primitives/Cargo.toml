@@ -1,0 +1,35 @@
+[package]
+name = "primitives"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "primitives" crate does not exist, so we're fine to use this internally.
+name = "primitives"
+path = "src/lib.rs"
+
+[dependencies]
+
+# NB: This is designed to be a central crate with few dependencies.
+# Consider the dependencies here wisely.
+# This is used in MySQL, etc., so dependencies are ill-advised.
+
+# Internal
+# **DO NOT ADD ANY!**
+# (None)
+
+# External
+# **DO NOT ADD ANY!**
+# (None)
+
+[dev-dependencies]
+# Internal
+test_utils.workspace = true
+
+# External
+assertor.workspace = true

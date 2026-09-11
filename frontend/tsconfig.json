@@ -1,0 +1,187 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./libs/api"
+    },
+    {
+      "path": "./apps/artcraft"
+    },
+    {
+      "path": "./libs/components/toaster"
+    },
+    {
+      "path": "./libs/components/close-button"
+    },
+    {
+      "path": "./libs/components/modal"
+    },
+    {
+      "path": "./libs/components/settings-modal"
+    },
+    {
+      "path": "./libs/components/button"
+    },
+    {
+      "path": "./libs/components/input"
+    },
+    {
+      "path": "./libs/components/label"
+    },
+    {
+      "path": "./libs/components/select"
+    },
+    {
+      "path": "./libs/components/tooltip"
+    },
+    {
+      "path": "./libs/tauri-api"
+    },
+    {
+      "path": "./libs/tauri-events"
+    },
+    {
+      "path": "./libs/tauri-utils"
+    },
+    {
+      "path": "./libs/components/gallery-modal"
+    },
+    {
+      "path": "./libs/components/lightbox-modal"
+    },
+    {
+      "path": "./libs/components/tab-selector"
+    },
+    {
+      "path": "./libs/components/loading-spinner"
+    },
+    {
+      "path": "./libs/soundboard"
+    },
+    {
+      "path": "./libs/components/promptbox"
+    },
+    {
+      "path": "./libs/components/popover"
+    },
+    {
+      "path": "./libs/components/camera-settings-modal"
+    },
+    {
+      "path": "./libs/components/slider-v2"
+    },
+    {
+      "path": "./libs/common"
+    },
+    {
+      "path": "./libs/components/login-modal"
+    },
+    {
+      "path": "./libs/components/switch"
+    },
+    {
+      "path": "./libs/components/menu-icon-selector"
+    },
+    {
+      "path": "./libs/components/badge"
+    },
+    {
+      "path": "./libs/components/button-dropdown"
+    },
+    {
+      "path": "./libs/components/button-icon"
+    },
+    {
+      "path": "./libs/components/button-icon-select"
+    },
+    {
+      "path": "./libs/components/file-uploader"
+    },
+    {
+      "path": "./libs/components/gravatar"
+    },
+    {
+      "path": "./libs/components/loading"
+    },
+    {
+      "path": "./libs/components/list-dropdown"
+    },
+    {
+      "path": "./libs/components/upload-modal"
+    },
+    {
+      "path": "./libs/components/action-reminder-modal"
+    },
+    {
+      "path": "./libs/components/model-selector"
+    },
+    {
+      "path": "./libs/components/pricing-modal"
+    },
+    {
+      "path": "./libs/model-list"
+    },
+    {
+      "path": "./libs/analytics/google-analytics"
+    },
+    {
+      "path": "./libs/components/provider-setup-modal"
+    },
+    {
+      "path": "./libs/components/provider-billing-modal"
+    },
+    {
+      "path": "./libs/state/credits"
+    },
+    {
+      "path": "./libs/state/subscription"
+    },
+    {
+      "path": "./libs/components/help-menu"
+    },
+    {
+      "path": "./libs/api-enums"
+    },
+    {
+      "path": "./libs/components/viewer-3d"
+    },
+    {
+      "path": "./libs/markdown-content"
+    },
+    {
+      "path": "./libs/components/pagedraw"
+    },
+    {
+      "path": "./libs/components/checkbox"
+    },
+    {
+      "path": "./libs/components/pagescene"
+    },
+    {
+      "path": "./libs/components/vfx"
+    },
+    {
+      "path": "./libs/components/video-editor"
+    },
+    {
+      "path": "./libs/components/generation-list"
+    },
+    {
+      "path": "./libs/components/moodboard"
+    },
+    {
+      "path": "./libs/components/keybinds"
+    },
+    {
+      "path": "./libs/omni-gen"
+    },
+    {
+      "path": "./libs/components/audio-player"
+    },
+    {
+      "path": "./libs/icons"
+    }
+  ]
+}

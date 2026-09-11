@@ -1,0 +1,2 @@
+pub mod uploaded_video_note_reported_model_type;
+pub mod uploaded_video_note_reported_website;

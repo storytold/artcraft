@@ -1,0 +1,30 @@
+.env
+.eslintcache
+.vite
+.notes
+node_modules
+/~/
+proxy/~/
+/.cache
+/public/build
+/build
+/backup
+.idea
+$
+
+# VS Code Setting
+.vscode
+
+# Local Netlify folder
+.netlify
+# Mac
+.DS_Store
+
+# Assets to ignore
+public/resources/movie/Big_Buck_Bunny_180_10s.webm
+public/resources/models/room/room_with_girl.glb
+
+*storybook.log
+
+# VIM
+*~

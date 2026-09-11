@@ -1,0 +1,44 @@
+/* PageDraw component styles — imported by PageDraw.tsx and PaintSurface.tsx */
+
+.pegboard-bg {
+  inset: 0;
+  z-index: 0;
+  /* Soft center lift + edge vignette so the workspace reads as a lit stage
+     with depth instead of a flat slab. Static and GPU-cheap (no animation). */
+  background-color: #1b1b1b;
+  background-image:
+    radial-gradient(
+      130% 100% at 50% 28%,
+      rgba(255, 255, 255, 0.045) 0%,
+      rgba(255, 255, 255, 0) 50%
+    ),
+    radial-gradient(
+      120% 120% at 50% 125%,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0) 55%
+    );
+}
+
+/* react-colorful overrides for the brush color picker in SideToolbar */
+.brush-picker .react-colorful {
+  border: 1px solid rgb(255, 255, 255);
+  margin-bottom: 16px;
+}
+
+.brush-picker .react-colorful__saturation {
+  border: 1px solid rgb(255, 255, 255);
+  border-radius: 15px;
+  margin-bottom: 12px;
+}
+
+.brush-picker .react-colorful__hue {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  margin-bottom: 12px;
+}
+
+.brush-picker .react-colorful__alpha {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  margin-bottom: 12px;
+}

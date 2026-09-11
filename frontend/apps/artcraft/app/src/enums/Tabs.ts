@@ -1,0 +1,17 @@
+export enum TabTitles {
+  ANIMATION = "Animation",
+  AUDIO = "Audio",
+  CHARACTERS = "Character",
+  GROUP_ANIME = "Anime Characters",
+  GROUP_CARTOONS = "Characters",
+  EXPRESSIONS = "Expressions",
+  OBJECTS = "Props & Objects",
+  OBJECTS_CREATURES = "Creatures",
+  OBJECTS_SETS = "Film Sets",
+  PLANES = "Image Plates",
+  PLANES_IMAGE = "Image Panels",
+  PLANES_VIDEO = "Video Panels",
+  RENDER = "AI Preview",
+  SKYBOXES = "Skyboxes",
+  STYLIZE = "AI Stylize",
+}

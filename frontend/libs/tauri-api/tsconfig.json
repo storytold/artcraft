@@ -1,0 +1,22 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../api"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "../model-list"
+    },
+    {
+      "path": "../api-enums"
+    }
+  ],
+  "extends": "../../tsconfig.base.json"
+}

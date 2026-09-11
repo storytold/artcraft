@@ -1,0 +1,2 @@
+pub mod http_flux_2_lora_edit_image_angle;
+pub mod http_qwen_edit_2511_edit_image_angle;

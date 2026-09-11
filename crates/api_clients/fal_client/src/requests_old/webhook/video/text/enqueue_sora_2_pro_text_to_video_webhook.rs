@@ -1,0 +1,209 @@
+use crate::creds::fal_api_key::FalApiKey;
+use crate::error::classify_fal_error::classify_fal_error;
+use crate::error::fal_error_plus::FalErrorPlus;
+use crate::requests_old::http::video::text::http_sora_2_pro_text_to_video::{sora_2_pro_text_to_video, Sora2ProTextToVideoInput};
+use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
+use crate::requests::core_api::webhook_response::WebhookResponse;
+use reqwest::IntoUrl;
+
+pub struct EnqueueSora2ProTextToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueSora2ProTextToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueSora2ProTextToVideoRequest {
+  pub prompt: String,
+  pub resolution: Option<EnqueueSora2ProTextToVideoResolution>,
+  pub duration: Option<EnqueueSora2ProTextToVideoDurationSeconds>,
+  pub aspect_ratio: Option<EnqueueSora2ProTextToVideoAspectRatio>,
+}
+
+#[derive(Copy, Clone, Debug, strum::EnumIter)]
+pub enum EnqueueSora2ProTextToVideoDurationSeconds {
+  Four,
+  Eight,
+  Twelve,
+}
+
+#[derive(Copy, Clone, Debug, strum::EnumIter)]
+pub enum EnqueueSora2ProTextToVideoResolution {
+  SevenTwentyP,
+  TenEightyP,
+}
+
+#[derive(Copy, Clone, Debug, strum::EnumIter)]
+pub enum EnqueueSora2ProTextToVideoAspectRatio {
+  NineBySixteen,
+  SixteenByNine,
+}
+
+
+impl FalRequestCostCalculator for EnqueueSora2ProTextToVideoRequest {
+  fn calculate_cost_in_cents(&self) -> UsdCents {
+    // Pricing: $0.30/s for 720p and $0.50/s for 1080p.
+    let duration = self.duration.unwrap_or(EnqueueSora2ProTextToVideoDurationSeconds::Four);
+    let resolution = self.resolution.unwrap_or(EnqueueSora2ProTextToVideoResolution::TenEightyP);
+
+    match (duration, resolution) {
+      (EnqueueSora2ProTextToVideoDurationSeconds::Four, EnqueueSora2ProTextToVideoResolution::SevenTwentyP) => 120,
+      (EnqueueSora2ProTextToVideoDurationSeconds::Four, EnqueueSora2ProTextToVideoResolution::TenEightyP) => 200,
+      (EnqueueSora2ProTextToVideoDurationSeconds::Eight, EnqueueSora2ProTextToVideoResolution::SevenTwentyP) => 240,
+      (EnqueueSora2ProTextToVideoDurationSeconds::Eight, EnqueueSora2ProTextToVideoResolution::TenEightyP) => 400,
+      (EnqueueSora2ProTextToVideoDurationSeconds::Twelve, EnqueueSora2ProTextToVideoResolution::SevenTwentyP) => 360,
+      (EnqueueSora2ProTextToVideoDurationSeconds::Twelve, EnqueueSora2ProTextToVideoResolution::TenEightyP) => 600,
+    }
+  }
+}
+
+/// Sora 2 Pro Text-to-Video
+/// https://fal.ai/models/fal-ai/sora-2/text-to-video/pro
+pub async fn enqueue_sora_2_pro_text_to_video_webhook<R: IntoUrl>(
+  args: EnqueueSora2ProTextToVideoArgs<'_, R>
+) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
+
+  let duration = req.duration
+      .map(|d| match d {
+        EnqueueSora2ProTextToVideoDurationSeconds::Four => 4,
+        EnqueueSora2ProTextToVideoDurationSeconds::Eight => 8,
+        EnqueueSora2ProTextToVideoDurationSeconds::Twelve => 12,
+      });
+
+  let resolution = req.resolution
+      .map(|r| match r {
+        EnqueueSora2ProTextToVideoResolution::SevenTwentyP => "720p",
+        EnqueueSora2ProTextToVideoResolution::TenEightyP => "1080p",
+      })
+      .map(|r| r.to_string());
+
+  let aspect_ratio = req.aspect_ratio
+      .map(|ar| match ar {
+        EnqueueSora2ProTextToVideoAspectRatio::NineBySixteen => "9:16",
+        EnqueueSora2ProTextToVideoAspectRatio::SixteenByNine => "16:9",
+      })
+      .map(|ar| ar.to_string());
+
+  let request = Sora2ProTextToVideoInput {
+    prompt: req.prompt,
+    duration,
+    resolution,
+    aspect_ratio,
+    delete_video: Some(false),
+  };
+
+  let result = sora_2_pro_text_to_video(request)
+      .with_api_key(&args.api_key.0)
+      .queue_webhook(args.webhook_url)
+      .await;
+
+  result.map_err(|err| classify_fal_error(err))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::creds::fal_api_key::FalApiKey;
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+  use strum::IntoEnumIterator;
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = EnqueueSora2ProTextToVideoArgs {
+      request: EnqueueSora2ProTextToVideoRequest {
+        prompt: "a dinosaur turns to the camera and asks, 'do you have adequate car insurance?' it then stomps off and attacks a brontosaurus".to_string(),
+        duration: Some(EnqueueSora2ProTextToVideoDurationSeconds::Eight),
+        aspect_ratio: Some(EnqueueSora2ProTextToVideoAspectRatio::NineBySixteen),
+        resolution: Some(EnqueueSora2ProTextToVideoResolution::SevenTwentyP),
+      },
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let result = enqueue_sora_2_pro_text_to_video_webhook(args).await?;
+    println!("result: {:?}", result);
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_aspect_ratios() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for ar in EnqueueSora2ProTextToVideoAspectRatio::iter() {
+      println!("--- aspect ratio: {:?} ---", ar);
+      let args = EnqueueSora2ProTextToVideoArgs {
+        request: EnqueueSora2ProTextToVideoRequest {
+          prompt: "a serene mountain lake at sunset with gentle ripples".to_string(),
+          duration: Some(EnqueueSora2ProTextToVideoDurationSeconds::Four),
+          aspect_ratio: Some(ar),
+          resolution: None,
+        },
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_sora_2_pro_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_durations() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for dur in EnqueueSora2ProTextToVideoDurationSeconds::iter() {
+      println!("--- duration: {:?} ---", dur);
+      let args = EnqueueSora2ProTextToVideoArgs {
+        request: EnqueueSora2ProTextToVideoRequest {
+          prompt: "Suspenseful Hollywood movie. Interior, night. Customers are eating at a city diner. Suddenly a t-rex bursts its head through the large windows. The customers run.".to_string(),
+          duration: Some(dur),
+          aspect_ratio: Some(EnqueueSora2ProTextToVideoAspectRatio::SixteenByNine),
+          resolution: None,
+        },
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_sora_2_pro_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_resolutions() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for res in EnqueueSora2ProTextToVideoResolution::iter() {
+      println!("--- resolution: {:?} ---", res);
+      let args = EnqueueSora2ProTextToVideoArgs {
+        request: EnqueueSora2ProTextToVideoRequest {
+          prompt: "a bird flying over an ocean at golden hour".to_string(),
+          duration: Some(EnqueueSora2ProTextToVideoDurationSeconds::Four),
+          aspect_ratio: Some(EnqueueSora2ProTextToVideoAspectRatio::SixteenByNine),
+          resolution: Some(res),
+        },
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_sora_2_pro_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
+  }
+}

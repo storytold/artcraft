@@ -1,0 +1,33 @@
+[package]
+name = "artcraft_api_defs"
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "artcraft_api_defs"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+enums.workspace = true
+tokens.workspace = true
+
+# External
+chrono.workspace = true
+url.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+utoipa.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true

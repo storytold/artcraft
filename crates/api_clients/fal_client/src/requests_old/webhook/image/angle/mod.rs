@@ -1,0 +1,2 @@
+pub mod enqueue_flux_2_lora_edit_image_angle_webhook;
+pub mod enqueue_qwen_edit_2511_edit_image_angle_webhook;

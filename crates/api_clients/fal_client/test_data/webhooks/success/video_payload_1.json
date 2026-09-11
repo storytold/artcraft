@@ -1,0 +1,14 @@
+{
+  "error": null,
+  "gateway_request_id": "01234560-1230-1230-1230-122233344455",
+  "payload": {
+    "video": {
+      "content_type": "video/mp4",
+      "file_name": "output.mp4",
+      "file_size": 6226845,
+      "url": "https://v3b.fal.media/files/b/0abcdef0/AB-CDE_123456789abcde_output.mp4"
+    }
+  },
+  "request_id": "01234560-1230-1230-1230-122233344455",
+  "status": "OK"
+}

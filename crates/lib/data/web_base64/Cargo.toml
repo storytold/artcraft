@@ -1,0 +1,20 @@
+[package]
+name = "web_base64"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "web_base64"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+# (None)
+
+# External
+base64 = { workspace = true }
+
+[dev-dependencies]
+# (None)

@@ -1,0 +1,22 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = """
+This permission set configures what kind of
+fetch operations are available from the http plugin.
+
+This enables all fetch operations but does not
+allow explicitly any origins to be fetched. This needs to
+be manually configured before usage.
+
+#### Granted Permissions
+
+All fetch operations are enabled.
+
+"""
+permissions = [
+  "allow-fetch",
+  "allow-fetch-cancel",
+  "allow-fetch-read-body",
+  "allow-fetch-send",
+]

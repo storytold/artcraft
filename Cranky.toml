@@ -1,0 +1,70 @@
+# Persist clippy check configurations:
+# https://github.com/ericseppanen/cargo-cranky 
+# Clippy doesn't allow this (yet):
+# https://github.com/rust-lang/rust-clippy/issues/6625
+deny = [
+  # Rust
+  "unsafe_code", # We may remove this if needed
+
+  # Clippy - "serious" lints
+  "clippy::borrow_interior_mutable_const", # Seems dangerous to allow this. Eg. `const F = Lazy::new()`;
+
+  # Clippy - bad math
+  #"clippy::cast_possible_truncation", # Seems dangerous, eg f64 to u64.
+  #"clippy::cast_possible_wrap",
+
+  # Clippy - pointer safety / readability / correctness
+  "clippy::as_ptr_cast_mut",
+  "clippy::borrow_as_ptr",
+  "clippy::borrow_deref_ref",
+
+  # Clippy async
+  "clippy::await_holding_lock",
+
+  # Clippy - performance
+  "clippy::cmp_owned",
+  "clippy::useless_vec",
+  "clippy::format_in_format_args",
+  #"clippy::redundant_clone",
+  #"clippy::unnecessary_to_owned",
+  #"clippy::vec_init_then_push",
+
+  # Clippy - "ergonomic" / "usage" lints
+  "clippy::clone_on_copy", # Don't use clone() on Copy types
+  "clippy::option_option", # Lint: Don't ever Option<Option<T>>! Enums instead.
+  "clippy::zero_sized_map_values", # Lint: use a HashSet instead of HashMap<T, ()>.
+
+  # Clippy - "aesthetic" / "style" lints
+  "clippy::clone_double_ref", # Lint: feels safer/hygienic to disallow this, but I'm not strongly opposed.
+  "clippy::double_comparisons", # Lint: readability
+  "clippy::empty_structs_with_brackets", # Lint: {} feels less aesthetic than ;
+  "clippy::implicit_clone", # Lint: Recommendation here seems more idiomatic.
+  "clippy::needless_late_init", # Don't declare variables without initializing them
+  "clippy::needless_return", # Lint: not the worst offender, but let's try to keep unnecessary returns out.
+  "clippy::redundant_field_names", # Lint: Duplicate names is a burden when reading: you wonder why they're dupes.
+  "clippy::redundant_static_lifetimes", # Lint: feels more modern to elide static lifetimes
+
+  # Rust
+  "non_fmt_panics", # panic!(format!(...)) will be unsupported soon
+  "unused_imports", # These are easy to automatically cull
+  "unused_mut", # Be strict about mutability
+  "unused_parens", # Unused parens are ugly
+  "unused_variables", # Don't leave cruft
+
+  # Possible:
+  # "clippy::ptr_arg",
+  # "clippy::too_many_lines" (note: this is configurable)
+]
+
+warn = [
+]
+
+allow = [
+  # Rust
+  "deprecated", # Other systems can handle deprecated code instead of the linter
+  "missing_docs", # Not everything needs documentation. Too much documentation is bad. Literate code.
+
+  # Clippy
+  "clippy::if_same_then_else", # There are cases this is clearer! Branches may have notes / considerations.
+  "clippy::single_char_pattern", # This is like punishing trailing commas. Chars are dumb.
+]

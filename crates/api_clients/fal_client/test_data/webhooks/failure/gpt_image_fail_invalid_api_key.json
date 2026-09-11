@@ -1,0 +1,29 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019d4771-5b51-7480-afc6-67e6e74b9f22",
+  "payload": {
+    "detail": [
+      {
+        "input": {
+          "background": "auto",
+          "image_size": "1536x1024",
+          "input_fidelity": null,
+          "num_images": 1,
+          "openai_api_key": "REDACTED",
+          "output_format": "png",
+          "prompt": "[redacted]",
+          "quality": "high"
+        },
+        "loc": [
+          "body",
+          "openai_api_key"
+        ],
+        "msg": "Invalid API key",
+        "type": "invalid_api_key",
+        "url": "https://docs.fal.ai/errors#invalid_api_key"
+      }
+    ]
+  },
+  "request_id": "019d4771-5b51-7480-afc6-67e6e74b9f22",
+  "status": "ERROR"
+}

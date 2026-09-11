@@ -1,0 +1,112 @@
+import { DynamicIcon } from "@storyteller/icons";
+import { twMerge } from "tailwind-merge";
+import {
+  useGenerateApps,
+  useEditApps,
+  getBadgeStyles,
+  goToApp,
+} from "~/config/appMenu";
+
+export const AppsQuickMenu = () => {
+  const generateApps = useGenerateApps();
+  const editApps = useEditApps();
+  return (
+    <div className="grid w-[680px] grid-cols-2 gap-3">
+      <div>
+        <h3 className="mb-2 px-2 text-xs font-semibold opacity-50">Create</h3>
+        <div className="space-y-0.5">
+          {generateApps.map((app) => (
+            <button
+              key={app.id}
+              onClick={() => goToApp(app.action)}
+              disabled={!app.action}
+              className={twMerge(
+                "group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors",
+                app.action
+                  ? "cursor-pointer hover:bg-base-fg/10"
+                  : "cursor-default opacity-60",
+              )}
+            >
+              <div
+                className={twMerge(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                  app.color || "bg-ui-panel",
+                )}
+              >
+                <DynamicIcon icon={app.icon} className="text-sm" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="truncate text-[13px] font-medium">
+                    {app.label}
+                  </div>
+                  {app.badge && (
+                    <span
+                      className={twMerge(
+                        "shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-wider",
+                        getBadgeStyles(app.badge),
+                      )}
+                    >
+                      {app.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="truncate text-[11px] opacity-60">
+                  {app.description}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="mb-2 px-2 text-xs font-semibold opacity-50">Edit</h3>
+        <div className="space-y-0.5">
+          {editApps.map((app) => (
+            <button
+              key={app.id}
+              onClick={() => goToApp(app.action)}
+              disabled={!app.action}
+              className={twMerge(
+                "group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors",
+                app.action
+                  ? "cursor-pointer hover:bg-base-fg/10"
+                  : "cursor-default opacity-60",
+              )}
+            >
+              <div
+                className={twMerge(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                  app.color || "bg-ui-panel",
+                )}
+              >
+                <DynamicIcon icon={app.icon} className="text-sm" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="truncate text-[13px] font-medium">
+                    {app.label}
+                  </div>
+                  {app.badge && (
+                    <span
+                      className={twMerge(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                        getBadgeStyles(app.badge),
+                      )}
+                    >
+                      {app.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="truncate text-[11px] opacity-60">
+                  {app.description}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

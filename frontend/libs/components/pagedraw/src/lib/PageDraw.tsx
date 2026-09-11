@@ -1,0 +1,1386 @@
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
+import { useShallow } from "zustand/react/shallow";
+import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
+import "./pagedraw.css";
+import PromptEditor from "./PromptEditor/PromptEditor";
+import SideToolbar from "./components/ui/SideToolbar";
+import {
+  AspectRatioType,
+  type SceneState,
+  useSceneStore,
+} from "./stores/SceneState";
+import { usePagedrawKeybinds } from "./hooks/usePagedrawKeybinds";
+import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
+import Konva from "konva";
+import { ContextMenuContainer } from "./components/ui/ContextMenu";
+import InpaintToolBar from "./components/ui/InpaintToolBar";
+import { ImageModel } from "@storyteller/model-list";
+import {
+  useCanvas2dPageModelList,
+  ClassyModelSelector,
+  ModelPage,
+  useSelectedImageModel,
+  useSelectedProviderForModel,
+} from "@storyteller/ui-model-selector";
+import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
+import { GenerationProvider } from "@storyteller/api-enums";
+import { HistoryStack } from "./HistoryStack";
+import { type BaseSelectorImage } from "./types";
+import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
+import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
+import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
+import { PromptsApi } from "@storyteller/api";
+import toast from "react-hot-toast";
+import {
+  render3DModelToDataUrl,
+  DEFAULT_MODEL3D_PARAMS,
+  type Model3DParams,
+} from "./utilities/render3DModel";
+import {
+  Model3DOverlay,
+  type Model3DOverlayHandle,
+} from "./components/Model3DOverlay";
+import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
+import type { PageDrawAdapter } from "./adapter";
+
+const PAGE_ID: ModelPage = ModelPage.Canvas2D;
+
+// Order the shape hotkey cycles through (matches the submenu's visual order).
+const SHAPE_CYCLE = ["rectangle", "circle", "triangle"] as const;
+
+export const DecodeBase64ToImage = async (
+  base64String: string,
+): Promise<ImageBitmap> => {
+  const img = document.createElement("img");
+
+  const dataUrl = base64String.startsWith("data:")
+    ? base64String
+    : `data:image/png;base64,${base64String}`;
+
+  return new Promise((resolve, reject) => {
+    img.onload = async () => {
+      try {
+        const bitmap = await createImageBitmap(img);
+        resolve(bitmap);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    img.onerror = () => reject(new Error("Failed to load image"));
+
+    img.src = dataUrl;
+  });
+};
+
+// ─── Edit3DButton ─────────────────────────────────────────────────────────────
+interface Edit3DButtonProps {
+  nodeId: string;
+  stageRef: { current: Konva.Stage };
+  onEdit: (nodeId: string) => void;
+}
+
+const Edit3DButton = memo(function Edit3DButton({
+  nodeId,
+  stageRef,
+  onEdit,
+}: Edit3DButtonProps) {
+  const [, forceUpdate] = useState(0);
+  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+  const [interacting, setInteracting] = useState(false);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage?.on) return;
+
+    const ns = ".edit3dbtn";
+    stage.on(
+      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
+      bump,
+    );
+
+    const transformers = stage.find("Transformer");
+    transformers.forEach((tr) => {
+      tr.on(`transformstart${ns}`, () => setInteracting(true));
+      tr.on(`transformend${ns}`, () =>
+        requestAnimationFrame(() => {
+          setInteracting(false);
+          bump();
+        }),
+      );
+    });
+
+    const konvaNode = stage.findOne("#" + nodeId);
+    if (konvaNode) {
+      konvaNode.on(`dragstart${ns}`, () => setInteracting(true));
+      konvaNode.on(`dragend${ns}`, () =>
+        requestAnimationFrame(() => {
+          setInteracting(false);
+          bump();
+        }),
+      );
+    }
+
+    return () => {
+      stage.off(ns);
+      transformers.forEach((tr) => tr.off(ns));
+      konvaNode?.off(ns);
+    };
+  }, [stageRef, bump, nodeId]);
+
+  if (interacting) return null;
+
+  const stage = stageRef.current;
+  if (!stage?.container) return null;
+
+  const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
+  if (!konvaNode) return null;
+
+  const clientRect = konvaNode.getClientRect();
+  const stageContainerRect = stage.container().getBoundingClientRect();
+  const btnLeft = stageContainerRect.left + clientRect.x + clientRect.width / 2;
+  const btnTop = stageContainerRect.top + clientRect.y + clientRect.height / 2;
+
+  return (
+    <button
+      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-primary-400"
+      style={{ left: btnLeft, top: btnTop }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={() => onEdit(nodeId)}
+    >
+      Edit 3D
+    </button>
+  );
+});
+
+// ─── DragScrubButton ──────────────────────────────────────────────────────────
+function DragScrubButton({
+  icon,
+  title,
+  onDrag,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onDrag: (dx: number, dy: number) => void;
+}) {
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.buttons === 0) return;
+    onDrag(e.movementX, e.movementY);
+  };
+  return (
+    <button
+      title={title}
+      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-primary"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// ─── Edit3DScrubControls ──────────────────────────────────────────────────────
+interface Edit3DScrubControlsProps {
+  nodeId: string;
+  stageRef: { current: Konva.Stage };
+  overlayHandle: React.RefObject<Model3DOverlayHandle | null>;
+}
+
+const Edit3DScrubControls = memo(function Edit3DScrubControls({
+  nodeId,
+  stageRef,
+  overlayHandle,
+}: Edit3DScrubControlsProps) {
+  const [, forceUpdate] = useState(0);
+  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage?.on) return;
+    const ns = ".edit3dcontrols";
+    stage.on(
+      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
+      bump,
+    );
+    return () => {
+      stage.off(ns);
+    };
+  }, [stageRef, bump, nodeId]);
+
+  const stage = stageRef.current;
+  if (!stage?.container) return null;
+  const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
+  if (!konvaNode) return null;
+
+  const clientRect = konvaNode.getClientRect();
+  const stageContainerRect = stage.container().getBoundingClientRect();
+  const cx = stageContainerRect.left + clientRect.x + clientRect.width / 2;
+  const cy = stageContainerRect.top + clientRect.y + clientRect.height / 2;
+
+  return (
+    <div
+      className="pointer-events-auto fixed z-[60] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2"
+      style={{ left: cx, top: cy }}
+    >
+      <DragScrubButton
+        icon={<Maximize2Icon />}
+        title="Scale — drag"
+        onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
+      />
+      <DragScrubButton
+        icon={<RefreshCwIcon />}
+        title="Rotate — drag"
+        onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
+      />
+      <DragScrubButton
+        icon={<CameraIcon />}
+        title="Field of view — drag"
+        onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
+      />
+      <button
+        onClick={() => overlayHandle.current?.commit()}
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-white shadow-lg hover:bg-primary-400"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        ✓
+      </button>
+    </div>
+  );
+});
+
+// ─── PageDraw ─────────────────────────────────────────────────────────────────
+
+interface PageDrawProps {
+  adapter: PageDrawAdapter;
+  /**
+   * Tailwind class for the full-viewport canvas backdrop (and the base-image
+   * selector surface). Defaults to the app's `bg-ui-background`; hosts that
+   * embed PageDraw under their own page chrome can pass a matching color (e.g.
+   * the webapp's `bg-[#101014]`).
+   */
+  backgroundClassName?: string;
+  /**
+   * When true the base-image selector fills its parent box instead of
+   * reserving 56px for a global top bar. Hosts that hide their top bar on this
+   * route (so the editor reclaims the full vertical strip) should set this.
+   */
+  fillParentHeight?: boolean;
+  /**
+   * Show the bottom-right cost-calculator + help cluster. Defaults to true;
+   * hosts that surface those elsewhere (e.g. the webapp) pass false.
+   */
+  showBottomRightControls?: boolean;
+}
+
+const PageDraw = ({
+  adapter,
+  backgroundClassName = "bg-ui-background",
+  fillParentHeight = false,
+  showBottomRightControls = true,
+}: PageDrawProps) => {
+  const canvas2dModelList = useCanvas2dPageModelList();
+  const canvasWidth = useRef<number>(1024);
+  const canvasHeight = useRef<number>(1024);
+  const [isSelecting, setIsSelecting] = useState<boolean>(false);
+  const [editing3DNodeId, setEditing3DNodeId] = useState<string | null>(null);
+  const overlayHandleRef = useRef<Model3DOverlayHandle>(null);
+  const stageRef = useRef<Konva.Stage>({} as Konva.Stage);
+  const transformerRefs = useRef<{ [key: string]: Konva.Transformer }>({});
+
+  const selector = useMemo(
+    () => (state: SceneState) => ({
+      baseImageInfo: state.baseImageInfo,
+      baseImageBitmap: state.baseImageBitmap,
+      drawNodes: state.drawNodes,
+      inpaintLineNodes: state.inpaintLineNodes,
+      selectedNodeIds: state.selectedNodeIds,
+      activeTool: state.activeTool,
+      currentShape: state.currentShape,
+      fillColor: state.fillColor,
+      brushColor: state.brushColor,
+      brushSize: state.brushSize,
+      eraserSize: state.eraserSize,
+      inpaintOperation: state.inpaintOperation,
+      inpaintBrushSize: state.inpaintBrushSize,
+      setInpaintOperation: state.setInpaintOperation,
+      setInpaintBrushSize: state.setInpaintBrushSize,
+      historyImageBundles: state.historyImageBundles,
+      pendingGenerations: state.pendingGenerations,
+      getAspectRatioDimensions: state.getAspectRatioDimensions,
+      finishRemoveBackground: state.finishRemoveBackground,
+      createImageFromUrl: state.createImageFromUrl,
+      createImageFromFile: state.createImageFromFile,
+      createImageFrom3DModel: state.createImageFrom3DModel,
+      updateNode: state.updateNode,
+      setBaseImageInfo: state.setBaseImageInfo,
+      RESET: state.RESET,
+      removeHistoryImage: state.removeHistoryImage,
+      addHistoryImageBundle: state.addHistoryImageBundle,
+      addPendingGeneration: state.addPendingGeneration,
+      resolvePendingGeneration: state.resolvePendingGeneration,
+      removePendingGeneration: state.removePendingGeneration,
+      clearPendingGenerations: state.clearPendingGenerations,
+      setAspectRatioType: state.setAspectRatioType,
+      setActiveTool: state.setActiveTool,
+      selectNode: state.selectNode,
+      setCurrentShape: state.setCurrentShape,
+      setBrushColor: state.setBrushColor,
+      setBrushSize: state.setBrushSize,
+      setBrushOpacity: state.setBrushOpacity,
+      setFillColor: state.setFillColor,
+      toggleLock: state.toggleLock,
+      beginRemoveBackground: state.beginRemoveBackground,
+      bringToFront: state.bringToFront,
+      bringForward: state.bringForward,
+      sendBackward: state.sendBackward,
+      sendToBack: state.sendToBack,
+      copySelectedItems: state.copySelectedItems,
+      pasteItems: state.pasteItems,
+      deleteSelectedItems: state.deleteSelectedItems,
+      undo: state.undo,
+      redo: state.redo,
+    }),
+    [],
+  );
+
+  const {
+    baseImageInfo,
+    baseImageBitmap,
+    drawNodes,
+    inpaintLineNodes,
+    selectedNodeIds,
+    activeTool,
+    currentShape,
+    fillColor,
+    brushColor,
+    brushSize,
+    eraserSize,
+    inpaintOperation,
+    inpaintBrushSize,
+    setInpaintOperation,
+    setInpaintBrushSize,
+    historyImageBundles,
+    pendingGenerations,
+    getAspectRatioDimensions,
+    createImageFromUrl,
+    createImageFromFile,
+    createImageFrom3DModel,
+    updateNode,
+    setBaseImageInfo,
+    RESET,
+    removeHistoryImage,
+    addHistoryImageBundle,
+    addPendingGeneration,
+    removePendingGeneration,
+    clearPendingGenerations,
+    setAspectRatioType,
+    setActiveTool,
+    selectNode,
+    setCurrentShape,
+    setBrushColor,
+    setBrushSize,
+    setBrushOpacity,
+    setFillColor,
+    toggleLock,
+    beginRemoveBackground,
+    bringToFront,
+    bringForward,
+    sendBackward,
+    sendToBack,
+    copySelectedItems,
+    pasteItems,
+    deleteSelectedItems,
+    undo,
+    redo,
+  } = useSceneStore(useShallow(selector));
+
+  const promptStoreProvider = usePrompt2DStore;
+  const generationCount = promptStoreProvider((state) => state.generationCount);
+  const setGenerationCount = promptStoreProvider(
+    (state) => state.setGenerationCount,
+  );
+  const useSystemPrompt = promptStoreProvider((state) => state.useSystemPrompt);
+
+  const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
+  const baseImageUrl = baseImageInfo?.url;
+
+  // Synchronous re-entry guard for the Generate flow. A ref (not state) is the
+  // safety belt against duplicate paid generations: it flips before the first
+  // await so a panic-clicked second click sees the in-flight value immediately,
+  // independent of React state batching. The state below is only for the UI.
+  const generateInFlightRef = useRef(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const selectedImageModel: ImageModel | undefined =
+    useSelectedImageModel(PAGE_ID);
+
+  const selectedProvider: GenerationProvider | undefined =
+    useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+
+  const supportsMaskedInpainting =
+    selectedImageModel?.usesInpaintingMask ?? false;
+
+  // Keyboard tool switching mirrors the SideToolbar buttons; size up/down
+  // adjusts whichever size the active tool draws with (brush, eraser, and the
+  // mask tool each own their size). Handlers read the store via getState so
+  // they stay referentially stable.
+  // The shape tool isn't a single tool — it has a rectangle/circle/triangle
+  // submenu. The hotkey uses press-again-to-cycle (Adobe/Figma convention):
+  // first press activates with the current shape, further presses cycle.
+  const handleShapeToolKey = useCallback(() => {
+    const scene = useSceneStore.getState();
+    if (scene.activeTool === "shape") {
+      const current = scene.currentShape ?? "rectangle";
+      const index = SHAPE_CYCLE.indexOf(current);
+      scene.setCurrentShape(SHAPE_CYCLE[(index + 1) % SHAPE_CYCLE.length]);
+      return;
+    }
+    scene.selectNode(null);
+    if (!scene.currentShape) scene.setCurrentShape("rectangle");
+    scene.setActiveTool("shape");
+  }, []);
+
+  const handleMaskToolKey = useCallback(() => {
+    if (!supportsMaskedInpainting) return;
+    useSceneStore.getState().setActiveTool("inpaint");
+  }, [supportsMaskedInpainting]);
+
+  const adjustBrushSize = useCallback((direction: 1 | -1) => {
+    const scene = useSceneStore.getState();
+    const step = 2 * direction;
+    if (scene.activeTool === "inpaint") {
+      scene.setInpaintBrushSize(
+        Math.min(100, Math.max(1, scene.inpaintBrushSize + step)),
+      );
+    } else if (scene.activeTool === "eraser") {
+      scene.setEraserSize(Math.min(64, Math.max(1, scene.eraserSize + step)));
+    } else if (scene.activeTool === "draw") {
+      scene.setBrushSize(Math.min(64, Math.max(1, scene.brushSize + step)));
+    }
+  }, []);
+
+  const handleBrushSizeUp = useCallback(
+    () => adjustBrushSize(1),
+    [adjustBrushSize],
+  );
+  const handleBrushSizeDown = useCallback(
+    () => adjustBrushSize(-1),
+    [adjustBrushSize],
+  );
+  const handleSelectToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("select"),
+    [],
+  );
+  const handleBrushToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("draw"),
+    [],
+  );
+  const handleEraserToolKey = useCallback(
+    () => useSceneStore.getState().setActiveTool("eraser"),
+    [],
+  );
+
+  usePagedrawKeybinds({
+    undo,
+    redo,
+    onCopy: copySelectedItems,
+    onPaste: pasteItems,
+    onDelete: deleteSelectedItems,
+    onSelectTool: handleSelectToolKey,
+    onShapeTool: handleShapeToolKey,
+    onBrushTool: handleBrushToolKey,
+    onMaskTool: handleMaskToolKey,
+    onEraserTool: handleEraserToolKey,
+    onBrushSizeUp: handleBrushSizeUp,
+    onBrushSizeDown: handleBrushSizeDown,
+  });
+  const cheatsheetVisible = useCheatsheetVisibility();
+
+  // Read the inpaint mask off the Konva layer and encode it on a worker thread.
+  // The Konva readback itself runs on main (Konva is DOM-bound), but everything
+  // downstream — drawImage to an exact-size canvas, PNG encoding, byte transfer —
+  // happens off the main thread. Stable: only touches refs, so handleGenerate
+  // can list it as a dep without churning per render.
+  const getMaskArrayBuffer = useCallback(async (): Promise<Uint8Array> => {
+    if (!stageRef.current || !baseImageKonvaRef.current) {
+      console.error("Stage or left panel ref is not available");
+      throw new Error("Stage or left panel or base image ref is not available");
+    }
+
+    const layer = stageRef.current
+      .getLayers()
+      .find((l) => l.id() === INPAINT_LAYER_ID)!;
+
+    const rect = baseImageKonvaRef.current;
+    const layerCrop = layer.toCanvas({
+      x: stageRef.current.x(),
+      y: stageRef.current.y(),
+      width: rect.width() * stageRef.current.scaleX(),
+      height: rect.height() * stageRef.current.scaleY(),
+      pixelRatio: 1 / stageRef.current.scaleX(),
+    });
+
+    const markerBitmap = await createImageBitmap(layerCrop);
+    return maskInWorker({
+      markerBitmap,
+      width: rect.width(),
+      height: rect.height(),
+    });
+  }, []);
+
+  // Listen for gallery drag and drop events
+  useEffect(() => {
+    const handleGallery2DDrop = async (event: CustomEvent) => {
+      const { item, canvasPosition } = event.detail;
+
+      const stage = stageRef.current;
+      if (!stage) {
+        console.error(
+          "Stage reference not available for coordinate transformation",
+        );
+        return;
+      }
+      const stagePoint = {
+        x: (canvasPosition.x - stage.x()) / stage.scaleX(),
+        y: (canvasPosition.y - stage.y()) / stage.scaleY(),
+      };
+
+      if (item.mediaClass === "dimensional") {
+        const modelUrl = item.fullImage;
+        if (!modelUrl) {
+          console.error("No model URL available for 3D item");
+          return;
+        }
+        const toastId = toast.loading(`Loading 3D model "${item.label}"…`);
+        try {
+          const dataUrl = await render3DModelToDataUrl(
+            modelUrl,
+            DEFAULT_MODEL3D_PARAMS,
+          );
+          const img = new globalThis.Image();
+          img.onload = () => {
+            const canvasDims = getAspectRatioDimensions();
+            const maxDim = Math.min(canvasDims.width, canvasDims.height) * 0.25;
+            const aspect = img.width / img.height;
+            const displayW = Math.min(img.width, maxDim * Math.max(1, aspect));
+            const displayH = displayW / aspect;
+            createImageFrom3DModel(
+              stagePoint.x - displayW / 2,
+              stagePoint.y - displayH / 2,
+              dataUrl,
+              modelUrl,
+              {
+                ...DEFAULT_MODEL3D_PARAMS,
+                nativeWidth: img.width,
+                nativeHeight: img.height,
+              },
+              displayW,
+              displayH,
+            );
+            toast.success(`Added "${item.label}" to canvas`, { id: toastId });
+          };
+          img.src = dataUrl;
+        } catch (err) {
+          console.error("Failed to render 3D model:", err);
+          toast.error(`Failed to load 3D model "${item.label}"`, {
+            id: toastId,
+          });
+        }
+        return;
+      }
+
+      const imageUrl = item.fullImage || item.thumbnail;
+      if (!imageUrl) {
+        console.error("No image URL available for dropped item");
+        return;
+      }
+
+      createImageFromUrl(stagePoint.x, stagePoint.y, imageUrl);
+    };
+
+    window.addEventListener(
+      "gallery-2d-drop",
+      handleGallery2DDrop as unknown as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "gallery-2d-drop",
+        handleGallery2DDrop as unknown as EventListener,
+      );
+    };
+  }, [createImageFromUrl, createImageFrom3DModel]);
+
+  // Auto-close the 3D overlay when the editing node is no longer selected
+  useEffect(() => {
+    if (editing3DNodeId && !selectedNodeIds.includes(editing3DNodeId)) {
+      setEditing3DNodeId(null);
+    }
+  }, [selectedNodeIds, editing3DNodeId]);
+
+  const handle3DOverlayCommit = useCallback(
+    (dataUrl: string, params: Model3DParams) => {
+      if (!editing3DNodeId) return;
+      const img = new globalThis.Image();
+      img.onload = () => {
+        updateNode(
+          editing3DNodeId,
+          { imageUrl: dataUrl, imageElement: img, model3dParams: params },
+          true,
+        );
+      };
+      img.src = dataUrl;
+      setEditing3DNodeId(null);
+      selectNode(null);
+    },
+    [editing3DNodeId, updateNode, selectNode],
+  );
+
+  const displayNodes = useMemo(
+    () =>
+      editing3DNodeId
+        ? drawNodes.filter((n) => n.id !== editing3DNodeId)
+        : drawNodes,
+    [drawNodes, editing3DNodeId],
+  );
+
+  const handleImageUpload = useCallback(
+    async (files: File[]): Promise<void> => {
+      const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
+
+      const maxW = canvasW * 0.85;
+      const maxH = canvasH * 0.85;
+
+      for (const file of files) {
+        const img = new Image();
+        img.onload = () => {
+          const { naturalWidth, naturalHeight } = img;
+
+          const scale = Math.min(maxW / naturalWidth, maxH / naturalHeight, 1);
+          const displayW = naturalWidth * scale;
+          const displayH = naturalHeight * scale;
+
+          const x = (canvasW - displayW) / 2;
+          const y = (canvasH - displayH) / 2;
+
+          createImageFromFile(x, y, file, displayW, displayH);
+        };
+        img.src = URL.createObjectURL(file);
+      }
+    },
+    [getAspectRatioDimensions, createImageFromFile],
+  );
+
+  // Stable: reads base state imperatively from the Zustand store so deps stay
+  // empty and the bake chain (runCompositeBake → getCompositeFile /
+  // scheduleCompositeBake → handleGenerate) doesn't recreate on every
+  // base-image swap. `useSceneStore.getState()` always returns the latest
+  // store snapshot, so deferred bakes pick up the current bitmap at run time
+  // (not the one captured at schedule time).
+  const getCompositeCanvasFile = useCallback(async (): Promise<File | null> => {
+    const { baseImageBitmap: baseBitmapNow, baseImageInfo: baseInfoNow } =
+      useSceneStore.getState();
+    if (!stageRef.current || !baseImageKonvaRef.current) return null;
+    if (!baseInfoNow?.isBlankCanvas && !baseBitmapNow) return null;
+
+    const editsLayer = stageRef.current
+      .getLayers()
+      .find((l) => l.id() === DRAW_LAYER_ID);
+
+    if (!editsLayer) {
+      console.error("Edits layer not found");
+      return null;
+    }
+
+    const rect = baseImageKonvaRef.current;
+    const width = rect.width();
+    const height = rect.height();
+
+    const markerLayerCanvas = editsLayer.toCanvas({
+      x: stageRef.current.x(),
+      y: stageRef.current.y(),
+      width: rect.width() * stageRef.current.scaleX(),
+      height: rect.height() * stageRef.current.scaleY(),
+      pixelRatio: 1 / stageRef.current.scaleX(),
+    });
+
+    // Move the marker pixels and a clone of the base bitmap off the main
+    // thread. The worker handles the exact-size resize, compositing, and PNG
+    // encoding. Each bake carries its own base atomically; we don't try to
+    // cache it across bakes — pre-baking on idle (see runCompositeBake) hides
+    // the per-bake clone cost on the click path, and the atomic-per-call
+    // contract avoids any race where concurrent bakes leave a stale base in a
+    // worker-side cache.
+    const [markerBitmap, baseBitmap] = await Promise.all([
+      createImageBitmap(markerLayerCanvas),
+      baseBitmapNow
+        ? createImageBitmap(baseBitmapNow)
+        : Promise.resolve(undefined),
+    ]);
+
+    const blob = await compositeInWorker({
+      markerBitmap,
+      baseBitmap,
+      width,
+      height,
+    });
+    const uuid = crypto.randomUUID();
+    return new File([blob], `${uuid}.png`, { type: "image/png" });
+  }, []);
+
+  // Pre-bake the composite File on idle so the Generate click path is
+  // near-instant in the common case (user pauses >300ms before clicking). The
+  // bake itself still freezes the main thread for the Konva readback, but it
+  // happens between user actions instead of on click. A generation counter
+  // makes concurrent bakes correct: only the latest bake commits its result,
+  // and only if no canvas change happened mid-bake.
+  const bakedCompositeRef = useRef<File | null>(null);
+  const bakeDirtyRef = useRef(true);
+  const bakeInFlightRef = useRef<Promise<File | null> | null>(null);
+  const bakeGenRef = useRef(0);
+  const bakeTimeoutRef = useRef<number | null>(null);
+
+  const runCompositeBake = useCallback((): Promise<File | null> => {
+    const myGen = ++bakeGenRef.current;
+    bakeDirtyRef.current = false;
+    const promise = (async () => {
+      try {
+        const file = await getCompositeCanvasFile();
+        if (myGen === bakeGenRef.current && !bakeDirtyRef.current) {
+          bakedCompositeRef.current = file;
+        }
+        return file;
+      } catch (err) {
+        if (myGen === bakeGenRef.current) bakeDirtyRef.current = true;
+        console.error("Composite pre-bake failed:", err);
+        return null;
+      } finally {
+        // Only the latest bake clears the in-flight slot. Older bakes that
+        // finish after a newer one has started leave the newer one's promise
+        // in place.
+        if (myGen === bakeGenRef.current) bakeInFlightRef.current = null;
+      }
+    })();
+    bakeInFlightRef.current = promise;
+    return promise;
+  }, [getCompositeCanvasFile]);
+
+  const getCompositeFile = useCallback((): Promise<File | null> => {
+    if (!bakeDirtyRef.current) {
+      if (bakedCompositeRef.current) {
+        return Promise.resolve(bakedCompositeRef.current);
+      }
+      if (bakeInFlightRef.current) return bakeInFlightRef.current;
+    }
+    return runCompositeBake();
+  }, [runCompositeBake]);
+
+  const scheduleCompositeBake = useCallback(() => {
+    if (bakeTimeoutRef.current !== null) {
+      window.clearTimeout(bakeTimeoutRef.current);
+    }
+    bakeTimeoutRef.current = window.setTimeout(() => {
+      bakeTimeoutRef.current = null;
+      runCompositeBake().catch(() => {});
+    }, 300);
+  }, [runCompositeBake]);
+
+  // Invalidate + reschedule on any change that affects what's actually rendered.
+  // `baseImageInfo` updates synchronously when the user picks a new base, but
+  // the canvas keeps showing the old bitmap until `baseImageBitmap` swaps in
+  // (see setBaseImageInfo in SceneState.ts) — so `baseImageBitmap` is the right
+  // trigger. The Generate button is gated separately on bitmap presence so we
+  // never bake or fire a generate against a not-yet-loaded base.
+  useEffect(() => {
+    bakeDirtyRef.current = true;
+    bakedCompositeRef.current = null;
+    scheduleCompositeBake();
+  }, [drawNodes, baseImageBitmap, scheduleCompositeBake]);
+
+  useEffect(
+    () => () => {
+      if (bakeTimeoutRef.current !== null) {
+        window.clearTimeout(bakeTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleGenerate = useCallback(
+    async (
+      prompt: string,
+      options?: {
+        aspectRatio?: string;
+        resolution?: string;
+        images?: RefImage[];
+        selectedProvider?: GenerationProvider;
+      },
+    ) => {
+      if (generateInFlightRef.current) return;
+      generateInFlightRef.current = true;
+      setIsGenerating(true);
+      try {
+        // Yield once so React paints the disabled button before the heavy
+        // canvas readback / encode / upload runs and locks the main thread.
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve()),
+        );
+
+        const editedImageToken = baseImageInfo?.mediaToken;
+
+        if (!editedImageToken) {
+          console.error("Base image is not available");
+          return;
+        }
+
+        // Defense in depth: the visual gate (PromptEditor's isDisabled) is the
+        // primary user-facing guard, but a programmatic dispatch or future
+        // alternate trigger could still land here while the bitmap for the
+        // current baseImageInfo isn't loaded yet. Bail rather than snapshot
+        // stale pixels.
+        if (!baseImageBitmap && !baseImageInfo?.isBlankCanvas) {
+          console.error("Base image bitmap not yet loaded");
+          return;
+        }
+
+        const subscriberId: string =
+          crypto?.randomUUID?.() ??
+          `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        adapter.onEnqueueMeta?.({
+          prompt,
+          refImageUrls: (options?.images || [])
+            .map((img) => img.url)
+            .filter(Boolean),
+          modelType:
+            (selectedImageModel as any)?.tauriId || String(selectedImageModel),
+          timestamp: Date.now(),
+        });
+
+        let result;
+
+        if (selectedImageModel?.editingIsInpainting) {
+          // CASE 1 - INPAINTING
+          const arrayBuffer = await getMaskArrayBuffer();
+          result = await adapter.enqueueInpaint({
+            model: selectedImageModel,
+            imageMediaToken: editedImageToken,
+            maskImageRawBytes: arrayBuffer,
+            prompt: prompt,
+            imageCount: generationCount,
+            frontendCaller: "image_editor",
+            frontendSubscriberId: subscriberId,
+            provider: options?.selectedProvider,
+          });
+        } else if (selectedImageModel?.isNanoBananaModel()) {
+          // CASE 2 - NANO BANANA
+          const compositeFile = await getCompositeFile();
+
+          if (!compositeFile) {
+            console.error("Failed to create composite canvas");
+            return;
+          }
+
+          const api = new PromptsApi();
+          const snapshotResult = await api.uploadSceneSnapshot({
+            screenshot: compositeFile,
+          });
+
+          if (!snapshotResult.success || !snapshotResult.data) {
+            console.error("Failed to upload scene snapshot");
+            return;
+          }
+
+          const imgs = options?.images || [];
+          result = await adapter.enqueueEditImage({
+            model: selectedImageModel,
+            canvasImageMediaToken: snapshotResult.data,
+            imageMediaTokens: imgs
+              .map((img) => img.mediaToken)
+              .filter((t) => t.length > 0),
+            prompt: prompt,
+            imageCount: generationCount,
+            frontendCaller: "image_editor",
+            frontendSubscriberId: subscriberId,
+            aspectRatio: options?.aspectRatio,
+            imageResolution: options?.resolution,
+            provider: options?.selectedProvider,
+          });
+        } else {
+          // CASE 3 - DEFAULT
+          const compositeFile = await getCompositeFile();
+
+          if (!compositeFile) {
+            console.error("Failed to create composite canvas");
+            return;
+          }
+
+          const api = new PromptsApi();
+          const snapshotResult = await api.uploadSceneSnapshot({
+            screenshot: compositeFile,
+          });
+
+          if (!snapshotResult.success || !snapshotResult.data) {
+            console.error("Failed to upload scene snapshot");
+            return;
+          }
+
+          const imgs = options?.images || [];
+          result = await adapter.enqueueEditImage({
+            model: selectedImageModel,
+            canvasImageMediaToken: snapshotResult.data,
+            imageMediaTokens: imgs
+              .map((img) => img.mediaToken)
+              .filter((t) => t.length > 0),
+            prompt: prompt,
+            imageCount: generationCount,
+            frontendCaller: "image_editor",
+            frontendSubscriberId: subscriberId,
+            aspectRatio: options?.aspectRatio,
+            imageResolution: options?.resolution,
+            disableSystemPrompt: !useSystemPrompt,
+            provider: options?.selectedProvider,
+          });
+        }
+        if (result?.status === "success") {
+          addPendingGeneration(subscriberId, generationCount);
+        }
+      } finally {
+        generateInFlightRef.current = false;
+        setIsGenerating(false);
+      }
+    },
+    [
+      generationCount,
+      getCompositeFile,
+      getMaskArrayBuffer,
+      selectedImageModel,
+      adapter,
+      baseImageBitmap,
+      baseImageInfo,
+      addPendingGeneration,
+      useSystemPrompt,
+    ],
+  );
+
+  const onFitPressed = useCallback(async () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const containerWidth = stage.container().offsetWidth;
+    const containerHeight = stage.container().offsetHeight;
+
+    const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
+
+    const padding = 40;
+    const availableWidth = containerWidth - padding * 2;
+    const availableHeight = containerHeight - padding * 2;
+
+    const scaleX = availableWidth / canvasW;
+    const scaleY = availableHeight / canvasH;
+    const scale = Math.min(scaleX, scaleY, 1);
+
+    stage.scale({ x: scale, y: scale });
+
+    const scaledCanvasW = canvasW * scale;
+    const scaledCanvasH = canvasH * scale;
+
+    stage.position({
+      x: (containerWidth - scaledCanvasW) / 2,
+      y: (containerHeight - scaledCanvasH) / 2,
+    });
+
+    stage.batchDraw();
+  }, [getAspectRatioDimensions]);
+
+  useEffect(() => {
+    if (!supportsMaskedInpainting && activeTool === "inpaint") {
+      setActiveTool("select");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTool, supportsMaskedInpainting]);
+
+  useEffect(() => {
+    if (!baseImageBitmap && !baseImageInfo?.isBlankCanvas) {
+      return;
+    }
+
+    const autoFitCanvas = async () => {
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      const tryFit = async () => {
+        const stage = stageRef.current;
+        if (stage && stage.container && stage.container().offsetWidth > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          onFitPressed();
+          return true;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return tryFit();
+        }
+        return false;
+      };
+
+      await tryFit();
+    };
+
+    autoFitCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseImageBitmap, baseImageInfo?.isBlankCanvas]);
+
+  const handleSelectTool = useCallback(
+    () => setActiveTool("select"),
+    [setActiveTool],
+  );
+
+  const handleActivateShapeTool = useCallback(
+    (shape: "rectangle" | "circle" | "triangle") => {
+      selectNode(null);
+      setCurrentShape(shape);
+      setActiveTool("shape");
+      selectNode(null);
+    },
+    [selectNode, setCurrentShape, setActiveTool],
+  );
+
+  const handlePaintBrush = useCallback(
+    (hex: string, size: number, opacity: number) => {
+      setActiveTool("draw");
+      setBrushColor(hex);
+      setBrushSize(size);
+      setBrushOpacity(opacity);
+    },
+    [setActiveTool, setBrushColor, setBrushSize, setBrushOpacity],
+  );
+
+  const handleCanvasBackground = useCallback(
+    (hex: string) => {
+      setFillColor(hex);
+    },
+    [setFillColor],
+  );
+
+  const handleUploadImageClick = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files) {
+        const imageFiles = Array.from(target.files).filter((f) =>
+          f.type.startsWith("image/"),
+        );
+        if (imageFiles.length > 0) handleImageUpload(imageFiles);
+      }
+      document.body.removeChild(input);
+    };
+    input.value = "";
+    input.click();
+  }, [handleImageUpload]);
+
+  const handleAspectRatioChange = useCallback(
+    async (ratio: string) => {
+      const ratioToType = (r: string): AspectRatioType => {
+        switch (r) {
+          case "tall":
+            return AspectRatioType.PORTRAIT;
+          case "wide":
+            return AspectRatioType.LANDSCAPE;
+          case "square":
+            return AspectRatioType.SQUARE;
+          default:
+            return AspectRatioType.NONE;
+        }
+      };
+      setAspectRatioType(ratioToType(ratio));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      onFitPressed();
+    },
+    [setAspectRatioType, onFitPressed],
+  );
+
+  const handleMenuAction = useCallback(
+    async (action: string) => {
+      switch (action) {
+        case "LOCK":
+          toggleLock(selectedNodeIds);
+          break;
+        case "REMOVE_BACKGROUND": {
+          const result = await beginRemoveBackground(selectedNodeIds);
+          if (result) {
+            await adapter.enqueueBgRemoval(result.base64, result.nodeId);
+          }
+          break;
+        }
+        case "BRING_TO_FRONT":
+          bringToFront(selectedNodeIds);
+          break;
+        case "BRING_FORWARD":
+          bringForward(selectedNodeIds);
+          break;
+        case "SEND_BACKWARD":
+          sendBackward(selectedNodeIds);
+          break;
+        case "SEND_TO_BACK":
+          sendToBack(selectedNodeIds);
+          break;
+        case "DUPLICATE":
+          copySelectedItems();
+          pasteItems();
+          break;
+        case "DELETE":
+          deleteSelectedItems();
+          break;
+        default:
+          break;
+      }
+    },
+    [
+      selectedNodeIds,
+      toggleLock,
+      beginRemoveBackground,
+      adapter,
+      bringToFront,
+      bringForward,
+      sendBackward,
+      sendToBack,
+      copySelectedItems,
+      pasteItems,
+      deleteSelectedItems,
+    ],
+  );
+
+  const handleCanvasSizeChange = useCallback(
+    (width: number, height: number) => {
+      canvasWidth.current = width;
+      canvasHeight.current = height;
+    },
+    [],
+  );
+
+  const isLocked = useMemo(
+    () =>
+      selectedNodeIds.some((id) => {
+        const node = drawNodes.find((n) => n.id === id);
+        return node?.locked ?? false;
+      }),
+    [selectedNodeIds, drawNodes],
+  );
+
+  const selectedNodeWithModel = useMemo(() => {
+    if (selectedNodeIds.length !== 1) return null;
+    const n = drawNodes.find((n) => n.id === selectedNodeIds[0]);
+    return n?.type !== "line" ? n : null;
+  }, [selectedNodeIds, drawNodes]);
+
+  const editingNode = useMemo(() => {
+    if (!editing3DNodeId) return null;
+    const n = drawNodes.find((n) => n.id === editing3DNodeId);
+    return n?.type !== "line" ? n : null;
+  }, [editing3DNodeId, drawNodes]);
+
+  // Display image selector on launch, otherwise hide it.
+  // Also show the selector when a non-blank-canvas image is set but the bitmap is still loading.
+  if (!baseImageInfo || (!baseImageBitmap && !baseImageInfo.isBlankCanvas)) {
+    return (
+      <div
+        className={`${backgroundClassName} flex ${
+          fillParentHeight ? "h-full" : "h-[calc(100vh-56px)]"
+        } w-full items-center justify-center p-8`}
+      >
+        <div className="w-full max-w-5xl">
+          <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+            {adapter.renderBaseImageSelector({
+              onImageSelect: (image: BaseSelectorImage) => {
+                addHistoryImageBundle({ images: [image] });
+                setBaseImageInfo(image);
+              },
+              showLoading:
+                baseImageInfo !== null &&
+                baseImageBitmap === null &&
+                !baseImageInfo.isBlankCanvas,
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className={`fixed inset-0 -z-10 ${backgroundClassName}`} />
+      <div
+        className={`preserve-aspect-ratio fixed right-4 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform ${
+          isSelecting ? "pointer-events-none" : "pointer-events-auto"
+        }`}
+      >
+        <HistoryStack
+          onClear={() => {
+            RESET();
+            clearPendingGenerations();
+          }}
+          imageBundles={historyImageBundles}
+          pendingPlaceholders={pendingGenerations}
+          blurredBackgroundUrl={baseImageUrl}
+          onImageSelect={(baseImage) => {
+            setBaseImageInfo(baseImage);
+          }}
+          onImageRemove={(baseImage) => {
+            if (
+              pendingGenerations.length === 0 &&
+              historyImageBundles.length === 1 &&
+              historyImageBundles[0].images.length <= 1
+            ) {
+              RESET();
+            } else {
+              removeHistoryImage(baseImage);
+            }
+          }}
+          onPendingRemove={removePendingGeneration}
+          selectedImageToken={baseImageInfo?.mediaToken}
+        />
+      </div>
+      {/* The page wrapper's `translateZ(0)` already scopes this fixed box to
+          the content area (right of the sidebar). It spans 0..right so the
+          promptbox's own `left-1/2 -translate-x-1/2` centers within the content
+          area — do NOT re-apply the sidebar offset or it double-shifts right. */}
+      <div
+        className={`preserve-aspect-ratio fixed inset-x-0 bottom-0 z-10 ${
+          isSelecting ? "pointer-events-none" : "pointer-events-auto"
+        }`}
+      >
+        <PromptEditor
+          onAspectRatioChange={handleAspectRatioChange}
+          usePrompt2DStore={promptStoreProvider}
+          EncodeImageBitmapToBase64={EncodeImageBitmapToBase64}
+          onGenerateClick={handleGenerate}
+          onFitPressed={onFitPressed}
+          isDisabled={!baseImageBitmap && !baseImageInfo?.isBlankCanvas}
+          isEnqueueing={isGenerating}
+          generationCount={generationCount}
+          onGenerationCountChange={setGenerationCount}
+          selectedImageModel={selectedImageModel}
+          selectedProvider={selectedProvider}
+          uploadImage={adapter.uploadImage}
+          modelSelector={
+            <ClassyModelSelector
+              variant="embedded"
+              items={canvas2dModelList}
+              page={PAGE_ID}
+              showProviderSelection={false}
+            />
+          }
+        />
+      </div>
+      <SideToolbar
+        className="fixed left-0 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform"
+        onSelect={handleSelectTool}
+        onActivateShapeTool={handleActivateShapeTool}
+        onPaintBrush={handlePaintBrush}
+        onCanvasBackground={handleCanvasBackground}
+        onUploadImage={handleUploadImageClick}
+        supportsMaskTool={supportsMaskedInpainting}
+        activeToolId={activeTool}
+        currentShape={currentShape}
+      />
+      {activeTool === "inpaint" && (
+        <InpaintToolBar
+          operation={inpaintOperation}
+          brushSize={inpaintBrushSize}
+          onOperationChange={setInpaintOperation}
+          onBrushSizeChange={setInpaintBrushSize}
+        />
+      )}
+      <div className="relative z-0">
+        <Cheatsheet surface="pagedraw" visible={cheatsheetVisible} />
+        <ContextMenuContainer
+          onAction={(e, action) => {
+            if (action === "contextMenu") {
+              const hasSelection = selectedNodeIds.length > 0;
+              if (hasSelection) {
+                console.log("An item is selected.");
+                return true;
+              } else {
+                console.log("No item is selected.");
+                return false;
+              }
+            }
+            return false;
+          }}
+          onMenuAction={handleMenuAction}
+          isLocked={isLocked}
+        >
+          <PaintSurface
+            drawNodes={displayNodes}
+            inpaintLineNodes={inpaintLineNodes}
+            selectedNodeIds={selectedNodeIds}
+            onCanvasSizeChange={handleCanvasSizeChange}
+            fillColor={fillColor}
+            activeTool={activeTool}
+            brushColor={brushColor}
+            brushSize={brushSize}
+            eraserSize={eraserSize}
+            inpaintOperation={inpaintOperation}
+            inpaintBrushSize={inpaintBrushSize}
+            onSelectionChange={setIsSelecting}
+            stageRef={stageRef}
+            transformerRefs={transformerRefs}
+            baseImageRef={baseImageKonvaRef}
+            showMaskLayer={supportsMaskedInpainting}
+            fillParentHeight={fillParentHeight}
+          />
+        </ContextMenuContainer>
+      </div>
+      {showBottomRightControls && (
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+          <CostCalculatorButton modelPage={PAGE_ID} />
+          <HelpMenuButton />
+        </div>
+      )}
+      {!editing3DNodeId && selectedNodeWithModel?.modelUrl && (
+        <Edit3DButton
+          nodeId={selectedNodeIds[0]}
+          stageRef={stageRef}
+          onEdit={setEditing3DNodeId}
+        />
+      )}
+      {editingNode && (
+        <>
+          <Edit3DScrubControls
+            nodeId={editing3DNodeId!}
+            stageRef={stageRef}
+            overlayHandle={overlayHandleRef}
+          />
+          <Model3DOverlay
+            ref={overlayHandleRef}
+            node={editingNode}
+            stageRef={stageRef}
+            onCommit={handle3DOverlayCommit}
+            onDismiss={() => setEditing3DNodeId(null)}
+          />
+        </>
+      )}
+    </>
+  );
+};
+
+export default PageDraw;

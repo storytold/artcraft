@@ -1,0 +1,4 @@
+# Don't restart the dev server on Rust changes
+crates/
+Cargo.toml
+Cargo.lock

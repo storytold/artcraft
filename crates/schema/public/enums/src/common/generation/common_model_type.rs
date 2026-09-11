@@ -1,0 +1,1380 @@
+// The deprecated Seedance 2.0 Ultra variants must stay referenced by this
+// enum's own coders, variant lists, and tests; suppress the lint file-wide.
+#![allow(deprecated)]
+
+use std::collections::BTreeSet;
+
+#[cfg(test)]
+use strum::EnumCount;
+#[cfg(test)]
+use strum::EnumIter;
+use utoipa::ToSchema;
+
+use crate::common::generation::common_model_class::CommonModelClass;
+
+/// Maximum serialized string length for database storage.
+/// Stored in the `prompts` table (`maybe_model_type` column) as VARCHAR(24).
+pub const MAX_LENGTH: usize = 24;
+
+/// Common model type enum used across image, video, 3D, and splat generation.
+/// This forms part of our core data model for generative models.
+///
+/// This is used in the MySQL database, the HTTP API, and throughout
+/// ArtCraft (the Tauri app).
+///
+/// Stored in the `prompts` table (`maybe_model_type` column).
+/// Also used by other tables and the sqlite tasks table.
+///
+/// NB: This will be used by a variety of tables (MySQL and sqlite)!
+/// Keep the max length to 24 characters.
+#[cfg_attr(test, derive(EnumIter, EnumCount))]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum CommonModelType {
+  // Image models
+  #[serde(rename = "flux_1_dev")]
+  Flux1Dev,
+  #[serde(rename = "flux_1_schnell")]
+  Flux1Schnell,
+  #[serde(rename = "flux_dev_juggernaut")]
+  FluxDevJuggernaut,
+  #[serde(rename = "flux_pro_1")]
+  FluxPro1,
+  #[serde(rename = "flux_pro_1p1")]
+  FluxPro11,
+  #[serde(rename = "flux_pro_1p1_ultra")]
+  FluxPro11Ultra,
+  #[serde(rename = "flux_pro_kontext_max")]
+  FluxProKontextMax,
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
+  #[serde(rename = "gpt_image_1")]
+  GptImage1,
+  #[serde(rename = "gpt_image_1p5")]
+  GptImage1p5,
+  #[serde(rename = "gpt_image_2")]
+  GptImage2,
+  #[serde(rename = "gpt_image_2p5_flare")]
+  GptImage2p5Flare,
+  #[serde(rename = "gpt_image_2p5_sunburst")]
+  GptImage2p5Sunburst,
+  // Generic grok image model without a version
+  #[serde(rename = "grok_image")]
+  GrokImage,
+  // xAI's Grok Imagine image model (grok-imagine-image), standard tier.
+  #[serde(rename = "grok_imagine_image")]
+  GrokImagineImage,
+  // xAI's Grok Imagine image model (grok-imagine-image-quality), high-quality tier.
+  #[serde(rename = "grok_imagine_image_q")]
+  GrokImagineImageQuality,
+  #[serde(rename = "recraft_3")]
+  Recraft3,
+  #[serde(rename = "seededit_3")]
+  SeedEdit3,
+  #[serde(rename = "qwen")]
+  Qwen,
+  #[serde(rename = "qwen_edit_2511_angles")]
+  QwenEdit2511Angles,
+  /// Gemini 2.5 Flash, AKA "Nano Banana"
+  #[serde(rename = "gemini_25_flash")]
+  Gemini25Flash,
+  #[serde(rename = "nano_banana")]
+  NanoBanana,
+  #[serde(rename = "nano_banana_2")]
+  NanoBanana2,
+  #[serde(rename = "nano_banana_pro")]
+  NanoBananaPro,
+  #[serde(rename = "seedream_4")]
+  Seedream4,
+  #[serde(rename = "seedream_4p5")]
+  Seedream4p5,
+  #[serde(rename = "seedream_5_lite")]
+  Seedream5Lite,
+  /// Seedream 5.0 Pro as routed via kinovi
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
+  /// Seedream 5.0 Pro as routed via the kinovi ultra account
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
+
+  /// Midjourney without distinguishing a model type or version
+  #[serde(rename = "midjourney")]
+  Midjourney,
+  #[serde(rename = "midjourney_v6")]
+  MidjourneyV6,
+  #[serde(rename = "midjourney_v6p1")]
+  MidjourneyV6p1,
+  #[serde(rename = "midjourney_v6p1_raw")]
+  MidjourneyV6p1Raw,
+  #[serde(rename = "midjourney_v7")]
+  MidjourneyV7,
+  #[serde(rename = "midjourney_v7_draft")]
+  MidjourneyV7Draft,
+  #[serde(rename = "midjourney_v7_draft_raw")]
+  MidjourneyV7DraftRaw,
+  #[serde(rename = "midjourney_v7_raw")]
+  MidjourneyV7Raw,
+  /// Midjourney v7 as routed via kinovi
+  #[serde(rename = "midjourney_7")]
+  Midjourney7,
+  /// Midjourney v7 niji as routed via kinovi
+  #[serde(rename = "midjourney_7_niji")]
+  Midjourney7Niji,
+  /// Midjourney v8 as routed via kinovi
+  #[serde(rename = "midjourney_8")]
+  Midjourney8,
+
+  //// Image Infill models
+  //#[serde(rename = "flux_pro_1_infill")]
+  //FluxPro1Infill,
+
+  // Video models
+  
+  /// Generic grok video model without a version
+  /// NB: This was for the consumer web login API
+  #[deprecated(note = "use GrokImagineVideo instead")]
+  #[serde(rename = "grok_video")]
+  GrokVideo,
+  /// xAI's Grok Imagine video model (grok-imagine-video).
+  /// This is for the API-based version.
+  /// No version is specified.
+  #[serde(rename = "grok_imagine_video")]
+  GrokImagineVideo,
+  /// xAI's Grok Imagine video 1.5 preview model (grok-imagine-video-1.5-preview).
+  #[serde(rename = "grok_imagine_video_1p5")]
+  GrokImagineVideo1p5,
+  #[serde(rename = "flux_3")]
+  Flux3,
+  #[serde(rename = "flux_3_draft")]
+  Flux3Draft,
+  #[serde(rename = "kling_1p6_pro")]
+  Kling16Pro,
+  #[serde(rename = "kling_2p1_pro")]
+  Kling21Pro,
+  #[serde(rename = "kling_2p1_master")]
+  Kling21Master,
+  #[serde(rename = "kling_2p5_turbo_pro")]
+  Kling2p5TurboPro,
+  #[serde(rename = "kling_2p6_pro")]
+  Kling2p6Pro,
+  #[serde(rename = "kling_3p0_standard")]
+  Kling3p0Standard,
+  #[serde(rename = "kling_3p0_pro")]
+  Kling3p0Pro,
+  #[serde(rename = "happy_horse_1p0")]
+  HappyHorse1p0,
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
+  #[serde(rename = "minimax_h3_turbo")]
+  MinimaxH3Turbo,
+  #[serde(rename = "minimax_h3_ultra")]
+  MinimaxH3Ultra,
+  #[serde(rename = "seedance_1p0_lite")]
+  Seedance10Lite,
+  #[serde(rename = "seedance_1p0_pro")]
+  Seedance10Pro,
+  #[serde(rename = "seedance_1p5_pro")]
+  Seedance1p5Pro,
+  #[serde(rename = "seedance_2p0")]
+  Seedance2p0,
+  #[serde(rename = "seedance_2p0_fast")]
+  Seedance2p0Fast,
+  #[serde(rename = "seedance_2p0_bp")]
+  Seedance2p0BytePlus,
+  #[serde(rename = "seedance_2p0_bp_fast")]
+  Seedance2p0BytePlusFast,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
+  #[serde(rename = "seedance_2p0_u")]
+  Seedance2p0Ultra,
+  #[deprecated(note = "Never launched and unroutable; kept only so historical database rows keep decoding")]
+  #[serde(rename = "seedance_2p0_u_fast")]
+  Seedance2p0UltraFast,
+  #[serde(rename = "seedance_2p0_bpu")]
+  Seedance2p0BytePlusUltra,
+  #[serde(rename = "seedance_2p0_bpu_fast")]
+  Seedance2p0BytePlusUltraFast,
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+  #[serde(rename = "seedance_2p0_bp_mini")]
+  Seedance2p0BytePlusMini,
+  #[serde(rename = "seedance_2p0_bpu_mini")]
+  Seedance2p0BytePlusUltraMini,
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "seedance_2p5_u")]
+  Seedance2p5Ultra,
+  #[serde(rename = "sora_2")]
+  Sora2,
+  #[serde(rename = "sora_2_pro")]
+  Sora2Pro,
+  #[serde(rename = "veo_2")]
+  Veo2,
+  #[serde(rename = "veo_3")]
+  Veo3,
+  #[serde(rename = "veo_3_fast")]
+  Veo3Fast,
+  #[serde(rename = "veo_3p1")]
+  Veo3p1,
+  #[serde(rename = "veo_3p1_fast")]
+  Veo3p1Fast,
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
+
+  // Audio models
+  #[serde(rename = "suno_music")]
+  SunoMusic,
+  #[serde(rename = "suno_remix")]
+  SunoRemix,
+  #[serde(rename = "suno_sounds")]
+  SunoSounds,
+  #[serde(rename = "suno_sample")]
+  SunoSample,
+  #[serde(rename = "seed_audio_1p0")]
+  SeedAudio1p0,
+
+  #[serde(rename = "preview_model")]
+  PreviewModel,
+  #[serde(rename = "preview_model_fast")]
+  PreviewModelFast,
+  #[serde(rename = "switch_x")]
+  SwitchX,
+
+  // 3D Object generation models
+  #[serde(rename = "hunyuan_3d_2p0")]
+  Hunyuan3d2_0,
+  #[serde(rename = "hunyuan_3d_2p1")]
+  Hunyuan3d2_1,
+  #[serde(rename = "hunyuan_3d_3")]
+  Hunyuan3d3,
+  #[serde(rename = "hunyuan_3d_3p1_pro")]
+  Hunyuan3d3_1Pro,
+  #[serde(rename = "hunyuan_3d_3p1_rapid")]
+  Hunyuan3d3_1Rapid,
+  #[serde(rename = "hunyuan_3d_3p1_part")]
+  Hunyuan3d3_1Part,
+  #[serde(rename = "hunyuan_3d_3p1_topology")]
+  Hunyuan3d3_1SmartTopology,
+  #[serde(rename = "tripo3d_h3p1")]
+  Tripo3dH3_1,
+  #[serde(rename = "meshy_v6")]
+  MeshyV6,
+  #[serde(rename = "rodin_2p5_fast")]
+  Rodin2_5Fast,
+
+  // Splat generation models (World Labs)
+  #[serde(rename = "marble_0p1_mini")]
+  Marble0p1Mini,
+  #[serde(rename = "marble_0p1_plus")]
+  Marble0p1Plus,
+  #[serde(rename = "marble_1p0")]
+  Marble1p0,
+  #[serde(rename = "marble_1p0_draft")]
+  Marble1p0Draft,
+  #[serde(rename = "marble_1p1")]
+  Marble1p1,
+  #[serde(rename = "marble_1p1_plus")]
+  Marble1p1Plus,
+  #[serde(rename = "triposplat")]
+  TripoSplat,
+}
+
+impl_enum_display_and_debug_using_to_str!(CommonModelType);
+impl_mysql_enum_coders!(CommonModelType);
+impl_mysql_from_row!(CommonModelType);
+
+// NB: We can derive `sqlx::Type` instead of using `impl_mysql_enum_coders`
+
+impl CommonModelType {
+  pub fn to_str(&self) -> &'static str {
+    match self {
+      // Image models
+      Self::Flux1Dev => "flux_1_dev",
+      Self::Flux1Schnell => "flux_1_schnell",
+      Self::FluxDevJuggernaut => "flux_dev_juggernaut",
+      Self::FluxPro1 => "flux_pro_1",
+      Self::FluxPro11 => "flux_pro_1p1",
+      Self::FluxPro11Ultra => "flux_pro_1p1_ultra",
+      Self::FluxProKontextMax => "flux_pro_kontext_max",
+      Self::Flux2LoraAngles => "flux_2_lora_angles",
+      Self::GptImage1 => "gpt_image_1",
+      Self::GptImage1p5 => "gpt_image_1p5",
+      Self::GptImage2 => "gpt_image_2",
+      Self::GptImage2p5Flare => "gpt_image_2p5_flare",
+      Self::GptImage2p5Sunburst => "gpt_image_2p5_sunburst",
+      Self::GrokImage => "grok_image",
+      Self::GrokImagineImage => "grok_imagine_image",
+      Self::GrokImagineImageQuality => "grok_imagine_image_q",
+      Self::Recraft3 => "recraft_3",
+      Self::SeedEdit3 => "seededit_3",
+      Self::Qwen => "qwen",
+      Self::QwenEdit2511Angles => "qwen_edit_2511_angles",
+      Self::Gemini25Flash => "gemini_25_flash",
+      Self::NanoBanana => "nano_banana",
+      Self::NanoBanana2 => "nano_banana_2",
+      Self::NanoBananaPro => "nano_banana_pro",
+      Self::Seedream4 => "seedream_4",
+      Self::Seedream4p5 => "seedream_4p5",
+      Self::Seedream5Lite => "seedream_5_lite",
+      Self::Seedream5p0Pro => "seedream_5p0_pro",
+      Self::Seedream5p0ProUltra => "seedream_5p0_pro_u",
+      Self::Midjourney => "midjourney",
+      Self::MidjourneyV6 => "midjourney_v6",
+      Self::MidjourneyV6p1 => "midjourney_v6p1",
+      Self::MidjourneyV6p1Raw => "midjourney_v6p1_raw",
+      Self::MidjourneyV7 => "midjourney_v7",
+      Self::MidjourneyV7Draft => "midjourney_v7_draft",
+      Self::MidjourneyV7DraftRaw => "midjourney_v7_draft_raw",
+      Self::MidjourneyV7Raw => "midjourney_v7_raw",
+      Self::Midjourney7 => "midjourney_7",
+      Self::Midjourney7Niji => "midjourney_7_niji",
+      Self::Midjourney8 => "midjourney_8",
+
+      // Video models
+      Self::GrokVideo => "grok_video",
+      Self::GrokImagineVideo => "grok_imagine_video",
+      Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
+      Self::Flux3 => "flux_3",
+      Self::Flux3Draft => "flux_3_draft",
+      Self::Kling16Pro => "kling_1p6_pro",
+      Self::Kling21Pro => "kling_2p1_pro",
+      Self::Kling21Master => "kling_2p1_master",
+      Self::Kling2p5TurboPro => "kling_2p5_turbo_pro",
+      Self::Kling2p6Pro => "kling_2p6_pro",
+      Self::Kling3p0Standard => "kling_3p0_standard",
+      Self::Kling3p0Pro => "kling_3p0_pro",
+      Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::MinimaxH3 => "minimax_h3",
+      Self::MinimaxH3Turbo => "minimax_h3_turbo",
+      Self::MinimaxH3Ultra => "minimax_h3_ultra",
+      Self::Seedance10Lite => "seedance_1p0_lite",
+      Self::Seedance10Pro => "seedance_1p0_pro",
+      Self::Seedance1p5Pro => "seedance_1p5_pro",
+      Self::Seedance2p0 => "seedance_2p0",
+      Self::Seedance2p0Fast => "seedance_2p0_fast",
+      Self::Seedance2p0BytePlus => "seedance_2p0_bp",
+      Self::Seedance2p0BytePlusFast => "seedance_2p0_bp_fast",
+      Self::Seedance2p0Ultra => "seedance_2p0_u",
+      Self::Seedance2p0UltraFast => "seedance_2p0_u_fast",
+      Self::Seedance2p0BytePlusUltra => "seedance_2p0_bpu",
+      Self::Seedance2p0BytePlusUltraFast => "seedance_2p0_bpu_fast",
+      Self::Seedance2p0Mini => "seedance_2p0_mini",
+      Self::Seedance2p0BytePlusMini => "seedance_2p0_bp_mini",
+      Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
+      Self::Seedance2p5Preview => "seedance_2p5_preview",
+      Self::Seedance2p5 => "seedance_2p5",
+      Self::Seedance2p5Ultra => "seedance_2p5_u",
+      Self::Sora2 => "sora_2",
+      Self::Sora2Pro => "sora_2_pro",
+      Self::Veo2 => "veo_2",
+      Self::Veo3 => "veo_3",
+      Self::Veo3Fast => "veo_3_fast",
+      Self::Veo3p1 => "veo_3p1",
+      Self::Veo3p1Fast => "veo_3p1_fast",
+      Self::Veo3p1Lite => "veo_3p1_lite",
+      Self::ViduQ3 => "vidu_q3",
+      Self::ViduQ3Turbo => "vidu_q3_turbo",
+
+      // Audio models
+      Self::SunoMusic => "suno_music",
+      Self::SunoRemix => "suno_remix",
+      Self::SunoSounds => "suno_sounds",
+      Self::SunoSample => "suno_sample",
+      Self::SeedAudio1p0 => "seed_audio_1p0",
+
+      Self::PreviewModel => "preview_model",
+      Self::PreviewModelFast => "preview_model_fast",
+      Self::SwitchX => "switch_x",
+
+      // 3D Object generation models
+      Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
+      Self::Hunyuan3d2_1 => "hunyuan_3d_2p1",
+      Self::Hunyuan3d3 => "hunyuan_3d_3",
+      Self::Hunyuan3d3_1Pro => "hunyuan_3d_3p1_pro",
+      Self::Hunyuan3d3_1Rapid => "hunyuan_3d_3p1_rapid",
+      Self::Hunyuan3d3_1Part => "hunyuan_3d_3p1_part",
+      Self::Hunyuan3d3_1SmartTopology => "hunyuan_3d_3p1_topology",
+      Self::Tripo3dH3_1 => "tripo3d_h3p1",
+      Self::MeshyV6 => "meshy_v6",
+      Self::Rodin2_5Fast => "rodin_2p5_fast",
+
+      // Splat generation models (World Labs)
+      Self::Marble0p1Mini => "marble_0p1_mini",
+      Self::Marble0p1Plus => "marble_0p1_plus",
+      Self::Marble1p0 => "marble_1p0",
+      Self::Marble1p0Draft => "marble_1p0_draft",
+      Self::Marble1p1 => "marble_1p1",
+      Self::Marble1p1Plus => "marble_1p1_plus",
+      Self::TripoSplat => "triposplat",
+    }
+  }
+
+  pub fn from_str(job_status: &str) -> Result<Self, String> {
+    match job_status {
+      // Image models
+      "flux_1_dev" => Ok(Self::Flux1Dev),
+      "flux_1_schnell" => Ok(Self::Flux1Schnell),
+      "flux_dev_juggernaut" => Ok(Self::FluxDevJuggernaut),
+      "flux_pro_1" => Ok(Self::FluxPro1),
+      "flux_pro_1p1" => Ok(Self::FluxPro11),
+      "flux_pro_1p1_ultra" => Ok(Self::FluxPro11Ultra),
+      "flux_pro_kontext_max" => Ok(Self::FluxProKontextMax),
+      "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
+      "gpt_image_1" => Ok(Self::GptImage1),
+      "gpt_image_1p5" => Ok(Self::GptImage1p5),
+      "gpt_image_2" => Ok(Self::GptImage2),
+      "gpt_image_2p5_flare" => Ok(Self::GptImage2p5Flare),
+      "gpt_image_2p5_sunburst" => Ok(Self::GptImage2p5Sunburst),
+      "grok_image" => Ok(Self::GrokImage),
+      "grok_imagine_image" => Ok(Self::GrokImagineImage),
+      "grok_imagine_image_q" => Ok(Self::GrokImagineImageQuality),
+      "recraft_3" => Ok(Self::Recraft3),
+      "seededit_3" => Ok(Self::SeedEdit3),
+      "qwen" => Ok(Self::Qwen),
+      "qwen_edit_2511_angles" => Ok(Self::QwenEdit2511Angles),
+      "gemini_25_flash" => Ok(Self::Gemini25Flash),
+      "nano_banana" => Ok(Self::NanoBanana),
+      "nano_banana_2" => Ok(Self::NanoBanana2),
+      "nano_banana_pro" => Ok(Self::NanoBananaPro),
+      "seedream_4" => Ok(Self::Seedream4),
+      "seedream_4p5" => Ok(Self::Seedream4p5),
+      "seedream_5_lite" => Ok(Self::Seedream5Lite),
+      "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
+      "seedream_5p0_pro_u" => Ok(Self::Seedream5p0ProUltra),
+      "midjourney" => Ok(Self::Midjourney),
+      "midjourney_v6" => Ok(Self::MidjourneyV6),
+      "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
+      "midjourney_v6p1_raw" => Ok(Self::MidjourneyV6p1Raw),
+      "midjourney_v7" => Ok(Self::MidjourneyV7),
+      "midjourney_v7_draft" => Ok(Self::MidjourneyV7Draft),
+      "midjourney_v7_draft_raw" => Ok(Self::MidjourneyV7DraftRaw),
+      "midjourney_v7_raw" => Ok(Self::MidjourneyV7Raw),
+      "midjourney_7" => Ok(Self::Midjourney7),
+      "midjourney_7_niji" => Ok(Self::Midjourney7Niji),
+      "midjourney_8" => Ok(Self::Midjourney8),
+
+      // Video models
+      "grok_video" => Ok(Self::GrokVideo),
+      "grok_imagine_video" => Ok(Self::GrokImagineVideo),
+      "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
+      "flux_3" => Ok(Self::Flux3),
+      "flux_3_draft" => Ok(Self::Flux3Draft),
+      "kling_1p6_pro" => Ok(Self::Kling16Pro),
+      "kling_2p1_pro" => Ok(Self::Kling21Pro),
+      "kling_2p1_master" => Ok(Self::Kling21Master),
+      "kling_2p5_turbo_pro" => Ok(Self::Kling2p5TurboPro),
+      "kling_2p6_pro" => Ok(Self::Kling2p6Pro),
+      "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
+      "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
+      "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "minimax_h3" => Ok(Self::MinimaxH3),
+      "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
+      "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
+      "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
+      "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
+      "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
+      "seedance_2p0" => Ok(Self::Seedance2p0),
+      "seedance_2p0_fast" => Ok(Self::Seedance2p0Fast),
+      "seedance_2p0_bp" => Ok(Self::Seedance2p0BytePlus),
+      "seedance_2p0_bp_fast" => Ok(Self::Seedance2p0BytePlusFast),
+      "seedance_2p0_u" => Ok(Self::Seedance2p0Ultra),
+      "seedance_2p0_u_fast" => Ok(Self::Seedance2p0UltraFast),
+      "seedance_2p0_bpu" => Ok(Self::Seedance2p0BytePlusUltra),
+      "seedance_2p0_bpu_fast" => Ok(Self::Seedance2p0BytePlusUltraFast),
+      "seedance_2p0_mini" => Ok(Self::Seedance2p0Mini),
+      "seedance_2p0_bp_mini" => Ok(Self::Seedance2p0BytePlusMini),
+      "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
+      "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
+      "seedance_2p5" => Ok(Self::Seedance2p5),
+      "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
+      "sora_2" => Ok(Self::Sora2),
+      "sora_2_pro" => Ok(Self::Sora2Pro),
+      "veo_2" => Ok(Self::Veo2),
+      "veo_3" => Ok(Self::Veo3),
+      "veo_3_fast" => Ok(Self::Veo3Fast),
+      "veo_3p1" => Ok(Self::Veo3p1),
+      "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
+      "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
+      "vidu_q3" => Ok(Self::ViduQ3),
+      "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
+
+      // Audio models
+      "suno_music" => Ok(Self::SunoMusic),
+      "suno_remix" => Ok(Self::SunoRemix),
+      "suno_sounds" => Ok(Self::SunoSounds),
+      "suno_sample" => Ok(Self::SunoSample),
+      "seed_audio_1p0" => Ok(Self::SeedAudio1p0),
+
+      "preview_model" => Ok(Self::PreviewModel),
+      "preview_model_fast" => Ok(Self::PreviewModelFast),
+      "switch_x" => Ok(Self::SwitchX),
+
+      // 3D Object generation models
+      "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
+      "hunyuan_3d_2p1" => Ok(Self::Hunyuan3d2_1),
+      "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
+      "hunyuan_3d_3p1_pro" => Ok(Self::Hunyuan3d3_1Pro),
+      "hunyuan_3d_3p1_rapid" => Ok(Self::Hunyuan3d3_1Rapid),
+      "hunyuan_3d_3p1_part" => Ok(Self::Hunyuan3d3_1Part),
+      "hunyuan_3d_3p1_topology" => Ok(Self::Hunyuan3d3_1SmartTopology),
+      "tripo3d_h3p1" => Ok(Self::Tripo3dH3_1),
+      "meshy_v6" => Ok(Self::MeshyV6),
+      "rodin_2p5_fast" => Ok(Self::Rodin2_5Fast),
+
+      // Splat generation models (World Labs)
+      "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
+      "marble_0p1_plus" => Ok(Self::Marble0p1Plus),
+      "marble_1p0" => Ok(Self::Marble1p0),
+      "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
+      "marble_1p1" => Ok(Self::Marble1p1),
+      "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
+      "triposplat" => Ok(Self::TripoSplat),
+
+      _ => Err(format!("invalid model_type: {:?}", job_status)),
+    }
+  }
+
+  pub fn all_variants() -> BTreeSet<Self> {
+    // NB: BTreeSet is sorted
+    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
+    BTreeSet::from([
+      // Image models
+      Self::Flux1Dev,
+      Self::Flux1Schnell,
+      Self::FluxDevJuggernaut,
+      Self::FluxPro1,
+      Self::FluxPro11,
+      Self::FluxPro11Ultra,
+      Self::FluxProKontextMax,
+      Self::Flux2LoraAngles,
+      Self::GptImage1,
+      Self::GptImage1p5,
+      Self::GptImage2,
+      Self::GptImage2p5Flare,
+      Self::GptImage2p5Sunburst,
+      Self::GrokImage,
+      Self::GrokImagineImage,
+      Self::GrokImagineImageQuality,
+      Self::Recraft3,
+      Self::SeedEdit3,
+      Self::Qwen,
+      Self::QwenEdit2511Angles,
+      Self::Gemini25Flash,
+      Self::NanoBanana,
+      Self::NanoBanana2,
+      Self::NanoBananaPro,
+      Self::Seedream4,
+      Self::Seedream4p5,
+      Self::Seedream5Lite,
+      Self::Seedream5p0Pro,
+      Self::Seedream5p0ProUltra,
+      Self::Midjourney,
+      Self::MidjourneyV6,
+      Self::MidjourneyV6p1,
+      Self::MidjourneyV6p1Raw,
+      Self::MidjourneyV7,
+      Self::MidjourneyV7Draft,
+      Self::MidjourneyV7DraftRaw,
+      Self::MidjourneyV7Raw,
+      Self::Midjourney7,
+      Self::Midjourney7Niji,
+      Self::Midjourney8,
+
+      // Video models
+      Self::GrokVideo,
+      Self::GrokImagineVideo,
+      Self::GrokImagineVideo1p5,
+      Self::Flux3,
+      Self::Flux3Draft,
+      Self::Kling16Pro,
+      Self::Kling21Pro,
+      Self::Kling21Master,
+      Self::Kling2p5TurboPro,
+      Self::Kling2p6Pro,
+      Self::Kling3p0Standard,
+      Self::Kling3p0Pro,
+      Self::HappyHorse1p0,
+      Self::MinimaxH3,
+      Self::MinimaxH3Turbo,
+      Self::MinimaxH3Ultra,
+      Self::Seedance10Lite,
+      Self::Seedance10Pro,
+      Self::Seedance1p5Pro,
+      Self::Seedance2p0,
+      Self::Seedance2p0Fast,
+      Self::Seedance2p0BytePlus,
+      Self::Seedance2p0BytePlusFast,
+      Self::Seedance2p0Ultra,
+      Self::Seedance2p0UltraFast,
+      Self::Seedance2p0BytePlusUltra,
+      Self::Seedance2p0BytePlusUltraFast,
+      Self::Seedance2p0Mini,
+      Self::Seedance2p0BytePlusMini,
+      Self::Seedance2p0BytePlusUltraMini,
+      Self::Seedance2p5Preview,
+      Self::Seedance2p5,
+      Self::Seedance2p5Ultra,
+      Self::Sora2,
+      Self::Sora2Pro,
+      Self::Veo2,
+      Self::Veo3,
+      Self::Veo3Fast,
+      Self::Veo3p1,
+      Self::Veo3p1Fast,
+      Self::Veo3p1Lite,
+      Self::ViduQ3,
+      Self::ViduQ3Turbo,
+
+      // Audio models
+      Self::SunoMusic,
+      Self::SunoRemix,
+      Self::SunoSounds,
+      Self::SunoSample,
+      Self::SeedAudio1p0,
+
+      Self::PreviewModel,
+      Self::PreviewModelFast,
+      Self::SwitchX,
+
+      // 3D Object generation models
+      Self::Hunyuan3d2_0,
+      Self::Hunyuan3d2_1,
+      Self::Hunyuan3d3,
+      Self::Hunyuan3d3_1Pro,
+      Self::Hunyuan3d3_1Rapid,
+      Self::Hunyuan3d3_1Part,
+      Self::Hunyuan3d3_1SmartTopology,
+      Self::Tripo3dH3_1,
+      Self::MeshyV6,
+      Self::Rodin2_5Fast,
+
+      // Splat generation models (World Labs)
+      Self::Marble0p1Mini,
+      Self::Marble0p1Plus,
+      Self::Marble1p0,
+      Self::Marble1p0Draft,
+      Self::Marble1p1,
+      Self::Marble1p1Plus,
+      Self::TripoSplat,
+    ])
+  }
+
+  /// Returns the broad model class for this model type.
+  pub fn get_model_class(&self) -> CommonModelClass {
+    match self {
+      // Image models
+      Self::Flux1Dev => CommonModelClass::Image,
+      Self::Flux1Schnell => CommonModelClass::Image,
+      Self::FluxDevJuggernaut => CommonModelClass::Image,
+      Self::FluxPro1 => CommonModelClass::Image,
+      Self::FluxPro11 => CommonModelClass::Image,
+      Self::FluxPro11Ultra => CommonModelClass::Image,
+      Self::FluxProKontextMax => CommonModelClass::Image,
+      Self::Flux2LoraAngles => CommonModelClass::Image,
+      Self::GptImage1 => CommonModelClass::Image,
+      Self::GptImage1p5 => CommonModelClass::Image,
+      Self::GptImage2 => CommonModelClass::Image,
+      Self::GptImage2p5Flare => CommonModelClass::Image,
+      Self::GptImage2p5Sunburst => CommonModelClass::Image,
+      Self::GrokImage => CommonModelClass::Image,
+      Self::GrokImagineImage => CommonModelClass::Image,
+      Self::GrokImagineImageQuality => CommonModelClass::Image,
+      Self::Recraft3 => CommonModelClass::Image,
+      Self::SeedEdit3 => CommonModelClass::Image,
+      Self::Qwen => CommonModelClass::Image,
+      Self::QwenEdit2511Angles => CommonModelClass::Image,
+      Self::Gemini25Flash => CommonModelClass::Image,
+      Self::NanoBanana => CommonModelClass::Image,
+      Self::NanoBanana2 => CommonModelClass::Image,
+      Self::NanoBananaPro => CommonModelClass::Image,
+      Self::Seedream4 => CommonModelClass::Image,
+      Self::Seedream4p5 => CommonModelClass::Image,
+      Self::Seedream5Lite => CommonModelClass::Image,
+      Self::Seedream5p0Pro => CommonModelClass::Image,
+      Self::Seedream5p0ProUltra => CommonModelClass::Image,
+      Self::Midjourney => CommonModelClass::Image,
+      Self::MidjourneyV6 => CommonModelClass::Image,
+      Self::MidjourneyV6p1 => CommonModelClass::Image,
+      Self::MidjourneyV6p1Raw => CommonModelClass::Image,
+      Self::MidjourneyV7 => CommonModelClass::Image,
+      Self::MidjourneyV7Draft => CommonModelClass::Image,
+      Self::MidjourneyV7DraftRaw => CommonModelClass::Image,
+      Self::MidjourneyV7Raw => CommonModelClass::Image,
+      Self::Midjourney7 => CommonModelClass::Image,
+      Self::Midjourney7Niji => CommonModelClass::Image,
+      Self::Midjourney8 => CommonModelClass::Image,
+
+      // Video models
+      Self::GrokVideo => CommonModelClass::Video,
+      Self::GrokImagineVideo => CommonModelClass::Video,
+      Self::GrokImagineVideo1p5 => CommonModelClass::Video,
+      Self::Flux3 => CommonModelClass::Video,
+      Self::Flux3Draft => CommonModelClass::Video,
+      Self::Kling16Pro => CommonModelClass::Video,
+      Self::Kling21Pro => CommonModelClass::Video,
+      Self::Kling21Master => CommonModelClass::Video,
+      Self::Kling2p5TurboPro => CommonModelClass::Video,
+      Self::Kling2p6Pro => CommonModelClass::Video,
+      Self::Kling3p0Standard => CommonModelClass::Video,
+      Self::Kling3p0Pro => CommonModelClass::Video,
+      Self::HappyHorse1p0 => CommonModelClass::Video,
+      Self::MinimaxH3 => CommonModelClass::Video,
+      Self::MinimaxH3Turbo => CommonModelClass::Video,
+      Self::MinimaxH3Ultra => CommonModelClass::Video,
+      Self::Seedance10Lite => CommonModelClass::Video,
+      Self::Seedance10Pro => CommonModelClass::Video,
+      Self::Seedance1p5Pro => CommonModelClass::Video,
+      Self::Seedance2p0 => CommonModelClass::Video,
+      Self::Seedance2p0Fast => CommonModelClass::Video,
+      Self::Seedance2p0BytePlus => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusFast => CommonModelClass::Video,
+      Self::Seedance2p0Ultra => CommonModelClass::Video,
+      Self::Seedance2p0UltraFast => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusUltra => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusUltraFast => CommonModelClass::Video,
+      Self::Seedance2p0Mini => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusMini => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusUltraMini => CommonModelClass::Video,
+      Self::Seedance2p5Preview => CommonModelClass::Video,
+      Self::Seedance2p5 => CommonModelClass::Video,
+      Self::Seedance2p5Ultra => CommonModelClass::Video,
+      Self::Sora2 => CommonModelClass::Video,
+      Self::Sora2Pro => CommonModelClass::Video,
+      Self::Veo2 => CommonModelClass::Video,
+      Self::Veo3 => CommonModelClass::Video,
+      Self::Veo3Fast => CommonModelClass::Video,
+      Self::Veo3p1 => CommonModelClass::Video,
+      Self::Veo3p1Fast => CommonModelClass::Video,
+      Self::Veo3p1Lite => CommonModelClass::Video,
+      Self::ViduQ3 => CommonModelClass::Video,
+      Self::ViduQ3Turbo => CommonModelClass::Video,
+
+      // Audio models
+      Self::SunoMusic => CommonModelClass::Audio,
+      Self::SunoRemix => CommonModelClass::Audio,
+      Self::SunoSounds => CommonModelClass::Audio,
+      Self::SunoSample => CommonModelClass::Audio,
+      Self::SeedAudio1p0 => CommonModelClass::Audio,
+
+      Self::PreviewModel => CommonModelClass::Video,
+      Self::PreviewModelFast => CommonModelClass::Video,
+      Self::SwitchX => CommonModelClass::Video,
+
+      // 3D Object generation models (mesh)
+      Self::Hunyuan3d2_0 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d2_1 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Pro => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Rapid => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Part => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1SmartTopology => CommonModelClass::DimensionalMesh,
+      Self::Tripo3dH3_1 => CommonModelClass::DimensionalMesh,
+      Self::MeshyV6 => CommonModelClass::DimensionalMesh,
+      Self::Rodin2_5Fast => CommonModelClass::DimensionalMesh,
+
+      // Splat generation models (World Labs)
+      Self::Marble0p1Mini => CommonModelClass::DimensionalSplat,
+      Self::Marble0p1Plus => CommonModelClass::DimensionalSplat,
+      Self::Marble1p0 => CommonModelClass::DimensionalSplat,
+      Self::Marble1p0Draft => CommonModelClass::DimensionalSplat,
+      Self::Marble1p1 => CommonModelClass::DimensionalSplat,
+      Self::Marble1p1Plus => CommonModelClass::DimensionalSplat,
+      Self::TripoSplat => CommonModelClass::DimensionalSplat,
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::common::generation::common_model_class::CommonModelClass;
+  use crate::common::generation::common_model_type::CommonModelType;
+  use crate::common::generation::common_model_type::MAX_LENGTH;
+  use crate::test_helpers::assert_serialization;
+
+  mod explicit_checks {
+    use super::*;
+
+    #[test]
+    fn test_serialization() {
+      // Image models
+      assert_serialization(CommonModelType::Flux1Dev, "flux_1_dev");
+      assert_serialization(CommonModelType::Flux1Schnell, "flux_1_schnell");
+      assert_serialization(CommonModelType::FluxDevJuggernaut, "flux_dev_juggernaut");
+      assert_serialization(CommonModelType::FluxPro1, "flux_pro_1");
+      assert_serialization(CommonModelType::FluxPro11, "flux_pro_1p1");
+      assert_serialization(CommonModelType::FluxPro11Ultra, "flux_pro_1p1_ultra");
+      assert_serialization(CommonModelType::FluxProKontextMax, "flux_pro_kontext_max");
+      assert_serialization(CommonModelType::Flux2LoraAngles, "flux_2_lora_angles");
+      assert_serialization(CommonModelType::GptImage1, "gpt_image_1");
+      assert_serialization(CommonModelType::GptImage1p5, "gpt_image_1p5");
+      assert_serialization(CommonModelType::GptImage2, "gpt_image_2");
+      assert_serialization(CommonModelType::GptImage2p5Flare, "gpt_image_2p5_flare");
+      assert_serialization(CommonModelType::GptImage2p5Sunburst, "gpt_image_2p5_sunburst");
+      assert_serialization(CommonModelType::GrokImage, "grok_image");
+      assert_serialization(CommonModelType::GrokImagineImage, "grok_imagine_image");
+      assert_serialization(CommonModelType::GrokImagineImageQuality, "grok_imagine_image_q");
+      assert_serialization(CommonModelType::Recraft3, "recraft_3");
+      assert_serialization(CommonModelType::SeedEdit3, "seededit_3");
+      assert_serialization(CommonModelType::Qwen, "qwen");
+      assert_serialization(CommonModelType::QwenEdit2511Angles, "qwen_edit_2511_angles");
+      assert_serialization(CommonModelType::Gemini25Flash, "gemini_25_flash");
+      assert_serialization(CommonModelType::NanoBanana, "nano_banana");
+      assert_serialization(CommonModelType::NanoBanana2, "nano_banana_2");
+      assert_serialization(CommonModelType::NanoBananaPro, "nano_banana_pro");
+      assert_serialization(CommonModelType::Seedream4, "seedream_4");
+      assert_serialization(CommonModelType::Seedream4p5, "seedream_4p5");
+      assert_serialization(CommonModelType::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(CommonModelType::Seedream5p0Pro, "seedream_5p0_pro");
+      assert_serialization(CommonModelType::Seedream5p0ProUltra, "seedream_5p0_pro_u");
+      assert_serialization(CommonModelType::Midjourney, "midjourney");
+      assert_serialization(CommonModelType::MidjourneyV6, "midjourney_v6");
+      assert_serialization(CommonModelType::MidjourneyV6p1, "midjourney_v6p1");
+      assert_serialization(CommonModelType::MidjourneyV6p1Raw, "midjourney_v6p1_raw");
+      assert_serialization(CommonModelType::MidjourneyV7, "midjourney_v7");
+      assert_serialization(CommonModelType::MidjourneyV7Draft, "midjourney_v7_draft");
+      assert_serialization(CommonModelType::MidjourneyV7DraftRaw, "midjourney_v7_draft_raw");
+      assert_serialization(CommonModelType::MidjourneyV7Raw, "midjourney_v7_raw");
+      assert_serialization(CommonModelType::Midjourney7, "midjourney_7");
+      assert_serialization(CommonModelType::Midjourney7Niji, "midjourney_7_niji");
+      assert_serialization(CommonModelType::Midjourney8, "midjourney_8");
+      // Video models
+      assert_serialization(CommonModelType::GrokVideo, "grok_video");
+      assert_serialization(CommonModelType::GrokImagineVideo, "grok_imagine_video");
+      assert_serialization(CommonModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
+      assert_serialization(CommonModelType::Flux3, "flux_3");
+      assert_serialization(CommonModelType::Flux3Draft, "flux_3_draft");
+      assert_serialization(CommonModelType::Kling16Pro, "kling_1p6_pro");
+      assert_serialization(CommonModelType::Kling21Pro, "kling_2p1_pro");
+      assert_serialization(CommonModelType::Kling21Master, "kling_2p1_master");
+      assert_serialization(CommonModelType::Kling2p5TurboPro, "kling_2p5_turbo_pro");
+      assert_serialization(CommonModelType::Kling2p6Pro, "kling_2p6_pro");
+      assert_serialization(CommonModelType::Kling3p0Standard, "kling_3p0_standard");
+      assert_serialization(CommonModelType::Kling3p0Pro, "kling_3p0_pro");
+      assert_serialization(CommonModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(CommonModelType::MinimaxH3, "minimax_h3");
+      assert_serialization(CommonModelType::MinimaxH3Turbo, "minimax_h3_turbo");
+      assert_serialization(CommonModelType::MinimaxH3Ultra, "minimax_h3_ultra");
+      assert_serialization(CommonModelType::Seedance10Lite, "seedance_1p0_lite");
+      assert_serialization(CommonModelType::Seedance10Pro, "seedance_1p0_pro");
+      assert_serialization(CommonModelType::Seedance1p5Pro, "seedance_1p5_pro");
+      assert_serialization(CommonModelType::Seedance2p0, "seedance_2p0");
+      assert_serialization(CommonModelType::Seedance2p0Fast, "seedance_2p0_fast");
+      assert_serialization(CommonModelType::Seedance2p0BytePlus, "seedance_2p0_bp");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusFast, "seedance_2p0_bp_fast");
+      assert_serialization(CommonModelType::Seedance2p0Ultra, "seedance_2p0_u");
+      assert_serialization(CommonModelType::Seedance2p0UltraFast, "seedance_2p0_u_fast");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusUltra, "seedance_2p0_bpu");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusUltraFast, "seedance_2p0_bpu_fast");
+      assert_serialization(CommonModelType::Seedance2p0Mini, "seedance_2p0_mini");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+      assert_serialization(CommonModelType::Seedance2p5Preview, "seedance_2p5_preview");
+      assert_serialization(CommonModelType::Seedance2p5, "seedance_2p5");
+      assert_serialization(CommonModelType::Seedance2p5Ultra, "seedance_2p5_u");
+      assert_serialization(CommonModelType::Sora2, "sora_2");
+      assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
+      assert_serialization(CommonModelType::Veo2, "veo_2");
+      assert_serialization(CommonModelType::Veo3, "veo_3");
+      assert_serialization(CommonModelType::Veo3Fast, "veo_3_fast");
+      assert_serialization(CommonModelType::Veo3p1, "veo_3p1");
+      assert_serialization(CommonModelType::Veo3p1Fast, "veo_3p1_fast");
+      assert_serialization(CommonModelType::Veo3p1Lite, "veo_3p1_lite");
+      assert_serialization(CommonModelType::ViduQ3, "vidu_q3");
+      assert_serialization(CommonModelType::ViduQ3Turbo, "vidu_q3_turbo");
+      // Audio models
+      assert_serialization(CommonModelType::SunoMusic, "suno_music");
+      assert_serialization(CommonModelType::SunoRemix, "suno_remix");
+      assert_serialization(CommonModelType::SunoSounds, "suno_sounds");
+      assert_serialization(CommonModelType::SunoSample, "suno_sample");
+      assert_serialization(CommonModelType::SeedAudio1p0, "seed_audio_1p0");
+      assert_serialization(CommonModelType::PreviewModel, "preview_model");
+      assert_serialization(CommonModelType::PreviewModelFast, "preview_model_fast");
+      assert_serialization(CommonModelType::SwitchX, "switch_x");
+      // 3D Object generation models
+      assert_serialization(CommonModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
+      assert_serialization(CommonModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
+      assert_serialization(CommonModelType::Hunyuan3d3, "hunyuan_3d_3");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Pro, "hunyuan_3d_3p1_pro");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Rapid, "hunyuan_3d_3p1_rapid");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Part, "hunyuan_3d_3p1_part");
+      assert_serialization(CommonModelType::Hunyuan3d3_1SmartTopology, "hunyuan_3d_3p1_topology");
+      assert_serialization(CommonModelType::Tripo3dH3_1, "tripo3d_h3p1");
+      assert_serialization(CommonModelType::MeshyV6, "meshy_v6");
+      assert_serialization(CommonModelType::Rodin2_5Fast, "rodin_2p5_fast");
+      // Splat generation models (World Labs)
+      assert_serialization(CommonModelType::Marble0p1Mini, "marble_0p1_mini");
+      assert_serialization(CommonModelType::Marble0p1Plus, "marble_0p1_plus");
+      assert_serialization(CommonModelType::Marble1p0, "marble_1p0");
+      assert_serialization(CommonModelType::Marble1p0Draft, "marble_1p0_draft");
+      assert_serialization(CommonModelType::Marble1p1, "marble_1p1");
+      assert_serialization(CommonModelType::Marble1p1Plus, "marble_1p1_plus");
+      assert_serialization(CommonModelType::TripoSplat, "triposplat");
+    }
+
+    #[test]
+    fn to_str() {
+      // Image models
+      assert_eq!(CommonModelType::Flux1Dev.to_str(), "flux_1_dev");
+      assert_eq!(CommonModelType::Flux1Schnell.to_str(), "flux_1_schnell");
+      assert_eq!(CommonModelType::FluxDevJuggernaut.to_str(), "flux_dev_juggernaut");
+      assert_eq!(CommonModelType::FluxPro1.to_str(), "flux_pro_1");
+      assert_eq!(CommonModelType::FluxPro11.to_str(), "flux_pro_1p1");
+      assert_eq!(CommonModelType::FluxPro11Ultra.to_str(), "flux_pro_1p1_ultra");
+      assert_eq!(CommonModelType::FluxProKontextMax.to_str(), "flux_pro_kontext_max");
+      assert_eq!(CommonModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
+      assert_eq!(CommonModelType::GptImage1.to_str(), "gpt_image_1");
+      assert_eq!(CommonModelType::GptImage1p5.to_str(), "gpt_image_1p5");
+      assert_eq!(CommonModelType::GptImage2.to_str(), "gpt_image_2");
+      assert_eq!(CommonModelType::GptImage2p5Flare.to_str(), "gpt_image_2p5_flare");
+      assert_eq!(CommonModelType::GptImage2p5Sunburst.to_str(), "gpt_image_2p5_sunburst");
+      assert_eq!(CommonModelType::GrokImage.to_str(), "grok_image");
+      assert_eq!(CommonModelType::GrokImagineImage.to_str(), "grok_imagine_image");
+      assert_eq!(CommonModelType::GrokImagineImageQuality.to_str(), "grok_imagine_image_q");
+      assert_eq!(CommonModelType::Recraft3.to_str(), "recraft_3");
+      assert_eq!(CommonModelType::SeedEdit3.to_str(), "seededit_3");
+      assert_eq!(CommonModelType::Qwen.to_str(), "qwen");
+      assert_eq!(CommonModelType::QwenEdit2511Angles.to_str(), "qwen_edit_2511_angles");
+      assert_eq!(CommonModelType::Gemini25Flash.to_str(), "gemini_25_flash");
+      assert_eq!(CommonModelType::NanoBanana.to_str(), "nano_banana");
+      assert_eq!(CommonModelType::NanoBanana2.to_str(), "nano_banana_2");
+      assert_eq!(CommonModelType::NanoBananaPro.to_str(), "nano_banana_pro");
+      assert_eq!(CommonModelType::Seedream4.to_str(), "seedream_4");
+      assert_eq!(CommonModelType::Seedream4p5.to_str(), "seedream_4p5");
+      assert_eq!(CommonModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(CommonModelType::Seedream5p0Pro.to_str(), "seedream_5p0_pro");
+      assert_eq!(CommonModelType::Seedream5p0ProUltra.to_str(), "seedream_5p0_pro_u");
+      assert_eq!(CommonModelType::Midjourney.to_str(), "midjourney");
+      assert_eq!(CommonModelType::MidjourneyV6.to_str(), "midjourney_v6");
+      assert_eq!(CommonModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
+      assert_eq!(CommonModelType::MidjourneyV6p1Raw.to_str(), "midjourney_v6p1_raw");
+      assert_eq!(CommonModelType::MidjourneyV7.to_str(), "midjourney_v7");
+      assert_eq!(CommonModelType::MidjourneyV7Draft.to_str(), "midjourney_v7_draft");
+      assert_eq!(CommonModelType::MidjourneyV7DraftRaw.to_str(), "midjourney_v7_draft_raw");
+      assert_eq!(CommonModelType::MidjourneyV7Raw.to_str(), "midjourney_v7_raw");
+      assert_eq!(CommonModelType::Midjourney7.to_str(), "midjourney_7");
+      assert_eq!(CommonModelType::Midjourney7Niji.to_str(), "midjourney_7_niji");
+      assert_eq!(CommonModelType::Midjourney8.to_str(), "midjourney_8");
+
+      // Video models
+      assert_eq!(CommonModelType::GrokVideo.to_str(), "grok_video");
+      assert_eq!(CommonModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
+      assert_eq!(CommonModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
+      assert_eq!(CommonModelType::Flux3.to_str(), "flux_3");
+      assert_eq!(CommonModelType::Flux3Draft.to_str(), "flux_3_draft");
+      assert_eq!(CommonModelType::Kling16Pro.to_str(), "kling_1p6_pro");
+      assert_eq!(CommonModelType::Kling21Pro.to_str(), "kling_2p1_pro");
+      assert_eq!(CommonModelType::Kling21Master.to_str(), "kling_2p1_master");
+      assert_eq!(CommonModelType::Kling2p5TurboPro.to_str(), "kling_2p5_turbo_pro");
+      assert_eq!(CommonModelType::Kling2p6Pro.to_str(), "kling_2p6_pro");
+      assert_eq!(CommonModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
+      assert_eq!(CommonModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
+      assert_eq!(CommonModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(CommonModelType::MinimaxH3.to_str(), "minimax_h3");
+      assert_eq!(CommonModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
+      assert_eq!(CommonModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
+      assert_eq!(CommonModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
+      assert_eq!(CommonModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
+      assert_eq!(CommonModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
+      assert_eq!(CommonModelType::Seedance2p0.to_str(), "seedance_2p0");
+      assert_eq!(CommonModelType::Seedance2p0Fast.to_str(), "seedance_2p0_fast");
+      assert_eq!(CommonModelType::Seedance2p0BytePlus.to_str(), "seedance_2p0_bp");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusFast.to_str(), "seedance_2p0_bp_fast");
+      assert_eq!(CommonModelType::Seedance2p0Ultra.to_str(), "seedance_2p0_u");
+      assert_eq!(CommonModelType::Seedance2p0UltraFast.to_str(), "seedance_2p0_u_fast");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusUltra.to_str(), "seedance_2p0_bpu");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusUltraFast.to_str(), "seedance_2p0_bpu_fast");
+      assert_eq!(CommonModelType::Seedance2p0Mini.to_str(), "seedance_2p0_mini");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusMini.to_str(), "seedance_2p0_bp_mini");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
+      assert_eq!(CommonModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
+      assert_eq!(CommonModelType::Seedance2p5.to_str(), "seedance_2p5");
+      assert_eq!(CommonModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
+      assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
+      assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
+      assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
+      assert_eq!(CommonModelType::Veo3.to_str(), "veo_3");
+      assert_eq!(CommonModelType::Veo3Fast.to_str(), "veo_3_fast");
+      assert_eq!(CommonModelType::Veo3p1.to_str(), "veo_3p1");
+      assert_eq!(CommonModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(CommonModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
+      assert_eq!(CommonModelType::ViduQ3.to_str(), "vidu_q3");
+      assert_eq!(CommonModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
+
+      // Audio models
+      assert_eq!(CommonModelType::SunoMusic.to_str(), "suno_music");
+      assert_eq!(CommonModelType::SunoRemix.to_str(), "suno_remix");
+      assert_eq!(CommonModelType::SunoSounds.to_str(), "suno_sounds");
+      assert_eq!(CommonModelType::SunoSample.to_str(), "suno_sample");
+      assert_eq!(CommonModelType::SeedAudio1p0.to_str(), "seed_audio_1p0");
+
+      assert_eq!(CommonModelType::PreviewModel.to_str(), "preview_model");
+      assert_eq!(CommonModelType::PreviewModelFast.to_str(), "preview_model_fast");
+      assert_eq!(CommonModelType::SwitchX.to_str(), "switch_x");
+
+      // 3D Object generation models
+      assert_eq!(CommonModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
+      assert_eq!(CommonModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
+      assert_eq!(CommonModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Pro.to_str(), "hunyuan_3d_3p1_pro");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Rapid.to_str(), "hunyuan_3d_3p1_rapid");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Part.to_str(), "hunyuan_3d_3p1_part");
+      assert_eq!(CommonModelType::Hunyuan3d3_1SmartTopology.to_str(), "hunyuan_3d_3p1_topology");
+      assert_eq!(CommonModelType::Tripo3dH3_1.to_str(), "tripo3d_h3p1");
+      assert_eq!(CommonModelType::MeshyV6.to_str(), "meshy_v6");
+      assert_eq!(CommonModelType::Rodin2_5Fast.to_str(), "rodin_2p5_fast");
+      // Splat generation models (World Labs)
+      assert_eq!(CommonModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
+      assert_eq!(CommonModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
+      assert_eq!(CommonModelType::Marble1p0.to_str(), "marble_1p0");
+      assert_eq!(CommonModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
+      assert_eq!(CommonModelType::Marble1p1.to_str(), "marble_1p1");
+      assert_eq!(CommonModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
+      assert_eq!(CommonModelType::TripoSplat.to_str(), "triposplat");
+    }
+
+    #[test]
+    fn from_str() {
+      // Image models
+      assert_eq!(CommonModelType::from_str("flux_1_dev").unwrap(), CommonModelType::Flux1Dev);
+      assert_eq!(CommonModelType::from_str("flux_1_schnell").unwrap(), CommonModelType::Flux1Schnell);
+      assert_eq!(CommonModelType::from_str("flux_dev_juggernaut").unwrap(), CommonModelType::FluxDevJuggernaut);
+      assert_eq!(CommonModelType::from_str("flux_pro_1").unwrap(), CommonModelType::FluxPro1);
+      assert_eq!(CommonModelType::from_str("flux_pro_1p1").unwrap(), CommonModelType::FluxPro11);
+      assert_eq!(CommonModelType::from_str("flux_pro_1p1_ultra").unwrap(), CommonModelType::FluxPro11Ultra);
+      assert_eq!(CommonModelType::from_str("flux_pro_kontext_max").unwrap(), CommonModelType::FluxProKontextMax);
+      assert_eq!(CommonModelType::from_str("flux_2_lora_angles").unwrap(), CommonModelType::Flux2LoraAngles);
+      assert_eq!(CommonModelType::from_str("gpt_image_1").unwrap(), CommonModelType::GptImage1);
+      assert_eq!(CommonModelType::from_str("gpt_image_1p5").unwrap(), CommonModelType::GptImage1p5);
+      assert_eq!(CommonModelType::from_str("gpt_image_2").unwrap(), CommonModelType::GptImage2);
+      assert_eq!(CommonModelType::from_str("gpt_image_2p5_flare").unwrap(), CommonModelType::GptImage2p5Flare);
+      assert_eq!(CommonModelType::from_str("gpt_image_2p5_sunburst").unwrap(), CommonModelType::GptImage2p5Sunburst);
+      assert_eq!(CommonModelType::from_str("grok_image").unwrap(), CommonModelType::GrokImage);
+      assert_eq!(CommonModelType::from_str("grok_imagine_image").unwrap(), CommonModelType::GrokImagineImage);
+      assert_eq!(CommonModelType::from_str("grok_imagine_image_q").unwrap(), CommonModelType::GrokImagineImageQuality);
+      assert_eq!(CommonModelType::from_str("recraft_3").unwrap(), CommonModelType::Recraft3);
+      assert_eq!(CommonModelType::from_str("seededit_3").unwrap(), CommonModelType::SeedEdit3);
+      assert_eq!(CommonModelType::from_str("qwen").unwrap(), CommonModelType::Qwen);
+      assert_eq!(CommonModelType::from_str("qwen_edit_2511_angles").unwrap(), CommonModelType::QwenEdit2511Angles);
+      assert_eq!(CommonModelType::from_str("gemini_25_flash").unwrap(), CommonModelType::Gemini25Flash);
+      assert_eq!(CommonModelType::from_str("nano_banana").unwrap(), CommonModelType::NanoBanana);
+      assert_eq!(CommonModelType::from_str("nano_banana_2").unwrap(), CommonModelType::NanoBanana2);
+      assert_eq!(CommonModelType::from_str("nano_banana_pro").unwrap(), CommonModelType::NanoBananaPro);
+      assert_eq!(CommonModelType::from_str("seedream_4").unwrap(), CommonModelType::Seedream4);
+      assert_eq!(CommonModelType::from_str("seedream_4p5").unwrap(), CommonModelType::Seedream4p5);
+      assert_eq!(CommonModelType::from_str("seedream_5_lite").unwrap(), CommonModelType::Seedream5Lite);
+      assert_eq!(CommonModelType::from_str("seedream_5p0_pro").unwrap(), CommonModelType::Seedream5p0Pro);
+      assert_eq!(CommonModelType::from_str("seedream_5p0_pro_u").unwrap(), CommonModelType::Seedream5p0ProUltra);
+      assert_eq!(CommonModelType::from_str("midjourney").unwrap(), CommonModelType::Midjourney);
+      assert_eq!(CommonModelType::from_str("midjourney_v6").unwrap(), CommonModelType::MidjourneyV6);
+      assert_eq!(CommonModelType::from_str("midjourney_v6p1").unwrap(), CommonModelType::MidjourneyV6p1);
+      assert_eq!(CommonModelType::from_str("midjourney_v6p1_raw").unwrap(), CommonModelType::MidjourneyV6p1Raw);
+      assert_eq!(CommonModelType::from_str("midjourney_v7").unwrap(), CommonModelType::MidjourneyV7);
+      assert_eq!(CommonModelType::from_str("midjourney_v7_draft").unwrap(), CommonModelType::MidjourneyV7Draft);
+      assert_eq!(CommonModelType::from_str("midjourney_v7_draft_raw").unwrap(), CommonModelType::MidjourneyV7DraftRaw);
+      assert_eq!(CommonModelType::from_str("midjourney_v7_raw").unwrap(), CommonModelType::MidjourneyV7Raw);
+      assert_eq!(CommonModelType::from_str("midjourney_7").unwrap(), CommonModelType::Midjourney7);
+      assert_eq!(CommonModelType::from_str("midjourney_7_niji").unwrap(), CommonModelType::Midjourney7Niji);
+      assert_eq!(CommonModelType::from_str("midjourney_8").unwrap(), CommonModelType::Midjourney8);
+      // Video models
+      assert_eq!(CommonModelType::from_str("grok_video").unwrap(), CommonModelType::GrokVideo);
+      assert_eq!(CommonModelType::from_str("grok_imagine_video").unwrap(), CommonModelType::GrokImagineVideo);
+      assert_eq!(CommonModelType::from_str("grok_imagine_video_1p5").unwrap(), CommonModelType::GrokImagineVideo1p5);
+      assert_eq!(CommonModelType::from_str("flux_3").unwrap(), CommonModelType::Flux3);
+      assert_eq!(CommonModelType::from_str("flux_3_draft").unwrap(), CommonModelType::Flux3Draft);
+      assert_eq!(CommonModelType::from_str("kling_1p6_pro").unwrap(), CommonModelType::Kling16Pro);
+      assert_eq!(CommonModelType::from_str("kling_2p1_pro").unwrap(), CommonModelType::Kling21Pro);
+      assert_eq!(CommonModelType::from_str("kling_2p1_master").unwrap(), CommonModelType::Kling21Master);
+      assert_eq!(CommonModelType::from_str("kling_2p5_turbo_pro").unwrap(), CommonModelType::Kling2p5TurboPro);
+      assert_eq!(CommonModelType::from_str("kling_2p6_pro").unwrap(), CommonModelType::Kling2p6Pro);
+      assert_eq!(CommonModelType::from_str("kling_3p0_standard").unwrap(), CommonModelType::Kling3p0Standard);
+      assert_eq!(CommonModelType::from_str("kling_3p0_pro").unwrap(), CommonModelType::Kling3p0Pro);
+      assert_eq!(CommonModelType::from_str("happy_horse_1p0").unwrap(), CommonModelType::HappyHorse1p0);
+      assert_eq!(CommonModelType::from_str("minimax_h3").unwrap(), CommonModelType::MinimaxH3);
+      assert_eq!(CommonModelType::from_str("minimax_h3_turbo").unwrap(), CommonModelType::MinimaxH3Turbo);
+      assert_eq!(CommonModelType::from_str("minimax_h3_ultra").unwrap(), CommonModelType::MinimaxH3Ultra);
+      assert_eq!(CommonModelType::from_str("seedance_1p0_lite").unwrap(), CommonModelType::Seedance10Lite);
+      assert_eq!(CommonModelType::from_str("seedance_1p0_pro").unwrap(), CommonModelType::Seedance10Pro);
+      assert_eq!(CommonModelType::from_str("seedance_1p5_pro").unwrap(), CommonModelType::Seedance1p5Pro);
+      assert_eq!(CommonModelType::from_str("seedance_2p0").unwrap(), CommonModelType::Seedance2p0);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_fast").unwrap(), CommonModelType::Seedance2p0Fast);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bp").unwrap(), CommonModelType::Seedance2p0BytePlus);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bp_fast").unwrap(), CommonModelType::Seedance2p0BytePlusFast);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_u").unwrap(), CommonModelType::Seedance2p0Ultra);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_u_fast").unwrap(), CommonModelType::Seedance2p0UltraFast);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bpu").unwrap(), CommonModelType::Seedance2p0BytePlusUltra);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bpu_fast").unwrap(), CommonModelType::Seedance2p0BytePlusUltraFast);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_mini").unwrap(), CommonModelType::Seedance2p0Mini);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bp_mini").unwrap(), CommonModelType::Seedance2p0BytePlusMini);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bpu_mini").unwrap(), CommonModelType::Seedance2p0BytePlusUltraMini);
+      assert_eq!(CommonModelType::from_str("seedance_2p5_preview").unwrap(), CommonModelType::Seedance2p5Preview);
+      assert_eq!(CommonModelType::from_str("seedance_2p5").unwrap(), CommonModelType::Seedance2p5);
+      assert_eq!(CommonModelType::from_str("seedance_2p5_u").unwrap(), CommonModelType::Seedance2p5Ultra);
+      assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
+      assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
+      assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
+      assert_eq!(CommonModelType::from_str("veo_3").unwrap(), CommonModelType::Veo3);
+      assert_eq!(CommonModelType::from_str("veo_3_fast").unwrap(), CommonModelType::Veo3Fast);
+      assert_eq!(CommonModelType::from_str("veo_3p1").unwrap(), CommonModelType::Veo3p1);
+      assert_eq!(CommonModelType::from_str("veo_3p1_fast").unwrap(), CommonModelType::Veo3p1Fast);
+      assert_eq!(CommonModelType::from_str("veo_3p1_lite").unwrap(), CommonModelType::Veo3p1Lite);
+      assert_eq!(CommonModelType::from_str("vidu_q3").unwrap(), CommonModelType::ViduQ3);
+      assert_eq!(CommonModelType::from_str("vidu_q3_turbo").unwrap(), CommonModelType::ViduQ3Turbo);
+      // Audio models
+      assert_eq!(CommonModelType::from_str("suno_music").unwrap(), CommonModelType::SunoMusic);
+      assert_eq!(CommonModelType::from_str("suno_remix").unwrap(), CommonModelType::SunoRemix);
+      assert_eq!(CommonModelType::from_str("suno_sounds").unwrap(), CommonModelType::SunoSounds);
+      assert_eq!(CommonModelType::from_str("suno_sample").unwrap(), CommonModelType::SunoSample);
+      assert_eq!(CommonModelType::from_str("seed_audio_1p0").unwrap(), CommonModelType::SeedAudio1p0);
+      assert_eq!(CommonModelType::from_str("preview_model").unwrap(), CommonModelType::PreviewModel);
+      assert_eq!(CommonModelType::from_str("preview_model_fast").unwrap(), CommonModelType::PreviewModelFast);
+      assert_eq!(CommonModelType::from_str("switch_x").unwrap(), CommonModelType::SwitchX);
+
+      // 3D Object generation models
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_2p0").unwrap(), CommonModelType::Hunyuan3d2_0);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_2p1").unwrap(), CommonModelType::Hunyuan3d2_1);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3").unwrap(), CommonModelType::Hunyuan3d3);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_pro").unwrap(), CommonModelType::Hunyuan3d3_1Pro);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_rapid").unwrap(), CommonModelType::Hunyuan3d3_1Rapid);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_part").unwrap(), CommonModelType::Hunyuan3d3_1Part);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_topology").unwrap(), CommonModelType::Hunyuan3d3_1SmartTopology);
+      assert_eq!(CommonModelType::from_str("tripo3d_h3p1").unwrap(), CommonModelType::Tripo3dH3_1);
+      assert_eq!(CommonModelType::from_str("meshy_v6").unwrap(), CommonModelType::MeshyV6);
+      assert_eq!(CommonModelType::from_str("rodin_2p5_fast").unwrap(), CommonModelType::Rodin2_5Fast);
+      // Splat generation models (World Labs)
+      assert_eq!(CommonModelType::from_str("marble_0p1_mini").unwrap(), CommonModelType::Marble0p1Mini);
+      assert_eq!(CommonModelType::from_str("marble_0p1_plus").unwrap(), CommonModelType::Marble0p1Plus);
+      assert_eq!(CommonModelType::from_str("marble_1p0").unwrap(), CommonModelType::Marble1p0);
+      assert_eq!(CommonModelType::from_str("marble_1p0_draft").unwrap(), CommonModelType::Marble1p0Draft);
+      assert_eq!(CommonModelType::from_str("marble_1p1").unwrap(), CommonModelType::Marble1p1);
+      assert_eq!(CommonModelType::from_str("marble_1p1_plus").unwrap(), CommonModelType::Marble1p1Plus);
+      assert_eq!(CommonModelType::from_str("triposplat").unwrap(), CommonModelType::TripoSplat);
+    }
+
+    #[test]
+    fn all_variants() {
+      let mut variants = CommonModelType::all_variants();
+      assert_eq!(variants.len(), 108);
+      // Image models
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxDevJuggernaut));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxPro1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxPro11));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxPro11Ultra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxProKontextMax));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux2LoraAngles));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2p5Flare));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2p5Sunburst));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImage));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineImage));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineImageQuality));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Recraft3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SeedEdit3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Qwen));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::QwenEdit2511Angles));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Gemini25Flash));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::NanoBanana));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::NanoBanana2));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::NanoBananaPro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5p0Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5p0ProUltra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6p1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6p1Raw));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7Draft));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7DraftRaw));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7Raw));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney7));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney7Niji));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney8));
+      // Video models
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokVideo));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo1p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Flux3Draft));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling16Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling21Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling21Master));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling2p5TurboPro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling2p6Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Standard));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::HappyHorse1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Turbo));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Ultra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance1p5Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusFast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Ultra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0UltraFast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltraFast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Mini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusMini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltraMini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Preview));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Ultra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3Turbo));
+      // Audio models
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoMusic));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoRemix));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoSounds));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoSample));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SeedAudio1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModel));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModelFast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SwitchX));
+      // 3D Object generation models
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Rapid));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Part));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1SmartTopology));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Tripo3dH3_1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MeshyV6));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Rodin2_5Fast));
+      // Splat generation models (World Labs)
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Mini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Plus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0Draft));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1Plus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::TripoSplat));
+
+      assert_eq!(variants.pop_first(), None);
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn variant_length() {
+      use strum::IntoEnumIterator;
+      assert_eq!(CommonModelType::all_variants().len(), CommonModelType::iter().len());
+    }
+
+    #[test]
+    fn round_trip() {
+      for variant in CommonModelType::all_variants() {
+        // Test to_str(), from_str(), Display, and Debug.
+        assert_eq!(variant, CommonModelType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, CommonModelType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, CommonModelType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      for variant in CommonModelType::all_variants() {
+        let serialized = variant.to_str();
+        assert!(serialized.len() > 0, "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+
+    #[test]
+    fn serialized_names_must_not_contain_dots() {
+      for variant in CommonModelType::all_variants() {
+        let to_str_value = variant.to_str();
+        assert!(!to_str_value.contains('.'), "to_str() for {:?} contains a dot: {:?}", variant, to_str_value);
+
+        let json_value = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert!(!json_value.contains('.'), "JSON serialization for {:?} contains a dot: {:?}", variant, json_value);
+      }
+    }
+
+    #[test]
+    fn serialized_names_must_only_contain_lowercase_alphanumeric_and_underscore() {
+      let valid_pattern = regex::Regex::new(r"^[a-z0-9_]+$").unwrap();
+
+      for variant in CommonModelType::all_variants() {
+        let to_str_value = variant.to_str();
+        assert!(valid_pattern.is_match(to_str_value),
+          "to_str() for {:?} contains invalid characters: {:?} (only a-z, 0-9, _ allowed)", variant, to_str_value);
+
+        let json_value = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert!(valid_pattern.is_match(&json_value),
+          "JSON serialization for {:?} contains invalid characters: {:?} (only a-z, 0-9, _ allowed)", variant, json_value);
+      }
+    }
+
+    #[test]
+    fn every_variant_has_a_model_class() {
+      for variant in CommonModelType::all_variants() {
+        let class = variant.get_model_class();
+        // Verify the class is a known value (not panicking is the main test)
+        assert!(CommonModelClass::all_variants().contains(&class),
+          "get_model_class() for {:?} returned {:?} which is not a known CommonModelClass variant", variant, class);
+      }
+    }
+
+    #[test]
+    fn image_models_return_image_class() {
+      assert_eq!(CommonModelType::Flux1Dev.get_model_class(), CommonModelClass::Image);
+      assert_eq!(CommonModelType::GptImage1.get_model_class(), CommonModelClass::Image);
+      assert_eq!(CommonModelType::Midjourney.get_model_class(), CommonModelClass::Image);
+    }
+
+    #[test]
+    fn video_models_return_video_class() {
+      assert_eq!(CommonModelType::Veo3.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Sora2.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Kling3p0Pro.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Seedance2p0Mini.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Seedance2p0BytePlusMini.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Seedance2p0BytePlusUltraMini.get_model_class(), CommonModelClass::Video);
+    }
+
+    #[test]
+    fn dimensional_models_return_correct_class() {
+      assert_eq!(CommonModelType::Hunyuan3d2_0.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Pro.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Rapid.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Part.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1SmartTopology.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Tripo3dH3_1.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::MeshyV6.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Rodin2_5Fast.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Marble0p1Mini.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble0p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p0.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p0Draft.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p1.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
+    }
+  }
+}

@@ -1,0 +1,21 @@
+[package]
+name = "http_headers"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+# NB: public `http_headers` crate appears to be abandoned, so this name seems fine. Wish we had namespacing, though.
+name = "http_headers"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+errors.workspace = true
+
+# External
+# (None yet)
+
+[dev-dependencies]
+# (None yet)

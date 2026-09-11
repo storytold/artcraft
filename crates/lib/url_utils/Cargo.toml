@@ -1,0 +1,23 @@
+[package]
+name = "url_utils"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "url_utils"
+path = "src/lib.rs"
+
+[dependencies]
+
+
+# Internal
+# NB: DO NOT ALLOW ANY OTHER DEPS - THIS IS URL LOGIC ONLY
+# (None)
+
+# External
+# NB: DO NOT ALLOW ANY OTHER DEPS - THIS IS URL LOGIC ONLY
+url.workspace = true
+
+[dev-dependencies]
+# (None)

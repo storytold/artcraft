@@ -1,0 +1,22 @@
+[package]
+name = "cookie_store"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "cookie_store"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+errors.workspace = true
+
+# External
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+# None yet

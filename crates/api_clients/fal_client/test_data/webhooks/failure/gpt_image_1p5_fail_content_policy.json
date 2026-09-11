@@ -1,0 +1,29 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019d4756-130b-7141-a16c-8f411b785844",
+  "payload": {
+    "detail": [
+      {
+        "input": {
+          "background": "auto",
+          "image_size": "1536x1024",
+          "input_fidelity": null,
+          "num_images": 1,
+          "openai_api_key": null,
+          "output_format": "png",
+          "prompt": "[redacted nsfw query]",
+          "quality": "medium"
+        },
+        "loc": [
+          "body",
+          "prompt"
+        ],
+        "msg": "The content could not be processed because it contained material flagged by a content checker.",
+        "type": "content_policy_violation",
+        "url": "https://docs.fal.ai/errors#content_policy_violation"
+      }
+    ]
+  },
+  "request_id": "019d4756-130b-7141-a16c-8f411b785844",
+  "status": "ERROR"
+}

@@ -1,0 +1,553 @@
+use enums::common::generation::common_resolution::CommonResolution;
+
+use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p0_four_k_usd_cents;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
+use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
+
+// ── Pricing constants ──
+//
+// ArtCraft credits: 100 credits = $1.00. Credits always equal USD cents.
+//
+// The per-second USD price varies by resolution.
+
+/// USD cents per second by resolution.
+///
+/// Kept as f64 because per-second rates are fractional; rounding happens
+/// once at the end after multiplying by duration × batch.
+const CENTS_PER_SECOND_480P: f64 = 7.772;
+const CENTS_PER_SECOND_720P: f64 = 18.5;
+const CENTS_PER_SECOND_1080P: f64 = 46.632;
+
+/// USD cents per second, in hundredths of a cent, when one or more
+/// reference videos are attached. Held as integer hundredths so the math is
+/// exact; rounded up to whole cents once, after multiplying by
+/// duration × batch.
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P: u64 = 881;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P: u64 = 2_205;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_1080P: u64 = 5_110;
+const WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_4K: u64 = 11_380;
+
+pub struct ArtcraftSeedance2p0CostState {
+  pub resolution: CommonResolution,
+  pub duration_seconds: u16,
+  pub batch_count: u16,
+  pub has_video_reference: bool,
+}
+
+impl ArtcraftSeedance2p0CostState {
+  pub fn from_request(request: &ArtcraftSeedance2p0RequestState) -> Self {
+    let resolution = request.request.resolution
+      .unwrap_or(CommonResolution::SevenTwentyP);
+    let duration_seconds = request.request.duration_seconds.unwrap_or(5);
+    let batch_count = request.request.video_batch_count.unwrap_or(1);
+    let has_video_reference = request.request.reference_video_media_tokens
+      .as_ref()
+      .is_some_and(|tokens| !tokens.is_empty());
+
+    Self { resolution, duration_seconds, batch_count, has_video_reference }
+  }
+
+  pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
+    if self.has_video_reference {
+      let usd_cents = self.with_video_reference_usd_cents();
+      return VideoGenerationCostEstimate {
+        cost_in_credits: Some(usd_cents),
+        cost_in_usd_cents: Some(usd_cents),
+        is_free: false,
+        is_unlimited: false,
+        is_rate_limited: false,
+        has_watermark: false,
+        failures_are_refunded: None,
+      };
+    }
+
+    if self.resolution == CommonResolution::FourK {
+      let usd_cents = seedance_2p0_four_k_usd_cents(
+        self.duration_seconds,
+        self.batch_count,
+      );
+      return VideoGenerationCostEstimate {
+        cost_in_credits: Some(usd_cents),
+        cost_in_usd_cents: Some(usd_cents),
+        is_free: false,
+        is_unlimited: false,
+        is_rate_limited: false,
+        has_watermark: false,
+        failures_are_refunded: None,
+      };
+    }
+
+    let cents_per_second = match self.resolution {
+      CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => CENTS_PER_SECOND_1080P,
+      // Everything else (including 720p) prices at 720p.
+      _ => CENTS_PER_SECOND_720P,
+    };
+
+    let usd_cents = (self.duration_seconds as f64 * cents_per_second * self.batch_count as f64).round() as u64;
+
+    // ArtCraft credits: 100 credits = $1.00, so credits = cents.
+    VideoGenerationCostEstimate {
+      cost_in_credits: Some(usd_cents),
+      cost_in_usd_cents: Some(usd_cents),
+      is_free: false,
+      is_unlimited: false,
+      is_rate_limited: false,
+      has_watermark: false,
+      failures_are_refunded: None,
+    }
+  }
+
+  /// Price when one or more reference videos are attached.
+  fn with_video_reference_usd_cents(&self) -> u64 {
+    let centi_cents_per_second = match self.resolution {
+      CommonResolution::FourEightyP => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_480P,
+      CommonResolution::TenEightyP => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_1080P,
+      CommonResolution::FourK => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_4K,
+      // Everything else (including 720p) prices at 720p.
+      _ => WITH_VIDEO_REFERENCE_CENTI_CENTS_PER_SECOND_720P,
+    };
+
+    let seconds = self.duration_seconds as u64 * self.batch_count as u64;
+
+    // Round up to whole cents.
+    (centi_cents_per_second * seconds).div_ceil(100)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use tokens::tokens::media_files::MediaFileToken;
+
+  use crate::api::router_provider::RouterProvider;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::video_list_ref::VideoListRef;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+
+  // -- 720p pricing --
+
+  mod pricing_720p {
+    use super::*;
+
+    #[test]
+    fn batch_1() {
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 1), 74);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1), 93);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 6, 1), 111);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1), 185);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1), 278);
+    }
+
+    #[test]
+    fn batch_2() {
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 2), 148);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2), 185);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 2), 555);
+    }
+
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 3), 222);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 3), 278);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 3), 833);
+    }
+
+    #[test]
+    fn batch_4() {
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 4, 4), 296);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4), 370);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 4), 1110);
+    }
+
+    #[test]
+    fn none_defaults_to_720p() {
+      assert_eq!(cost_cents(None, 5, 1), cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1));
+    }
+  }
+
+  // -- 480p pricing --
+
+  mod pricing_480p {
+    use super::*;
+
+    #[test]
+    fn batch_1() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 4, 1), 31);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 39);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 78);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 117);
+    }
+
+    #[test]
+    fn batch_2() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 78);
+    }
+
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 3), 117);
+    }
+
+    #[test]
+    fn batch_4() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 155);
+    }
+  }
+
+  // -- 1080p pricing --
+
+  mod pricing_1080p {
+    use super::*;
+
+    #[test]
+    fn batch_1() {
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 4, 1), 187);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 1), 233);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 10, 1), 466);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 15, 1), 699);
+    }
+
+    #[test]
+    fn batch_2() {
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 2), 466);
+    }
+
+        #[test]
+    fn batch_3() {
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 3), 699);
+    }
+
+    #[test]
+    fn batch_4() {
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 4), 933);
+    }
+  }
+
+  // -- 4K pricing --
+
+  mod four_k_pricing {
+    use enums::common::generation::common_resolution::CommonResolution;
+
+    fn artcraft_4k_cents(duration_seconds: u16, batch_count: u16, has_video_reference: bool) -> u64 {
+      super::super::ArtcraftSeedance2p0CostState {
+        resolution: CommonResolution::FourK,
+        duration_seconds,
+        batch_count,
+        has_video_reference,
+      }
+      .estimate_cost()
+      .cost_in_usd_cents
+      .unwrap()
+    }
+
+    #[test]
+    fn explicit_4k_without_video_reference() {
+      assert_eq!(artcraft_4k_cents(4, 1, false), 370);
+      assert_eq!(artcraft_4k_cents(5, 1, false), 463);
+      assert_eq!(artcraft_4k_cents(10, 1, false), 925);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1388);
+    }
+
+    #[test]
+    fn explicit_4k_with_video_reference() {
+      assert_eq!(artcraft_4k_cents(4, 1, true), 456);
+      assert_eq!(artcraft_4k_cents(5, 1, true), 569);
+      assert_eq!(artcraft_4k_cents(10, 1, true), 1138);
+      assert_eq!(artcraft_4k_cents(15, 1, true), 1707);
+    }
+  }
+
+  // -- With-video-reference pricing --
+
+  mod video_reference_pricing {
+    use super::*;
+
+    #[test]
+    fn table_480p() {
+      let expected = [36, 45, 53, 62, 71, 80, 89, 97, 106, 115, 124, 133];
+      for (i, cents) in expected.iter().enumerate() {
+        let duration = (i + 4) as u16;
+        assert_eq!(
+          cost_cents_with_video_ref(Some(RouterResolution::FourEightyP), duration, 1),
+          *cents,
+          "480p {duration}s",
+        );
+      }
+    }
+
+    #[test]
+    fn table_720p() {
+      let expected = [89, 111, 133, 155, 177, 199, 221, 243, 265, 287, 309, 331];
+      for (i, cents) in expected.iter().enumerate() {
+        let duration = (i + 4) as u16;
+        assert_eq!(
+          cost_cents_with_video_ref(Some(RouterResolution::SevenTwentyP), duration, 1),
+          *cents,
+          "720p {duration}s",
+        );
+      }
+    }
+
+    #[test]
+    fn table_1080p() {
+      let expected = [205, 256, 307, 358, 409, 460, 511, 563, 614, 665, 716, 767];
+      for (i, cents) in expected.iter().enumerate() {
+        let duration = (i + 4) as u16;
+        assert_eq!(
+          cost_cents_with_video_ref(Some(RouterResolution::TenEightyP), duration, 1),
+          *cents,
+          "1080p {duration}s",
+        );
+      }
+    }
+
+    #[test]
+    fn table_4k() {
+      let expected = [456, 569, 683, 797, 911, 1025, 1138, 1252, 1366, 1480, 1594, 1707];
+      for (i, cents) in expected.iter().enumerate() {
+        let duration = (i + 4) as u16;
+        assert_eq!(
+          cost_cents_with_video_ref(Some(RouterResolution::FourK), duration, 1),
+          *cents,
+          "4K {duration}s",
+        );
+      }
+    }
+
+    /// Batches price identically to the equivalent total seconds.
+    #[test]
+    fn batch_multiplies_total_seconds() {
+      assert_eq!(
+        cost_cents_with_video_ref(Some(RouterResolution::FourEightyP), 5, 2),
+        cost_cents_with_video_ref(Some(RouterResolution::FourEightyP), 10, 1),
+      );
+      assert_eq!(
+        cost_cents_with_video_ref(Some(RouterResolution::FourK), 5, 2),
+        cost_cents_with_video_ref(Some(RouterResolution::FourK), 10, 1),
+      );
+    }
+
+    /// Image and audio references do NOT trigger the with-reference pricing —
+    /// only reference videos do. (The non-reference price is unchanged.)
+    #[test]
+    fn image_and_audio_references_price_as_no_reference() {
+      use crate::api::audio_list_ref::AudioListRef;
+      use crate::api::image_list_ref::ImageListRef;
+
+      let builder = GenerateVideoRequestBuilder {
+        provider: RouterProvider::Artcraft,
+        resolution: Some(RouterResolution::SevenTwentyP),
+        duration_seconds: Some(5),
+        video_batch_count: Some(1),
+        reference_images: Some(ImageListRef::MediaFileTokens(vec![
+          MediaFileToken::new("mf_img".to_string()),
+        ])),
+        reference_audio: Some(AudioListRef::MediaFileTokens(vec![
+          MediaFileToken::new("mf_audio".to_string()),
+        ])),
+        ..Default::default()
+      };
+      let cents = builder.build2()
+        .expect("build2 should succeed")
+        .estimate_cost()
+        .expect("estimate_cost should succeed")
+        .cost_in_usd_cents
+        .unwrap();
+      assert_eq!(cents, cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1));
+    }
+  }
+
+  // -- Relative pricing --
+
+  mod relative_pricing_tests {
+    use super::*;
+
+    #[test]
+    fn cost_480p_cheaper_than_720p_cheaper_than_1080p() {
+      let c480 = cost_cents(Some(RouterResolution::FourEightyP), 5, 1);
+      let c720 = cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1);
+      let c1080 = cost_cents(Some(RouterResolution::TenEightyP), 5, 1);
+      assert!(c480 < c720);
+      assert!(c720 < c1080);
+    }
+
+    #[test]
+    fn cost_4k_more_expensive_than_1080p() {
+      let c1080 = cost_cents(Some(RouterResolution::TenEightyP), 5, 1);
+      let c4k = cost_cents(Some(RouterResolution::FourK), 5, 1);
+      assert!(c4k > c1080);
+    }
+
+    #[test]
+    fn cost_scales_with_duration() {
+      let c4 = cost_cents(Some(RouterResolution::SevenTwentyP), 4, 1);
+      let c10 = cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1);
+      let c15 = cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1);
+      assert!(c4 < c10);
+      assert!(c10 < c15);
+    }
+
+    #[test]
+    fn cost_scales_with_batch() {
+      let b1 = cost_cents(Some(RouterResolution::TenEightyP), 5, 1);
+      let b2 = cost_cents(Some(RouterResolution::TenEightyP), 5, 2);
+      let b4 = cost_cents(Some(RouterResolution::TenEightyP), 5, 4);
+      assert!(b1 < b2);
+      assert!(b2 < b4);
+    }
+  }
+
+  // -- Credits equal cents --
+
+  mod credits_tests {
+    use super::*;
+
+    #[test]
+    fn credits_equal_usd_cents_all_combos() {
+      let resolutions = [
+        Some(RouterResolution::FourEightyP),
+        Some(RouterResolution::SevenTwentyP),
+        Some(RouterResolution::TenEightyP),
+        Some(RouterResolution::FourK),
+        None,
+      ];
+      for res in resolutions {
+        for dur in [4, 5, 10, 15] {
+          for batch in [1, 2, 4] {
+            let cost = build_cost(res, dur, batch);
+            assert_eq!(
+              cost.cost_in_credits, cost.cost_in_usd_cents,
+              "credits should equal cents for res={:?} dur={}s batch={}",
+              res, dur, batch,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // -- Helpers --
+
+  /// Build a cost estimate end-to-end: GenerateVideoRequestBuilder → build2 → estimate_cost.
+  fn build_cost(
+    resolution: Option<RouterResolution>,
+    duration_seconds: u16,
+    video_batch_count: u16,
+  ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
+    let builder = GenerateVideoRequestBuilder {
+      provider: RouterProvider::Artcraft,
+      resolution,
+      duration_seconds: Some(duration_seconds),
+      video_batch_count: Some(video_batch_count),
+      ..Default::default()
+    };
+    builder.build2()
+      .expect("build2 should succeed")
+      .estimate_cost()
+      .expect("estimate_cost should succeed")
+  }
+
+  fn cost_cents(
+    resolution: Option<RouterResolution>,
+    duration_seconds: u16,
+    video_batch_count: u16,
+  ) -> u64 {
+    build_cost(resolution, duration_seconds, video_batch_count)
+      .cost_in_usd_cents
+      .unwrap()
+  }
+
+  /// Like [`cost_cents`], with one reference video attached.
+  fn cost_cents_with_video_ref(
+    resolution: Option<RouterResolution>,
+    duration_seconds: u16,
+    video_batch_count: u16,
+  ) -> u64 {
+    let builder = GenerateVideoRequestBuilder {
+      provider: RouterProvider::Artcraft,
+      resolution,
+      duration_seconds: Some(duration_seconds),
+      video_batch_count: Some(video_batch_count),
+      reference_videos: Some(VideoListRef::MediaFileTokens(vec![
+        MediaFileToken::new("mf_ref".to_string()),
+      ])),
+      ..Default::default()
+    };
+    builder.build2()
+      .expect("build2 should succeed")
+      .estimate_cost()
+      .expect("estimate_cost should succeed")
+      .cost_in_usd_cents
+      .unwrap()
+  }
+
+  // ── Video reference deltas ──
+  //
+  // References price on the with-reference rate card; the delta must be positive at every resolution and duration.
+
+  mod video_reference_deltas {
+    use enums::common::generation::common_resolution::CommonResolution;
+
+    use super::super::ArtcraftSeedance2p0CostState;
+
+    #[test]
+    fn refs_cost_more_at_480p() {
+      assert_ref_delta(CommonResolution::FourEightyP, 5, 39, 45, 6);
+      assert_ref_delta(CommonResolution::FourEightyP, 10, 78, 89, 11);
+      assert_ref_delta(CommonResolution::FourEightyP, 15, 117, 133, 16);
+    }
+
+    #[test]
+    fn refs_cost_more_at_720p() {
+      assert_ref_delta(CommonResolution::SevenTwentyP, 5, 93, 111, 18);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 10, 185, 221, 36);
+      assert_ref_delta(CommonResolution::SevenTwentyP, 15, 278, 331, 53);
+    }
+
+    #[test]
+    fn refs_cost_more_at_1080p() {
+      assert_ref_delta(CommonResolution::TenEightyP, 5, 233, 256, 23);
+      assert_ref_delta(CommonResolution::TenEightyP, 10, 466, 511, 45);
+      assert_ref_delta(CommonResolution::TenEightyP, 15, 699, 767, 68);
+    }
+
+    #[test]
+    fn refs_cost_more_at_4k() {
+      assert_ref_delta(CommonResolution::FourK, 5, 463, 569, 106);
+      assert_ref_delta(CommonResolution::FourK, 10, 925, 1138, 213);
+      assert_ref_delta(CommonResolution::FourK, 15, 1388, 1707, 319);
+    }
+
+    /// Price the same generation with and without a reference video; pin
+    /// both prices and the delta, in USD cents AND credits (credits equal
+    /// cents, and both must show references costing more).
+    fn assert_ref_delta(
+      resolution: CommonResolution,
+      duration_seconds: u16,
+      expected_no_ref: u64,
+      expected_with_ref: u64,
+      expected_delta: u64,
+    ) {
+      let no_ref = ArtcraftSeedance2p0CostState {
+        resolution, duration_seconds, batch_count: 1, has_video_reference: false,
+      }.estimate_cost();
+      let with_ref = ArtcraftSeedance2p0CostState {
+        resolution, duration_seconds, batch_count: 1, has_video_reference: true,
+      }.estimate_cost();
+
+      let no_ref_cents = no_ref.cost_in_usd_cents.unwrap();
+      let with_ref_cents = with_ref.cost_in_usd_cents.unwrap();
+      assert_eq!(no_ref_cents, expected_no_ref);
+      assert_eq!(with_ref_cents, expected_with_ref);
+      assert_eq!(with_ref_cents - no_ref_cents, expected_delta);
+      assert!(with_ref_cents > no_ref_cents, "references must cost more");
+
+      let no_ref_credits = no_ref.cost_in_credits.unwrap();
+      let with_ref_credits = with_ref.cost_in_credits.unwrap();
+      assert_eq!(no_ref_credits, expected_no_ref);
+      assert_eq!(with_ref_credits, expected_with_ref);
+      assert_eq!(with_ref_credits - no_ref_credits, expected_delta);
+    }
+  }
+
+}

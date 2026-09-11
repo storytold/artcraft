@@ -1,0 +1,24 @@
+[package]
+name = "errors"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "errors" crate is name-squatted, so we're fine to use this internally.
+name = "errors"
+path = "src/lib.rs"
+
+[dependencies]
+
+# NB: This is one of the most central crates in the monorepo and everything depends on it.
+# Consider the dependencies here wisely.
+# Ideally we have almost nothing as a dependency of this crate.
+anyhow.workspace = true
+
+[dev-dependencies]
+# None yet

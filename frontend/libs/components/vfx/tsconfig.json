@@ -1,0 +1,34 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../../common"
+    },
+    {
+      "path": "../promptbox"
+    },
+    {
+      "path": "../gallery-modal"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

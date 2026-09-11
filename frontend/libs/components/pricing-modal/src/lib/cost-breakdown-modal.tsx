@@ -1,0 +1,443 @@
+import { useMeshCostEstimate } from "./useMeshCostEstimate";
+import { Modal } from "@storyteller/ui-modal";
+import { useMemo } from "react";
+import { CoinsIcon, LoaderIcon } from "lucide-react";
+import { Select } from "@storyteller/ui-select";
+import {
+  useCostBreakdownModalStore,
+  TAB_TO_MODEL_PAGE,
+} from "./cost-breakdown-modal-store";
+import {
+  ModelPage,
+  useSelectedModel,
+  useSelectedProviderForModel,
+  defaultModelForPage,
+  useTextToImagePageModelList,
+  useImageToVideoPageModelList,
+  useCanvas2dPageModelList,
+  useStage3dPageModelList,
+  useImageEditorPageModelList,
+  useAnglesPageModelList,
+  IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST,
+  IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST,
+} from "@storyteller/ui-model-selector";
+import {
+  usePrompt2DStore,
+  usePrompt3DStore,
+  usePromptImageStore,
+  usePromptVideoStore,
+  usePromptEditStore,
+} from "@storyteller/ui-promptbox";
+import { Model } from "@storyteller/model-list";
+import { useCurrency } from "./use-currency";
+import { useVideoCostEstimate } from "./useVideoCostEstimate";
+import { useImageCostEstimate } from "./useImageCostEstimate";
+import { useSplatCostEstimate } from "./useSplatCostEstimate";
+
+// Drag handle subcomponent that Modal looks for
+const DragHandle = ({ children }: { children: React.ReactNode }) => (
+  <>{children}</>
+);
+DragHandle.displayName = "ModalDragHandle";
+
+// Provider display name mapping
+const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
+  artcraft: "ArtCraft",
+  fal: "FAL",
+  grok: "Grok",
+  midjourney: "Midjourney",
+  sora: "Sora",
+  worldlabs: "World Labs",
+};
+
+// Extract the concrete `Model` instances out of a page's selectable item list.
+const modelsFromList = (
+  list: { model?: Model }[],
+): Model[] =>
+  list.map((item) => item.model).filter((m): m is Model => m !== undefined);
+
+export interface CostBreakdownModalProps {
+  /** The current active tab ID from the app (e.g. "IMAGE", "VIDEO", "2D", "3D") */
+  activeTabId?: string;
+}
+
+export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
+  const { isOpen, closeModal, estimatedCreditsByPage } =
+    useCostBreakdownModalStore();
+  const {
+    currency,
+    setCurrency,
+    formatPrice,
+    currencyOptions,
+  } = useCurrency();
+
+  // Map TabId to ModelPage, default to TextToImage
+  const activePage = useMemo(() => {
+    if (!activeTabId) return ModelPage.TextToImage;
+    return TAB_TO_MODEL_PAGE[activeTabId] ?? ModelPage.TextToImage;
+  }, [activeTabId]);
+
+  // Backend-reconciled model lists per page (fall back to the overlay until the
+  // startup fetch completes).
+  const textToImageList = useTextToImagePageModelList();
+  const imageToVideoList = useImageToVideoPageModelList();
+  const canvas2dList = useCanvas2dPageModelList();
+  const stage3dList = useStage3dPageModelList();
+  const imageEditorList = useImageEditorPageModelList();
+  const anglesList = useAnglesPageModelList();
+
+  // Get the selected model for the active page
+  const selectedModelFromStore = useSelectedModel(activePage);
+
+  // If no model selected in store, use the default for this page
+  const modelsForPage = useMemo<Model[]>(() => {
+    switch (activePage) {
+      case ModelPage.TextToImage:
+        return modelsFromList(textToImageList);
+      case ModelPage.ImageToVideo:
+        return modelsFromList(imageToVideoList);
+      case ModelPage.Canvas2D:
+        return modelsFromList(canvas2dList);
+      case ModelPage.Stage3D:
+        return modelsFromList(stage3dList);
+      case ModelPage.ImageEditor:
+        return modelsFromList(imageEditorList);
+      case ModelPage.ImageTo3DWorld:
+        return modelsFromList(IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST);
+      case ModelPage.ImageTo3DObject:
+        return modelsFromList(IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST);
+      case ModelPage.Angles:
+        return modelsFromList(anglesList);
+      default:
+        return [];
+    }
+  }, [
+    activePage,
+    textToImageList,
+    imageToVideoList,
+    canvas2dList,
+    stage3dList,
+    imageEditorList,
+    anglesList,
+  ]);
+  const selectedModel =
+    selectedModelFromStore ?? defaultModelForPage(modelsForPage, activePage);
+
+  const selectedProvider = useSelectedProviderForModel(
+    activePage,
+    selectedModel?.id,
+  );
+
+  const { isLoading: isVideoEstimateLoading } = useVideoCostEstimate(
+    activePage,
+    selectedModel,
+    selectedProvider,
+  );
+  const { isLoading: isImageEstimateLoading } = useImageCostEstimate(
+    activePage,
+    selectedModel,
+    selectedProvider,
+  );
+  const { isLoading: isSplatEstimateLoading } = useSplatCostEstimate(
+    activePage,
+    selectedModel,
+    selectedProvider,
+  );
+  const { isLoading: isMeshEstimateLoading } = useMeshCostEstimate(activePage, selectedModel, selectedProvider);
+  const isEstimateLoading =
+    isVideoEstimateLoading || isImageEstimateLoading || isSplatEstimateLoading || isMeshEstimateLoading;
+
+  // Get generation settings from the appropriate stores based on active page
+  const prompt2D = usePrompt2DStore();
+  const prompt3D = usePrompt3DStore();
+  const promptImage = usePromptImageStore();
+  const promptVideo = usePromptVideoStore();
+  const promptEdit = usePromptEditStore();
+
+  // Determine which store to use based on active page
+  const getStoreData = () => {
+    switch (activePage) {
+      case ModelPage.Canvas2D:
+        return {
+          resolution: prompt2D.resolution,
+          generationCount: prompt2D.generationCount,
+          label: "Images",
+        };
+      case ModelPage.Stage3D:
+        return {
+          resolution: prompt3D.resolution,
+          generationCount: 1, // 3D doesn't have generation count
+          label: "Images",
+        };
+      case ModelPage.TextToImage:
+        return {
+          resolution: promptImage.resolution,
+          generationCount: promptImage.generationCount,
+          label: "Images",
+        };
+      case ModelPage.ImageToVideo:
+        return {
+          resolution: promptVideo.resolution,
+          generationCount: promptVideo.generationCount,
+          label: "Videos",
+        };
+      case ModelPage.ImageEditor:
+        return {
+          resolution: promptEdit.resolution,
+          generationCount: 1, // Edit doesn't have generation count in store
+          label: "Images",
+        };
+      case ModelPage.ImageTo3DWorld:
+        return {
+          resolution: undefined,
+          generationCount: 1,
+          label: "Worlds",
+        };
+      case ModelPage.Angles:
+        return {
+          resolution: undefined,
+          generationCount: 1,
+          label: "Images",
+        };
+      default:
+        return {
+          resolution: "1k",
+          generationCount: 1,
+          label: "Items",
+        };
+    }
+  };
+
+  const storeData = getStoreData();
+
+  // Pages that use a live backend estimate instead of a local calculation
+  const LIVE_ESTIMATE_PAGES = new Set<ModelPage>([
+    ModelPage.TextToImage,
+    ModelPage.Canvas2D,
+    ModelPage.Stage3D,
+    ModelPage.ImageEditor,
+    ModelPage.ImageToVideo,
+    ModelPage.ImageTo3DWorld,
+    ModelPage.ImageTo3DObject,
+    ModelPage.Angles,
+  ]);
+
+  const isLiveEstimatePage = LIVE_ESTIMATE_PAGES.has(activePage);
+  const liveCredits = isLiveEstimatePage
+    ? (estimatedCreditsByPage[activePage] ?? null)
+    : null;
+
+  const creditsPerGeneration = 1;
+  const totalCredits = isLiveEstimatePage
+    ? liveCredits
+    : creditsPerGeneration * storeData.generationCount;
+
+  // Convert credits to USD first (1 credit = $0.01), then to selected currency
+  const usdAmount = (totalCredits ?? 0) * 0.01;
+  const formattedPrice = formatPrice(usdAmount);
+
+  // Select options formatted for the Select component
+  const selectOptions = currencyOptions.map((o) => ({
+    value: o.value,
+    label: o.label,
+  }));
+
+  // Format provider name
+  const formatProvider = (provider: string | undefined) => {
+    if (!provider) return null;
+    const key = provider.toLowerCase();
+    if (PROVIDER_DISPLAY_NAMES[key]) {
+      return PROVIDER_DISPLAY_NAMES[key];
+    }
+    // Fallback: Convert snake_case to Title Case
+    return provider
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  // Get page display name
+  const getPageName = () => {
+    switch (activePage) {
+      case ModelPage.TextToImage:
+        return "Text to Image";
+      case ModelPage.ImageToVideo:
+        return "Generate Video";
+      case ModelPage.Canvas2D:
+        return "Canvas 2D";
+      case ModelPage.Stage3D:
+        return "Stage 3D";
+      case ModelPage.ImageEditor:
+        return "Image Editor";
+      case ModelPage.ImageTo3DWorld:
+        return "Image to 3D World";
+      case ModelPage.Angles:
+        return "Angles";
+      default:
+        return null;
+    }
+  };
+
+  const pageName = getPageName();
+
+  // Models that have credit cost data available
+  const MODELS_WITH_COST_DATA = new Set([
+    "flux_1_dev",
+    "flux_1_schnell",
+    "flux_pro_11", // Legacy id
+    "flux_pro_1p1",
+    "flux_pro_11_ultra", // Legacy id
+    "flux_pro_1p1_ultra",
+    "gpt_image_1p5",
+    "gpt_image_2",
+    "gpt_image_2p5_flare",
+    "gpt_image_2p5_sunburst",
+    "nano_banana",
+    "nano_banana_2",
+    "nano_banana_pro",
+    "seedream_4",
+    "seedream_4p5",
+    "seedream_5_lite",
+    "kling_3p0_standard",
+    "kling_3p0_pro",
+    "seedance_1p5_pro",
+    "seedance_2p0",
+    "marble_0p1_mini",
+    "marble_0p1_plus",
+    "flux_2_lora_angles",
+    "qwen_edit_2511_angles",
+  ]);
+  const hasCostData =
+    selectedModel != null && MODELS_WITH_COST_DATA.has(selectedModel.id);
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={closeModal}
+      draggable={true}
+      allowBackgroundInteraction={true}
+      showClose={true}
+      closeOnOutsideClick={false}
+      closeOnEsc={true}
+      resizable={false}
+      backdropClassName="pointer-events-none !bg-transparent"
+      className="max-w-xs rounded-xl bg-ui-panel border border-ui-panel-border overflow-visible shadow-2xl"
+    >
+      {/* Drag Handle - Modal component will recognize this and make it draggable */}
+      <DragHandle>
+        <div className="flex items-center gap-2 pb-3 bg-ui-panel-header border-b border-ui-panel-border select-none">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-fg">
+            <CoinsIcon  className="text-white" />
+            Cost Breakdown
+          </div>
+        </div>
+      </DragHandle>
+
+      <div className="space-y-3 font-sans text-base-fg text-xs mt-3">
+        {/* Page indicator */}
+        {pageName && (
+          <div className="text-[10px] text-base-fg/75 uppercase tracking-wide text-start font-bold">
+            {pageName}
+          </div>
+        )}
+
+        {/* Model row — always shown */}
+        {selectedModel && (
+          <div className="flex justify-between items-center">
+            <span className="text-base-fg/60">Model</span>
+            <span
+              className="text-base-fg font-medium truncate max-w-[140px]"
+              title={selectedModel.selectorName}
+            >
+              {selectedModel.selectorName}
+            </span>
+          </div>
+        )}
+
+        {hasCostData ? (
+          <>
+            {/* Generation Details */}
+            <div className="space-y-1.5">
+              {storeData.resolution && (
+                <div className="flex justify-between items-center">
+                  <span className="text-base-fg/60">Resolution</span>
+                  <span className="text-base-fg font-medium uppercase">
+                    {storeData.resolution}
+                  </span>
+                </div>
+              )}
+              {storeData.generationCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-base-fg/60">{storeData.label}</span>
+                  <span className="text-base-fg font-medium">
+                    {storeData.generationCount}
+                  </span>
+                </div>
+              )}
+              {selectedProvider && (
+                <div className="flex justify-between items-center">
+                  <span className="text-base-fg/60">Provider</span>
+                  <span className="text-base-fg font-medium">
+                    {formatProvider(selectedProvider)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Total Cost */}
+            <div className="bg-ui-controls/50 rounded-lg p-3 border border-ui-controls-border space-y-2.5">
+              {/* Credits row */}
+              <div>
+                <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
+                  Credits
+                </div>
+                <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
+                  {isEstimateLoading && isLiveEstimatePage ? (
+                    <>
+                      <LoaderIcon
+                        
+                        className="animate-spin text-base" />
+                      <span className="text-base-fg/50 text-sm">
+                        Calculating…
+                      </span>
+                    </>
+                  ) : totalCredits != null ? (
+                    <>
+                      {totalCredits} {totalCredits === 1 ? "Credit" : "Credits"}
+                    </>
+                  ) : (
+                    <span className="text-base-fg/50">—</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-ui-controls-border" />
+
+              {/* Converted price row */}
+              <div>
+                <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
+                  Estimated Price
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-lg font-bold text-base-fg tracking-tight">
+                    {formattedPrice}
+                  </span>
+                  <Select
+                    options={selectOptions}
+                    value={currency}
+                    onChange={setCurrency}
+                    className="w-[110px] text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="bg-ui-controls/50 rounded-lg p-2.5 border border-ui-controls-border text-center text-base-fg/60 text-[11px]">
+            Credit Costs not yet available for this model
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}

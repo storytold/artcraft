@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    UPDATE tasks\n    SET is_dismissed_by_user = 1\n    WHERE id = ?\n  ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "13d435d8f681b73e4080748dcef0579e246e41049af67e1bd79ffc06aa6ba974"
+}

@@ -1,0 +1,13 @@
+pub mod http_hailuo_v2p3_pro_text_to_video;
+pub mod http_kling_3p0_pro_text_to_video;
+pub mod http_kling_3p0_standard_text_to_video;
+pub mod http_kling_v2p5_turbo_pro_text_to_video;
+pub mod http_kling_v2p6_pro_text_to_video;
+pub mod http_pixverse_v5_text_to_video;
+pub mod http_seedance_1p5_pro_text_to_video;
+pub mod http_sora_2_pro_text_to_video;
+pub mod http_sora_2_text_to_video;
+pub mod http_veo_2_text_to_video;
+pub mod http_veo_3_text_to_video;
+pub mod http_veo_3p1_fast_text_to_video;
+pub mod http_veo_3p1_text_to_video;

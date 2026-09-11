@@ -1,0 +1,27 @@
+[package]
+name = "filesys"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "filesys" crate does not exist, so it's safe to use for now.
+name = "filesys"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal (keep this to a minimum!)
+errors.workspace = true
+
+# External
+# KEEP THIS TO A MINIMUM OR NIL.
+log.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+test_utils = { path = "../../../testing/test_utils" }

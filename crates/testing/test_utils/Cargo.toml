@@ -1,0 +1,27 @@
+[package]
+name = "test_utils"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "testing" crate is used by the "swc" project as an internal project.
+# It isn't a crate meant to be consumed by others, so we'll use it internally.
+name = "test_utils"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+errors = { path = "../../lib/errors" }
+
+
+# External
+# None yet
+
+[dev-dependencies]
+# None yet

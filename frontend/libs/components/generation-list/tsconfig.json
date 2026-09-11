@@ -1,0 +1,34 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../loading-spinner"
+    },
+    {
+      "path": "../../common"
+    },
+    {
+      "path": "../audio-player"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

@@ -1,0 +1,68 @@
+# Storyteller rustfmt rules
+# (Not yet happy with these.)
+
+# Four spaces is excessive in any language.
+# Conserve horizontal space for small laptop screens.
+tab_spaces = 2
+
+# Only Unix
+newline_style = "Unix"
+
+# NB(bt,2023-08-21): This is still nightly-only. Disabled.
+# # We won't change any vendor code.
+# # Note: This appears not to work in stable, so it's necessary to run `cargo +nightly fmt`.
+# ignore = [
+#   "vendor"
+# ]
+
+# NB(bt,2023-08-21): This is still nightly-only. Disabled.
+# # Item-level imports makes for better diffs and fewer merge conflicts.
+# # Another suitable option is "Module", but that's not the default either.
+# # (This is commented out for now to reduce the first round of rustfmt diffs, but will be enabled.)
+# imports_granularity = "Item"
+
+# NB(bt,2023-08-21): This is still nightly-only. Disabled.
+# # It's better to keep stdlib, crate (self), and external crates separate.
+# # (This is commented out for now to reduce the first round of rustfmt diffs, but will be enabled.)
+# group_imports = "StdExternalCrate"
+
+# The default is wrong
+match_block_trailing_comma = true
+
+# 'try!' shouldn't exist in our codebase.
+use_try_shorthand = true
+
+# MAYBE
+#struct_lit_single_line = true
+
+# This fixes method chaining. 
+# (rustfmt ordinarily puts everything on one line.)
+use_small_heuristics = "Off" 
+
+# TEMPORARY
+reorder_imports = false
+reorder_modules = false
+merge_derives = false
+remove_nested_parens = false
+use_field_init_shorthand = false
+
+#struct_lit_single_line = false
+
+
+#width_heuristics = "Off"
+array_width = 1000
+attr_fn_like_width = 1000
+chain_width = 1000
+fn_call_width = 1000
+max_width = 1000
+single_line_if_else_max_width = 1000
+struct_lit_width = 1000
+struct_variant_width = 1000
+
+#blank_lines_upper_bound = 1000
+
+#match_arm_blocks = false
+#max_width = 180 # default 100
+#chain_width = 10
+
+

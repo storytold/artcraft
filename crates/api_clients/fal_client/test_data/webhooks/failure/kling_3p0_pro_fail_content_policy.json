@@ -1,0 +1,29 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019d4761-035d-7b50-8c42-1521efdd4f34",
+  "payload": {
+    "detail": [
+      {
+        "input": {
+          "aspect_ratio": "16:9",
+          "cfg_scale": 0.5,
+          "duration": "3",
+          "generate_audio": false,
+          "multi_prompt": null,
+          "negative_prompt": "blur, distort, and low quality",
+          "prompt": "[redacted prompt]",
+          "shot_type": "customize",
+          "voice_ids": null
+        },
+        "loc": [
+          "body"
+        ],
+        "msg": "The content could not be processed because it contained material flagged by a content checker.",
+        "type": "content_policy_violation",
+        "url": "https://docs.fal.ai/errors#content_policy_violation"
+      }
+    ]
+  },
+  "request_id": "019d4761-035d-7b50-8c42-1521efdd4f34",
+  "status": "ERROR"
+}

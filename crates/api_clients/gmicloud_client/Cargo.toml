@@ -1,0 +1,26 @@
+[package]
+name = "gmicloud_client"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "gmicloud_client"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+errors.workspace = true
+
+# External
+log.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+test_data = { path = "../../testing/test_data" }
+test_utils = { path = "../../testing/test_utils" }
+tokio = { version = "1", features = ["full"] }

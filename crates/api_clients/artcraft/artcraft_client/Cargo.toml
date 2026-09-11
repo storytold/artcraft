@@ -1,0 +1,50 @@
+[package]
+name = "artcraft_client"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+# [lints.rust]
+# unused_imports = "forbid"
+
+[lib]
+name = "artcraft_client"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+artcraft_api_defs.workspace = true
+cloudflare_errors.workspace = true
+enums.workspace = true
+errors.workspace = true
+uuid_utils.workspace = true
+mimetypes.workspace = true
+tokens.workspace = true
+
+# External
+anyhow.workspace = true
+chrono.workspace = true
+cookie.workspace = true
+log.workspace = true
+reqwest = { workspace = true, features = ["multipart", "gzip"] }
+url.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+# HTTP
+backoff = { version = "0.4.0", features = ["futures"] }  # Exponential backoff retry
+uuid = { version = "1.8.0", features = ["v4"] }
+
+# TODO: This is not a very mature, safe, or intuitive URL builder library. Please replace it!
+url-builder = "0.1.1"
+
+[dev-dependencies]
+tokio.workspace = true

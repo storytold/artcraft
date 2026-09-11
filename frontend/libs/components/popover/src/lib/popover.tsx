@@ -1,0 +1,1617 @@
+import {
+  ReactNode,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useCallback,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  Popover,
+  Transition,
+  PopoverButton,
+  PopoverPanel,
+} from "@headlessui/react";
+import { twMerge } from "tailwind-merge";
+import { Button } from "@storyteller/ui-button";
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CircleCheckIcon, InfoIcon } from "lucide-react";
+import { Model, ModelInfo } from "@storyteller/model-list";
+import { Tooltip } from "@storyteller/ui-tooltip";
+
+interface PortalTooltipProps {
+  children: React.ReactElement;
+  content: ReactNode;
+  delay?: number;
+  className?: string;
+  onOpenChange?: (open: boolean) => void;
+}
+
+function PortalTooltip({
+  children,
+  content,
+  delay = 300,
+  className,
+  onOpenChange,
+}: PortalTooltipProps) {
+  const [isShowing, setIsShowing] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [isHoveringTrigger, setIsHoveringTrigger] = useState(false);
+  const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
+  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const checkVisibilityAndUpdatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+
+    const scrollParent = triggerRef.current.closest("[data-scroll-container]");
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect();
+      const isInView =
+        rect.top >= parentRect.top - 10 &&
+        rect.bottom <= parentRect.bottom + 10;
+      setIsVisible(isInView);
+      if (!isInView) return;
+    }
+
+    setPosition({
+      top: rect.top + rect.height / 2,
+      left: rect.right + 10,
+    });
+  }, []);
+
+  useEffect(() => {
+    const shouldShow = isHoveringTrigger || isHoveringTooltip;
+    if (shouldShow) {
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+      checkVisibilityAndUpdatePosition();
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      showTimeoutRef.current = setTimeout(() => setIsShowing(true), delay);
+    } else {
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = setTimeout(() => setIsShowing(false), 150);
+    }
+    return () => {
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, [
+    isHoveringTrigger,
+    isHoveringTooltip,
+    delay,
+    checkVisibilityAndUpdatePosition,
+  ]);
+
+  useEffect(() => {
+    onOpenChange?.(isShowing && isVisible);
+  }, [isShowing, isVisible, onOpenChange]);
+
+  useEffect(() => {
+    if (!isShowing) return;
+    const handleScroll = () => checkVisibilityAndUpdatePosition();
+    // Escape dismisses the tooltip — required because the outside-safe marker
+    // below makes the enclosing Modal defer its own Escape handling to us.
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      setIsShowing(false);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [isShowing, checkVisibilityAndUpdatePosition]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        onMouseEnter={() => setIsHoveringTrigger(true)}
+        onMouseLeave={() => setIsHoveringTrigger(false)}
+      >
+        {children}
+      </div>
+      {isShowing &&
+        isVisible &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            // Body-portaled, so inside a Radix modal (promptbox focus mode)
+            // clicks here must not count as outside clicks on the dialog.
+            data-modal-outside-safe=""
+            onMouseEnter={() => setIsHoveringTooltip(true)}
+            onMouseLeave={() => setIsHoveringTooltip(false)}
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              transform: "translateY(-50%)",
+              zIndex: 9999,
+            }}
+            className={twMerge(
+              "pointer-events-auto rounded-lg bg-ui-panel p-3 shadow-xl border border-ui-panel-border text-base-fg",
+              className,
+            )}
+          >
+            {content}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+// Small (i) info affordance for list rows. Opens on hover (desktop) and
+// toggles on click/tap (works on touch devices). Rendered into a portal so it
+// is never clipped by the popover panel's bounds.
+function InfoHint({ content }: { content: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const pinnedRef = useRef(false); // opened via click/tap (sticky until dismissed)
+  const [position, setPosition] = useState({ top: 0, left: 0, maxWidth: 320 });
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updatePosition = useCallback(() => {
+    const el = anchorRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // Clamp horizontally so the (centered) bubble never overflows the viewport
+    // — important on narrow / mobile screens.
+    const margin = 8;
+    const vw = window.innerWidth;
+    const maxWidth = Math.min(320, vw - margin * 2);
+    const half = maxWidth / 2;
+    const center = rect.left + rect.width / 2;
+    const left = Math.max(margin + half, Math.min(center, vw - margin - half));
+    // Anchor above the icon; the bubble is translated up by its own height.
+    setPosition({ top: rect.top - 8, left, maxWidth });
+  }, []);
+
+  const close = useCallback(() => {
+    pinnedRef.current = false;
+    setOpen(false);
+  }, []);
+
+  // While open, reposition on scroll and dismiss on outside click / Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = () => updatePosition();
+    const onPointerDown = (e: MouseEvent) => {
+      if (anchorRef.current?.contains(e.target as Node)) return;
+      close();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("mousedown", onPointerDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("mousedown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, close, updatePosition]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        aria-label="More info"
+        className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
+        onClick={(e) => {
+          // Don't let the click select the row.
+          e.stopPropagation();
+          e.preventDefault();
+          if (open && pinnedRef.current) {
+            close();
+          } else {
+            pinnedRef.current = true;
+            updatePosition();
+            setOpen(true);
+          }
+        }}
+        onMouseEnter={() => {
+          if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+          hoverTimerRef.current = setTimeout(() => {
+            updatePosition();
+            setOpen(true);
+          }, 150);
+        }}
+        onMouseLeave={() => {
+          if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+          if (!pinnedRef.current) setOpen(false);
+        }}
+      >
+        <InfoIcon  className="h-3.5 w-3.5" />
+      </button>
+      {open &&
+        createPortal(
+          <div
+            // Body-portaled, so inside a Radix modal (promptbox focus mode)
+            // taps here must not count as outside clicks on the dialog.
+            data-modal-outside-safe=""
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              maxWidth: position.maxWidth,
+              transform: "translate(-50%, -100%)",
+              zIndex: 10000,
+            }}
+            className="pointer-events-auto rounded-lg border border-white/10 bg-ui-controls px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={() => {
+              if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+            }}
+            onMouseLeave={() => {
+              if (!pinnedRef.current) setOpen(false);
+            }}
+          >
+            {content}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+// Global hover manager to debounce close across adjacent hover popovers
+let globalCloseTimer: NodeJS.Timeout | null = null;
+const cancelGlobalClose = () => {
+  if (globalCloseTimer) {
+    clearTimeout(globalCloseTimer);
+    globalCloseTimer = null;
+  }
+};
+const scheduleGlobalClose = (fn: () => void, delayMs: number) => {
+  cancelGlobalClose();
+  globalCloseTimer = setTimeout(() => {
+    fn();
+    globalCloseTimer = null;
+  }, delayMs);
+};
+
+// Global coordination so opening one hover popover closes others immediately
+const ST_POPOVER_OPEN_EVENT = "st-popover-open";
+let popoverIdCounter = 0;
+
+type HoverTooltipContent = ReactNode | ((close: () => void) => ReactNode);
+
+export interface PopoverItem {
+  label: string;
+  selected: boolean;
+  icon?: ReactNode;
+  action?: string;
+  disabled?: boolean;
+  divider?: boolean;
+  description?: string;
+  // Longer info blurb surfaced behind an (i) icon next to the label. Shown on
+  // hover (desktop) and tap (mobile). Only rendered in `richList` mode.
+  info?: ReactNode;
+  badges?: Array<{
+    label: string;
+    icon?: ReactNode;
+  }>;
+  modelInfo?: ModelInfo;
+  model?: Model; // NB: Let's migrate to using this.
+  // Optional trailing content rendered on the far right of each list row
+  // (e.g., a settings button or tooltip trigger)
+  trailing?: ReactNode;
+  // Optional tooltip content to show when hovering the entire row
+  hoverTooltip?: HoverTooltipContent;
+  tooltipDelayMs?: number;
+  // Optional custom right-side node shown when item is selected
+  selectedRight?: ReactNode;
+  // Renders this row as a group (e.g. a model family) whose children open in
+  // a right-side flyout submenu. Group rows never select themselves; clicking
+  // a child selects it and closes the whole popover. Only used in `richList`
+  // mode. Build model groups with `groupModelItems`.
+  subItems?: PopoverItem[];
+}
+
+interface RichListRowProps {
+  item: PopoverItem;
+  onClick?: () => void;
+  // Highlight the row while its flyout/tooltip is open.
+  active?: boolean;
+  // Overrides the default right-side selection check (e.g. a submenu chevron).
+  rightNode?: ReactNode;
+}
+
+// One rich-list row (icon tile, name, description, badges). Shared between the
+// main richList panel and the submenu flyout so group children render
+// identically to top-level rows.
+function RichListRow({
+  item,
+  onClick,
+  active = false,
+  rightNode,
+}: RichListRowProps) {
+  return (
+    <div
+      data-selected={item.selected ? "true" : undefined}
+      onClick={() => {
+        if (!item.disabled) onClick?.();
+      }}
+      className={twMerge(
+        "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
+        item.selected ? "bg-ui-controls/70" : "hover:bg-ui-controls/50",
+        !item.selected && active ? "bg-ui-controls/50" : "",
+        item.disabled ? "!cursor-not-allowed opacity-50" : "",
+      )}
+    >
+      <span
+        className={twMerge(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
+          item.selected
+            ? "border-primary bg-primary/20"
+            : "border-ui-controls-border bg-ui-controls/60",
+        )}
+      >
+        {item.icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 items-center gap-1">
+          <span
+            className={twMerge(
+              "truncate font-semibold",
+              item.selected ? "text-base-fg" : "text-base-fg/90",
+            )}
+          >
+            {item.label}
+          </span>
+          {item.info ? <InfoHint content={item.info} /> : null}
+        </div>
+        {item.description && (
+          <span className="truncate text-xs text-base-fg/55">
+            {item.description}
+          </span>
+        )}
+        {item.badges &&
+          Array.isArray(item.badges) &&
+          item.badges.length > 0 && (
+            <div className="mt-1 flex flex-row flex-wrap gap-1">
+              {item.badges.map((badge, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+                >
+                  {badge?.icon && <span>{badge.icon}</span>}
+                  {badge?.label || ""}
+                </span>
+              ))}
+            </div>
+          )}
+      </div>
+      {item.trailing && (
+        <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>
+      )}
+      {rightNode ??
+        (item.selected &&
+          (item.selectedRight ?? (
+            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
+              <CheckIcon
+                
+                className="text-[11px] font-bold text-white" />
+            </span>
+          )))}
+    </div>
+  );
+}
+
+interface SubmenuFlyoutProps {
+  children: React.ReactElement;
+  item: PopoverItem;
+  onSelectChild: (child: PopoverItem) => void;
+  // The enclosing popover's close, threaded into children's hoverTooltip
+  // render functions (e.g. the provider selector) so they can close everything.
+  popoverClose: () => void;
+  onOpenChange?: (open: boolean) => void;
+}
+
+// Right-side flyout submenu for grouped model rows. Portal-rendered so it
+// escapes the panel bounds, opens on hover or click (the click path doubles as
+// the touch fallback), and hides when its row scrolls out of the list.
+function SubmenuFlyout({
+  children,
+  item,
+  onSelectChild,
+  popoverClose,
+  onOpenChange,
+}: SubmenuFlyoutProps) {
+  const [isShowing, setIsShowingRaw] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [activeChildIdx, setActiveChildIdx] = useState<number | null>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const openTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateScrollIndicators = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    setCanScrollUp(scrollTop > 1);
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1);
+  }, []);
+
+  const setIsShowing = useCallback(
+    (show: boolean) => {
+      setIsShowingRaw(show);
+      onOpenChange?.(show);
+    },
+    [onOpenChange],
+  );
+
+  // Position the flyout beside the trigger row. Returns false (without
+  // positioning) when the row is scrolled out of its list.
+  const updatePosition = useCallback((): boolean => {
+    const trigger = triggerRef.current;
+    if (!trigger) return false;
+    const rect = trigger.getBoundingClientRect();
+    const scrollParent = trigger.closest("[data-scroll-container]");
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect();
+      const inView =
+        rect.top >= parentRect.top - 10 &&
+        rect.bottom <= parentRect.bottom + 10;
+      if (!inView) return false;
+    }
+    setPosition({ top: rect.top + rect.height / 2, left: rect.right + 10 });
+    return true;
+  }, []);
+
+  const cancelTimers = () => {
+    if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  const scheduleOpen = () => {
+    cancelTimers();
+    openTimerRef.current = setTimeout(() => {
+      if (updatePosition()) setIsShowing(true);
+    }, 100);
+  };
+
+  const scheduleClose = () => {
+    cancelTimers();
+    closeTimerRef.current = setTimeout(() => setIsShowing(false), 150);
+  };
+
+  const cancelClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  useEffect(() => cancelTimers, []);
+
+  // Open with the selected model centered in the flyout's own scroll list so
+  // the current choice is visible without scrolling.
+  useLayoutEffect(() => {
+    if (!isShowing) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const selected = container.querySelector(
+      "[data-selected='true']",
+    ) as HTMLElement | null;
+    if (selected) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = selected.getBoundingClientRect();
+      const relativeTop =
+        elementRect.top - containerRect.top + container.scrollTop;
+      container.scrollTop = Math.max(
+        0,
+        relativeTop - containerRect.height / 2 + elementRect.height / 2,
+      );
+    }
+    updateScrollIndicators();
+  }, [isShowing, updateScrollIndicators]);
+
+  // Keep the scroll fades in sync while the flyout is open.
+  useEffect(() => {
+    if (!isShowing) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    container.addEventListener("scroll", updateScrollIndicators);
+    const resizeObserver = new ResizeObserver(updateScrollIndicators);
+    resizeObserver.observe(container);
+    return () => {
+      container.removeEventListener("scroll", updateScrollIndicators);
+      resizeObserver.disconnect();
+    };
+  }, [isShowing, updateScrollIndicators]);
+
+  // The flyout is vertically centered on its row; clamp it into the viewport
+  // when a long list would run off the top or bottom edge.
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    if (!isShowing || !el) return;
+    el.style.transform = "translateY(-50%)";
+    const rect = el.getBoundingClientRect();
+    const margin = 8;
+    let dy = 0;
+    if (rect.bottom > window.innerHeight - margin) {
+      dy = window.innerHeight - margin - rect.bottom;
+    }
+    if (rect.top + dy < margin) dy = margin - rect.top;
+    if (dy !== 0) el.style.transform = `translateY(calc(-50% + ${dy}px))`;
+  }, [isShowing, position]);
+
+  // Track the row while scrolling; hide once it leaves the list viewport.
+  useEffect(() => {
+    if (!isShowing) return;
+    const handleScroll = () => {
+      if (!updatePosition()) setIsShowing(false);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isShowing, updatePosition, setIsShowing]);
+
+  // Dismiss on outside press — needed for the click/touch open path, where
+  // there is no hover-out to close the flyout. Escape also dismisses: the
+  // outside-safe marker on the panel makes the enclosing Modal defer its own
+  // Escape handling while the flyout is open.
+  useEffect(() => {
+    if (!isShowing) return;
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setIsShowing(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsShowing(false);
+    };
+    window.addEventListener("mousedown", onPointerDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isShowing, setIsShowing]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
+        onClick={() => {
+          cancelTimers();
+          if (isShowing) {
+            setIsShowing(false);
+          } else if (updatePosition()) {
+            setIsShowing(true);
+          }
+        }}
+      >
+        {children}
+      </div>
+      {isShowing &&
+        createPortal(
+          <div
+            ref={panelRef}
+            // Body-portaled: a modal Radix dialog (promptbox focus mode) sets
+            // pointer-events: none on <body>, so re-enable them explicitly or
+            // the flyout can never be hovered and closes on row mouse-leave.
+            // The outside-safe marker keeps clicks in here from counting as
+            // outside clicks that would close the dialog.
+            data-modal-outside-safe=""
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            // The focus-mode modal's scroll lock (react-remove-scroll) blocks
+            // any wheel/touch event that bubbles to document from outside the
+            // dialog — and this body-portaled panel counts as outside. Stop
+            // propagation so the list's native scrolling keeps working.
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              transform: "translateY(-50%)",
+              zIndex: 9999,
+            }}
+            className="pointer-events-auto w-[340px] rounded-lg border border-ui-panel-border bg-ui-panel p-1.5 text-base-fg shadow-xl"
+          >
+            <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
+              {item.label}
+            </div>
+            <div className="relative">
+              {/* Top fade — appears only when there's content above, with a
+                  slow bouncing arrow hinting to scroll up. */}
+              <div
+                className={twMerge(
+                  "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-10 items-start justify-center bg-gradient-to-b from-ui-panel to-transparent pt-1 transition-opacity duration-200",
+                  canScrollUp ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <ChevronUpIcon
+                  
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+              </div>
+              <div
+                ref={scrollRef}
+                data-scroll-container
+                className="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto text-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              >
+                {item.subItems?.map((child, childIdx) => {
+                  const childRow = (
+                    <RichListRow
+                      item={child}
+                      onClick={() => onSelectChild(child)}
+                      active={activeChildIdx === childIdx}
+                    />
+                  );
+                  if (!child.hoverTooltip) {
+                    return <div key={childIdx}>{childRow}</div>;
+                  }
+                  const childTooltip =
+                    typeof child.hoverTooltip === "function"
+                      ? (
+                          child.hoverTooltip as (close: () => void) => ReactNode
+                        )(popoverClose)
+                      : child.hoverTooltip;
+                  return (
+                    <div key={childIdx}>
+                      <PortalTooltip
+                        content={childTooltip}
+                        delay={child.tooltipDelayMs ?? 300}
+                        className="min-w-48"
+                        onOpenChange={(open) =>
+                          setActiveChildIdx((prev) =>
+                            open ? childIdx : prev === childIdx ? null : prev,
+                          )
+                        }
+                      >
+                        {childRow}
+                      </PortalTooltip>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Bottom fade — appears only when there's more below, with a
+                  slow bouncing arrow hinting to scroll down. */}
+              <div
+                className={twMerge(
+                  "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-10 items-end justify-center bg-gradient-to-t from-ui-panel to-transparent pb-1 transition-opacity duration-200",
+                  canScrollDown ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <ChevronDownIcon
+                  
+                  className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+const ViewportClamp = ({
+  targetRef,
+}: {
+  targetRef: React.RefObject<HTMLDivElement | null>;
+}) => {
+  useLayoutEffect(() => {
+    const el = targetRef.current;
+    if (!el) return;
+    el.style.visibility = "hidden";
+    el.style.transform = "";
+    let done = false;
+    const clamp = () => {
+      if (done || !el.isConnected) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0) return;
+      const margin = 8;
+      const vw = window.innerWidth;
+      let dx = 0;
+      if (rect.right > vw - margin) {
+        dx = vw - margin - rect.right;
+      } else if (rect.left < margin) {
+        dx = margin - rect.left;
+      }
+      el.style.transform = dx !== 0 ? `translateX(${dx}px)` : "";
+      el.style.visibility = "";
+      done = true;
+    };
+    clamp();
+    const raf = requestAnimationFrame(clamp);
+    const onResize = () => {
+      done = false;
+      clamp();
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [targetRef]);
+  return null;
+};
+
+interface PopoverMenuProps {
+  items?: PopoverItem[];
+  onSelect?: (item: PopoverItem) => void;
+  onAdd?: () => void;
+  triggerIcon?: ReactNode;
+  showAddButton?: boolean;
+  disableAddButton?: boolean;
+  showIconsInList?: boolean;
+  mode?: "default" | "toggle" | "button" | "hoverSelect";
+  triggerLabel?: string | ReactNode;
+  children?: ReactNode | ((close: () => void) => ReactNode);
+  buttonClassName?: string;
+  panelClassName?: string;
+  onPanelAction?: (action: string) => void;
+  panelTitle?: string;
+  position?: "top" | "bottom";
+  align?: "start" | "center" | "end";
+  panelActionLabel?: string;
+  onOpenChange?: (open: boolean) => void;
+  closeOnUnhover?: boolean;
+  renderTrigger?: (selected?: PopoverItem, open?: boolean) => ReactNode;
+  maxListHeight?: number | string;
+  // Render rows as rich cards: icon in a subtle container, bold name (with an
+  // optional (i) info icon) and a description line beneath. Keeps click-to-
+  // select semantics. Use for model/option pickers with descriptions.
+  richList?: boolean;
+}
+
+export const PopoverMenu = ({
+  items = [],
+  onSelect,
+  onAdd,
+  triggerIcon,
+  showAddButton = false,
+  disableAddButton = false,
+  showIconsInList = false,
+  mode = "default",
+  triggerLabel,
+  children,
+  buttonClassName,
+  panelClassName,
+  onPanelAction,
+  panelTitle,
+  position = "top",
+  align = "start",
+  panelActionLabel,
+  onOpenChange,
+  closeOnUnhover = false,
+  renderTrigger,
+  maxListHeight,
+  richList = false,
+}: PopoverMenuProps) => {
+  // Search leaves so a grouped list resolves to the selected model, not its
+  // (also-selected) family group row.
+  const selectedItem = items
+    .flatMap((item) => item.subItems ?? [item])
+    .find((item) => item.selected);
+  const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const panelContentRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+  const [scrollReady, setScrollReady] = useState(false);
+
+  const updateScrollIndicators = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    setCanScrollUp(scrollTop > 1);
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1);
+  }, []);
+
+  const scrollToSelectedItem = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const selectedElement = container.querySelector("[data-selected='true']");
+    if (selectedElement) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = selectedElement.getBoundingClientRect();
+      const relativeTop =
+        elementRect.top - containerRect.top + container.scrollTop;
+      const scrollTo =
+        relativeTop - containerRect.height / 2 + elementRect.height / 2;
+      container.scrollTop = Math.max(0, scrollTo);
+    }
+    updateScrollIndicators();
+    setScrollReady(true);
+  }, [updateScrollIndicators]);
+
+  const handleItemClick = (item: PopoverItem, close: () => void) => {
+    if (mode === "button" && item.action && onPanelAction) {
+      onPanelAction(item.action);
+      close();
+    } else {
+      onSelect?.(item);
+      close();
+    }
+  };
+
+  const className = twMerge(
+    "text-sm font-medium rounded-lg px-2.5 py-1.5 shadow-sm",
+    "flex gap-2 items-center justify-center outline-none",
+    "transition-all duration-150",
+    "bg-ui-controls px-3 text-base-fg hover:bg-ui-controls/80 border border-ui-controls-border",
+    "active:scale-95 transform",
+    buttonClassName,
+  );
+
+  const positionClasses = {
+    top: "bottom-full",
+    bottom: "top-full",
+  };
+
+  const alignClasses = {
+    start: "left-0",
+    center: "left-1/2 -translate-x-1/2",
+    end: "right-0",
+  };
+
+  // Hover timers and refs
+  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const popoverButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+      cancelGlobalClose();
+    };
+  }, []);
+
+  const handleButtonMouseEnter = (open: boolean, openFn: () => void) => {
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    if (!open && mode === "hoverSelect") {
+      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = setTimeout(() => {
+        openFn();
+      }, 0);
+    }
+  };
+
+  const handleButtonMouseLeave = () => {
+    // Defer close to wrapper/panel leave so moving from button to panel doesn't close
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+    }
+  };
+
+  const handlePanelMouseEnter = () => {
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  };
+
+  const handlePanelMouseLeave = (closeFn: () => void) => {
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(
+      () => {
+        closeFn();
+      },
+      mode === "hoverSelect" ? 200 : 120,
+    );
+  };
+
+  return (
+    <div className="relative inline-block">
+      <Popover>
+        {({ open, close }) => (
+          <>
+            {(() => {
+              const thisId = ++popoverIdCounter;
+              useEffect(() => {
+                onOpenChange?.(open);
+                let scrollTimeoutId: NodeJS.Timeout | undefined;
+                if (open && (mode === "hoverSelect" || closeOnUnhover)) {
+                  // Broadcast that this popover opened; others should close
+                  window.dispatchEvent(
+                    new CustomEvent(ST_POPOVER_OPEN_EVENT, {
+                      detail: { id: thisId },
+                    }),
+                  );
+                }
+                let resizeObserver: ResizeObserver | null = null;
+                if (open && (maxListHeight || richList)) {
+                  setScrollReady(false);
+                  scrollTimeoutId = setTimeout(() => {
+                    scrollToSelectedItem();
+                    const container = scrollContainerRef.current;
+                    if (container) {
+                      container.addEventListener(
+                        "scroll",
+                        updateScrollIndicators,
+                      );
+                      resizeObserver = new ResizeObserver(
+                        updateScrollIndicators,
+                      );
+                      resizeObserver.observe(container);
+                    }
+                  }, 20);
+                } else if (!open) {
+                  setScrollReady(false);
+                }
+                const handler = (e: Event) => {
+                  const detail = (e as CustomEvent).detail as { id: number };
+                  if (detail?.id !== thisId && open) {
+                    // Another popover opened; close this one immediately
+                    close();
+                  }
+                };
+                window.addEventListener(
+                  ST_POPOVER_OPEN_EVENT,
+                  handler as EventListener,
+                );
+                return () => {
+                  if (scrollTimeoutId) clearTimeout(scrollTimeoutId);
+                  const container = scrollContainerRef.current;
+                  if (container) {
+                    container.removeEventListener(
+                      "scroll",
+                      updateScrollIndicators,
+                    );
+                  }
+                  if (resizeObserver) {
+                    resizeObserver.disconnect();
+                  }
+                  window.removeEventListener(
+                    ST_POPOVER_OPEN_EVENT,
+                    handler as EventListener,
+                  );
+                };
+              }, [open]);
+              return null;
+            })()}
+            <div
+              className="inline-flex"
+              onMouseEnter={() => {
+                if (closeTimeoutRef.current) {
+                  clearTimeout(closeTimeoutRef.current);
+                  closeTimeoutRef.current = null;
+                }
+                cancelGlobalClose();
+              }}
+              onMouseLeave={() => {
+                if (!(mode === "hoverSelect" || closeOnUnhover)) return;
+                if (openTimeoutRef.current) {
+                  clearTimeout(openTimeoutRef.current);
+                  openTimeoutRef.current = null;
+                }
+                if (closeTimeoutRef.current)
+                  clearTimeout(closeTimeoutRef.current);
+                // Use global close so moving to another hover popover cancels this
+                scheduleGlobalClose(
+                  () => close(),
+                  mode === "hoverSelect" ? 200 : 120,
+                );
+              }}
+            >
+              <PopoverButton
+                className={className}
+                onMouseEnter={() =>
+                  handleButtonMouseEnter(open, () => {
+                    if (popoverButtonRef.current && !open) {
+                      popoverButtonRef.current.click();
+                    }
+                  })
+                }
+                onMouseLeave={handleButtonMouseLeave}
+                onClick={(e) => {
+                  if (mode === "hoverSelect" && open) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+                ref={popoverButtonRef}
+              >
+                {renderTrigger ? (
+                  renderTrigger(selectedItem, open)
+                ) : (
+                  <>
+                    {triggerIcon}
+                    {mode === "toggle" && selectedItem ? (
+                      <span className="truncate">{selectedItem.label}</span>
+                    ) : null}
+                    {mode === "default" && triggerLabel ? (
+                      <span className="truncate">{triggerLabel}</span>
+                    ) : null}
+                    {mode === "hoverSelect" && selectedItem ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="opacity-70">{triggerLabel}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{selectedItem.label}</span>
+                          <ChevronUpIcon
+                            
+                            className="text-sm" />
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </PopoverButton>
+
+              <Transition
+                show={open}
+                enter="transition duration-75 ease-out"
+                enterFrom={
+                  position === "bottom"
+                    ? "translate-y-1 opacity-0"
+                    : "-translate-y-1 opacity-0"
+                }
+                enterTo="translate-y-0 opacity-100"
+                leave="transition duration-75 ease-in"
+                leaveFrom="translate-y-0 opacity-100"
+                leaveTo={
+                  position === "bottom"
+                    ? "translate-y-1 opacity-0"
+                    : "-translate-y-1 opacity-0"
+                }
+              >
+                <PopoverPanel
+                  static
+                  className={twMerge(
+                    "absolute transform-gpu z-50",
+                    positionClasses[position],
+                    alignClasses[align],
+                    position === "bottom" ? "origin-top" : "origin-bottom",
+                  )}
+                >
+                  {open && <ViewportClamp targetRef={panelContentRef} />}
+                  <div
+                    ref={panelContentRef}
+                    className={twMerge(
+                      "z-10 min-w-48 mt-2 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border overflow-visible",
+                      position === "top" ? "mb-2" : "mt-2",
+                      panelClassName,
+                    )}
+                    onMouseEnter={handlePanelMouseEnter}
+                    onMouseLeave={() => handlePanelMouseLeave(close)}
+                  >
+                    {panelTitle && (
+                      <div className="mb-2 mt-0.5 flex justify-between px-1.5 text-sm font-normal text-base-fg opacity-70">
+                        {panelTitle}
+                        {panelActionLabel && (
+                          <button
+                            onClick={() => {
+                              onPanelAction?.(panelActionLabel);
+                              close();
+                            }}
+                            className="text-end text-sm text-base-fg/85 hover:underline"
+                          >
+                            {panelActionLabel}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {mode === "default" && children ? (
+                      <div className="text-sm text-base-fg">
+                        {typeof children === "function"
+                          ? children(close)
+                          : children}
+                      </div>
+                    ) : richList ? (
+                      <div className="relative">
+                        {/* Top fade — appears only when there's content above,
+                            with a slow bouncing arrow hinting to scroll up. */}
+                        <div
+                          className={twMerge(
+                            "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-10 items-start justify-center bg-gradient-to-b from-ui-panel to-transparent pt-1 transition-opacity duration-200",
+                            canScrollUp ? "opacity-100" : "opacity-0",
+                          )}
+                        >
+                          <ChevronUpIcon
+                            
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+                        </div>
+                        <div
+                          ref={scrollContainerRef}
+                          data-scroll-container
+                          className="flex flex-col gap-0.5 overflow-y-auto text-sm text-base-fg [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                          style={{ maxHeight: maxListHeight ?? "60vh" }}
+                        >
+                          {items.map((item, index) => {
+                            if (item.subItems && item.subItems.length > 0) {
+                              return (
+                                <div key={index}>
+                                  <SubmenuFlyout
+                                    item={item}
+                                    popoverClose={close}
+                                    onSelectChild={(child) =>
+                                      handleItemClick(child, close)
+                                    }
+                                    onOpenChange={(open) =>
+                                      setOpenTooltipIdx((prev) =>
+                                        open
+                                          ? index
+                                          : prev === index
+                                            ? null
+                                            : prev,
+                                      )
+                                    }
+                                  >
+                                    <RichListRow
+                                      item={item}
+                                      active={openTooltipIdx === index}
+                                      rightNode={
+                                        <ChevronRightIcon
+                                          
+                                          className="ml-1 shrink-0 text-xs text-base-fg/50" />
+                                      }
+                                    />
+                                  </SubmenuFlyout>
+                                  {item.divider && (
+                                    <div className="my-1 border-t border-white/10" />
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            const tooltipContent =
+                              typeof item.hoverTooltip === "function"
+                                ? (
+                                    item.hoverTooltip as (
+                                      close: () => void,
+                                    ) => ReactNode
+                                  )(close)
+                                : item.hoverTooltip;
+
+                            const itemRow = (
+                              <RichListRow
+                                item={item}
+                                onClick={() => handleItemClick(item, close)}
+                                active={openTooltipIdx === index}
+                              />
+                            );
+
+                            return (
+                              <div key={index}>
+                                {item.hoverTooltip ? (
+                                  <PortalTooltip
+                                    content={tooltipContent}
+                                    delay={item.tooltipDelayMs ?? 300}
+                                    className="min-w-48"
+                                    onOpenChange={(open) =>
+                                      setOpenTooltipIdx((prev) =>
+                                        open
+                                          ? index
+                                          : prev === index
+                                            ? null
+                                            : prev,
+                                      )
+                                    }
+                                  >
+                                    {itemRow}
+                                  </PortalTooltip>
+                                ) : (
+                                  itemRow
+                                )}
+                                {item.divider && (
+                                  <div className="my-1 border-t border-white/10" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* Bottom fade — appears only when there's more below,
+                            with a slow bouncing arrow hinting to scroll down. */}
+                        <div
+                          className={twMerge(
+                            "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-10 items-end justify-center bg-gradient-to-t from-ui-panel to-transparent pb-1 transition-opacity duration-200",
+                            canScrollDown ? "opacity-100" : "opacity-0",
+                          )}
+                        >
+                          <ChevronDownIcon
+                            
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]" />
+                        </div>
+                      </div>
+                    ) : mode === "hoverSelect" ? (
+                      <div className="relative flex flex-col text-sm text-base-fg overflow-visible">
+                        {maxListHeight && canScrollUp && (
+                          <div className="absolute top-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-b from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
+                            <ChevronUpIcon
+                              
+                              className="text-base-fg/60 text-xs animate-bounce" />
+                          </div>
+                        )}
+                        <div
+                          ref={scrollContainerRef}
+                          data-scroll-container
+                          className="flex flex-col gap-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-opacity duration-75"
+                          style={
+                            maxListHeight
+                              ? {
+                                  maxHeight: maxListHeight,
+                                  overflowY: "auto",
+                                  opacity: scrollReady ? 1 : 0,
+                                }
+                              : undefined
+                          }
+                        >
+                          {items.map((item, index) => {
+                            const tooltipContent =
+                              typeof item.hoverTooltip === "function"
+                                ? (
+                                    item.hoverTooltip as (
+                                      close: () => void,
+                                    ) => ReactNode
+                                  )(close)
+                                : item.hoverTooltip;
+
+                            const itemRow = (
+                              <div
+                                data-selected={
+                                  item.selected ? "true" : undefined
+                                }
+                                onClick={() => {
+                                  if (!item.disabled) {
+                                    handleItemClick(item, close);
+                                  }
+                                }}
+                                className={twMerge(
+                                  "group flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 transition-all",
+                                  item.selected
+                                    ? "bg-ui-controls/70 border-l-4 border-primary"
+                                    : "hover:bg-ui-controls/50",
+                                  !item.selected && openTooltipIdx === index
+                                    ? "bg-ui-controls/50"
+                                    : "",
+                                  item.disabled
+                                    ? "!cursor-not-allowed opacity-50"
+                                    : "",
+                                )}
+                                style={{ minHeight: 48 }}
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <div className="flex items-start gap-2 grow">
+                                    {showIconsInList && (
+                                      <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-base-fg/80">
+                                        {item.icon}
+                                      </span>
+                                    )}
+                                    <div className="flex flex-1 flex-col min-w-0">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="truncate font-semibold text-base-fg text-base">
+                                          {item.label}
+                                        </span>
+                                      </div>
+
+                                      {item.description && (
+                                        <div className="truncate text-xs text-base-fg/60 mt-0.5">
+                                          {item.description}
+                                        </div>
+                                      )}
+
+                                      <div className="flex flex-row gap-1 flex-wrap mt-1.5">
+                                        {item.badges &&
+                                          Array.isArray(item.badges) &&
+                                          item.badges.map((badge, i) => (
+                                            <div
+                                              key={i}
+                                              className="flex items-center gap-1 min-w-0"
+                                            >
+                                              <span className="inline-flex items-center rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
+                                                {badge?.icon && (
+                                                  <span>{badge.icon}</span>
+                                                )}
+                                                {badge?.label || ""}
+                                              </span>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {item.trailing && (
+                                    <div className="ml-2 mr-1 flex items-center">
+                                      {item.trailing}
+                                    </div>
+                                  )}
+
+                                  {item.selected &&
+                                    (item.selectedRight ?? (
+                                      <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
+                                        <CircleCheckIcon />
+                                      </span>
+                                    ))}
+                                </div>
+                              </div>
+                            );
+
+                            return (
+                              <div key={index}>
+                                {item.hoverTooltip ? (
+                                  maxListHeight ? (
+                                    <PortalTooltip
+                                      content={tooltipContent}
+                                      delay={item.tooltipDelayMs ?? 300}
+                                      className="min-w-48"
+                                      onOpenChange={(open) =>
+                                        setOpenTooltipIdx((prev) =>
+                                          open
+                                            ? index
+                                            : prev === index
+                                              ? null
+                                              : prev,
+                                        )
+                                      }
+                                    >
+                                      {itemRow}
+                                    </PortalTooltip>
+                                  ) : (
+                                    <Tooltip
+                                      content={tooltipContent}
+                                      position="right"
+                                      delay={item.tooltipDelayMs ?? 300}
+                                      interactive
+                                      className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                                      onOpenChange={(open) =>
+                                        setOpenTooltipIdx((prev) =>
+                                          open
+                                            ? index
+                                            : prev === index
+                                              ? null
+                                              : prev,
+                                        )
+                                      }
+                                    >
+                                      {itemRow}
+                                    </Tooltip>
+                                  )
+                                ) : (
+                                  itemRow
+                                )}
+                                {item.divider && (
+                                  <div className="my-1 border-t border-white/10" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {maxListHeight && canScrollDown && (
+                          <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-t from-ui-panel via-ui-panel/80 to-transparent py-1.5 pointer-events-none">
+                            <ChevronDownIcon
+                              
+                              className="text-base-fg/60 text-xs animate-bounce" />
+                          </div>
+                        )}
+                        {showAddButton && onAdd && (
+                          <Button
+                            variant="secondary"
+                            className={twMerge(
+                              "w-full mb-0.5 mt-2 border-none py-1",
+                              disableAddButton
+                                ? "cursor-not-allowed bg-[#7B7B84]/50 opacity-50"
+                                : "bg-[#7B7B84] hover:bg-[#8c8c96]",
+                            )}
+                            onClick={onAdd}
+                            disabled={disableAddButton}
+                          >
+                            + Add
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex max-h-[35vh] flex-col gap-0 overflow-y-auto text-sm text-base-fg">
+                        {items.map((item, index) => (
+                          <div key={index}>
+                            {item.hoverTooltip ? (
+                              <Tooltip
+                                content={
+                                  typeof item.hoverTooltip === "function"
+                                    ? (
+                                        item.hoverTooltip as (
+                                          close: () => void,
+                                        ) => ReactNode
+                                      )(close)
+                                    : item.hoverTooltip
+                                }
+                                position="right"
+                                delay={item.tooltipDelayMs ?? 1000}
+                                interactive
+                                className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                                onOpenChange={(open) =>
+                                  setOpenTooltipIdx((prev) =>
+                                    open ? index : prev === index ? null : prev,
+                                  )
+                                }
+                              >
+                                <Button
+                                  className={twMerge(
+                                    "flex w-full items-center shadow-none justify-between px-1.5",
+                                    "bg-transparent hover:bg-ui-controls/60",
+                                    openTooltipIdx === index
+                                      ? "bg-ui-controls/60"
+                                      : "",
+                                    mode === "toggle" && item.selected
+                                      ? "hover:bg-ui-controls/80"
+                                      : "",
+                                    item.disabled
+                                      ? "!cursor-not-allowed opacity-50"
+                                      : "",
+                                    "border-0",
+                                  )}
+                                  onClick={() =>
+                                    !item.disabled &&
+                                    handleItemClick(item, close)
+                                  }
+                                  variant="secondary"
+                                  disabled={item.disabled}
+                                >
+                                  <div className="flex items-center gap-2 truncate">
+                                    {showIconsInList && item.icon}
+                                    {mode === "toggle" ? (
+                                      <span
+                                        className={twMerge(
+                                          "truncate",
+                                          item.selected
+                                            ? "text-base-fg"
+                                            : "text-base-fg/70",
+                                        )}
+                                      >
+                                        {item.label}
+                                      </span>
+                                    ) : (
+                                      <span className="truncate">
+                                        {item.label}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {/* Optional trailing content on the right */}
+                                  {item.trailing && (
+                                    <div className="ml-2 flex items-center">
+                                      {item.trailing}
+                                    </div>
+                                  )}
+                                  {/* Optional trailing content on the right */}
+                                  {item.trailing && (
+                                    <div className="ml-2 flex items-center">
+                                      {item.trailing}
+                                    </div>
+                                  )}
+
+                                  {mode === "toggle" && (
+                                    <span
+                                      className={twMerge(
+                                        "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
+                                        item.selected
+                                          ? "border-primary bg-primary"
+                                          : "border-transparent bg-transparent",
+                                      )}
+                                    >
+                                      {item.selected && (
+                                        <CheckIcon
+                                          
+                                          className="text-base-fg text-xs font-bold" />
+                                      )}
+                                    </span>
+                                  )}
+                                </Button>
+                              </Tooltip>
+                            ) : (
+                              <Button
+                                className={twMerge(
+                                  "flex w-full items-center shadow-none justify-between px-1.5",
+                                  "bg-transparent hover:bg-ui-controls/60",
+                                  mode === "toggle" && item.selected
+                                    ? "hover:bg-ui-controls/80"
+                                    : "",
+                                  item.disabled
+                                    ? "!cursor-not-allowed opacity-50"
+                                    : "",
+                                  "border-0",
+                                )}
+                                onClick={() =>
+                                  !item.disabled && handleItemClick(item, close)
+                                }
+                                variant="secondary"
+                                disabled={item.disabled}
+                              >
+                                <div className="flex items-center gap-2 truncate">
+                                  {showIconsInList && item.icon}
+                                  {mode === "toggle" ? (
+                                    <span
+                                      className={twMerge(
+                                        "truncate",
+                                        item.selected
+                                          ? "text-base-fg"
+                                          : "text-base-fg/70",
+                                      )}
+                                    >
+                                      {item.label}
+                                    </span>
+                                  ) : (
+                                    <span className="truncate">
+                                      {item.label}
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Optional trailing content on the right */}
+                                {item.trailing && (
+                                  <div className="ml-2 flex items-center">
+                                    {item.trailing}
+                                  </div>
+                                )}
+
+                                {mode === "toggle" && (
+                                  <span
+                                    className={twMerge(
+                                      "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
+                                      item.selected
+                                        ? "border-primary bg-primary"
+                                        : "border-transparent bg-transparent",
+                                    )}
+                                  >
+                                    {item.selected && (
+                                      <CheckIcon
+                                        
+                                        className="text-base-fg text-xs font-bold" />
+                                    )}
+                                  </span>
+                                )}
+                              </Button>
+                            )}
+                            {item.divider && (
+                              <div className="my-1 border-t border-white/10" />
+                            )}
+                          </div>
+                        ))}
+                        {showAddButton && onAdd && (
+                          <Button
+                            variant="secondary"
+                            className={twMerge(
+                              "w-full mb-0.5 mt-2 py-1 border-0",
+                              disableAddButton
+                                ? "cursor-not-allowed opacity-50"
+                                : "",
+                            )}
+                            onClick={onAdd}
+                            disabled={disableAddButton}
+                          >
+                            + Add
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </PopoverPanel>
+              </Transition>
+            </div>
+          </>
+        )}
+      </Popover>
+    </div>
+  );
+};

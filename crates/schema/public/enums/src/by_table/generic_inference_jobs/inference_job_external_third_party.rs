@@ -1,0 +1,184 @@
+use std::collections::BTreeSet;
+
+#[cfg(test)]
+use strum::EnumCount;
+#[cfg(test)]
+use strum::EnumIter;
+
+/// Used in the `generic_inference_jobs` table in `VARCHAR(16)` field `maybe_external_third_party`.
+///
+/// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
+#[cfg_attr(test, derive(EnumIter, EnumCount))]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum InferenceJobExternalThirdParty {
+  /// Beeble jobs
+  #[serde(rename = "beeble")]
+  Beeble,
+
+  /// Fal jobs
+  #[serde(rename = "fal")]
+  #[default]
+  Fal,
+
+  /// GmiCloud jobs
+  #[serde(rename = "gmicloud")]
+  GmiCloud,
+
+  /// Grok (xAI) API jobs
+  #[serde(rename = "grok_api")]
+  GrokApi,
+
+  /// Seedance 2 Pro jobs
+  #[serde(rename = "seedance2pro")]
+  Seedance2Pro,
+
+  /// Seedance 2 Pro Alt jobs
+  #[serde(rename = "seedance2pro_alt")]
+  Seedance2ProAlt,
+
+  /// Seedance 2 Pro BytePlus Ultra jobs
+  #[serde(rename = "seedance2pro_bpu")]
+  Seedance2ProBytePlusUltra,
+
+  /// World Labs jobs
+  #[serde(rename = "worldlabs")]
+  Worldlabs,
+}
+
+// TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
+impl_enum_display_and_debug_using_to_str!(InferenceJobExternalThirdParty);
+impl_mysql_enum_coders!(InferenceJobExternalThirdParty);
+
+/// NB: Legacy API for older code.
+impl InferenceJobExternalThirdParty {
+  pub fn to_str(&self) -> &'static str {
+    match self {
+      Self::Beeble => "beeble",
+      Self::Fal => "fal",
+      Self::GmiCloud => "gmicloud",
+      Self::GrokApi => "grok_api",
+      Self::Seedance2Pro => "seedance2pro",
+      Self::Seedance2ProAlt => "seedance2pro_alt",
+      Self::Seedance2ProBytePlusUltra => "seedance2pro_bpu",
+      Self::Worldlabs => "worldlabs",
+    }
+  }
+
+  pub fn from_str(value: &str) -> Result<Self, String> {
+    match value {
+      "beeble" => Ok(Self::Beeble),
+      "fal" => Ok(Self::Fal),
+      "gmicloud" => Ok(Self::GmiCloud),
+      "grok_api" => Ok(Self::GrokApi),
+      "seedance2pro" => Ok(Self::Seedance2Pro),
+      "seedance2pro_alt" => Ok(Self::Seedance2ProAlt),
+      "seedance2pro_bpu" => Ok(Self::Seedance2ProBytePlusUltra),
+      "worldlabs" => Ok(Self::Worldlabs),
+      _ => Err(format!("invalid value: {:?}", value)),
+    }
+  }
+
+  pub fn all_variants() -> BTreeSet<Self> {
+    // NB: BTreeSet is sorted
+    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
+    BTreeSet::from([
+      Self::Beeble,
+      Self::Fal,
+      Self::GmiCloud,
+      Self::GrokApi,
+      Self::Seedance2Pro,
+      Self::Seedance2ProAlt,
+      Self::Seedance2ProBytePlusUltra,
+      Self::Worldlabs,
+    ])
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
+  use crate::test_helpers::assert_serialization;
+
+  mod explicit_checks {
+    use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(InferenceJobExternalThirdParty::Beeble, "beeble");
+      assert_serialization(InferenceJobExternalThirdParty::Fal, "fal");
+      assert_serialization(InferenceJobExternalThirdParty::GmiCloud, "gmicloud");
+      assert_serialization(InferenceJobExternalThirdParty::GrokApi, "grok_api");
+      assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
+      assert_serialization(InferenceJobExternalThirdParty::Seedance2ProAlt, "seedance2pro_alt");
+      assert_serialization(InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra, "seedance2pro_bpu");
+      assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
+    }
+
+    #[test]
+    fn to_str() {
+      assert_eq!(InferenceJobExternalThirdParty::Beeble.to_str(), "beeble");
+      assert_eq!(InferenceJobExternalThirdParty::Fal.to_str(), "fal");
+      assert_eq!(InferenceJobExternalThirdParty::GmiCloud.to_str(), "gmicloud");
+      assert_eq!(InferenceJobExternalThirdParty::GrokApi.to_str(), "grok_api");
+      assert_eq!(InferenceJobExternalThirdParty::Seedance2Pro.to_str(), "seedance2pro");
+      assert_eq!(InferenceJobExternalThirdParty::Seedance2ProAlt.to_str(), "seedance2pro_alt");
+      assert_eq!(InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra.to_str(), "seedance2pro_bpu");
+      assert_eq!(InferenceJobExternalThirdParty::Worldlabs.to_str(), "worldlabs");
+    }
+
+    #[test]
+    fn from_str() {
+      assert_eq!(InferenceJobExternalThirdParty::from_str("beeble").unwrap(), InferenceJobExternalThirdParty::Beeble);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("fal").unwrap(), InferenceJobExternalThirdParty::Fal);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("gmicloud").unwrap(), InferenceJobExternalThirdParty::GmiCloud);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("grok_api").unwrap(), InferenceJobExternalThirdParty::GrokApi);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro").unwrap(), InferenceJobExternalThirdParty::Seedance2Pro);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro_alt").unwrap(), InferenceJobExternalThirdParty::Seedance2ProAlt);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro_bpu").unwrap(), InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("worldlabs").unwrap(), InferenceJobExternalThirdParty::Worldlabs);
+    }
+
+    #[test]
+    fn all_variants() {
+      // Static check
+      const EXPECTED_COUNT : usize = 8;
+      
+      assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), EXPECTED_COUNT);
+      assert_eq!(InferenceJobExternalThirdParty::iter().len(), EXPECTED_COUNT);
+
+      // Generated check
+      use strum::IntoEnumIterator;
+      assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), InferenceJobExternalThirdParty::iter().len());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn variant_length() {
+      use strum::IntoEnumIterator;
+      assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), InferenceJobExternalThirdParty::iter().len());
+    }
+
+    #[test]
+    fn round_trip() {
+      for variant in InferenceJobExternalThirdParty::all_variants() {
+        assert_eq!(variant, InferenceJobExternalThirdParty::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, InferenceJobExternalThirdParty::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, InferenceJobExternalThirdParty::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH : usize = 16;
+      for variant in InferenceJobExternalThirdParty::all_variants() {
+        let serialized = variant.to_str();
+        assert!(serialized.len() > 0, "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+  }
+}

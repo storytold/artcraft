@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    UPDATE tasks\n    SET\n      task_status = ?,\n      on_complete_batch_token = ?,\n      on_complete_primary_media_file_token = ?,\n      on_complete_primary_media_file_class = ?,\n      on_complete_primary_media_file_cdn_url = ?,\n      on_complete_primary_media_file_thumbnail_url_template = ?\n    WHERE\n      provider = ?\n      AND provider_job_id = ?\n  ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "1e3758851fc8451670f86a9432009b73bdb81de4a08dcaa96a86afb5f9be7a68"
+}

@@ -1,0 +1,186 @@
+import React, { useRef, useLayoutEffect, useState } from "react";
+import { twMerge } from "tailwind-merge";
+import { Tooltip } from "@storyteller/ui-tooltip";
+
+export interface MenuIconItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  imageSrc?: string;
+  description?: string;
+  large?: boolean;
+  tooltipContent?: React.ReactNode;
+  tooltipInteractive?: boolean;
+  tooltipPosition?: "top" | "bottom" | "left" | "right";
+}
+
+interface MenuIconSelectorProps {
+  menuItems: MenuIconItem[];
+  activeMenu: string;
+  onMenuChange: (menuId: string) => void;
+  className?: string;
+  disabled?: boolean;
+  disabledMessage?: string;
+}
+
+export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
+  menuItems,
+  activeMenu,
+  onMenuChange,
+  className,
+  disabled,
+  disabledMessage,
+}) => {
+  const selectedIndex = menuItems.findIndex((item) => item.id === activeMenu);
+  const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
+  const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [activeStyle, setActiveStyle] = useState({ left: 0, width: 0 });
+  const [hoverStyle, setHoverStyle] = useState({ left: 0, width: 0 });
+
+  // Animate active background
+  useLayoutEffect(() => {
+    if (
+      selectedIndex >= 0 &&
+      itemsRef.current[selectedIndex] &&
+      containerRef.current
+    ) {
+      const current = itemsRef.current[selectedIndex];
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const currentRect = current!.getBoundingClientRect();
+      setActiveStyle({
+        left: currentRect.left - containerRect.left,
+        width: currentRect.width,
+      });
+    }
+  }, [selectedIndex, menuItems]);
+
+  // Animate hover background
+  useLayoutEffect(() => {
+    if (
+      hoveredIndex >= 0 &&
+      itemsRef.current[hoveredIndex] &&
+      containerRef.current
+    ) {
+      const current = itemsRef.current[hoveredIndex];
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const currentRect = current!.getBoundingClientRect();
+      setHoverStyle({
+        left: currentRect.left - containerRect.left,
+        width: currentRect.width,
+      });
+    }
+  }, [hoveredIndex, menuItems]);
+
+  // On activeMenu change, reset hoveredIndex if it matches
+  React.useEffect(() => {
+    setHoveredIndex(-1);
+  }, [selectedIndex]);
+
+  const MenuGroupElement = (
+    <div
+      className={twMerge(
+        "w-full flex items-center justify-center relative",
+        className,
+        disabled && "cursor-not-allowed opacity-60",
+      )}
+    >
+      <div
+        ref={containerRef}
+        className="relative flex gap-1 rounded-full px-1 py-0.5 min-w-max bg-ui-panel border border-ui-panel-border"
+        style={{ minWidth: 0 }}
+        onMouseLeave={() => setHoveredIndex(-1)}
+      >
+        {/* Active tab background */}
+        {selectedIndex >= 0 && (
+          <div
+            className="absolute z-10 rounded-full bg-primary/25 border-2 border-primary shadow-md transition-all duration-150 ease-in-out -ml-[1px]"
+            style={{
+              left: activeStyle.left,
+              width: activeStyle.width,
+              top: 4,
+              bottom: 4,
+            }}
+          />
+        )}
+        {/* Hover background (only if hovering a different tab) */}
+        {hoveredIndex !== -1 && hoveredIndex !== selectedIndex && (
+          <div
+            className="absolute z-20 rounded-full bg-primary/10 transition-all duration-150 ease-in-out pointer-events-none -ml-[1px]"
+            style={{
+              left: hoverStyle.left,
+              width: hoverStyle.width,
+              top: 4,
+              bottom: 4,
+            }}
+          />
+        )}
+        {menuItems.map((item, idx) => {
+          const content = item.tooltipContent ?? item.label;
+          const interactive = item.tooltipInteractive ?? false;
+          const position = item.tooltipPosition ?? "bottom";
+          const imageSrc = item.tooltipContent ? undefined : item.imageSrc;
+          const description = item.tooltipContent
+            ? undefined
+            : item.description;
+          return (
+            <Tooltip
+              // Include activeMenu in the key so the tooltip subtree remounts on
+              // tab change and starts closed. Without this, switching tabs while
+              // hovering leaves the trigger's pointerleave unfired and the tooltip
+              // gets stuck open until the user manually hovers + leaves.
+              key={`${item.id}-${activeMenu}`}
+              content={content}
+              position={position}
+              delay={100}
+              closeOnClick={true}
+              interactive={interactive}
+              disabled={disabled}
+              className={twMerge(
+                "text-sm font-semibold",
+                item.large && "text-md",
+              )}
+              imageSrc={imageSrc || undefined}
+              description={description || undefined}
+            >
+              <button
+                ref={(el) => {
+                  itemsRef.current[idx] = el;
+                }}
+                disabled={disabled}
+                onClick={() => !disabled && onMenuChange(item.id)}
+                onMouseEnter={() => setHoveredIndex(idx)}
+                className={twMerge(
+                  "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-full transition-all duration-150 text-base-fg",
+                  disabled ? "cursor-not-allowed opacity-60" : "",
+                )}
+                tabIndex={0}
+                type="button"
+              >
+                {item.icon}
+              </button>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {disabled && disabledMessage ? (
+        <Tooltip
+          content={disabledMessage}
+          position="bottom"
+          className="bg-transparent border-none"
+        >
+          {MenuGroupElement}
+        </Tooltip>
+      ) : (
+        MenuGroupElement
+      )}
+    </>
+  );
+};
+
+export default MenuIconSelector;

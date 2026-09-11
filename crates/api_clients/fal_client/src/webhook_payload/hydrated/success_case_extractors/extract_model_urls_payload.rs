@@ -1,0 +1,327 @@
+use serde_json::{Map, Value};
+
+use crate::webhook_payload::hydrated::hydrated_webhook_contents::ModelUrlsData;
+
+/// Extract and deserialize the `model_urls` key from a webhook success
+/// payload (e.g. Hunyuan 3D 3.0's per-format file map).
+pub(crate) fn extract_model_urls(obj: &Map<String, Value>) -> Option<ModelUrlsData> {
+  let value = obj.get("model_urls")?;
+  serde_json::from_value(value.clone()).ok()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::webhook_payload::hydrate_webhook_contents::hydrate_webhook_contents;
+  use crate::webhook_payload::hydrated::hydrated_webhook_contents::HydratedWebhookContents;
+  use crate::webhook_payload::raw::raw_webhook_payload::RawWebhookPayload;
+
+  fn load_test_webhook(filename: &str) -> RawWebhookPayload {
+    let path = format!("test_data/webhooks/{}", filename);
+    let json = std::fs::read_to_string(&path)
+      .unwrap_or_else(|e| panic!("Failed to read {}: {}", path, e));
+    serde_json::from_str(&json)
+      .unwrap_or_else(|e| panic!("Failed to parse {}: {}", path, e))
+  }
+
+  #[test]
+  fn model_urls_from_hunyuan_3d_3p0_test_file() {
+    let webhook = load_test_webhook("success/hunyuan_3d_3p0_model_urls_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    let glb = contents.model_glb.expect("model_glb should be Some");
+    assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1b969/k5FZWmTsKxHH71404bBR__model.glb"));
+    assert_eq!(glb.content_type.as_deref(), Some("model/gltf-binary"));
+    assert_eq!(glb.file_name.as_deref(), Some("model.glb"));
+    assert_eq!(glb.file_size, Some(51001160));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // The `glb` slot duplicates `model_glb` in this payload (same URL).
+    let urls_glb = model_urls.glb.expect("model_urls.glb should be Some");
+    assert_eq!(urls_glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1b969/k5FZWmTsKxHH71404bBR__model.glb"));
+
+    let urls_obj = model_urls.obj.expect("model_urls.obj should be Some");
+    assert_eq!(urls_obj.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1b968/xngvKxLugXUlNh89Fp0K4_model.obj"));
+    assert_eq!(urls_obj.content_type.as_deref(), Some("text/plain"));
+    assert_eq!(urls_obj.file_name.as_deref(), Some("model.obj"));
+    assert_eq!(urls_obj.file_size, Some(41107268));
+
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.mtl.is_none());
+    assert!(model_urls.texture.is_none());
+    assert!(model_urls.usdz.is_none());
+
+    let thumbnail = contents.thumbnail.expect("thumbnail should be Some");
+    assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1b969/EPgha8Kee7YZCAccjFUU7_preview.png"));
+    assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+    assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+    assert_eq!(thumbnail.file_size, Some(136476));
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.model_mesh.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
+  fn model_urls_and_thumbnail_from_hunyuan_3d_3p1_test_file() {
+    let webhook = load_test_webhook("success/hunyuan_3d_3p1_model_urls_thumbnail_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    let glb = contents.model_glb.expect("model_glb should be Some");
+    assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1ba44/OdgIv8M9EkaBP_Mh4TVAB_model.glb"));
+    assert_eq!(glb.content_type.as_deref(), Some("model/gltf-binary"));
+    assert_eq!(glb.file_name.as_deref(), Some("model.glb"));
+    assert_eq!(glb.file_size, Some(64261364));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // The `glb` slot duplicates `model_glb` in this payload (same URL).
+    let urls_glb = model_urls.glb.expect("model_urls.glb should be Some");
+    assert_eq!(urls_glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1ba44/OdgIv8M9EkaBP_Mh4TVAB_model.glb"));
+
+    let urls_obj = model_urls.obj.expect("model_urls.obj should be Some");
+    assert_eq!(urls_obj.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1ba43/WxPMNbzsDxaGRCmGNgNAL_c3a871e997ecd5f889bf671630de23b4.obj"));
+    assert_eq!(urls_obj.content_type.as_deref(), Some("model/obj"));
+    assert_eq!(urls_obj.file_size, Some(34563830));
+
+    // 3.1 additionally ships the OBJ's material and PBR texture files.
+    let urls_mtl = model_urls.mtl.expect("model_urls.mtl should be Some");
+    assert_eq!(urls_mtl.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1ba42/1T5VCp_xD0zCJlTLE96iK_material.mtl"));
+    assert_eq!(urls_mtl.content_type.as_deref(), Some("text/plain"));
+    assert_eq!(urls_mtl.file_name.as_deref(), Some("material.mtl"));
+    assert_eq!(urls_mtl.file_size, Some(245));
+
+    let urls_texture = model_urls.texture.expect("model_urls.texture should be Some");
+    assert_eq!(urls_texture.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1ba43/aKp3mMB9nrhlKfV2KVf0S_texture_pbr_20250901.png"));
+    assert_eq!(urls_texture.content_type.as_deref(), Some("image/png"));
+    assert_eq!(urls_texture.file_name.as_deref(), Some("texture_pbr_20250901.png"));
+    assert_eq!(urls_texture.file_size, Some(22794575));
+
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.usdz.is_none());
+
+    // The thumbnail is attached to the GLB as its cover image downstream.
+    let thumbnail = contents.thumbnail.expect("thumbnail should be Some");
+    assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1ba44/njq8zYhYahJNNQkGGiEZW_preview.png"));
+    assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+    assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+    assert_eq!(thumbnail.file_size, Some(141254));
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.model_mesh.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
+  fn obj_and_thumbnail_from_hunyuan_3d_3p1_rapid_test_file() {
+    let webhook = load_test_webhook("success/hunyuan_3d_3p1_rapid_obj_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    // NB: Hunyuan 3D 3.1 Rapid puts an OBJ under the `model_glb` key. The
+    // key name doesn't matter downstream: the webhook handler resolves the
+    // real file type from content_type / file name, so it uploads as an OBJ
+    // mesh.
+    let glb = contents.model_glb.expect("model_glb should be Some");
+    assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/22zStkYp8-q6npG9dsMs5_23dce35fc95b34722f15a7329061d5df.obj"));
+    assert_eq!(glb.content_type.as_deref(), Some("model/obj"));
+    assert_eq!(glb.file_name.as_deref(), Some("23dce35fc95b34722f15a7329061d5df.obj"));
+    assert_eq!(glb.file_size, Some(3258750));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // The `glb` slot is null here; `obj` duplicates `model_glb` (same URL).
+    assert!(model_urls.glb.is_none());
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.usdz.is_none());
+
+    let urls_obj = model_urls.obj.expect("model_urls.obj should be Some");
+    assert_eq!(urls_obj.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/22zStkYp8-q6npG9dsMs5_23dce35fc95b34722f15a7329061d5df.obj"));
+    assert_eq!(urls_obj.content_type.as_deref(), Some("model/obj"));
+    assert_eq!(urls_obj.file_size, Some(3258750));
+
+    let urls_mtl = model_urls.mtl.expect("model_urls.mtl should be Some");
+    assert_eq!(urls_mtl.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/5cbE-q28i44GUOO6YeZPH_material.mtl"));
+    assert_eq!(urls_mtl.file_size, Some(229));
+
+    let urls_texture = model_urls.texture.expect("model_urls.texture should be Some");
+    assert_eq!(urls_texture.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/7eBRddTHf6U8SUg2QOIHw_texture_pbr_v128.png"));
+    assert_eq!(urls_texture.file_name.as_deref(), Some("texture_pbr_v128.png"));
+    assert_eq!(urls_texture.file_size, Some(5503289));
+
+    // The thumbnail is attached to the mesh as its cover image downstream.
+    let thumbnail = contents.thumbnail.expect("thumbnail should be Some");
+    assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/IO3aspD4ijEadoFxSF504_preview.png"));
+    assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+    assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+    assert_eq!(thumbnail.file_size, Some(120530));
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.model_mesh.is_none());
+    assert!(contents.model_obj.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
+  fn model_urls_and_rendered_image_from_tripo3d_test_file() {
+    let webhook = load_test_webhook("success/tripo3d_model_urls_rendered_image_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    // Tripo 3D sends its GLB under `model_mesh` (not `model_glb`); the
+    // webhook handler picks `model_urls.glb` as the primary GLB instead.
+    assert!(contents.model_glb.is_none());
+    let mesh = contents.model_mesh.expect("model_mesh should be Some");
+    assert_eq!(mesh.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbdb/d8ATWvvXYHY-8zj-lQecf_model.glb"));
+    assert_eq!(mesh.content_type.as_deref(), Some("model/gltf-binary"));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // `glb` and `pbr_model` duplicate each other (same URL) in this payload;
+    // the webhook handler dedupes by URL and uploads the file only once.
+    let urls_glb = model_urls.glb.expect("model_urls.glb should be Some");
+    assert_eq!(urls_glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbdb/d8ATWvvXYHY-8zj-lQecf_model.glb"));
+    assert_eq!(urls_glb.file_size, Some(43981280));
+
+    let urls_pbr_model = model_urls.pbr_model.expect("model_urls.pbr_model should be Some");
+    assert_eq!(urls_pbr_model.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbdb/d8ATWvvXYHY-8zj-lQecf_model.glb"));
+
+    assert!(model_urls.base_model.is_none());
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.mtl.is_none());
+    assert!(model_urls.obj.is_none());
+    assert!(model_urls.texture.is_none());
+    assert!(model_urls.usdz.is_none());
+
+    // The preview arrives as `rendered_image` (no `thumbnail` key) and is
+    // attached to the mesh as its cover image downstream.
+    let rendered_image = contents.rendered_image.expect("rendered_image should be Some");
+    assert_eq!(rendered_image.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbd0/MblV2S5R6CeskRABMS7-V_preview.png"));
+    assert!(contents.thumbnail.is_none());
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
+  fn model_urls_and_thumbnail_from_meshy_test_file() {
+    let webhook = load_test_webhook("success/meshy_model_urls_thumbnail_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    let glb = contents.model_glb.expect("model_glb should be Some");
+    assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbe1/0vrf9NUhVxKZO4GScA0EI_model.glb"));
+    assert_eq!(glb.content_type.as_deref(), Some("model/gltf-binary"));
+    assert_eq!(glb.file_name.as_deref(), Some("model.glb"));
+    assert_eq!(glb.file_size, Some(15943768));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // The `glb` slot duplicates `model_glb` (same URL); the webhook handler
+    // dedupes by URL so the file uploads only once.
+    let urls_glb = model_urls.glb.expect("model_urls.glb should be Some");
+    assert_eq!(urls_glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbe1/0vrf9NUhVxKZO4GScA0EI_model.glb"));
+
+    // Alternate formats of the same model; parsed but not uploaded.
+    let urls_fbx = model_urls.fbx.expect("model_urls.fbx should be Some");
+    assert_eq!(urls_fbx.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbed/yKO-HOjBnWA-LZpRLHHSB_model.fbx"));
+    assert_eq!(urls_fbx.file_size, Some(13665964));
+
+    let urls_obj = model_urls.obj.expect("model_urls.obj should be Some");
+    assert_eq!(urls_obj.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbe2/NBmqIWBS8LuY_BPYWkOOf_model.obj"));
+
+    let urls_stl = model_urls.stl.expect("model_urls.stl should be Some");
+    assert_eq!(urls_stl.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbe2/3wtOE6iEeVHZFvwAGN6Rl_model.stl"));
+    assert_eq!(urls_stl.content_type.as_deref(), Some("application/octet-stream"));
+    assert_eq!(urls_stl.file_size, Some(1508384));
+
+    let urls_usdz = model_urls.usdz.expect("model_urls.usdz should be Some");
+    assert_eq!(urls_usdz.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbed/BsniPBo6Uev85V4hLFACR_model.usdz"));
+    assert_eq!(urls_usdz.content_type.as_deref(), Some("model/vnd.usdz+zip"));
+
+    assert!(model_urls.base_model.is_none());
+    assert!(model_urls.blend.is_none());
+    assert!(model_urls.mtl.is_none());
+    assert!(model_urls.pbr_model.is_none());
+    assert!(model_urls.texture.is_none());
+
+    // The thumbnail is attached to the GLB as its cover image downstream.
+    let thumbnail = contents.thumbnail.expect("thumbnail should be Some");
+    assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbe3/tn1qfOr12oGXecA4mRtlI_preview.png"));
+    assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+    assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+    assert_eq!(thumbnail.file_size, Some(192910));
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.model_mesh.is_none());
+    assert!(contents.rendered_image.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
+  fn synthetic_model_urls_payload_with_distinct_glb() {
+    let obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(r#"{
+      "model_urls": {
+        "fbx": null,
+        "glb": {
+          "url": "https://cdn.example.com/model_alt.glb",
+          "content_type": "model/gltf-binary",
+          "file_name": "model_alt.glb",
+          "file_size": 1234567
+        },
+        "obj": null,
+        "usdz": null
+      }
+    }"#).unwrap();
+
+    let model_urls = extract_model_urls(&obj).expect("should extract model_urls");
+    let glb = model_urls.glb.expect("glb slot should be Some");
+    assert_eq!(glb.url.as_deref(), Some("https://cdn.example.com/model_alt.glb"));
+    assert_eq!(glb.file_size, Some(1234567));
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.obj.is_none());
+    assert!(model_urls.usdz.is_none());
+  }
+
+  #[test]
+  fn missing_model_urls_key_returns_none() {
+    let obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(r#"{
+      "model_glb": {"url": "https://example.com/model.glb"}
+    }"#).unwrap();
+
+    assert!(extract_model_urls(&obj).is_none());
+  }
+}

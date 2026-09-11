@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .filter-tab {
+    @apply text-nowrap rounded-lg border border-[#363636] bg-ui-controls-button px-2.5 py-1 text-[13px] font-medium text-white/80 transition-all duration-150 hover:border-brand-primary/50 hover:bg-assets-background/80;
+  }
+
+  .filter-tab.active {
+    @apply border border-brand-primary text-white hover:border-brand-primary hover:bg-ui-controls-button;
+  }
+
+  .filter-tab:disabled {
+    @apply border-transparent bg-ui-controls-button/50 hover:border-transparent disabled:text-white/30;
+  }
+
+  .glass {
+    @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
+    @apply bg-[#303032]/90 !important;
+  }
+
+  /* Light theme: the glass surface must be a light panel, not the dark
+     hard-coded fill above. Tint + border swapped to read on a light bg. */
+  .theme-light .glass {
+    @apply border-black/10 !important;
+    background-color: rgb(248 248 248 / 0.92) !important;
+  }
+}
+
+/* Lucide icons ship with a fixed 24px default; size them relative to the
+   surrounding font so they scale with text like the previous icons did.
+   1.2em (not 1em) because Lucide draws glyphs on a 20px grid inside a 24px
+   viewBox — the extra 20% makes the visible mark fill a full 1em, matching
+   the old solid-glyph sizing. Explicit w-/h-/size- utilities still win
+   (the utilities layer is emitted later). */
+@layer base {
+  .lucide {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -0.2em;
+  }
+}

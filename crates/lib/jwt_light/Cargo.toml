@@ -1,0 +1,23 @@
+[package]
+name = "jwt_light"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "jwt_light"
+path = "src/lib.rs"
+
+[dependencies]
+
+
+# Internal
+# (None)
+
+# External
+base64.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+# (None)

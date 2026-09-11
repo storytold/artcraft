@@ -1,0 +1,35 @@
+[package]
+name = "midjourney_client"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "midjourney_client"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+cloudflare_errors.workspace = true
+cookie_store.workspace = true
+errors.workspace = true
+
+# External
+anyhow.workspace = true
+futures.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { version = "1", features = ["full"] }
+url.workspace = true
+wreq-util.workspace = true
+wreq.workspace = true
+
+# NB: We need to parse HTML to get out the websocket token
+dom_query = "0.20.2"
+
+[dev-dependencies]
+filesys.workspace = true
+test_data.workspace = true
+test_utils.workspace = true

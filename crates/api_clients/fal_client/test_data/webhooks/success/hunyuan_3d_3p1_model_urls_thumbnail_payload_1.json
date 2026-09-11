@@ -1,0 +1,49 @@
+{
+  "error": null,
+  "gateway_request_id": "019f4d79-35fd-7462-85be-359c8232f56e",
+  "payload": {
+    "model_glb": {
+      "content_type": "model/gltf-binary",
+      "file_name": "model.glb",
+      "file_size": 64261364,
+      "url": "https://v3b.fal.media/files/b/0aa1ba44/OdgIv8M9EkaBP_Mh4TVAB_model.glb"
+    },
+    "model_urls": {
+      "fbx": null,
+      "glb": {
+        "content_type": "model/gltf-binary",
+        "file_name": "model.glb",
+        "file_size": 64261364,
+        "url": "https://v3b.fal.media/files/b/0aa1ba44/OdgIv8M9EkaBP_Mh4TVAB_model.glb"
+      },
+      "mtl": {
+        "content_type": "text/plain",
+        "file_name": "material.mtl",
+        "file_size": 245,
+        "url": "https://v3b.fal.media/files/b/0aa1ba42/1T5VCp_xD0zCJlTLE96iK_material.mtl"
+      },
+      "obj": {
+        "content_type": "model/obj",
+        "file_name": "c3a871e997ecd5f889bf671630de23b4.obj",
+        "file_size": 34563830,
+        "url": "https://v3b.fal.media/files/b/0aa1ba43/WxPMNbzsDxaGRCmGNgNAL_c3a871e997ecd5f889bf671630de23b4.obj"
+      },
+      "texture": {
+        "content_type": "image/png",
+        "file_name": "texture_pbr_20250901.png",
+        "file_size": 22794575,
+        "url": "https://v3b.fal.media/files/b/0aa1ba43/aKp3mMB9nrhlKfV2KVf0S_texture_pbr_20250901.png"
+      },
+      "usdz": null
+    },
+    "seed": null,
+    "thumbnail": {
+      "content_type": "image/png",
+      "file_name": "preview.png",
+      "file_size": 141254,
+      "url": "https://v3b.fal.media/files/b/0aa1ba44/njq8zYhYahJNNQkGGiEZW_preview.png"
+    }
+  },
+  "request_id": "019f4d79-35fd-7462-85be-359c8232f56e",
+  "status": "OK"
+}

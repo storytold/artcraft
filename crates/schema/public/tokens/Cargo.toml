@@ -1,0 +1,46 @@
+[package]
+name = "tokens"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "tokens"
+path = "src/lib.rs"
+
+[features]
+default = []
+database = ["sqlx", "sqlx-core", "sqlx-mysql"]
+
+[dependencies]
+
+# Internal
+# (none)
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+
+# Random
+rand = {  version = "0.8.5", features = ["std_rng"] }
+
+once_cell.workspace = true
+
+# Database conversion of enum types is optional
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ], optional = true }
+sqlx-core = { version = "0.7.4", optional = true }
+sqlx-mysql= { version = "0.7.4", optional = true }
+
+utoipa.workspace = true
+
+[dev-dependencies]
+
+# Enum utilities
+strum.workspace = true
+
+# Test serialization
+serde_json.workspace = true

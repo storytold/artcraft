@@ -1,0 +1,19 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019f4d0e-3f44-7ed1-bb12-f2f834bdde7b",
+  "payload": {
+    "detail": [
+      {
+        "input": "https://cdn-2.fakeyou.com/media/f/d/6/f/6/fd6f6czv21gkrdqhptz6nj072wh7w06y/artcraft_fd6f6czv21gkrdqhptz6nj072wh7w06y.png",
+        "loc": [
+          "body"
+        ],
+        "msg": "No foreground subject could be detected in the input image after background removal. Provide an image with a clear, visible subject against a plain or distinct background.",
+        "type": "input_value_error",
+        "url": "https://docs.fal.ai/errors#input_value_error"
+      }
+    ]
+  },
+  "request_id": "019f4d0e-3f44-7ed1-bb12-f2f834bdde7b",
+  "status": "ERROR"
+}

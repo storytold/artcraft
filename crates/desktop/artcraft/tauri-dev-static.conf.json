@@ -1,0 +1,13 @@
+{
+  "build": {
+    "frontendDist": "../../../frontend/apps/artcraft/dist",
+    "beforeDevCommand": "echo 'this is static development; no live reload'",
+    "beforeBuildCommand": "echo 'this is static development; no live reload'",
+    "devUrl": null
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+    ]
+  }
+}

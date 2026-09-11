@@ -1,0 +1,14 @@
+pub mod add_media_file_tags;
+pub mod bulk_add_tags;
+pub mod bulk_list_media_file_tags;
+pub mod bulk_set_tags;
+pub mod clear_media_file_tags;
+pub mod common;
+pub mod delete_tag;
+pub mod list_media_file_tags;
+pub mod list_media_files_with_tag;
+pub mod list_tagged_media_files;
+pub mod list_tags;
+pub mod list_untagged_media_files;
+pub mod rename_tag;
+pub mod set_media_file_tags;

@@ -1,0 +1,28 @@
+[package]
+name = "images"
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "images" crate doesn't exist; "image" crate is the heavily used public library,
+# so perhaps this naming scheme causes confusion (?)
+name = "images"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+errors = { workspace = true}
+mimetypes = { workspace = true }
+
+# External
+image = { version = "0.25.6" , features = ["jpeg", "png", "tiff", "webp"] }
+
+[dev-dependencies]
+anyhow = { workspace = true }
+test_utils = { path = "../../../testing/test_utils" }

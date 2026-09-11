@@ -1,0 +1,21 @@
+[package]
+name = "cloudflare_mitigation"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "cloudflare_mitigation"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+# (None)
+
+# External
+once_cell.workspace = true
+wreq.workspace = true
+
+[dev-dependencies]
+# (None)

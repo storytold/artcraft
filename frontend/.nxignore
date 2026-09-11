@@ -1,0 +1,8 @@
+# The admin dashboard is intentionally isolated from the Nx/npm workspace.
+#
+# It pins its own incompatible toolchain (React 19, Vite 7, Tailwind 4) and
+# installs with pnpm into its own node_modules. Nx must NOT infer it as a
+# project — otherwise `nx run-many`/`nx affected` would try to build it with the
+# workspace's React 18 toolchain and root node_modules. It builds standalone
+# (see apps/artcraft-dashboard/netlify.toml).
+apps/artcraft-dashboard

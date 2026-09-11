@@ -1,0 +1,25 @@
+[
+  {
+    "error": {
+      "json": {
+        "message": "credits not enough",
+        "code": -32600,
+        "data": {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "path": "workflow.runTask",
+          "zodError": null
+        },
+        "stack": null
+      },
+      "meta": {
+        "values": {
+          "stack": [
+            "undefined"
+          ]
+        },
+        "v": 1
+      }
+    }
+  }
+]

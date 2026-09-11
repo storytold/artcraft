@@ -1,0 +1,23 @@
+export const FKBoneBlacklistStrings = [
+  "def",
+  "toe_end",
+  "thumb",
+  "index",
+  "handmiddle",
+  "handring",
+  "pinky",
+  "headtop",
+  "-ear",
+  "teeth",
+  "eye",
+  "lid",
+  "jaw",
+  "tongue",
+  "lip",
+  "chin",
+  "brow",
+  "cheek",
+  "forehead",
+  "nose",
+  "temple"
+];

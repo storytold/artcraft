@@ -1,0 +1,40 @@
+[package]
+name = "artcraft_router"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "artcraft_router"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+artcraft_api_defs.workspace = true
+enums.workspace = true
+artcraft_client.workspace = true
+fal_client.workspace = true
+gmicloud_client.workspace = true
+grok_api_client.workspace = true
+kinovi_web_client.workspace = true
+tokens.workspace = true
+url_utils.workspace = true
+worldlabs_api_client.workspace = true
+
+# External
+anyhow.workspace = true
+log.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+wreq.workspace = true
+serde_derive.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+test_data.workspace = true
+test_utils.workspace = true
+strum.workspace = true
+serde_json.workspace = true
+

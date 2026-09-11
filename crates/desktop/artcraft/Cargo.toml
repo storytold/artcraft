@@ -1,0 +1,100 @@
+[package]
+name = "artcraft"
+version = "0.0.1"
+description = "Artcraft"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+publish = false
+
+# [lints.rust]
+# unused_imports = "forbid"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "artcraft_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.2", features = [] }
+
+[dependencies]
+
+# Internal
+artcraft_api_defs.workspace = true
+artcraft_client.workspace = true
+artcraft_router.workspace = true
+build_metadata.workspace = true
+cookie_store.workspace = true
+enums.workspace = true
+errors.workspace = true
+fal_client.workspace = true
+filesys.workspace = true
+grok_consumer_client.workspace = true
+uuid_utils.workspace = true
+images.workspace = true
+memory_store.workspace = true
+midjourney_client.workspace = true
+mimetypes.workspace = true
+openai_sora_client.workspace = true
+primitives.workspace = true
+sqlite_tasks.workspace = true
+tokens.workspace = true
+url_utils.workspace = true
+web_base64.workspace = true
+worldlabs_consumer_client.workspace = true
+
+# External
+anyhow.workspace = true
+base64.workspace = true
+bytes = "1.10.1"
+chrono.workspace = true
+directories = "6.0.0"
+dirs = "6.0.0"
+discord-rich-presence = "1.1.0"
+futures = "0.3"
+image = "0.25.5"
+indexmap.workspace = true
+log.workspace = true
+once_cell.workspace = true
+os_info = { version = "3.12.0", default-features = false }
+rand.workspace = true
+reqwest = { workspace = true, features = ["multipart", "stream"], default-features = false } # NB(bt,2025-03-10): default-features = false on Windows while I debug openssl / rustls
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+tauri-plugin-dialog.workspace = true
+tauri-plugin-log.workspace = true
+tauri-plugin-upload.workspace = true
+tauri.workspace = true
+tempdir.workspace = true
+tempfile.workspace = true
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "fs"] }
+tokio-util.workspace = true
+url.workspace = true
+
+# NB: We need to vendor this in so that we can access the cookies inside via the private API
+tauri-plugin-http = { path = "../../vendor/tauri-plugin-http" }
+tauri-plugin-opener = "2"
+
+# # Transparent title bar on MacOS
+# # NB: See the notes here:
+# # https://v2.tauri.app/learn/window-customization/
+# [target."cfg(target_os = \"macos\")".dependencies]
+# cocoa = "0.26"
+
+[dev-dependencies]
+serial_test = "3.2.0"
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = 3 # `s` prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.

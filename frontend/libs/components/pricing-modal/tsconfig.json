@@ -1,0 +1,46 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../../state/subscription"
+    },
+    {
+      "path": "../tab-selector"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../select"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../model-selector"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../promptbox"
+    },
+    {
+      "path": "../../api-enums"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

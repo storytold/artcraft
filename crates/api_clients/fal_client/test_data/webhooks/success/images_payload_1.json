@@ -1,0 +1,26 @@
+{
+  "error": null,
+  "gateway_request_id": "11111111-2222-3333-4444-555555555555",
+  "payload": {
+    "images": [
+      {
+        "content_type": "image/png",
+        "file_name": "name1.png",
+        "file_size": 11500002,
+        "height": null,
+        "url": "https://v3b.fal.media/files/b/01234567/name1.png",
+        "width": null
+      },
+      {
+        "content_type": "image/png",
+        "file_name": "name2.png",
+        "file_size": 13499999,
+        "height": null,
+        "url": "https://v3b.fal.media/files/b/01234567/name2.png",
+        "width": null
+      }
+    ]
+  },
+  "request_id": "11111111-2222-3333-4444-555555555555",
+  "status": "OK"
+}

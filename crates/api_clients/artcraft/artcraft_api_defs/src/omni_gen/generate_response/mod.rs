@@ -1,0 +1,5 @@
+pub mod omni_gen_audio_generate_response;
+pub mod omni_gen_image_generate_response;
+pub mod omni_gen_mesh_generate_response;
+pub mod omni_gen_splat_generate_response;
+pub mod omni_gen_video_generate_response;

@@ -1,0 +1,13 @@
+pub mod aspect_ratio_to_artcraft_flux_1_dev;
+pub mod router_aspect_ratio_to_enums_aspect_ratio;
+pub mod aspect_ratio_to_artcraft_flux_1_schnell;
+pub mod aspect_ratio_to_artcraft_flux_pro_1p1;
+pub mod aspect_ratio_to_artcraft_flux_pro_1p1_ultra;
+pub mod aspect_ratio_to_artcraft_gpt_image_1;
+pub mod aspect_ratio_to_artcraft_gpt_image_1p5;
+pub mod aspect_ratio_to_artcraft_nano_banana;
+pub mod aspect_ratio_to_artcraft_nano_banana_pro;
+pub mod aspect_ratio_to_artcraft_seedream_4;
+pub mod aspect_ratio_to_artcraft_seedream_4p5;
+pub mod aspect_ratio_to_grok_image;
+pub mod aspect_ratio_to_sora_native_gpt_image_1;

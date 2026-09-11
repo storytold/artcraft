@@ -1,0 +1,86 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    SELECT\n      id,\n      task_status,\n      task_type,\n      model_type,\n      provider,\n      provider_job_id,\n      frontend_caller,\n      queue_status_url,\n      queue_response_url,\n      prompt_token,\n      frontend_subscriber_id,\n      frontend_subscriber_payload\n    FROM tasks\n    WHERE\n      provider = ?\n      AND provider_job_id = ?\n  ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "task_status",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "task_type",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "model_type",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "provider",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "provider_job_id",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "frontend_caller",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "queue_status_url",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "queue_response_url",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "prompt_token",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "frontend_subscriber_id",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "frontend_subscriber_payload",
+        "ordinal": 11,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "35677894f7b02f32a1bf6396fa6d10caba69bb0f3f03ee7ffbfa1437689d42df"
+}

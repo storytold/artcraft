@@ -1,0 +1,2 @@
+pub mod flux_dev_juggernaut_inpaint_image;
+pub mod flux_pro_1_inpaint_image;

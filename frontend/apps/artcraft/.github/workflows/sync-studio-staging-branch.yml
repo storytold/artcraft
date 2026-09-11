@@ -1,0 +1,33 @@
+# This action syncs "studio-staging" with "main" by force pushing every time it is run.
+# Adapted from: 
+# https://github.community/t/user-github-pages-site-auto-deploy-from-another-branch-on-push/17912/2
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync_studio_staging_branch:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: checkout main branch
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: sync main to studio-staging
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git checkout -b studio-staging
+      - name: push changes
+        uses: ad-m/github-push-action@0fafdd62b84042d49ec0cb92d9cac7f7ce4ec79e
+        with:
+          # Note: Github does not allow the default access token to push to 
+          # protected branches. Using a PAT with permissions can bypass this, 
+          # but it triggers recursive Github Actions calls on branch updates
+          # (which the default access token does not). Ultimately, it's better
+          # to leave the studio-staging branch unprotected.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: studio-staging
+          force: true
+

@@ -1,0 +1,76 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../slider-v2"
+    },
+    {
+      "path": "../../omni-gen"
+    },
+    {
+      "path": "../../analytics/google-analytics"
+    },
+    {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../camera-settings-modal"
+    },
+    {
+      "path": "../button-icon-select"
+    },
+    {
+      "path": "../../tauri-utils"
+    },
+    {
+      "path": "../../api-enums"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../../common"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../action-reminder-modal"
+    },
+    {
+      "path": "../label"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../gallery-modal"
+    },
+    {
+      "path": "../toaster"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../../icons"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

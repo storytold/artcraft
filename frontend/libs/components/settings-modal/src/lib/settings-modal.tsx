@@ -1,0 +1,202 @@
+import { Modal } from "@storyteller/ui-modal";
+import { useEffect, useState } from "react";
+import { CreditCardIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
+import { DynamicIcon } from "@storyteller/icons";
+import { twMerge } from "tailwind-merge";
+import { KeybindsSettings } from "@storyteller/keybinds";
+import { MiscSettingsPane } from "./panes/MiscSettingsPane";
+import { AudioSettingsPane } from "./panes/AudioSettingsPane";
+import { AccountSettingsPane } from "./panes/AccountSettings/AccountSettingsPane";
+import { AboutSettingsPane } from "./panes/AboutSettingsPane";
+import { ProviderPrioritySettingsPane } from "./panes/ProviderPrioritySettingsPane";
+import { ExperimentalSettingsPane } from "./panes/ExperimentalSettingsPane";
+import { gtagEvent } from "@storyteller/google-analytics";
+import { BillingSettingsPane } from "./panes/BillingSettingsPane";
+import { AppearanceSettingsPane } from "./panes/AppearanceSettingsPane";
+import { Button } from "@storyteller/ui-button";
+import { useExperimentalStore } from "./experimental-store";
+import { ExperimentalConfirmModal } from "./ExperimentalConfirmModal";
+
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  globalAccountLogoutCallback: () => void;
+  onStoryboardPageDisable?: () => void;
+  initialSection?: SettingsSection;
+}
+
+type SettingsSection =
+  | "general"
+  | "appearance"
+  | "keybinds"
+  | "accounts"
+  | "alerts"
+  | "about"
+  | "provider_priority"
+  | "billing"
+  | "experimental";
+
+export const SettingsModal = ({
+  isOpen,
+  onClose,
+  globalAccountLogoutCallback,
+  onStoryboardPageDisable,
+  initialSection = "general",
+}: SettingsModalProps) => {
+  const [selectedSection, setSelectedSection] =
+    useState<SettingsSection>(initialSection);
+
+  const experimentalEnabled = useExperimentalStore((s) => s.enabled);
+  const disableExperimental = useExperimentalStore((s) => s.disable);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
+  // Sync the selected section with incoming prop when modal opens or prop changes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedSection(initialSection);
+    }
+  }, [isOpen, initialSection]);
+
+  // If experimental gets disabled while user is on that pane, fall back to General
+  useEffect(() => {
+    if (!experimentalEnabled && selectedSection === "experimental") {
+      setSelectedSection("general");
+    }
+  }, [experimentalEnabled, selectedSection]);
+
+  const sections = [
+    { id: "general" as const, label: "General", icon: SettingsIcon },
+
+    { id: "accounts" as const, label: "Accounts", icon: UserIcon },
+    { id: "billing" as const, label: "Plan & Credits", icon: CreditCardIcon },
+
+    /* {
+      id: "provider_priority" as const,
+      label: "Provider Priority",
+      icon: RouteIcon,
+    }, */
+    { id: "appearance" as const, label: "Appearance", icon: PaletteIcon },
+    { id: "keybinds" as const, label: "Keybinds", icon: KeyboardIcon },
+    { id: "alerts" as const, label: "Alerts", icon: Volume2Icon },
+    { id: "about" as const, label: "About", icon: InfoIcon },
+    //{ id: "video" as const, label: "Video", icon: VideoIcon },
+    //{ id: "image" as const, label: "Image", icon: ImageIcon },
+    ...(experimentalEnabled
+      ? [{ id: "experimental" as const, label: "Experimental", icon: FlaskConicalIcon }]
+      : []),
+  ];
+
+  const renderContent = () => {
+    switch (selectedSection) {
+      case "appearance":
+        return <AppearanceSettingsPane />;
+      case "keybinds":
+        return <KeybindsSettings />;
+      case "alerts":
+        return <AudioSettingsPane />;
+      case "general":
+        return <MiscSettingsPane />;
+      case "accounts":
+        return (
+          <AccountSettingsPane
+            globalAccountLogoutCallback={globalAccountLogoutCallback}
+          />
+        );
+      case "about":
+        return <AboutSettingsPane />;
+      case "provider_priority":
+        return <ProviderPrioritySettingsPane />;
+      case "billing":
+        return <BillingSettingsPane />;
+      case "experimental":
+        return (
+          <ExperimentalSettingsPane
+            onStoryboardPageDisable={onStoryboardPageDisable}
+          />
+        );
+    }
+  };
+
+  const handleConfirmReset = () => {
+    disableExperimental();
+    gtagEvent("reset_experimental_menu", {});
+    setIsResetConfirmOpen(false);
+  };
+
+  return (
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        className="max-w-3xl"
+        childPadding={false}
+      >
+        <div className="h-[560px]">
+          <div className="grid h-full grid-cols-12 gap-3">
+            <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
+              <div className="flex items-center justify-between gap-2.5 py-0.5">
+                <h2 className="text-[18px] font-semibold opacity-80">Settings</h2>
+              </div>
+              <hr className="my-2 w-full border-ui-panel-border" />
+              <div className="space-y-1">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    className={twMerge(
+                      "h-9 w-full rounded-lg p-2 text-left transition-colors duration-100 hover:bg-[#63636B]/30",
+                      section.id === selectedSection ? "bg-[#63636B]/20" : ""
+                    )}
+                    onClick={() => {
+                      gtagEvent("switch_settings_section", {
+                        section: section.id,
+                      });
+                      setSelectedSection(section.id);
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5 text-sm">
+                      <DynamicIcon icon={section.icon} />
+                      {section.label}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="col-span-8 flex h-full flex-col overflow-y-auto relative">
+              <div className="w-full border-b border-ui-panel-border py-2.5 ps-0">
+                <h2 className="text-[18px] font-semibold">
+                  {sections.find((s) => s.id === selectedSection)?.label}
+                </h2>
+              </div>
+              {experimentalEnabled && selectedSection === "experimental" && (
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ui-panel-border bg-ui-modal/95 backdrop-blur px-3 py-2">
+                  <div className="flex items-center gap-2 text-xs opacity-80">
+                    <FlaskConicalIcon />
+                    Experimental features enabled
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setIsResetConfirmOpen(true)}
+                    className="px-2 py-1 text-xs"
+                  >
+                    Reset
+                  </Button>
+                </div>
+              )}
+              <div className="p-3 ps-0 text-sm h-full">{renderContent()}</div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+      <ExperimentalConfirmModal
+        isOpen={isResetConfirmOpen}
+        onClose={() => setIsResetConfirmOpen(false)}
+        onConfirm={handleConfirmReset}
+        title="Reset experimental settings?"
+        text="This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page."
+        confirmText="Reset"
+      />
+    </>
+  );
+};
+
+export default SettingsModal;
