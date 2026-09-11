@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { CloudUploadIcon, LoaderCircleIcon, RotateCwIcon, TrashIcon, TriangleAlertIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext";
-import { usePageSceneStore } from "../../PageSceneStore";
+import { usePageSceneStore, type ProducedArtifact } from "../../PageSceneStore";
 
 // Output modal shown immediately after Capture/Record — it previews the local
 // artifact (object URL, works offline), then uploads to the gallery and shows
@@ -17,25 +17,47 @@ export const CompletionModal = () => {
     (s) => s.clearProducedArtifact,
   );
   const [status, setStatus] = useState<UploadStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
   const autoStartedRef = useRef(false);
+  const inFlightRef = useRef(false);
+  const uploadedRef = useRef<{ artifact: ProducedArtifact; token: string } | null>(null);
 
   const isVideo = artifact?.kind === "video";
 
   const upload = async () => {
-    if (!editor?.adapter.uploadMedia || !artifact) return;
+    if (!artifact || inFlightRef.current) return;
+    inFlightRef.current = true;
     setStatus("uploading");
+    setErrorMessage("");
     try {
-      const token = await editor.adapter.uploadMedia({
-        kind: artifact.kind,
-        blob: artifact.blob,
-        fileName: artifact.fileName,
-      });
+      if (!editor?.adapter.uploadMedia || !editor.adapter.openMediaLightbox) {
+        throw new Error("Uploading is unavailable in this editor.");
+      }
+      // A failed preview lookup must not upload the same large video again.
+      let token = uploadedRef.current?.artifact === artifact
+        ? uploadedRef.current.token
+        : undefined;
+      if (!token) {
+        token = await editor.adapter.uploadMedia({
+          kind: artifact.kind,
+          blob: artifact.blob,
+          fileName: artifact.fileName,
+        });
+        uploadedRef.current = { artifact, token };
+      }
+      if (usePageSceneStore.getState().producedArtifact !== artifact) return;
       // Hand off to the app Lightbox (destinations for this kind). It shows via
       // the uploaded CDN URL, so revoking the local object URL now is safe.
-      editor.adapter.openMediaLightbox?.(token, artifact.kind);
-      clearProducedArtifact();
-    } catch {
+      await editor.adapter.openMediaLightbox(token, artifact.kind);
+      if (usePageSceneStore.getState().producedArtifact === artifact) {
+        clearProducedArtifact();
+      }
+    } catch (error) {
+      console.error("Scene output upload or preview failed:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Upload failed. Please retry.");
       setStatus("error");
+    } finally {
+      inFlightRef.current = false;
     }
   };
 
@@ -47,7 +69,9 @@ export const CompletionModal = () => {
     }
     if (!artifact) {
       autoStartedRef.current = false;
+      uploadedRef.current = null;
       setStatus("idle");
+      setErrorMessage("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artifact]);
@@ -91,11 +115,11 @@ export const CompletionModal = () => {
           </div>
         )}
         {status === "error" && (
-          <div className="flex items-center gap-2 text-sm text-red">
+          <div role="alert" className="flex items-center gap-2 text-sm text-red">
             <TriangleAlertIcon
               
               className="h-4 w-4" />
-            Upload failed — check your connection and retry.
+            {errorMessage}
           </div>
         )}
 

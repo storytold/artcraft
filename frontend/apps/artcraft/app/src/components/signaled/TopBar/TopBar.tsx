@@ -598,7 +598,8 @@ export const TopBar = ({ pageName }: Props) => {
                 <Button
                   variant="secondary"
                   icon={SettingsIcon}
-                  className="h-[34px] w-[34px]"
+                  iconClassName="h-5 w-5 shrink-0"
+                  className="h-[34px] w-[34px] p-0"
                   onClick={() => {
                     setSettingsSection("general");
                     setIsSettingsModalOpen(true);
