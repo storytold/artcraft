@@ -1,2 +1,0 @@
-pub mod default_cover_image_color_from_token;
-pub mod default_cover_image_from_token;

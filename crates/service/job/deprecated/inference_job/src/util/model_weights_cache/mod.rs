@@ -1,2 +1,0 @@
-pub mod model_weights_cache_directory;
-pub mod model_weights_cache_filename;

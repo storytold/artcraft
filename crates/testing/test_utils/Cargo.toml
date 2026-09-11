@@ -14,16 +14,11 @@ publish = false
 name = "test_utils"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
 
 # Internal
 errors = { path = "../../lib/errors" }
 
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
 
 # External
 # None yet

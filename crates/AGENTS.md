@@ -44,16 +44,18 @@ helpers go in the parent `mod tests` so sub-modules can `use super::*`.
 
 - Most crates: `cargo check -p {crate_name}` or `cargo test -p {crate_name}`
 - Crates using SQLx: `SQLX_OFFLINE=true cargo check -p {crate_name}`
-- `storyteller-web` and `mysql_queries` require `SQLX_OFFLINE=true`
-- `storyteller-web` has ~370 pre-existing warnings — check the last few lines for actual errors
+- The desktop SQLite query cache and migrations must remain in `.sqlx/` and `_database/sql/artcraft_migrations/`
 
 ## Key Crates
 
-- `storyteller_web` — main HTTP API monolith (actix-web)
 - `artcraft` (desktop) — Tauri desktop app
-- `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, KinoviWeb, Muapi)
+- `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, KinoviWeb, Grok, GMICloud, WorldLabs)
 - `artcraft_api_defs` — shared HTTP API type definitions
 - `kinovi_web_client` — HTTP client for the Kinovi/KinoviWeb video generation service
 - `enums` — database-backed enums stored as VARCHAR fields
 - `tokens` — primary key identifiers with Stripe-like prefixes (e.g. `user_`, `mf_`)
-- `mysql_queries` — SQLx MySQL queries for the backend
+
+- `sqlite_tasks` — SQLite persistence for desktop generation tasks
+
+The workspace contains only desktop dependencies and their shared test helpers.
+There is no Hakari workspace helper; keep new dependencies local to their consumers.

@@ -13,12 +13,7 @@ publish = false
 name = "mimetypes"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { workspace =  true }
 
 # External
 infer = "0.19.0" # Mimetype detection

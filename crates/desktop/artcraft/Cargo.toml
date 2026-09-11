@@ -22,8 +22,6 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration.workspace =  true
 
 # Internal
 artcraft_api_defs.workspace = true

@@ -34,12 +34,7 @@ An easy way to get started with running the app in development is to run the two
 .\script\artcraft\windows_rust_dev.ps1
 ```
 
-
-# ArtCraft Server
-
-ArtCraft's server is a Rust / Actix app called `storyteller-web`.
-
-You don't need to run this to develop the ArtCraft application, but it can be useful to spin up 
-a development instance for adding new server functions or as your own private local copy.
-
-See [dev_setup_server.md](./dev_setup_server.md) for instructions.
+Backend services and website builds live in the separate `artcraft-services` repository.
+This repository retains the desktop task database in
+`_database/sql/artcraft_migrations/` and its SQLite query cache in `.sqlx/`.
+Use `SQLX_OFFLINE=true cargo check -p artcraft` to check Rust without a database server.

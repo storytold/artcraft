@@ -4,8 +4,7 @@
     "env.d.ts",
     "app/**/*.js",
     "app/**/*.ts",
-    "app/**/*.tsx",
-    "netlify-edge-plugin.ts"
+    "app/**/*.tsx"
   ],
   "compilerOptions": {
     "lib": [

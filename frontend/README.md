@@ -1,118 +1,52 @@
-# Frontend
+# Artcraft frontend
 
-This is an `nx` monorepo that can contain multiple apps and shared libraries.
+This Nx workspace contains the Tauri desktop frontend in `apps/artcraft` and its
+shared libraries in `libs`. Website and Netlify builds live in `artcraft-services`.
 
-All commands to run these projects are performed from _this_ directory
-(except the repo-root launcher scripts noted below).
-
-## Requirements
-
-- **Node.js 20+** (Nx 21 / Vite 6 requirement). Install via [nvm](https://github.com/nvm-sh/nvm),
-  [nodejs.org](https://nodejs.org), or `brew install node`.
-- **npm** (ships with Node).
-
-> **We use npm, not pnpm.** pnpm was briefly adopted ("add pnpm to solve build
-> issues") and later removed ("fix(frontend): consume video-editor libs via nx
-> path aliases, drop pnpm"). If you have leftovers from that era — a
-> `pnpm-lock.yaml`, `pnpm-workspace.yaml`, or a `node_modules/.pnpm` directory —
-> npm installs will fail (typically with `ENOTEMPTY` rename errors). See
-> Troubleshooting below.
-
-## Install dependencies
-
-```
-npm install
-```
-
-## Running the apps in dev mode
-
-From the **repository root**, the launcher scripts (these preflight your
-environment, install dependencies, and free the dev port first):
+Use Node.js 20 or newer and npm. Run the following commands from `frontend/`:
 
 ```bash
-./script/website/unix_frontend_dev.sh           # artcraft-website (marketing site), port 4200
-./script/website/unix_frontend_webapp_dev.sh    # artcraft-webapp (user dashboard), port 4201
-./script/artcraft/unix_frontend_dev.sh          # artcraft (Tauri app frontend), port 5173
-```
-
-Or directly from this directory:
-
-```bash
-nx dev artcraft-website
-nx dev artcraft-webapp
-nx dev artcraft        # NB: the Tauri app also needs the Rust dev server running
-nx dev editor2d
-```
-
-## Building
-
-```bash
-npx nx build artcraft-website
-npx nx build artcraft-webapp
+npm ci
+npx nx dev artcraft
 npx nx build artcraft
-npx nx build editor2d
 ```
 
-Netlify deploys run `apps/<app>/script/netlify_build.sh` (see each app's
-`netlify.toml`).
-
-## Troubleshooting
-
-### `npm install` fails with `ENOTEMPTY: directory not empty, rename ...`
-
-Your `node_modules` tree is corrupted — usually an interrupted install, or a
-tree written by pnpm back when the repo briefly used it. Fix:
+The frontend development server uses port 5173. Start the Rust app separately
+from the repository root:
 
 ```bash
-./clean_modules.sh
-npm install
+./script/artcraft/unix_rust_dev.sh
 ```
 
-Or the manual minimum:
+The repository-root frontend launcher installs dependencies and starts the same
+server:
 
 ```bash
-rm -rf node_modules .nx pnpm-lock.yaml pnpm-workspace.yaml
-npm install
+./script/artcraft/unix_frontend_dev.sh
 ```
 
-### Stale build state after switching branches
+On Windows, use `script/artcraft/windows_frontend_dev.ps1` and
+`script/artcraft/windows_rust_dev.ps1` in separate terminals. See
+[development setup](../_docs/dev_setup.md) for Rust and Tauri prerequisites.
 
-Call this when starting on main or a new branch:
+The Vite build writes `apps/artcraft/dist`, which Tauri bundles. Public resources
+come from `apps/artcraft/app/public`. The app also needs its retained libraries,
+root package lock, TypeScript project references, and Nx/Vite configuration.
+The aliases in `tsconfig.base.json` resolve shared libraries to their source for
+both development and production. The desktop build does not require library
+`dist/` outputs or a separate library build.
 
-```bash
-./clean_modules.sh
-```
-
-It removes all `dist/` outputs, resets the nx cache, and removes
-`node_modules`.
-
-## Import aliases
-
-The names for `@frontend` and `@storyteller` come from the `package.json` file
-in the libs folder:
-
-```ts
-import { Login } from "@frontend/login";
-import { api } from "@storyteller/api";
-```
-
-For shared UI components, import from `@storyteller/ui-[componentname]`:
+Import shared libraries by the names declared in their `package.json` files:
 
 ```ts
 import { Button } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 ```
 
-## Generating a new component library
+Use the workspace-local Nx version through `npx nx`. `npm ci` and the release
+workflows use the checked-in lockfile; do not reinstall different Nx versions
+inside CI.
 
-```bash
-# 1. Generate the library
-npx nx g @nx/react:library libs/components/toaster --import-path=@storyteller/ui-toaster --bundler=vite
-npm install
-
-# 2. Import it somewhere in code
-
-# 3. Sync and build
-nx sync
-nx build
-```
+`clean_modules.sh` is an explicit cleanup command that removes build outputs,
+Nx caches, and frontend dependencies. Do not run it when preserving local build
+outputs during repository pruning.

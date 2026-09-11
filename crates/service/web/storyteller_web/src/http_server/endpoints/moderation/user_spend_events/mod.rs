@@ -1,1 +1,0 @@
-pub mod moderator_list_user_spend_events_handler;

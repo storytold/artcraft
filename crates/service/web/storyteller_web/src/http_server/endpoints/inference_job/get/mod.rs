@@ -1,2 +1,0 @@
-pub mod batch_get_inference_job_status_handler;
-pub mod get_inference_job_status_handler;

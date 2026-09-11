@@ -1,2 +1,0 @@
-pub mod moderator_list_global_user_referrals_handler;
-pub mod moderator_list_user_referrals_for_user_handler;

@@ -1,8 +1,0 @@
-$kind: http-request
-name: Create TTS (HEAD / CORS)
-url: "{{api_host}}/v1/tts/inference"
-method: HEAD
-headers:
-  Accept: application/json
-  User-Agent: brandon
-order: 2000

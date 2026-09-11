@@ -1,3 +1,0 @@
-pub mod bucket_url_from_media_path;
-pub mod bucket_url_from_str_path;
-pub mod bucket_url_string_from_media_path;

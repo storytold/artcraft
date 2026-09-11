@@ -13,12 +13,7 @@ publish = false
 name = "primitives"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
-# cargo-hakari workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # NB: This is designed to be a central crate with few dependencies.
 # Consider the dependencies here wisely.

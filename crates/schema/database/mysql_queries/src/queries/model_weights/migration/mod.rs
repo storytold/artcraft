@@ -1,2 +1,0 @@
-pub mod upsert_model_weight_from_tts_model;
-pub mod upsert_model_weight_from_voice_conversion_model;

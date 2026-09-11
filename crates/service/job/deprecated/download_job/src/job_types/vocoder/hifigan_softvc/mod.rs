@@ -1,2 +1,0 @@
-pub mod hifigan_softvc_model_check_command;
-pub mod process_hifigan_softvc_vocoder;

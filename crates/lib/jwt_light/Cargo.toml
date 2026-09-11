@@ -4,17 +4,12 @@ edition = "2024"
 version = "0.0.1"
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [lib]
 name = "jwt_light"
 path = "src/lib.rs"
 
 [dependencies]
 
-# cargo-hakari workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 # (None)

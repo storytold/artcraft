@@ -4,17 +4,12 @@ edition = "2021"
 version = "0.0.1"
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [lib]
 # NB: Did not look for public-facing crate with same name.
 name = "test_data"
 path = "src/lib.rs"
 
 [dependencies]
-# cargo-hakari workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 errors.workspace = true

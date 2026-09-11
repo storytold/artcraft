@@ -1,2 +1,0 @@
-pub mod flux_dev_juggernaut_inpaint_handler;
-pub mod flux_pro_1_inpaint_handler;

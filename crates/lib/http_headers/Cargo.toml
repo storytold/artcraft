@@ -4,17 +4,12 @@ edition = "2024"
 version = "0.0.1"
 publish = false
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [lib]
 # NB: public `http_headers` crate appears to be abandoned, so this name seems fine. Wish we had namespacing, though.
 name = "http_headers"
 path = "src/lib.rs"
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 errors.workspace = true

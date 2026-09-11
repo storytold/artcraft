@@ -1,1 +1,0 @@
-pub mod delete_all_anonymous_user_images;

@@ -1,1 +1,0 @@
-pub mod delete_weight_handler;

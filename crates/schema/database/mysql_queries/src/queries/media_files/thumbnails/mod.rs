@@ -1,2 +1,0 @@
-pub mod list_video_media_files_without_thumbnails_for_job;
-pub mod update_video_media_file_with_thumbnail;

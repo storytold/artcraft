@@ -1,2 +1,0 @@
-pub mod copy_model_weight_records_to_documents;
-pub mod create_model_weight_document_from_record;

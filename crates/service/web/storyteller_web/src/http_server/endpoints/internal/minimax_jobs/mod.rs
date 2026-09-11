@@ -1,3 +1,0 @@
-pub mod mark_minimax_job_failure_handler;
-pub mod mark_minimax_job_success_handler;
-pub mod obtain_minimax_job_handler;

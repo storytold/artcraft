@@ -13,12 +13,7 @@ publish = false
 name = "filesys"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
-# cargo-hakari workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
 
 # Internal (keep this to a minimum!)
 errors.workspace = true

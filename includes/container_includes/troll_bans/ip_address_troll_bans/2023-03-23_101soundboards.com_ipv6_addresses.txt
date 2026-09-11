@@ -1,9 +1,0 @@
-# It looks like 101soundboards has fewer IP addresses they can use (relative to user accounts).
-# They have a few IPv6 addresses that are infrequently used.
-
-# TODO: Support IPv6 addresses and CIDRs
-# 2600:6c64:4c7f:f11f:4171:9854:beed:6dde
-# 2601:205:c380:6810:5860:82ac:f25c:81de
-# 2601:300:4400:3290:1864:2e36:fdab:dd9b
-# 2601:648:8300:4cc0:a9c7:d8bc:9614:c76d
-# 2603:9001:3f00:4e29:e4e9:56c0:ffc:f1d5

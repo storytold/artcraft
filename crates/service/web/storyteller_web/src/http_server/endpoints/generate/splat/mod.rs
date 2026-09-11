@@ -1,2 +1,0 @@
-pub mod generate_worldlabs_marble_0p1_mini_splat_handler;
-pub mod generate_worldlabs_marble_0p1_plus_splat_handler;

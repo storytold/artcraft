@@ -1,4 +1,0 @@
-pub mod get_media_upload_by_uuid;
-pub mod get_media_upload_for_inference;
-pub mod insert_media_upload;
-pub mod reverse_list_user_media_uploads_of_type;

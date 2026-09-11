@@ -1,3 +1,0 @@
-pub mod search_model_weights_http_get_handler;
-pub mod search_model_weights_http_post_handler;
-pub mod search_model_weights_impl;

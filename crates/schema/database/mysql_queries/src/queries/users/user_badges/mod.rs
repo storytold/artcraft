@@ -1,1 +1,0 @@
-pub mod list_user_badges;

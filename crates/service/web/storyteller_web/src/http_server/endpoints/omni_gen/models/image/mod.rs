@@ -1,1 +1,0 @@
-pub mod omni_gen_image_models_handler;
