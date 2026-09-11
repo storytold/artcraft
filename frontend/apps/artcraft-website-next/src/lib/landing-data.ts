@@ -110,7 +110,7 @@ export const RULER_SECTIONS: RulerSection[] = [
   { id: HERO_SECTION_ID, label: "ARTCRAFT" },
   { id: "features", label: "FEATURES" },
   { id: "ownership", label: "OWNERSHIP" },
-  { id: "made-with", label: "MADE WITH" },
+  { id: "made-with", label: "COMMUNITY" },
   { id: "start", label: "GET STARTED" },
 ];
 
