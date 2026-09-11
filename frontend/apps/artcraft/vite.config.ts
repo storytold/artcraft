@@ -57,7 +57,16 @@ export default defineConfig({
       },
     },
   },
-  plugins: [sparkWasmDataUrlFix(), tsconfigPaths(), wasm(), topLevelAwait()],
+  plugins: [
+    sparkWasmDataUrlFix(),
+    tsconfigPaths({
+      // Resolve workspace packages to source for every importer, including shared
+      // libraries. Fresh release checkouts have no prebuilt library dist files.
+      projects: [path.resolve(workspaceRoot, "tsconfig.base.json")],
+    }),
+    wasm(),
+    topLevelAwait(),
+  ],
   server: {
     fs: {
       allow: [workspaceRoot],
