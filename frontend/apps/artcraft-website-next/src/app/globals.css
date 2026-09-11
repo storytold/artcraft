@@ -167,6 +167,15 @@ html.theme-anim {
     --scanline 0.4s ease;
 }
 
+/* While the theme fade runs, element-level transitions (invert-block's
+   120ms colors, the buttons' transition-colors) would re-target every
+   frame against the animating tokens — a visible stutter-chase. Suspend
+   them for the window; the root's token transition does all the driving,
+   and everything is restored when .theme-anim lifts (~0.45s). */
+html.theme-anim body * {
+  transition-duration: 0s !important;
+}
+
 /* Intro-pending letter hide: stamped pre-paint by the head script when the
    intro will play, so the wordmark never flashes complete before the
    formation takes the letters. The formation and HeadingFlow write inline
