@@ -184,7 +184,15 @@ export const galaxyMotionTuner = defineTunables(
       max: 0.15,
       step: 0.002,
       default: 0.05,
-      info: "Dispersion flare riding the wave front — cards flash chromatic as the reveal crosses them.",
+      info: "Dispersion flare of the chromatic ring trailing the reveal wave — cards flash as it crosses them.",
+    },
+    waveLag: {
+      label: "Flare lag s",
+      min: 0,
+      max: 1,
+      step: 0.05,
+      default: 0.2,
+      info: "How far behind the reveal front the dispersion ring launches — it sweeps the already-revealed field as a second pass.",
     },
     perfFloor: {
       label: "FPS floor",

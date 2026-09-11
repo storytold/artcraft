@@ -745,6 +745,12 @@ function GalaxyScene({
       (introClock.t - iv.cardsAt) / Math.max(0.1, mv.introDur),
     );
     const waveEase = easeOutCubic(rollT);
+    // The dispersion ring launches on its own delayed clock, trailing the
+    // reveal front and sweeping the already-revealed field behind it.
+    const flareT = clamp01(
+      (introClock.t - iv.cardsAt - mv.waveLag) / Math.max(0.1, mv.introDur),
+    );
+    const flareEase = easeOutCubic(flareT);
     const burstT = clamp01(
       (introClock.t - iv.cardsAt) / Math.max(0.1, mv.burstDur),
     );
@@ -1126,13 +1132,17 @@ function GalaxyScene({
       // dispersion flash riding the front itself (waveG).
       let waveK = 1;
       let waveG = 0;
-      if (rollT < 1) {
+      if (rollT < 1 || (flareT > 0 && flareT < 1)) {
         const rr = L.b * (L.thetaBirth + c * (L.thetaExit - L.thetaBirth));
-        const waveR = waveEase * L.b * L.thetaExit;
         const band = Math.max(1, mv.waveBand);
-        waveK = clamp01((waveR - rr) / band + 1);
-        const fr = (rr - waveR) / band;
-        waveG = Math.exp(-fr * fr);
+        if (rollT < 1) {
+          const waveR = waveEase * L.b * L.thetaExit;
+          waveK = clamp01((waveR - rr) / band + 1);
+        }
+        if (flareT > 0 && flareT < 1) {
+          const fr = (rr - flareEase * L.b * L.thetaExit) / band;
+          waveG = Math.exp(-fr * fr);
+        }
       }
 
       const ready = videos[card.clip].readyState >= 2 ? 1 : 0;
