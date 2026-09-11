@@ -7,6 +7,7 @@ import {
   introClock,
   introFastForward,
   introTuner,
+  onIntroReplay,
 } from "@/lib/intro";
 
 // Drives the master intro clock (see lib/intro.ts) and owns the navbar's
@@ -39,10 +40,12 @@ export default function IntroConductor() {
     // A lead-in tween carries the delay so timeScale accelerates it too.
     const navCells = gsap.utils.toArray<HTMLElement>("#site-nav > div > *");
     let navTl: gsap.core.Timeline | null = null;
-    if (navCells.length) {
+    const runNav = () => {
+      if (!navCells.length) return;
+      navTl?.kill();
       gsap.set(navCells, { autoAlpha: 0, y: -6 });
       navTl = gsap.timeline();
-      navTl.to({}, { duration: it.instrAt });
+      navTl.to({}, { duration: introTuner.read().instrAt });
       navTl.to(navCells, {
         autoAlpha: 1,
         y: 0,
@@ -52,22 +55,34 @@ export default function IntroConductor() {
         clearProps: "all",
       });
       navTl.timeScale(introClock.scale);
-    }
+    };
+    runNav();
 
     const onInput = () => {
       introFastForward();
       navTl?.timeScale(introTuner.read().ffScale);
     };
-    window.addEventListener("wheel", onInput, { passive: true });
-    window.addEventListener("pointerdown", onInput, { passive: true });
-    window.addEventListener("keydown", onInput);
-    window.addEventListener("touchstart", onInput, { passive: true });
+    const attachInput = () => {
+      window.addEventListener("wheel", onInput, { passive: true });
+      window.addEventListener("pointerdown", onInput, { passive: true });
+      window.addEventListener("keydown", onInput);
+      window.addEventListener("touchstart", onInput, { passive: true });
+    };
     const removeInput = () => {
       window.removeEventListener("wheel", onInput);
       window.removeEventListener("pointerdown", onInput);
       window.removeEventListener("keydown", onInput);
       window.removeEventListener("touchstart", onInput);
     };
+    attachInput();
+
+    // Tuner debug replay: the clock is already rewound; rebuild the nav
+    // reveal and re-arm the fast-forward listeners.
+    const offReplay = onIntroReplay(() => {
+      removeInput();
+      attachInput();
+      runNav();
+    });
 
     const tick = (_t: number, deltaMs: number) => {
       introClock.t += (Math.min(deltaMs, 100) / 1000) * introClock.scale;
@@ -86,6 +101,7 @@ export default function IntroConductor() {
 
     return () => {
       gsap.ticker.remove(tick);
+      offReplay();
       removeInput();
       navTl?.kill();
       // A dev-time remount must not strand a hidden navbar.

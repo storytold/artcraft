@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { HERO_SECTION_ID, RULER_SECTIONS } from "@/lib/landing-data";
-import { introClock, introTuner, onIntroFast } from "@/lib/intro";
+import {
+  introClock,
+  introTuner,
+  onIntroFast,
+  onIntroReplay,
+} from "@/lib/intro";
 import { lenisRef } from "@/lib/lenis-ref";
 import { useTunerStore } from "@/lib/tuner";
 import HeadingFlow from "./heading-flow";
@@ -230,36 +235,42 @@ export default function ScrollRuler() {
     if (mode !== "full" || !ticks.length) return;
     const els = lineRefs.current.filter((el): el is HTMLSpanElement => !!el);
     if (!els.length) return;
-    const mt = rulerMotionTuner.read();
-    fs.current.introDone = false;
     // The cascade waits for the master intro's instrument beat (a lead-in
     // tween carries the delay so timeScale accelerates it too), hidden
     // from the first frame so nothing shows during the wait. Fast-forward
-    // input accelerates the whole timeline.
-    const it = introTuner.read();
-    gsap.set(els, { scaleX: 0, opacity: 0 });
-    const tl = gsap.timeline();
-    tl.to({}, { duration: it.instrAt });
-    tl.to(els, {
-      scaleX: 1,
-      opacity: (i: number) => ticks[i]?.alpha ?? 0.3,
-      duration: mt.introDur,
-      stagger: mt.introStagger,
-      ease: "power3.out",
-      overwrite: true,
-      onComplete: () => {
-        fs.current.introDone = true;
-      },
-    });
-    tl.timeScale(introClock.scale);
+    // input accelerates the whole timeline; the tuner's replay re-runs it.
+    let tl: gsap.core.Timeline | null = null;
+    const runCascade = () => {
+      tl?.kill();
+      fs.current.introDone = false;
+      const mt = rulerMotionTuner.read();
+      gsap.set(els, { scaleX: 0, opacity: 0 });
+      tl = gsap.timeline();
+      tl.to({}, { duration: introTuner.read().instrAt });
+      tl.to(els, {
+        scaleX: 1,
+        opacity: (i: number) => ticks[i]?.alpha ?? 0.3,
+        duration: mt.introDur,
+        stagger: mt.introStagger,
+        ease: "power3.out",
+        overwrite: true,
+        onComplete: () => {
+          fs.current.introDone = true;
+        },
+      });
+      tl.timeScale(introClock.scale);
+    };
+    runCascade();
     const offFast = onIntroFast(() =>
-      tl.timeScale(introTuner.read().ffScale),
+      tl?.timeScale(introTuner.read().ffScale),
     );
+    const offReplay = onIntroReplay(runCascade);
     // No intro tween for the needle: its opacity is owned per-frame by the
     // sub-N% progress fade (hidden at page top anyway).
     return () => {
       offFast();
-      tl.kill();
+      offReplay();
+      tl?.kill();
       fs.current.introDone = true;
     };
   }, [mode, ticks]);

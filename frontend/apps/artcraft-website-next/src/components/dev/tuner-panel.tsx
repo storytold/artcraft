@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   useTunerStore,
   tunerSnapshot,
+  getTunerActions,
   type TunableGroup,
 } from "@/lib/tuner";
 import { Button } from "@/components/ui";
@@ -102,6 +103,9 @@ function Panel() {
       >
         <p className="hud-label font-bold">Tuner</p>
         <div className="flex items-center gap-1">
+          {getTunerActions().map((a) => (
+            <HeaderButton key={a.label} onClick={a.run} label={a.label} />
+          ))}
           <HeaderButton onClick={copyValues} label={copied ? "Copied" : "Copy"} />
           <HeaderButton onClick={resetAll} label="Reset" />
           <HeaderButton

@@ -18,7 +18,7 @@
 // gsap-driven intro pieces (which run on their own clocks) register with
 // onIntroFast so a fast-forward accelerates them in the same gesture.
 
-import { defineTunables } from "@/lib/tuner";
+import { defineTunables, registerTunerAction } from "@/lib/tuner";
 
 export const introTuner = defineTunables("intro", "Intro", {
   wordAt: {
@@ -117,3 +117,28 @@ export function introFastForward(): void {
   introClock.scale = ff;
   fastCbs.forEach((cb) => cb());
 }
+
+const replayCbs = new Set<() => void>();
+
+/** Register a callback fired when the intro is force-replayed from the
+ * tuner — one-shot consumers (gsap cascades, the word formation, the copy
+ * reveal) re-arm themselves here. Clock-driven consumers (the galaxy
+ * rollout) replay automatically when `t` rewinds. Returns an unsubscribe. */
+export function onIntroReplay(cb: () => void): () => void {
+  replayCbs.add(cb);
+  return () => {
+    replayCbs.delete(cb);
+  };
+}
+
+/** Rewind the master clock to zero at full-length pacing and re-arm every
+ * one-shot consumer — the debug replay behind the tuner's Intro button. */
+export function replayIntro(): void {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  introClock.t = 0;
+  introClock.scale = 1;
+  introClock.done = false;
+  replayCbs.forEach((cb) => cb());
+}
+
+registerTunerAction("Intro ↻", replayIntro);

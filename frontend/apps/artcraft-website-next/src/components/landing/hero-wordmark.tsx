@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { heroWordmark } from "@/components/ruler/ruler-shared";
-import { introClock, introTuner } from "@/lib/intro";
+import { introClock, introTuner, onIntroReplay } from "@/lib/intro";
 
 const WORDMARK_TEXT = "ARTCRAFT";
 // Variable Archivo at its poster extreme — the Archivo Black look, but on
@@ -162,16 +162,8 @@ export default function HeroMasthead() {
   useEffect(() => {
     if (!fontPx) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const it0 = introTuner.read();
-    const total =
-      it0.wordAt + it0.wordDur + WORDMARK_TEXT.length * it0.wordStagger + 0.5;
-    if (introClock.t > total) return;
     const els = letterRefs.current.filter((el): el is HTMLSpanElement => !!el);
     if (els.length !== WORDMARK_TEXT.length) return;
-
-    heroWordmark.forming = true;
-    for (let i = 1; i < els.length; i++) els[i].style.opacity = "0";
-    els[0].style.opacity = "0";
 
     const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
     const easeInOut = (x: number) =>
@@ -214,8 +206,23 @@ export default function HeroMasthead() {
         gsap.ticker.remove(tick);
       }
     };
-    gsap.ticker.add(tick);
+
+    // Runs at mount when the intro is still ahead, and again on the
+    // tuner's debug replay (the clock is already rewound by then).
+    const start = () => {
+      const it0 = introTuner.read();
+      const total =
+        it0.wordAt + it0.wordDur + WORDMARK_TEXT.length * it0.wordStagger + 0.5;
+      if (introClock.t > total) return;
+      gsap.ticker.remove(tick);
+      heroWordmark.forming = true;
+      for (const el of els) el.style.opacity = "0";
+      gsap.ticker.add(tick);
+    };
+    start();
+    const offReplay = onIntroReplay(start);
     return () => {
+      offReplay();
       gsap.ticker.remove(tick);
       heroWordmark.forming = false;
       for (const el of letterRefs.current) {

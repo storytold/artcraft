@@ -120,6 +120,23 @@ export function defineTunables<T extends Record<string, TunableDef>>(
   };
 }
 
+// One-shot action buttons rendered in the TunerPanel header (e.g. "Replay
+// intro" — things that are otherwise hard to debug because they run once).
+// Idempotent by label so hot reload doesn't stack duplicates.
+export type TunerAction = { label: string; run: () => void };
+
+const actions: TunerAction[] = [];
+
+export function registerTunerAction(label: string, run: () => void): void {
+  const existing = actions.find((a) => a.label === label);
+  if (existing) existing.run = run;
+  else actions.push({ label, run });
+}
+
+export function getTunerActions(): TunerAction[] {
+  return actions;
+}
+
 // Merged snapshot of every registered group — used by the panel's copy
 // button so tuned values can be pasted back into code as new defaults.
 export function tunerSnapshot(): Record<string, Record<string, number>> {

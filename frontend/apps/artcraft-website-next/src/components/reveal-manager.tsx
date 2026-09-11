@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { introClock, introTuner } from "@/lib/intro";
+import { introClock, introTuner, onIntroReplay } from "@/lib/intro";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -45,7 +45,7 @@ export default function RevealManager() {
           });
         });
 
-      const introTickers: gsap.TickerCallback[] = [];
+      const introCleanups: (() => void)[] = [];
       gsap.utils.toArray<HTMLElement>("[data-reveal-group]").forEach((group) => {
         const children = Array.from(
           group.querySelectorAll<HTMLElement>("[data-reveal]"),
@@ -55,14 +55,26 @@ export default function RevealManager() {
         // Hero groups play on the master intro's copy beat instead of a
         // scroll trigger — they're above the fold on load, and firing
         // immediately would land the pitch before the brand has formed.
+        // The tuner's replay re-hides and re-arms them.
         if (group.closest("#hero")) {
-          const wait: gsap.TickerCallback = () => {
-            if (introClock.t < introTuner.read().copyAt) return;
-            gsap.to(children, { ...SHOWN, stagger: 0.08 });
-            gsap.ticker.remove(wait);
+          let wait: gsap.TickerCallback | null = null;
+          const arm = () => {
+            if (wait) gsap.ticker.remove(wait);
+            gsap.set(children, HIDDEN);
+            const cb: gsap.TickerCallback = () => {
+              if (introClock.t < introTuner.read().copyAt) return;
+              gsap.to(children, { ...SHOWN, stagger: 0.08 });
+              gsap.ticker.remove(cb);
+              if (wait === cb) wait = null;
+            };
+            wait = cb;
+            gsap.ticker.add(cb);
           };
-          introTickers.push(wait);
-          gsap.ticker.add(wait);
+          arm();
+          introCleanups.push(onIntroReplay(arm));
+          introCleanups.push(() => {
+            if (wait) gsap.ticker.remove(wait);
+          });
           return;
         }
         ScrollTrigger.create({
@@ -74,7 +86,7 @@ export default function RevealManager() {
       });
 
       return () => {
-        introTickers.forEach((cb) => gsap.ticker.remove(cb));
+        introCleanups.forEach((fn) => fn());
       };
     });
 
