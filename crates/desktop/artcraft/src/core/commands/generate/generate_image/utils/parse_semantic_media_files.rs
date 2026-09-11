@@ -64,7 +64,7 @@ pub async fn parse_semantic_media_files(
 
 // ── Helpers ──
 
-async fn resolve_image_field(
+pub(crate) async fn resolve_image_field(
   field_name: &str,
   maybe_token: Option<&MediaFileToken>,
   maybe_raw_bytes: Option<&[u8]>,
@@ -95,7 +95,7 @@ async fn resolve_image_field(
   Ok(None)
 }
 
-async fn resolve_mask_field(
+pub(crate) async fn resolve_mask_field(
   maybe_token: Option<&MediaFileToken>,
   maybe_raw_bytes: Option<&[u8]>,
   creds: &StorytellerCredentialSet,

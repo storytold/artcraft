@@ -14,6 +14,7 @@ import {
   VideoModel,
   IMAGE_MODELS,
   VIDEO_MODELS,
+  ALL_MODELS_LIST,
   buildImageModelsFromListing,
   buildVideoModelsFromListing,
 } from "@storyteller/model-list";
@@ -79,3 +80,10 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
 // Hook selectors for React consumers.
 export const useImageModels = (): ImageModel[] => useModelsStore((s) => s.imageModels);
 export const useVideoModels = (): VideoModel[] => useModelsStore((s) => s.videoModels);
+
+// History/recreate must consult the hydrated catalog too, not just the build's overlay.
+export function findDesktopModel(modelId: string) {
+  const { imageModels, videoModels } = useModelsStore.getState();
+  return [...imageModels, ...videoModels, ...ALL_MODELS_LIST]
+    .find((model) => model.tauriId === modelId || model.id === modelId);
+}

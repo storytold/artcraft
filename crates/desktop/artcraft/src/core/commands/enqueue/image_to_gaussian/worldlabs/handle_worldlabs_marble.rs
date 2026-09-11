@@ -24,6 +24,7 @@ use worldlabs_consumer_client::recipes::upload_image_and_create_world_with_retry
 
 pub(super) const MAX_IMAGES: usize = 10;
 
+#[deprecated(note = "Legacy direct-provider handler; desktop generation now uses ArtCraft.")]
 pub async fn handle_worldlabs_marble(
   app: &AppHandle,
   app_data_root: &AppDataRoot,

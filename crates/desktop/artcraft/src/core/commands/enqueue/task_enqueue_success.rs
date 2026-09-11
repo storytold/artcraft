@@ -26,6 +26,7 @@ impl TaskEnqueueSuccess{
       TaskType::ImageGeneration => GenerationAction::GenerateImage,
       TaskType::GaussianGeneration => GenerationAction::GenerateGaussian,
       TaskType::VideoGeneration => GenerationAction::GenerateVideo,
+      TaskType::AudioGeneration => GenerationAction::GenerateAudio,
       TaskType::BackgroundRemoval => GenerationAction::RemoveBackground,
       TaskType::ObjectGeneration => GenerationAction::ImageTo3d,
       TaskType::ImageInpaintEdit => GenerationAction::ImageInpaintEdit,
@@ -69,8 +70,9 @@ impl TaskEnqueueSuccess{
     frontend_subscriber_payload: Option<&str>,
   ) -> Result<TaskId, SqliteTasksError> {
     // TODO: Move this mapping elsewhere, or remove the other models.
-    let model_type = match self.model {
+    let model_type = match &self.model {
       None => None,
+      Some(GenerationModel::Unknown(model)) => Some(TaskModelType::Unknown(model.clone())),
       Some(GenerationModel::Flux1Dev) => Some(TaskModelType::Flux1Dev),
       Some(GenerationModel::FluxDevJuggernaut) => Some(TaskModelType::FluxDevJuggernaut),
       Some(GenerationModel::Flux1Schnell) => Some(TaskModelType::Flux1Schnell),

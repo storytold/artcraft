@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../api"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

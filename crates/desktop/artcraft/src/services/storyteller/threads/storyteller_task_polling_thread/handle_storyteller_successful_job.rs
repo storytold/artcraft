@@ -1,5 +1,5 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::GenerationAction;
+use crate::core::events::generation_events::common::{GenerationAction, GenerationModel};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::events::sendable_event_trait::SendableEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
@@ -59,7 +59,7 @@ pub async fn handle_successful_job(
   let event = GenerationCompleteEvent {
     action: Some(action),
     service,
-    model: None, // TODO
+    model: task.model_type.as_ref().map(|model| GenerationModel::Unknown(model.to_str().to_owned())),
   };
 
   if let Err(err) = event.send(app_handle) {
@@ -139,6 +139,8 @@ fn get_media_file_class(job: &ListSessionJobsItem) -> Option<TaskMediaFileClass>
     InferenceCategory::BackgroundRemoval => return Some(TaskMediaFileClass::Image),
     InferenceCategory::ImageGeneration => return Some(TaskMediaFileClass::Image),
     InferenceCategory::VideoGeneration => return Some(TaskMediaFileClass::Video),
+    InferenceCategory::AudioGeneration | InferenceCategory::TextToSpeech => return Some(TaskMediaFileClass::Audio),
+    InferenceCategory::SplatGeneration => return Some(TaskMediaFileClass::Dimensional),
     InferenceCategory::ObjectGeneration => return Some(TaskMediaFileClass::Dimensional),
     _ => {}, // Fall-through
   }

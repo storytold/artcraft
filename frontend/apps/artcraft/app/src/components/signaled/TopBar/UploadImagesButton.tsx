@@ -3,6 +3,7 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImagesIcon, UploadIcon } from "lucide-react";
 import { UploadModalImage } from "@storyteller/ui-upload-modal";
+import { twMerge } from "tailwind-merge";
 
 interface Props {
   className?: string;
@@ -17,7 +18,8 @@ export const UploadImagesButton = ({ className }: Props) => {
         <Button
           variant="secondary"
           icon={UploadIcon}
-          className={className || "h-[38px] w-[38px]"}
+          iconClassName="h-5 w-5 shrink-0"
+          className={twMerge("h-[38px] w-[38px] p-0", className)}
           onClick={() => setIsOpen(true)}
         />
       </Tooltip>

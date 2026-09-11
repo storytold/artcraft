@@ -18,6 +18,7 @@ use openai_sora_client::requests::generate_sora2_video::generate_sora2_video::{G
 use tauri::AppHandle;
 use tokens::tokens::media_files::MediaFileToken;
 
+#[deprecated(note = "Legacy direct-provider handler; desktop generation now uses ArtCraft.")]
 pub async fn handle_sora_sora2(
   request: &TauriGenerateVideoRequest,
   app: &AppHandle,

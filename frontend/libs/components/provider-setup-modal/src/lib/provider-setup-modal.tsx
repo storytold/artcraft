@@ -15,6 +15,13 @@ export function ProviderSetupModal({
   const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
 
   useShowProviderLoginModalEvent(async (event) => {
+    // Retained native handlers can still emit these events for old tasks.
+    if (
+      event.provider === GenerationProvider.Sora ||
+      event.provider === GenerationProvider.WorldLabs
+    ) {
+      return;
+    }
     console.log("Show provider login modal event received from Tauri:", event);
     setProvider(event.provider);
     setShowModal(true);
@@ -28,7 +35,6 @@ export function ProviderSetupModal({
   let modalDescription;
   switch (provider) {
     case GenerationProvider.Grok:
-    case GenerationProvider.Sora:
       modalDescription = `You can add your ${serviceProviderName} account to ArtCraft by simply logging in. Use can then use it directly within Artcraft. You can add all of your AI accounts to Artcraft to use them all in one place and build the ultimate AI art tool.`;
       break;
     default:
@@ -40,17 +46,11 @@ export function ProviderSetupModal({
 
   const buttonOnClick = async () => {
     switch (provider) {
-      case GenerationProvider.WorldLabs:
-        await invoke("worldlabs_open_login_command");
-        break;
       case GenerationProvider.Grok:
         await invoke("grok_open_login_command");
         break;
       case GenerationProvider.Midjourney:
         await invoke("midjourney_open_login_command");
-        break;
-      case GenerationProvider.Sora:
-        await invoke("open_sora_login_command"); // TODO: Rename in Tauri
         break;
       case GenerationProvider.Fal:
         break; // TODO: None yet.
@@ -119,10 +119,6 @@ function getServiceProviderName(provider: GenerationProvider) : string {
       return "Fal";
     case GenerationProvider.Midjourney:
       return "Midjourney";
-    case GenerationProvider.Sora:
-      return "Sora";
-    case GenerationProvider.WorldLabs:
-      return "WorldLabs";
     case GenerationProvider.Higgsfield:
       return "Higgsfield";
     case GenerationProvider.Krea:

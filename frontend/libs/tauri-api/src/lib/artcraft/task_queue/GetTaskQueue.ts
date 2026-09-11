@@ -21,7 +21,7 @@ export interface TaskQueueItem {
   id: string;
   task_status: TaskStatus;
   task_type: TaskType;
-  model_type?: TaskModelType;
+  model_type?: TaskModelType | string;
   provider?: GenerationProvider;
   provider_job_id?: string;
   completed_item?: TaskQueueCompletedItem;

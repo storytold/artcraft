@@ -8,7 +8,7 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskModelType {
   // Image models
@@ -127,6 +127,11 @@ pub enum TaskModelType {
   WorldlabsMarble0p1Mini,
   #[serde(rename = "marble_0p1_plus")]
   WorldlabsMarble0p1Plus,
+
+  /// Preserve catalog IDs introduced after this desktop build.
+  #[serde(untagged)]
+  #[cfg_attr(test, strum(disabled))]
+  Unknown(String),
 }
 
 impl_enum_display_and_debug_using_to_str!(TaskModelType);
@@ -136,8 +141,9 @@ impl_enum_display_and_debug_using_to_str!(TaskModelType);
 // NB: We can derive `sqlx::Type` instead of using `impl_mysql_enum_coders`
 
 impl TaskModelType {
-  pub fn to_str(&self) -> &'static str {
+  pub fn to_str(&self) -> &str {
     match self {
+      Self::Unknown(value) => value,
       // Image models
       Self::Flux1Dev => "flux_1_dev",
       Self::Flux1Schnell => "flux_1_schnell",
@@ -257,7 +263,7 @@ impl TaskModelType {
       "worldlabs_marble" => Ok(Self::WorldlabsMarble),
       "marble_0p1_mini" => Ok(Self::WorldlabsMarble0p1Mini),
       "marble_0p1_plus" => Ok(Self::WorldlabsMarble0p1Plus),
-      _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
+      _ => Ok(Self::Unknown(value.to_owned())),
     }
   }
 
@@ -330,7 +336,6 @@ impl TaskModelType {
 mod tests {
   use crate::tauri::tasks::task_model_type::TaskModelType;
   use crate::test_helpers::assert_serialization;
-  use crate::error::enum_error::EnumError;
 
   mod explicit_checks {
     use super::*;
@@ -513,14 +518,11 @@ mod tests {
     }
 
     #[test]
-    fn from_str_err() {
-      let result = TaskModelType::from_str("asdf");
-      assert!(result.is_err());
-      if let Err(EnumError::CouldNotConvertFromString(value)) = result {
-        assert_eq!(value, "asdf");
-      } else {
-        panic!("Expected EnumError::CouldNotConvertFromString");
-      }
+    fn unknown_catalog_id_round_trips() {
+      let model = TaskModelType::from_str("future_video_v9").unwrap();
+      assert_eq!(model.to_str(), "future_video_v9");
+      assert_eq!(serde_json::to_string(&model).unwrap(), "\"future_video_v9\"");
+      assert_eq!(serde_json::from_str::<TaskModelType>("\"future_video_v9\"").unwrap(), model);
     }
 
     #[test]

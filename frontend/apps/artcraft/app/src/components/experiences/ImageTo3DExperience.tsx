@@ -11,9 +11,10 @@ import { useImageTo3DWorldStore } from "../../pages/PageImageTo3DWorld/ImageTo3D
 import { MediaUploadApi, downloadFileFromUrl } from "@storyteller/api";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
-  EnqueueImageTo3dObject,
+  GenerateMesh,
   EnqueueImageTo3dObjectModel,
-  EnqueueImageToGaussian,
+  GenerateSplat,
+  commandErrorMessage,
 } from "@storyteller/tauri-api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
@@ -415,18 +416,15 @@ export const ImageTo3DExperience = ({
           timestamp: Date.now(),
         });
 
-        const result = await EnqueueImageToGaussian({
-          image_media_tokens: readyTokens,
+        await GenerateSplat({
+          reference_image_media_tokens: readyTokens,
           prompt: worldPrompt.trim() || undefined,
-          model: selectedWorldModel ?? SPLAT_MODELS[0],
+          model: (selectedWorldModel ?? SPLAT_MODELS[0]).tauriId,
           provider: selectedWorldProvider,
           frontend_caller: "mini_app",
           frontend_subscriber_id: subscriberId,
         });
 
-        if ("error_type" in result) {
-          throw new Error(result.error_message || result.error_type);
-        }
       } else {
         const snapshotPrompt = prompt.trim();
         const snapshotPreview = uploadedPreview || undefined;
@@ -452,24 +450,21 @@ export const ImageTo3DExperience = ({
           timestamp: Date.now(),
         });
 
-        const result = await EnqueueImageTo3dObject({
-          image_media_token: uploadedMediaToken || undefined,
-          model: selectedObjectModelId,
+        await GenerateMesh({
+          prompt: snapshotPrompt || undefined,
+          reference_image_media_tokens: activeMode === "image" && uploadedMediaToken ? [uploadedMediaToken] : undefined,
+          model: selectedObjectModel?.tauriId ?? selectedObjectModelId,
           frontend_caller: "mini_app",
           frontend_subscriber_id: subscriberId,
         });
 
-        if ("error_type" in result) {
-          throw new Error(result.error_message || result.error_type);
-        }
 
         if (activeMode === "text") {
           setPrompt("");
         }
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
+      const errorMessage = commandErrorMessage(error, "An unexpected error occurred");
       toast.error(`Failed to generate 3D model: ${errorMessage}`);
       if (variant === "world") {
         worldFailGeneration(subscriberId);

@@ -6,9 +6,12 @@ import { GenerationProvider } from "@storyteller/api-enums";
 export type CommonSplatModel = "marble_0p1_mini" | "marble_0p1_plus";
 
 export interface EstimateSplatCostRequest {
-  model: CommonSplatModel;
+  model: string;
   provider: GenerationProvider;
   has_reference_image?: boolean;
+  reference_image_media_tokens?: string[];
+  reference_video_media_token?: string;
+  [key: string]: unknown;
 }
 
 export interface EstimateSplatCostPayload {

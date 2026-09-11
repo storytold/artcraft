@@ -263,8 +263,8 @@ export interface PageSceneAdapter {
 
   // Persist a produced still/video to the user's media library and return its
   // media token. Images auto-upload after Capture; videos upload on demand
-  // (they're large). Host: MediaUploadApi via uploadByKind.
-  uploadMedia?(args: {
+  // (they're large). Required so hosts cannot silently omit recording uploads.
+  uploadMedia(args: {
     kind: "image" | "video";
     blob: Blob;
     fileName: string;
@@ -275,7 +275,7 @@ export interface PageSceneAdapter {
   // offers every destination for the media type (Edit-on-Canvas, Make-Video,
   // Recreate, Share, Download). Host resolves the CDN URL from the token and
   // renders <Lightbox>. Replaces bespoke per-destination handoffs.
-  openMediaLightbox?(token: string, kind: "image" | "video"): void;
+  openMediaLightbox(token: string, kind: "image" | "video"): void | Promise<void>;
 
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.

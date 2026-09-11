@@ -38,6 +38,7 @@ use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use tauri::AppHandle;
 use tempdir::TempDir;
 
+#[deprecated(note = "Retained to poll legacy direct-provider tasks; new generations use ArtCraft.")]
 pub async fn sora_task_polling_thread(
   app_handle: AppHandle,
   app_env_configs: AppEnvConfigs,

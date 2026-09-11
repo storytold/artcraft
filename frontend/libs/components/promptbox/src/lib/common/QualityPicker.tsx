@@ -15,10 +15,6 @@ const QUALITY_LABELS: Record<CommonQuality, string> = {
   [CommonQuality.Low]: "Low",
 };
 
-const LABEL_TO_QUALITY: Record<string, CommonQuality> = Object.fromEntries(
-  Object.entries(QUALITY_LABELS).map(([k, v]) => [v, k as CommonQuality]),
-);
-
 /**
  * Stateless picker for image generation "quality" (used by OpenAI image
  * models — gpt_image_1, gpt_image_1p5, gpt_image_2). Models that don't
@@ -32,12 +28,13 @@ export const QualityPicker = ({
   const useQuality = currentQuality ?? model.defaultQuality ?? undefined;
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const quality = LABEL_TO_QUALITY[item.label];
+    const quality = (item.action ?? item.label) as CommonQuality;
     if (quality) handleCommonQualitySelect(quality);
   };
 
   const qualityList: PopoverItem[] = model.qualityOptions.map((q) => ({
     label: QUALITY_LABELS[q] ?? q,
+    action: q,
     selected: useQuality === q,
   }));
 

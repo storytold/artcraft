@@ -41,6 +41,7 @@ import {
   pageWidth,
   signalScene,
 } from "~/signals";
+import { sceneOutputAdapter } from "./sceneOutputAdapter";
 
 const apiHost = () =>
   StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
@@ -167,6 +168,7 @@ export const useTauriPageSceneAdapter = (
   const { initialSceneToken, cacheJsonString, onSceneSerialized } = options;
   return useMemo<PageSceneAdapter>(
     () => ({
+      ...sceneOutputAdapter,
       enqueueGeneration: async (req) => {
         const request: GenerateImageRequest = {
           model: req.model,

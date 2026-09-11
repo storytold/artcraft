@@ -12,7 +12,7 @@ import { CommonVideoResolution } from "@storyteller/api-enums";
  */
 export function stringToCommonVideoResolution(
   resolution: string | undefined,
-): CommonVideoResolution | null {
+): string | null {
   switch (resolution) {
     case "half_k":
       return CommonVideoResolution.HalfK;
@@ -30,13 +30,15 @@ export function stringToCommonVideoResolution(
       return CommonVideoResolution.TenEightyP;
     case "two_k":
     case "2k":
+    case "2K":
       return CommonVideoResolution.TwoK;
     case "three_k":
       return CommonVideoResolution.ThreeK;
     case "four_k":
     case "4k":
+    case "4K":
       return CommonVideoResolution.FourK;
     default:
-      return null;
+      return resolution ?? null;
   }
 }

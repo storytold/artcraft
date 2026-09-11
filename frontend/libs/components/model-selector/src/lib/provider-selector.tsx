@@ -26,7 +26,6 @@ interface ProviderSelectorProps {
 const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [
   GenerationProvider.Artcraft,
   GenerationProvider.Fal,
-  GenerationProvider.Sora,
 ];
 
 export function ProviderSelector({
@@ -40,14 +39,16 @@ export function ProviderSelector({
   const modelId = model?.id;
   const allowedProviders: GenerationProvider[] = useMemo(() => {
     if (!modelId) return DEFAULT_PROVIDER_OPTIONS;
-    return providersByModel?.[modelId] ?? DEFAULT_PROVIDER_OPTIONS;
-  }, [providersByModel, modelId]);
+    const providers = (providersByModel?.[modelId] ?? model?.getProviders() ?? DEFAULT_PROVIDER_OPTIONS)
+      .filter((provider) => provider !== GenerationProvider.Sora && provider !== GenerationProvider.WorldLabs);
+    return providers.length > 0 ? providers : [GenerationProvider.Artcraft];
+  }, [providersByModel, modelId, model]);
 
   const selectedProvider = useSelectedProviderForModel(page, modelId);
 
   useEffect(() => {
     if (!modelId) return;
-    if (!selectedProvider && allowedProviders.length > 0) {
+    if ((!selectedProvider || !allowedProviders.includes(selectedProvider)) && allowedProviders.length > 0) {
       setSelectedProvider(page, modelId, allowedProviders[0]);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);

@@ -14,6 +14,7 @@ pub enum TaskType {
   ImageGeneration,
   ImageInpaintEdit,
   VideoGeneration,
+  AudioGeneration,
   ObjectGeneration,
   GaussianGeneration,
   BackgroundRemoval,
@@ -31,6 +32,7 @@ impl TaskType {
       Self::ImageGeneration => "image_generation",
       Self::ImageInpaintEdit => "image_inpaint_edit",
       Self::VideoGeneration => "video_generation",
+      Self::AudioGeneration => "audio_generation",
       Self::ObjectGeneration => "object_generation",
       Self::GaussianGeneration => "gaussian_generation",
       Self::BackgroundRemoval => "background_removal",
@@ -42,6 +44,7 @@ impl TaskType {
       "image_generation" => Ok(Self::ImageGeneration),
       "image_inpaint_edit" => Ok(Self::ImageInpaintEdit),
       "video_generation" => Ok(Self::VideoGeneration),
+      "audio_generation" => Ok(Self::AudioGeneration),
       "object_generation" => Ok(Self::ObjectGeneration),
       "gaussian_generation" => Ok(Self::GaussianGeneration),
       "background_removal" => Ok(Self::BackgroundRemoval),
@@ -56,6 +59,7 @@ impl TaskType {
       Self::ImageGeneration,
       Self::ImageInpaintEdit,
       Self::VideoGeneration,
+      Self::AudioGeneration,
       Self::ObjectGeneration,
       Self::GaussianGeneration,
       Self::BackgroundRemoval,
@@ -116,10 +120,11 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskType::all_variants();
-      assert_eq!(variants.len(), 6);
+      assert_eq!(variants.len(), 7);
       assert_eq!(variants.pop_first(), Some(TaskType::ImageGeneration));
       assert_eq!(variants.pop_first(), Some(TaskType::ImageInpaintEdit));
       assert_eq!(variants.pop_first(), Some(TaskType::VideoGeneration));
+      assert_eq!(variants.pop_first(), Some(TaskType::AudioGeneration));
       assert_eq!(variants.pop_first(), Some(TaskType::ObjectGeneration));
       assert_eq!(variants.pop_first(), Some(TaskType::GaussianGeneration));
       assert_eq!(variants.pop_first(), Some(TaskType::BackgroundRemoval));

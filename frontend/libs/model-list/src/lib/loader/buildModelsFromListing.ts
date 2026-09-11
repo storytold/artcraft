@@ -27,6 +27,9 @@ import { CommonResolution } from "../classes/properties/CommonResolution.js";
 import { CommonQuality } from "../classes/properties/CommonQuality.js";
 import { MODEL_ID_PREFIX_CREATORS } from "../classes/metadata/ModelCreatorIconForId.js";
 
+// Admin testing variants are deliberately unavailable in desktop.
+const ADMIN_ONLY_MODELS = new Set(["minimax_h3_turbo", "minimax_h3_ultra"]);
+
 // ── Structural shapes of the backend listing (subset we read) ──────────────
 
 export interface ListingModelBase {
@@ -67,6 +70,11 @@ export interface ListingVideoModel extends ListingModelBase {
   audio_references_max_total_duration_seconds?: number | null;
   show_generate_with_sound_toggle?: boolean | null;
   duration_seconds_options?: number[] | null;
+  duration_seconds_min?: number | null;
+  duration_seconds_max?: number | null;
+  duration_seconds_max_with_image_references?: number | null;
+  bitrate_options?: string[] | null;
+  bitrate_default?: string | null;
   duration_seconds_default?: number | null;
 }
 
@@ -90,9 +98,7 @@ export const buildVideoModelsFromListing = (
 //   1. OFFERED by a provider in the response's `providers[]` (the backend's
 //      publish switch — `models[]` details also contain disabled entries and
 //      internal variants that must NOT surface), or
-//   2. an ENABLED `models[]` detail that the frontend knows (overlay entry) —
-//      covers desktop-native models like grok video that no backend provider
-//      offers yet, or
+//   2. any ENABLED `models[]` detail, including models added after this build, or
 //   3. a frontend-only overlay model the backend has never heard of
 //      (switch_x, inpaint models, …).
 // `models[]` details are the capability source either way (the enabled entry
@@ -123,13 +129,12 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   // Backend details order drives ordering.
   for (const m of listing) {
     const tauriId = m.model;
-    if (seenTauriIds.has(tauriId)) continue;
+    if (seenTauriIds.has(tauriId) || ADMIN_ONLY_MODELS.has(tauriId)) continue;
 
     const overlayEntry = overlayByTauriId.get(tauriId);
     const detail = detailsByTauriId.get(tauriId) ?? m;
     const enabled = detail.is_disabled !== true;
-    const show =
-      offeredTauriIds.has(tauriId) || (enabled && overlayEntry !== undefined);
+    const show = offeredTauriIds.has(tauriId) || enabled;
     if (!show) continue;
 
     seenTauriIds.add(tauriId);
@@ -138,7 +143,7 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   // Offered models with no detail entry at all (unusual, but the publish
   // switch wins): surface minimally.
   for (const tauriId of offeredModelIds) {
-    if (seenTauriIds.has(tauriId)) continue;
+    if (seenTauriIds.has(tauriId) || ADMIN_ONLY_MODELS.has(tauriId)) continue;
     seenTauriIds.add(tauriId);
     result.push(
       merge({ model: tauriId } as L, tauriId, overlayByTauriId.get(tauriId)),
@@ -146,7 +151,7 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   }
   // Append frontend-only models the backend has never heard of.
   for (const m of overlay) {
-    if (!knownTauriIds.has(m.tauriId) && !seenTauriIds.has(m.tauriId)) {
+    if (!ADMIN_ONLY_MODELS.has(m.tauriId) && !knownTauriIds.has(m.tauriId) && !seenTauriIds.has(m.tauriId)) {
       result.push(m);
     }
   }
@@ -160,9 +165,9 @@ const mergedImageModel = (
   tauriId: string,
   o: ImageModel | undefined,
 ): ImageModel => {
-  const aspectRatios = knownValues(m.aspect_ratio_options, COMMON_ASPECT_RATIO_VALUES);
-  const resolutions = knownValues(m.resolution_options, COMMON_RESOLUTION_VALUES);
-  const qualityOptions = knownValues(m.quality_options, COMMON_QUALITY_VALUES);
+  const aspectRatios = m.aspect_ratio_options ?? [];
+  const resolutions = m.resolution_options ?? [];
+  const qualityOptions = m.quality_options ?? [];
   const fullName = m.full_name ?? o?.fullName ?? m.model;
 
   return new ImageModel({
@@ -203,23 +208,17 @@ const mergedImageModel = (
     aspectRatios:
       aspectRatios.length > 0 ? (aspectRatios as CommonAspectRatio[]) : o?.aspectRatios,
     defaultAspectRatio:
-      (knownValue(m.aspect_ratio_default, COMMON_ASPECT_RATIO_VALUES) as
-        | CommonAspectRatio
-        | undefined) ?? o?.defaultAspectRatio,
+      (m.aspect_ratio_default as CommonAspectRatio | undefined) ?? o?.defaultAspectRatio,
     canChangeResolution:
       resolutions.length > 0 || (o?.canChangeResolution ?? false),
     resolutions:
       resolutions.length > 0 ? (resolutions as CommonResolution[]) : o?.resolutions,
     defaultResolution:
-      (knownValue(m.resolution_default, COMMON_RESOLUTION_VALUES) as
-        | CommonResolution
-        | undefined) ?? o?.defaultResolution,
+      (m.resolution_default as CommonResolution | undefined) ?? o?.defaultResolution,
     qualityOptions:
       qualityOptions.length > 0 ? (qualityOptions as CommonQuality[]) : o?.qualityOptions,
     defaultQuality:
-      (knownValue(m.default_quality, COMMON_QUALITY_VALUES) as
-        | CommonQuality
-        | undefined) ?? o?.defaultQuality,
+      (m.default_quality as CommonQuality | undefined) ?? o?.defaultQuality,
   });
 };
 
@@ -228,7 +227,7 @@ const mergedVideoModel = (
   tauriId: string,
   o: VideoModel | undefined,
 ): VideoModel => {
-  const aspectRatios = knownValues(m.aspect_ratio_options, COMMON_ASPECT_RATIO_VALUES);
+  const aspectRatios = m.aspect_ratio_options ?? [];
   const fullName = m.full_name ?? o?.fullName ?? m.model;
 
   return new VideoModel({
@@ -262,6 +261,12 @@ const mergedVideoModel = (
     generateWithSound: m.show_generate_with_sound_toggle ?? o?.generateWithSound,
     durationOptions: m.duration_seconds_options ?? o?.durationOptions,
     defaultDuration: m.duration_seconds_default ?? o?.defaultDuration,
+    minDuration: m.duration_seconds_min ?? o?.minDuration,
+    maxDuration: m.duration_seconds_max ?? o?.maxDuration,
+    maxDurationWithImageReferences: m.duration_seconds_max_with_image_references ?? o?.maxDurationWithImageReferences,
+    bitrateOptions: m.bitrate_options ?? o?.bitrateOptions,
+    defaultBitrate: m.bitrate_default ?? o?.defaultBitrate,
+    defaultAspectRatio: m.aspect_ratio_default ?? o?.defaultAspectRatio,
     supportsReferenceMode: m.image_references_supported ?? o?.supportsReferenceMode,
     maxReferenceImages: m.image_references_max ?? o?.maxReferenceImages,
     maxReferenceVideos: m.video_references_max ?? o?.maxReferenceVideos,
@@ -287,18 +292,6 @@ const mergedVideoModel = (
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-const COMMON_ASPECT_RATIO_VALUES: Set<string> = new Set(Object.values(CommonAspectRatio));
-const COMMON_RESOLUTION_VALUES: Set<string> = new Set(Object.values(CommonResolution));
-const COMMON_QUALITY_VALUES: Set<string> = new Set(Object.values(CommonQuality));
-
-const knownValues = (values: string[] | null | undefined, known: Set<string>): string[] =>
-  (values ?? []).filter((v) => known.has(v));
-
-const knownValue = (
-  value: string | null | undefined,
-  known: Set<string>,
-): string | undefined => (value != null && known.has(value) ? value : undefined);
 
 /**
  * Derive a video size picker option from a CommonAspectRatio value.
@@ -348,6 +341,10 @@ const sizeOptionForAspectRatio = (value: string): SizeOption => {
  */
 const resolutionLabel = (value: string): string => {
   switch (value) {
+    case "two_k":
+      return "2K";
+    case "four_k":
+      return "4K";
     case "four_eighty_p":
       return "480p";
     case "seven_twenty_p":

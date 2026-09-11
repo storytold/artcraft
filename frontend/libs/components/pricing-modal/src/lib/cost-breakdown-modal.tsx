@@ -1,3 +1,4 @@
+import { useMeshCostEstimate } from "./useMeshCostEstimate";
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
 import { CoinsIcon, LoaderIcon } from "lucide-react";
@@ -18,6 +19,7 @@ import {
   useImageEditorPageModelList,
   useAnglesPageModelList,
   IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST,
+  IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST,
 } from "@storyteller/ui-model-selector";
 import {
   usePrompt2DStore,
@@ -102,6 +104,8 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
         return modelsFromList(imageEditorList);
       case ModelPage.ImageTo3DWorld:
         return modelsFromList(IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST);
+      case ModelPage.ImageTo3DObject:
+        return modelsFromList(IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST);
       case ModelPage.Angles:
         return modelsFromList(anglesList);
       default:
@@ -139,8 +143,9 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     selectedModel,
     selectedProvider,
   );
+  const { isLoading: isMeshEstimateLoading } = useMeshCostEstimate(activePage, selectedModel, selectedProvider);
   const isEstimateLoading =
-    isVideoEstimateLoading || isImageEstimateLoading || isSplatEstimateLoading;
+    isVideoEstimateLoading || isImageEstimateLoading || isSplatEstimateLoading || isMeshEstimateLoading;
 
   // Get generation settings from the appropriate stores based on active page
   const prompt2D = usePrompt2DStore();
@@ -213,6 +218,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     ModelPage.ImageEditor,
     ModelPage.ImageToVideo,
     ModelPage.ImageTo3DWorld,
+    ModelPage.ImageTo3DObject,
     ModelPage.Angles,
   ]);
 

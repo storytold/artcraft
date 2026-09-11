@@ -1,6 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import { uniqueTokens } from "../common/UniqueTokens";
 import {
   CommonAspectRatio,
   CommonResolution,
@@ -9,6 +8,8 @@ import {
 import { GenerationProvider } from "@storyteller/api-enums";
 
 export interface GenerateVideoRequest {
+  // API-owned options may be introduced independently of this desktop build.
+  [key: string]: unknown;
   // The provider to use (defaults to Artcraft/Storyteller).
   provider?: GenerationProvider;
 
@@ -33,9 +34,10 @@ export interface GenerateVideoRequest {
   reference_audio_media_tokens?: string[];
   reference_character_tokens?: string[];
 
-  aspect_ratio?: CommonAspectRatio;
-  resolution?: CommonResolution;
+  aspect_ratio?: CommonAspectRatio | string;
+  resolution?: CommonResolution | string;
 
+  bitrate?: string;
   duration_seconds?: number;
   generate_audio?: boolean;
   video_batch_count?: number;
@@ -45,29 +47,6 @@ export interface GenerateVideoRequest {
   grok_aspect_ratio?: "portrait" | "landscape" | "square";
 
   // Frontend metadata.
-  frontend_caller?: string;
-  frontend_subscriber_id?: string;
-  frontend_subscriber_payload?: string;
-}
-
-interface RawGenerateVideoRequest {
-  provider?: GenerationProvider;
-  model?: string;
-  prompt?: string;
-  negative_prompt?: string;
-  start_frame_image_media_token?: string;
-  end_frame_image_media_token?: string;
-  reference_image_media_tokens?: string[];
-  reference_video_media_tokens?: string[];
-  reference_audio_media_tokens?: string[];
-  reference_character_tokens?: string[];
-  aspect_ratio?: CommonAspectRatio;
-  resolution?: CommonResolution;
-  duration_seconds?: number;
-  generate_audio?: boolean;
-  video_batch_count?: number;
-  sora_orientation?: "portrait" | "landscape";
-  grok_aspect_ratio?: "portrait" | "landscape" | "square";
   frontend_caller?: string;
   frontend_subscriber_id?: string;
   frontend_subscriber_payload?: string;
@@ -114,51 +93,7 @@ export const GenerateVideo = async (
     );
   }
 
-  const mutableRequest: RawGenerateVideoRequest = {
-    model: modelName,
-  };
-
-  if (!!request.provider) mutableRequest.provider = request.provider;
-  if (!!request.prompt) mutableRequest.prompt = request.prompt;
-  if (!!request.negative_prompt) mutableRequest.negative_prompt = request.negative_prompt;
-  if (!!request.start_frame_image_media_token) {
-    mutableRequest.start_frame_image_media_token = request.start_frame_image_media_token;
-  }
-  if (!!request.end_frame_image_media_token) {
-    mutableRequest.end_frame_image_media_token = request.end_frame_image_media_token;
-  }
-  if (!!request.reference_image_media_tokens && request.reference_image_media_tokens.length > 0) {
-    mutableRequest.reference_image_media_tokens = uniqueTokens(request.reference_image_media_tokens);
-  }
-  if (!!request.reference_video_media_tokens && request.reference_video_media_tokens.length > 0) {
-    mutableRequest.reference_video_media_tokens = uniqueTokens(request.reference_video_media_tokens);
-  }
-  if (!!request.reference_audio_media_tokens && request.reference_audio_media_tokens.length > 0) {
-    mutableRequest.reference_audio_media_tokens = uniqueTokens(request.reference_audio_media_tokens);
-  }
-  if (!!request.reference_character_tokens && request.reference_character_tokens.length > 0) {
-    mutableRequest.reference_character_tokens = request.reference_character_tokens;
-  }
-  if (!!request.aspect_ratio) mutableRequest.aspect_ratio = request.aspect_ratio;
-  if (!!request.resolution) mutableRequest.resolution = request.resolution;
-  if (typeof request.duration_seconds === "number") {
-    mutableRequest.duration_seconds = request.duration_seconds;
-  }
-  if (typeof request.generate_audio === "boolean") {
-    mutableRequest.generate_audio = request.generate_audio;
-  }
-  if (typeof request.video_batch_count === "number") {
-    mutableRequest.video_batch_count = request.video_batch_count;
-  }
-  if (!!request.sora_orientation) mutableRequest.sora_orientation = request.sora_orientation;
-  if (!!request.grok_aspect_ratio) mutableRequest.grok_aspect_ratio = request.grok_aspect_ratio;
-  if (!!request.frontend_caller) mutableRequest.frontend_caller = request.frontend_caller;
-  if (!!request.frontend_subscriber_id) {
-    mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
-  }
-  if (!!request.frontend_subscriber_payload) {
-    mutableRequest.frontend_subscriber_payload = request.frontend_subscriber_payload;
-  }
+  const mutableRequest = { ...request, model: modelName };
 
   const result = await invoke("generate_video_command", {
     request: mutableRequest,

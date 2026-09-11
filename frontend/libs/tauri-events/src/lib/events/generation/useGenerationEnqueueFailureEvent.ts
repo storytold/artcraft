@@ -8,7 +8,7 @@ import { BasicEventWrapper } from "../../common/BasicEventWrapper";
 type GenerationEnqueueFailureEvent = {
   action: GenerationAction,
   service: GenerationServiceProvider,
-  model?: GenerationModel,
+  model?: GenerationModel | string,
   reason?: string,
 }; 
 

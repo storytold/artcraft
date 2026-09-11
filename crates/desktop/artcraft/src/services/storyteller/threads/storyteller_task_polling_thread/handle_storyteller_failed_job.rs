@@ -1,3 +1,4 @@
+use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::state::task_database::TaskDatabase;
@@ -42,7 +43,7 @@ pub async fn handle_failed_job(
   let event = GenerationFailedEvent {
     action,
     service,
-    model: None,
+    model: task.model_type.as_ref().map(|model| GenerationModel::Unknown(model.to_str().to_owned())),
     reason: None,
   };
 

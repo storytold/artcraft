@@ -2,10 +2,6 @@ import { CommonAspectRatio } from "@storyteller/api-enums";
 
 // TODO(bt): This shouldn't exist. We need to standardize types throughout the frontend.
 
-const VALID_COMMON_ASPECT_RATIOS = new Set<string>(
-  Object.values(CommonAspectRatio),
-);
-
 /**
  * Convert an aspect ratio to a CommonAspectRatio for the image cost estimate API.
  *
@@ -18,8 +14,8 @@ const VALID_COMMON_ASPECT_RATIOS = new Set<string>(
 export function imageAspectRatioToCommonAspectRatio(
   newStyleAspectRatio: string | undefined,
   legacyAspectRatio?: string,
-): CommonAspectRatio | null {
-  if (newStyleAspectRatio && VALID_COMMON_ASPECT_RATIOS.has(newStyleAspectRatio)) {
+): string | null {
+  if (newStyleAspectRatio) {
     return newStyleAspectRatio as CommonAspectRatio;
   }
   if (legacyAspectRatio) {
