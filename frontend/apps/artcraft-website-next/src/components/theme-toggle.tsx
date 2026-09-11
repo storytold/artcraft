@@ -41,6 +41,9 @@ export default function ThemeToggle({ className }: { className?: string }) {
       () => root.classList.remove("theme-anim"),
       800,
     );
+    // Commit the transition property in its own style pass BEFORE the
+    // token flip — same-recalc changes can skip the transition entirely.
+    void root.offsetWidth;
     root.setAttribute("data-theme", next);
     try {
       localStorage.setItem(STORAGE_KEY, next);

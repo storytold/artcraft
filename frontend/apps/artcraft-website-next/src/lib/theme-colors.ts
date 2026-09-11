@@ -67,17 +67,28 @@ export function watchThemeColors(
   onChange: (colors: ThemeColors) => void,
 ): () => void {
   const derive = () => onChange(deriveThemeColors());
+  // Theme flips animate the tokens over 0.75s (see globals.css), so a
+  // derive at flip time reads MID-transition values. Deliver both: the
+  // immediate read (consumers that lerp start moving at once) and a final
+  // read after the fade settles so targets land on the true colors.
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  const deriveTwice = () => {
+    derive();
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(derive, 850);
+  };
   derive();
 
-  const observer = new MutationObserver(derive);
+  const observer = new MutationObserver(deriveTwice);
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
   const mq = window.matchMedia("(prefers-color-scheme: dark)");
-  mq.addEventListener("change", derive);
+  mq.addEventListener("change", deriveTwice);
   return () => {
+    clearTimeout(settleTimer);
     observer.disconnect();
-    mq.removeEventListener("change", derive);
+    mq.removeEventListener("change", deriveTwice);
   };
 }

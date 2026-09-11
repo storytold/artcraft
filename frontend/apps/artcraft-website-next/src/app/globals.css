@@ -124,19 +124,47 @@ body {
   outline-offset: 2px;
 }
 
-/* Theme switch cross-fade: the toggle stamps .theme-anim on <html> for
-   ~0.8s so every themed property (text, backgrounds, hairlines, SVG fills
-   — the wordmark's logo-A included) transitions together over 0.75s, then
-   lifts the blanket so hover states and per-frame color writes stay
-   instant. */
-html.theme-anim,
-html.theme-anim * {
+/* Theme switch cross-fade. The tokens are registered as typed <color>
+   custom properties so the VARIABLES THEMSELVES can transition: when the
+   toggle stamps .theme-anim on <html>, the root transitions every token
+   over 0.75s and every consumer — utilities, borders, SVG fills,
+   color-mix() strings, and gradients (background-image is not animatable,
+   so element-level transitions could never cover the scrims and pools) —
+   re-resolves each animated frame. No per-element transitions exist, so
+   hover states and per-frame color writes stay instant throughout. */
+@property --bg { syntax: "<color>"; inherits: true; initial-value: #f2f1ee; }
+@property --bg-raised { syntax: "<color>"; inherits: true; initial-value: #faf9f7; }
+@property --bg-sunken { syntax: "<color>"; inherits: true; initial-value: #e9e8e4; }
+@property --ink { syntax: "<color>"; inherits: true; initial-value: #101014; }
+@property --ink-strong { syntax: "<color>"; inherits: true; initial-value: #000000; }
+@property --muted { syntax: "<color>"; inherits: true; initial-value: rgba(16, 16, 20, 0.62); }
+@property --faint { syntax: "<color>"; inherits: true; initial-value: rgba(16, 16, 20, 0.42); }
+@property --line { syntax: "<color>"; inherits: true; initial-value: rgba(16, 16, 20, 0.16); }
+@property --line-strong { syntax: "<color>"; inherits: true; initial-value: rgba(16, 16, 20, 0.4); }
+@property --accent { syntax: "<color>"; inherits: true; initial-value: #2d81ff; }
+@property --accent-ink { syntax: "<color>"; inherits: true; initial-value: #1659c4; }
+@property --invert-bg { syntax: "<color>"; inherits: true; initial-value: #101014; }
+@property --invert-fg { syntax: "<color>"; inherits: true; initial-value: #f2f1ee; }
+@property --danger { syntax: "<color>"; inherits: true; initial-value: #b3261e; }
+@property --scanline { syntax: "<color>"; inherits: true; initial-value: rgba(16, 16, 20, 0.03); }
+
+html.theme-anim {
   transition:
-    background-color 0.75s ease,
-    color 0.75s ease,
-    border-color 0.75s ease,
-    fill 0.75s ease,
-    stroke 0.75s ease;
+    --bg 0.75s ease,
+    --bg-raised 0.75s ease,
+    --bg-sunken 0.75s ease,
+    --ink 0.75s ease,
+    --ink-strong 0.75s ease,
+    --muted 0.75s ease,
+    --faint 0.75s ease,
+    --line 0.75s ease,
+    --line-strong 0.75s ease,
+    --accent 0.75s ease,
+    --accent-ink 0.75s ease,
+    --invert-bg 0.75s ease,
+    --invert-fg 0.75s ease,
+    --danger 0.75s ease,
+    --scanline 0.75s ease;
 }
 
 /* Signature interaction: label blocks invert on hover/active. */
