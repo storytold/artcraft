@@ -33,8 +33,9 @@ The Vite build writes `apps/artcraft/dist`, which Tauri bundles. Public resource
 come from `apps/artcraft/app/public`. The app also needs its retained libraries,
 root package lock, TypeScript project references, and Nx/Vite configuration.
 The aliases in `tsconfig.base.json` resolve shared libraries to their source for
-both development and production. The desktop build does not require library
-`dist/` outputs or a separate library build.
+both development and production. The app's Vite configuration loads this file
+explicitly so imports inside shared libraries use the same aliases. The desktop
+build does not require library `dist/` outputs or a separate library build.
 
 Import shared libraries by the names declared in their `package.json` files:
 
