@@ -312,6 +312,11 @@ function GalaxyScene({
   const rigRef = useRef<THREE.Group>(null);
   const cardRefs = useRef<(THREE.Mesh | null)[]>([]);
   const state = useRef({
+    // Monotonic scene time, accumulated from frame deltas. NEVER use the
+    // r3f clock for timers here: frameloop="never" (hero offscreen) stops
+    // it, and r3f restarts it from ZERO on resume — every clock-keyed
+    // timer rewinds, replaying the intro on every scroll back up.
+    time: 0,
     idleP: 0,
     spin: 0,
     cullTimer: 0,
@@ -721,13 +726,14 @@ function GalaxyScene({
   );
   const clipOrder = useMemo(() => SEEDANCE_SHOWCASE.map((_, i) => i), []);
 
-  useFrame((st3, delta) => {
+  useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
     const st = state.current;
+    st.time += dt;
     const mv = galaxyMotionTuner.read();
     const lk = galaxyLookTuner.read();
     const pt = galaxyPointerTuner.read();
-    const t = st3.clock.elapsedTime;
+    const t = st.time;
     const L = layout;
 
     st.idleP += (dt * mv.idleSpeed) / 60;
