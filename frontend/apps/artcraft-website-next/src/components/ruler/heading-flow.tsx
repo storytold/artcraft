@@ -322,6 +322,9 @@ export default function HeadingFlow({
         const m = heroDrive ? heroWordmark.metrics : metrics[s.label];
         const refs = wordRefs.current[wi];
         if (!m || !refs || (s.isHero && !heroDrive)) continue;
+        // The masthead's intro formation owns the hero letters until it
+        // completes — writing here too would fight it every frame.
+        if (s.isHero && heroWordmark.forming) continue;
         const { v, rideLen, flipP, detachP, yq } = phases[wi];
         const n = m.adv.length;
 

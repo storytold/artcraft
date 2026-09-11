@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import SiteNav from "@/components/site-nav";
 import SiteFooter from "@/components/site-footer";
+import IntroConductor from "@/components/intro-conductor";
 import MotionProvider from "@/components/motion-provider";
 import ScrollRuler from "@/components/ruler/scroll-ruler";
 import TunerPanel from "@/components/dev/tuner-panel";
@@ -115,6 +116,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
         />
         <MotionProvider>
+          {/* First child: its effect must run before every intro consumer
+              (the ruler cascade reads introClock.scale at mount). */}
+          <IntroConductor />
           <SiteNav />
           <main id="main">{children}</main>
           <SiteFooter />

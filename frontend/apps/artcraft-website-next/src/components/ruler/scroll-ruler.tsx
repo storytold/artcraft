@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { HERO_SECTION_ID, RULER_SECTIONS } from "@/lib/landing-data";
+import { introClock, introTuner, onIntroFast } from "@/lib/intro";
 import { lenisRef } from "@/lib/lenis-ref";
 import { useTunerStore } from "@/lib/tuner";
 import HeadingFlow from "./heading-flow";
@@ -231,25 +232,34 @@ export default function ScrollRuler() {
     if (!els.length) return;
     const mt = rulerMotionTuner.read();
     fs.current.introDone = false;
-    const tween = gsap.fromTo(
-      els,
-      { scaleX: 0, opacity: 0 },
-      {
-        scaleX: 1,
-        opacity: (i: number) => ticks[i]?.alpha ?? 0.3,
-        duration: mt.introDur,
-        stagger: mt.introStagger,
-        ease: "power3.out",
-        overwrite: true,
-        onComplete: () => {
-          fs.current.introDone = true;
-        },
+    // The cascade waits for the master intro's instrument beat (a lead-in
+    // tween carries the delay so timeScale accelerates it too), hidden
+    // from the first frame so nothing shows during the wait. Fast-forward
+    // input accelerates the whole timeline.
+    const it = introTuner.read();
+    gsap.set(els, { scaleX: 0, opacity: 0 });
+    const tl = gsap.timeline();
+    tl.to({}, { duration: it.instrAt });
+    tl.to(els, {
+      scaleX: 1,
+      opacity: (i: number) => ticks[i]?.alpha ?? 0.3,
+      duration: mt.introDur,
+      stagger: mt.introStagger,
+      ease: "power3.out",
+      overwrite: true,
+      onComplete: () => {
+        fs.current.introDone = true;
       },
+    });
+    tl.timeScale(introClock.scale);
+    const offFast = onIntroFast(() =>
+      tl.timeScale(introTuner.read().ffScale),
     );
     // No intro tween for the needle: its opacity is owned per-frame by the
     // sub-N% progress fade (hidden at page top anyway).
     return () => {
-      tween.kill();
+      offFast();
+      tl.kill();
       fs.current.introDone = true;
     };
   }, [mode, ticks]);

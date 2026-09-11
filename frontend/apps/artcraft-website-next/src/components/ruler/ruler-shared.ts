@@ -42,6 +42,10 @@ export const rulerZoom = { target: 0, p: 0, dragging: false };
  * normalized per 1px of font, measured from the rendered letters. */
 export const heroWordmark: {
   ready: boolean;
+  /** True while the masthead's intro formation owns the letters (logo
+   * gliding to its slot, letters emerging behind it) — HeadingFlow must
+   * not write hero letter styles until it clears. */
+  forming: boolean;
   els: HTMLSpanElement[];
   baseX: number[];
   baseDocY: number[];
@@ -49,6 +53,7 @@ export const heroWordmark: {
   metrics: { adv: number[]; cum: number[]; total: number };
 } = {
   ready: false,
+  forming: false,
   els: [],
   baseX: [],
   baseDocY: [],

@@ -65,7 +65,10 @@ export default function SiteNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 left-0 z-50 w-full border-b border-line bg-bg/95 backdrop-blur-sm">
+    <nav
+      id="site-nav"
+      className="sticky top-0 left-0 z-50 w-full border-b border-line bg-bg/95 backdrop-blur-sm"
+    >
       <div className="flex h-12 items-stretch justify-between">
         {/* Left: logo + nav cells */}
         <div className="flex min-w-0 items-stretch">

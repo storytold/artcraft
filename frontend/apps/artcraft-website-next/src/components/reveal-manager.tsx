@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { introClock, introTuner } from "@/lib/intro";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -44,12 +45,26 @@ export default function RevealManager() {
           });
         });
 
+      const introTickers: gsap.TickerCallback[] = [];
       gsap.utils.toArray<HTMLElement>("[data-reveal-group]").forEach((group) => {
         const children = Array.from(
           group.querySelectorAll<HTMLElement>("[data-reveal]"),
         );
         if (!children.length) return;
         gsap.set(children, HIDDEN);
+        // Hero groups play on the master intro's copy beat instead of a
+        // scroll trigger — they're above the fold on load, and firing
+        // immediately would land the pitch before the brand has formed.
+        if (group.closest("#hero")) {
+          const wait: gsap.TickerCallback = () => {
+            if (introClock.t < introTuner.read().copyAt) return;
+            gsap.to(children, { ...SHOWN, stagger: 0.08 });
+            gsap.ticker.remove(wait);
+          };
+          introTickers.push(wait);
+          gsap.ticker.add(wait);
+          return;
+        }
         ScrollTrigger.create({
           trigger: group,
           start: "top 85%",
@@ -57,6 +72,10 @@ export default function RevealManager() {
           onEnter: () => gsap.to(children, { ...SHOWN, stagger: 0.08 }),
         });
       });
+
+      return () => {
+        introTickers.forEach((cb) => gsap.ticker.remove(cb));
+      };
     });
 
     return () => mm.revert();

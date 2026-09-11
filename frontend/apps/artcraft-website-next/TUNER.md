@@ -63,9 +63,10 @@ Then read values where they're used:
   `hero-galaxy.tsx`).
 
 The panel picks up new groups automatically — no panel changes needed.
-Registered groups: Galaxy layout, Galaxy motion, Galaxy pointer, Galaxy look
-(hero galaxy; `src/components/landing/hero-galaxy-tunables.ts`) and Ruler
-layout, Ruler motion, Ruler look (scroll ruler;
+Registered groups: Intro (page-intro choreography beats; `src/lib/intro.ts`),
+Galaxy layout, Galaxy motion, Galaxy pointer, Galaxy look (hero galaxy;
+`src/components/landing/hero-galaxy-tunables.ts`) and Ruler layout, Ruler
+motion, Ruler look (scroll ruler;
 `src/components/ruler/ruler-tunables.ts`).
 
 ## Shipping tuned values

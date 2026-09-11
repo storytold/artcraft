@@ -4,6 +4,7 @@ import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { SEEDANCE_SHOWCASE } from "@/lib/landing-data";
+import { introClock, introTuner } from "@/lib/intro";
 import { watchThemeColors, type ThemeColors } from "@/lib/theme-colors";
 import { useTunerStore } from "@/lib/tuner";
 import {
@@ -791,6 +792,7 @@ function GalaxyScene({
     // Pass 1: place every live card along its arm (in permuted order — the
     // live set is the first liveN entries of liveOrder). All positions must
     // be known before any card can size itself against its neighbors.
+    const iv = introTuner.read();
     for (let k = 0; k < liveN; k++) {
       const i = liveOrder[k];
       const card = cards[i];
@@ -799,18 +801,32 @@ function GalaxyScene({
         (i === st.targetI
           ? Math.max(st.holdTarget, st.holdRest)
           : st.holdRest);
-      const c = cycle(
+      const cFull = cycle(
         (card.slot + 0.5) / L.slotsPerArm +
           P +
           card.arm * L.armJitter +
           cardPhase[i],
       );
+      // Intro rollout: each card rides its own arm from the center out to
+      // its conveyor position (scattered stagger), passing through the
+      // birth styling — tiny, blurred, faint — it already has. At roll
+      // completion this is exactly the live cycle: seamless handoff.
+      const rollP = clamp01(
+        (introClock.t - iv.cardsAt - liveRank[i] * mv.introStagger) /
+          Math.max(0.05, mv.introDur),
+      );
+      const c = cFull * easeOutCubic(rollP);
       cardCyc[i] = c;
 
       // Rebirth (the wrap always happens offscreen or at zero alpha): hand
       // the card the least-recently-shown clip, so repeats spread as far
-      // apart as the pool allows.
-      if (!Number.isNaN(prevC[i]) && Math.abs(c - prevC[i]) > 0.5) {
+      // apart as the pool allows. Suspended during the rollout — the fast
+      // ramp would read as false wraps.
+      if (
+        rollP >= 1 &&
+        !Number.isNaN(prevC[i]) &&
+        Math.abs(c - prevC[i]) > 0.5
+      ) {
         let lru = 0;
         for (let cl = 1; cl < clipLastUsed.length; cl++) {
           if (clipLastUsed[cl] < clipLastUsed[lru]) lru = cl;
@@ -1097,9 +1113,12 @@ function GalaxyScene({
       // Birth fade only: the death happens fully offscreen past thetaExit.
       const lifecycle = clamp01(c / lk.fadeBand);
       const solid = lk.washInner + (1 - lk.washInner) * c;
+      // Presence gate on the rollout beat: a card is simply absent until
+      // its roll starts (position/blur/size do the real intro work).
       const intro = clamp01(
-        (t - mv.introDelay - liveRank[i] * mv.introStagger) /
-          Math.max(0.05, mv.introDur),
+        ((introClock.t - iv.cardsAt - liveRank[i] * mv.introStagger) /
+          Math.max(0.05, mv.introDur)) *
+          4,
       );
 
       const ready = videos[card.clip].readyState >= 2 ? 1 : 0;
@@ -1180,8 +1199,13 @@ function GalaxyScene({
       }
     }
 
-    // Underlay ink follows the look tuner and eases in on load.
-    const lineIntro = smoothstep(0, 1, Math.min(1, t / 1.2));
+    // Underlay ink follows the look tuner; the linework draws up at the
+    // instrument beat, together with the ruler's tick cascade.
+    const lineIntro = smoothstep(
+      0,
+      1,
+      clamp01((introClock.t - iv.instrAt) / 1.2),
+    );
     lineMat.opacity = lk.lineAlpha * lineIntro;
     tickMat.opacity = lk.tickAlpha * lineIntro;
 
@@ -1285,6 +1309,8 @@ class CanvasBoundary extends Component<
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 const cycle = (x: number) => ((x % 1) + 1) % 1;
+
+const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = clamp01((x - edge0) / (edge1 - edge0));
