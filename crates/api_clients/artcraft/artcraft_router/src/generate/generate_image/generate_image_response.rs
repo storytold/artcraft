@@ -38,6 +38,7 @@ pub struct KinoviWebImageResponsePayload {
 
 #[derive(Clone, Debug)]
 pub enum GenerateImageResponse {
+  Midjourney(MidjourneyImageResponsePayload),
   Artcraft(ArtcraftImageResponsePayload),
   Fal(FalImageResponsePayload),
   KinoviWeb(KinoviWebImageResponsePayload),
@@ -64,4 +65,9 @@ impl GenerateImageResponse {
       _ => None,
     }
   }
+}
+
+#[derive(Clone, Debug)]
+pub struct MidjourneyImageResponsePayload {
+  pub job_id: String,
 }

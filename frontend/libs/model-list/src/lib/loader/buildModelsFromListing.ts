@@ -1,3 +1,4 @@
+import { GenerationProvider } from "@storyteller/api-enums";
 // Builds the picker model lists FROM the backend omni listing (the Tauri
 // command response). Membership + order come from the backend, and every
 // capability the API expresses is mapped 1:1 — the static overlay lists
@@ -193,7 +194,9 @@ const mergedImageModel = (
     canEditAngles: o?.canEditAngles ?? false,
 
     // Desktop-native provider knowledge.
-    providers: o?.getProviders(),
+    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
+      ? [GenerationProvider.Artcraft, GenerationProvider.Midjourney]
+      : o?.getProviders(),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.

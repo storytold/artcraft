@@ -43,34 +43,10 @@ import { useTabStore } from "~/pages/Stores/TabState";
 
 export const SHARE_URL_BASE = "https://getartcraft.com/media/";
 
-const EXT_BY_MEDIA_CLASS: Record<string, string> = {
-  image: "png",
-  video: "mp4",
-  audio: "mp3",
-  // "dimensional" is the deprecated pre-split 3D class; mesh/splat replace it.
-  dimensional: "glb",
-  mesh: "glb",
-  splat: "spz",
-};
-
-function extensionForUrl(url: string, mediaClass?: string): string {
-  try {
-    const pathname = new URL(url).pathname;
-    const match = pathname.match(/\.([a-z0-9]{2,5})$/i);
-    if (match) return match[1].toLowerCase();
-  } catch {
-    // ignore — fall through to mediaClass default
-  }
-  if (mediaClass && EXT_BY_MEDIA_CLASS[mediaClass]) {
-    return EXT_BY_MEDIA_CLASS[mediaClass];
-  }
-  return "bin";
-}
-
 /** Download a media file, prompting for a location when configured to. */
-export async function downloadMediaFileToDisk(url: string, mediaClass?: string) {
+export async function downloadMediaFileToDisk(url: string, mediaClass?: string, model?: string) {
   try {
-    const chosenPath = await promptDownloadLocationIfNeeded(url);
+    const chosenPath = await promptDownloadLocationIfNeeded(url, model);
     if (chosenPath === null) {
       // User dismissed the picker.
       return;
@@ -78,7 +54,7 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string) 
     if (typeof chosenPath === "string") {
       await downloadUrlToPath(url, chosenPath);
     } else {
-      await DownloadUrl(url);
+      await DownloadUrl(url, { model });
     }
     if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
       toast.success(`Downloaded 3D model`);
@@ -94,7 +70,7 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string) 
 
 /**
  * Batch download: prompt for a directory, then save each item as its own
- * file (`artcraft-{token}.{ext}`). Progress and the outcome are surfaced via
+ * file using the preferred naming scheme. Progress and the outcome are surfaced via
  * a single updating toast. Returns true when at least one file was saved
  * (false on dismiss / nothing downloadable).
  */
@@ -120,11 +96,11 @@ export async function downloadMediaFilesToFolder(
       id: toastId,
     });
     try {
-      const ext = extensionForUrl(item.fullImage, item.mediaClass);
-      await downloadUrlToPath(
-        item.fullImage,
-        `${dir}/artcraft-${item.id}.${ext}`,
-      );
+      await DownloadUrl(item.fullImage, {
+        directory: dir,
+        model: item.modelId,
+        batch_index: downloadable.length > 1 ? i + 1 : undefined,
+      });
     } catch (error) {
       console.error(">>> Failed to save file:", error);
       failedCount++;

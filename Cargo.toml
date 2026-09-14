@@ -16,11 +16,13 @@ members = [
   "crates/api_clients/worldlabs_api_client",
   "crates/api_clients/worldlabs_consumer_client",
   "crates/desktop/artcraft",
+  "crates/lib/browser_emulation",
   "crates/lib/build_metadata",
   "crates/lib/caching/memory_store",
   "crates/lib/cloudflare_errors",
   "crates/lib/cloudflare_mitigation",
   "crates/lib/cookie_store",
+  "crates/lib/cookie_store_wrapper",
   "crates/lib/data/primitives",
   "crates/lib/data/web_base64",
   "crates/lib/errors",
@@ -48,6 +50,8 @@ publish = false
 artcraft_api_defs = { path = "crates/api_clients/artcraft/artcraft_api_defs" }
 artcraft_client = { path = "crates/api_clients/artcraft/artcraft_client" }
 artcraft_router = { path = "crates/api_clients/artcraft/artcraft_router" }
+browser_emulation = { path = "crates/lib/browser_emulation" }
+cookie_store_wrapper = { path = "crates/lib/cookie_store_wrapper" }
 build_metadata = { path = "crates/lib/build_metadata" }
 cloudflare_errors = { path = "crates/lib/cloudflare_errors" }
 cloudflare_mitigation = { path = "crates/lib/cloudflare_mitigation" }

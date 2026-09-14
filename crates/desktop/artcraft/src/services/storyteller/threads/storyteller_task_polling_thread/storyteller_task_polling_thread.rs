@@ -109,7 +109,10 @@ async fn polling_loop(
             TaskStatus::CompleteSuccess => continue, // NB: We're done with this task.
             _ => {}
           }
-          handle_successful_job(app_handle, app_env_configs, creds.as_ref(), job, task, task_database).await?;
+          if let Err(err) = handle_successful_job(app_handle, app_env_configs, creds.as_ref(), job, task, task_database).await {
+            // One failed local download must not delay other completed jobs.
+            error!("Completion for task {} will be retried: {}", task.id.as_str(), err);
+          }
         }
         JobStatusPlus::CompleteFailure => {
           match task.status {

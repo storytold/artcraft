@@ -1,5 +1,6 @@
 use crate::core::state::app_preferences::app_preferences_manager::AppPreferencesManager;
 use crate::core::state::app_preferences::preferred_download_directory::PreferredDownloadDirectory;
+use crate::core::state::app_preferences::preferred_download_filename::PreferredDownloadFilename;
 use errors::AnyhowResult;
 use log::{error, info};
 use serde_derive::Serialize;
@@ -14,6 +15,8 @@ pub struct GetAppPreferencesResponse {
 pub struct AppPreferencesPayload {
   /// The downloads directory to use when a user downloads a file.
   pub preferred_download_directory: PreferredDownloadDirectory,
+  pub preferred_download_filename: PreferredDownloadFilename,
+  pub auto_download: bool,
   
   /// Play sounds on events.
   pub play_sounds: bool,
@@ -63,6 +66,8 @@ async fn get_prefs(app_prefs: &AppPreferencesManager) -> AnyhowResult<AppPrefere
   let prefs = app_prefs.get_clone()?;
   Ok(AppPreferencesPayload {
     preferred_download_directory: prefs.preferred_download_directory,
+    preferred_download_filename: prefs.preferred_download_filename,
+    auto_download: prefs.auto_download,
     play_sounds: prefs.play_sounds,
     delete_file_sound: prefs.delete_file_sound,
     enqueue_success_sound: prefs.enqueue_success_sound,

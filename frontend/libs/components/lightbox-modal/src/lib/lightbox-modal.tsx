@@ -60,7 +60,7 @@ interface LightboxModalProps {
   additionalInfo?: ReactNode;
   downloadUrl?: string;
   mediaId?: string;
-  onDownloadClicked?: (url: string, mediaClass?: string) => Promise<void>;
+  onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
     media_id: string | undefined,
@@ -1183,7 +1183,7 @@ export function LightboxModal({
                     onClick={async (e) => {
                       e.stopPropagation();
                       gtagEvent("download_clicked");
-                      await onDownloadClicked(actionUrl, mediaClass);
+                      await onDownloadClicked(actionUrl, mediaClass, modelType ?? undefined);
                     }}
                   >
                     Download

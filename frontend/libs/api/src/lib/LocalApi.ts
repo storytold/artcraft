@@ -1,7 +1,7 @@
 
 import { download } from "@tauri-apps/plugin-upload";
-import { downloadDir } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
+import { DownloadUrl, GetDownloadPath } from "@storyteller/tauri-api";
 
 const ASK_LOCATION_BEFORE_DOWNLOAD_KEY = "artcraft_ask_location_before_download";
 
@@ -27,17 +27,6 @@ export const setAskLocationBeforeDownload = (enabled: boolean): void => {
   }
 };
 
-const deriveDownloadFilename = (url: string): string => {
-  try {
-    const urlObj = new URL(url);
-    const last = urlObj.pathname.split("/").pop();
-    if (last && last.length > 0) return last;
-  } catch {
-    // fall through
-  }
-  return "downloaded_file";
-};
-
 /**
  * Prompts the user with a native save dialog if the
  * "Ask location before download" setting is on.
@@ -49,10 +38,11 @@ const deriveDownloadFilename = (url: string): string => {
  */
 export const promptDownloadLocationIfNeeded = async (
   url: string,
+  model?: string,
 ): Promise<string | null | undefined> => {
   if (!getAskLocationBeforeDownload()) return undefined;
-  const filename = deriveDownloadFilename(url);
-  const chosen = await save({ defaultPath: filename });
+  const { path } = await GetDownloadPath(url, { model });
+  const chosen = await save({ defaultPath: path });
   return chosen ?? null;
 };
 
@@ -70,29 +60,19 @@ export const downloadUrlToPath = async (url: string, path: string) => {
   await download(url, path);
 };
 
-export const downloadFileFromUrl = async (url: string) => {
+export const downloadFileFromUrl = async (url: string, _mediaClass?: string, model?: string) => {
   console.log("GOT THE URL", url);
   try {
-    const filename = deriveDownloadFilename(url);
-
-    let filePath: string;
-    const chosen = await promptDownloadLocationIfNeeded(url);
+    const chosen = await promptDownloadLocationIfNeeded(url, model);
     if (chosen === null) {
       // User dismissed the picker.
       return;
     }
     if (typeof chosen === "string") {
-      filePath = chosen;
+      await download(url, chosen);
     } else {
-      const downloadsPath = await downloadDir();
-      filePath = `${downloadsPath}/${filename}`;
+      await DownloadUrl(url, { model });
     }
-
-    await download(url, filePath);
-
-    console.log(
-      `File downloaded and saved to ${filePath}`,
-    );
   } catch (error) {
     console.error("Error downloading file:", error);
     throw error;

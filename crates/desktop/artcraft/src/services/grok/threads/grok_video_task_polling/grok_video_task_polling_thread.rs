@@ -1,6 +1,7 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
+use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
@@ -326,6 +327,8 @@ async fn upload_grok_video(
     }
   }
 
+  auto_download_task(app_handle, local_task, None, maybe_cdn_url.as_deref(), None).await?;
+
   let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
     db: task_database.get_connection(),
     task_id: &local_task.id,
@@ -340,6 +343,7 @@ async fn upload_grok_video(
     return Ok(()); // If anything breaks with queries, don't spam events.
   }
 
+  clear_auto_download_checkpoint(app_handle, local_task);
   let event = GenerationCompleteEvent {
     //media_file_token: result.media_file_token,
     action: Some(GenerationAction::GenerateVideo),
@@ -365,4 +369,3 @@ async fn upload_grok_video(
 
   Ok(())
 }
-

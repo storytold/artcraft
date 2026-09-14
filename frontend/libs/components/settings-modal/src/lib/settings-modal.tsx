@@ -1,10 +1,11 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useState } from "react";
-import { CreditCardIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
+import { CreditCardIcon, DownloadIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { KeybindsSettings } from "@storyteller/keybinds";
 import { MiscSettingsPane } from "./panes/MiscSettingsPane";
+import { DownloadsSettingsPane } from "./panes/DownloadsSettingsPane";
 import { AudioSettingsPane } from "./panes/AudioSettingsPane";
 import { AccountSettingsPane } from "./panes/AccountSettings/AccountSettingsPane";
 import { AboutSettingsPane } from "./panes/AboutSettingsPane";
@@ -27,6 +28,7 @@ interface SettingsModalProps {
 
 type SettingsSection =
   | "general"
+  | "downloads"
   | "appearance"
   | "keybinds"
   | "accounts"
@@ -66,6 +68,7 @@ export const SettingsModal = ({
 
   const sections = [
     { id: "general" as const, label: "General", icon: SettingsIcon },
+    { id: "downloads" as const, label: "Downloads", icon: DownloadIcon },
 
     { id: "accounts" as const, label: "Accounts", icon: UserIcon },
     { id: "billing" as const, label: "Plan & Credits", icon: CreditCardIcon },
@@ -96,6 +99,8 @@ export const SettingsModal = ({
         return <AudioSettingsPane />;
       case "general":
         return <MiscSettingsPane />;
+      case "downloads":
+        return <DownloadsSettingsPane />;
       case "accounts":
         return (
           <AccountSettingsPane

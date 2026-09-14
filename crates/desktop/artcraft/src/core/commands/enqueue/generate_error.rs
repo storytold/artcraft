@@ -233,6 +233,7 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::InvalidInput(msg) => Self::BadInput(BadInputReason::WrongImageArguments(msg)),
       ArtcraftRouterError::ProviderBillingError(err) => {
         let provider = match err {
+          ProviderError::Midjourney(_) | ProviderError::MidjourneySubscriptionRequired(_) | ProviderError::MidjourneySubmitRejected(_) => BillingProvider::Midjourney,
           ProviderError::Fal(_) => BillingProvider::Fal,
           ProviderError::KinoviWeb(_) => BillingProvider::Kinovi,
           ProviderError::Storyteller(_) => BillingProvider::Artcraft,
@@ -242,6 +243,8 @@ impl From<ArtcraftRouterError> for GenerateError {
         };
         Self::BillingIssue(BillingIssueReason { provider })
       },
+      ArtcraftRouterError::Provider(ProviderError::Midjourney(e)) => Self::from(e),
+      ArtcraftRouterError::Provider(ProviderError::MidjourneySubscriptionRequired(message) | ProviderError::MidjourneySubmitRejected(message)) => Self::BadInput(BadInputReason::WrongImageArguments(message)),
       ArtcraftRouterError::Provider(ProviderError::Storyteller(e)) => Self::ProviderFailure(ProviderFailureReason::StorytellerError(e)),
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
       ArtcraftRouterError::Provider(ProviderError::GmiCloud(_)) => Self::ArtcraftRouterNotYetSupportedProvider("gmicloud"),

@@ -9,10 +9,10 @@ name = "midjourney_client"
 path = "src/lib.rs"
 
 [dependencies]
-
 # Internal
+browser_emulation.workspace = true
 cloudflare_errors.workspace = true
-cookie_store.workspace = true
+cookie_store_wrapper = { workspace = true, features = ["wreq"] }
 errors.workspace = true
 
 # External
@@ -28,6 +28,9 @@ wreq.workspace = true
 
 # NB: We need to parse HTML to get out the websocket token
 dom_query = "0.20.2"
+
+# NB: Midjourney's websocket sends server->client frames as CBOR.
+ciborium = "0.2"
 
 [dev-dependencies]
 filesys.workspace = true

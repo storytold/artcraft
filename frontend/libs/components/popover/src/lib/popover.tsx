@@ -25,6 +25,7 @@ interface PortalTooltipProps {
   delay?: number;
   className?: string;
   onOpenChange?: (open: boolean) => void;
+  portalRef?: (element: HTMLDivElement | null) => void;
 }
 
 function PortalTooltip({
@@ -33,12 +34,12 @@ function PortalTooltip({
   delay = 300,
   className,
   onOpenChange,
+  portalRef,
 }: PortalTooltipProps) {
   const [isShowing, setIsShowing] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
   const [isHoveringTrigger, setIsHoveringTrigger] = useState(false);
   const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -122,7 +123,7 @@ function PortalTooltip({
         isVisible &&
         createPortal(
           <div
-            ref={tooltipRef}
+            ref={portalRef}
             // Body-portaled, so inside a Radix modal (promptbox focus mode)
             // clicks here must not count as outside clicks on the dialog.
             data-modal-outside-safe=""
@@ -441,6 +442,7 @@ function SubmenuFlyout({
   const [canScrollDown, setCanScrollDown] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const childTooltipRefs = useRef(new Map<number, HTMLDivElement>());
   const scrollRef = useRef<HTMLDivElement>(null);
   const openTimerRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -574,6 +576,12 @@ function SubmenuFlyout({
       const target = e.target as Node;
       if (triggerRef.current?.contains(target)) return;
       if (panelRef.current?.contains(target)) return;
+      // Provider pickers are body portals, but still belong to this submenu.
+      // Keep them mounted through the press so their click can select a model
+      // and provider before closing the popover.
+      for (const tooltip of childTooltipRefs.current.values()) {
+        if (tooltip.contains(target)) return;
+      }
       setIsShowing(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -673,6 +681,13 @@ function SubmenuFlyout({
                     <div key={childIdx}>
                       <PortalTooltip
                         content={childTooltip}
+                        portalRef={(element) => {
+                          if (element) {
+                            childTooltipRefs.current.set(childIdx, element);
+                          } else {
+                            childTooltipRefs.current.delete(childIdx);
+                          }
+                        }}
                         delay={child.tooltipDelayMs ?? 300}
                         className="min-w-48"
                         onOpenChange={(open) =>

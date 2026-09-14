@@ -1,3 +1,4 @@
+use crate::client::router_midjourney_client::RouterMidjourneyClient;
 use crate::client::multi_router_client::MultiRouterClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
@@ -10,6 +11,7 @@ use crate::errors::client_error::{ClientError, ClientType};
 pub enum RouterClient {
   Multi(MultiRouterClient),
   Artcraft(RouterArtcraftClient),
+  Midjourney(RouterMidjourneyClient),
   Fal(RouterFalClient),
   GmiCloud(RouterGmiCloudClient),
   GrokApi(RouterGrokApiClient),
@@ -18,6 +20,14 @@ pub enum RouterClient {
 }
 
 impl RouterClient {
+  pub fn get_midjourney_client_ref(&self) -> Result<&RouterMidjourneyClient, ClientError> {
+    match self {
+      Self::Midjourney(client) => Ok(client),
+      Self::Multi(multi) => multi.get_midjourney_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::Midjourney)),
+    }
+  }
+
   pub fn get_artcraft_client_ref(&self) -> Result<&RouterArtcraftClient, ClientError> {
     match self {
       RouterClient::Artcraft(client) => Ok(client),

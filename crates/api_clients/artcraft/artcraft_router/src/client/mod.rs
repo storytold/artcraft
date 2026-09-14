@@ -9,3 +9,5 @@ pub mod router_gmicloud_client;
 pub mod router_grok_api_client;
 pub mod router_kinovi_web_client;
 pub mod router_worldlabs_client;
+
+pub mod router_midjourney_client;

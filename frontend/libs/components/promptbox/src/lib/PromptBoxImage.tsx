@@ -8,7 +8,7 @@ import { GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateImage, GenerateImageRequest, commandErrorMessage } from "@storyteller/tauri-api";
 import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import { ImageModel } from "@storyteller/model-list";
+import { ImageModel, imageModelForProvider } from "@storyteller/model-list";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { UploadMediaFn } from "@storyteller/api";
 import {
@@ -68,7 +68,7 @@ export const PromptBoxImage = ({
   useJobContext,
   uploadImage,
   onEnqueuePressed,
-  selectedModel,
+  selectedModel: catalogModel,
   selectedProvider,
   imageMediaId,
   url,
@@ -76,6 +76,12 @@ export const PromptBoxImage = ({
   modelSelector,
 }: PromptBoxImageProps) => {
   useSignals();
+  const selectedModel = useMemo(
+    () => imageModelForProvider(catalogModel, selectedProvider),
+    [catalogModel, selectedProvider],
+  );
+  const isDirectMidjourney = selectedProvider === GenerationProvider.Midjourney;
+
 
   console.debug(
     "Selected model and provider:",
@@ -101,7 +107,8 @@ export const PromptBoxImage = ({
   const setAspectRatio = usePromptImageStore((s) => s.setAspectRatio);
   const resolution = usePromptImageStore((s) => s.resolution);
   const setResolution = usePromptImageStore((s) => s.setResolution);
-  const generationCount = usePromptImageStore((s) => s.generationCount);
+  const storedGenerationCount = usePromptImageStore((s) => s.generationCount);
+  const generationCount = isDirectMidjourney ? 4 : storedGenerationCount;
   const setGenerationCount = usePromptImageStore((s) => s.setGenerationCount);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -578,7 +585,7 @@ export const PromptBoxImage = ({
                 onClick={handleEnqueue}
                 disabled={!prompt.trim()}
                 loading={isEnqueueing}
-                credits={credits}
+                credits={isDirectMidjourney ? 0 : credits}
               />
             </div>
           </div>

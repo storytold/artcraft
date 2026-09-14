@@ -120,6 +120,7 @@ pub enum TauriGenerateImageErrorType {
   NeedsFalApiKey,
   /// Needs Grok credentials
   NeedsGrokCredentials,
+  NeedsMidjourneyCredentials,
   /// Billing issue
   BillingIssue,
 }

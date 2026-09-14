@@ -1,3 +1,4 @@
+use midjourney_client::error::midjourney_error::MidjourneyError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use artcraft_client::error::storyteller_error::StorytellerError;
@@ -9,6 +10,9 @@ use worldlabs_api_client::error::world_labs_error::WorldLabsError;
 
 #[derive(Debug)]
 pub enum ProviderError {
+  Midjourney(MidjourneyError),
+  MidjourneySubscriptionRequired(String),
+  MidjourneySubmitRejected(String),
   Storyteller(StorytellerError),
   Fal(FalErrorPlus),
   GmiCloud(GmiCloudError),
@@ -22,6 +26,8 @@ impl Error for ProviderError {}
 impl Display for ProviderError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
+      Self::Midjourney(e) => write!(f, "Midjourney provider error: {}", e),
+      Self::MidjourneySubscriptionRequired(message) | Self::MidjourneySubmitRejected(message) => write!(f, "{}", message),
       Self::Storyteller(e) => write!(f, "Storyteller provider error: {}", e),
       Self::Fal(e) => write!(f, "Fal provider error: {}", e),
       Self::GmiCloud(e) => write!(f, "GmiCloud provider error: {}", e),

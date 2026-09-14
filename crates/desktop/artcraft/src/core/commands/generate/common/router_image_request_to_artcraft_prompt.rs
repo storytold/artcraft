@@ -71,6 +71,7 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
 fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvider {
   match provider {
     RouterProvider::Artcraft => GenerationProvider::Artcraft,
+    RouterProvider::Midjourney => GenerationProvider::Midjourney,
     RouterProvider::Fal => GenerationProvider::Fal,
     // Unused providers -> ArtCraft
     RouterProvider::KinoviWeb => GenerationProvider::Artcraft ,

@@ -21,7 +21,6 @@ use errors::AnyhowResult;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;
 use midjourney_client::credentials::cookie_store_has_auth_cookies::cookie_store_has_auth_cookies;
-use midjourney_client::recipes::get_user_info::{get_user_info, GetUserInfoRequest};
 use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;
 use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
 use tauri::{AppHandle, Manager, WebviewWindow};

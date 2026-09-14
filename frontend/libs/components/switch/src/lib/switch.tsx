@@ -5,13 +5,16 @@ import { Fragment } from "react";
 interface SwitchProps {
   enabled: boolean;
   setEnabled: (enabled: boolean) => void;
+  id?: string;
+  label?: string;
+  disabled?: boolean;
   className?: string;
   offClassName?: string;
 }
 
-export function Switch({ enabled, setEnabled, className, offClassName }: SwitchProps) {
+export function Switch({ enabled, setEnabled, id, label = "Enable notifications", disabled = false, className, offClassName }: SwitchProps) {
   return (
-    <HeadlessSwitch checked={enabled} onChange={setEnabled} as={Fragment}>
+    <HeadlessSwitch id={id} checked={enabled} onChange={setEnabled} disabled={disabled} as={Fragment}>
       {({ checked, disabled }) => (
         <button
           className={clsx(
@@ -21,7 +24,7 @@ export function Switch({ enabled, setEnabled, className, offClassName }: SwitchP
             className,
           )}
         >
-          <span className="sr-only">Enable notifications</span>
+          <span className="sr-only">{label}</span>
           <span
             className={clsx(
               "size-4 rounded-full bg-white transition",

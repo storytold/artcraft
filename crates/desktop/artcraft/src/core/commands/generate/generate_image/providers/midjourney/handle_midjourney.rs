@@ -1,140 +1,60 @@
-use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason, ProviderFailureReason};
-use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::{EditImageQuality, EditImageSize};
+use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
+use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
+use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::deprecated::text_to_image::enqueue_text_to_image_command::{EnqueueTextToImageRequest, TextToImageSize};
-use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::functional_events::canvas_background_removal_complete_event::CanvasBackgroundRemovalCompleteEvent;
-use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
-use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
-use crate::core::events::warning_events::flash_user_input_error_event::FlashUserInputErrorEvent;
+use crate::core::commands::generate::common::router_image_request_to_artcraft_prompt::router_image_request_to_artcraft_prompt;
+use crate::core::commands::generate::generate_image::providers::artcraft_router::utils::convert_enums_to_router::convert_aspect_ratio;
+use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
+use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
-use crate::core::state::data_dir::app_data_root::AppDataRoot;
-use crate::core::state::provider_priority::ProviderPriorityStore;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
-use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
-use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
+use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
+use artcraft_router::api::router_image_model::RouterImageModel;
+use artcraft_router::api::router_provider::RouterProvider;
+use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
+use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+use artcraft_router::client::router_client::RouterClient;
+use artcraft_router::client::router_midjourney_client::RouterMidjourneyClient;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
+use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use uuid_utils::uuid::generate_random_uuid;
-use log::{error, info};
-use midjourney_client::client::midjourney_hostname::MidjourneyHostname;
-use midjourney_client::endpoints::submit_job::{submit_job, SubmitJobRequest};
-use midjourney_client::error::midjourney_api_error::MidjourneyApiError;
-use midjourney_client::recipes::channel_id::ChannelId;
-use midjourney_client::recipes::text_to_image::{text_to_image, TextToImageError, TextToImageRequest};
-use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
-use openai_sora_client::recipes::simple_image_gen_with_session_auto_renew::{simple_image_gen_with_session_auto_renew, SimpleImageGenAutoRenewRequest};
-use openai_sora_client::requests::image_gen::common::{ImageSize, NumImages};
-use std::time::Duration;
-use tauri::AppHandle;
-use tokens::tokens::media_files::MediaFileToken;
 
-pub async fn handle_midjourney(
-  app: &AppHandle,
-  request: &EnqueueTextToImageRequest,
-  app_env_configs: &AppEnvConfigs,
-  mj_creds_manager: &MidjourneyCredentialManager,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
-
-  let creds = match mj_creds_manager.maybe_copy_cookie_store() {
-    Ok(Some(creds)) => creds,
-    Ok(None) => {
-      error!("Midjourney credentials not found.");
-      ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Midjourney, &app);
-      return Err(GenerateError::needs_midjourney_credentials());
-    }
-    Err(err) => {
-      error!("Error reading Midjourney credentials: {:?}", err);
-      ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Midjourney, &app);
-      return Err(GenerateError::needs_midjourney_credentials());
-    },
+pub async fn handle_midjourney(request: &TauriGenerateImageRequest, config: &AppEnvConfigs, credentials: &MidjourneyCredentialManager, storyteller: &StorytellerCredentialManager) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let model = request.model.ok_or_else(GenerateError::no_model_specified)?;
+  if !matches!(model, TauriImageModel::Midjourney | TauriImageModel::Midjourney7 | TauriImageModel::Midjourney7Niji | TauriImageModel::Midjourney8) {
+    return Err(bad_input("This model cannot use a Midjourney account"));
+  }
+  if has_image_inputs(request) {
+    return Err(bad_input("Direct Midjourney does not support image references yet"));
+  }
+  if request.batch_size.is_some_and(|count| count != 4) {
+    return Err(bad_input("Direct Midjourney generates four images per job"));
+  }
+  let builder = GenerateImageRequestBuilder { model: tauri_image_model_to_router_model(model).unwrap_or(RouterImageModel::Midjourney8), provider: RouterProvider::Midjourney, prompt: request.prompt.clone(), image_inputs: None, resolution: None, aspect_ratio: request.aspect_ratio.map(convert_aspect_ratio), quality: None, image_batch_count: Some(4), horizontal_angle: None, vertical_angle: None, zoom: None, request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade, generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::AbortGeneration), idempotency_token: None };
+  let prompt_request = router_image_request_to_artcraft_prompt(&builder);
+  let ImageGenerationDraftOrRequest::Request(generation) = builder.build2()? else {
+    return Err(bad_input("Unexpected Midjourney request draft"));
   };
-
-  // TODO: We can request population of the user info if absent or expired.
-  
-  let user_info = match mj_creds_manager.maybe_copy_user_info() {
-    Ok(Some(user_info)) => user_info,
-    Ok(None) => {
-      return Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyUserInfo));
-    }
-    Err(err) => {
-      error!("Error reading Midjourney user info: {:?}", err);
-      return Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyUserInfo));
-    },
+  let session = credentials.session().await.map_err(GenerateError::AnyhowError)?.ok_or_else(GenerateError::needs_midjourney_credentials)?;
+  // Persist the prompt before submit and link it to the task. Completion can
+  // then attribute results after restart, including websocket-only completions.
+  let storyteller_credentials = storyteller.get_credentials().map_err(GenerateError::AnyhowError)?.ok_or_else(GenerateError::needs_storyteller_credentials)?;
+  let prompt = create_prompt(&config.storyteller_host, Some(&storyteller_credentials), prompt_request).await?;
+  let client = RouterClient::Midjourney(RouterMidjourneyClient::new(session.cookie_header, session.user_id, session.browser));
+  let response = generation.send_request(&client).await?;
+  let GenerateImageResponse::Midjourney(response) = response else {
+    return Err(bad_input("Unexpected Midjourney response"));
   };
-
-  let channel_id = match user_info.user_id {
-    Some(user_id) => ChannelId::UserId(user_id),
-    None => {
-      error!("Midjourney user info does not contain a user ID.");
-      return Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyUserId));
-    }
-  };
-
-  info!("Calling midjourney ...");
-
-  let cookie_header = creds.to_cookie_string();
-
-  let prompt = request.prompt
-      .as_deref()
-      .unwrap_or("");
-
-  let result = text_to_image(TextToImageRequest {
-    prompt,
-    channel_id: &channel_id,
-    hostname: MidjourneyHostname::Standard,
-    cookie_header,
-  }).await;
-
-  let result = match result {
-    Ok(result) => result,
-    Err(err) => {
-      error!("Failed to use MidJourney: {:?}", err);
-      return Err(GenerateError::from(err));
-    }
-  };
-  
-  let job_id = match result.maybe_job_id {
-    Some(job_id) => job_id,
-    None => {
-      error!("Failed to enqueue MidJourney: No job ID returned.");
-      return handle_midjourney_errors(app, result.maybe_errors);
-    }
-  };
-
-  info!("Successfully enqueued MidJourney. Job token: {}", job_id);
-
-  Ok(TaskEnqueueSuccess {
-    provider: GenerationProvider::Midjourney,
-    model: Some(GenerationModel::Midjourney),
-    provider_job_id: Some(job_id),
-    task_type: TaskType::ImageGeneration,
-  })
+  Ok(TaskEnqueueSuccess { task_type: TaskType::ImageGeneration, model: Some(tauri_image_model_to_generation_model(model)), provider: GenerationProvider::Midjourney, provider_job_id: Some(response.job_id), maybe_queue_status_url: None, maybe_queue_response_url: None, maybe_prompt_token: Some(prompt.prompt_token) })
 }
 
-fn handle_midjourney_errors(
-  app: &AppHandle,
-  maybe_errors: Option<Vec<TextToImageError>>
-) -> Result<TaskEnqueueSuccess, GenerateError> {
-  if let Some(errors) = maybe_errors {
-    if !errors.is_empty() {
-      let messages: Vec<String> = errors.iter()
-          .map(|e| format!("{:?}", e))
-          .collect();
+fn has_image_inputs(request: &TauriGenerateImageRequest) -> bool {
+  request.image_media_tokens.as_ref().is_some_and(|images| !images.is_empty()) || request.canvas_image_media_token.is_some() || request.canvas_image_raw_bytes.is_some() || request.scene_image_media_token.is_some() || request.scene_image_raw_bytes.is_some() || request.inpainting_mask_image_media_token.is_some() || request.inpainting_mask_image_raw_bytes.is_some()
+}
 
-      let combined_message = messages.join("; ");
-
-      let event = FlashUserInputErrorEvent {
-        message: format!("Midjourney Error: {}", combined_message),
-      };
-
-      if let Err(err) = event.send(&app) {
-        error!("Failed to send FlashUserInputErrorEvent: {:?}", err); // Fail open
-      }
-    }
-  }
-  
-  Err(GenerateError::ProviderFailure(ProviderFailureReason::MidjourneyJobEnqueueFailed))
+fn bad_input(message: &str) -> GenerateError {
+  GenerateError::BadInput(BadInputReason::WrongImageArguments(message.to_string()))
 }

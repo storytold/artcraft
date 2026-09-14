@@ -47,8 +47,11 @@ pub enum MidjourneyApiError {
   /// Cloudflare errors.
   CloudflareError(CloudflareError),
 
-  /// A deserialization error with the response.
-  DeserializationError(serde_json::Error),
+  /// A response could not be decoded. The payload may contain credentials.
+  DeserializationError {
+    source: serde_json::Error,
+    body: String,
+  },
 
   /// The request timed out.
   Timeout(String),
@@ -84,7 +87,13 @@ impl Display for MidjourneyApiError {
         write!(f, "Unknown HTTP failure; status code: {}; body: {}", status_code, body),
       // Deserialization errors
       // Server response handling errors
-      Self::DeserializationError(error) => write!(f, "Deserialization error: {}", error),
+      Self::DeserializationError { source, body } => write!(
+        f,
+        "Deserialization error: {} | raw response body ({} bytes): {}",
+        source,
+        body.len(),
+        body,
+      ),
       // Network errors
       Self::Timeout(msg) => write!(f, "Timeout: {}", msg),
       Self::NetworkError(msg) => write!(f, "Network error: {}", msg),
@@ -98,9 +107,9 @@ impl Display for MidjourneyApiError {
   }
 }
 
-impl From<serde_json::Error> for MidjourneyApiError {
-  fn from(error: serde_json::Error) -> Self {
-    Self::DeserializationError(error)
+impl MidjourneyApiError {
+  pub fn deserialization(source: serde_json::Error, _body: &str) -> Self {
+    Self::DeserializationError { source, body: "<redacted>".to_string() }
   }
 }
 

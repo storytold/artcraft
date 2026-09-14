@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 pub enum RouterProvider {
   Artcraft,
+  Midjourney,
   Fal,
   GmiCloud,
   GrokApi,

@@ -2,9 +2,9 @@ use crate::error::midjourney_api_error::MidjourneyApiError;
 use crate::error::midjourney_client_error::MidjourneyClientError;
 use crate::error::midjourney_error::MidjourneyError;
 use crate::utils::get_image_url::get_image_url;
+use browser_emulation::browser_profile::BrowserProfile;
 use cloudflare_errors::filter_cloudflare_errors::filter_cloudflare_errors;
 use wreq::Client;
-use wreq_util::Emulation;
 
 #[derive(Clone)]
 pub struct ImageDownloaderClient {
@@ -12,12 +12,12 @@ pub struct ImageDownloaderClient {
 }
 
 impl ImageDownloaderClient {
-  pub fn create() -> Result<Self, MidjourneyClientError> {
+  /// Build a downloader. `maybe_browser` defaults to [`BrowserProfile::default`].
+  pub fn create(maybe_browser: Option<BrowserProfile>) -> Result<Self, MidjourneyClientError> {
     Ok(Self {
-      client: Client::builder()
-          .emulation(Emulation::Firefox139)
-          .build()
-          .map_err(|err| MidjourneyClientError::WreqError(err))?
+      client: maybe_browser.unwrap_or_default()
+          .build_client()
+          .map_err(MidjourneyClientError::WreqError)?,
     })
   }
 
@@ -26,16 +26,13 @@ impl ImageDownloaderClient {
 
     // TODO: Cookies
     // TODO: Cache control headers?
-    let mut http_request = self.client.get(url)
-        //.header("Referrer-Policy", "origin-when-cross-origin")
-        //.header("content-type", "application/json")
-        //.header("sec-fetch-user", "?1")
-        //.header("upgrade-insecure-requests", "1");
+    // NB: Browser-identity headers come from the emulation on the client; only
+    // request-context headers are set here.
+    let http_request = self.client.get(url)
         .header("Referrer", "https://www.midjourney.com/")
         .header("accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
         .header("accept-language", "en-US,en;q=0.8")
         .header("priority", "i")
-        .header("sec-ch-ua-mobile", "?0")
         .header("sec-fetch-dest", "image")
         .header("sec-fetch-mode", "no-cors")
         .header("sec-fetch-site", "same-site");

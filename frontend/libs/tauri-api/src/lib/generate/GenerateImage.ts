@@ -69,6 +69,7 @@ export enum GenerateImageErrorType {
   ServerError = "server_error",
   NeedsStorytellerCredentials = "needs_storyteller_credentials",
   NeedsGrokCredentials = "needs_grok_credentials",
+  NeedsMidjourneyCredentials = "needs_midjourney_credentials",
   BillingIssue = "billing_issue",
 }
 

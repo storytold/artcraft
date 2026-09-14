@@ -6,6 +6,7 @@ use tokens::tokens::media_files::MediaFileToken;
 #[derive(Debug, Clone, Copy)]
 pub enum ClientType {
   Artcraft,
+  Midjourney,
   Fal,
   GmiCloud,
   GrokApi,
@@ -16,6 +17,7 @@ pub enum ClientType {
 impl Display for ClientType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
+      Self::Midjourney => write!(f, "Midjourney"),
       Self::Artcraft => write!(f, "Artcraft"),
       Self::Fal => write!(f, "Fal"),
       Self::GmiCloud => write!(f, "GmiCloud"),

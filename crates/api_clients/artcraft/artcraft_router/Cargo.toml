@@ -9,6 +9,8 @@ name = "artcraft_router"
 path = "src/lib.rs"
 
 [dependencies]
+midjourney_client.workspace = true
+browser_emulation.workspace = true
 
 # Internal
 artcraft_api_defs.workspace = true

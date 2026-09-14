@@ -133,3 +133,14 @@ describe("API video options", () => {
     expect(resolveVideoDuration(model, 30, false)).toBe(12);
   });
 });
+
+it("offers ArtCraft and direct Midjourney only for supported Midjourney models", () => {
+  const models = buildImageModelsFromListing([], [
+    { model: "midjourney_7" }, { model: "midjourney_7_niji" },
+    { model: "midjourney_8" }, { model: "future_image" },
+  ]);
+  for (const model of models.slice(0, 3)) {
+    expect(model.getProviders()).toEqual([GenerationProvider.Artcraft, GenerationProvider.Midjourney]);
+  }
+  expect(models[3].getProviders()).toEqual([GenerationProvider.Artcraft]);
+});

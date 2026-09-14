@@ -70,3 +70,9 @@ it("preserves reference duration hints in video pricing", async () => {
     request,
   });
 });
+
+it.each(["artcraft", "midjourney"])("passes an explicit %s provider for Midjourney generation", async (provider) => {
+  const request = { model: "midjourney_8", provider, batch_size: 4, prompt: "sailboat" };
+  await GenerateImage(request as Parameters<typeof GenerateImage>[0]);
+  expect(invoke).toHaveBeenCalledWith("generate_image_command", { request });
+});

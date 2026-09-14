@@ -1,11 +1,17 @@
 use crate::core::state::app_preferences::app_preferences_serializable::AppPreferencesSerializable;
 use crate::core::state::app_preferences::preferred_download_directory::{PreferredDownloadDirectory, SystemDownloadDirectory};
+use crate::core::state::app_preferences::preferred_download_filename::PreferredDownloadFilename;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 
 #[derive(Clone)]
 pub struct AppPreferences {
   /// The downloads directory to use when a user downloads a file.
   pub preferred_download_directory: PreferredDownloadDirectory,
+
+  pub preferred_download_filename: PreferredDownloadFilename,
+
+  /// Save generated results before marking their task complete.
+  pub auto_download: bool,
 
   /// Play sounds on events.
   pub play_sounds: bool,
@@ -36,6 +42,8 @@ impl Default for AppPreferences {
   fn default() -> Self {
     Self {
       preferred_download_directory: PreferredDownloadDirectory::System(SystemDownloadDirectory::Downloads),
+      preferred_download_filename: PreferredDownloadFilename::default(),
+      auto_download: false,
       play_sounds: true,
       // NB: These are defined in the frontend.
       enqueue_success_sound: Some("done".to_string()),

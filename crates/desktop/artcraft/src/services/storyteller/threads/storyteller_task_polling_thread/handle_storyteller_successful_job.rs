@@ -6,6 +6,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
 use crate::core::utils::enum_conversion::task_type::to_generation_action;
+use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use super::events::maybe_handle_frontend_caller_notification::maybe_handle_frontend_caller_notification;
 use artcraft_api_defs::jobs::list_session_jobs::ListSessionJobsItem;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
@@ -32,6 +33,13 @@ pub async fn handle_successful_job(
       .as_ref()
       .map(|result| MediaFileToken::new_from_str(&result.entity_token));
 
+  auto_download_task(
+    app_handle, task,
+    job.maybe_result.as_ref().and_then(|result| result.maybe_batch_token.as_ref()),
+    job.maybe_result.as_ref().map(|result| result.media_links.cdn_url.as_str()),
+    None,
+  ).await?;
+
   let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
@@ -51,6 +59,7 @@ pub async fn handle_successful_job(
     return Ok(()); // If anything breaks with queries, don't spam events.
   }
 
+  clear_auto_download_checkpoint(app_handle, task);
   send_additional_success_events(app_handle, app_env_configs, creds, job, task).await;
 
   let service = to_generation_service_provider(task.provider);

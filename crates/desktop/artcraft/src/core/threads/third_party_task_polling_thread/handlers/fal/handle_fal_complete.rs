@@ -5,6 +5,7 @@ use crate::core::threads::third_party_task_polling_thread::events::notify_fronte
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::utils::auto_download::{auto_download_task_urls, clear_auto_download_checkpoint};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -89,6 +90,10 @@ async fn handle_fal_complete_inner(
     return Ok(());
   }
 
+  // Save local copies before uploading or announcing completion.
+  let download_urls = urls.iter().map(|url| reqwest::Url::parse(url)).collect::<Result<Vec<_>, _>>()?;
+  auto_download_task_urls(app_handle, task, &download_urls).await?;
+
   // Use the prompt token from the task record (created at generation time).
   let maybe_prompt_token = task.prompt_token.as_ref()
     .map(|s| PromptToken::new_from_str(s));
@@ -163,6 +168,7 @@ async fn handle_fal_complete_inner(
   }).await?;
 
   if updated {
+    clear_auto_download_checkpoint(app_handle, task);
     if let Some(primary_token) = maybe_primary_media_file_token {
       let completion = CompletionData {
         primary_media_file_token: primary_token,
@@ -341,4 +347,3 @@ async fn try_upload(
 
   Ok(media_token)
 }
-

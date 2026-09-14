@@ -1,3 +1,4 @@
+use crate::client::router_midjourney_client::RouterMidjourneyClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
@@ -7,6 +8,7 @@ use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
 pub struct MultiRouterClient {
+  pub(crate) midjourney_client: Option<RouterMidjourneyClient>,
   pub(crate) artcraft_client: Option<RouterArtcraftClient>,
   pub(crate) fal_client: Option<RouterFalClient>,
   pub(crate) gmicloud_client: Option<RouterGmiCloudClient>,
@@ -16,6 +18,11 @@ pub struct MultiRouterClient {
 }
 
 impl MultiRouterClient {
+  pub fn get_midjourney_client_ref(&self) -> Result<&RouterMidjourneyClient, ClientError> {
+    self.midjourney_client.as_ref()
+      .ok_or(ClientError::ClientNotConfigured(ClientType::Midjourney))
+  }
+
   pub fn get_artcraft_client_ref(&self) -> Result<&RouterArtcraftClient, ClientError> {
     self.artcraft_client.as_ref()
       .ok_or(ClientError::ClientNotConfigured(ClientType::Artcraft))

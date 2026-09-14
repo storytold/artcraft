@@ -27,3 +27,5 @@ export * from "./lib/lists/Object3DModels.js";
 export * from "./lib/loader/buildModelsFromListing.js";
 
 export * from "./lib/classes/videoOptions.js";
+
+export { imageModelForProvider } from "./lib/classes/imageModelForProvider.js";

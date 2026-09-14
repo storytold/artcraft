@@ -1,14 +1,16 @@
 
 import { invoke } from "@tauri-apps/api/core";
-import { PreferredDownloadDirectory } from "./GetAppPreferences";
+import { PreferredDownloadDirectory, PreferredDownloadFilename } from "./GetAppPreferences";
 
 export interface UpdateAppPreferencesRequest {
   preference: PreferenceName,
-  value: undefined | string | boolean | PreferredDownloadDirectory,
+  value: undefined | string | boolean | PreferredDownloadDirectory | PreferredDownloadFilename,
 }
 
 export enum PreferenceName {
   PreferredDownloadDirectory = "preferred_download_directory",
+  PreferredDownloadFilename = "preferred_download_filename",
+  AutoDownload = "auto_download",
   PlaySounds = "play_sounds", 
   DeleteFileSound = "delete_file_sound",
   EnqueueSuccessSound = "enqueue_success_sound",

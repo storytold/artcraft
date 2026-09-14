@@ -19,6 +19,7 @@ use crate::core::commands::generate::models::video::list_video_models_command::l
 use crate::core::commands::download::download_directory_reveal_command::download_directory_reveal_command;
 use crate::core::commands::download::download_media_file_command::download_media_file_command;
 use crate::core::commands::download::download_url_command::download_url_command;
+use crate::core::commands::download::get_download_path_command::get_download_path_command;
 use crate::core::commands::enqueue::image_bg_removal::enqueue_image_bg_removal_command::enqueue_image_bg_removal_command;
 use crate::core::commands::enqueue::image_to_gaussian::enqueue_image_to_gaussian_command::enqueue_image_to_gaussian_command;
 use crate::core::commands::enqueue::image_to_object::enqueue_image_to_3d_object_command::enqueue_image_to_3d_object_command;
@@ -220,6 +221,7 @@ pub fn run() {
     download_directory_reveal_command,
     download_media_file_command,
     download_url_command,
+    get_download_path_command,
     enqueue_image_bg_removal_command,
     enqueue_image_to_3d_object_command,
     enqueue_image_to_gaussian_command,

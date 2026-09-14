@@ -64,6 +64,7 @@ impl From<DownloadError> for ArtcraftRouterError {
 impl From<ProviderError> for ArtcraftRouterError {
   fn from(error: ProviderError) -> Self {
     let is_billing_error = match &error {
+      ProviderError::MidjourneySubscriptionRequired(_) => true,
       ProviderError::Fal(FalErrorPlus::FalBillingError(_)) => true,
       ProviderError::KinoviWeb(KinoviWebError::ApiSpecific(KinoviWebSpecificApiError::BillingError { .. })) => true,
       ProviderError::Storyteller(StorytellerError::Api(ApiError::PaymentRequired(_))) => true,
