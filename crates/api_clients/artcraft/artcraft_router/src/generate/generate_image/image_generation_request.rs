@@ -1,3 +1,5 @@
+use crate::generate::generate_image::providers::midjourney::request::MidjourneyRequestState;
+use crate::generate::generate_image::providers::midjourney::cost::MidjourneyCostState;
 use crate::api::router_provider::RouterProvider;
 use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -92,6 +94,7 @@ use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::reques
 
 #[derive(Clone, Debug)]
 pub enum ImageGenerationRequest {
+  MidjourneyRequest(MidjourneyRequestState),
   // ── Artcraft provider (omni-gen image endpoint) ──
   ArtcraftFlux1Dev(ArtcraftFlux1DevRequestState),
   ArtcraftFlux1Schnell(ArtcraftFlux1SchnellRequestState),
@@ -145,6 +148,7 @@ pub enum ImageGenerationRequest {
 impl ImageGenerationRequest {
   pub fn get_provider(&self) -> RouterProvider {
     match self {
+      Self::MidjourneyRequest(_) => RouterProvider::Midjourney,
       Self::ArtcraftFlux1Dev(_) => RouterProvider::Artcraft,
       Self::ArtcraftFlux1Schnell(_) => RouterProvider::Artcraft,
       Self::ArtcraftFluxPro1p1(_) => RouterProvider::Artcraft,
@@ -195,6 +199,7 @@ impl ImageGenerationRequest {
 
   pub fn estimate_cost(&self) -> Result<ImageGenerationCostEstimate, ArtcraftRouterError> {
     match self {
+      Self::MidjourneyRequest(request) => Ok(MidjourneyCostState::from_request(request).estimate_cost()),
       // ── Artcraft ──
       Self::ArtcraftFlux1Dev(request) => {
         Ok(ArtcraftFlux1DevCostState::from_request(request).estimate_cost())
@@ -291,6 +296,7 @@ impl ImageGenerationRequest {
 
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     match self {
+      Self::MidjourneyRequest(request) => request.send(client.get_midjourney_client_ref()?).await,
       // ── Artcraft (omni-gen image endpoint) ──
       Self::ArtcraftFlux1Dev(request) => {
         let artcraft_client = client.get_artcraft_client_ref()?;

@@ -1,3 +1,5 @@
+use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
+use crate::core::commands::generate::generate_image::providers::midjourney::handle_midjourney::handle_midjourney;
 use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
 use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
 use tauri::Manager;
@@ -54,11 +56,8 @@ async fn generate_image_native(
         &storyteller_creds_manager,
       ).await
     }
-    // Midjourney uses its own legacy command path, not this one.
     GenerationProvider::Midjourney => {
-      Err(GenerateError::NotYetImplemented(
-        "Midjourney should use its dedicated command".to_string(),
-      ))
+      handle_midjourney(&request, &app_env_configs, &app.state(), &storyteller_creds_manager).await
     }
     // All other providers go through the router.
     other => {
@@ -137,11 +136,15 @@ async fn handle_error_behavior(
   error!("generate_image_command error: {:?}", err);
 
   notify_frontend_of_errors(&app, &err).await;
+  if matches!(&err, GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo)) {
+    ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Midjourney, app);
+  }
 
   let error_type = match &err {
     GenerateError::BadInput(_) => TauriGenerateImageErrorType::BadInput,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => TauriGenerateImageErrorType::NeedsFalApiKey,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials) => TauriGenerateImageErrorType::NeedsGrokCredentials,
+    GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo) => TauriGenerateImageErrorType::NeedsMidjourneyCredentials,
     GenerateError::MissingCredentials(_) => TauriGenerateImageErrorType::NeedsStorytellerCredentials,
     GenerateError::NoProviderAvailable => TauriGenerateImageErrorType::NoProviderAvailable,
     GenerateError::BillingIssue(_) => TauriGenerateImageErrorType::BillingIssue,

@@ -1,3 +1,4 @@
+use crate::generate::generate_image::providers::midjourney::build::build_midjourney;
 use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::router_image_model::RouterImageModel;
 use crate::api::router_quality::RouterQuality;
@@ -113,6 +114,7 @@ impl GenerateImageRequestBuilder {
   /// `GenerateVideoRequestBuilder::build2`.
   pub fn build2(self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
+      (RouterProvider::Midjourney, RouterImageModel::Midjourney7 | RouterImageModel::Midjourney7Niji | RouterImageModel::Midjourney8) => build_midjourney(self),
       (RouterProvider::Artcraft, RouterImageModel::Flux1Dev) => build_artcraft_flux_1_dev(self),
       (RouterProvider::Artcraft, RouterImageModel::Flux1Schnell) => build_artcraft_flux_1_schnell(self),
       (RouterProvider::Artcraft, RouterImageModel::FluxPro11) => build_artcraft_flux_pro_1p1(self),

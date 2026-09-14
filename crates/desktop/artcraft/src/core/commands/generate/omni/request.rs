@@ -38,7 +38,7 @@ impl OmniRequest {
   pub fn uses_legacy_image_endpoint(&self) -> bool {
     // These desktop editor integrations still have dedicated request shapes.
     // Catalog models, including any future ID, use Omni by default.
-    matches!(self.model(), Some("recraft_3" | "flux_pro_kontext_max" | "flux_dev_juggernaut" | "flux_pro_1" | "midjourney"))
+    matches!(self.model(), Some("recraft_3" | "flux_pro_kontext_max" | "flux_dev_juggernaut" | "flux_pro_1"))
   }
 
   pub fn api_fields(&self, modality: Modality) -> Map<String, Value> {
@@ -101,6 +101,7 @@ fn rename_field(fields: &mut Map<String, Value>, old: &str, new: &str) {
 // Unknown IDs pass through unchanged; this is not a model allowlist.
 fn canonical_model_id(model: &str) -> &str {
   match model {
+    "midjourney" => "midjourney_8",
     "flux_pro_11" => "flux_pro_1p1",
     "flux_pro_11_ultra" => "flux_pro_1p1_ultra",
     "gemini_25_flash" => "nano_banana",
@@ -183,5 +184,30 @@ mod tests {
     assert_eq!(serde_json::to_value(event).unwrap(), json!("future_model_v99"));
     // Keep existing event strings compatible with old history.
     assert_eq!(serde_json::to_value(GenerationModel::FluxPro11).unwrap(), json!("flux_pro_1.1"));
+  }
+}
+
+#[cfg(test)]
+mod midjourney_tests {
+  use super::*;
+
+  #[test]
+  fn versioned_models_respect_the_explicit_provider() {
+    for model in ["midjourney_7", "midjourney_7_niji", "midjourney_8"] {
+      let direct: OmniRequest = serde_json::from_value(serde_json::json!({"model": model, "provider": "midjourney"})).unwrap();
+      assert!(!direct.uses_artcraft());
+      let artcraft: OmniRequest = serde_json::from_value(serde_json::json!({"model": model, "provider": "artcraft"})).unwrap();
+      assert!(artcraft.uses_artcraft());
+      assert!(!artcraft.uses_legacy_image_endpoint());
+      assert_eq!(artcraft.api_fields(Modality::Image)["model"], model);
+    }
+  }
+
+  #[test]
+  fn generic_midjourney_uses_v8_when_artcraft_is_selected() {
+    let request: OmniRequest = serde_json::from_value(serde_json::json!({"model": "midjourney", "provider": "artcraft"})).unwrap();
+    assert!(request.uses_artcraft());
+    assert!(!request.uses_legacy_image_endpoint());
+    assert_eq!(request.api_fields(Modality::Image)["model"], "midjourney_8");
   }
 }

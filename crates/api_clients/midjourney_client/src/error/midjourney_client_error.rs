@@ -27,6 +27,16 @@ pub enum MidjourneyClientError {
 
   /// A serialization error with the request.
   SerializationError(serde_json::Error),
+
+  /// The websocket upgrade handshake failed.
+  WebSocketUpgrade(String),
+
+  /// Tried to send on a websocket whose background task has stopped.
+  WebSocketClosed,
+
+  /// The websocket opened but the `subscribe_to_user` handshake did not
+  /// complete within the allotted time.
+  WebSocketHandshakeTimeout,
 }
 
 impl Error for MidjourneyClientError {}
@@ -42,6 +52,9 @@ impl Display for MidjourneyClientError {
       //Self::ReqwestError(err) => write!(f, "Reqwest client error: {}", err),
       Self::WreqError(err) => write!(f, "Wreq client error: {}", err),
       Self::SerializationError(err) => write!(f, "Request serialization error: {}", err),
+      Self::WebSocketUpgrade(msg) => write!(f, "WebSocket upgrade failed: {}", msg),
+      Self::WebSocketClosed => write!(f, "The websocket connection is closed."),
+      Self::WebSocketHandshakeTimeout => write!(f, "Timed out waiting for the websocket user handshake."),
     }
   }
 }

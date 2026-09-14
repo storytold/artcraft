@@ -2,17 +2,19 @@ use crate::client::midjourney_hostname::MidjourneyHostname;
 use crate::error::midjourney_api_error::MidjourneyApiError;
 use crate::error::midjourney_client_error::MidjourneyClientError;
 use crate::error::midjourney_error::MidjourneyError;
+use browser_emulation::browser_profile::BrowserProfile;
 use cloudflare_errors::filter_cloudflare_errors::filter_cloudflare_errors;
 use log::error;
 use serde::Deserialize;
-use wreq::Client;
-use wreq_util::Emulation;
 
-const USER_CONNECTIONS_URL :&str = "https://www.midjourney.com/api/user-connections";
-
-pub struct GetUserConnectionsRequest {
-  pub hostname: MidjourneyHostname,
-  pub cookie_header: String,
+/// Lists the user's linked auth providers. Has no semantic parameters — only
+/// transport concerns.
+pub struct UserConnectionsArgs<'a> {
+  pub cookie_header: &'a str,
+  /// Defaults to the standard hostname if absent.
+  pub hostname: Option<&'a MidjourneyHostname>,
+  /// Defaults to [`BrowserProfile::default`] if absent.
+  pub browser: Option<BrowserProfile>,
 }
 
 #[derive(Debug)]
@@ -30,29 +32,28 @@ pub struct Provider {
   pub is_linked: bool,
 }
 
-pub async fn user_connections(req: GetUserConnectionsRequest) -> Result<Vec<Provider>, MidjourneyError> {
+pub async fn user_connections(args: UserConnectionsArgs<'_>) -> Result<Vec<Provider>, MidjourneyError> {
+  let default_hostname = MidjourneyHostname::Standard;
+  let hostname = args.hostname.unwrap_or(&default_hostname);
 
-  let referer = format!("https://{}", req.hostname.as_str());
+  let referer = format!("https://{}", hostname.as_str());
 
-  let url = format!("https://{}/api/user-connections", req.hostname.as_str());
+  let url = format!("https://{}/api/user-connections", hostname.as_str());
 
-  let client = Client::builder()
-      .emulation(Emulation::Firefox139)
-      .build()
-      .map_err(|err| MidjourneyClientError::WreqError(err))?;
+  let client = args.browser.clone().unwrap_or_default()
+      .build_client()
+      .map_err(MidjourneyClientError::WreqError)?;
 
-  let cookie_header = req.cookie_header.trim();
+  let cookie_header = args.cookie_header.trim();
 
   if cookie_header.len() < 20 {
-    error!("Cookie header is too short (len: {}): {}", cookie_header.len(), cookie_header);
+    error!("Cookie header is too short (len: {})", cookie_header.len());
     return Err(MidjourneyClientError::CookieTooShort.into());
   }
 
-  // NB: missing headers that were in the browser request:
-  // -H 'sec-ch-ua-platform: "macOS"' \
-  // -H 'sec-ch-ua: "Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"' \
-
-  let mut http_request = client.get(url)
+  // NB: Browser-identity headers come from the emulation on the client; only
+  // request-context headers are set here.
+  let http_request = client.get(url)
       .header("cookie", cookie_header)
       .header("Referer", &referer)
       .header("Referrer-Policy", "origin-when-cross-origin")
@@ -60,7 +61,6 @@ pub async fn user_connections(req: GetUserConnectionsRequest) -> Result<Vec<Prov
       .header("accept-language", "en-US,en;q=0.8")
       .header("content-type", "application/json")
       .header("priority", "u=1, i")
-      .header("sec-ch-ua-mobile", "?0")
       .header("sec-fetch-dest", "empty")
       .header("sec-fetch-mode", "cors")
       .header("sec-fetch-site", "same-origin")
@@ -128,7 +128,7 @@ pub async fn user_connections(req: GetUserConnectionsRequest) -> Result<Vec<Prov
   }
 
   let response : Vec<RawProvider> = serde_json::from_str(response_body)
-      .map_err(|err| MidjourneyApiError::DeserializationError(err))?;
+      .map_err(|err| MidjourneyApiError::deserialization(err, response_body.as_str()))?;
 
   let providers = response
       .into_iter()
@@ -149,8 +149,7 @@ pub async fn user_connections(req: GetUserConnectionsRequest) -> Result<Vec<Prov
 
 #[cfg(test)]
 mod tests {
-  use crate::client::midjourney_hostname::MidjourneyHostname;
-  use crate::endpoints::user_connections::{user_connections, GetUserConnectionsRequest};
+  use crate::endpoints::user_connections::{user_connections, UserConnectionsArgs};
   use errors::AnyhowResult;
   use filesys::read_to_trimmed_string::read_to_trimmed_string;
 
@@ -159,9 +158,10 @@ mod tests {
   async fn test() -> AnyhowResult<()> {
     let cookie_header = read_to_trimmed_string("/Users/bt/secrets/midjourney/cookie.txt")?;
 
-    let result = user_connections(GetUserConnectionsRequest {
-      cookie_header,
-      hostname: MidjourneyHostname::Standard,
+    let result = user_connections(UserConnectionsArgs {
+      cookie_header: &cookie_header,
+      hostname: None,
+      browser: None,
     }).await?;
 
     println!("Response: {:?}\n\n", result);

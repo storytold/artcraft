@@ -41,7 +41,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Midjourney",
     category: "image",
     creator: ModelCreator.Midjourney,
-    providers: [GenerationProvider.Midjourney],
+    providers: [GenerationProvider.Midjourney, GenerationProvider.Artcraft],
     selectorName: "Midjourney",
     selectorDescription: "Stunning style and quality",
     selectorBadges: ["45 sec."],

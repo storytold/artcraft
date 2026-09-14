@@ -5,51 +5,101 @@ use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::client::midjourney_hostname::MidjourneyHostname;
+use browser_emulation::browser_profile::BrowserProfile;
 use cloudflare_errors::filter_cloudflare_errors::filter_cloudflare_errors;
-use wreq::Client;
-use wreq_util::Emulation;
 
+/// The semantic parameters of a submit-jobs request.
 pub struct SubmitJobRequest<'a> {
   pub prompt: &'a str,
   pub channel_id: &'a str,
-  pub hostname: MidjourneyHostname,
-  pub cookie_header: String,
+}
+
+/// A submit-jobs request plus its transport concerns.
+pub struct SubmitJobArgs<'a> {
+  pub request: SubmitJobRequest<'a>,
+  pub cookie_header: &'a str,
+  /// Defaults to the standard hostname if absent.
+  pub hostname: Option<&'a MidjourneyHostname>,
+  /// Defaults to [`BrowserProfile::default`] if absent.
+  pub browser: Option<BrowserProfile>,
 }
 
 #[derive(Debug, Clone)]
 pub struct SubmitJobResponse {
   /// On success, the job ID is returned.
   pub maybe_job_id: Option<String>,
-  
+
   /// On error, we have a list of error messages.
   pub maybe_errors: Option<Vec<SubmitJobError>>,
 }
 
+impl SubmitJobResponse {
+  /// The classified errors returned by the submit, if any.
+  pub fn errors(&self) -> &[SubmitJobError] {
+    self.maybe_errors.as_deref().unwrap_or(&[])
+  }
+
+  /// Whether the submit was rejected because the account has no active paid
+  /// Midjourney subscription (free trials disabled). First-class so callers
+  /// can branch on it (e.g. prompt the user to subscribe).
+  pub fn is_subscription_required(&self) -> bool {
+    self.errors()
+        .iter()
+        .any(|error| error.error_type == MidjourneySubmitErrorType::SubscriptionRequired)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct SubmitJobError {
-  pub error_type: Option<String>,
+  pub error_type: MidjourneySubmitErrorType,
   pub message: Option<String>,
 }
 
-pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, MidjourneyError> {
-  let client = Client::builder()
-      .emulation(Emulation::Firefox139)
-      .build()
-      .map_err(|err| MidjourneyClientError::WreqError(err))?;
+/// A classified Midjourney submit-jobs failure `type`. Unknown values are
+/// preserved via [`MidjourneySubmitErrorType::Other`] so matching stays
+/// exhaustive-safe.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MidjourneySubmitErrorType {
+  /// `subscription_required`: the account needs an active paid Midjourney plan.
+  SubscriptionRequired,
 
-  let referer = format!("https://{}", req.hostname.as_str());
+  /// Any other failure type Midjourney returned (carries the raw string).
+  Other(String),
+}
+
+impl MidjourneySubmitErrorType {
+  pub fn from_api_str(value: &str) -> Self {
+    match value {
+      "subscription_required" => Self::SubscriptionRequired,
+      other => Self::Other(other.to_string()),
+    }
+  }
+}
+
+pub async fn submit_job(args: SubmitJobArgs<'_>) -> Result<SubmitJobResponse, MidjourneyError> {
+  let default_hostname = MidjourneyHostname::Standard;
+  let hostname = args.hostname.unwrap_or(&default_hostname);
+
+  let client = args.browser.clone().unwrap_or_default()
+      .build_client()
+      .map_err(MidjourneyClientError::WreqError)?;
+
+  let referer = format!("https://{}", hostname.as_str());
 
   // NB: Other recent clients use /api/app/submit-jobs, but this appears invalid.
-  let url = format!("https://{}/api/submit-jobs", req.hostname.as_str());
+  let url = format!("https://{}/api/submit-jobs", hostname.as_str());
 
-  let cookie_header = req.cookie_header.trim();
+  let cookie_header = args.cookie_header.trim();
 
   if cookie_header.len() < 20 {
-    error!("Cookie header is too short (len: {}): {}", cookie_header.len(), cookie_header);
+    error!("Cookie header is too short (len: {})", cookie_header.len());
     return Err(MidjourneyClientError::CookieTooShort.into());
   }
 
-  let mut http_request = client.post(url)
+  // NB: Browser-identity headers (user-agent, sec-ch-ua*, accept-encoding) are
+  // set coherently by the emulation on the client; here we set only the
+  // request-context headers.
+  let http_request = client.post(url)
       .header("cookie", cookie_header)
       .header("Referer", &referer)
       .header("Referrer-Policy", "origin-when-cross-origin")
@@ -57,7 +107,6 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
       .header("accept-language", "en-US,en;q=0.8")
       .header("content-type", "application/json")
       .header("priority", "u=1, i")
-      .header("sec-ch-ua-mobile", "?0")
       .header("sec-fetch-dest", "empty")
       .header("sec-fetch-mode", "cors")
       .header("sec-fetch-site", "same-origin")
@@ -72,11 +121,13 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
   #[derive(Serialize)]
   #[allow(non_snake_case)]
   struct Metadata {
+    // NB: Field order and null-vs-empty match the browser request exactly.
+    isMobile: Option<bool>,
     imagePrompts: u8,
     imageReferences: u8,
     characterReferences: u8,
     depthReferences: u8,
-    lightboxOpen: String,
+    lightboxOpen: Option<bool>,
   }
 
   #[derive(Serialize)]
@@ -94,16 +145,17 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
       mode: "fast".to_string(),
       private: false,
     },
-    channelId: req.channel_id.to_string(),
+    channelId: args.request.channel_id.to_string(),
     metadata: Metadata {
+      isMobile: None,
       imagePrompts: 0,
       imageReferences: 0,
       characterReferences: 0,
       depthReferences: 0,
-      lightboxOpen: "".to_string(),
+      lightboxOpen: None,
     },
     t: "imagine".to_string(),
-    prompt: req.prompt.to_string(),
+    prompt: args.request.prompt.to_string(),
   };
 
   let http_request  = http_request
@@ -125,6 +177,13 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
 
   let response_body = &response.text().await
       .map_err(|e| MidjourneyApiError::NetworkError(e.to_string()))?;
+
+  log::info!(
+    "Midjourney submit-jobs response: status={}, body_len={}, looks_like_challenge={}",
+    status.as_u16(),
+    response_body.len(),
+    response_body.contains("challenge-platform") || response_body.contains("Just a moment"),
+  );
 
   if !status.is_success() {
     if let Err(err) = filter_cloudflare_errors(status.as_u16(), &response_body) {
@@ -170,7 +229,7 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
   }
 
   let response = serde_json::from_str::<RawResponse>(response_body)
-      .map_err(|err| MidjourneyApiError::DeserializationError(err))?;
+      .map_err(|err| MidjourneyApiError::deserialization(err, response_body.as_str()))?;
 
   let maybe_job_id = response.success
       .get(0)
@@ -185,9 +244,9 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
   if let Some(failures) = response.failure.as_ref() {
     if !failures.is_empty() {
       maybe_errors = Some(failures.iter()
-          .map(|f| SubmitJobError { 
-            error_type: Some(f.r#type.clone()), 
-            message: Some(f.message.clone()), 
+          .map(|f| SubmitJobError {
+            error_type: MidjourneySubmitErrorType::from_api_str(&f.r#type),
+            message: Some(f.message.clone()),
           }).collect());
     }
   }
@@ -200,10 +259,39 @@ pub async fn submit_job(req: SubmitJobRequest<'_>) -> Result<SubmitJobResponse, 
 
 #[cfg(test)]
 mod tests {
-  use crate::client::midjourney_hostname::MidjourneyHostname;
-  use crate::endpoints::submit_job::{submit_job, SubmitJobRequest};
+  use crate::endpoints::submit_job::{
+    submit_job, MidjourneySubmitErrorType, SubmitJobArgs, SubmitJobError, SubmitJobRequest,
+    SubmitJobResponse,
+  };
   use errors::AnyhowResult;
   use filesys::read_to_trimmed_string::read_to_trimmed_string;
+
+  #[test]
+  fn classifies_subscription_required() {
+    assert_eq!(
+      MidjourneySubmitErrorType::from_api_str("subscription_required"),
+      MidjourneySubmitErrorType::SubscriptionRequired,
+    );
+    assert_eq!(
+      MidjourneySubmitErrorType::from_api_str("softban"),
+      MidjourneySubmitErrorType::Other("softban".to_string()),
+    );
+  }
+
+  #[test]
+  fn response_flags_subscription_required() {
+    let response = SubmitJobResponse {
+      maybe_job_id: None,
+      maybe_errors: Some(vec![SubmitJobError {
+        error_type: MidjourneySubmitErrorType::SubscriptionRequired,
+        message: Some("Please subscribe".to_string()),
+      }]),
+    };
+    assert!(response.is_subscription_required());
+
+    let ok = SubmitJobResponse { maybe_job_id: Some("job".to_string()), maybe_errors: None };
+    assert!(!ok.is_subscription_required());
+  }
 
   // Get channel id via:
   // https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=[TOKEN]
@@ -213,11 +301,14 @@ mod tests {
     let cookie_header = read_to_trimmed_string("/Users/bt/secrets/midjourney/cookie.txt")?;
     let channel_id = read_to_trimmed_string("/Users/bt/secrets/midjourney/channel_id.txt")?;
 
-    let result = submit_job(SubmitJobRequest {
-      prompt: "a modern n64 console",
-      channel_id: &channel_id,
-      cookie_header,
-      hostname: MidjourneyHostname::Standard,
+    let result = submit_job(SubmitJobArgs {
+      request: SubmitJobRequest {
+        prompt: "a modern n64 console",
+        channel_id: &channel_id,
+      },
+      cookie_header: &cookie_header,
+      hostname: None,
+      browser: None,
     }).await?;
 
     println!("Response: {:?}", result);

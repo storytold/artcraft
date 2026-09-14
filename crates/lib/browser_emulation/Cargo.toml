@@ -1,0 +1,17 @@
+[package]
+name = "browser_emulation"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "browser_emulation"
+path = "src/lib.rs"
+
+[dependencies]
+# External
+wreq.workspace = true
+wreq-util.workspace = true
+
+[dev-dependencies]
+# None yet

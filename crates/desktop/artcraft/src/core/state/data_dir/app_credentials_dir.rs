@@ -58,6 +58,10 @@ impl AppCredentialsDir {
     self.path.join("fal_api_key.txt")
   }
 
+  pub fn get_midjourney_credential_path(&self) -> PathBuf {
+    self.path.join("midjourney_cookies.toml")
+  }
+
   pub fn get_midjourney_state_path(&self) -> PathBuf {
     self.path.join("midjourney_state.json")
   }
