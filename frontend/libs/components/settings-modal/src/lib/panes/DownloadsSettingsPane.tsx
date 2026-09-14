@@ -148,21 +148,6 @@ export const DownloadsSettingsPane = () => {
   return (
     <div className="space-y-4 text-base-fg">
       {settingsError && <p role="alert" className="text-red-400">{settingsError}</p>}
-      <div className="flex flex-col gap-1">
-        <label className="flex items-center gap-2 font-medium">
-          <input
-            type="checkbox"
-            checked={preferences?.auto_download ?? false}
-            disabled={!preferences || saving}
-            onChange={(event) => toggleAutoDownload(event.target.checked)}
-            className="h-4 w-4 accent-primary"
-          />
-          Auto Download
-        </label>
-        <p className="text-xs opacity-70">
-          Downloads to your system the minute generations complete
-        </p>
-      </div>
       <div className="space-y-2">
         <Label htmlFor="download-path">Default Download Directory</Label>
         <p className="opacity-80">
@@ -189,6 +174,21 @@ export const DownloadsSettingsPane = () => {
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
+          <Label htmlFor="auto-download">Auto Download</Label>
+          <p className="text-xs opacity-70">
+            Downloads to your system the minute generations complete
+          </p>
+        </div>
+        <Switch
+          id="auto-download"
+          label="Auto Download"
+          enabled={preferences?.auto_download ?? false}
+          setEnabled={toggleAutoDownload}
+          disabled={!preferences || saving}
+        />
+      </div>
+      <div className="flex flex-col gap-2 pt-3">
+        <div className="flex flex-col gap-0.5">
           <Label htmlFor="ask-location-before-download">
             Ask location before download
           </Label>
@@ -200,6 +200,8 @@ export const DownloadsSettingsPane = () => {
           </p>
         </div>
         <Switch
+          id="ask-location-before-download"
+          label="Ask location before download"
           enabled={askLocationBeforeDownload}
           setEnabled={toggleAskLocationBeforeDownload}
         />

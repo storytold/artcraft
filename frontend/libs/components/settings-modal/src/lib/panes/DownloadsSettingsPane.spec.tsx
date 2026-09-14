@@ -49,17 +49,17 @@ it("persists Auto Download using Tauri and keeps the existing directory", async 
   const user = userEvent.setup();
   render(<DownloadsSettingsPane />);
   await screen.findByText("/existing/downloads");
-  const checkbox = screen.getByRole("checkbox", { name: "Auto Download" }) as HTMLInputElement;
-  expect(checkbox.checked).toBe(false);
+  const toggle = screen.getByRole("switch", { name: "Auto Download" });
+  expect(toggle.getAttribute("aria-checked")).toBe("false");
   expect(screen.getByText("Downloads to your system the minute generations complete")).toBeTruthy();
 
-  await user.click(checkbox);
-  await waitFor(() => expect(checkbox.checked).toBe(true));
+  await user.click(toggle);
+  await waitFor(() => expect(toggle.getAttribute("aria-checked")).toBe("true"));
   expect(api.update).toHaveBeenCalledWith({ preference: "auto_download", value: true });
   cleanup();
   render(<DownloadsSettingsPane />);
   await screen.findByText("/existing/downloads");
-  expect((screen.getByRole("checkbox", { name: "Auto Download" }) as HTMLInputElement).checked).toBe(true);
+  expect(screen.getByRole("switch", { name: "Auto Download" }).getAttribute("aria-checked")).toBe("true");
 });
 
 it("saves a custom format explicitly, reloads it, and restores the app convention", async () => {
@@ -100,7 +100,7 @@ it("rejects unsafe names and shows persistence failures without enabling Auto Do
   expect(api.update).not.toHaveBeenCalled();
 
   api.update.mockRejectedValueOnce(new Error("Cannot save preferences"));
-  await user.click(screen.getByRole("checkbox", { name: "Auto Download" }));
+  await user.click(screen.getByRole("switch", { name: "Auto Download" }));
   await screen.findByText("Error: Cannot save preferences");
-  expect((screen.getByRole("checkbox", { name: "Auto Download" }) as HTMLInputElement).checked).toBe(false);
+  expect(screen.getByRole("switch", { name: "Auto Download" }).getAttribute("aria-checked")).toBe("false");
 });
