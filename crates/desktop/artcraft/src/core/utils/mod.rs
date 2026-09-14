@@ -1,4 +1,5 @@
 pub mod clear_all_webview_cookies;
+pub mod auto_download;
 pub mod download_media_file_to_temp_dir;
 pub mod download_url_to_temp_dir;
 pub mod download_url_to_user_download_dir;

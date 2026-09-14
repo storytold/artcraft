@@ -10,7 +10,8 @@ use crate::core::state::app_preferences::app_preferences::AppPreferences;
 use crate::core::state::app_preferences::app_preferences_manager::AppPreferencesManager;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::utils::download_url_to_temp_dir::download_url_to_temp_dir;
-use crate::core::utils::download_url_to_user_download_dir::download_url_to_user_download_dir;
+use crate::core::utils::download_url_to_user_download_dir::{download_url_with_filename, suggested_download_filename};
+use chrono::Local;
 use anyhow::anyhow;
 use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
@@ -23,6 +24,13 @@ use url::Url;
 #[derive(Deserialize, Debug)]
 pub struct DownloadUrlRequest {
   pub url: Url,
+  #[serde(rename = "model")]
+  pub maybe_model: Option<String>,
+  #[serde(rename = "batch_index")]
+  pub maybe_batch_index: Option<usize>,
+  /// Set only when the user explicitly chooses a folder for a batch download.
+  #[serde(rename = "directory")]
+  pub maybe_directory: Option<PathBuf>,
 }
 
 #[derive(Serialize)]
@@ -113,11 +121,9 @@ pub async fn handle_request(
 
   let app_prefs = app_prefs.get_clone()?;
 
-  let download_path = download_url_to_user_download_dir(
-    &request.url,
-    app_data_root,
-    &app_prefs
-  ).await?;
+  let filename = suggested_download_filename(&request.url, &app_prefs, request.maybe_model.as_deref(), request.maybe_batch_index, Local::now());
+  let directory = request.maybe_directory.unwrap_or_else(|| app_prefs.preferred_download_directory.download_directory(app_data_root));
+  let download_path = download_url_with_filename(&request.url, &directory, &filename).await?;
 
   info!("downloaded to: {:?}", download_path);
 

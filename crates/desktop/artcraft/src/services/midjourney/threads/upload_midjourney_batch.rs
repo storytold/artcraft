@@ -5,6 +5,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use crate::services::midjourney::threads::events::maybe_handle_text_to_image_complete_event::maybe_handle_text_to_image_complete_event;
 use crate::services::midjourney::utils::download_midjourney_image::download_midjourney_image;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
@@ -88,6 +89,10 @@ pub(super) async fn upload_midjourney_batch(maybe_app_handle: Option<&AppHandle>
     }
   }
 
+  if let Some(app) = maybe_app_handle {
+    auto_download_task(app, local_task, Some(&batch_token), maybe_cdn_url.as_deref(), Some(checkpoint.uploaded.len())).await?;
+  }
+
   let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs { db: task_database.get_connection(), task_id: &local_task.id, maybe_batch_token: Some(&batch_token), maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(), maybe_primary_media_file_class: Some(TaskMediaFileClass::Image), maybe_primary_media_file_thumbnail_url_template: maybe_thumbnail_url_template.as_deref(), maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref() }).await?;
 
   if !updated {
@@ -95,6 +100,7 @@ pub(super) async fn upload_midjourney_batch(maybe_app_handle: Option<&AppHandle>
   }
 
   if let Some(app_handle) = maybe_app_handle {
+    clear_auto_download_checkpoint(app_handle, local_task);
     let event = GenerationCompleteEvent {
       //media_file_token: result.media_file_token,
       action: Some(GenerationAction::GenerateImage),

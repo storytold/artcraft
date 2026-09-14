@@ -7,6 +7,8 @@ export interface GetAppPreferencesResult {
 export interface AppPreferencesPayload {
   // Preferred download directory
   preferred_download_directory: PreferredDownloadDirectory,
+  preferred_download_filename: PreferredDownloadFilename,
+  auto_download: boolean,
 
   // Play sounds on events.
   play_sounds: boolean,
@@ -22,6 +24,12 @@ export interface AppPreferencesPayload {
 }
 
 export type PreferredDownloadDirectory = SystemDirectory | CustomDirectory;
+
+export type PreferredDownloadFilename = "artcraft_convention" | CustomFilenameFormat;
+
+export interface CustomFilenameFormat {
+  custom_format: string;
+}
 
 export interface SystemDirectory {
   // If the directory is a system directory.

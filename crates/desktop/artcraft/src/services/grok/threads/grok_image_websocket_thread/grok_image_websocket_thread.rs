@@ -2,6 +2,7 @@ use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::text_to_image_generation_complete_event::{GeneratedImage, TextToImageGenerationCompleteEvent};
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
+use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
@@ -248,8 +249,6 @@ async fn upload_images_to_storyteller(
       model: None,
     };
 
-    event.send_infallible(&app_handle);
-
     let task = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs {
       db: task_database.get_connection(),
       provider: GenerationProvider::Grok,
@@ -286,6 +285,8 @@ async fn upload_images_to_storyteller(
       }
     }
 
+    auto_download_task(app_handle, &task, Some(&batch_token), maybe_cdn_url.as_deref(), Some(images.images.len())).await?;
+
     let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
       db: task_database.get_connection(),
       task_id: &task.id,
@@ -300,6 +301,8 @@ async fn upload_images_to_storyteller(
       return Ok(()); // If anything breaks with queries, don't spam events.
     }
 
+    clear_auto_download_checkpoint(app_handle, &task);
+    event.send_infallible(app_handle);
     send_frontend_ui_update(
       app_handle,
       app_env_configs,

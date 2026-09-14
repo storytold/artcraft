@@ -280,7 +280,7 @@ interface GalleryModalProps {
    *  (e.g. open the login modal on desktop, navigate to /login on web) instead
    *  of a Retry link. */
   onLoginClick?: () => void;
-  onDownloadClicked?: (url: string, mediaClass?: string) => Promise<void>;
+  onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
     media_id: string | undefined,

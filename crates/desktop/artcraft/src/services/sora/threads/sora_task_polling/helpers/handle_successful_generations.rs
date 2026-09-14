@@ -1,6 +1,7 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
+use crate::core::utils::auto_download::{auto_download_task_urls, clear_auto_download_checkpoint};
 use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -72,6 +73,10 @@ pub async fn handle_classic_successful_generations(
     }
 
     info!("Task succeeded: {:?}", task_id);
+
+    let local_task = &sqlite_tasks_by_sora_task_id[task_id.as_str()];
+    let urls = generation.items.iter().map(|item| Url::parse(&item.url)).collect::<Result<Vec<_>, _>>()?;
+    auto_download_task_urls(app_handle, local_task, &urls).await?;
 
     let generation_type = match generation.model_type {
       CommonModelType::GptImage1 => GenerationType::Image,
@@ -169,6 +174,7 @@ pub async fn handle_classic_successful_generations(
       }).await?;
 
       if updated {
+        clear_auto_download_checkpoint(app_handle, local_task);
         // If anything breaks with queries, don't spam events.
         let event = GenerationCompleteEvent {
           action: Some(match generation_type {

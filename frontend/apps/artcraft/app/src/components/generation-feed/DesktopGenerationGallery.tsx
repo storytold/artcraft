@@ -271,7 +271,7 @@ function ItemActions({
       if (!item.fullImage || isDownloading) return;
       setIsDownloading(true);
       try {
-        await downloadMediaFileToDisk(item.fullImage, item.mediaClass);
+        await downloadMediaFileToDisk(item.fullImage, item.mediaClass, item.modelId);
       } finally {
         setIsDownloading(false);
       }
