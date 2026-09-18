@@ -24,6 +24,7 @@ it("passes unknown model and option strings through image and video commands", a
   const video = {
     model: "future_video",
     bitrate: "high",
+    output_format: "mov",
     resolution: "eight_k",
     duration_seconds: 30,
     generate_audio: false,
@@ -52,6 +53,25 @@ it("dispatches every added modality and its pricing through Tauri", async () => 
     "estimate_audio_cost_command",
     "estimate_mesh_cost_command",
   ]);
+});
+
+it.each(["gpt_image_2p5_flare", "gpt_image_2p5_sunburst"])("forwards every %s quality tier", async (model) => {
+  for (const quality of ["auto", "max", "xhigh", "high", "medium", "low"]) {
+    const request = { model, quality, resolution: "four_k" };
+    await GenerateImage(request);
+    expect(invoke).toHaveBeenLastCalledWith("generate_image_command", { request });
+  }
+});
+
+it.each(["wan_3p0", "wan_3p0_prime"])("forwards %s with reference media", async (model) => {
+  const request = {
+    model, duration_seconds: 15, resolution: "ten_eighty_p", generate_audio: true,
+    reference_image_media_tokens: ["mf_image"],
+    reference_video_media_tokens: ["mf_video"],
+    reference_audio_media_tokens: ["mf_audio"],
+  };
+  await GenerateVideo(request);
+  expect(invoke).toHaveBeenLastCalledWith("generate_video_command", { request });
 });
 
 it("preserves reference duration hints in video pricing", async () => {

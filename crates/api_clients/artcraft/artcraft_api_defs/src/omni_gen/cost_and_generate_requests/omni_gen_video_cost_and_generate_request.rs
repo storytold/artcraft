@@ -6,6 +6,7 @@ use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use enums::common::generation::common_video_output_format::CommonVideoOutputFormat;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -54,6 +55,11 @@ pub struct OmniGenVideoCostAndGenerateRequest {
   /// The output bitrate to use.
   /// Not all models support this; models that don't simply ignore it.
   pub bitrate: Option<CommonBitrate>,
+
+  /// Output container for Seedance 2.5 (including Ultra). Other models ignore it.
+  /// Use "mp4" or "mov" (QuickTime). Omitted or null defaults to MP4.
+  #[serde(rename = "output_format", skip_serializing_if = "Option::is_none")]
+  pub maybe_output_format: Option<CommonVideoOutputFormat>,
 
   /// The quality to use.
   pub quality: Option<CommonQuality>,

@@ -15,3 +15,4 @@ pub mod model_creator;
 pub mod common_resolution;
 pub mod common_splat_model;
 pub mod common_video_model;
+pub mod common_video_output_format;

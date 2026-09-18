@@ -1,5 +1,23 @@
 import type { VideoModel } from "./VideoModel.js";
 
+export function resolveVideoOutputFormat(model: VideoModel, current?: string | null): string | undefined {
+  const options = model.outputFormatOptions;
+  if (!options?.length) return undefined;
+  if (current && options.includes(current)) return current;
+  return model.defaultOutputFormat ?? options[0];
+}
+
+export function videoGenerationCounts(model: VideoModel): number[] {
+  return model.generationCountOptions?.length ? model.generationCountOptions : [1];
+}
+
+export function resolveVideoGenerationCount(model: VideoModel, current: number): number {
+  const options = videoGenerationCounts(model);
+  if (options.includes(current)) return current;
+  return model.defaultGenerationCount != null && options.includes(model.defaultGenerationCount)
+    ? model.defaultGenerationCount : options[0];
+}
+
 /** Normalize old display values while preserving future API values. */
 export function videoResolutionValue(value: string): string {
   const legacy: Record<string, string> = {

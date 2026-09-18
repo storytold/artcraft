@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
     referenceVideos: [{ mediaToken: "mf_video", duration: 7.25 }],
     referenceAudios: [{ mediaToken: "mf_audio", duration: 3.5 }],
     bitrate: "high",
+    outputFormat: "mov",
     generationCount: 1,
     generateWithSound: true,
   },
@@ -38,6 +39,7 @@ vi.mock("./cost-breakdown-modal-store", () => ({
 }));
 
 beforeEach(() => {
+  mocks.state.generationCount = 1;
   mocks.estimate.mockReset();
   mocks.setCredits.mockReset();
   mocks.estimate.mockResolvedValue({
@@ -61,6 +63,7 @@ it("quotes a future model with the chosen bitrate and reference durations in mil
       model: "future_video",
       resolution: "four_k",
       bitrate: "high",
+      output_format: "mov",
       duration_seconds: 30,
       reference_video_media_tokens: ["mf_video"],
       reference_audio_media_tokens: ["mf_audio"],
@@ -70,6 +73,20 @@ it("quotes a future model with the chosen bitrate and reference durations in mil
       },
     }),
   );
+});
+
+it("prices all selected generations for any model with API batch options", async () => {
+  mocks.state.generationCount = 3;
+  renderHook(() => useVideoCostEstimate(ModelPage.ImageToVideo, model, "artcraft"));
+  await waitFor(() => expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 126));
+});
+
+it("clears format options and clamps stale batch counts for unsupported models", async () => {
+  mocks.state.generationCount = 4;
+  const single = { ...model, generationCountOptions: [1], outputFormatOptions: undefined } as VideoModel;
+  renderHook(() => useVideoCostEstimate(ModelPage.ImageToVideo, single, "artcraft"));
+  await waitFor(() => expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 42));
+  expect(mocks.estimate).toHaveBeenCalledWith(expect.objectContaining({ output_format: undefined }));
 });
 
 it("does not overwrite a newer model's quote with a slow earlier response", async () => {
@@ -111,6 +128,10 @@ const model = {
   resolutionOptions: ["4K"],
   bitrateOptions: ["normal", "high"],
   defaultBitrate: "normal",
+  outputFormatOptions: ["mp4", "mov"],
+  defaultOutputFormat: "mp4",
+  generationCountOptions: [1, 2, 3, 4],
+  defaultGenerationCount: 1,
   generateWithSound: true,
   sizeOptions: [{ tauriValue: "wide_sixteen_by_nine", textLabel: "16:9" }],
 } as VideoModel;

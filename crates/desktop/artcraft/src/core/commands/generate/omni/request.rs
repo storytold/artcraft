@@ -124,6 +124,31 @@ mod tests {
   use serde_json::json;
 
   #[test]
+  fn catalog_parity_new_models_and_options_reach_the_api_unchanged() {
+    for model in ["gpt_image_2p5_flare", "gpt_image_2p5_sunburst"] {
+      for quality in ["auto", "max", "xhigh", "high", "medium", "low"] {
+        let source = json!({"model": model, "quality": quality, "resolution": "four_k"});
+        let request: OmniRequest = serde_json::from_value(source.clone()).unwrap();
+        assert!(request.uses_artcraft());
+        assert!(!request.uses_legacy_image_endpoint());
+        assert_eq!(Value::Object(request.api_fields(Modality::Image)), source);
+      }
+    }
+    for model in ["wan_3p0", "wan_3p0_prime", "seedance_2p5", "seedance_2p5_u"] {
+      let source = json!({
+        "model": model, "duration_seconds": 15, "resolution": "ten_eighty_p",
+        "output_format": "mov", "generate_audio": true,
+        "reference_image_media_tokens": ["mf_image"],
+        "reference_video_media_tokens": ["mf_video"],
+        "reference_audio_media_tokens": ["mf_audio"]
+      });
+      let request: OmniRequest = serde_json::from_value(source.clone()).unwrap();
+      assert!(request.uses_artcraft());
+      assert_eq!(Value::Object(request.api_fields(Modality::Video)), source);
+    }
+  }
+
+  #[test]
   fn future_model_and_options_survive_without_desktop_metadata() {
     let request: OmniRequest = serde_json::from_value(json!({
       "model": "future_video_v9", "resolution": "eight_k", "bitrate": "ultra",

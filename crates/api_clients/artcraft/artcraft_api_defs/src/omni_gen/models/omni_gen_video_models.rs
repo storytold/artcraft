@@ -2,6 +2,7 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use enums::common::generation::common_video_output_format::CommonVideoOutputFormat;
 use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use serde_derive::{Deserialize, Serialize};
@@ -156,6 +157,12 @@ pub struct OmniGenVideoModelDetails {
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub bitrate_default: Option<CommonBitrate>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub output_format_options: Option<Vec<CommonVideoOutputFormat>>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub output_format_default: Option<CommonVideoOutputFormat>,
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub quality_options: Option<Vec<CommonQuality>>,
@@ -229,6 +236,8 @@ impl Default for OmniGenVideoModelDetails {
       resolution_default: None,
       bitrate_options: None,
       bitrate_default: None,
+      output_format_options: None,
+      output_format_default: None,
       quality_options: None,
       default_quality: None,
       duration_seconds_min: None,

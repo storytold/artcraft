@@ -36,7 +36,7 @@ impl ArtcraftGptImage1CostState {
   }
 
   pub fn estimate_cost(&self) -> ImageGenerationCostEstimate {
-    let quality = self.quality.unwrap_or(CommonQualityEnum::High);
+    let quality = clamp_to_supported_quality(self.quality);
     let is_square = is_square_or_none(self.aspect_ratio);
 
     let output_cost_per_image: u64 = match (quality, is_square) {
@@ -45,6 +45,8 @@ impl ArtcraftGptImage1CostState {
       (CommonQualityEnum::Medium, false) => 7,
       (CommonQualityEnum::High, true) => 17,
       (CommonQualityEnum::High, false) => 25,
+      // Clamped away above.
+      (CommonQualityEnum::Auto | CommonQualityEnum::XHigh | CommonQualityEnum::Max, _) => unreachable!(),
     };
 
     let output_cost = output_cost_per_image * self.num_images as u64;
@@ -60,6 +62,20 @@ impl ArtcraftGptImage1CostState {
       has_watermark: false,
       failures_are_refunded: None,
     }
+  }
+}
+
+/// GPT Image 1 only offers low / medium / high. `auto` prices as the default (high) and the
+/// higher GPT Image 2.5 tiers clamp down to high, matching the Fal request planner.
+fn clamp_to_supported_quality(quality: Option<CommonQualityEnum>) -> CommonQualityEnum {
+  match quality {
+    Some(CommonQualityEnum::Low) => CommonQualityEnum::Low,
+    Some(CommonQualityEnum::Medium) => CommonQualityEnum::Medium,
+    Some(CommonQualityEnum::High)
+    | Some(CommonQualityEnum::XHigh)
+    | Some(CommonQualityEnum::Max)
+    | Some(CommonQualityEnum::Auto)
+    | None => CommonQualityEnum::High,
   }
 }
 

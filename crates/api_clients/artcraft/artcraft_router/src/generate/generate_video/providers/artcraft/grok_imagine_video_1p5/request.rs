@@ -59,6 +59,7 @@ mod tests {
         resolution: None,
         aspect_ratio: None,
         bitrate: None,
+        maybe_output_format: None,
         quality: None,
         duration_seconds: Some(5),
         video_batch_count: Some(1),

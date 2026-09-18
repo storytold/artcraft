@@ -78,7 +78,7 @@ export function useImageCostEstimate(
         // Match GenerateImage exactly; omitted values use the API defaults.
         aspectRatioStr = imageModel.supportsNewAspectRatio() ? imageAspectRatio : undefined;
         resolutionStr = imageModel.supportsNewResolution() ? imageResolution : undefined;
-        qualityStr = imageModel.supportsQuality() ? imageQuality ?? imageModel.defaultQuality : undefined;
+        qualityStr = imageModel.resolveQuality(imageQuality);
         referenceImageCount = imageModel.canUseImagePrompt
           ? imageReferenceImages.filter((image) => image.mediaToken.length > 0).length : 0;
         generationCount = imageGenerationCount;

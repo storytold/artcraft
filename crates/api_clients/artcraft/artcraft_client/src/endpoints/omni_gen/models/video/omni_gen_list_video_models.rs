@@ -158,6 +158,10 @@ pub struct OmniGenVideoModelDetails {
   #[serde(default)]
   pub bitrate_default: Option<ApiClientBitrate>,
   #[serde(default)]
+  pub output_format_options: Option<Vec<String>>,
+  #[serde(default)]
+  pub output_format_default: Option<String>,
+  #[serde(default)]
   pub quality_options: Option<Vec<ApiClientQuality>>,
   #[serde(default)]
   pub default_quality: Option<ApiClientQuality>,

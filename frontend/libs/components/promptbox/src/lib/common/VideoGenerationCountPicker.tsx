@@ -4,27 +4,24 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { PROMPT_TOOLBAR_ICON_BUTTON_CLASSES } from "../PromptClearAllButton";
 
 interface VideoGenerationCountPickerProps {
-  maxCount: number;
+  counts: number[];
   currentCount: number;
   handleCountChange: (count: number) => void;
 }
 
 export const VideoGenerationCountPicker = ({
-  maxCount,
+  counts,
   currentCount,
   handleCountChange,
 }: VideoGenerationCountPickerProps) => {
-  const options: PopoverItem[] = [];
-  for (let i = 1; i <= maxCount; i++) {
-    options.push({
-      label: String(i),
-      selected: i === currentCount,
-    });
-  }
+  const options: PopoverItem[] = counts.map((count) => ({
+    label: String(count),
+    selected: count === currentCount,
+  }));
 
   const onSelect = (item: PopoverItem) => {
     const count = parseInt(item.label, 10);
-    if (!isNaN(count) && count >= 1 && count <= maxCount) {
+    if (counts.includes(count)) {
       handleCountChange(count);
     }
   };

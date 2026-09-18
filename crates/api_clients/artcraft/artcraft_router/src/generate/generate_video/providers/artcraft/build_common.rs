@@ -77,6 +77,7 @@ pub fn build_artcraft_omni_video_request(
     resolution,
     aspect_ratio,
     bitrate,
+    maybe_output_format: None,
     duration_seconds: duration_seconds.map(|d| d as u16),
     video_batch_count: Some(batch_count),
     negative_prompt: None,

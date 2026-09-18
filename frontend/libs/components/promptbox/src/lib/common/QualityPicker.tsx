@@ -10,6 +10,9 @@ interface QualityPickerProps {
 }
 
 const QUALITY_LABELS: Record<CommonQuality, string> = {
+  [CommonQuality.Auto]: "Auto",
+  [CommonQuality.Max]: "Max",
+  [CommonQuality.XHigh]: "Extra high",
   [CommonQuality.High]: "High",
   [CommonQuality.Medium]: "Medium",
   [CommonQuality.Low]: "Low",
@@ -17,7 +20,7 @@ const QUALITY_LABELS: Record<CommonQuality, string> = {
 
 /**
  * Stateless picker for image generation "quality" (used by OpenAI image
- * models — gpt_image_1, gpt_image_1p5, gpt_image_2). Models that don't
+ * models, including GPT Image 2.5). Models that don't
  * declare `qualities` should not render this picker.
  */
 export const QualityPicker = ({
@@ -25,7 +28,7 @@ export const QualityPicker = ({
   currentQuality,
   handleCommonQualitySelect,
 }: QualityPickerProps) => {
-  const useQuality = currentQuality ?? model.defaultQuality ?? undefined;
+  const useQuality = model.resolveQuality(currentQuality);
 
   const handleSelectAdapter = (item: PopoverItem) => {
     const quality = (item.action ?? item.label) as CommonQuality;

@@ -552,3 +552,25 @@ impl From<OmniGenImageModelDetails> for ListImageModelsModelDetails {
     }
   }
 }
+
+#[cfg(test)]
+mod catalog_parity_tests {
+  use super::*;
+  use serde_json::json;
+
+  #[test]
+  fn gpt_image_2p5_quality_tiers_survive_the_desktop_listing_boundary() {
+    for model in ["gpt_image_2p5_flare", "gpt_image_2p5_sunburst"] {
+      let source = json!({
+        "model": model,
+        "quality_options": ["auto", "max", "xhigh", "high", "medium", "low", "future_quality"],
+        "default_quality": "high",
+        "resolution_options": ["one_k", "two_k", "three_k", "four_k"],
+        "resolution_default": "one_k"
+      });
+      let client: OmniGenImageModelDetails = serde_json::from_value(source.clone()).unwrap();
+      let desktop = serde_json::to_value(ListImageModelsModelDetails::from(client)).unwrap();
+      assert_eq!(desktop, source);
+    }
+  }
+}

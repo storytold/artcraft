@@ -189,6 +189,13 @@ export class ImageModel extends Model {
     return this.qualityOptions && this.qualityOptions.length > 0;
   }
 
+  // A saved tier from another model may not be supported by this model.
+  resolveQuality(current?: CommonQuality): CommonQuality | undefined {
+    if (!this.supportsQuality()) return undefined;
+    return current && this.qualityOptions.includes(current)
+      ? current : this.defaultQuality ?? this.qualityOptions[0];
+  }
+
   // Return whether the count of generations is valid for this model
   isValidGenerationCount(count: number): boolean {
     if (this.predefinedGenerationCounts) {

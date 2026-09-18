@@ -165,6 +165,7 @@ interface PromptVideoStore {
   generateWithSound: boolean;
   duration: number | null;
   bitrate: string | null;
+  outputFormat: string | null;
   inputMode: VideoInputMode;
   generationCount: number;
   setPrompt: (prompt: string) => void;
@@ -178,6 +179,7 @@ interface PromptVideoStore {
   setGenerateWithSound: (value: boolean) => void;
   setDuration: (duration: number | null) => void;
   setBitrate: (bitrate: string | null) => void;
+  setOutputFormat: (outputFormat: string | null) => void;
   setInputMode: (mode: VideoInputMode) => void;
   setGenerationCount: (count: number) => void;
 }
@@ -194,6 +196,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   generateWithSound: true,
   duration: null,
   bitrate: null,
+  outputFormat: null,
   inputMode: "reference",
   generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
@@ -207,6 +210,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
   setDuration: (duration) => set({ duration }),
   setBitrate: (bitrate) => set({ bitrate }),
+  setOutputFormat: (outputFormat) => set({ outputFormat }),
   setInputMode: (inputMode) => set({ inputMode }),
   setGenerationCount: (generationCount) => set({ generationCount }),
 }));

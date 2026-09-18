@@ -192,6 +192,12 @@ pub enum InferenceModelType {
   Kling3p0Pro,
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
+
+  #[serde(rename = "wan_3p0")]
+  Wan3p0,
+
+  #[serde(rename = "wan_3p0_prime")]
+  Wan3p0Prime,
   #[serde(rename = "minimax_h3")]
   MinimaxH3,
   #[serde(rename = "minimax_h3_turbo")]
@@ -394,6 +400,8 @@ impl InferenceModelType {
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::Wan3p0 => "wan_3p0",
+      Self::Wan3p0Prime => "wan_3p0_prime",
       Self::MinimaxH3 => "minimax_h3",
       Self::MinimaxH3Turbo => "minimax_h3_turbo",
       Self::MinimaxH3Ultra => "minimax_h3_ultra",
@@ -534,6 +542,8 @@ impl InferenceModelType {
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "wan_3p0" => Ok(Self::Wan3p0),
+      "wan_3p0_prime" => Ok(Self::Wan3p0Prime),
       "minimax_h3" => Ok(Self::MinimaxH3),
       "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
       "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
@@ -678,6 +688,8 @@ impl InferenceModelType {
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
+      Self::Wan3p0,
+      Self::Wan3p0Prime,
       Self::MinimaxH3,
       Self::MinimaxH3Turbo,
       Self::MinimaxH3Ultra,
@@ -805,6 +817,8 @@ impl InferenceModelType {
       CommonModelType::Kling3p0Standard => Self::Kling3p0Standard,
       CommonModelType::Kling3p0Pro => Self::Kling3p0Pro,
       CommonModelType::HappyHorse1p0 => Self::HappyHorse1p0,
+      CommonModelType::Wan3p0 => Self::Wan3p0,
+      CommonModelType::Wan3p0Prime => Self::Wan3p0Prime,
       CommonModelType::MinimaxH3 => Self::MinimaxH3,
       CommonModelType::MinimaxH3Turbo => Self::MinimaxH3Turbo,
       CommonModelType::MinimaxH3Ultra => Self::MinimaxH3Ultra,
@@ -954,6 +968,8 @@ mod tests {
       assert_serialization(InferenceModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(InferenceModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(InferenceModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(InferenceModelType::Wan3p0, "wan_3p0");
+      assert_serialization(InferenceModelType::Wan3p0Prime, "wan_3p0_prime");
       assert_serialization(InferenceModelType::MinimaxH3, "minimax_h3");
       assert_serialization(InferenceModelType::MinimaxH3Turbo, "minimax_h3_turbo");
       assert_serialization(InferenceModelType::MinimaxH3Ultra, "minimax_h3_ultra");
@@ -1090,6 +1106,8 @@ mod tests {
       assert_eq!(InferenceModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(InferenceModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(InferenceModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(InferenceModelType::Wan3p0.to_str(), "wan_3p0");
+      assert_eq!(InferenceModelType::Wan3p0Prime.to_str(), "wan_3p0_prime");
       assert_eq!(InferenceModelType::MinimaxH3.to_str(), "minimax_h3");
       assert_eq!(InferenceModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
       assert_eq!(InferenceModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
@@ -1228,6 +1246,8 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("kling_3p0_standard").unwrap(), InferenceModelType::Kling3p0Standard);
       assert_eq!(InferenceModelType::from_str("kling_3p0_pro").unwrap(), InferenceModelType::Kling3p0Pro);
       assert_eq!(InferenceModelType::from_str("happy_horse_1p0").unwrap(), InferenceModelType::HappyHorse1p0);
+      assert_eq!(InferenceModelType::from_str("wan_3p0").unwrap(), InferenceModelType::Wan3p0);
+      assert_eq!(InferenceModelType::from_str("wan_3p0_prime").unwrap(), InferenceModelType::Wan3p0Prime);
       assert_eq!(InferenceModelType::from_str("minimax_h3").unwrap(), InferenceModelType::MinimaxH3);
       assert_eq!(InferenceModelType::from_str("minimax_h3_turbo").unwrap(), InferenceModelType::MinimaxH3Turbo);
       assert_eq!(InferenceModelType::from_str("minimax_h3_ultra").unwrap(), InferenceModelType::MinimaxH3Ultra);

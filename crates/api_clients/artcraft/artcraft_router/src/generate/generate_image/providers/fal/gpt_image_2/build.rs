@@ -106,11 +106,17 @@ fn plan_num_images(
   }
 }
 
+/// This endpoint only offers low / medium / high. `auto` falls back to Fal's default (`high`)
+/// and the higher GPT Image 2.5 tiers (`xhigh`, `max`) clamp down to `high`.
 fn plan_quality(quality: Option<RouterQuality>) -> PlannedQuality {
   match quality {
     Some(RouterQuality::Low) => PlannedQuality::Low,
     Some(RouterQuality::Medium) => PlannedQuality::Medium,
-    Some(RouterQuality::High) | None => PlannedQuality::High,
+    Some(RouterQuality::High)
+    | Some(RouterQuality::XHigh)
+    | Some(RouterQuality::Max)
+    | Some(RouterQuality::Auto)
+    | None => PlannedQuality::High,
   }
 }
 
@@ -362,6 +368,10 @@ mod tests {
       (Some(RouterQuality::Low), "Some(Low)"),
       (Some(RouterQuality::Medium), "Some(Medium)"),
       (Some(RouterQuality::High), "Some(High)"),
+      // Tiers this endpoint lacks clamp to high.
+      (Some(RouterQuality::Auto), "Some(High)"),
+      (Some(RouterQuality::XHigh), "Some(High)"),
+      (Some(RouterQuality::Max), "Some(High)"),
     ];
 
     for (quality, expected) in cases {

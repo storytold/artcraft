@@ -76,6 +76,8 @@ export interface ListingVideoModel extends ListingModelBase {
   duration_seconds_max_with_image_references?: number | null;
   bitrate_options?: string[] | null;
   bitrate_default?: string | null;
+  output_format_options?: string[] | null;
+  output_format_default?: string | null;
   duration_seconds_default?: number | null;
 }
 
@@ -269,6 +271,10 @@ const mergedVideoModel = (
     maxDurationWithImageReferences: m.duration_seconds_max_with_image_references ?? o?.maxDurationWithImageReferences,
     bitrateOptions: m.bitrate_options ?? o?.bitrateOptions,
     defaultBitrate: m.bitrate_default ?? o?.defaultBitrate,
+    outputFormatOptions: m.output_format_options ?? o?.outputFormatOptions,
+    defaultOutputFormat: m.output_format_default ?? o?.defaultOutputFormat,
+    generationCountOptions: m.batch_size_options ?? o?.generationCountOptions,
+    defaultGenerationCount: m.batch_size_default ?? o?.defaultGenerationCount,
     defaultAspectRatio: m.aspect_ratio_default ?? o?.defaultAspectRatio,
     supportsReferenceMode: m.image_references_supported ?? o?.supportsReferenceMode,
     maxReferenceImages: m.image_references_max ?? o?.maxReferenceImages,

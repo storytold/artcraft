@@ -151,8 +151,11 @@ fn to_resolution_enum(r: RouterResolution) -> CommonResolutionEnum {
 
 fn to_quality_enum(q: RouterQuality) -> CommonQualityEnum {
   match q {
-    RouterQuality::Low => CommonQualityEnum::Low,
-    RouterQuality::Medium => CommonQualityEnum::Medium,
+    RouterQuality::Auto => CommonQualityEnum::Auto,
+    RouterQuality::Max => CommonQualityEnum::Max,
+    RouterQuality::XHigh => CommonQualityEnum::XHigh,
     RouterQuality::High => CommonQualityEnum::High,
+    RouterQuality::Medium => CommonQualityEnum::Medium,
+    RouterQuality::Low => CommonQualityEnum::Low,
   }
 }
