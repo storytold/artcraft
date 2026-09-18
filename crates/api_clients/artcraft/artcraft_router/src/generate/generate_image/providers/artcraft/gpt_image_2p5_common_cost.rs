@@ -8,25 +8,27 @@ use fal_client::requests::api::image::common::gpt_image_2p5::gpt_image_2p5_image
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 
 /// Artcraft price per output image, in hundredths of a US cent, by output dimensions and
-/// quality (`[low, medium, high]`). Rows are stored landscape-first; portrait orientations of
-/// the same dimensions price identically. Dimensions come from the aspect ratio preset and
-/// resolution tier the same way the Fal request builder derives them.
-const OUTPUT_IMAGE_PRICE_TABLE: &[(u32, u32, [u64; 3])] = &[
+/// quality (`[low, medium, high, xhigh, max]`). Each cell is the `fal_client` GPT Image 2.5
+/// estimate for that size and tier with a 10% markup, rounded up. Rows are stored
+/// landscape-first; portrait orientations of the same dimensions price identically.
+/// Dimensions come from the aspect ratio preset and resolution tier the same way the Fal
+/// request builder derives them.
+const OUTPUT_IMAGE_PRICE_TABLE: &[(u32, u32, [u64; 5])] = &[
   // 1:1
-  (1024, 1024, [ 65, 152,  582]),
-  (2048, 2048, [103, 239,  919]),
-  (2880, 2880, [151, 352, 1357]),
+  (1024, 1024, [ 65, 152,  582, 1034, 2327]),
+  (2048, 2048, [103, 239,  919, 1633, 3672]),
+  (2880, 2880, [151, 352, 1357, 2412, 5426]),
   // 4:3
-  (1024,  768, [ 46, 105,  400]),
-  (2048, 1536, [ 73, 170,  652]),
-  (3072, 2304, [120, 279, 1073]),
-  (3312, 2480, [134, 311, 1194]),
+  (1024,  768, [ 46, 105,  400,  710, 1597]),
+  (2048, 1536, [ 73, 170,  652, 1159, 2605]),
+  (3072, 2304, [120, 279, 1073, 1906, 4287]),
+  (3312, 2480, [134, 311, 1194, 2122, 4773]),
   // 16:9
-  (1088,  608, [ 32,  75,  285]),
-  (1920, 1080, [ 49, 114,  436]),
-  (2048, 1152, [ 53, 121,  467]),
-  (3072, 1728, [ 87, 204,  783]),
-  (3840, 2160, [124, 286, 1102]),
+  (1088,  608, [ 32,  75,  285,  506, 1139]),
+  (1920, 1080, [ 49, 114,  436,  775, 1743]),
+  (2048, 1152, [ 53, 121,  467,  830, 1865]),
+  (3072, 1728, [ 87, 204,  783, 1390, 3127]),
+  (3840, 2160, [124, 286, 1102, 1957, 4404]),
 ];
 
 /// Artcraft price per reference image on an edit request, in hundredths of a US cent.
@@ -55,7 +57,8 @@ impl ArtcraftGptImage2p5CostInputs {
   }
 
   /// Per-image price rounded up to whole cents, times the batch size. Quality defaults to
-  /// high. Without an aspect ratio, text-to-image prices as landscape 4:3 and edit as auto,
+  /// high, and `auto` is priced as high (the documented default the model falls back to).
+  /// Without an aspect ratio, text-to-image prices as landscape 4:3 and edit as auto,
   /// matching the Fal defaults the request would fall back to.
   pub fn estimate_cost(&self) -> ImageGenerationCostEstimate {
     let quality = self.quality.unwrap_or(CommonQualityEnum::High);
@@ -91,11 +94,13 @@ fn output_image_price(quality: CommonQualityEnum, width: u32, height: u32) -> u6
   match quality {
     CommonQualityEnum::Low => prices[0],
     CommonQualityEnum::Medium => prices[1],
-    CommonQualityEnum::High => prices[2],
+    CommonQualityEnum::High | CommonQualityEnum::Auto => prices[2],
+    CommonQualityEnum::XHigh => prices[3],
+    CommonQualityEnum::Max => prices[4],
   }
 }
 
-fn lookup_price_row(width: u32, height: u32) -> Option<[u64; 3]> {
+fn lookup_price_row(width: u32, height: u32) -> Option<[u64; 5]> {
   let long_edge = width.max(height);
   let short_edge = width.min(height);
   OUTPUT_IMAGE_PRICE_TABLE.iter()
@@ -176,6 +181,18 @@ mod tests {
     (Some(Ar::Auto4k),            Some(R::OneK),  [2, 3, 12]),
   ];
 
+  // (aspect_ratio, resolution, [xhigh, max]) — cents per image, text-to-image
+  const TEXT_GRID_UPPER_TIERS: &[(Option<Ar>, Option<R>, [u64; 2])] = &[
+    (None,                        None,           [ 8, 16]), // landscape 4:3 default
+    (Some(Ar::Square),            None,           [11, 24]),
+    (Some(Ar::Square),            Some(R::TwoK),  [17, 37]),
+    (Some(Ar::Square),            Some(R::FourK), [25, 55]),
+    (Some(Ar::WideSixteenByNine), None,           [ 8, 18]),
+    (Some(Ar::WideSixteenByNine), Some(R::OneK),  [ 6, 12]),
+    (Some(Ar::TallNineBySixteen), Some(R::FourK), [20, 45]),
+    (Some(Ar::Auto),              None,           [20, 45]),
+  ];
+
   mod text_to_image_tests {
     use super::*;
 
@@ -190,8 +207,29 @@ mod tests {
     }
 
     #[test]
+    fn upper_tier_grid() {
+      for &(aspect_ratio, resolution, expected) in TEXT_GRID_UPPER_TIERS {
+        for (quality, expected) in [Q::XHigh, Q::Max].into_iter().zip(expected) {
+          let actual = cents(make_inputs(0, Some(quality), aspect_ratio, resolution, 1));
+          assert_eq!(actual, expected, "{aspect_ratio:?} {resolution:?} {quality:?}");
+        }
+      }
+    }
+
+    #[test]
     fn quality_defaults_to_high() {
       assert_eq!(cents(make_inputs(0, None, Some(Ar::Square), None, 1)), 6);
+    }
+
+    #[test]
+    fn auto_prices_as_high() {
+      for &(aspect_ratio, resolution, _) in TEXT_GRID {
+        assert_eq!(
+          cents(make_inputs(0, Some(Q::Auto), aspect_ratio, resolution, 1)),
+          cents(make_inputs(0, Some(Q::High), aspect_ratio, resolution, 1)),
+          "{aspect_ratio:?} {resolution:?}",
+        );
+      }
     }
 
     #[test]
@@ -265,7 +303,7 @@ mod tests {
     #[test]
     fn prices_rise_with_quality_and_size() {
       for &(_, _, prices) in OUTPUT_IMAGE_PRICE_TABLE {
-        assert!(prices[0] < prices[1] && prices[1] < prices[2], "{prices:?}");
+        assert!(prices.windows(2).all(|pair| pair[0] < pair[1]), "{prices:?}");
       }
       assert!(output_image_price(Q::High, 1024, 1024) < output_image_price(Q::High, 2048, 2048));
       assert!(output_image_price(Q::High, 2048, 2048) < output_image_price(Q::High, 2880, 2880));

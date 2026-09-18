@@ -41,6 +41,10 @@ export class VideoModel extends Model {
   readonly maxDurationWithImageReferences?: number;
   readonly bitrateOptions?: string[];
   readonly defaultBitrate?: string;
+  readonly outputFormatOptions?: string[];
+  readonly defaultOutputFormat?: string;
+  readonly generationCountOptions?: number[];
+  readonly defaultGenerationCount?: number;
   readonly defaultAspectRatio?: string;
 
 
@@ -102,6 +106,10 @@ export class VideoModel extends Model {
     maxDurationWithImageReferences?: number;
     bitrateOptions?: string[];
     defaultBitrate?: string;
+    outputFormatOptions?: string[];
+    defaultOutputFormat?: string;
+    generationCountOptions?: number[];
+    defaultGenerationCount?: number;
     defaultAspectRatio?: string;
 
     supportsReferenceMode?: boolean;
@@ -130,6 +138,10 @@ export class VideoModel extends Model {
     this.maxDurationWithImageReferences = args.maxDurationWithImageReferences;
     this.bitrateOptions = args.bitrateOptions;
     this.defaultBitrate = args.defaultBitrate;
+    this.outputFormatOptions = args.outputFormatOptions;
+    this.defaultOutputFormat = args.defaultOutputFormat;
+    this.generationCountOptions = args.generationCountOptions;
+    this.defaultGenerationCount = args.defaultGenerationCount;
     this.defaultAspectRatio = args.defaultAspectRatio;
 
     this.supportsReferenceMode = args.supportsReferenceMode;

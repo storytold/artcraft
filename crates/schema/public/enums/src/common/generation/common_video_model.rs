@@ -51,6 +51,12 @@ pub enum CommonVideoModel {
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
+  #[serde(rename = "wan_3p0")]
+  Wan3p0,
+
+  #[serde(rename = "wan_3p0_prime")]
+  Wan3p0Prime,
+
   #[serde(rename = "minimax_h3")]
   MinimaxH3,
 
@@ -168,6 +174,8 @@ impl CommonVideoModel {
       Self::Kling3p0Standard => CommonModelType::Kling3p0Standard,
       Self::Kling3p0Pro => CommonModelType::Kling3p0Pro,
       Self::HappyHorse1p0 => CommonModelType::HappyHorse1p0,
+      Self::Wan3p0 => CommonModelType::Wan3p0,
+      Self::Wan3p0Prime => CommonModelType::Wan3p0Prime,
       Self::MinimaxH3 => CommonModelType::MinimaxH3,
       Self::MinimaxH3Turbo => CommonModelType::MinimaxH3Turbo,
       Self::MinimaxH3Ultra => CommonModelType::MinimaxH3Ultra,
@@ -224,6 +232,8 @@ mod tests {
     assert_serialization(CommonVideoModel::Kling3p0Standard, "kling_3p0_standard");
     assert_serialization(CommonVideoModel::Kling3p0Pro, "kling_3p0_pro");
     assert_serialization(CommonVideoModel::HappyHorse1p0, "happy_horse_1p0");
+    assert_serialization(CommonVideoModel::Wan3p0, "wan_3p0");
+    assert_serialization(CommonVideoModel::Wan3p0Prime, "wan_3p0_prime");
     assert_serialization(CommonVideoModel::MinimaxH3, "minimax_h3");
     assert_serialization(CommonVideoModel::MinimaxH3Turbo, "minimax_h3_turbo");
     assert_serialization(CommonVideoModel::MinimaxH3Ultra, "minimax_h3_ultra");
@@ -273,6 +283,8 @@ mod tests {
       ("kling_3p0_standard", CommonVideoModel::Kling3p0Standard),
       ("kling_3p0_pro", CommonVideoModel::Kling3p0Pro),
       ("happy_horse_1p0", CommonVideoModel::HappyHorse1p0),
+      ("wan_3p0", CommonVideoModel::Wan3p0),
+      ("wan_3p0_prime", CommonVideoModel::Wan3p0Prime),
       ("minimax_h3", CommonVideoModel::MinimaxH3),
       ("minimax_h3_turbo", CommonVideoModel::MinimaxH3Turbo),
       ("minimax_h3_ultra", CommonVideoModel::MinimaxH3Ultra),
@@ -329,6 +341,8 @@ mod tests {
       CommonVideoModel::Kling3p0Standard,
       CommonVideoModel::Kling3p0Pro,
       CommonVideoModel::HappyHorse1p0,
+      CommonVideoModel::Wan3p0,
+      CommonVideoModel::Wan3p0Prime,
       CommonVideoModel::MinimaxH3,
       CommonVideoModel::MinimaxH3Turbo,
       CommonVideoModel::MinimaxH3Ultra,
@@ -384,6 +398,8 @@ mod tests {
       (CommonVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
       (CommonVideoModel::Kling3p0Pro, CommonModelType::Kling3p0Pro),
       (CommonVideoModel::HappyHorse1p0, CommonModelType::HappyHorse1p0),
+      (CommonVideoModel::Wan3p0, CommonModelType::Wan3p0),
+      (CommonVideoModel::Wan3p0Prime, CommonModelType::Wan3p0Prime),
       (CommonVideoModel::MinimaxH3, CommonModelType::MinimaxH3),
       (CommonVideoModel::MinimaxH3Turbo, CommonModelType::MinimaxH3Turbo),
       (CommonVideoModel::MinimaxH3Ultra, CommonModelType::MinimaxH3Ultra),

@@ -122,10 +122,14 @@ pub(crate) fn plan_quality(quality: Option<RouterQuality>) -> Option<GenerateMid
   // Kinovi pricing — pass through whatever the caller asked for, and let
   // `None` ride Midjourney's server-side default.
   match quality {
-    None => None,
+    // `auto` has no Midjourney equivalent; leave it to the provider default.
+    None | Some(RouterQuality::Auto) => None,
     Some(RouterQuality::Low) => Some(GenerateMidjourneyV7Quality::Quarter),
     Some(RouterQuality::Medium) => Some(GenerateMidjourneyV7Quality::Half),
-    Some(RouterQuality::High) => Some(GenerateMidjourneyV7Quality::Full),
+    // Midjourney tops out at full quality; the higher GPT Image tiers clamp to it.
+    Some(RouterQuality::High)
+    | Some(RouterQuality::XHigh)
+    | Some(RouterQuality::Max) => Some(GenerateMidjourneyV7Quality::Full),
   }
 }
 

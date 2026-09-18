@@ -16,6 +16,7 @@ export interface EstimateVideoCostRequest {
   video_batch_count?: number;
   generate_audio?: boolean;
   bitrate?: string;
+  output_format?: string;
   start_frame_image_media_token?: string;
   end_frame_image_media_token?: string;
   reference_image_media_tokens?: string[];

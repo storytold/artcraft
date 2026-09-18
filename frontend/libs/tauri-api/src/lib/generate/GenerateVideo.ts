@@ -38,6 +38,7 @@ export interface GenerateVideoRequest {
   resolution?: CommonResolution | string;
 
   bitrate?: string;
+  output_format?: string;
   duration_seconds?: number;
   generate_audio?: boolean;
   video_batch_count?: number;

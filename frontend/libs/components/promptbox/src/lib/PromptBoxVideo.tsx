@@ -11,6 +11,9 @@ import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   resolveVideoDuration,
+  resolveVideoGenerationCount,
+  resolveVideoOutputFormat,
+  videoGenerationCounts,
   videoDurationRange,
   videoResolutionValue,
   effectivePromptMaxLength,
@@ -143,6 +146,8 @@ export const PromptBoxVideo = ({
   const duration = usePromptVideoStore((s) => s.duration);
   const bitrate = usePromptVideoStore((s) => s.bitrate);
   const setBitrate = usePromptVideoStore((s) => s.setBitrate);
+  const outputFormat = usePromptVideoStore((s) => s.outputFormat);
+  const setOutputFormat = usePromptVideoStore((s) => s.setOutputFormat);
   const setDuration = usePromptVideoStore((s) => s.setDuration);
   const inputMode = usePromptVideoStore((s) => s.inputMode);
   const setInputMode = usePromptVideoStore((s) => s.setInputMode);
@@ -362,6 +367,14 @@ export const PromptBoxVideo = ({
   }, [selectedModel, setBitrate]);
 
   useEffect(() => {
+    const current = usePromptVideoStore.getState().outputFormat;
+    const options = selectedModel?.outputFormatOptions;
+    if (!current || !options?.includes(current)) {
+      setOutputFormat(selectedModel?.defaultOutputFormat ?? options?.[0] ?? null);
+    }
+  }, [selectedModel, setOutputFormat]);
+
+  useEffect(() => {
     const current = usePromptVideoStore.getState().aspectRatio;
     if (selectedModel?.sizeOptions.some((option) => option.textLabel === current)) return;
     const option = selectedModel?.sizeOptions.find((option) => option.tauriValue === selectedModel.defaultAspectRatio)
@@ -396,15 +409,16 @@ export const PromptBoxVideo = ({
     }
   }, [selectedModel]);
 
-  // Reset generation count when switching away from seedance 2.0.
-  // Read from store directly to avoid stale closure (same as duration above).
+  // Keep the selected count within the API's options when switching models.
   useEffect(() => {
-    const currentGenerationCount =
-      usePromptVideoStore.getState().generationCount;
-    if (selectedModel?.id !== "seedance_2p0" && currentGenerationCount > 1) {
-      setGenerationCount(1);
-    }
-  }, [selectedModel]);
+    const current = usePromptVideoStore.getState().generationCount;
+    const next = selectedModel ? resolveVideoGenerationCount(selectedModel, current) : 1;
+    if (next !== current) setGenerationCount(next);
+  }, [selectedModel, setGenerationCount]);
+
+  const generationCounts = selectedModel ? videoGenerationCounts(selectedModel) : [1];
+  const effectiveGenerationCount = selectedModel
+    ? resolveVideoGenerationCount(selectedModel, generationCount) : 1;
 
   const durationRange = selectedModel
     ? videoDurationRange(selectedModel, inputMode === "reference")
@@ -1049,8 +1063,7 @@ export const PromptBoxVideo = ({
 
     gtagEvent("enqueue_video");
 
-    const isSeedance2 = selectedModel.id === "seedance_2p0";
-    const count = isSeedance2 ? generationCount : 1;
+    const count = effectiveGenerationCount;
 
     const isRefMode =
       inputMode === "reference" && !!selectedModel.supportsReferenceMode;
@@ -1144,6 +1157,9 @@ export const PromptBoxVideo = ({
       }
       if (selectedModel.bitrateOptions?.length) {
         request.bitrate = bitrate ?? selectedModel.defaultBitrate ?? selectedModel.bitrateOptions[0];
+      }
+      if (selectedModel.outputFormatOptions?.length) {
+        request.output_format = resolveVideoOutputFormat(selectedModel, outputFormat);
       }
 
       // Pass the chosen resolution when the model exposes a resolution picker.
@@ -1454,6 +1470,21 @@ export const PromptBoxVideo = ({
                 </Tooltip>
               )}
 
+              {!!selectedModel?.outputFormatOptions?.length && (
+                <Tooltip content="Output format" position="top" className="z-50">
+                  <PopoverMenu
+                    panelTitle="Output format"
+                    mode="toggle"
+                    items={selectedModel.outputFormatOptions.map((value) => ({
+                      label: value.toUpperCase(),
+                      action: value,
+                      selected: value === outputFormat,
+                    }))}
+                    onSelect={(item) => setOutputFormat(item.action ?? item.label)}
+                  />
+                </Tooltip>
+              )}
+
               {durationRange && durationRange.max > durationRange.min && (
                 <Tooltip content="Duration" position="top" className="z-50">
                   <PopoverMenu
@@ -1522,10 +1553,10 @@ export const PromptBoxVideo = ({
                 disabled={!hasClearableContent}
                 confirmClear={hasAttachedRefs}
               />
-              {selectedModel?.id === "seedance_2p0" && (
+              {generationCounts.length > 1 && (
                 <VideoGenerationCountPicker
-                  maxCount={4}
-                  currentCount={generationCount}
+                  counts={generationCounts}
+                  currentCount={effectiveGenerationCount}
                   handleCountChange={setGenerationCount}
                 />
               )}
@@ -1541,9 +1572,7 @@ export const PromptBoxVideo = ({
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
-                    credits={
-                      credits != null ? credits * generationCount : credits
-                    }
+                    credits={credits}
                   />
                 </div>
               </Tooltip>

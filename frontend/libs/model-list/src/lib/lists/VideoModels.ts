@@ -345,6 +345,8 @@ export const VIDEO_MODELS: VideoModel[] = [
   new VideoModel({
     id: "seedance_2p0",
     tauriId: "seedance_2p0",
+    generationCountOptions: [1, 2, 3, 4],
+    defaultGenerationCount: 1,
     fullName: "Seedance 2.0",
     category: "video",
     creator: ModelCreator.Bytedance,

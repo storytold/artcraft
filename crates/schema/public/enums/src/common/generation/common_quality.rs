@@ -13,11 +13,22 @@ pub const MAX_LENGTH: usize = 16;
 
 /// Common quality levels for generation.
 ///
+/// Declared from "let the model decide" through the highest tier down to the lowest, so the
+/// derived `Ord` (and `all_variants()`) reads top-down. Not every model supports every tier;
+/// the router clamps unsupported tiers to the nearest one the model offers.
+///
 /// NB: Keep the max serialized length to 16 characters.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonQuality {
+  /// Let the model choose. Models without a native "auto" treat this as their default tier.
+  Auto,
+  /// Highest tier (GPT Image 2.5 `max`).
+  Max,
+  /// Between High and Max (GPT Image 2.5 `xhigh`).
+  #[serde(rename = "xhigh")]
+  XHigh,
   High,
   Medium,
   Low,
@@ -30,6 +41,9 @@ impl_mysql_from_row!(CommonQuality);
 impl CommonQuality {
   pub fn to_str(&self) -> &'static str {
     match self {
+      Self::Auto => "auto",
+      Self::Max => "max",
+      Self::XHigh => "xhigh",
       Self::High => "high",
       Self::Medium => "medium",
       Self::Low => "low",
@@ -38,6 +52,9 @@ impl CommonQuality {
 
   pub fn from_str(value: &str) -> Result<Self, EnumError> {
     match value {
+      "auto" => Ok(Self::Auto),
+      "max" => Ok(Self::Max),
+      "xhigh" => Ok(Self::XHigh),
       "high" => Ok(Self::High),
       "medium" => Ok(Self::Medium),
       "low" => Ok(Self::Low),
@@ -47,6 +64,9 @@ impl CommonQuality {
 
   pub fn all_variants() -> BTreeSet<Self> {
     BTreeSet::from([
+      Self::Auto,
+      Self::Max,
+      Self::XHigh,
       Self::High,
       Self::Medium,
       Self::Low,
@@ -66,6 +86,9 @@ mod tests {
 
     #[test]
     fn test_serialization() {
+      assert_serialization(CommonQuality::Auto, "auto");
+      assert_serialization(CommonQuality::Max, "max");
+      assert_serialization(CommonQuality::XHigh, "xhigh");
       assert_serialization(CommonQuality::High, "high");
       assert_serialization(CommonQuality::Medium, "medium");
       assert_serialization(CommonQuality::Low, "low");
@@ -73,6 +96,9 @@ mod tests {
 
     #[test]
     fn to_str() {
+      assert_eq!(CommonQuality::Auto.to_str(), "auto");
+      assert_eq!(CommonQuality::Max.to_str(), "max");
+      assert_eq!(CommonQuality::XHigh.to_str(), "xhigh");
       assert_eq!(CommonQuality::High.to_str(), "high");
       assert_eq!(CommonQuality::Medium.to_str(), "medium");
       assert_eq!(CommonQuality::Low.to_str(), "low");
@@ -80,6 +106,9 @@ mod tests {
 
     #[test]
     fn from_str() {
+      assert_eq!(CommonQuality::from_str("auto").unwrap(), CommonQuality::Auto);
+      assert_eq!(CommonQuality::from_str("max").unwrap(), CommonQuality::Max);
+      assert_eq!(CommonQuality::from_str("xhigh").unwrap(), CommonQuality::XHigh);
       assert_eq!(CommonQuality::from_str("high").unwrap(), CommonQuality::High);
       assert_eq!(CommonQuality::from_str("medium").unwrap(), CommonQuality::Medium);
       assert_eq!(CommonQuality::from_str("low").unwrap(), CommonQuality::Low);
@@ -99,7 +128,10 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonQuality::all_variants();
-      assert_eq!(variants.len(), 3);
+      assert_eq!(variants.len(), 6);
+      assert_eq!(variants.pop_first(), Some(CommonQuality::Auto));
+      assert_eq!(variants.pop_first(), Some(CommonQuality::Max));
+      assert_eq!(variants.pop_first(), Some(CommonQuality::XHigh));
       assert_eq!(variants.pop_first(), Some(CommonQuality::High));
       assert_eq!(variants.pop_first(), Some(CommonQuality::Medium));
       assert_eq!(variants.pop_first(), Some(CommonQuality::Low));

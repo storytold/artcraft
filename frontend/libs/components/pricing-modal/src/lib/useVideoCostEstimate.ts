@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model, VideoModel, resolveVideoDuration, videoResolutionValue } from "@storyteller/model-list";
+import { Model, VideoModel, resolveVideoDuration, resolveVideoGenerationCount, resolveVideoOutputFormat, videoResolutionValue } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { usePromptVideoStore } from "@storyteller/ui-promptbox";
 import {
@@ -32,6 +32,7 @@ export function useVideoCostEstimate(
   const referenceVideos = usePromptVideoStore((s) => s.referenceVideos);
   const referenceAudios = usePromptVideoStore((s) => s.referenceAudios);
   const bitrate = usePromptVideoStore((s) => s.bitrate);
+  const outputFormat = usePromptVideoStore((s) => s.outputFormat);
   const generationCount = usePromptVideoStore((s) => s.generationCount);
   const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
 
@@ -72,6 +73,7 @@ export function useVideoCostEstimate(
       duration_seconds: resolveVideoDuration(videoModel, duration, isReferenceMode) ?? undefined,
       generate_audio: videoModel.generateWithSound ? generateWithSound : undefined,
       bitrate: videoModel.bitrateOptions?.length ? bitrate ?? videoModel.defaultBitrate ?? videoModel.bitrateOptions[0] : undefined,
+      output_format: resolveVideoOutputFormat(videoModel, outputFormat),
       start_frame_image_media_token: !isReferenceMode ? referenceImages[0]?.mediaToken : undefined,
       end_frame_image_media_token: !isReferenceMode ? endFrameImage?.mediaToken : undefined,
       reference_image_media_tokens: isReferenceMode ? referenceImages.map((image) => image.mediaToken) : undefined,
@@ -88,7 +90,7 @@ export function useVideoCostEstimate(
         if (cancelled) return;
         if (isEstimateVideoCostSuccess(result)) {
           const unitCredits = result.payload.cost_in_credits;
-          const count = videoModel.id === "seedance_2p0" ? generationCount : 1;
+          const count = resolveVideoGenerationCount(videoModel, generationCount);
           const credits = unitCredits == null ? null : unitCredits * count;
           setEstimatedCreditsForPage(ModelPage.ImageToVideo, credits);
         } else {
@@ -115,6 +117,7 @@ export function useVideoCostEstimate(
     referenceVideos,
     referenceAudios,
     bitrate,
+    outputFormat,
     generationCount,
     endFrameImage,
     generateWithSound,

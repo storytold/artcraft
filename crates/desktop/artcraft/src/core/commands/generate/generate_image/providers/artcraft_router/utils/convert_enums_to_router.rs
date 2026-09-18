@@ -30,6 +30,9 @@ pub fn convert_aspect_ratio(value: EnumsAspectRatio) -> RouterAspectRatio {
 
 pub fn convert_quality(value: EnumsQuality) -> RouterQuality {
   match value {
+    EnumsQuality::Auto => RouterQuality::Auto,
+    EnumsQuality::Max => RouterQuality::Max,
+    EnumsQuality::XHigh => RouterQuality::XHigh,
     EnumsQuality::High => RouterQuality::High,
     EnumsQuality::Medium => RouterQuality::Medium,
     EnumsQuality::Low => RouterQuality::Low,

@@ -82,13 +82,16 @@ fn plan_num_images(
   }
 }
 
-/// The router only exposes low / medium / high; GPT Image 2.5's `xhigh` and `max` tiers are
-/// not reachable through it. Fal's default (`high`) applies when unspecified.
+/// GPT Image 2.5 supports every router tier natively. Fal's default (`high`) applies when
+/// unspecified.
 fn plan_quality(quality: Option<RouterQuality>) -> GptImage2p5Quality {
   match quality {
-    Some(RouterQuality::Low) => GptImage2p5Quality::Low,
-    Some(RouterQuality::Medium) => GptImage2p5Quality::Medium,
+    Some(RouterQuality::Auto) => GptImage2p5Quality::Auto,
+    Some(RouterQuality::Max) => GptImage2p5Quality::Max,
+    Some(RouterQuality::XHigh) => GptImage2p5Quality::XHigh,
     Some(RouterQuality::High) | None => GptImage2p5Quality::High,
+    Some(RouterQuality::Medium) => GptImage2p5Quality::Medium,
+    Some(RouterQuality::Low) => GptImage2p5Quality::Low,
   }
 }
 
@@ -220,9 +223,12 @@ mod tests {
   fn quality_maps_exhaustively_for_text_and_edit() {
     let cases = [
       (None, "Some(High)"),
-      (Some(RouterQuality::Low), "Some(Low)"),
-      (Some(RouterQuality::Medium), "Some(Medium)"),
+      (Some(RouterQuality::Auto), "Some(Auto)"),
+      (Some(RouterQuality::Max), "Some(Max)"),
+      (Some(RouterQuality::XHigh), "Some(XHigh)"),
       (Some(RouterQuality::High), "Some(High)"),
+      (Some(RouterQuality::Medium), "Some(Medium)"),
+      (Some(RouterQuality::Low), "Some(Low)"),
     ];
     for (quality, expected) in cases {
       let text = unwrap_t2i(plan_gpt_image_2p5_params(&GenerateImageRequestBuilder { quality, ..base_builder() }));

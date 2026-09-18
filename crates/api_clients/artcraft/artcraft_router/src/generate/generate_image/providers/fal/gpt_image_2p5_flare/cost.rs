@@ -53,6 +53,9 @@ mod tests {
     (Some(Q::Low),    Some(Ar::Square),        None,          1,  1),
     (Some(Q::Medium), Some(Ar::Square),        None,          1,  2),
     (Some(Q::High),   Some(Ar::Square),        None,          1,  6),
+    (Some(Q::Auto),   Some(Ar::Square),        None,          1,  6), // auto is priced as high
+    (Some(Q::XHigh),  Some(Ar::Square),        None,          1, 10),
+    (Some(Q::Max),    Some(Ar::Square),        None,          1, 22),
     (Some(Q::High),   Some(Ar::Square),        None,          4, 24),
     (Some(Q::High),   Some(Ar::SquareHd),      None,          1,  9),
     (Some(Q::High),   Some(Ar::Square),        Some(R::TwoK), 1,  9),

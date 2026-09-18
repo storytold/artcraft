@@ -110,10 +110,14 @@ pub(crate) fn plan_aspect_ratio(
 
 pub(crate) fn plan_quality(quality: Option<RouterQuality>) -> Option<GenerateMidjourneyV7NijiQuality> {
   match quality {
-    None => None,
+    // `auto` has no Midjourney equivalent; leave it to the provider default.
+    None | Some(RouterQuality::Auto) => None,
     Some(RouterQuality::Low) => Some(GenerateMidjourneyV7NijiQuality::Quarter),
     Some(RouterQuality::Medium) => Some(GenerateMidjourneyV7NijiQuality::Half),
-    Some(RouterQuality::High) => Some(GenerateMidjourneyV7NijiQuality::Full),
+    // Midjourney tops out at full quality; the higher GPT Image tiers clamp to it.
+    Some(RouterQuality::High)
+    | Some(RouterQuality::XHigh)
+    | Some(RouterQuality::Max) => Some(GenerateMidjourneyV7NijiQuality::Full),
   }
 }
 

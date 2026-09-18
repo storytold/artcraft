@@ -163,6 +163,12 @@ pub enum CommonModelType {
   Kling3p0Pro,
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
+
+  #[serde(rename = "wan_3p0")]
+  Wan3p0,
+
+  #[serde(rename = "wan_3p0_prime")]
+  Wan3p0Prime,
   #[serde(rename = "minimax_h3")]
   MinimaxH3,
   #[serde(rename = "minimax_h3_turbo")]
@@ -349,6 +355,8 @@ impl CommonModelType {
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
       Self::HappyHorse1p0 => "happy_horse_1p0",
+      Self::Wan3p0 => "wan_3p0",
+      Self::Wan3p0Prime => "wan_3p0_prime",
       Self::MinimaxH3 => "minimax_h3",
       Self::MinimaxH3Turbo => "minimax_h3_turbo",
       Self::MinimaxH3Ultra => "minimax_h3_ultra",
@@ -472,6 +480,8 @@ impl CommonModelType {
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
+      "wan_3p0" => Ok(Self::Wan3p0),
+      "wan_3p0_prime" => Ok(Self::Wan3p0Prime),
       "minimax_h3" => Ok(Self::MinimaxH3),
       "minimax_h3_turbo" => Ok(Self::MinimaxH3Turbo),
       "minimax_h3_ultra" => Ok(Self::MinimaxH3Ultra),
@@ -599,6 +609,8 @@ impl CommonModelType {
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
       Self::HappyHorse1p0,
+      Self::Wan3p0,
+      Self::Wan3p0Prime,
       Self::MinimaxH3,
       Self::MinimaxH3Turbo,
       Self::MinimaxH3Ultra,
@@ -723,6 +735,8 @@ impl CommonModelType {
       Self::Kling3p0Standard => CommonModelClass::Video,
       Self::Kling3p0Pro => CommonModelClass::Video,
       Self::HappyHorse1p0 => CommonModelClass::Video,
+      Self::Wan3p0 => CommonModelClass::Video,
+      Self::Wan3p0Prime => CommonModelClass::Video,
       Self::MinimaxH3 => CommonModelClass::Video,
       Self::MinimaxH3Turbo => CommonModelClass::Video,
       Self::MinimaxH3Ultra => CommonModelClass::Video,
@@ -856,6 +870,8 @@ mod tests {
       assert_serialization(CommonModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(CommonModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(CommonModelType::HappyHorse1p0, "happy_horse_1p0");
+      assert_serialization(CommonModelType::Wan3p0, "wan_3p0");
+      assert_serialization(CommonModelType::Wan3p0Prime, "wan_3p0_prime");
       assert_serialization(CommonModelType::MinimaxH3, "minimax_h3");
       assert_serialization(CommonModelType::MinimaxH3Turbo, "minimax_h3_turbo");
       assert_serialization(CommonModelType::MinimaxH3Ultra, "minimax_h3_ultra");
@@ -974,6 +990,8 @@ mod tests {
       assert_eq!(CommonModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(CommonModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(CommonModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(CommonModelType::Wan3p0.to_str(), "wan_3p0");
+      assert_eq!(CommonModelType::Wan3p0Prime.to_str(), "wan_3p0_prime");
       assert_eq!(CommonModelType::MinimaxH3.to_str(), "minimax_h3");
       assert_eq!(CommonModelType::MinimaxH3Turbo.to_str(), "minimax_h3_turbo");
       assert_eq!(CommonModelType::MinimaxH3Ultra.to_str(), "minimax_h3_ultra");
@@ -1094,6 +1112,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("kling_3p0_standard").unwrap(), CommonModelType::Kling3p0Standard);
       assert_eq!(CommonModelType::from_str("kling_3p0_pro").unwrap(), CommonModelType::Kling3p0Pro);
       assert_eq!(CommonModelType::from_str("happy_horse_1p0").unwrap(), CommonModelType::HappyHorse1p0);
+      assert_eq!(CommonModelType::from_str("wan_3p0").unwrap(), CommonModelType::Wan3p0);
+      assert_eq!(CommonModelType::from_str("wan_3p0_prime").unwrap(), CommonModelType::Wan3p0Prime);
       assert_eq!(CommonModelType::from_str("minimax_h3").unwrap(), CommonModelType::MinimaxH3);
       assert_eq!(CommonModelType::from_str("minimax_h3_turbo").unwrap(), CommonModelType::MinimaxH3Turbo);
       assert_eq!(CommonModelType::from_str("minimax_h3_ultra").unwrap(), CommonModelType::MinimaxH3Ultra);
@@ -1158,7 +1178,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 108);
+      assert_eq!(variants.len(), 110);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1214,6 +1234,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Standard));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::HappyHorse1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Wan3p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Wan3p0Prime));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Turbo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MinimaxH3Ultra));

@@ -597,6 +597,10 @@ pub struct ListVideoModelsModelDetails {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub bitrate_default: Option<ListVideoModelsBitrate>,
   #[serde(skip_serializing_if = "Option::is_none")]
+  pub output_format_options: Option<Vec<String>>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub output_format_default: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub quality_options: Option<Vec<ListVideoModelsQuality>>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub default_quality: Option<ListVideoModelsQuality>,
@@ -655,6 +659,8 @@ impl From<OmniGenVideoModelDetails> for ListVideoModelsModelDetails {
       resolution_default: v.resolution_default.map(Into::into),
       bitrate_options: v.bitrate_options.map(|items| items.into_iter().map(Into::into).collect()),
       bitrate_default: v.bitrate_default.map(Into::into),
+      output_format_options: v.output_format_options,
+      output_format_default: v.output_format_default,
       quality_options: v.quality_options.map(|items| items.into_iter().map(Into::into).collect()),
       default_quality: v.default_quality.map(Into::into),
       duration_seconds_min: v.duration_seconds_min,
@@ -667,6 +673,29 @@ impl From<OmniGenVideoModelDetails> for ListVideoModelsModelDetails {
       batch_size_options: v.batch_size_options,
       batch_size_default: v.batch_size_default,
       is_disabled: v.is_disabled,
+    }
+  }
+}
+
+#[cfg(test)]
+mod catalog_parity_tests {
+  use super::*;
+  use serde_json::json;
+
+  #[test]
+  fn wan_and_output_formats_survive_the_desktop_listing_boundary() {
+    for model in ["wan_3p0", "wan_3p0_prime", "seedance_2p5", "seedance_2p5_u", "future_video"] {
+      let source = json!({
+        "model": model,
+        "output_format_options": ["mp4", "mov", "future_container"],
+        "output_format_default": "mp4",
+        "batch_size_options": [1, 2, 3, 4],
+        "duration_seconds_max": 30,
+        "video_references_max": 5
+      });
+      let client: OmniGenVideoModelDetails = serde_json::from_value(source.clone()).unwrap();
+      let desktop = serde_json::to_value(ListVideoModelsModelDetails::from(client)).unwrap();
+      assert_eq!(desktop, source);
     }
   }
 }

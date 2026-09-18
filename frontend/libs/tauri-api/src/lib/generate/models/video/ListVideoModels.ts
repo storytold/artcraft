@@ -55,6 +55,8 @@ export interface OmniGenVideoModelDetails {
   resolution_default?: string;
   bitrate_options?: string[];
   bitrate_default?: string;
+  output_format_options?: string[];
+  output_format_default?: string;
   quality_options?: string[];
   default_quality?: string;
   duration_seconds_min?: number;
