@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { invoke } from "@tauri-apps/api/core";
-import { LoginChallengesApi, UsersApi, HttpApiError, type LoginChallenge, type UserInfo } from "@storyteller/api";
-import { OpenUrl } from "@storyteller/tauri-api";
+import type { UserInfo } from "@storyteller/api";
+import { createDesktopLoginChallenge, pollDesktopLoginChallenge, cancelDesktopLoginChallenge, isDesktopLoginError, type DesktopLoginChallenge } from "./NativeLoginBridge";
+
+const OpenUrl = (url: string) => invoke("plugin:opener|open_url", { url });
 
 export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) => void }) {
-  const api = useMemo(() => new LoginChallengesApi(), []);
-  const [challenge, setChallenge] = useState<LoginChallenge | null>(null);
+  const [challenge, setChallenge] = useState<DesktopLoginChallenge | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(Date.now);
@@ -35,28 +36,21 @@ export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) 
       if (!active) return;
       if (Date.now() >= deadline) { finish("Login request expired. Start a new request."); return; }
       try {
-        const result = await api.poll(challenge.device_token);
+        const result = await pollDesktopLoginChallenge(challenge.challenge_id);
         if (!active) return;
         if (result.status === "redeemed") {
-          api.acceptSession(result);
-          // The response's Set-Cookie is already in Tauri's HTTP cookie jar.
-          // Synchronize the native API client before declaring login complete.
-          await invoke("storyteller_sync_login_session_command");
-          if (!active) return;
-          const session = await new UsersApi().GetSession();
-          if (!session.success || !session.data?.loggedIn || !session.data.user) throw new Error("Session verification failed");
-          if (!active) return;
+          if (!result.maybe_user) throw new Error("Native session verification did not return a user");
           active = false;
           setChallenge(null);
           setMessage("Signed in successfully.");
-          success.current(session.data.user);
+          success.current(result.maybe_user);
           return;
         }
         if (result.status === "failed") {
           finish(result.maybe_failure_type === "user_declined" ? "Login was declined on the website." : result.maybe_failure_type === "expired" ? "Login request expired. Start a new request." : "Login failed. Start a new request.");
           return;
         }
-        if (!result.success || !["pending", "approved"].includes(result.status)) {
+        if (!["pending", "approved"].includes(result.status)) {
           finish("This login request could not be completed. Start a new request.");
           return;
         }
@@ -64,8 +58,8 @@ export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) 
         setMessage("Waiting for your confirmation on the website…");
       } catch (error) {
         if (!active) return;
-        if (error instanceof HttpApiError && [400, 401, 403, 404].includes(error.status)) {
-          finish("This login request is no longer valid. Start a new request.");
+        if (isDesktopLoginError(error) && !error.retryable) {
+          finish(error.message);
           return;
         }
         delay = Math.min(delay * 2, 30_000);
@@ -74,8 +68,12 @@ export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) 
       if (active) timer = setTimeout(poll, Math.min(delay, Math.max(0, deadline - Date.now())));
     };
     timer = setTimeout(poll, Math.min(delay, Math.max(0, deadline - Date.now())));
-    return () => { active = false; clearTimeout(timer); };
-  }, [api, challenge]);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      void cancelDesktopLoginChallenge(challenge.challenge_id).catch(() => {});
+    };
+  }, [challenge]);
 
   const start = async (openBrowser: boolean) => {
     if (busy) return;
@@ -83,18 +81,18 @@ export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) 
     setBusy(true);
     setMessage("");
     try {
-      const created = await api.create();
-      if (current !== generation.current) return;
-      const url = new URL(created.verification_url);
-      if (!created.success || url.origin !== "https://app.getartcraft.com" || url.pathname !== "/login/desktop" || !Number.isFinite(Date.parse(created.expires_at))) {
-        throw new Error("Invalid login challenge");
+      const created = await createDesktopLoginChallenge();
+      if (current !== generation.current) {
+        void cancelDesktopLoginChallenge(created.challenge_id).catch(() => {});
+        return;
       }
+      // Rust validates the approval URL against the configured API environment.
       setNow(Date.now());
       setChallenge(created);
       setMessage("Waiting for your confirmation on the website…");
       if (openBrowser) await OpenUrl(created.verification_url);
-    } catch {
-      if (current === generation.current) setMessage("Unable to open website login. Try again or scan the QR code.");
+    } catch (error) {
+      if (current === generation.current) setMessage(isDesktopLoginError(error) ? error.message : "Unable to open website login. Try again or scan the QR code.");
     } finally {
       if (current === generation.current) setBusy(false);
     }

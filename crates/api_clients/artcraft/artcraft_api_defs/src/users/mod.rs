@@ -3,3 +3,4 @@ pub mod edit_email;
 pub mod edit_username;
 pub mod login;
 pub mod session_info;
+pub mod login_challenges;

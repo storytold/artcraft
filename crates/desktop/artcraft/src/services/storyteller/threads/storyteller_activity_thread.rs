@@ -3,9 +3,10 @@ use crate::core::state::artcraft_platform_info::ArtcraftPlatformInfo;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use anyhow::anyhow;
-use artcraft_api_defs::analytics::log_active_user::LogAppActiveUserRequest;
+use artcraft_api_defs::analytics::log_active_user::{LogAppActiveUserRequest, LOG_ACTIVE_USER_V2_PATH};
 use artcraft_client::endpoints::analytics::log_active_user_v2::log_active_user_v2;
 use artcraft_client::error::api_error::ApiError;
+use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::error::storyteller_error::StorytellerError;
 use errors::AnyhowResult;
 use log::{debug, error, info};
@@ -38,7 +39,7 @@ pub async fn storyteller_activity_thread(
       &app_session_token,
     ).await;
     if let Err(err) = res {
-      error!("An error occurred: {:?}", err);
+      error!("Activity request failed: origin={} path={} error={:?}", app_env_configs.storyteller_host.to_api_hostname_and_scheme(), LOG_ACTIVE_USER_V2_PATH, err);
     }
     // NB: Sleep if an error occurs.
     tokio::time::sleep(std::time::Duration::from_millis(ERROR_SLEEP_MILLIS)).await;
@@ -62,7 +63,7 @@ async fn polling_loop(
         continue;
       }
       Some(creds) => {
-        if creds.is_empty() {
+        if !has_activity_session(&creds) {
           tokio::time::sleep(std::time::Duration::from_millis(5_000)).await;
           continue;
         }
@@ -123,7 +124,31 @@ async fn polling_loop(
     };
 
     // Wait at least a minute, no matter what the server tells us.
-    let wait_millis = std::cmp::min(wait_millis, 60_000);
+    let wait_millis = std::cmp::max(wait_millis, 60_000);
     tokio::time::sleep(std::time::Duration::from_millis(wait_millis)).await;
+  }
+}
+
+// Anonymous visitor tracking is not authentication for active_user_v2.
+fn has_activity_session(creds: &StorytellerCredentialSet) -> bool {
+  creds.session.as_ref().map(|session| !session.as_str().is_empty()).unwrap_or(false)
+}
+
+#[cfg(test)]
+mod login_bridge_tests {
+  use super::has_activity_session;
+  use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+  use artcraft_client::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
+  use artcraft_client::credentials::storyteller_session_cookie::StorytellerSessionCookie;
+
+  #[test]
+  fn anonymous_visitor_cookie_does_not_authorize_activity_requests() {
+    assert!(!has_activity_session(&StorytellerCredentialSet::empty()));
+    let visitor_only = StorytellerCredentialSet::initialize_with_just_avt(StorytellerAvtCookie::new("visitor_fixture".into()));
+    assert!(!has_activity_session(&visitor_only));
+    let empty_session = StorytellerCredentialSet::initialize_with_just_cookie(StorytellerSessionCookie::new(String::new()));
+    assert!(!has_activity_session(&empty_session));
+    let signed_in = StorytellerCredentialSet::initialize_with_just_cookie(StorytellerSessionCookie::new("signed_session_fixture".into()));
+    assert!(has_activity_session(&signed_in));
   }
 }

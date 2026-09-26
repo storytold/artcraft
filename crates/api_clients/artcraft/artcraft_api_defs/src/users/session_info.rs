@@ -1,11 +1,11 @@
 use crate::common::responses::user_details_light::UserDetailsLight;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use tokens::tokens::users::UserToken;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Copy, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Copy, Clone, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum FakeYouPlan {
   Free,
@@ -14,7 +14,7 @@ pub enum FakeYouPlan {
   Pro,
 }
 
-#[derive(Serialize, Copy, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Copy, Clone, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum StorytellerStreamPlan {
   Free,
@@ -23,7 +23,7 @@ pub enum StorytellerStreamPlan {
   Pro,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SessionUserInfo {
   pub core_info: UserDetailsLight,
 
@@ -76,7 +76,7 @@ pub struct SessionUserInfo {
   pub can_delete_users: bool,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SessionOnboardingState {
   /// If true, the user hasn't set their email.
   pub email_not_set: bool,
@@ -91,7 +91,7 @@ pub struct SessionOnboardingState {
   pub username_not_customized: bool,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SessionInfoSuccessResponse {
   pub success: bool,
   pub logged_in: bool,
