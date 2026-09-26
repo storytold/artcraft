@@ -167,7 +167,7 @@ async fn cancelling_during_http_prevents_late_cookie_installation() {
     poll_challenge(&h.state, &h.manager, &h.jar, &created.challenge_id),
     async {
       tokio::time::sleep(Duration::from_millis(30)).await;
-      h.state.pending.lock().await.remove(&created.challenge_id);
+      cancel_challenge(&h.state, &created.challenge_id).await;
     }
   );
   assert!(result.is_err());

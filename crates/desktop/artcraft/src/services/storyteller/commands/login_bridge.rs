@@ -3,22 +3,21 @@ use std::sync::Arc;
 
 use artcraft_api_defs::users::login_challenges::{LoginChallengeFailure, LoginChallengeState};
 use artcraft_api_defs::users::session_info::SessionUserInfo;
+use artcraft_client::endpoints::users::password_login::PasswordLoginRequest;
+use artcraft_client::endpoints::users::password_signup::PasswordSignupRequest;
+use artcraft_client::utils::api_host::ApiHost;
 use artcraft_client::utils::login_challenge_client::{
   LoginChallengeClient, LoginChallengeClientError,
 };
-use artcraft_client::utils::api_host::ApiHost;
-use artcraft_client::endpoints::users::password_login::PasswordLoginRequest;
-use artcraft_client::endpoints::users::password_signup::PasswordSignupRequest;
 use chrono::{DateTime, Utc};
 use log::{info, warn};
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager};
 use tauri_plugin_http::reqwest_cookie_store::{CookieStoreMutex, RawCookie};
 use tauri_plugin_http::Http;
 use tokio::sync::Mutex;
 use uuid_utils::uuid::generate_random_uuid;
 
-use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::threads::main_window_thread::persist_storyteller_cookies_task::get_credentials_from_cookie_store;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
@@ -60,91 +59,101 @@ pub struct DesktopLoginError {
   pub retryable: bool,
 }
 
-#[tauri::command]
-pub async fn storyteller_create_login_challenge_command(
-  config: State<'_, AppEnvConfigs>,
-  state: State<'_, DesktopLoginBridgeState>,
-) -> Result<DesktopLoginChallenge, DesktopLoginError> {
-  begin_challenge(&config.storyteller_host, &state).await
+impl DesktopLoginError {
+  fn local(message: &str) -> Self {
+    Self {
+      status: None,
+      message: message.to_owned(),
+      retryable: false,
+    }
+  }
+
+  pub(super) fn from_client(origin: &str, error: LoginChallengeClientError) -> Self {
+    warn!(
+      "Website login failed: origin={} status={:?} reason={}",
+      origin, error.status, error.message
+    );
+    Self {
+      retryable: error
+        .status
+        .map(|s| s == 429 || s >= 500)
+        .unwrap_or(error.message == "Unable to reach the login server"),
+      status: error.status,
+      message: format!("{}: {} (HTTP {:?})", origin, error.message, error.status),
+    }
+  }
 }
 
-#[tauri::command]
-pub async fn storyteller_poll_login_challenge_command(
-  app: AppHandle,
-  state: State<'_, DesktopLoginBridgeState>,
-  manager: State<'_, StorytellerCredentialManager>,
-  challenge_id: String,
-) -> Result<DesktopLoginOutcome, DesktopLoginError> {
-  let jar = app
-    .try_state::<Http>()
-    .ok_or_else(|| DesktopLoginError::local("HTTP cookie store unavailable"))?
-    .cookies_jar
-    .clone();
-  poll_challenge(&state, &manager, &jar, &challenge_id).await
-}
-
-#[tauri::command]
-pub async fn storyteller_cancel_login_challenge_command(
-  state: State<'_, DesktopLoginBridgeState>,
-  challenge_id: String,
-) -> Result<(), DesktopLoginError> {
-  state.pending.lock().await.remove(&challenge_id);
-  Ok(())
-}
-
-#[tauri::command]
-pub async fn storyteller_get_login_session_command(app: AppHandle, config: State<'_, AppEnvConfigs>) -> Result<Option<SessionUserInfo>, DesktopLoginError> {
-  let client = LoginChallengeClient::new(&config.storyteller_host)
-    .map_err(|e| DesktopLoginError::from_client(&config.storyteller_host.to_api_hostname_and_scheme(), e))?;
-  current_login_session(&client, &http_cookie_jar(&app)?).await
-}
-
-#[tauri::command]
-pub async fn storyteller_password_login_command(app: AppHandle, config: State<'_, AppEnvConfigs>, manager: State<'_, StorytellerCredentialManager>, request: PasswordLoginRequest) -> Result<SessionUserInfo, DesktopLoginError> {
-  password_auth(&config.storyteller_host, &manager, &http_cookie_jar(&app)?, Some(request), None).await
-}
-
-#[tauri::command]
-pub async fn storyteller_password_signup_command(app: AppHandle, config: State<'_, AppEnvConfigs>, manager: State<'_, StorytellerCredentialManager>, request: PasswordSignupRequest) -> Result<SessionUserInfo, DesktopLoginError> {
-  password_auth(&config.storyteller_host, &manager, &http_cookie_jar(&app)?, None, Some(request)).await
-}
-
-async fn current_login_session(client: &LoginChallengeClient, jar: &Arc<CookieStoreMutex>) -> Result<Option<SessionUserInfo>, DesktopLoginError> {
+pub(super) async fn current_login_session(
+  client: &LoginChallengeClient,
+  jar: &Arc<CookieStoreMutex>,
+) -> Result<Option<SessionUserInfo>, DesktopLoginError> {
   let credentials = {
-    let store = jar.store.lock().map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
-    get_credentials_from_cookie_store(&store, &client.api_url()).map_err(|_| DesktopLoginError::local("Unable to read session cookie"))?
+    let store = jar
+      .store
+      .lock()
+      .map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
+    get_credentials_from_cookie_store(&store, &client.api_url())
+      .map_err(|_| DesktopLoginError::local("Unable to read session cookie"))?
   };
-  let Some(signed) = credentials.session else { return Ok(None); };
+  let Some(signed) = credentials.session else {
+    return Ok(None);
+  };
   let session = match client.session(signed.as_str()).await {
     Ok(session) => session,
     Err(error) if error.status == Some(401) => return Ok(None),
     Err(error) => return Err(DesktopLoginError::from_client(&client.api_origin(), error)),
   };
-  Ok(session.user.filter(|_| session.success && session.logged_in))
+  Ok(
+    session
+      .user
+      .filter(|_| session.success && session.logged_in),
+  )
 }
 
-async fn password_auth(host: &ApiHost, manager: &StorytellerCredentialManager, jar: &Arc<CookieStoreMutex>, login: Option<PasswordLoginRequest>, signup: Option<PasswordSignupRequest>) -> Result<SessionUserInfo, DesktopLoginError> {
-  let client = LoginChallengeClient::new(host).map_err(|e| DesktopLoginError::from_client(&host.to_api_hostname_and_scheme(), e))?;
+pub(super) async fn password_auth(
+  host: &ApiHost,
+  manager: &StorytellerCredentialManager,
+  jar: &Arc<CookieStoreMutex>,
+  login: Option<PasswordLoginRequest>,
+  signup: Option<PasswordSignupRequest>,
+) -> Result<SessionUserInfo, DesktopLoginError> {
+  let client = LoginChallengeClient::new(host)
+    .map_err(|e| DesktopLoginError::from_client(&host.to_api_hostname_and_scheme(), e))?;
   let response = match (login, signup) {
     (Some(request), None) => client.password_login(&request).await,
     (None, Some(request)) => client.password_signup(&request).await,
     _ => return Err(DesktopLoginError::local("Invalid authentication request")),
-  }.map_err(|e| DesktopLoginError::from_client(&client.api_origin(), e))?;
+  }
+  .map_err(|e| DesktopLoginError::from_client(&client.api_origin(), e))?;
   let (response, cookie) = response;
-  if !response.success { return Err(DesktopLoginError::local("Sign-in failed. Check your account details and try again.")); }
-  let signed = response.signed_session.ok_or_else(|| DesktopLoginError::local("Login server did not issue a session"))?;
-  let cookie = cookie.ok_or_else(|| DesktopLoginError::local("Login server did not set a session cookie"))?;
+  if !response.success {
+    return Err(DesktopLoginError::local(
+      "Sign-in failed. Check your account details and try again.",
+    ));
+  }
+  let signed = response
+    .signed_session
+    .ok_or_else(|| DesktopLoginError::local("Login server did not issue a session"))?;
+  let cookie =
+    cookie.ok_or_else(|| DesktopLoginError::local("Login server did not set a session cookie"))?;
   let (cookie, user) = verify_session(&client, &signed, cookie).await?;
   install_session_cookie(&client, &signed, cookie, manager, jar)?;
   persist_session_cookie(jar).await?;
   Ok(user)
 }
 
-fn http_cookie_jar(app: &AppHandle) -> Result<Arc<CookieStoreMutex>, DesktopLoginError> {
-  Ok(app.try_state::<Http>().ok_or_else(|| DesktopLoginError::local("HTTP cookie store unavailable"))?.cookies_jar.clone())
+pub(super) fn http_cookie_jar(app: &AppHandle) -> Result<Arc<CookieStoreMutex>, DesktopLoginError> {
+  Ok(
+    app
+      .try_state::<Http>()
+      .ok_or_else(|| DesktopLoginError::local("HTTP cookie store unavailable"))?
+      .cookies_jar
+      .clone(),
+  )
 }
 
-async fn begin_challenge(
+pub(super) async fn begin_challenge(
   host: &ApiHost,
   state: &DesktopLoginBridgeState,
 ) -> Result<DesktopLoginChallenge, DesktopLoginError> {
@@ -186,7 +195,7 @@ async fn begin_challenge(
   })
 }
 
-async fn poll_challenge(
+pub(super) async fn poll_challenge(
   state: &DesktopLoginBridgeState,
   manager: &StorytellerCredentialManager,
   jar: &Arc<CookieStoreMutex>,
@@ -251,7 +260,15 @@ async fn poll_challenge(
   })
 }
 
-async fn verify_session(client: &LoginChallengeClient, signed: &str, set_cookie: String) -> Result<(RawCookie<'static>, SessionUserInfo), DesktopLoginError> {
+pub(super) async fn cancel_challenge(state: &DesktopLoginBridgeState, challenge_id: &str) {
+  state.pending.lock().await.remove(challenge_id);
+}
+
+async fn verify_session(
+  client: &LoginChallengeClient,
+  signed: &str,
+  set_cookie: String,
+) -> Result<(RawCookie<'static>, SessionUserInfo), DesktopLoginError> {
   let cookie = RawCookie::parse(set_cookie)
     .map_err(|_| DesktopLoginError::local("Invalid session cookie"))?
     .into_owned();
@@ -272,23 +289,39 @@ async fn verify_session(client: &LoginChallengeClient, signed: &str, set_cookie:
   Ok((cookie, user))
 }
 
-fn install_session_cookie(client: &LoginChallengeClient, signed: &str, cookie: RawCookie<'static>, manager: &StorytellerCredentialManager, jar: &Arc<CookieStoreMutex>) -> Result<(), DesktopLoginError> {
-  let mut store = jar.store.lock().map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
+fn install_session_cookie(
+  client: &LoginChallengeClient,
+  signed: &str,
+  cookie: RawCookie<'static>,
+  manager: &StorytellerCredentialManager,
+  jar: &Arc<CookieStoreMutex>,
+) -> Result<(), DesktopLoginError> {
+  let mut store = jar
+    .store
+    .lock()
+    .map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
   let mut candidate = store.clone();
   candidate.store_response_cookies([cookie].into_iter(), &client.api_url());
   let credentials = get_credentials_from_cookie_store(&candidate, &client.api_url())
     .map_err(|_| DesktopLoginError::local("Unable to read session cookie"))?;
   if credentials.session.as_ref().map(|c| c.as_str()) != Some(signed) {
-    return Err(DesktopLoginError::local("Session cookie does not apply to the configured API host"));
+    return Err(DesktopLoginError::local(
+      "Session cookie does not apply to the configured API host",
+    ));
   }
-  manager.set_credentials(&credentials).map_err(|_| DesktopLoginError::local("Unable to store native login credentials"))?;
+  manager
+    .set_credentials(&credentials)
+    .map_err(|_| DesktopLoginError::local("Unable to store native login credentials"))?;
   *store = candidate;
   Ok(())
 }
 
 async fn persist_session_cookie(jar: &Arc<CookieStoreMutex>) -> Result<(), DesktopLoginError> {
-  let saved = jar.request_save().map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
-  tokio::task::spawn_blocking(move || saved.recv()).await
+  let saved = jar
+    .request_save()
+    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
+  tokio::task::spawn_blocking(move || saved.recv())
+    .await
     .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?
     .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
   Ok(())
@@ -299,31 +332,6 @@ fn expired() -> DesktopLoginOutcome {
     status: LoginChallengeState::Failed,
     maybe_failure_type: Some(LoginChallengeFailure::Expired),
     maybe_user: None,
-  }
-}
-
-impl DesktopLoginError {
-  fn local(message: &str) -> Self {
-    Self {
-      status: None,
-      message: message.to_owned(),
-      retryable: false,
-    }
-  }
-
-  fn from_client(origin: &str, error: LoginChallengeClientError) -> Self {
-    warn!(
-      "Website login failed: origin={} status={:?} reason={}",
-      origin, error.status, error.message
-    );
-    Self {
-      retryable: error
-        .status
-        .map(|s| s == 429 || s >= 500)
-        .unwrap_or(error.message == "Unable to reach the login server"),
-      status: error.status,
-      message: format!("{}: {} (HTTP {:?})", origin, error.message, error.status),
-    }
   }
 }
 
