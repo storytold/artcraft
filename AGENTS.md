@@ -44,6 +44,7 @@ explicitly authorizes a cache cleanup.
 - Prefer `use` imports over inline fully-qualified paths; only qualify inline for true one-offs or std collisions
 - TypeScript with Nx, React, Vite, Zustand, and Three.js
 - Use two spaces for indentation
+- Each Tauri command belongs in its own file module, named after the command. Keep shared state, types, and helpers in separate support modules; see the [Storyteller command conventions](crates/desktop/artcraft/src/services/storyteller/commands/AGENTS.md).
 
 ### File Layout
 

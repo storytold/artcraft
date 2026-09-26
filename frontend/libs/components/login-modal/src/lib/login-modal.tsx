@@ -1,17 +1,19 @@
 import { Button } from "@storyteller/ui-button";
 import { Transition, TransitionChild } from "@headlessui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowRightIcon } from "lucide-react";
 import { DiscordIcon } from "@storyteller/icons";
+import type { UserInfo } from "@storyteller/api";
+import { DesktopLoginBridge } from "./DesktopLoginBridge";
+import { LoginSuccess } from "./LoginSuccess";
 import { ArtCraftSignUp } from "./artcraft-signup";
-import { UsersApi } from "@storyteller/api";
+import { getNativeLoginSession, passwordLogin, passwordSignup, isDesktopLoginError } from "./NativeLoginBridge";
 import { useLoginModalStore } from "./useLoginModalStore";
-
-const SIGNUP_SOURCE_ARTCRAFT = "artcraft";
 
 // Webapp auth-showcase video (swap by passing `videoUrl`).
 const DEFAULT_SHOWCASE_VIDEO =
   "https://player.vimeo.com/video/1169289718?background=1&autoplay=1&loop=1&muted=1";
+const LOGIN_SUCCESS_DURATION_MS = 3000;
 
 interface LoginModalProps {
   onClose?: () => void;
@@ -40,38 +42,55 @@ export function LoginModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [showDiscord, setShowDiscord] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isChallengeActive, setIsChallengeActive] = useState(false);
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
 
-  const checkArtCraftLogin = async () => {
-    const usersApi = new UsersApi();
-    const session = await usersApi.GetSession();
-    const loggedIn = session.data?.loggedIn;
-    return loggedIn;
-  };
+  const authGeneration = useRef(0);
+  const authSuccess = useRef(onArtCraftAuthSuccess);
+  authSuccess.current = onArtCraftAuthSuccess;
+  const afterClose = useRef(onClose);
+  afterClose.current = onClose;
 
-  // Check session on mount and when recheckTrigger changes.
+  // A stale startup/recheck response must never reopen the modal after login.
   useEffect(() => {
-    checkArtCraftLogin().then((loggedIn) => {
-      if (loggedIn) {
+    const generation = ++authGeneration.current;
+    let active = true;
+    getNativeLoginSession().then((user) => {
+      if (!active || generation !== authGeneration.current) return;
+      if (user) {
         setIsLoggedInArtCraft(true);
+        authSuccess.current?.(user);
         closeModal();
       } else {
-        // Reset modal state to initial values.
         setIsLoading(false);
         setIsSignUp(initialIsSignUp);
         setErrorMessage("");
         setShowDiscord(false);
         setShowSuccess(false);
+        setLoggedInUsername(null);
         setIsLoggedInArtCraft(false);
-
-        const { openModal } = useLoginModalStore.getState();
-        openModal();
+        useLoginModalStore.getState().openModal();
       }
+    }).catch((error) => {
+      if (!active || generation !== authGeneration.current) return;
+      setErrorMessage(isDesktopLoginError(error) ? error.message : "Unable to check your account. Please sign in again.");
+      useLoginModalStore.getState().openModal();
     });
+    return () => { active = false; };
   }, [recheckTrigger, closeModal, initialIsSignUp]);
 
   useEffect(() => {
     if (onOpenChange) onOpenChange(isOpen);
   }, [isOpen, onOpenChange]);
+
+  useEffect(() => {
+    if (loggedInUsername === null || !isOpen) return;
+    const timer = window.setTimeout(() => {
+      closeModal();
+      afterClose.current?.();
+    }, LOGIN_SUCCESS_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [loggedInUsername, isOpen, closeModal]);
 
   const handleClose = () => {
     closeModal();
@@ -84,6 +103,15 @@ export function LoginModal({
     setShowSuccess(true);
   };
 
+  const handleLoginSuccess = (user: UserInfo) => {
+    authGeneration.current += 1;
+    setIsLoading(false);
+    setIsLoggedInArtCraft(true);
+    setIsChallengeActive(false);
+    setLoggedInUsername(user.username);
+    authSuccess.current?.(user);
+  };
+
   const handleAuthSubmit = async (
     username: string,
     email: string,
@@ -91,56 +119,24 @@ export function LoginModal({
     passwordConfirmation: string
   ) => {
     setIsLoading(true);
-    const usersApi = new UsersApi();
+    setErrorMessage("");
+    const generation = ++authGeneration.current;
     try {
-      let signupResponse, loginResponse;
+      const user = isSignUp
+        ? await passwordSignup(username, email, password, passwordConfirmation)
+        : await passwordLogin(username || email, password);
+      if (generation !== authGeneration.current) return;
       if (isSignUp) {
-        signupResponse = await usersApi.Signup({
-          username,
-          email,
-          password,
-          passwordConfirmation,
-          signupSource: SIGNUP_SOURCE_ARTCRAFT,
-        });
-
-        if (!signupResponse.success) {
-          setErrorMessage(
-            signupResponse.errorMessage || "Signup failed, please try again."
-          );
-          setIsLoading(false);
-          return;
-        }
-        loginResponse = await usersApi.Login({
-          usernameOrEmail: username || email,
-          password,
-        });
+        setIsLoggedInArtCraft(true);
+        authSuccess.current?.(user);
+        setShowDiscord(true);
       } else {
-        loginResponse = await usersApi.Login({
-          usernameOrEmail: username || email,
-          password,
-        });
+        handleLoginSuccess(user);
       }
-
-      if (!loginResponse.success) {
-        setErrorMessage(
-          loginResponse.errorMessage || "Login failed, please try again."
-        );
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoggedInArtCraft(true);
-      if (onArtCraftAuthSuccess) {
-        const session = await usersApi.GetSession();
-        const userInfo = session.data?.user;
-        if (userInfo) onArtCraftAuthSuccess(userInfo);
-      }
-      setShowDiscord(true); // Onboarding step after successful auth.
-    } catch (e) {
-      console.error(e);
-      setErrorMessage("An unexpected error occurred. Please try again.");
+    } catch (error) {
+      if (generation === authGeneration.current) setErrorMessage(isDesktopLoginError(error) ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
-      setIsLoading(false);
+      if (generation === authGeneration.current) setIsLoading(false);
     }
   };
 
@@ -204,7 +200,7 @@ export function LoginModal({
   const inOnboarding = showDiscord || showSuccess;
 
   return (
-    <Transition appear show={isOpen}>
+    <Transition appear show={isOpen} afterLeave={() => setLoggedInUsername(null)}>
       <div className="fixed inset-0 z-[100]">
         <TransitionChild
           enter="ease-out duration-300"
@@ -226,10 +222,12 @@ export function LoginModal({
             leaveTo="opacity-0 scale-95"
           >
             <div
-              className="relative flex w-full max-w-5xl overflow-hidden rounded-3xl border border-white/[4%] bg-[#1C1C20] text-white shadow-2xl lg:min-h-[640px]"
+              className={`relative flex w-full overflow-hidden rounded-3xl border bg-[#1C1C20] text-white shadow-2xl ${loggedInUsername !== null ? "max-w-md border-emerald-200/20" : "max-w-5xl border-white/[4%] lg:min-h-[640px]"}`}
               onClick={(e) => e.stopPropagation()}
             >
-              {inOnboarding ? (
+              {loggedInUsername !== null ? (
+                <LoginSuccess username={loggedInUsername} />
+              ) : inOnboarding ? (
                 renderOnboarding()
               ) : (
                 <>
@@ -254,13 +252,14 @@ export function LoginModal({
                           </p>
                         </div>
 
-                        <ArtCraftSignUp
+                        {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={handleLoginSuccess} />}
+                        {!isChallengeActive && <ArtCraftSignUp
                           onSubmit={handleAuthSubmit}
                           isSignUp={isSignUp}
                           onToggleMode={() => setIsSignUp((prev) => !prev)}
                           errorMessage={errorMessage}
                           isLoading={isLoading}
-                        />
+                        />}
                       </div>
                     </div>
 

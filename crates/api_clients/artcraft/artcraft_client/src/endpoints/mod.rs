@@ -7,3 +7,4 @@ pub mod media_files;
 pub mod prompts;
 pub mod stripe_artcraft;
 pub mod subscriptions;
+pub mod users;
