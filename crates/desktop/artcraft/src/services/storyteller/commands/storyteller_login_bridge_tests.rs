@@ -64,6 +64,10 @@ async fn approved_session_is_verified_installed_persisted_and_retried_entirely_i
       .unwrap();
     assert_eq!(result.status, LoginChallengeState::Redeemed);
     assert_eq!(result.maybe_user.as_ref().unwrap().username, "google_user");
+    // This was the real failure: use_qt exists on the server, not this desktop.
+    let flags = &result.maybe_user.as_ref().unwrap().maybe_feature_flags;
+    assert_eq!(flags.len(), 1);
+    assert_eq!(flags.first().unwrap().to_str(), "studio");
     assert!(!serde_json::to_string(&result).unwrap().contains(SIGNED));
     let credentials = h.manager.get_credentials_required().unwrap();
     assert_eq!(credentials.session.unwrap().as_str(), SIGNED);
@@ -221,6 +225,51 @@ fn website_origin_must_match_native_api_environment() {
   assert!(!prod.allows_verification_url(&format!("http://localhost:4201/login/desktop{fragment}")));
 }
 
+#[tokio::test]
+async fn malformed_session_data_still_cannot_install_credentials() {
+  for (field, value) in [("maybe_feature_flags", json!([42])), ("username", Value::Null)] {
+    let mut invalid = session();
+    invalid.body["user"][field] = value;
+    let server = server(vec![create(), redeemed(), invalid]);
+    let h = harness();
+    let created = begin_challenge(&server.host, &h.state).await.unwrap();
+    assert!(poll_challenge(&h.state, &h.manager, &h.jar, &created.challenge_id).await.is_err());
+    assert!(h.manager.get_credentials().unwrap().is_none());
+    assert!(h.jar.store.lock().unwrap().iter_unexpired().next().is_none());
+    server.thread.join().unwrap();
+  }
+}
+
+#[tokio::test]
+async fn password_login_and_signup_verify_persist_and_recheck_via_native_api() {
+  for signup in [false, true] {
+    let mut auth = redeemed();
+    auth.path = if signup { "/v1/create_account" } else { "/v1/login" };
+    auth.body = json!({"success":true,"signed_session":SIGNED});
+    let server = server(vec![auth, session(), session()]);
+    let h = harness();
+    let (login, signup) = if signup {
+      (None, Some(PasswordSignupRequest { username: "google_user".into(), email_address: "user@example.test".into(), password: "fixture_password".into(), password_confirmation: "fixture_password".into(), signup_source: "artcraft".into() }))
+    } else {
+      (Some(PasswordLoginRequest { username_or_email: "google_user".into(), password: "fixture_password".into() }), None)
+    };
+    let user = password_auth(&server.host, &h.manager, &h.jar, login, signup).await.unwrap();
+    assert_eq!(user.username, "google_user");
+    assert_eq!(h.manager.get_credentials_required().unwrap().session.unwrap().as_str(), SIGNED);
+    assert!(std::fs::read_to_string(&h.jar.path).unwrap().contains(SIGNED));
+    let client = LoginChallengeClient::new(&server.host).unwrap();
+    assert_eq!(current_login_session(&client, &h.jar).await.unwrap().unwrap().username, "google_user");
+    server.thread.join().unwrap();
+  }
+}
+
+#[tokio::test]
+async fn empty_native_cookie_jar_needs_no_session_http_request() {
+  let h = harness();
+  let client = LoginChallengeClient::new(&ApiHost::Localhost { port: 1 }).unwrap();
+  assert!(current_login_session(&client, &h.jar).await.unwrap().is_none());
+}
+
 struct Harness {
   _directory: tempfile::TempDir,
   state: DesktopLoginBridgeState,
@@ -354,7 +403,7 @@ fn session() -> Step {
     "user_token":"u_native_test", "username":"google_user", "display_name":"Google User", "email_gravatar_hash":"fixture",
     "core_info":{"user_token":"u_native_test","username":"google_user","display_name":"Google User","gravatar_hash":"fixture","default_avatar":{"image_index":1,"color_index":1}},
     "onboarding":{"email_not_set":false,"email_not_confirmed":false,"password_not_set":true,"username_not_customized":false},
-    "maybe_feature_flags":[],"fakeyou_plan":"free","storyteller_stream_plan":"free"
+    "maybe_feature_flags":["studio", "use_qt", "future_server_flag"],"fakeyou_plan":"free","storyteller_stream_plan":"free"
   });
   for field in [
     "can_access_studio",

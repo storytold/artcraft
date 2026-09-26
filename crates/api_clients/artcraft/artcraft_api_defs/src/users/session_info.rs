@@ -1,6 +1,7 @@
 use crate::common::responses::user_details_light::UserDetailsLight;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize as DeserializeTrait, Deserializer};
 use std::collections::BTreeSet;
 use tokens::tokens::users::UserToken;
 use utoipa::ToSchema;
@@ -41,6 +42,7 @@ pub struct SessionUserInfo {
   /// Collection of feature / rollout flags
   /// This is the proper place to detect if a user has access to some rollout (non-paywall) feature.
   /// NB: The BTreeSet maintains order so React doesn't introduce re-render state bugs when order changes
+  #[serde(default, deserialize_with = "deserialize_known_feature_flags")]
   pub maybe_feature_flags: BTreeSet<UserFeatureFlag>,
 
   // Premium plans:
@@ -96,4 +98,13 @@ pub struct SessionInfoSuccessResponse {
   pub success: bool,
   pub logged_in: bool,
   pub user: Option<SessionUserInfo>,
+}
+
+// Server rollouts may introduce flags before a desktop release understands them.
+// Ignore only unknown flag names; malformed values and authentication fields
+// still fail decoding. Unknown flags never grant a client-side capability.
+fn deserialize_known_feature_flags<'de, D>(deserializer: D) -> Result<BTreeSet<UserFeatureFlag>, D::Error>
+where D: Deserializer<'de> {
+  let names = Vec::<String>::deserialize(deserializer)?;
+  Ok(names.into_iter().filter_map(|name| UserFeatureFlag::from_str(&name).ok()).collect())
 }

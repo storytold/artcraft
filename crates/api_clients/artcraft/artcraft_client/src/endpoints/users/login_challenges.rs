@@ -69,9 +69,10 @@ impl LoginChallengeClient {
       return false;
     };
     let origin_allowed = match self.api_host {
-      ApiHost::Localhost { .. } => ["http://localhost:4201", "http://127.0.0.1:4201"]
+      ApiHost::Localhost { .. } => ["http://localhost:4200", "http://127.0.0.1:4200", "http://localhost:4201", "http://127.0.0.1:4201"]
         .contains(&url.origin().ascii_serialization().as_str()),
-      ApiHost::Storyteller => url.origin().ascii_serialization() == "https://app.getartcraft.com",
+      ApiHost::Storyteller => ["https://app.getartcraft.com", "https://getartcraft.com", "https://www.getartcraft.com"]
+        .contains(&url.origin().ascii_serialization().as_str()),
       ApiHost::FakeYou => false,
     };
     origin_allowed
@@ -126,14 +127,14 @@ impl LoginChallengeClient {
     Ok(result)
   }
 
-  fn request(&self, method: Method, path: &str) -> RequestBuilder {
+  pub(crate) fn request(&self, method: Method, path: &str) -> RequestBuilder {
     self
       .client
       .request(method, format!("{}{path}", self.api_origin()))
       .header("Accept", "application/json")
   }
 
-  async fn send<T: DeserializeOwned>(
+  pub(crate) async fn send<T: DeserializeOwned>(
     &self,
     request: RequestBuilder,
     path: &str,

@@ -63,7 +63,7 @@ use crate::services::sora::commands::sora_logout_command::sora_logout_command;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::threads::sora_task_polling::sora_task_polling_thread::sora_task_polling_thread;
-use crate::services::storyteller::commands::storyteller_login_bridge_commands::{DesktopLoginBridgeState, storyteller_create_login_challenge_command, storyteller_poll_login_challenge_command, storyteller_cancel_login_challenge_command};
+use crate::services::storyteller::commands::storyteller_login_bridge_commands::{DesktopLoginBridgeState, storyteller_get_login_session_command, storyteller_password_login_command, storyteller_password_signup_command, storyteller_create_login_challenge_command, storyteller_poll_login_challenge_command, storyteller_cancel_login_challenge_command};
 use crate::services::storyteller::commands::storyteller_get_credits_command::storyteller_get_credits_command;
 use crate::services::storyteller::commands::storyteller_get_subscription_command::storyteller_get_subscription_command;
 use crate::services::storyteller::commands::storyteller_purge_credentials_command::storyteller_purge_credentials_command;
@@ -261,6 +261,9 @@ pub fn run() {
     set_provider_order_command,
     sora_get_credential_info_command,
     sora_logout_command,
+    storyteller_get_login_session_command,
+    storyteller_password_login_command,
+    storyteller_password_signup_command,
     storyteller_create_login_challenge_command,
     storyteller_poll_login_challenge_command,
     storyteller_cancel_login_challenge_command,

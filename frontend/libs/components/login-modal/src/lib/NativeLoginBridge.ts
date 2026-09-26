@@ -28,3 +28,11 @@ export const cancelDesktopLoginChallenge = (challengeId: string) => invoke<void>
 export function isDesktopLoginError(error: unknown): error is DesktopLoginError {
   return typeof error === "object" && error !== null && "message" in error && "retryable" in error;
 }
+
+export const getNativeLoginSession = () => invoke<UserInfo | null>("storyteller_get_login_session_command");
+export const passwordLogin = (usernameOrEmail: string, password: string) => invoke<UserInfo>("storyteller_password_login_command", {
+  request: { username_or_email: usernameOrEmail, password },
+});
+export const passwordSignup = (username: string, email: string, password: string, passwordConfirmation: string) => invoke<UserInfo>("storyteller_password_signup_command", {
+  request: { username, email_address: email, password, password_confirmation: passwordConfirmation, signup_source: "artcraft" },
+});

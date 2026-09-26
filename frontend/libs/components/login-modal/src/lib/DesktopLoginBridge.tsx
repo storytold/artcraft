@@ -6,7 +6,7 @@ import { createDesktopLoginChallenge, pollDesktopLoginChallenge, cancelDesktopLo
 
 const OpenUrl = (url: string) => invoke("plugin:opener|open_url", { url });
 
-export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) => void }) {
+export function DesktopLoginBridge({ onSuccess, onStart }: { onSuccess: (user: UserInfo) => void; onStart?: () => void }) {
   const [challenge, setChallenge] = useState<DesktopLoginChallenge | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -77,6 +77,7 @@ export function DesktopLoginBridge({ onSuccess }: { onSuccess: (user: UserInfo) 
 
   const start = async (openBrowser: boolean) => {
     if (busy) return;
+    onStart?.();
     const current = ++generation.current;
     setBusy(true);
     setMessage("");

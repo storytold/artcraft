@@ -7,6 +7,7 @@ use artcraft_client::endpoints::users::login_challenges::{
   LoginChallengeClient, LoginChallengeClientError,
 };
 use artcraft_client::utils::api_host::ApiHost;
+use artcraft_client::endpoints::users::password_auth::{PasswordLoginRequest, PasswordSignupRequest};
 use chrono::{DateTime, Utc};
 use log::{info, warn};
 use serde::Serialize;
@@ -88,6 +89,58 @@ pub async fn storyteller_cancel_login_challenge_command(
 ) -> Result<(), DesktopLoginError> {
   state.pending.lock().await.remove(&challenge_id);
   Ok(())
+}
+
+#[tauri::command]
+pub async fn storyteller_get_login_session_command(app: AppHandle, config: State<'_, AppEnvConfigs>) -> Result<Option<SessionUserInfo>, DesktopLoginError> {
+  let client = LoginChallengeClient::new(&config.storyteller_host)
+    .map_err(|e| DesktopLoginError::from_client(&config.storyteller_host.to_api_hostname_and_scheme(), e))?;
+  current_login_session(&client, &http_cookie_jar(&app)?).await
+}
+
+#[tauri::command]
+pub async fn storyteller_password_login_command(app: AppHandle, config: State<'_, AppEnvConfigs>, manager: State<'_, StorytellerCredentialManager>, request: PasswordLoginRequest) -> Result<SessionUserInfo, DesktopLoginError> {
+  password_auth(&config.storyteller_host, &manager, &http_cookie_jar(&app)?, Some(request), None).await
+}
+
+#[tauri::command]
+pub async fn storyteller_password_signup_command(app: AppHandle, config: State<'_, AppEnvConfigs>, manager: State<'_, StorytellerCredentialManager>, request: PasswordSignupRequest) -> Result<SessionUserInfo, DesktopLoginError> {
+  password_auth(&config.storyteller_host, &manager, &http_cookie_jar(&app)?, None, Some(request)).await
+}
+
+async fn current_login_session(client: &LoginChallengeClient, jar: &Arc<CookieStoreMutex>) -> Result<Option<SessionUserInfo>, DesktopLoginError> {
+  let credentials = {
+    let store = jar.store.lock().map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
+    get_credentials_from_cookie_store(&store, &client.api_url()).map_err(|_| DesktopLoginError::local("Unable to read session cookie"))?
+  };
+  let Some(signed) = credentials.session else { return Ok(None); };
+  let session = match client.session(signed.as_str()).await {
+    Ok(session) => session,
+    Err(error) if error.status == Some(401) => return Ok(None),
+    Err(error) => return Err(DesktopLoginError::from_client(&client.api_origin(), error)),
+  };
+  Ok(session.user.filter(|_| session.success && session.logged_in))
+}
+
+async fn password_auth(host: &ApiHost, manager: &StorytellerCredentialManager, jar: &Arc<CookieStoreMutex>, login: Option<PasswordLoginRequest>, signup: Option<PasswordSignupRequest>) -> Result<SessionUserInfo, DesktopLoginError> {
+  let client = LoginChallengeClient::new(host).map_err(|e| DesktopLoginError::from_client(&host.to_api_hostname_and_scheme(), e))?;
+  let response = match (login, signup) {
+    (Some(request), None) => client.password_login(&request).await,
+    (None, Some(request)) => client.password_signup(&request).await,
+    _ => return Err(DesktopLoginError::local("Invalid authentication request")),
+  }.map_err(|e| DesktopLoginError::from_client(&client.api_origin(), e))?;
+  let (response, cookie) = response;
+  if !response.success { return Err(DesktopLoginError::local("Sign-in failed. Check your account details and try again.")); }
+  let signed = response.signed_session.ok_or_else(|| DesktopLoginError::local("Login server did not issue a session"))?;
+  let cookie = cookie.ok_or_else(|| DesktopLoginError::local("Login server did not set a session cookie"))?;
+  let (cookie, user) = verify_session(&client, &signed, cookie).await?;
+  install_session_cookie(&client, &signed, cookie, manager, jar)?;
+  persist_session_cookie(jar).await?;
+  Ok(user)
+}
+
+fn http_cookie_jar(app: &AppHandle) -> Result<Arc<CookieStoreMutex>, DesktopLoginError> {
+  Ok(app.try_state::<Http>().ok_or_else(|| DesktopLoginError::local("HTTP cookie store unavailable"))?.cookies_jar.clone())
 }
 
 async fn begin_challenge(
@@ -175,24 +228,7 @@ async fn poll_challenge(
   let set_cookie = polled
     .session_set_cookie
     .ok_or_else(|| DesktopLoginError::local("Login server did not set a session cookie"))?;
-  let cookie = RawCookie::parse(set_cookie)
-    .map_err(|_| DesktopLoginError::local("Invalid session cookie"))?
-    .into_owned();
-  if cookie.name() != "session" || cookie.value() != signed {
-    return Err(DesktopLoginError::local(
-      "Session cookie did not match the redeemed session",
-    ));
-  }
-  // Validate on the SAME native API host before publishing any new credentials.
-  let session = challenge
-    .client
-    .session(&signed)
-    .await
-    .map_err(|e| DesktopLoginError::from_client(&origin, e))?;
-  let user = session
-    .user
-    .filter(|_| session.success && session.logged_in)
-    .ok_or_else(|| DesktopLoginError::local("The redeemed session could not authenticate"))?;
+  let (cookie, user) = verify_session(&challenge.client, &signed, set_cookie).await?;
   {
     let pending = state.pending.lock().await;
     // A cancellation during either HTTP request must prevent local installation.
@@ -202,38 +238,59 @@ async fn poll_challenge(
     if challenge.expires_at <= Utc::now() {
       return Ok(expired());
     }
-    let mut store = jar
-      .store
-      .lock()
-      .map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
-    let mut candidate = store.clone();
-    candidate.store_response_cookies([cookie].into_iter(), &challenge.client.api_url());
-    let credentials = get_credentials_from_cookie_store(&candidate, &challenge.client.api_url())
-      .map_err(|_| DesktopLoginError::local("Unable to read session cookie"))?;
-    if credentials.session.as_ref().map(|c| c.as_str()) != Some(signed.as_str()) {
-      return Err(DesktopLoginError::local(
-        "Session cookie does not apply to the configured API host",
-      ));
-    }
-    manager
-      .set_credentials(&credentials)
-      .map_err(|_| DesktopLoginError::local("Unable to store native login credentials"))?;
-    *store = candidate;
+    install_session_cookie(&challenge.client, &signed, cookie, manager, jar)?;
   }
   // Keep the challenge for idempotent IPC retries; it expires on its original deadline.
-  let saved = jar
-    .request_save()
-    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
-  tokio::task::spawn_blocking(move || saved.recv())
-    .await
-    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?
-    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
+  persist_session_cookie(jar).await?;
   info!("Website login complete: origin={}", origin);
   Ok(DesktopLoginOutcome {
     status: LoginChallengeState::Redeemed,
     maybe_failure_type: None,
     maybe_user: Some(user),
   })
+}
+
+async fn verify_session(client: &LoginChallengeClient, signed: &str, set_cookie: String) -> Result<(RawCookie<'static>, SessionUserInfo), DesktopLoginError> {
+  let cookie = RawCookie::parse(set_cookie)
+    .map_err(|_| DesktopLoginError::local("Invalid session cookie"))?
+    .into_owned();
+  if cookie.name() != "session" || cookie.value() != signed {
+    return Err(DesktopLoginError::local(
+      "Session cookie did not match the redeemed session",
+    ));
+  }
+  // Validate on the SAME native API host before publishing any new credentials.
+  let session = client
+    .session(&signed)
+    .await
+    .map_err(|e| DesktopLoginError::from_client(&client.api_origin(), e))?;
+  let user = session
+    .user
+    .filter(|_| session.success && session.logged_in)
+    .ok_or_else(|| DesktopLoginError::local("The redeemed session could not authenticate"))?;
+  Ok((cookie, user))
+}
+
+fn install_session_cookie(client: &LoginChallengeClient, signed: &str, cookie: RawCookie<'static>, manager: &StorytellerCredentialManager, jar: &Arc<CookieStoreMutex>) -> Result<(), DesktopLoginError> {
+  let mut store = jar.store.lock().map_err(|_| DesktopLoginError::local("HTTP cookie store unavailable"))?;
+  let mut candidate = store.clone();
+  candidate.store_response_cookies([cookie].into_iter(), &client.api_url());
+  let credentials = get_credentials_from_cookie_store(&candidate, &client.api_url())
+    .map_err(|_| DesktopLoginError::local("Unable to read session cookie"))?;
+  if credentials.session.as_ref().map(|c| c.as_str()) != Some(signed) {
+    return Err(DesktopLoginError::local("Session cookie does not apply to the configured API host"));
+  }
+  manager.set_credentials(&credentials).map_err(|_| DesktopLoginError::local("Unable to store native login credentials"))?;
+  *store = candidate;
+  Ok(())
+}
+
+async fn persist_session_cookie(jar: &Arc<CookieStoreMutex>) -> Result<(), DesktopLoginError> {
+  let saved = jar.request_save().map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
+  tokio::task::spawn_blocking(move || saved.recv()).await
+    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?
+    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
+  Ok(())
 }
 
 fn expired() -> DesktopLoginOutcome {
