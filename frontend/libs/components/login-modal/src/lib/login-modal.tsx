@@ -3,6 +3,7 @@ import { Transition, TransitionChild } from "@headlessui/react";
 import { useState, useEffect } from "react";
 import { ArrowRightIcon } from "lucide-react";
 import { DiscordIcon } from "@storyteller/icons";
+import { DesktopLoginBridge } from "./DesktopLoginBridge";
 import { ArtCraftSignUp } from "./artcraft-signup";
 import { UsersApi } from "@storyteller/api";
 import { useLoginModalStore } from "./useLoginModalStore";
@@ -254,6 +255,10 @@ export function LoginModal({
                           </p>
                         </div>
 
+                        <DesktopLoginBridge onSuccess={(user) => {
+                          onArtCraftAuthSuccess?.(user);
+                          handleClose();
+                        }} />
                         <ArtCraftSignUp
                           onSubmit={handleAuthSubmit}
                           isSignUp={isSignUp}
