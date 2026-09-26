@@ -39,6 +39,7 @@ export function LoginModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [showDiscord, setShowDiscord] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isChallengeActive, setIsChallengeActive] = useState(false);
 
   const authGeneration = useRef(0);
   const authSuccess = useRef(onArtCraftAuthSuccess);
@@ -220,18 +221,18 @@ export function LoginModal({
                           </p>
                         </div>
 
-                        {!isSignUp && <DesktopLoginBridge onStart={() => { authGeneration.current += 1; }} onSuccess={(user) => {
+                        {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={(user) => {
                           authGeneration.current += 1;
                           onArtCraftAuthSuccess?.(user);
                           handleClose();
                         }} />}
-                        <ArtCraftSignUp
+                        {!isChallengeActive && <ArtCraftSignUp
                           onSubmit={handleAuthSubmit}
                           isSignUp={isSignUp}
                           onToggleMode={() => setIsSignUp((prev) => !prev)}
                           errorMessage={errorMessage}
                           isLoading={isLoading}
-                        />
+                        />}
                       </div>
                     </div>
 

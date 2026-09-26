@@ -115,6 +115,28 @@ describe("desktop native login bridge integration", () => {
     expect(success).not.toHaveBeenCalled();
   });
 
+  it("ignores an in-flight redemption after Back and can start a new challenge", async () => {
+    let resolve: (value: unknown) => void = () => {};
+    const success = vi.fn();
+    render(<DesktopLoginBridge onSuccess={success} />);
+    await start("Scan to Login");
+    native.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    await tick(5000);
+    await start("Back");
+    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", { challengeId: CHALLENGE_ID });
+    await act(async () => { resolve({ status: "redeemed", maybe_user: USER }); });
+    expect(success).not.toHaveBeenCalled();
+    expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
+    await tick(30_000);
+    expect(calls("storyteller_poll_login_challenge_command")).toBe(1);
+
+    await start("Scan to Login");
+    expect(screen.getByRole("img", { name: "Login QR" })).toBeTruthy();
+    outcome = { status: "redeemed", maybe_user: USER };
+    await tick(5000);
+    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+  });
+
   it("fails closed on a future status", async () => {
     outcome = { status: "future_state", maybe_user: USER };
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);

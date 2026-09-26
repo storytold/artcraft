@@ -54,6 +54,43 @@ describe("native login modal integration", () => {
     expect(screen.queryByRole("button", { name: "Login with Website" })).toBeNull();
   });
 
+  it.each(["Login with Website", "Scan to Login"])("hides password login during %s and restores it with Back", async (label) => {
+    const success = vi.fn();
+    await act(async () => { render(<LoginModal isSignUp={false} onArtCraftAuthSuccess={success} />); });
+    expect(screen.getByPlaceholderText("you@example.com or username")).toBeTruthy();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: label })); });
+    expect(screen.getByRole("img", { name: "Login QR" })).toBeTruthy();
+    expect(screen.queryByPlaceholderText("you@example.com or username")).toBeNull();
+    expect(screen.queryByPlaceholderText("Min. 8 characters")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign up" })).toBeNull();
+
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Back" })); });
+    expect(screen.getByPlaceholderText("you@example.com or username")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Min. 8 characters")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Login with Website" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Scan to Login" })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
+    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", { challengeId: "native_handle" });
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+    expect(native.mock.calls.filter(([command]) => command === "storyteller_poll_login_challenge_command")).toHaveLength(0);
+    expect(success).not.toHaveBeenCalled();
+  });
+
+  it("hides password login while preparing a challenge and cancels a late creation after Back", async () => {
+    let resolve: (value: unknown) => void = () => {};
+    await act(async () => { render(<LoginModal isSignUp={false} />); });
+    native.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Login with Website" })); });
+    expect(screen.getByText("Preparing login…")).toBeTruthy();
+    expect(screen.queryByPlaceholderText("Min. 8 characters")).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Back" })); });
+    await act(async () => { resolve({ challenge_id: "late_handle" }); });
+    expect(screen.getByPlaceholderText("Min. 8 characters")).toBeTruthy();
+    expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
+    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", { challengeId: "late_handle" });
+    expect(native.mock.calls.filter(([command]) => command === "plugin:opener|open_url")).toHaveLength(0);
+  });
+
   it.each([true, false])("keeps the completed native login when a stale session check resolves (before completion: %s)", async (beforeCompletion) => {
     let resolveSession: (value: unknown) => void = () => {};
     native.mockImplementationOnce(() => new Promise((resolve) => { resolveSession = resolve; }));
