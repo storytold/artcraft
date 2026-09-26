@@ -3,7 +3,9 @@ import { Transition, TransitionChild } from "@headlessui/react";
 import { useState, useEffect, useRef } from "react";
 import { ArrowRightIcon } from "lucide-react";
 import { DiscordIcon } from "@storyteller/icons";
+import type { UserInfo } from "@storyteller/api";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
+import { LoginSuccess } from "./LoginSuccess";
 import { ArtCraftSignUp } from "./artcraft-signup";
 import { getNativeLoginSession, passwordLogin, passwordSignup, isDesktopLoginError } from "./NativeLoginBridge";
 import { useLoginModalStore } from "./useLoginModalStore";
@@ -11,6 +13,7 @@ import { useLoginModalStore } from "./useLoginModalStore";
 // Webapp auth-showcase video (swap by passing `videoUrl`).
 const DEFAULT_SHOWCASE_VIDEO =
   "https://player.vimeo.com/video/1169289718?background=1&autoplay=1&loop=1&muted=1";
+const LOGIN_SUCCESS_DURATION_MS = 3000;
 
 interface LoginModalProps {
   onClose?: () => void;
@@ -40,10 +43,13 @@ export function LoginModal({
   const [showDiscord, setShowDiscord] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isChallengeActive, setIsChallengeActive] = useState(false);
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
 
   const authGeneration = useRef(0);
   const authSuccess = useRef(onArtCraftAuthSuccess);
   authSuccess.current = onArtCraftAuthSuccess;
+  const afterClose = useRef(onClose);
+  afterClose.current = onClose;
 
   // A stale startup/recheck response must never reopen the modal after login.
   useEffect(() => {
@@ -61,6 +67,7 @@ export function LoginModal({
         setErrorMessage("");
         setShowDiscord(false);
         setShowSuccess(false);
+        setLoggedInUsername(null);
         setIsLoggedInArtCraft(false);
         useLoginModalStore.getState().openModal();
       }
@@ -76,6 +83,15 @@ export function LoginModal({
     if (onOpenChange) onOpenChange(isOpen);
   }, [isOpen, onOpenChange]);
 
+  useEffect(() => {
+    if (loggedInUsername === null || !isOpen) return;
+    const timer = window.setTimeout(() => {
+      closeModal();
+      afterClose.current?.();
+    }, LOGIN_SUCCESS_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [loggedInUsername, isOpen, closeModal]);
+
   const handleClose = () => {
     closeModal();
     onClose?.();
@@ -85,6 +101,15 @@ export function LoginModal({
     window.open("https://discord.gg/75svZP2Vje", "_blank");
     setShowDiscord(false);
     setShowSuccess(true);
+  };
+
+  const handleLoginSuccess = (user: UserInfo) => {
+    authGeneration.current += 1;
+    setIsLoading(false);
+    setIsLoggedInArtCraft(true);
+    setIsChallengeActive(false);
+    setLoggedInUsername(user.username);
+    authSuccess.current?.(user);
   };
 
   const handleAuthSubmit = async (
@@ -101,9 +126,13 @@ export function LoginModal({
         ? await passwordSignup(username, email, password, passwordConfirmation)
         : await passwordLogin(username || email, password);
       if (generation !== authGeneration.current) return;
-      setIsLoggedInArtCraft(true);
-      onArtCraftAuthSuccess?.(user);
-      setShowDiscord(true);
+      if (isSignUp) {
+        setIsLoggedInArtCraft(true);
+        authSuccess.current?.(user);
+        setShowDiscord(true);
+      } else {
+        handleLoginSuccess(user);
+      }
     } catch (error) {
       if (generation === authGeneration.current) setErrorMessage(isDesktopLoginError(error) ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
@@ -171,7 +200,7 @@ export function LoginModal({
   const inOnboarding = showDiscord || showSuccess;
 
   return (
-    <Transition appear show={isOpen}>
+    <Transition appear show={isOpen} afterLeave={() => setLoggedInUsername(null)}>
       <div className="fixed inset-0 z-[100]">
         <TransitionChild
           enter="ease-out duration-300"
@@ -193,10 +222,12 @@ export function LoginModal({
             leaveTo="opacity-0 scale-95"
           >
             <div
-              className="relative flex w-full max-w-5xl overflow-hidden rounded-3xl border border-white/[4%] bg-[#1C1C20] text-white shadow-2xl lg:min-h-[640px]"
+              className={`relative flex w-full overflow-hidden rounded-3xl border bg-[#1C1C20] text-white shadow-2xl ${loggedInUsername !== null ? "max-w-md border-emerald-200/20" : "max-w-5xl border-white/[4%] lg:min-h-[640px]"}`}
               onClick={(e) => e.stopPropagation()}
             >
-              {inOnboarding ? (
+              {loggedInUsername !== null ? (
+                <LoginSuccess username={loggedInUsername} />
+              ) : inOnboarding ? (
                 renderOnboarding()
               ) : (
                 <>
@@ -221,11 +252,7 @@ export function LoginModal({
                           </p>
                         </div>
 
-                        {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={(user) => {
-                          authGeneration.current += 1;
-                          onArtCraftAuthSuccess?.(user);
-                          handleClose();
-                        }} />}
+                        {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={handleLoginSuccess} />}
                         {!isChallengeActive && <ArtCraftSignUp
                           onSubmit={handleAuthSubmit}
                           isSignUp={isSignUp}

@@ -102,7 +102,14 @@ describe("native login modal integration", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
     expect(success).toHaveBeenCalledExactlyOnceWith(USER);
     if (!beforeCompletion) await act(async () => { resolveSession(null); });
+    expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
+    expect(useLoginModalStore.getState().isOpen).toBe(true);
+    await act(async () => { await vi.advanceTimersByTimeAsync(2999); });
+    expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
     expect(useLoginModalStore.getState().isOpen).toBe(false);
+    expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
     expect(screen.queryByText("Create your account")).toBeNull();
     expect(native).toHaveBeenCalledWith("storyteller_poll_login_challenge_command", { challengeId: "native_handle" });
   });
@@ -124,5 +131,52 @@ describe("native login modal integration", () => {
     expect(native).toHaveBeenCalledWith(signup ? "storyteller_password_signup_command" : "storyteller_password_login_command", {
       request: signup ? { username: "native_user", email_address: "user@example.com", password: "password123", password_confirmation: "password123", signup_source: "artcraft" } : { username_or_email: "native_user", password: "password123" },
     });
+    if (!signup) {
+      expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+      expect(screen.queryByText("Join Our Community")).toBeNull();
+      await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+      expect(useLoginModalStore.getState().isOpen).toBe(false);
+    }
+  });
+
+  it("dismisses the confirmation once even when callbacks change", async () => {
+    const firstClose = vi.fn();
+    const latestClose = vi.fn();
+    const success = vi.fn();
+    const view = render(<LoginModal isSignUp={false} onClose={firstClose} onArtCraftAuthSuccess={success} />);
+    await act(async () => {});
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Login with Website" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(screen.getByRole("status").textContent).toContain("Logged in as google_user");
+    await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+    view.rerender(<LoginModal isSignUp={false} onClose={latestClose} onArtCraftAuthSuccess={success} />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+    expect(useLoginModalStore.getState().isOpen).toBe(false);
+    expect(firstClose).not.toHaveBeenCalled();
+    expect(latestClose).toHaveBeenCalledTimes(1);
+    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+    expect(latestClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("cleans up the confirmation timer on unmount", async () => {
+    const onClose = vi.fn();
+    const view = render(<LoginModal isSignUp={false} onClose={onClose} />);
+    await act(async () => {});
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Scan to Login" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+    view.unmount();
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("restores an existing session without showing the login confirmation", async () => {
+    native.mockResolvedValueOnce(USER);
+    const success = vi.fn();
+    await act(async () => { render(<LoginModal onArtCraftAuthSuccess={success} />); });
+    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+    expect(useLoginModalStore.getState().isOpen).toBe(false);
+    expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
   });
 });
