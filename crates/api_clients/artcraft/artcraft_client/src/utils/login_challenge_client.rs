@@ -1,10 +1,5 @@
 use std::time::Duration;
 
-use artcraft_api_defs::users::login_challenges::{
-  CreateLoginChallengeRequest, CreateLoginChallengeResponse, LoginChallengeResponse,
-  PollLoginChallengeRequest,
-};
-use artcraft_api_defs::users::session_info::SessionInfoSuccessResponse;
 use log::{info, warn};
 use reqwest::header::SET_COOKIE;
 use reqwest::{Client, Method, RequestBuilder};
@@ -14,22 +9,12 @@ use url::Url;
 use crate::utils::api_host::ApiHost;
 use crate::utils::constants::USER_AGENT;
 
-pub const CREATE_PATH: &str = "/v1/login_challenges/create";
-pub const POLL_PATH: &str = "/v1/login_challenges/poll";
-pub const SESSION_PATH: &str = "/v1/session";
-
 /// Native transport for the session bridge. No request/response bodies, cookies,
 /// or challenge credentials are logged, even at debug level. Never follows redirects.
 #[derive(Clone)]
 pub struct LoginChallengeClient {
   client: Client,
   api_host: ApiHost,
-}
-
-// Deliberately no Debug/Serialize: the wire result contains a bearer credential.
-pub struct PollLoginChallengeResult {
-  pub response: LoginChallengeResponse,
-  pub session_set_cookie: Option<String>,
 }
 
 #[derive(Debug)]
@@ -90,41 +75,6 @@ impl LoginChallengeClient {
               .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
         })
         .unwrap_or(false)
-  }
-
-  pub async fn create(&self) -> Result<CreateLoginChallengeResponse, LoginChallengeClientError> {
-    let request = self
-      .request(Method::POST, CREATE_PATH)
-      .json(&CreateLoginChallengeRequest {});
-    let (result, _) = self.send(request, CREATE_PATH).await?;
-    Ok(result)
-  }
-
-  pub async fn poll(
-    &self,
-    device_token: &str,
-  ) -> Result<PollLoginChallengeResult, LoginChallengeClientError> {
-    let request = self
-      .request(Method::POST, POLL_PATH)
-      .json(&PollLoginChallengeRequest {
-        device_token: device_token.to_owned(),
-      });
-    let (response, session_set_cookie) = self.send(request, POLL_PATH).await?;
-    Ok(PollLoginChallengeResult {
-      response,
-      session_set_cookie,
-    })
-  }
-
-  pub async fn session(
-    &self,
-    signed_session: &str,
-  ) -> Result<SessionInfoSuccessResponse, LoginChallengeClientError> {
-    let request = self
-      .request(Method::GET, SESSION_PATH)
-      .header("Cookie", format!("session={signed_session}"));
-    let (result, _) = self.send(request, SESSION_PATH).await?;
-    Ok(result)
   }
 
   pub(crate) fn request(&self, method: Method, path: &str) -> RequestBuilder {

@@ -3,11 +3,12 @@ use std::sync::Arc;
 
 use artcraft_api_defs::users::login_challenges::{LoginChallengeFailure, LoginChallengeState};
 use artcraft_api_defs::users::session_info::SessionUserInfo;
-use artcraft_client::endpoints::users::login_challenges::{
+use artcraft_client::utils::login_challenge_client::{
   LoginChallengeClient, LoginChallengeClientError,
 };
 use artcraft_client::utils::api_host::ApiHost;
-use artcraft_client::endpoints::users::password_auth::{PasswordLoginRequest, PasswordSignupRequest};
+use artcraft_client::endpoints::users::password_login::PasswordLoginRequest;
+use artcraft_client::endpoints::users::password_signup::PasswordSignupRequest;
 use chrono::{DateTime, Utc};
 use log::{info, warn};
 use serde::Serialize;
