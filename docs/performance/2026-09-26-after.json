@@ -1,0 +1,527 @@
+{
+  "timestamp": "2026-09-27T00:32:54.524Z",
+  "build": {
+    "builtAt": "2026-09-27T00:30:35.760Z",
+    "revision": "780e4494e995163fed1d677b88c3cf03b3fca63c",
+    "baselineOverlay": null,
+    "changedFiles": [
+      "frontend/apps/artcraft/app/src/pages/MainApp.tsx",
+      "frontend/apps/artcraft/app/src/pages/Stores/TabState.ts",
+      "frontend/package-lock.json",
+      "frontend/package.json"
+    ]
+  },
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M4 Pro",
+    "browser": "153.0.8010.53",
+    "node": "v24.13.0",
+    "runs": 7,
+    "viewport": "1440x1000@1",
+    "ipc": "mocked",
+    "network": "local assets only, browser cache disabled"
+  },
+  "summary": {
+    "startup": {
+      "readyMs": {
+        "median": 350.60000002384186,
+        "min": 348.7000000476837,
+        "max": 457.39999997615814
+      },
+      "jsBytes": {
+        "median": 6466606,
+        "min": 6466606,
+        "max": 6466606
+      },
+      "longTaskMs": {
+        "median": 184,
+        "min": 179,
+        "max": 284
+      },
+      "webglContexts": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "refresh": {
+      "readyMs": {
+        "median": 198.10000002384186,
+        "min": 197.10000002384186,
+        "max": 198.80000007152557
+      },
+      "jsBytes": {
+        "median": 6466606,
+        "min": 6466606,
+        "max": 6466606
+      },
+      "longTaskMs": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "webglContexts": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "firstDraw": {
+      "stateReadyMs": {
+        "median": 38.300000071525574,
+        "min": 37.60000002384186,
+        "max": 40.299999952316284
+      },
+      "paintMs": {
+        "median": 118.19999992847443,
+        "min": 115.30000007152557,
+        "max": 120
+      },
+      "fileReads": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "leaveDraw": {
+      "stateReadyMs": {
+        "median": 9,
+        "min": 7.5,
+        "max": 11
+      },
+      "paintMs": {
+        "median": 23,
+        "min": 19.600000023841858,
+        "max": 26.600000023841858
+      },
+      "fileReads": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "returnDraw": {
+      "stateReadyMs": {
+        "median": 18.800000071525574,
+        "min": 15.799999952316284,
+        "max": 20.700000047683716
+      },
+      "paintMs": {
+        "median": 86.5,
+        "min": 78.79999995231628,
+        "max": 90.10000002384186
+      },
+      "fileReads": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      }
+    }
+  },
+  "samples": [
+    {
+      "startup": {
+        "readyMs": 457.39999997615814,
+        "jsBytes": 6466606,
+        "longTaskMs": 284,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 197.80000007152557,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 38.800000071525574,
+        "paintMs": 119.5,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 7.600000023841858,
+        "paintMs": 20.399999976158142,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 17.799999952316284,
+        "paintMs": 87.79999995231628,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    },
+    {
+      "startup": {
+        "readyMs": 365.7999999523163,
+        "jsBytes": 6466606,
+        "longTaskMs": 185,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 197.10000002384186,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 37.60000002384186,
+        "paintMs": 116,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 7.5,
+        "paintMs": 26.600000023841858,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 15.799999952316284,
+        "paintMs": 78.79999995231628,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    },
+    {
+      "startup": {
+        "readyMs": 366.59999990463257,
+        "jsBytes": 6466606,
+        "longTaskMs": 193,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 198.39999997615814,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 40.299999952316284,
+        "paintMs": 118.19999992847443,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 9,
+        "paintMs": 23,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 19.699999928474426,
+        "paintMs": 86.5,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    },
+    {
+      "startup": {
+        "readyMs": 348.7000000476837,
+        "jsBytes": 6466606,
+        "longTaskMs": 184,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 197.89999997615814,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 37.700000047683716,
+        "paintMs": 115.60000002384186,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 9.300000071525574,
+        "paintMs": 26.40000009536743,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 18.700000047683716,
+        "paintMs": 84.90000009536743,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    },
+    {
+      "startup": {
+        "readyMs": 349.60000002384186,
+        "jsBytes": 6466606,
+        "longTaskMs": 179,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 198.10000002384186,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 38.300000071525574,
+        "paintMs": 118.5,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 11,
+        "paintMs": 19.600000023841858,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 20.700000047683716,
+        "paintMs": 90.10000002384186,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    },
+    {
+      "startup": {
+        "readyMs": 350.60000002384186,
+        "jsBytes": 6466606,
+        "longTaskMs": 179,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 198.20000004768372,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 39.60000002384186,
+        "paintMs": 120,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 11,
+        "paintMs": 22.199999928474426,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 20,
+        "paintMs": 87,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    },
+    {
+      "startup": {
+        "readyMs": 349.89999997615814,
+        "jsBytes": 6466606,
+        "longTaskMs": 180,
+        "webglContexts": 0
+      },
+      "refresh": {
+        "readyMs": 198.80000007152557,
+        "jsBytes": 6466606,
+        "longTaskMs": 0,
+        "webglContexts": 0
+      },
+      "firstDraw": {
+        "stateReadyMs": 38,
+        "paintMs": 115.30000007152557,
+        "fileReads": 0
+      },
+      "leaveDraw": {
+        "stateReadyMs": 8.200000047683716,
+        "paintMs": 24.899999976158142,
+        "fileReads": 0
+      },
+      "returnDraw": {
+        "stateReadyMs": 18.800000071525574,
+        "paintMs": 84.5,
+        "fileReads": 0
+      },
+      "fixture": {
+        "images": 4,
+        "imageSize": 1024,
+        "imageBytesEach": 2356706,
+        "strokes": 80,
+        "coordinatesPerStroke": 200
+      },
+      "afterReturn": {
+        "nodeCount": 84,
+        "selectedCount": 1,
+        "historyLength": 1,
+        "commands": {
+          "plugin:event|listen": 25,
+          "get_app_info_command": 1,
+          "list_image_models_command": 1,
+          "list_video_models_command": 1,
+          "get_task_queue_command": 1,
+          "estimate_image_cost_command": 5,
+          "storyteller_get_login_session_command": 1,
+          "plugin:http|fetch": 5,
+          "storyteller_get_credits_command": 1,
+          "storyteller_get_subscription_command": 1,
+          "plugin:window|is_maximized": 1,
+          "plugin:event|unlisten": 2
+        }
+      }
+    }
+  ],
+  "importedPages": [
+    "src/pages/PageAngles/index.ts",
+    "src/pages/PageAudio/CreateAudio.tsx",
+    "src/pages/PageBackgroundChange/index.ts",
+    "src/pages/PageImage/TextToImage.tsx",
+    "src/pages/PageImageTo3DObject/index.ts",
+    "src/pages/PageImageTo3DWorld/index.ts",
+    "src/pages/PageImageWatermarkRemover/index.ts",
+    "src/pages/PageMoodboard/index.ts",
+    "src/pages/PageRemoveBackground/index.ts",
+    "src/pages/PageScene/index.tsx",
+    "src/pages/PageStoryboard/index.ts",
+    "src/pages/PageVideo/ImageToVideo.tsx",
+    "src/pages/PageVideoEditor/index.tsx",
+    "src/pages/PageVideoFrameExtractor/index.ts",
+    "src/pages/PageVideoWatermarkRemover/index.ts"
+  ],
+  "errors": []
+}

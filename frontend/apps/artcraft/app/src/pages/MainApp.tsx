@@ -10,8 +10,7 @@
 // siblings, never wrapped by EngineProvider, so they have no
 // dependency on the 3D engine being present.
 
-import { useEffect, useState } from "react";
-import * as gpu from "detect-gpu";
+import { lazy, Suspense, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 
 import { TopBar } from "~/components";
@@ -58,25 +57,54 @@ import { useTextToImageStore } from "./PageImage/TextToImageStore";
 
 import { AppsIndexPage } from "./PageApps/AppsIndexPage";
 import PageDraw from "./PageDraw/PageDraw";
-import TextToImage from "./PageImage/TextToImage";
-import ImageToVideo from "./PageVideo/ImageToVideo";
-import CreateAudio from "./PageAudio/CreateAudio";
-import { VideoFrameExtractor } from "./PageVideoFrameExtractor";
-import { VideoWatermarkRemover } from "./PageVideoWatermarkRemover";
-import { ImageWatermarkRemover } from "./PageImageWatermarkRemover";
-import { ImageTo3DObject } from "./PageImageTo3DObject";
-import { ImageTo3DWorld } from "./PageImageTo3DWorld";
-import { RemoveBackground } from "./PageRemoveBackground";
-import { Angles } from "./PageAngles";
-import { Storyboard } from "./PageStoryboard";
-import { PageBackgroundChange } from "./PageBackgroundChange";
-import { PageScene } from "./PageScene";
-import { PageVideoEditor } from "./PageVideoEditor";
-import { PageMoodboard } from "./PageMoodboard";
 import {
   topNavMediaId,
   topNavMediaUrl,
 } from "~/components/signaled/TopBar/TopBar";
+
+// Load editors when selected, keeping their code off the launch path. Drawing
+// stays eager: its shared store/UI is already needed by the shell, so deferring
+// its small host adapter adds first-open latency for very little byte saving.
+// Declare lazy components once so navigating does not recreate their identity.
+const TextToImage = lazy(() => import("./PageImage/TextToImage"));
+const ImageToVideo = lazy(() => import("./PageVideo/ImageToVideo"));
+const CreateAudio = lazy(() => import("./PageAudio/CreateAudio"));
+const VideoFrameExtractor = lazy(() =>
+  import("./PageVideoFrameExtractor").then((m) => ({ default: m.VideoFrameExtractor })),
+);
+const VideoWatermarkRemover = lazy(() =>
+  import("./PageVideoWatermarkRemover").then((m) => ({ default: m.VideoWatermarkRemover })),
+);
+const ImageWatermarkRemover = lazy(() =>
+  import("./PageImageWatermarkRemover").then((m) => ({ default: m.ImageWatermarkRemover })),
+);
+const ImageTo3DObject = lazy(() =>
+  import("./PageImageTo3DObject").then((m) => ({ default: m.ImageTo3DObject })),
+);
+const ImageTo3DWorld = lazy(() =>
+  import("./PageImageTo3DWorld").then((m) => ({ default: m.ImageTo3DWorld })),
+);
+const RemoveBackground = lazy(() =>
+  import("./PageRemoveBackground").then((m) => ({ default: m.RemoveBackground })),
+);
+const Angles = lazy(() =>
+  import("./PageAngles").then((m) => ({ default: m.Angles })),
+);
+const Storyboard = lazy(() =>
+  import("./PageStoryboard").then((m) => ({ default: m.Storyboard })),
+);
+const PageBackgroundChange = lazy(() =>
+  import("./PageBackgroundChange").then((m) => ({ default: m.PageBackgroundChange })),
+);
+const PageScene = lazy(() =>
+  import("./PageScene").then((m) => ({ default: m.PageScene })),
+);
+const PageVideoEditor = lazy(() =>
+  import("./PageVideoEditor").then((m) => ({ default: m.PageVideoEditor })),
+);
+const PageMoodboard = lazy(() =>
+  import("./PageMoodboard").then((m) => ({ default: m.PageMoodboard })),
+);
 
 interface Props {
   sceneToken?: string;
@@ -121,28 +149,13 @@ export const MainApp = ({ sceneToken }: Props) => {
     toast.error("File deleted.");
   });
 
-  // Session probe (runs once per shell mount) and GPU detection.
-  // Both are app-wide concerns, not 3D-only.
+  // Session probe (runs once per shell mount).
   useEffect(() => {
     const usersApi = new UsersApi();
     usersApi.GetSession().then((result) => {
       console.log(
         `User Info | Username: ${result.data?.user?.username}, Token: ${result.data?.user?.user_token}`,
       );
-    });
-  }, []);
-
-  const [, setValidGpu] = useState("unknown");
-  useEffect(() => {
-    const { getGPUTier } = gpu;
-    getGPUTier().then((gpuTier) => {
-      console.log("GPU tier", gpuTier);
-      let isValid = false;
-      const fps = gpuTier.fps || 0;
-      if (gpuTier.tier > 1) isValid = true;
-      if (fps > 15) isValid = true;
-      if (gpuTier.gpu === "apple gpu (Apple GPU)") isValid = true;
-      setValidGpu(isValid ? "valid" : "error");
     });
   }, []);
 
@@ -179,7 +192,18 @@ export const MainApp = ({ sceneToken }: Props) => {
         }}
       />
 
-      <TabBody sceneToken={sceneToken} />
+      <Suspense
+        fallback={
+          <div
+            role="status"
+            className="flex h-[calc(100vh-56px)] items-center justify-center text-base-fg/60"
+          >
+            Loading…
+          </div>
+        }
+      >
+        <TabBody sceneToken={sceneToken} />
+      </Suspense>
 
       <GalleryDragComponent />
       <ErrorDialog />
@@ -210,7 +234,7 @@ export const MainApp = ({ sceneToken }: Props) => {
 };
 
 const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
-  const tabStore = useTabStore();
+  const activeTabId = useTabStore((s) => s.activeTabId);
   const storyboardPageEnabled = useStoryboardPageEnabled();
 
   // The 3D case stays unwrapped because Stage3DBody (lib) already
@@ -218,7 +242,7 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
   // top-level children may use position: fixed (e.g. PageDraw); the
   // wrapping <div> scopes them so they don't stack as siblings of
   // the TopBar at the MainApp root.
-  switch (tabStore.activeTabId) {
+  switch (activeTabId) {
     case "3D":
       return <PageScene sceneToken={sceneToken} />;
     case "APPS":
