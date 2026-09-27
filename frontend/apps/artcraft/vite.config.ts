@@ -1,4 +1,5 @@
 import { defineConfig, type Plugin } from "vite";
+import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import path from "path";
 import { resolve } from "node:path";
@@ -58,6 +59,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    react(),
     sparkWasmDataUrlFix(),
     tsconfigPaths({
       // Resolve workspace packages to source for every importer, including shared

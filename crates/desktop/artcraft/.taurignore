@@ -1,4 +1,5 @@
-# Don't restart the dev server on Rust changes
-crates/
-Cargo.toml
-Cargo.lock
+# Rust sources and Cargo manifests must remain watched for `cargo tauri dev`.
+# Vite owns frontend reloads; build artifacts must not trigger Rust rebuilds.
+target/
+node_modules/
+dist/
