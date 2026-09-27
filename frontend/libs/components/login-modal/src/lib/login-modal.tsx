@@ -12,7 +12,7 @@ import { useLoginModalStore } from "./useLoginModalStore";
 
 // Webapp auth-showcase video (swap by passing `videoUrl`).
 const DEFAULT_SHOWCASE_VIDEO =
-  "https://player.vimeo.com/video/1169289718?background=1&autoplay=1&loop=1&muted=1";
+  "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
 const LOGIN_SUCCESS_DURATION_MS = 3000;
 
 interface LoginModalProps {
@@ -20,7 +20,7 @@ interface LoginModalProps {
   onOpenChange?: (isOpen: boolean) => void;
   onArtCraftAuthSuccess?: (userInfo: any) => void;
   isSignUp?: boolean;
-  /** Optional override for the right-pane showcase video. */
+  /** Optional direct media URL for the right-pane showcase video. */
   videoUrl?: string;
   // Accepted for backwards compatibility with existing call sites (MainApp
   // passes these); no longer used now that the showcase is a single video.
@@ -283,24 +283,19 @@ export function LoginModal({
   );
 }
 
-// Right-pane video showcase — Vimeo background embed scaled to cover the pane,
+// Right-pane video showcase — muted background video cropped to cover the pane,
 // with a legibility gradient + caption. Mirrors the webapp auth-showcase.
 function LoginShowcase({ videoUrl }: { videoUrl: string }) {
   return (
-    <div
-      className="absolute inset-2 overflow-hidden rounded-2xl bg-black"
-      style={{ containerType: "size" }}
-    >
-      <iframe
+    <div className="absolute inset-2 overflow-hidden rounded-2xl bg-black">
+      <video
         src={videoUrl}
-        title="ArtCraft"
-        allow="autoplay; fullscreen; picture-in-picture"
-        allowFullScreen
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: "max(100cqw, calc(100cqh * 16 / 9))",
-          height: "max(100cqh, calc(100cqw * 9 / 16))",
-        }}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
 
       <div
