@@ -596,6 +596,7 @@ export const TopBar = ({ pageName }: Props) => {
 
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
+                  aria-label="Settings"
                   variant="secondary"
                   icon={SettingsIcon}
                   iconClassName="h-5 w-5 shrink-0"

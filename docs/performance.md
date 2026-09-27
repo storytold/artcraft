@@ -6,6 +6,11 @@ headless Chrome with mocked Tauri services. They do **not** measure native
 process launch, WKWebView/WebView2, Rust, disk startup, real account loading,
 or generation latency.
 
+These timings are not authentication acceptance tests: the benchmark mocks the
+native session and rejects frontend HTTP requests. Before accepting a desktop
+change, also run the [session and Library checks](desktop-session-regression.md),
+including real Tauri HTTP requests when changing the launcher or bridge.
+
 ## Changes and results
 
 Seven samples per version; table values are medians. Each sample uses a fresh

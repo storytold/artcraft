@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "test:desktop-session": "node tools/testing/desktop-session.mjs",
     "perf:desktop": "node tools/performance/run.mjs"
   },
   "private": true,

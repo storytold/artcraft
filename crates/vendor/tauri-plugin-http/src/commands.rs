@@ -16,6 +16,7 @@ use tauri::{
 use tokio::sync::oneshot::{channel, Receiver, Sender};
 
 use crate::{
+    artcraft_origin::normalize_artcraft_origin,
     scope::{Entry, Scope},
     Error, Http, Result,
 };
@@ -269,7 +270,7 @@ pub async fn fetch<R: Runtime>(
                     builder = builder.cookie_provider(state.cookies_jar.clone());
                 }
 
-                let mut request = builder.build()?.request(method.clone(), url);
+                let mut request = builder.build()?.request(method.clone(), url.clone());
 
                 // POST and PUT requests should always have a 0 length content-length,
                 // if there is no body. https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
@@ -305,26 +306,7 @@ pub async fn fetch<R: Runtime>(
                     headers.remove(header::ORIGIN);
                 };
 
-                // NB(bt): In production builds, the origin seems to be "null". This is what our server CORS filter sees:
-                //   [2025-05-01T23:42:35Z WARN  actix_cors_configs::configs::fakeyou] Invalid origin: "null"
-                //   [2025-05-01T23:42:35Z WARN  actix_cors_configs::util::netlify_branch_domain_matches] Invalid origin: "null"
-                //   [2025-05-01T23:42:35Z WARN  actix_cors_configs::util::netlify_branch_domain_matches] Invalid origin: "null"
-                //     ...
-                //   [2025-05-01T23:42:35Z WARN  actix_cors_configs::util::netlify_branch_domain_matches] Invalid origin: "null"
-                //   [2025-05-01T23:42:35Z INFO  actix_web::middleware::logger] [storyteller-web-85f9b4974-ddvq7] IP=[redact] 
-                //               939322e1095ee5e4-IAD "POST /v1/login HTTP/1.1" 400 42 "-" "tauri-plugin-http/2.4.3" 0.000076
-                let mut maybe_origin_header = headers.get(header::ORIGIN);
-
-                let replace_origin_header = maybe_origin_header.is_none()
-                    || maybe_origin_header == Some(&HeaderValue::from_static("null")) // Above error (Mac)
-                    || maybe_origin_header == Some(&HeaderValue::from_static("http://tauri.localhost")) // Windows
-                    || maybe_origin_header == Some(&HeaderValue::from_static("tauri://localhost")); // Mac plausibly causes this
-
-                if replace_origin_header {
-                    // TODO(bt): Make this a sentinel origin, eg. sentinel.storyteller.ai.
-                    // NB: HeadersMap is a multimap, but this should ensure we just have one value.
-                    headers.insert(header::ORIGIN, HeaderValue::from_static("https://studio.storyteller.ai"));
-                }
+                normalize_artcraft_origin(&url, &mut headers);
 
                 if let Some(data) = data {
                     request = request.body(data);
