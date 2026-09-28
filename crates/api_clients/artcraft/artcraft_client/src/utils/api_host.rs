@@ -1,4 +1,6 @@
 
+use artcraft_client_identity::origins::{ARTCRAFT_DESKTOP_DEVELOPMENT_ORIGIN, ARTCRAFT_DESKTOP_ORIGIN};
+
 const HTTP_SCHEME: &str = "http";
 
 const HTTPS_SCHEME: &str = "https";
@@ -27,6 +29,15 @@ impl ApiHost {
     }
   }
   
+  /// The `Origin` the desktop client declares to this API.
+  pub fn request_origin(&self) -> &'static str {
+    match self {
+      ApiHost::Storyteller => ARTCRAFT_DESKTOP_ORIGIN,
+      ApiHost::FakeYou => ARTCRAFT_DESKTOP_ORIGIN,
+      ApiHost::Localhost { .. } => ARTCRAFT_DESKTOP_DEVELOPMENT_ORIGIN,
+    }
+  }
+
   pub fn scheme(&self) -> &'static str {
     match self {
       ApiHost::Storyteller => HTTPS_SCHEME,

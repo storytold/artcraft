@@ -1,14 +1,12 @@
 use crate::error::api_error::ApiError;
-use reqwest::Client;
-const USER_AGENT: &str = "storyteller-client/1.0";
+use crate::utils::api_host::ApiHost;
+use crate::utils::storyteller_client_builder::storyteller_client_builder;
 
-pub async fn http_get_anonymous(url: String) -> Result<reqwest::Response, ApiError> {
-  let client = Client::builder()
-      .gzip(true)
+pub async fn http_get_anonymous(api_host: &ApiHost, url: String) -> Result<reqwest::Response, ApiError> {
+  let client = storyteller_client_builder(api_host)
       .build()?;
 
   let response = client.get(url)
-      .header("User-Agent", USER_AGENT)
       .header("Accept", "application/json")
       //.header("Accept-Encoding", "gzip, deflate, br")
       .send()

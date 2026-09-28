@@ -262,6 +262,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "artcraft_api_defs",
+ "artcraft_client_identity",
  "backoff",
  "chrono",
  "cloudflare_errors",
@@ -280,6 +281,13 @@ dependencies = [
  "url-builder",
  "uuid 1.22.0",
  "uuid_utils",
+]
+
+[[package]]
+name = "artcraft_client_identity"
+version = "0.0.1"
+dependencies = [
+ "url",
 ]
 
 [[package]]
@@ -7018,6 +7026,7 @@ dependencies = [
 name = "tauri-plugin-http"
 version = "2.4.3"
 dependencies = [
+ "artcraft_client_identity",
  "bytes",
  "cookie_store 0.21.1",
  "data-url",

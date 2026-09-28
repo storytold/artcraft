@@ -18,7 +18,60 @@ development origins, at any port, for HTTPS requests to `api.storyteller.ai` and
 website origins retain their headers. Cookie handling and API authorization are
 unchanged. A frontend reload alone cannot update this fix: Rust must rebuild.
 
+## Dedicated desktop origin and rollout
+
+The desktop app now declares itself per destination. Both transports read the
+values from one place, `crates/lib/artcraft_client_identity`
+(`Destination::classify`, origins, user agents, third-party provider table):
+
+| Destination                                            | Origin sent                         | User-Agent               |
+|--------------------------------------------------------|-------------------------------------|--------------------------|
+| Our APIs (`api.storyteller.ai`, `api.fakeyou.com`, …)  | `https://desktop.getartcraft.com`   | `storyteller-client/1.0` |
+| Local API (`localhost`, `127.0.0.1`, `[::1]`)          | `http://localhost`                  | `storyteller-client/1.0` |
+| Our CDNs / sites (`*.storyteller.ai`, `*.fakeyou.com`) | unchanged (`studio.storyteller.ai`) | `storyteller-client/1.0` |
+| Named third parties (`THIRD_PARTY_PROVIDERS`)          | the provider's own site             | OS webview               |
+| Any other host (incl. `storage.googleapis.com`)        | webview origin, untouched           | OS webview               |
+
+- The native Rust client (`artcraft_client`) sends the Origin and User-Agent on
+  every API request via `storyteller_client_builder`; it previously sent no
+  Origin.
+- The vendored HTTP plugin only replaces the webview's own origin (packaged
+  `tauri://localhost` etc., or a loopback Vite origin), and only sets the
+  User-Agent when the frontend didn't.
+- Native third-party Rust clients (Grok, Midjourney, Sora, World Labs, Kinovi)
+  set their own headers and are not affected.
+- Older desktop releases keep working: the server still allows the studio and
+  Tauri origins, and requests without an Origin.
+
+Keep the deployed origin in sync with
+`../artcraft-services/crates/lib/actix_cors_configs/src/configs/artcraft_desktop.rs`.
+Development servers accept any `localhost` origin.
+
+Deploy the server allowlist to the APIs **before running or releasing a desktop
+build with the new origin**. Otherwise the deployed server will reject desktop
+requests until its allowlist is updated. The server retains the studio and
+legacy Tauri origins so existing desktop releases continue working.
+
+Check both repositories:
+
+```sh
+# From artcraft/
+cargo test --offline -p artcraft_client_identity -p tauri-plugin-http --lib
+
+# From artcraft-services/
+cargo test --offline -p actix_cors_configs --lib
+```
+
+The server tests verify credentialed GET/POST requests and OPTIONS preflights in
+production and development, rejection of lookalike domains/HTTP/alternate ports,
+and compatibility with previous desktop origins. After server deployment, repeat
+the native checks below using the updated app.
+
 ## Observed native results
+
+These observations were captured with the earlier studio origin, before the
+dedicated desktop origin migration. They do not establish that production has
+deployed the new allowlist.
 
 Checked in the real macOS Tauri dev app at `http://127.0.0.1:5193`, using its
 existing session. Temporary probes were removed after verification. No cookies,

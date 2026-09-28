@@ -16,12 +16,10 @@ use tauri::{
 use tokio::sync::oneshot::{channel, Receiver, Sender};
 
 use crate::{
-    artcraft_origin::normalize_artcraft_origin,
+    artcraft_identity::{artcraft_default_user_agent, normalize_artcraft_origin},
     scope::{Entry, Scope},
     Error, Http, Result,
 };
-
-const HTTP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
 struct ReqwestResponse(reqwest::Response);
 impl tauri::Resource for ReqwestResponse {}
@@ -285,7 +283,7 @@ pub async fn fetch<R: Runtime>(
                 }
 
                 if !headers.contains_key(header::USER_AGENT) {
-                    headers.append(header::USER_AGENT, HeaderValue::from_str(HTTP_USER_AGENT)?);
+                    headers.append(header::USER_AGENT, HeaderValue::from_static(artcraft_default_user_agent(&url)));
                 }
 
                 // ensure we have an Origin header set

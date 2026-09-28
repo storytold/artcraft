@@ -12,7 +12,7 @@ use tauri::{
 
 pub use error::{Error, Result};
 
-mod artcraft_origin;
+mod artcraft_identity;
 
 // NB(bt): We're making everything public so we can access it.
 pub mod commands;

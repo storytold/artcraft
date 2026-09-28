@@ -3,10 +3,10 @@ use crate::error::api_error::ApiError;
 use crate::error::client_error::ClientError;
 use crate::error::storyteller_error::StorytellerError;
 use crate::utils::api_host::ApiHost;
-use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
+use crate::utils::constants::APPLICATION_JSON;
+use crate::utils::storyteller_client_builder::storyteller_client_builder;
 use crate::utils::filter_bad_response::filter_bad_response;
 use log::{debug, info};
-use reqwest::Client;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -20,13 +20,11 @@ pub async fn basic_json_get_request<Res: DeserializeOwned>(
 
   debug!("Requesting {:?}", &url);
 
-  let client = Client::builder()
-      .gzip(true)
+  let client = storyteller_client_builder(api_host)
       .build()
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 
   let mut request_builder = client.get(url)
-      .header("User-Agent", USER_AGENT)
       .header("Accept", APPLICATION_JSON);
 
   if let Some(creds) = maybe_creds {
