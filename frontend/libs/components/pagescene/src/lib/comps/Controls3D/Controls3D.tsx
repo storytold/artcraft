@@ -254,7 +254,8 @@ export const Controls3D = ({
                 >
                   <Button
                     icon={WandSparklesIcon}
-                    className="text-md h-9 w-9 rounded-[3px] bg-white/15 transition-colors hover:bg-white/25"
+                    iconClassName="h-[18px] w-[18px]"
+                    className="h-9 w-9 rounded-[3px] border border-ui-controls-border bg-ui-controls p-0 text-base-fg transition-colors hover:border-white/25 hover:bg-white/[0.07]"
                     variant="secondary"
                     onClick={handleOpenCreate3dModal}
                   />
