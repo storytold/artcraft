@@ -5,6 +5,11 @@ pub const ARTCRAFT_DESKTOP_USER_AGENT: &str = "storyteller-client/1.0";
 
 /// `User-Agent` sent to third parties: the default of the OS webview Tauri runs on
 /// (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux).
+///
+/// NB: These are hardcoded snapshots and WILL go out of date as the OS webviews update
+/// (especially WebView2's Chrome/Edge version, which auto-updates on Windows). Rust can't read
+/// the webview's real `navigator.userAgent`, so refresh these periodically by checking
+/// `navigator.userAgent` in the desktop app's devtools on each OS.
 #[cfg(target_os = "macos")]
 pub const WEBVIEW_USER_AGENT: &str =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)";

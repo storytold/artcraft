@@ -35,6 +35,10 @@ values from one place, `crates/lib/artcraft_client_identity`
 - The native Rust client (`artcraft_client`) sends the Origin and User-Agent on
   every API request via `storyteller_client_builder`; it previously sent no
   Origin.
+- The "OS webview" User-Agents are hardcoded snapshots in
+  `artcraft_client_identity/src/user_agents.rs` and go out of date as the
+  webviews update (notably WebView2's Edge version on Windows). Refresh them
+  from `navigator.userAgent` in the desktop app's devtools on each OS.
 - The vendored HTTP plugin only replaces the webview's own origin (packaged
   `tauri://localhost` etc., or a loopback Vite origin), and only sets the
   User-Agent when the frontend didn't.
