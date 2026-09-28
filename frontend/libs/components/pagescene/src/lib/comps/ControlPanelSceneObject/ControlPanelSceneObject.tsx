@@ -305,7 +305,7 @@ export const ControlPanelSceneObject = () => {
       as="div"
       show={isShowing}
       className={twMerge(
-        "glass absolute bottom-16 right-0 mb-4 mr-4 flex h-fit w-56 origin-bottom-right flex-col gap-2 rounded-lg border border-ui-panel-border p-3.5 text-white shadow-lg",
+        "border border-ui-panel-border bg-ui-controls absolute bottom-16 right-0 mb-4 mr-4 flex h-fit w-56 origin-bottom-right flex-col gap-2 rounded-none p-3.5 text-white",
       )}
       enter="transition-opacity duration-150"
       enterFrom="opacity-0"
@@ -315,7 +315,7 @@ export const ControlPanelSceneObject = () => {
       leaveTo="opacity-0"
       style={{ transform: `scale(${getScale()})` }}
     >
-      <div className="mb-1 flex justify-between">
+      <div className="mb-1 flex justify-between border-b border-ui-panel-border pb-3">
         <div className="flex items-center gap-2">
           <BoxIcon />
           <p className="max-w-36 truncate font-semibold">
@@ -342,7 +342,7 @@ export const ControlPanelSceneObject = () => {
         className={"flex flex-col gap-2 overflow-y-auto"}
       >
         <div className="flex flex-col gap-1">
-          <p className="font-semibold text-sm">Color</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Color</p>
           {/* Native <input type="color"> is nested INSIDE the Button's
               <label> so Safari opens the picker reliably. Safari refuses
               to open a color picker triggered via label[htmlFor]→input
@@ -385,7 +385,7 @@ export const ControlPanelSceneObject = () => {
           </Button>
         </div>
         <div className="flex flex-col gap-2">
-          <p className="font-semibold text-sm">Location</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Location</p>
           <InputVector
             x={localPosition.x.toString()}
             y={localPosition.y.toString()}
@@ -398,7 +398,7 @@ export const ControlPanelSceneObject = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="font-semibold text-sm">Rotation</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Rotation</p>
           <InputVector
             x={localRotation.x.toString()}
             y={localRotation.y.toString()}
@@ -413,7 +413,7 @@ export const ControlPanelSceneObject = () => {
 
         <div className="mb-1 flex flex-col gap-2">
           <DraggablePrecisionMutator onChange={handleUniformScaleChange}>
-            <p className="font-semibold text-sm">Scale</p>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Scale</p>
           </DraggablePrecisionMutator>
           <InputVector
             x={localScale.x.toString()}

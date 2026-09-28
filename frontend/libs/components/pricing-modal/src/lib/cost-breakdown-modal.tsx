@@ -321,13 +321,13 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       closeOnEsc={true}
       resizable={false}
       backdropClassName="pointer-events-none !bg-transparent"
-      className="max-w-xs rounded-xl bg-ui-panel border border-ui-panel-border overflow-visible shadow-2xl"
+      className="max-w-xs rounded-none bg-ui-panel border border-ui-panel-border overflow-visible shadow-none"
     >
       {/* Drag Handle - Modal component will recognize this and make it draggable */}
       <DragHandle>
-        <div className="flex items-center gap-2 pb-3 bg-ui-panel-header border-b border-ui-panel-border select-none">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-fg">
-            <CoinsIcon  className="text-white" />
+        <div className="flex items-center gap-2 pb-3 border-b border-ui-panel-border select-none">
+          <div className="hud-label flex items-center gap-2 text-base-fg">
+            <CoinsIcon className="text-base-fg" />
             Cost Breakdown
           </div>
         </div>
@@ -336,7 +336,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       <div className="space-y-3 font-sans text-base-fg text-xs mt-3">
         {/* Page indicator */}
         {pageName && (
-          <div className="text-[10px] text-base-fg/75 uppercase tracking-wide text-start font-bold">
+          <div className="font-mono text-[10px] text-base-fg/55 uppercase tracking-[0.12em] text-start">
             {pageName}
           </div>
         )}
@@ -385,18 +385,16 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
             </div>
 
             {/* Total Cost */}
-            <div className="bg-ui-controls/50 rounded-lg p-3 border border-ui-controls-border space-y-2.5">
+            <div className="bg-ui-sunken rounded-none p-3 border border-ui-panel-border space-y-2.5">
               {/* Credits row */}
               <div>
-                <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
+                <div className="font-mono text-[10px] text-base-fg/50 uppercase tracking-[0.12em] mb-0.5">
                   Credits
                 </div>
-                <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
+                <div className="font-display text-lg font-medium tracking-[-0.02em] text-base-fg flex items-center gap-1.5">
                   {isEstimateLoading && isLiveEstimatePage ? (
                     <>
-                      <LoaderIcon
-                        
-                        className="animate-spin text-base" />
+                      <LoaderIcon className="animate-spin text-base" />
                       <span className="text-base-fg/50 text-sm">
                         Calculating…
                       </span>
@@ -411,15 +409,15 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                 </div>
               </div>
 
-              <div className="border-t border-ui-controls-border" />
+              <div className="border-t border-ui-panel-border" />
 
               {/* Converted price row */}
               <div>
-                <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
+                <div className="font-mono text-[10px] text-base-fg/50 uppercase tracking-[0.12em] mb-0.5">
                   Estimated Price
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-lg font-bold text-base-fg tracking-tight">
+                  <span className="font-display text-lg font-medium text-base-fg tracking-[-0.02em]">
                     {formattedPrice}
                   </span>
                   <Select
@@ -433,7 +431,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
             </div>
           </>
         ) : (
-          <div className="bg-ui-controls/50 rounded-lg p-2.5 border border-ui-controls-border text-center text-base-fg/60 text-[11px]">
+          <div className="bg-ui-sunken rounded-none p-2.5 border border-ui-panel-border text-center text-base-fg/60 text-[11px]">
             Credit Costs not yet available for this model
           </div>
         )}

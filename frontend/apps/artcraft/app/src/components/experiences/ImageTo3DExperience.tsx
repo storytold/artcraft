@@ -36,6 +36,7 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CreateEmptyState } from "~/components/generation-feed/CreateEmptyState";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
@@ -549,9 +550,9 @@ export const ImageTo3DExperience = ({
         role="button"
         tabIndex={0}
         className={twMerge(
-          "flex flex-col items-center justify-center rounded-2xl border-[3px] border-dashed border-primary/40 bg-primary/5 text-center text-xs transition-all hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40",
+          "flex flex-col items-center justify-center border border-dashed border-white/20 bg-white/[0.015] text-center text-xs transition-all hover:border-white/40 hover:bg-white/5 focus:border-white/60 focus:outline-none",
           hasResults ? "aspect-square w-24" : "aspect-square w-48",
-          dragActive && "border-primary bg-primary/10",
+          dragActive && "border-white/60 bg-white/5",
         )}
         onDragEnter={(event) => {
           event.preventDefault();
@@ -581,11 +582,11 @@ export const ImageTo3DExperience = ({
         <PlusIcon
           
           className={twMerge(
-            "text-base-fg opacity-90 drop-shadow",
+            "text-base-fg opacity-80",
             hasResults ? "text-2xl" : "text-4xl",
           )} />
         {!hasResults && (
-          <span className="mt-3 text-[15px] font-medium text-base-fg opacity-60">
+          <span className="mt-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
             Add Image
           </span>
         )}
@@ -598,7 +599,7 @@ export const ImageTo3DExperience = ({
       {uploadedPreview ? (
         <div
           className={twMerge(
-            "group relative cursor-pointer overflow-hidden rounded-2xl border-[3px] border-primary/40 bg-black/30 transition-all",
+            "group relative cursor-pointer overflow-hidden border border-white/30 bg-black/30 transition-all hover:border-white/60",
             hasResults ? "aspect-square w-24" : "aspect-square w-48",
           )}
           onClick={() => !isUploading && fileInputRef.current?.click()}
@@ -613,13 +614,13 @@ export const ImageTo3DExperience = ({
           />
           {isUploading && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/30 border-t-primary" />
+              <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
             </div>
           )}
           {!isUploading && (
             <button
               type="button"
-              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-all hover:bg-black group-hover:opacity-100"
               onClick={(event) => {
                 event.stopPropagation();
                 setUploadedPreview(null);
@@ -645,7 +646,7 @@ export const ImageTo3DExperience = ({
         ref={textareaRef}
         id={promptInputId}
         rows={1}
-        className="text-md max-h-[5.5em] w-full resize-none overflow-y-auto rounded bg-transparent pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+        className="text-md max-h-[5.5em] w-full resize-none overflow-y-auto rounded-[3px] bg-transparent pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
         value={prompt}
         placeholder="Describe any object you want to generate from scratch..."
         onChange={(event) => setPrompt(event.target.value)}
@@ -691,8 +692,8 @@ export const ImageTo3DExperience = ({
                 role="button"
                 tabIndex={0}
                 className={twMerge(
-                  "flex h-32 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 transition-all hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40",
-                  dragActive && "border-primary bg-primary/10",
+                  "flex h-32 w-32 flex-col items-center justify-center border border-dashed border-white/20 bg-white/[0.015] transition-all hover:border-white/40 hover:bg-white/5 focus:border-white/60 focus:outline-none",
+                  dragActive && "border-white/60 bg-white/5",
                 )}
                 onDragEnter={(e) => {
                   e.preventDefault();
@@ -730,8 +731,8 @@ export const ImageTo3DExperience = ({
               >
                 <PlusIcon
                   
-                  className="text-3xl text-base-fg opacity-90 drop-shadow" />
-                <span className="mt-2 text-sm font-medium text-base-fg/50">
+                  className="text-3xl text-base-fg opacity-80" />
+                <span className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                   Add Images
                 </span>
               </div>
@@ -740,7 +741,7 @@ export const ImageTo3DExperience = ({
           <textarea
             ref={worldTextareaRef}
             rows={2}
-            className="w-full resize-none overflow-y-auto rounded-lg bg-white/5 px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 outline-none ring-2 ring-transparent transition-all focus:ring-primary/80"
+            className="w-full resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
             style={{ maxHeight: "5em" }}
             value={worldPrompt}
             placeholder="Describe your 3D world (optional)..."
@@ -754,7 +755,7 @@ export const ImageTo3DExperience = ({
       <div
         key={img.id}
         className={twMerge(
-          "glass group relative aspect-square overflow-hidden rounded-lg border-2 border-white/30 transition-all",
+          "group relative aspect-square overflow-hidden rounded-[3px] border border-white/30 bg-black/30 transition-all",
           hasResults ? "w-10" : "w-auto",
           img.isUploading
             ? "cursor-default"
@@ -772,13 +773,13 @@ export const ImageTo3DExperience = ({
         />
         {img.isUploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-primary" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           </div>
         )}
         {!img.isUploading && (
           <button
             type="button"
-            className="absolute right-[2px] top-[2px] flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
+            className="absolute right-[2px] top-[2px] flex h-4 w-4 cursor-pointer items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-colors hover:bg-red/70 group-hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               removeWorldImage(img.id);
@@ -820,7 +821,7 @@ export const ImageTo3DExperience = ({
         <Button
           variant="action"
           className={twMerge(
-            "aspect-square overflow-hidden rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 transition-all hover:bg-ui-controls/60 dark:border-white/25",
+            "aspect-square overflow-hidden rounded-[3px] border border-dashed border-black/15 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10 dark:border-white/25",
             hasResults ? "w-10" : "w-14",
           )}
           onClick={() => worldFileInputRef.current?.click()}
@@ -836,7 +837,7 @@ export const ImageTo3DExperience = ({
     );
 
     const imageCountRow = (
-      <div className="flex items-center justify-center gap-2 text-xs text-base-fg/40">
+      <div className="flex items-center justify-center gap-2 font-mono text-[11px] tabular-nums text-base-fg/40">
         <span>
           {worldImages.length}/{MAX_WORLD_IMAGES} images
         </span>
@@ -865,7 +866,7 @@ export const ImageTo3DExperience = ({
             <textarea
               ref={worldTextareaRef}
               rows={1}
-              className="flex-1 resize-none overflow-y-auto rounded-lg bg-white/5 px-3 py-2 text-sm text-base-fg placeholder-base-fg/60 focus:outline-none focus:ring-2 focus:ring-primary/60"
+              className="flex-1 resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
               value={worldPrompt}
               placeholder="Describe world (optional)..."
               onChange={(e) => setWorldPrompt(e.target.value)}
@@ -887,7 +888,7 @@ export const ImageTo3DExperience = ({
         <textarea
           ref={worldTextareaRef}
           rows={2}
-          className="w-full resize-none overflow-y-auto rounded-lg bg-white/5 px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 focus:outline-none focus:ring-2 focus:ring-primary/60"
+          className="w-full resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
           style={{ maxHeight: "5em" }}
           value={worldPrompt}
           placeholder="Describe your 3D world (optional)..."
@@ -907,7 +908,7 @@ export const ImageTo3DExperience = ({
     results.find((r) => r.id === selectedResultId) || results[0];
 
   return (
-    <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full bg-ui-panel text-base-fg">
+    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background text-base-fg">
       {backgroundImage && !hasResults && (
         <>
           <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgb(var(--st-controls-rgb)_/_var(--st-gallery-vignette-alpha))_100%)]" />
@@ -928,9 +929,12 @@ export const ImageTo3DExperience = ({
 
       <div className="relative z-10 h-full w-full p-8">
         {!hasResults && (
-          <div className="pointer-events-none absolute left-0 top-[calc(50%-280px)] w-full text-center">
-            <h1 className="mb-3 text-7xl font-bold tracking-tight">{title}</h1>
-            <p className="text-xl text-base-fg/70">{subtitle}</p>
+          <div className="pointer-events-none absolute left-0 top-[calc(50%-280px)] flex w-full justify-center">
+            <CreateEmptyState
+              title={title}
+              subtitle={subtitle}
+              className="py-8 sm:py-8"
+            />
           </div>
         )}
 
@@ -944,7 +948,7 @@ export const ImageTo3DExperience = ({
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
             {/* Left: Viewer */}
-            <div className="glass relative h-full overflow-hidden rounded-xl border border-ui-panel-border">
+            <div className="relative h-full overflow-hidden border border-ui-panel-border bg-ui-panel">
               <Viewer3D
                 key={activeResult?.id}
                 modelUrl={activeResult?.modelUrl}
@@ -1002,13 +1006,15 @@ export const ImageTo3DExperience = ({
             </div>
 
             {/* Right: History List */}
-            <div className="glass flex h-full flex-col overflow-hidden rounded-xl border border-ui-panel-border">
-              <div className="flex items-center justify-between p-4">
-                <h3 className="font-semibold text-base-fg/80">History</h3>
+            <div className="flex h-full flex-col overflow-hidden border border-ui-panel-border bg-ui-panel">
+              <div className="flex items-center justify-between border-b border-ui-panel-border px-4 py-3">
+                <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+                  History
+                </h3>
                 {results.length > 0 && (
                   <button
                     onClick={resetResults}
-                    className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
+                    className="rounded-[3px] border border-red/40 bg-red/10 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/20"
                   >
                     Clear Session
                   </button>
@@ -1024,13 +1030,13 @@ export const ImageTo3DExperience = ({
                         key={result.id}
                         onClick={() => setSelectedResultId(result.id)}
                         className={twMerge(
-                          "group flex w-full items-center gap-3 rounded-xl border p-2 text-left transition-all hover:bg-ui-controls/40",
+                          "group flex w-full items-center gap-3 rounded-none border p-2 text-left transition-all hover:bg-white/5",
                           isSelected
-                            ? "border-primary/50 bg-primary/10"
-                            : "border-transparent bg-ui-controls/20",
+                            ? "border-white bg-white/10"
+                            : "border-white/10 bg-transparent hover:border-white/30",
                         )}
                       >
-                        <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-black/30 ring-1 ring-white/5">
+                        <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden border border-white/10 bg-black/30">
                           {result.previewUrl ? (
                             <img
                               src={result.previewUrl}
@@ -1049,7 +1055,7 @@ export const ImageTo3DExperience = ({
                           )}
                           {isPending && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-primary" />
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                             </div>
                           )}
                         </div>
@@ -1063,7 +1069,7 @@ export const ImageTo3DExperience = ({
                                 Generating…
                               </span>
                             ) : (
-                              <span className="text-base-fg/45">
+                              <span className="font-mono tabular-nums text-base-fg/45">
                                 {formatTime(result.timestamp)}
                               </span>
                             )}
@@ -1093,7 +1099,7 @@ export const ImageTo3DExperience = ({
           <div ref={promptContentRef}>
             <div
               className={twMerge(
-                "glass w-full rounded-xl shadow-2xl ring-1 ring-white/10",
+                "glass w-full",
                 hasResults ? "p-3" : "p-5",
               )}
             >
@@ -1138,7 +1144,7 @@ export const ImageTo3DExperience = ({
                   activeTab={activeMode}
                   onTabChange={(tabId) => setActiveMode(tabId as Mode)}
                   className="w-fit"
-                  indicatorClassName="bg-primary/25"
+                  indicatorClassName="bg-white/15"
                 />
               </div>
             )}
@@ -1195,12 +1201,12 @@ export const ImageTo3DExperience = ({
 
       {previewImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
           onClick={() => setPreviewImage(null)}
         >
           <button
             type="button"
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-[3px] border border-white/15 bg-black/60 text-white transition-colors hover:border-white/30 hover:bg-black"
             onClick={() => setPreviewImage(null)}
           >
             <XIcon  className="h-4 w-4" />
@@ -1208,7 +1214,7 @@ export const ImageTo3DExperience = ({
           <img
             src={previewImage}
             alt="Preview"
-            className="max-h-[80vh] max-w-[80vw] rounded-xl object-contain shadow-2xl"
+            className="max-h-[80vh] max-w-[80vw] border border-white/15 object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

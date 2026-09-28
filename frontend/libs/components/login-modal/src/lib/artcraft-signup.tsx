@@ -18,9 +18,10 @@ interface ArtCraftSignUpProps {
   isLoading?: boolean;
 }
 
-const FIELD_LABEL = "text-xs font-semibold text-white/70 ml-1";
+const FIELD_LABEL =
+  "block font-mono text-[11px] font-semibold leading-4 uppercase tracking-[0.12em] text-white/70";
 const FIELD_INPUT =
-  "w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors";
+  "h-10 w-full rounded-[3px] border border-white/15 bg-white/5 px-4 py-2 text-sm font-normal leading-5 text-white placeholder-white/20 outline-none transition-colors focus:border-white/40";
 
 export const ArtCraftSignUp = ({
   onSubmit,
@@ -74,12 +75,12 @@ export const ArtCraftSignUp = ({
 
   return (
     <form
-      className="flex w-full flex-col gap-2"
+      className="flex w-full flex-col gap-4"
       onSubmit={handleSubmit}
       ref={formRef}
     >
       {localError && (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
+        <div className="flex items-center justify-center gap-2 border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
           <TriangleAlertIcon />
           {localError}
         </div>
@@ -87,7 +88,7 @@ export const ArtCraftSignUp = ({
 
       {isSignUp ? (
         <>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className={FIELD_LABEL}>Username</label>
             <Input
               name="username"
@@ -97,7 +98,7 @@ export const ArtCraftSignUp = ({
               inputClassName={FIELD_INPUT}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className={FIELD_LABEL}>Email</label>
             <Input
               name="email"
@@ -110,7 +111,7 @@ export const ArtCraftSignUp = ({
           </div>
         </>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className={FIELD_LABEL}>Email or Username</label>
           <Input
             name="usernameOrEmail"
@@ -122,7 +123,7 @@ export const ArtCraftSignUp = ({
         </div>
       )}
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <label className={FIELD_LABEL}>Password</label>
         <div className="relative">
           <Input
@@ -145,7 +146,7 @@ export const ArtCraftSignUp = ({
       </div>
 
       {isSignUp && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className={FIELD_LABEL}>Confirm Password</label>
           <div className="relative">
             <Input
@@ -168,14 +169,14 @@ export const ArtCraftSignUp = ({
         </div>
       )}
 
-      <div className="pt-4">
+      <div className="pt-2">
         <Button
           type="submit"
           disabled={isLoading}
-          className="h-10 w-full justify-center rounded-full border-none bg-primary font-bold text-white hover:bg-primary-600"
+          className="h-10 w-full justify-center rounded-[3px] border-none bg-white font-mono text-xs font-semibold uppercase tracking-[0.12em] text-black shadow-none hover:bg-white/90"
         >
           {isLoading ? (
-            <LoaderCircleIcon  className="animate-spin" />
+            <LoaderCircleIcon className="animate-spin" />
           ) : isSignUp ? (
             "Sign up"
           ) : (
@@ -184,7 +185,7 @@ export const ArtCraftSignUp = ({
         </Button>
       </div>
 
-      <div className="mt-2 text-center text-sm text-white/60">
+      <div className="mt-4 text-center text-sm text-white/60">
         {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
         <button
           type="button"

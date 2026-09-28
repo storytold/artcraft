@@ -48,7 +48,7 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
       onClose={onClose}
       title={title}
       accessibleTitle={title}
-      className="w-80 max-w-[90vw]"
+      className="w-80 max-w-[90vw] [&_h2]:font-sans [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:tracking-normal [&_h2]:[font-stretch:normal]"
     >
       <div className="space-y-3">
         {subtitle && (
@@ -57,26 +57,27 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
         <input
           ref={inputRef}
           type="text"
+          aria-label="Folder name"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          className="w-full rounded-md border border-ui-panel-border bg-ui-controls/40 px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
+          className="w-full rounded-[3px] border border-ui-panel-border bg-ui-controls/40 px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
           autoFocus
         />
         <div className="flex justify-end gap-2">
           <Button
             variant="action"
             onClick={onClose}
-            className="px-3 py-1 text-sm"
+            className="px-3 py-1.5 text-[11px]"
           >
             Cancel
           </Button>
           <Button
             onClick={submit}
             disabled={!value.trim()}
-            className="px-3 py-1 text-sm"
+            className="px-3 py-1.5 text-[11px]"
           >
             {confirmLabel}
           </Button>

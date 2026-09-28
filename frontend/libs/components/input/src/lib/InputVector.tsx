@@ -39,10 +39,10 @@ export const InputVector = ({
   oldZ.current = z;
 
   const inputCommonClasses =
-    "relative h-6 rounded-r-lg bg-black/25 p-2 text-sm text-white transition-all duration-100 ease-in-out outline-none -outline-offset-2 text-end w-full hover:cursor-e-resize hover:bg-black/40";
+    "relative h-6 rounded-r-[3px] bg-black/25 p-2 text-sm text-white transition-all duration-100 ease-in-out outline-none -outline-offset-2 text-end w-full hover:cursor-e-resize hover:bg-black/40";
 
   const wrapperCommonClasses =
-    "relative flex items-center before:inline-block before:h-6 before:bg-brand-primary before:text-white before:rounded-l-lg before:w-1.5 before:text-center before:justify-center before:items-center before:font-semibold before:flex before:align-middle before:leading-8 text-xs";
+    "relative flex items-center before:inline-block before:h-6 before:bg-brand-primary before:text-white before:rounded-l-[3px] before:w-1.5 before:text-center before:justify-center before:items-center before:font-semibold before:flex before:align-middle before:leading-8 text-xs";
 
   const lockedCommonClasses =
     "hover:cursor-not-allowed hover:bg-brand-secondary";

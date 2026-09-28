@@ -14,6 +14,12 @@ import { useLoginModalStore } from "./useLoginModalStore";
 const DEFAULT_SHOWCASE_VIDEO =
   "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
 const LOGIN_SUCCESS_DURATION_MS = 3000;
+const FRAME_CORNERS = [
+  "top-0 left-0",
+  "top-0 right-0",
+  "bottom-0 left-0",
+  "bottom-0 right-0",
+];
 
 interface LoginModalProps {
   onClose?: () => void;
@@ -145,10 +151,10 @@ export function LoginModal({
     if (showSuccess) {
       return (
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
-          <h2 className="mb-2 text-3xl font-bold text-white">
+          <h2 className="mb-3 font-display text-3xl leading-[1.05] tracking-tight text-white sm:text-4xl">
             Thank you for signing in!
           </h2>
-          <p className="mb-6 text-white/70">
+          <p className="mb-8 text-sm leading-relaxed text-white/60">
             You're all set to start creating amazing content.
           </p>
           <Button
@@ -156,7 +162,7 @@ export function LoginModal({
             onClick={handleClose}
             icon={ArrowRightIcon}
             iconFlip={true}
-            className="text-md"
+            className="h-10 rounded-[3px] bg-white px-5 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-black shadow-none hover:bg-white/90"
           >
             Get Started
           </Button>
@@ -167,16 +173,17 @@ export function LoginModal({
     // Discord
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
-        <h2 className="mb-2 text-3xl font-bold text-white">
-          Join Our Community
+        <h2 className="mb-3 font-display text-3xl leading-[1.05] tracking-tight text-white sm:text-4xl">
+          Join our <span className="font-serif-italic">community.</span>
         </h2>
-        <p className="mb-6 max-w-md text-white/70">
+        <p className="mb-8 max-w-md text-sm leading-relaxed text-white/60">
           Connect with other creators, share your work, and get the latest
           updates in our Discord community.
         </p>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <Button
             variant="secondary"
+            className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-none hover:bg-white/10"
             onClick={() => {
               setShowDiscord(false);
               setShowSuccess(true);
@@ -188,7 +195,7 @@ export function LoginModal({
             variant="primary"
             onClick={handleDiscordJoin}
             icon={DiscordIcon}
-            className="text-md bg-[#5865F2] hover:bg-[#6a76ff]"
+            className="h-10 rounded-[3px] bg-[#5865F2] px-4 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-none hover:bg-[#6a76ff]"
           >
             Join Discord
           </Button>
@@ -222,59 +229,84 @@ export function LoginModal({
             leaveTo="opacity-0 scale-95"
           >
             <div
-              className={`relative flex w-full overflow-hidden rounded-3xl border bg-[#1C1C20] text-white shadow-2xl ${loggedInUsername !== null ? "max-w-md border-emerald-200/20" : "max-w-5xl border-white/[4%] lg:min-h-[640px]"}`}
+              className={`relative w-full ${loggedInUsername !== null ? "max-w-md" : "max-w-lg lg:max-w-5xl"}`}
               onClick={(e) => e.stopPropagation()}
             >
-              {loggedInUsername !== null ? (
-                <LoginSuccess username={loggedInUsername} />
-              ) : inOnboarding ? (
-                renderOnboarding()
-              ) : (
-                <>
-                  {/* ── Form pane ── (no dismiss control — login is required) */}
-                  <div className="relative flex w-full flex-col lg:w-1/2">
-                    <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-10">
-                      <div className="mx-auto w-full max-w-sm">
-                        <div className="mb-8 text-center">
-                          <img
-                            src="/resources/logo/artcraft-icon.png"
-                            alt="ArtCraft"
-                            className="pointer-events-none mx-auto mb-6 h-12 w-auto select-none"
-                            draggable={false}
-                          />
-                          <h1 className="mb-2 text-2xl font-semibold">
-                            {isSignUp ? "Create your account" : "Welcome back"}
-                          </h1>
-                          <p className="text-sm text-white/60">
-                            {isSignUp
-                              ? "Sign up to start creating with ArtCraft"
-                              : "Log in to your account"}
-                          </p>
-                        </div>
+              <div
+                className={`relative flex w-full overflow-hidden border border-white/20 bg-[#1e1f22] text-white ${loggedInUsername !== null ? "" : "lg:min-h-[560px]"}`}
+              >
+                {loggedInUsername !== null ? (
+                  <LoginSuccess username={loggedInUsername} />
+                ) : inOnboarding ? (
+                  renderOnboarding()
+                ) : (
+                  <>
+                    {/* ── Form pane ── (no dismiss control — login is required) */}
+                    <div className="relative flex w-full flex-col lg:w-1/2">
+                      <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
+                        <div className="w-full">
+                          <div className="mb-8 text-left">
+                            <img
+                              src="/resources/logo/artcraft-icon.png"
+                              alt="ArtCraft"
+                              className="pointer-events-none mb-8 h-8 w-auto select-none"
+                              draggable={false}
+                            />
+                            <h1 className="mb-3 text-balance font-display text-3xl leading-[1.05] tracking-tight sm:text-4xl">
+                              {isSignUp ? (
+                                "Create your account"
+                              ) : (
+                                <>
+                                  Welcome{" "}
+                                  <span className="font-serif-italic">back.</span>
+                                </>
+                              )}
+                            </h1>
+                            <p className="text-sm leading-relaxed text-white/60">
+                              {isSignUp
+                                ? "Sign up to start creating with ArtCraft"
+                                : "Log in to your creative workspace."}
+                            </p>
+                          </div>
 
-                        {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={handleLoginSuccess} />}
-                        {!isChallengeActive && <ArtCraftSignUp
-                          onSubmit={handleAuthSubmit}
-                          isSignUp={isSignUp}
-                          onToggleMode={() => setIsSignUp((prev) => !prev)}
-                          errorMessage={errorMessage}
-                          isLoading={isLoading}
-                        />}
+                          {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={handleLoginSuccess} />}
+                          {!isSignUp && !isChallengeActive && (
+                            <div className="mb-6 flex items-center gap-4 before:h-px before:flex-1 before:bg-white/15 after:h-px after:flex-1 after:bg-white/15">
+                              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
+                                or
+                              </span>
+                            </div>
+                          )}
+                          {!isChallengeActive && <ArtCraftSignUp
+                            onSubmit={handleAuthSubmit}
+                            isSignUp={isSignUp}
+                            onToggleMode={() => setIsSignUp((prev) => !prev)}
+                            errorMessage={errorMessage}
+                            isLoading={isLoading}
+                          />}
+                        </div>
+                      </div>
+
+                      <div className="px-6 pb-6 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-white/25 sm:px-10">
+                        &copy; {new Date().getFullYear()} ArtCraft. All rights
+                        reserved.
                       </div>
                     </div>
 
-                    <div className="px-8 pb-8 text-center text-xs text-white/20">
-                      &copy; {new Date().getFullYear()} ArtCraft. All rights
-                      reserved.
+                    {/* ── Showcase pane (desktop only) ── */}
+                    <div className="relative hidden border-l border-white/15 lg:block lg:w-1/2">
+                      <LoginShowcase videoUrl={videoUrl} />
                     </div>
-                  </div>
-
-                  {/* ── Showcase pane (desktop only) ── */}
-                  <div className="relative hidden lg:block lg:w-1/2">
-                    <LoginShowcase videoUrl={videoUrl} />
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
+              {FRAME_CORNERS.map((corner) => (
+                <span
+                  key={corner}
+                  aria-hidden="true"
+                  className={`frame-corner-mark ${corner}`}
+                />
+              ))}
             </div>
           </TransitionChild>
         </div>
@@ -287,7 +319,7 @@ export function LoginModal({
 // with a legibility gradient + caption. Mirrors the webapp auth-showcase.
 function LoginShowcase({ videoUrl }: { videoUrl: string }) {
   return (
-    <div className="absolute inset-2 overflow-hidden rounded-2xl bg-black">
+    <div className="absolute inset-0 overflow-hidden bg-[#1e1f22]">
       <video
         src={videoUrl}
         autoPlay
@@ -304,7 +336,7 @@ function LoginShowcase({ videoUrl }: { videoUrl: string }) {
       />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-8">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary-300">
+        <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
           One of the cheapest
         </p>
         <h2 className="text-2xl font-bold leading-tight">

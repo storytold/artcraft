@@ -16,7 +16,7 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
   return (
     <Listbox value={selected} onChange={setSelected}>
       <div className="relative mt-1">
-        <Listbox.Button className="relative h-10 w-full cursor-pointer rounded-md bg-brand-secondary py-2 pl-3 pr-10 text-left outline-none outline-offset-0 transition-all duration-150 ease-in-out focus:outline-brand-primary sm:text-sm">
+        <Listbox.Button className="relative h-10 w-full cursor-pointer rounded-[3px] border border-ui-controls-border bg-ui-controls py-2 pl-3 pr-10 text-left text-base-fg outline-none outline-offset-0 transition-colors duration-150 ease-in-out hover:border-white/40 focus:!outline-none sm:text-sm">
           <span className="block truncate">{Object.keys(selected)[0]}</span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
             <ChevronDownIcon  aria-hidden="true" />
@@ -28,12 +28,17 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-brand-secondary py-1 text-base shadow-lg focus:outline-none sm:text-sm">
+          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-[3px] border border-ui-panel-border bg-ui-panel text-base focus:outline-none sm:text-sm">
             {list.map((item, itemIdx) => (
               <Listbox.Option
                 key={itemIdx}
-                className={({ active }) =>
-                  `relative cursor-pointer select-none py-2 pl-10 pr-4 text-white ${active ? "text-white" : "text-gray-400"
+                className={({ active, selected }) =>
+                  `relative cursor-pointer select-none py-2 pl-10 pr-4 transition-colors duration-150 ${
+                    active
+                      ? "bg-white text-black"
+                      : selected
+                        ? "bg-white/10 text-base-fg"
+                        : "text-base-fg/90"
                   }`
                 }
                 value={item}

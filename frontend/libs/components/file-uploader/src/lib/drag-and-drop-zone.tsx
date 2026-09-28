@@ -13,14 +13,14 @@ export const DragAndDropZone = ({
 }) => {
   if (files.length === 0) {
     return (
-      <div className="flex cursor-pointer items-center gap-3.5 rounded-lg border border-dashed border-[#363636] bg-brand-secondary p-3">
-        <FileUpIcon  className="text-4xl" />
+      <div className="flex cursor-pointer items-center gap-3.5 rounded-none border border-dashed border-white/20 bg-white/[0.02] p-3 transition-colors hover:border-white/40 hover:bg-white/[0.05]">
+        <FileUpIcon className="text-4xl text-white/60" />
         <div className="flex flex-col gap-0">
           <p className="font-medium">
             <u>Upload a file</u> or drop it here
           </p>
 
-          <p className="flex items-center gap-2 text-sm font-normal opacity-50">
+          <p className="flex items-center gap-2 font-mono text-[11px] font-normal uppercase tracking-[0.12em] opacity-50">
             {fileTypes.join(", ").toString()} supported
           </p>
         </div>
@@ -37,7 +37,7 @@ export const DragAndDropZone = ({
         : `${Math.floor(file.size / 1024)} KB`;
 
     return (
-      <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-lg border border-dashed border-[#363636] bg-brand-secondary p-3">
+      <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-none border border-dashed border-white/20 bg-white/[0.02] p-3 transition-colors hover:border-white/40 hover:bg-white/[0.05]">
         <DynamicIcon icon={fileIcon} className="text-4xl" />
         <div className="flex grow flex-col gap-0">
           <p className="font-medium">
@@ -55,7 +55,7 @@ export const DragAndDropZone = ({
   }
 
   return (
-    <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-lg border border-dashed border-[#363636] bg-brand-secondary p-3">
+    <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-none border border-dashed border-white/20 bg-white/[0.02] p-3 transition-colors hover:border-white/40 hover:bg-white/[0.05]">
       <DynamicIcon icon={fileIcon} className="text-4xl" />
       <div className="flex grow flex-col gap-0">
         <p className="font-medium">{files.length} files selected</p>

@@ -36,7 +36,7 @@ export function KeybindCaptureInput({
       onClick={() => setCapturing((v) => !v)}
       aria-label="Change keybinding"
       className={twMerge(
-        "inline-flex min-h-8 min-w-[7rem] items-center justify-center rounded-md border px-2 py-1 text-sm transition-colors",
+        "inline-flex min-h-8 min-w-[7rem] items-center justify-center rounded-[3px] border px-2 py-1 text-sm transition-colors",
         capturing
           ? "border-primary/80 bg-primary/10 text-primary animate-pulse"
           : accent

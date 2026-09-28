@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SparklesIcon } from "lucide-react";
 import { toast } from "@storyteller/ui-toaster";
 import { UploadImageMedia, UploadVideoMedia } from "@storyteller/api";
 import {
   PromptBoxVFX,
   SubTabStrip,
-  TruchetPattern,
   VFXResultCard,
   VFXShowcaseView,
   newIdempotencyToken,
@@ -14,6 +12,7 @@ import {
   VFX_NOT_AVAILABLE_ERROR,
   VFX_SHOWCASE,
 } from "@storyteller/ui-vfx";
+import { CreateEmptyState } from "~/components/generation-feed/CreateEmptyState";
 
 export const PageBackgroundChange = () => {
   const subTab = useVFXStore((s) => s.subTab);
@@ -113,34 +112,17 @@ export const PageBackgroundChange = () => {
           className="relative flex flex-1 items-center justify-center px-6"
           style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{
-              maskImage:
-                "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
-            }}
-          >
-            <TruchetPattern
-              intensity={0.8}
-              className="absolute inset-0 h-full w-full"
-            />
-          </div>
-          <div className="relative z-10">
-            <EmptyState
-              title="No background changes yet"
-              subtitle="Upload a source video and a reference image, then optionally add a prompt."
-            />
-          </div>
+          <CreateEmptyState
+            title="No background changes yet"
+            subtitle="Upload a source video and a reference image, then optionally add a prompt."
+          />
         </div>
       ) : (
         <div
           className="flex-1 overflow-y-auto"
           style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
-          <div className="flex flex-col gap-10 px-6 pt-6">
+          <div className="flex flex-col items-center gap-10 px-6 pt-6">
             {history.map((r) => (
               <VFXResultCard
                 key={r.id}
@@ -155,6 +137,7 @@ export const PageBackgroundChange = () => {
                   failureReason: r.failureReason,
                 }}
                 onDismiss={() => dismissResult(r.id)}
+                className="w-[min(960px,calc(100vw-32px))]"
               />
             ))}
           </div>
@@ -163,7 +146,7 @@ export const PageBackgroundChange = () => {
 
       <div
         aria-hidden
-        className="via-ui-background/85 pointer-events-none fixed bottom-0 left-0 right-0 z-20 h-72 bg-gradient-to-t from-ui-background to-transparent"
+        className="pointer-events-none fixed bottom-0 left-0 right-0 z-20 h-72 bg-gradient-to-t from-ui-background via-ui-background/85 to-transparent"
       />
 
       <div
@@ -183,20 +166,5 @@ export const PageBackgroundChange = () => {
     </div>
   );
 };
-
-interface EmptyStateProps {
-  title: string;
-  subtitle: string;
-}
-
-const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
-  <div className="flex max-w-md flex-col items-center gap-4 text-center">
-    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-base-fg/5 ring-1 ring-base-fg/10">
-      <SparklesIcon  className="text-2xl" />
-    </div>
-    <h3 className="text-2xl font-bold text-base-fg">{title}</h3>
-    <p className="max-w-xs text-sm text-base-fg/60">{subtitle}</p>
-  </div>
-);
 
 export default PageBackgroundChange;

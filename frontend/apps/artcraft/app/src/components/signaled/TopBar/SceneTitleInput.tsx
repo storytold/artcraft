@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
-import { LoaderCircleIcon, PencilIcon } from "lucide-react";
+import { ChevronRightIcon, LoaderCircleIcon, PencilIcon } from "lucide-react";
 import { scene, signalScene, authentication } from "~/signals";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 import { Input } from "@storyteller/ui-input";
 import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
-import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 
 interface Props {
   pageName: string;
@@ -95,27 +94,29 @@ export const SceneTitleInput = ({ pageName }: Props) => {
       data-tauri-drag-region
     >
       {!showInput && (
-        <div className="flex items-center gap-2.5" data-tauri-drag-region>
-          {getCreatorIcon(
-            ModelCreator.ArtCraft,
-            "h-5 w-5 icon-auto-contrast opacity-60",
-          )}
-          <span className="text-nowrap opacity-60">{pageName}</span>
-          <span className="opacity-60">/</span>
+        <div className="flex items-center gap-1.5" data-tauri-drag-region>
+          <span
+            className="hud-label text-nowrap text-base-fg/70"
+            data-tauri-drag-region
+          >
+            {pageName}
+          </span>
+          <ChevronRightIcon
+            aria-hidden="true"
+            className="h-3 w-3 shrink-0 text-base-fg/50"
+          />
 
           {isSceneOwner ? (
             <button
-              className="ml-0.5 rounded-md px-2 py-1 transition-all hover:cursor-text hover:bg-white/[8%]"
+              className="flex max-w-[280px] items-center border border-transparent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:cursor-text hover:bg-white/10"
               onClick={handleShowInput}
               data-tauri-drag-region="false"
             >
-              {scene.value.title || ""}
-              <PencilIcon
-                
-                className="ml-2 text-sm opacity-50" />
+              <span className="truncate">{scene.value.title || ""}</span>
+              <PencilIcon className="ml-2 shrink-0 text-sm opacity-50" />
             </button>
           ) : (
-            <div className="ml-0.5 rounded-md px-2 py-1">
+            <div className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
               {scene.value.title || ""}
             </div>
           )}
@@ -128,8 +129,8 @@ export const SceneTitleInput = ({ pageName }: Props) => {
             disabled={scene.value.ownerToken !== userInfo.value?.user_token}
             className="w-[420px]"
             inputClassName={twMerge(
-              "text-center h-8 focus:outline-brand-primary",
-              isSaving && "outline-brand-secondary",
+              "text-center h-[34px] text-sm font-semibold focus:outline-white/60",
+              isSaving && "outline-white/30",
             )}
             isError={!isValid}
             value={scene.value.title || ""}
@@ -152,7 +153,9 @@ export const SceneTitleInput = ({ pageName }: Props) => {
         </div>
       )}
 
-      {isSaving && <LoaderCircleIcon className="animate-spin" />}
+      {isSaving && (
+        <LoaderCircleIcon className="shrink-0 animate-spin text-sm opacity-70" />
+      )}
     </div>
   );
 };

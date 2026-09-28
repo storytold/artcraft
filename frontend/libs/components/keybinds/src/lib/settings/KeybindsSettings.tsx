@@ -176,8 +176,8 @@ export function KeybindsSettings({
           Deliberately reset-free: destructive actions live with their scope
           (section headers) or in the danger row at the bottom, never beside
           the search field where a stray click can nuke every override. */}
-      <div className="sticky top-0 z-10 -mt-2 flex flex-col gap-3 border-b border-white/[0.06] bg-ui-modal/80 py-3 backdrop-blur-xl">
-        <div className="flex items-center gap-1.5 rounded-2xl bg-white/[0.04] p-1.5 ring-1 ring-white/[0.06]">
+      <div className="sticky top-0 z-10 -mt-2 flex flex-col gap-3 border-b border-white/[0.06] bg-ui-modal py-3">
+        <div className="flex items-center gap-1.5 rounded-none bg-white/[0.04] p-1.5 ring-1 ring-white/15">
           <ModeToggle mode={searchMode} onChange={switchMode} />
           {searchMode === "name" ? (
             <NameSearchField value={nameSearch} onChange={setNameSearch} />
@@ -273,7 +273,7 @@ export function KeybindsSettings({
           and gated behind a two-step confirm. Hidden when there is nothing to
           destroy. ─────────────────────────────────────────────────────────── */}
       {overriddenCount > 0 && (
-        <div className="flex items-center justify-between gap-4 rounded-2xl bg-red/[0.04] p-4 ring-1 ring-red/20">
+        <div className="flex items-center justify-between gap-4 rounded-none bg-red/[0.04] p-4 ring-1 ring-red/20">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[13px] font-medium text-base-fg/90">
               Reset all customizations
@@ -296,7 +296,7 @@ export function KeybindsSettings({
       )}
 
       {/* ── Video editor lives in its own customizer ───────────────────────── */}
-      <div className="flex items-start gap-3 rounded-2xl bg-white/[0.02] p-4 text-[13px] leading-relaxed text-base-fg/55 ring-1 ring-white/[0.06]">
+      <div className="flex items-start gap-3 rounded-none bg-white/[0.02] p-4 text-[13px] leading-relaxed text-base-fg/55 ring-1 ring-white/15">
         <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-base-fg/35" />
         <span>
           Video editor shortcuts are managed in the video editor itself
@@ -357,14 +357,14 @@ function PresetDropdown({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={twMerge(
-          "flex w-full items-center gap-3 rounded-2xl bg-white/[0.04] p-1.5 text-left ring-1 ring-white/[0.08] transition-all hover:bg-white/[0.06] active:scale-[0.995]",
+          "flex w-full items-center gap-3 rounded-none bg-white/[0.04] p-1.5 text-left ring-1 ring-white/15 transition-all hover:bg-white/[0.06] active:scale-[0.995]",
           EASE,
           open && "ring-primary/40",
         )}
       >
         <div className="flex min-w-0 grow flex-col gap-0.5 px-3 py-1.5">
           <span className="text-sm font-medium text-base-fg">{def.label}</span>
-          <span className="truncate text-[12px] text-base-fg/50">
+          <span className="text-[12px] leading-relaxed text-base-fg/60">
             {def.description}
           </span>
         </div>
@@ -381,7 +381,7 @@ function PresetDropdown({
         role="listbox"
         aria-label="Preset"
         className={twMerge(
-          "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-2xl bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
+          "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-none bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
           EASE,
           open
             ? "scale-100 opacity-100"
@@ -457,7 +457,7 @@ function ModeToggle({
   onChange: (mode: SearchMode) => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 rounded-[0.625rem] bg-ui-modal/60 p-0.5">
+    <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] bg-ui-modal/60 p-0.5">
       {(["name", "key"] as SearchMode[]).map((m) => (
         <button
           key={m}
@@ -465,7 +465,7 @@ function ModeToggle({
           onClick={() => onChange(m)}
           aria-pressed={mode === m}
           className={twMerge(
-            "rounded-lg px-3 py-1.5 text-[12px] font-medium capitalize transition-all",
+            "rounded-[3px] px-3 py-1.5 text-[12px] font-medium capitalize transition-all",
             EASE,
             mode === m
               ? "bg-white/10 text-base-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
@@ -489,7 +489,7 @@ function NameSearchField({
   return (
     <div
       className={twMerge(
-        "group flex grow items-center rounded-[0.625rem] bg-ui-modal/60 ring-1 ring-transparent transition-all",
+        "group flex grow items-center rounded-[3px] bg-ui-modal/60 ring-1 ring-transparent transition-all",
         EASE,
         "focus-within:bg-ui-modal/80 focus-within:ring-primary/50",
       )}
@@ -508,7 +508,7 @@ function NameSearchField({
           onClick={() => onChange("")}
           aria-label="Clear search"
           className={twMerge(
-            "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
+            "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
           )}
         >
@@ -533,7 +533,7 @@ function KeySearchField({
   return (
     <div
       className={twMerge(
-        "flex grow items-center rounded-[0.625rem] bg-ui-modal/60 ring-1 transition-all",
+        "flex grow items-center rounded-[3px] bg-ui-modal/60 ring-1 transition-all",
         EASE,
         listening ? "ring-primary/60" : "ring-transparent",
       )}
@@ -570,7 +570,7 @@ function KeySearchField({
           onClick={onClear}
           aria-label="Clear key filter"
           className={twMerge(
-            "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
+            "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
           )}
         >
@@ -605,8 +605,8 @@ function CollapsibleSurface({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
-      <div className="overflow-hidden rounded-[0.625rem] bg-ui-modal/40">
+    <div className="rounded-none bg-white/[0.04] ring-1 ring-white/15">
+      <div className="overflow-hidden rounded-[3px] bg-ui-modal/40">
         {/* The toggle and the (destructive) section reset are sibling buttons —
             a nested button is invalid HTML and a mis-click on "reset" must
             never also collapse the section. */}
@@ -647,7 +647,7 @@ function CollapsibleSurface({
               onConfirm={onReset}
             />
           )}
-          <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs tabular-nums text-base-fg/55">
+          <span className="shrink-0 rounded-[3px] bg-white/[0.06] px-2 py-0.5 text-xs tabular-nums text-base-fg/55">
             {count}
           </span>
         </div>
@@ -738,7 +738,7 @@ function ConfirmResetButton({
       title={title}
       aria-label={armed ? `${title} — click again to confirm` : title}
       className={twMerge(
-        "relative shrink-0 overflow-hidden whitespace-nowrap rounded-full font-medium transition-all active:scale-[0.97]",
+        "relative shrink-0 overflow-hidden whitespace-nowrap rounded-[3px] font-medium transition-all active:scale-[0.97]",
         EASE,
         prominent
           ? "h-9 px-4 text-[13px]"
@@ -746,7 +746,7 @@ function ConfirmResetButton({
         armed
           ? ready
             ? "bg-red/25 text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)]"
-            : "cursor-wait bg-white/[0.06] text-base-fg/55 ring-1 ring-white/[0.08]"
+            : "cursor-wait bg-white/[0.06] text-base-fg/55 ring-1 ring-white/15"
           : prominent
             ? "bg-red/10 text-red ring-1 ring-red/30 hover:bg-red/[0.18]"
             : "text-base-fg/45 hover:bg-red/10 hover:text-red",
@@ -827,7 +827,7 @@ function ActionRow({
   return (
     <div
       className={twMerge(
-        "group/row flex items-center gap-3 rounded-xl px-3 py-2 transition-colors",
+        "group/row flex items-center gap-3 rounded-[3px] px-3 py-2 transition-colors",
         EASE,
         "hover:bg-white/[0.03]",
       )}
@@ -859,7 +859,7 @@ function ActionRow({
           title="Revert to preset default"
           aria-label="Revert to preset default"
           className={twMerge(
-            "grid h-7 w-7 shrink-0 place-items-center rounded-full text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
+            "grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
           )}
         >
@@ -887,7 +887,7 @@ function ConflictAlert({
   return (
     <div
       role="alert"
-      className="flex flex-col gap-2.5 rounded-2xl bg-red/[0.08] p-3.5 text-[13px] ring-1 ring-red/30"
+      className="flex flex-col gap-2.5 rounded-none bg-red/[0.08] p-3.5 text-[13px] ring-1 ring-red/30"
     >
       <span className="leading-relaxed text-base-fg/80">
         <KbdBindings bindings={[pending.binding]} /> is already used by{" "}
@@ -901,7 +901,7 @@ function ConflictAlert({
           type="button"
           onClick={onConfirm}
           className={twMerge(
-            "rounded-full bg-red px-4 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-red/85 active:scale-[0.97]",
+            "rounded-[3px] bg-red px-4 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-red/85 active:scale-[0.97]",
             EASE,
           )}
         >
@@ -911,7 +911,7 @@ function ConflictAlert({
           type="button"
           onClick={onCancel}
           className={twMerge(
-            "rounded-full bg-white/[0.06] px-4 py-1.5 text-[13px] text-base-fg/80 transition-all hover:bg-white/10 active:scale-[0.97]",
+            "rounded-[3px] bg-white/[0.06] px-4 py-1.5 text-[13px] text-base-fg/80 transition-all hover:bg-white/10 active:scale-[0.97]",
             EASE,
           )}
         >
@@ -932,7 +932,7 @@ function EmptyState({
   binding: Binding | null;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/[0.06] px-6 py-12 text-center ring-1 ring-white/[0.06]">
+    <div className="flex flex-col items-center gap-3 rounded-none bg-white/[0.06] px-6 py-12 text-center ring-1 ring-white/15">
       {mode === "key" ? (
         <KeyIcon className="h-6 w-6 text-base-fg/25" />
       ) : (
@@ -955,7 +955,7 @@ function EmptyState({
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-xs font-medium tracking-wide text-base-fg/50">
+    <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
       {children}
     </span>
   );
@@ -963,7 +963,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-3 pb-1 pt-4 text-[11px] font-medium uppercase tracking-[0.13em] text-base-fg/45 first:pt-2">
+    <div className="px-3 pb-1 pt-4 font-mono text-[11px] font-medium uppercase tracking-[0.13em] text-base-fg/45 first:pt-2">
       {children}
     </div>
   );

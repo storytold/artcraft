@@ -46,12 +46,13 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 pt-3 text-base-fg">
         <div className="space-y-1">
           <Label>
             Artcraft Version
           </Label>
           <div
+            className="text-sm font-medium"
             onClick={handleVersionClick}
             style={{ cursor: "default", userSelect: "none" }}
           >
@@ -61,45 +62,45 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
 
         <div className="space-y-1">
           <Label>Artcraft Host</Label>
-          <div>{appInfo?.storyteller_host}</div>
+          <div className="break-all text-sm font-medium">{appInfo?.storyteller_host}</div>
         </div>
 
         <div className="space-y-1">
           <Label>Git Commit ID</Label>
-          <div>{appInfo?.git_commit_short_id} &middot; {appInfo?.git_commit_id}</div>
+          <div className="break-all text-sm font-medium">{appInfo?.git_commit_short_id} &middot; {appInfo?.git_commit_id}</div>
         </div>
 
         <div className="space-y-1">
           <Label>Git Commit Timestamp</Label>
-          <div>{appInfo?.git_commit_timestamp}</div>
+          <div className="break-all text-sm font-medium">{appInfo?.git_commit_timestamp}</div>
         </div>
 
         <div className="space-y-1">
           <Label>
             Build Timestamp
           </Label>
-          <div>{appInfo?.build_timestamp}</div>
+          <div className="break-all text-sm font-medium">{appInfo?.build_timestamp}</div>
         </div>
 
         <div className="space-y-1">
           <Label>
             Operating System
           </Label>
-          <div>{appInfo?.os_platform} ({appInfo?.os_version})</div>
+          <div className="break-all text-sm font-medium">{appInfo?.os_platform} ({appInfo?.os_version})</div>
         </div>
 
         <div className="space-y-1">
           <Label>
             Artcraft Data Directory
           </Label>
-          <div>{appInfo?.artcraft_root_directory}</div>
+          <div className="break-all text-sm font-medium">{appInfo?.artcraft_root_directory}</div>
         </div>
 
         <div className="space-y-1">
           <Label>
             Downloads Directory
           </Label>
-          <div>{appInfo?.download_directory}</div>
+          <div className="break-all text-sm font-medium">{appInfo?.download_directory}</div>
         </div>
 
       </div>

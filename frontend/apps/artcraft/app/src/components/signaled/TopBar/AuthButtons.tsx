@@ -1,7 +1,6 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import { AUTH_STATUS } from "~/enums";
 import { authentication } from "~/signals";
-import { Button } from "@storyteller/ui-button";
 // import ProfileDropdown from "./ProfileDropdown";
 
 export const AuthButtons = ({
@@ -19,15 +18,14 @@ export const AuthButtons = ({
     return (
       <>
         <div className="flex items-center gap-2">
-          <span className="text-white/20">|</span>
-          <Button
-            className="h-[38px]"
+          <button
+            className="flex h-8 items-center gap-1.5 rounded-[3px] bg-white px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/80"
             onClick={() => {
               loginSignUpPressed();
             }}
           >
             Login / Sign Up
-          </Button>
+          </button>
         </div>
       </>
     );

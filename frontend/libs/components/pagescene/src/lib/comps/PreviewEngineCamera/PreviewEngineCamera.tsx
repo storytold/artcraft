@@ -84,7 +84,7 @@ export const PreviewEngineCamera = () => {
       >
         <div
           className={twMerge(
-            "origin -z-10 flex h-auto w-full flex-wrap items-center gap-1.5 rounded-t-lg bg-ui-panel p-2 text-white",
+            "origin -z-10 flex h-auto w-full flex-wrap items-center gap-1.5 rounded-t-lg bg-ui-controls p-2 text-white",
             camAspect !== CameraAspectRatio.VERTICAL_9_16
               ? "justify-between"
               : "flex-col justify-center",
@@ -134,7 +134,7 @@ export const PreviewEngineCamera = () => {
                   : "aspect-video",
           )}
         >
-          <div className="flex h-full w-full items-center justify-center bg-ui-panel">
+          <div className="flex h-full w-full items-center justify-center bg-ui-controls">
             <LoaderCircleIcon size="3em" className="animate-spin" />
           </div>
           <div className="absolute left-0 top-0 h-full w-full overflow-hidden">

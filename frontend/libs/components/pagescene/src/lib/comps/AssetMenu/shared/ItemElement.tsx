@@ -110,7 +110,7 @@ export const ItemElement = ({ item }: Props) => {
       )}
 
       <div
-        className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-xl border-[3px] border-white/5 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
+        className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-none border border-white/15 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
         onPointerDown={(event) => dragAndDrop.onPointerDown(event, item, editor)}
         onClick={handleClick}
         style={{ cursor: "grab", pointerEvents: "auto" }}

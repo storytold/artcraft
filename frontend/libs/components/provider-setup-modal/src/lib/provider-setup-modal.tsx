@@ -67,37 +67,28 @@ export function ProviderSetupModal({
       onClose={() => {
         setShowModal(false);
       }}
-      className="max-w-2xl max-h-[500px] p-6"
+      className="max-w-xl p-6"
       showClose={true}
     >
-      <div className="flex flex-col items-center justify-center gap-6">
-        <div className="flex flex-col items-center gap-3">
-
-          <br />
-
-          <h1 className="text-3xl font-bold">
-            <WandSparklesIcon
-              
-              className="mr-3 text-[24px]" />
+      <div className="flex flex-col gap-6 text-base-fg">
+        <div className="flex flex-col gap-3">
+          <p className="hud-label flex items-center gap-2 text-base-fg/55">
+            <WandSparklesIcon aria-hidden className="h-3.5 w-3.5" />
+            Connect account
+          </p>
+          <h1 className="font-display text-3xl font-medium leading-[1.05] tracking-[-0.03em]">
             {modalTitle}
           </h1>
-          <div className="text-center">
-            <p className="text-lg font-medium text-white/80">{modalSubTitle}</p>
-
-            <br />
-
-            <p className="text-white/60">{modalDescription}</p>
-
-            <br />
-
-          </div>
+          <p className="text-base font-medium text-base-fg/80">
+            {modalSubTitle}
+          </p>
+          <p className="text-sm leading-relaxed text-base-fg/60">
+            {modalDescription}
+          </p>
         </div>
 
-        {/*<div className="aspect-video w-full overflow-hidden rounded-md">
-          Test
-        </div>*/}
         <Button
-          className="font-semibold"
+          className="h-10 px-4"
           icon={ArrowRightIcon}
           iconFlip={true}
           onClick={() => {

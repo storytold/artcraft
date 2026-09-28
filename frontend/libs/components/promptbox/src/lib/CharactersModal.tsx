@@ -44,6 +44,8 @@ interface PendingCharacter {
 
 const POLL_INTERVAL_MS = 5000;
 const PENDING_STALE_MS = 3 * 60 * 1000;
+const FIELD_LABEL_CLASSES =
+  "mb-0 text-[11px] tracking-[0.12em] text-base-fg/70";
 
 export const CharactersModal = ({
   isOpen,
@@ -320,7 +322,7 @@ const CharacterListView = ({
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]"
+              className="flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden">
                 <div
@@ -332,7 +334,7 @@ const CharacterListView = ({
               </div>
               <div className="px-2 py-1.5 flex justify-center bg-base-fg/[0.04]">
                 <div
-                  className="h-3 w-2/3 rounded bg-base-fg/[0.08]"
+                  className="h-3 w-2/3 bg-base-fg/[0.08]"
                   style={{
                     animation: `charPulse 1.8s ease-in-out ${i * 0.07 + 0.1}s infinite`,
                   }}
@@ -352,7 +354,7 @@ const CharacterListView = ({
           {/* Create New card */}
           <button
             onClick={onCreateClick}
-            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-base-fg/10 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/25 hover:text-base-fg/80"
+            className="flex flex-col items-center justify-center gap-2 overflow-hidden border-2 border-dashed border-base-fg/15 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/30 hover:text-base-fg/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
               <PlusIcon  className="text-lg" />
@@ -364,7 +366,7 @@ const CharacterListView = ({
           {pendingCharacters.map((pending) => (
             <div
               key={`pending-${pending.name}`}
-              className="relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]"
+              className="relative flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
                 {pending.previewUrl ? (
@@ -401,7 +403,7 @@ const CharacterListView = ({
             return (
               <div
                 key={character.token}
-                className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/25 hover:bg-base-fg/10"
+                className="group relative flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/30 hover:bg-base-fg/10"
               >
                 <button
                   onClick={() => onSelectCharacter?.(character)}
@@ -441,7 +443,7 @@ const CharacterListView = ({
                           setPreviewCharacter(character);
                         }}
                         title="View full size"
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                        className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                       >
                         <EyeIcon  className="text-[10px]" />
                       </button>
@@ -453,7 +455,7 @@ const CharacterListView = ({
                             e.stopPropagation();
                             onEditCharacter(character);
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                          className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                         >
                           <PenIcon
                             
@@ -464,7 +466,7 @@ const CharacterListView = ({
                             e.stopPropagation();
                             handleDelete(character);
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                          className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                         >
                           <Trash2Icon
                             
@@ -570,7 +572,7 @@ const EditCharacterView = ({
 
         {/* Avatar preview */}
         {character.maybe_avatar?.cdn_url && (
-          <div className="flex h-56 max-h-56 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-fg/[0.05]">
+          <div className="flex h-56 max-h-56 shrink-0 items-center justify-center overflow-hidden bg-base-fg/[0.05]">
             <img
               src={character.maybe_avatar.cdn_url}
               alt={character.name}
@@ -580,21 +582,26 @@ const EditCharacterView = ({
         )}
 
         {/* Name input */}
-        <div className="flex flex-col">
-          <Label htmlFor="edit-character-name">Name</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="edit-character-name" className={FIELD_LABEL_CLASSES}>
+            Name
+          </Label>
           <Input
             id="edit-character-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Character name"
             autoComplete="off"
-            inputClassName="bg-base-fg/[0.07] hover:border-ui-panel-border"
+            inputClassName="bg-ui-controls text-sm"
           />
         </div>
 
         {/* Description input */}
-        <div className="flex flex-col">
-          <Label htmlFor="edit-character-description">
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="edit-character-description"
+            className={FIELD_LABEL_CLASSES}
+          >
             Description{" "}
             <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
@@ -605,14 +612,14 @@ const EditCharacterView = ({
             placeholder="Description..."
             rows={3}
             autoComplete="off"
-            className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
+            className="w-full resize-none rounded-[3px] border border-ui-panel-border bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/50 outline-none transition-colors focus:border-white focus:!outline-none"
           />
         </div>
       </div>
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2 pt-4">
-        <Button variant="secondary" className="border-none" onClick={onBack}>
+        <Button variant="secondary" onClick={onBack}>
           Cancel
         </Button>
         <Button
@@ -829,8 +836,8 @@ const NewCharacterView = ({
         <div
           ref={dropZoneRef}
           className={twMerge(
-            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-base-fg/20 bg-base-fg/[0.05] transition-colors overflow-hidden",
-            isDragging && "border-blue-400 bg-blue-500/10",
+            "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-base-fg/15 bg-base-fg/[0.05] transition-colors overflow-hidden",
+            isDragging && "border-white/60 bg-white/10",
           )}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
@@ -860,7 +867,7 @@ const NewCharacterView = ({
                   e.stopPropagation();
                   removeImage(0);
                 }}
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
                 <XIcon  className="text-sm" />
               </button>
@@ -880,14 +887,14 @@ const NewCharacterView = ({
               >
                 <button
                   onClick={() => setIsGalleryOpen(true)}
-                  className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
+                  className="flex items-center gap-2 rounded-[3px] border border-base-fg/15 bg-transparent px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:border-base-fg/25 hover:bg-base-fg/[0.07] hover:text-base-fg"
                 >
                   <ImagesIcon  className="text-xs" />
                   Choose from Library
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
+                  className="flex items-center gap-2 rounded-[3px] border border-base-fg/15 bg-transparent px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:border-base-fg/25 hover:bg-base-fg/[0.07] hover:text-base-fg"
                 >
                   <UploadIcon  className="text-xs" />
                   Upload Image
@@ -906,21 +913,26 @@ const NewCharacterView = ({
         />
 
         {/* Name input */}
-        <div className="flex flex-col">
-          <Label htmlFor="character-name">Name</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="character-name" className={FIELD_LABEL_CLASSES}>
+            Name
+          </Label>
           <Input
             id="character-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Character name"
             autoComplete="off"
-            inputClassName="bg-base-fg/[0.07] hover:border-ui-panel-border"
+            inputClassName="bg-ui-controls text-sm"
           />
         </div>
 
         {/* Description input */}
-        <div className="flex flex-col">
-          <Label htmlFor="character-description">
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="character-description"
+            className={FIELD_LABEL_CLASSES}
+          >
             Description{" "}
             <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
@@ -931,14 +943,14 @@ const NewCharacterView = ({
             placeholder="Description..."
             rows={3}
             autoComplete="off"
-            className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
+            className="w-full resize-none rounded-[3px] border border-ui-panel-border bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/50 outline-none transition-colors focus:border-white focus:!outline-none"
           />
         </div>
       </div>
 
       {/* Action buttons — sticky at the bottom */}
       <div className="sticky bottom-0 flex justify-end gap-2 pt-4 pb-1 bg-ui-modal">
-        <Button variant="secondary" className="border-none" onClick={onBack}>
+        <Button variant="secondary" onClick={onBack}>
           Cancel
         </Button>
         <Button

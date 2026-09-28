@@ -133,14 +133,16 @@ export const SettingsModal = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className="max-w-3xl"
+        className="max-w-4xl"
         childPadding={false}
       >
-        <div className="h-[560px]">
+        <div className="h-[600px]">
           <div className="grid h-full grid-cols-12 gap-3">
             <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
               <div className="flex items-center justify-between gap-2.5 py-0.5">
-                <h2 className="text-[18px] font-semibold opacity-80">Settings</h2>
+                <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+                  Settings
+                </h2>
               </div>
               <hr className="my-2 w-full border-ui-panel-border" />
               <div className="space-y-1">
@@ -148,8 +150,10 @@ export const SettingsModal = ({
                   <button
                     key={section.id}
                     className={twMerge(
-                      "h-9 w-full rounded-lg p-2 text-left transition-colors duration-100 hover:bg-[#63636B]/30",
-                      section.id === selectedSection ? "bg-[#63636B]/20" : ""
+                      "h-9 w-full px-2 text-left transition-colors duration-100",
+                      section.id === selectedSection
+                        ? "bg-base-fg/10 text-base-fg"
+                        : "text-base-fg/70 hover:bg-base-fg/[0.06] hover:text-base-fg",
                     )}
                     onClick={() => {
                       gtagEvent("switch_settings_section", {
@@ -168,20 +172,20 @@ export const SettingsModal = ({
             </div>
             <div className="col-span-8 flex h-full flex-col overflow-y-auto relative">
               <div className="w-full border-b border-ui-panel-border py-2.5 ps-0">
-                <h2 className="text-[18px] font-semibold">
+                <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/80">
                   {sections.find((s) => s.id === selectedSection)?.label}
                 </h2>
               </div>
               {experimentalEnabled && selectedSection === "experimental" && (
-                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ui-panel-border bg-ui-modal/95 backdrop-blur px-3 py-2">
-                  <div className="flex items-center gap-2 text-xs opacity-80">
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ui-panel-border bg-ui-modal px-3 py-2">
+                  <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] opacity-80">
                     <FlaskConicalIcon />
                     Experimental features enabled
                   </div>
                   <Button
                     variant="destructive"
                     onClick={() => setIsResetConfirmOpen(true)}
-                    className="px-2 py-1 text-xs"
+                    className="rounded-[3px] px-2 py-1 text-xs"
                   >
                     Reset
                   </Button>

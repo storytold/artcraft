@@ -6,7 +6,6 @@ export const ImageTo3DObject = () => {
       title="Generate 3D Object"
       subtitle="Transform your image into a 3D object with textures."
       variant="object"
-      backgroundImage="/resources/images/floating-cubes.webp"
     />
   );
 };

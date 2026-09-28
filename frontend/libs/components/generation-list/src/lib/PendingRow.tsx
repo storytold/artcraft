@@ -38,9 +38,9 @@ export const PendingRow = memo(function PendingRow({
   const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
-    <div className="group flex items-center gap-3 rounded-lg px-2.5 py-2">
+    <div className="group flex items-center gap-3 px-2.5 py-2">
       {/* Thumbnail placeholder */}
-      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-md bg-white/[0.03] leading-none">
+      <div className="relative size-[100px] shrink-0 overflow-hidden bg-white/[0.03] leading-none">
         <div className="animate-shimmer h-full w-full" />
         <div className="absolute inset-0 flex items-center justify-center">
           <LoaderCircleIcon

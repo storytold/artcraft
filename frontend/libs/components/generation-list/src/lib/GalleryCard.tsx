@@ -1,5 +1,12 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
-import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import {
+  BoxIcon,
+  CheckIcon,
+  EyeIcon,
+  ImageIcon,
+  MusicIcon,
+  VideoIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import {
   getCreatorIconPathForModelId,
@@ -165,7 +172,7 @@ export const GalleryCard = memo(function GalleryCard({
     <div
       role="button"
       tabIndex={0}
-      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : lastViewed ? "ring-2 ring-primary-400/50" : ""}`}
+      className={`group relative block w-full rounded-[3px] bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : lastViewed ? "ring-2 ring-primary-400/50" : ""}`}
       style={outerStyle}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -187,9 +194,7 @@ export const GalleryCard = memo(function GalleryCard({
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
-                <MusicIcon
-                  
-                  className="text-xl text-white/70" />
+                <MusicIcon className="text-xl text-white/70" />
               </div>
             </div>
             {item.fullImage && (
@@ -216,13 +221,13 @@ export const GalleryCard = memo(function GalleryCard({
       {/* Selection checkbox chip (select mode only) */}
       {selectMode && item.fullImage && (
         <div
-          className={`pointer-events-none absolute left-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
+          className={`pointer-events-none absolute left-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-[3px] border transition-colors ${
             selected
               ? "border-primary-400 bg-primary-400 text-white"
               : "border-white/60 bg-black/40 text-transparent"
           }`}
         >
-          <CheckIcon  className="text-[10px]" />
+          <CheckIcon className="text-[10px]" />
         </div>
       )}
 
@@ -230,21 +235,21 @@ export const GalleryCard = memo(function GalleryCard({
           in the lightbox). Top-right so it never collides with the selection
           checkbox chip at top-left. */}
       {lastViewed && (
-        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-[3px] bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
           <EyeIcon />
           Last viewed
         </div>
       )}
 
       {/* Hover overlay with media type + model badges and quick actions */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-lg from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-[3px] from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
-          <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
+          <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
             <DynamicIcon icon={mediaIcon} className="text-[10px]" />
             {mediaLabel}
           </div>
           {modelDisplayName && modelIconPath && (
-            <div className="flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-[10px] text-white/80">
+            <div className="flex items-center gap-1 bg-black/60 px-2 py-1 text-[10px] text-white/80">
               <img
                 src={modelIconPath}
                 alt=""
@@ -256,7 +261,7 @@ export const GalleryCard = memo(function GalleryCard({
         </div>
 
         {actionsSlot && !selectMode && (
-          <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-lg bg-black/60 p-1 backdrop-blur-sm">
+          <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-[3px] bg-black/60 p-1 backdrop-blur-sm">
             {actionsSlot}
           </div>
         )}

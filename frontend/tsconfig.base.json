@@ -132,6 +132,9 @@
       "@storyteller/ui-pricing-modal": [
         "libs/components/pricing-modal/src/index.ts"
       ],
+      "@storyteller/ui-pricing-table": [
+        "libs/components/pricing-table/src/index.ts"
+      ],
       "@storyteller/ui-promptbox": [
         "libs/components/promptbox/src/index.ts"
       ],

@@ -15,12 +15,14 @@ interface ButtonIconSelectProps {
   options: Option[];
   onOptionChange?: (value: string) => void;
   selectedOption?: string;
+  buttonClassName?: string;
 }
 
 export function ButtonIconSelect({
   options,
   onOptionChange,
   selectedOption,
+  buttonClassName,
 }: ButtonIconSelectProps) {
   const [internalSelectedOption, setInternalSelectedOption] = useState<string>(
     selectedOption || options[0].value
@@ -54,7 +56,8 @@ export function ButtonIconSelect({
                 text ? "h-auto w-auto gap-2 px-3 py-1.5" : "w-9",
                 internalSelectedOption === value
                   ? "border-brand-primary bg-brand-primary/20"
-                  : "border-transparent hover:bg-ui-panel/[0.4]"
+                  : "border-transparent hover:bg-ui-panel/[0.4]",
+                buttonClassName,
               )}
               onClick={() => handleOptionChange(value)}
             >
@@ -72,7 +75,8 @@ export function ButtonIconSelect({
               text ? "h-auto w-auto gap-2 px-3 py-1.5" : "w-9",
               internalSelectedOption === value
                 ? "border-brand-primary bg-brand-primary/20"
-                : "border-transparent hover:bg-ui-panel/[0.4]"
+                : "border-transparent hover:bg-ui-panel/[0.4]",
+              buttonClassName,
             )}
             onClick={() => handleOptionChange(value)}
           >

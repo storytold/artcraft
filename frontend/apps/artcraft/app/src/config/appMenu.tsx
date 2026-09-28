@@ -83,98 +83,116 @@ export interface FullAppItem {
 }
 
 // Per-app card palette for the Apps page (webapp-home-style cards). Derived
-// from each app's Tailwind color family so the icon box, its border, and the
-// hover gradient all share a hue. Keyed by app id; falls back to a neutral
-// slate when an id is missing.
+// from each app's Tailwind color family so the icon tile, its border, and the
+// hover state all share a hue. Keyed by app id; falls back to a neutral tone
+// when an id is missing.
 interface AppCardPalette {
-  /** Hover gradient overlay, e.g. "from-blue-500/20 to-blue-500/0". */
+  /** Hover tint for the card, e.g. "from-blue-500/20 to-blue-500/0". Legacy. */
   accent: string;
-  /** Icon box background + border, e.g. "bg-blue-500/20 border-blue-400/30". */
+  /** Icon tile background + border, e.g. "bg-blue-500/20 border-blue-400/40". */
   iconBg: string;
   /** Icon glyph color, e.g. "text-blue-300". */
   iconColor: string;
+  /** Card hover border + background, e.g. "hover:border-blue-400/60 hover:bg-blue-500/10". */
+  hoverStyle: string;
 }
 
 const APP_CARD_PALETTES: Record<string, AppCardPalette> = {
   "text-to-image": {
     accent: "from-blue-500/20 to-blue-500/0",
-    iconBg: "bg-blue-500/20 border-blue-400/30",
+    iconBg: "bg-blue-500/20 border-blue-400/40",
     iconColor: "text-blue-300",
+    hoverStyle: "hover:border-blue-400/60 hover:bg-blue-500/10",
   },
   "image-to-video": {
     accent: "from-amber-500/20 to-amber-500/0",
-    iconBg: "bg-amber-500/20 border-amber-400/30",
+    iconBg: "bg-amber-500/20 border-amber-400/40",
     iconColor: "text-amber-300",
+    hoverStyle: "hover:border-amber-400/60 hover:bg-amber-500/10",
   },
   "create-audio": {
     accent: "from-pink-500/20 to-pink-500/0",
-    iconBg: "bg-pink-500/20 border-pink-400/30",
+    iconBg: "bg-pink-500/20 border-pink-400/40",
     iconColor: "text-pink-300",
+    hoverStyle: "hover:border-pink-400/60 hover:bg-pink-500/10",
   },
   "image-to-3d-object": {
     accent: "from-emerald-500/20 to-emerald-500/0",
-    iconBg: "bg-emerald-500/20 border-emerald-400/30",
+    iconBg: "bg-emerald-500/20 border-emerald-400/40",
     iconColor: "text-emerald-300",
+    hoverStyle: "hover:border-emerald-400/60 hover:bg-emerald-500/10",
   },
   "image-to-3d-world": {
     accent: "from-sky-500/20 to-sky-500/0",
-    iconBg: "bg-sky-500/20 border-sky-400/30",
+    iconBg: "bg-sky-500/20 border-sky-400/40",
     iconColor: "text-sky-300",
+    hoverStyle: "hover:border-sky-400/60 hover:bg-sky-500/10",
   },
   angles: {
     accent: "from-lime-500/20 to-lime-500/0",
-    iconBg: "bg-lime-500/20 border-lime-400/30",
+    iconBg: "bg-lime-500/20 border-lime-400/40",
     iconColor: "text-lime-300",
+    hoverStyle: "hover:border-lime-400/60 hover:bg-lime-500/10",
   },
   storyboard: {
     accent: "from-fuchsia-500/20 to-fuchsia-500/0",
-    iconBg: "bg-fuchsia-500/20 border-fuchsia-400/30",
+    iconBg: "bg-fuchsia-500/20 border-fuchsia-400/40",
     iconColor: "text-fuchsia-300",
+    hoverStyle: "hover:border-fuchsia-400/60 hover:bg-fuchsia-500/10",
   },
   "2d-canvas": {
     accent: "from-sky-500/20 to-sky-500/0",
-    iconBg: "bg-sky-500/20 border-sky-400/30",
+    iconBg: "bg-sky-500/20 border-sky-400/40",
     iconColor: "text-sky-300",
+    hoverStyle: "hover:border-sky-400/60 hover:bg-sky-500/10",
   },
   "3d-editor": {
     accent: "from-emerald-500/20 to-emerald-500/0",
-    iconBg: "bg-emerald-500/20 border-emerald-400/30",
+    iconBg: "bg-emerald-500/20 border-emerald-400/40",
     iconColor: "text-emerald-300",
+    hoverStyle: "hover:border-emerald-400/60 hover:bg-emerald-500/10",
   },
   "edit-image": {
     accent: "from-purple-500/20 to-purple-500/0",
-    iconBg: "bg-purple-500/20 border-purple-400/30",
+    iconBg: "bg-purple-500/20 border-purple-400/40",
     iconColor: "text-purple-300",
+    hoverStyle: "hover:border-purple-400/60 hover:bg-purple-500/10",
   },
   "remove-background": {
     accent: "from-violet-500/20 to-violet-500/0",
-    iconBg: "bg-violet-500/20 border-violet-400/30",
+    iconBg: "bg-violet-500/20 border-violet-400/40",
     iconColor: "text-violet-300",
+    hoverStyle: "hover:border-violet-400/60 hover:bg-violet-500/10",
   },
   "video-frame-extractor": {
     accent: "from-rose-500/20 to-rose-500/0",
-    iconBg: "bg-rose-500/20 border-rose-400/30",
+    iconBg: "bg-rose-500/20 border-rose-400/40",
     iconColor: "text-rose-300",
+    hoverStyle: "hover:border-rose-400/60 hover:bg-rose-500/10",
   },
   "background-change": {
     accent: "from-orange-500/20 to-orange-500/0",
-    iconBg: "bg-orange-500/20 border-orange-400/30",
+    iconBg: "bg-orange-500/20 border-orange-400/40",
     iconColor: "text-orange-300",
+    hoverStyle: "hover:border-orange-400/60 hover:bg-orange-500/10",
   },
   "video-editor": {
     accent: "from-teal-500/20 to-teal-500/0",
-    iconBg: "bg-teal-500/20 border-teal-400/30",
+    iconBg: "bg-teal-500/20 border-teal-400/40",
     iconColor: "text-teal-300",
+    hoverStyle: "hover:border-teal-400/60 hover:bg-teal-500/10",
   },
   "video-watermark-removal": {
     accent: "from-cyan-500/20 to-cyan-500/0",
-    iconBg: "bg-cyan-500/20 border-cyan-400/30",
+    iconBg: "bg-cyan-500/20 border-cyan-400/40",
     iconColor: "text-cyan-300",
+    hoverStyle: "hover:border-cyan-400/60 hover:bg-cyan-500/10",
   },
   "image-watermark-removal": {
     accent: "from-indigo-500/20 to-indigo-500/0",
-    iconBg: "bg-indigo-500/20 border-indigo-400/30",
+    iconBg: "bg-indigo-500/20 border-indigo-400/40",
     iconColor: "text-indigo-300",
+    hoverStyle: "hover:border-indigo-400/60 hover:bg-indigo-500/10",
   },
 };
 
@@ -182,6 +200,7 @@ const FALLBACK_APP_CARD_PALETTE: AppCardPalette = {
   accent: "from-white/10 to-white/0",
   iconBg: "bg-ui-controls border-ui-controls-border",
   iconColor: "text-base-fg",
+  hoverStyle: "hover:border-white/30 hover:bg-white/10",
 };
 
 export const getAppCardPalette = (id: string): AppCardPalette =>
@@ -387,13 +406,13 @@ export const useEditApps = (): FullAppItem[] => {
 export const getBadgeStyles = (badge?: string) => {
   switch (badge) {
     case "NEW":
-      return "bg-teal-600 text-white";
+      return "border-purple-400/40 text-purple-300";
     case "BEST":
-      return "bg-primary text-white";
+      return "border-primary/30 text-ui-accent-ink";
     case "SOON":
-      return "bg-gray-600 text-white";
+      return "border-white/20 text-base-fg/50";
     case "BETA":
-      return "bg-amber-500 text-white";
+      return "border-amber-400/40 text-amber-300";
     default:
       return "";
   }

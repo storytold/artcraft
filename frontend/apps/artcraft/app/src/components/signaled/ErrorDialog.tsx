@@ -20,14 +20,14 @@ export function ErrorDialog() {
     <Modal
       title={errorDialogTitle}
       titleIcon={TriangleAlertIcon}
-      titleIconClassName="text-brand-primary"
+      titleIconClassName="text-red-400"
       isOpen={showErrorDialog}
       onClose={() => setShowErrorDialog(false)}
       showClose={false}
     >
       <div>
         {errorDialogMessage}
-        <div className="flex justify-end">
+        <div className="mt-4 flex justify-end">
           <Button
             type="button"
             onClick={() => setShowErrorDialog(false)}

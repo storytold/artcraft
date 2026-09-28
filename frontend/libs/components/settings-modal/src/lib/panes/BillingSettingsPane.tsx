@@ -48,24 +48,22 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
   return (
     <>
-      <div className="space-y-4 text-base-fg">
+      <div className="flex flex-col gap-0.5 pt-3 text-base-fg">
         <Label>Support ArtCraft</Label>
-        <p className="text-sm opacity-70">
+        <p className="text-xs opacity-70">
           You do not have to purchase anything from us to use ArtCraft, but you
           can support ArtCraft development by subscribing or buying credits.
         </p>
       </div>
 
-      <br />
+      <hr className="my-5 border-ui-panel-border" />
 
       <div className="space-y-4 text-base-fg">
         <div className="space-y-2">
           <Label>Current ArtCraft Plan</Label>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xl font-semibold ">
-              <StarIcon
-                
-                className="text-[#C03FFF] text-lg" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 font-display text-2xl font-medium tracking-[-0.02em]">
+              <StarIcon className="text-lg text-base-fg/70" />
               {currentPlanDetails.name}
             </div>
             <div className="flex gap-2">
@@ -73,7 +71,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
               <Button
                 variant="primary"
-                className="h-[30px]"
+                className="h-9 shrink-0 px-4"
                 onClick={() => toggleSubscriptionModal()}
               >
                 {changeOrUpgradePlanButtonLabel}
@@ -91,14 +89,14 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
         */}
 
         {subscriptionEndAt && (
-          <div className="flex items-center gap-2 text-white/50">
+          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/50">
             <InfoIcon />
             Subscription ends on {subscriptionEndAt}
           </div>
         )}
 
         {nextBillAt && (
-          <div className="flex items-center gap-2 text-white/50">
+          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/50">
             <InfoIcon />
             Next payment on {nextBillAt}
           </div>
@@ -110,12 +108,12 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
           <Label htmlFor="credits" className="flex items-center gap-2">
             Your ArtCraft credit balance
           </Label>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <CoinsIcon
-                
-                className="text-primary text-lg" />
-              <span className="text-2xl font-bold">{sumTotalCredits}</span>
+              <CoinsIcon className="text-lg text-base-fg/70" />
+              <span className="font-display text-2xl font-medium tracking-[-0.02em]">
+                {sumTotalCredits}
+              </span>
             </div>
             <div className="flex gap-2">
               <BuyCreditsButton />
@@ -135,7 +133,7 @@ const CancelPlanButton = () => {
   };
 
   return (
-    <Button variant="secondary" className="h-[30px]" onClick={handleClick}>
+    <Button variant="secondary" className="h-9 shrink-0 px-3" onClick={handleClick}>
       Cancel plan
     </Button>
   );
@@ -147,7 +145,7 @@ const BuyCreditsButton = () => {
   return (
     <Button
       variant="primary"
-      className="h-[30px]"
+      className="h-9 shrink-0 px-4"
       onClick={() => toggleCreditsModal()}
     >
       Buy credits
@@ -157,14 +155,19 @@ const BuyCreditsButton = () => {
 
 const CreditsTally = ({ creditsStore }: { creditsStore: CreditsState }) => {
   return (
-    <div className="flex pl-5 pt-3">
-      <ul className="list-disc">
-        <li>
-          {" "}
-          {creditsStore.monthlyCredits} monthly credits (refilled monthly){" "}
-        </li>
-        <li> {creditsStore.bankedCredits} purchased credits </li>
-      </ul>
-    </div>
+    <ul className="mt-4 divide-y divide-ui-panel-border border border-ui-panel-border">
+      <li className="flex items-baseline justify-between gap-3 px-3 py-2">
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
+          Monthly credits (refilled monthly)
+        </span>
+        <span className="text-sm font-medium">{creditsStore.monthlyCredits}</span>
+      </li>
+      <li className="flex items-baseline justify-between gap-3 px-3 py-2">
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
+          Purchased credits
+        </span>
+        <span className="text-sm font-medium">{creditsStore.bankedCredits}</span>
+      </li>
+    </ul>
   );
 };

@@ -14,11 +14,14 @@ export const Label = ({
   ...rest
 }: LabelProps) => (
   <label
-    className={twMerge("text-base-fg mb-1.5 text-[15px] font-medium", className)}
+    className={twMerge(
+      "text-base-fg/60 mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.25em]",
+      className,
+    )}
     {...rest}
   >
     {children}
-    {required && <span className="ml-0.5 text-[#ff6467]">*</span>}
+    {required && <span className="ml-0.5 text-red-400">*</span>}
   </label>
 );
 

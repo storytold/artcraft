@@ -23,28 +23,35 @@ export const AppsIndexPage = () => {
     // flush against the right edge; horizontal padding lives on the inner
     // wrapper instead.
     <div className="fixed inset-0 overflow-y-auto bg-ui-background pt-[56px] text-base-fg">
-      <main className="mx-auto max-w-6xl px-6 pb-20 pt-12 sm:pt-20">
-        <h1 className="mx-auto text-center text-4xl font-semibold tracking-tight sm:text-6xl">
-          What will you <span className="text-primary">craft</span> today?
+      <main className="mx-auto w-full max-w-6xl px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
+        <p className="hud-label mb-4 text-ui-accent-ink">
+          Your creative workspace
+        </p>
+        <h1 className="max-w-3xl font-display text-3xl leading-tight tracking-tight sm:text-5xl">
+          What will you <span className="text-ui-accent-ink">craft</span> today?
         </h1>
-        <p className="mx-auto mt-3 max-w-xl text-center text-lg text-base-fg/55">
-          Every tool in your toolbox - pick one and start creating.
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-base-fg/70 sm:text-base">
+          Start with an idea. Choose a tool to bring it to life.
         </p>
 
-        <div className="mt-12 space-y-10">
-          {categories.map((category) => (
-            <section key={category.title}>
-              <h2 className="mb-4 text-sm font-semibold text-base-fg/85">
-                {category.title}
-              </h2>
-              <div className="grid auto-rows-min gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {category.apps.map((app) => (
-                  <AppCard key={app.id} app={app} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        {categories.map((category, index) => (
+          <section
+            key={category.title}
+            className={twMerge(
+              "border-t border-ui-border pt-6",
+              index === 0 ? "mt-8 sm:mt-10" : "mt-10",
+            )}
+          >
+            <h2 className="hud-label mb-4 text-base-fg/70">
+              {category.title}
+            </h2>
+            <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {category.apps.map((app) => (
+                <AppCard key={app.id} app={app} />
+              ))}
+            </div>
+          </section>
+        ))}
       </main>
     </div>
   );
@@ -59,27 +66,14 @@ function AppCard({ app }: { app: FullAppItem }) {
       onClick={() => goToApp(app.action)}
       disabled={!enabled}
       className={twMerge(
-        "group relative block overflow-hidden rounded-2xl bg-ui-controls/50 p-5 text-left transition-colors",
-        enabled
-          ? "cursor-pointer hover:bg-ui-controls"
-          : "cursor-default opacity-60",
+        "group relative flex h-full rounded-[3px] border border-ui-border bg-white/5 p-5 text-left transition-colors duration-150 focus-visible:border-primary",
+        enabled ? twMerge("cursor-pointer", palette.hoverStyle) : "cursor-default opacity-60",
       )}
     >
-      {/* Hover accent — gradient wash matching the app's hue. */}
-      {enabled && (
-        <div
-          aria-hidden
-          className={twMerge(
-            "pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br opacity-0 transition-opacity group-hover:opacity-100",
-            palette.accent,
-          )}
-        />
-      )}
-
-      <div className="relative flex items-start gap-4">
+      <div className="relative flex w-full items-start gap-4">
         <div
           className={twMerge(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border",
+            "flex h-10 w-10 shrink-0 items-center justify-center border",
             palette.iconBg,
             palette.iconColor,
           )}
@@ -88,14 +82,14 @@ function AppCard({ app }: { app: FullAppItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <h3 className="truncate text-base font-semibold text-base-fg">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h3 className="text-base font-bold uppercase tracking-tight text-ui-ink">
                 {app.label}
               </h3>
               {app.badge && (
                 <span
                   className={twMerge(
-                    "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wider",
+                    "shrink-0 border px-1.5 py-1 font-mono text-[9px] font-medium leading-none tracking-wider",
                     getBadgeStyles(app.badge),
                   )}
                 >
@@ -104,12 +98,12 @@ function AppCard({ app }: { app: FullAppItem }) {
               )}
             </div>
             {enabled && (
-              <ArrowRightIcon
-                
-                className="text-sm text-base-fg/40 transition-all group-hover:translate-x-0.5 group-hover:text-base-fg/70" />
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] border border-white/15 text-white/40 transition-colors duration-150 group-hover:border-white/40 group-hover:text-white">
+                <ArrowRightIcon className="text-xs" />
+              </span>
             )}
           </div>
-          <p className="mt-1 text-sm leading-snug text-base-fg/55">
+          <p className="mt-2 text-sm leading-relaxed text-base-fg/70">
             {app.description}
           </p>
         </div>

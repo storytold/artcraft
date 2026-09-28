@@ -2,7 +2,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
-import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
@@ -544,7 +544,7 @@ export function LightboxModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className="rounded-xl bg-ui-modal h-[760px] w-[1200px] max-w-screen min-w-[1000px] min-h-[600px] p-4"
+        className="rounded-none border-white/15 bg-ui-modal h-[760px] w-[1200px] max-w-screen min-w-[1000px] min-h-[600px] p-4"
         draggable
         allowBackgroundInteraction={true}
         showClose={true}
@@ -555,15 +555,15 @@ export function LightboxModal({
       >
         {/* Invisible drag handle strip at the very top for moving */}
         <Modal.DragHandle>
-          <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+          <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move" />
         </Modal.DragHandle>
 
         {/* content grid */}
         <div className="flex h-full gap-4">
           {/* image panel - flexible width */}
-          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
+          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black">
             {!selectedImageUrl ? (
-              <div className="flex h-full w-full items-center justify-center bg-black/30">
+              <div className="flex h-full w-full items-center justify-center bg-black">
                 <span className="text-base-fg/60">Image not available</span>
               </div>
             ) : mediaClass === "dimensional" ||
@@ -601,8 +601,8 @@ export function LightboxModal({
               </video>
             ) : mediaClass === "audio" ? (
               <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
-                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-10 sm:px-6">
-                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                <div className="w-full max-w-xl border border-white/15 bg-ui-controls px-4 py-10 sm:px-6">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-white/15 bg-white/10">
                     <MusicIcon
                       
                       className="text-2xl text-white/70" />
@@ -625,7 +625,7 @@ export function LightboxModal({
                         className="embla__slide flex-[0_0_100%]"
                         key={`${url}-${idx}`}
                       >
-                        <div className="relative flex h-full items-center justify-center overflow-hidden rounded-lg bg-black/20">
+                        <div className="relative flex h-full items-center justify-center overflow-hidden bg-black">
                           <img
                             data-lightbox-modal="true"
                             src={addCorsParam(url) || url}
@@ -660,12 +660,12 @@ export function LightboxModal({
                 </div>
 
                 {effectiveImageUrls.length > 1 && (
-                  <div className="mt-3 px-2">
+                  <div className="mt-3 px-2 pb-2">
                     <div
                       className="embla-thumbs overflow-hidden"
                       ref={emblaThumbsRef}
                     >
-                      <div className="embla-thumbs__container flex gap-2">
+                      <div className="embla-thumbs__container flex justify-center gap-2">
                         {effectiveImageUrls.map((url, idx) => {
                           const isSelected = idx === selectedIndex;
                           return (
@@ -674,9 +674,9 @@ export function LightboxModal({
                               type="button"
                               onClick={() => onThumbClick(idx)}
                               className={twMerge(
-                                "embla-thumbs__slide relative h-20 w-20 flex-[0_0_5rem] overflow-hidden rounded-md border-2 transition-all",
+                                "embla-thumbs__slide relative h-16 w-16 flex-[0_0_4rem] overflow-hidden border transition-all",
                                 isSelected
-                                  ? "border-brand-primary-400 opacity-100"
+                                  ? "border-white opacity-100"
                                   : "border-transparent opacity-60 hover:border-white/40 hover:opacity-100",
                               )}
                             >
@@ -701,7 +701,7 @@ export function LightboxModal({
               mediaClass !== "mesh" &&
               mediaClass !== "splat" &&
               mediaClass !== "audio" && (
-                <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
+                <div className="absolute inset-0 bg-black flex items-center justify-center">
                   <LoadingSpinner className="h-12 w-12 text-base-fg" />
                 </div>
               )}
@@ -713,7 +713,7 @@ export function LightboxModal({
                   e.stopPropagation();
                   onNavigatePrev();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
                 aria-label="Previous item"
               >
                 <ChevronLeftIcon  className="text-lg" />
@@ -725,7 +725,7 @@ export function LightboxModal({
                   e.stopPropagation();
                   onNavigateNext();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
                 aria-label="Next item"
               >
                 <ChevronRightIcon  className="text-lg" />
@@ -737,7 +737,7 @@ export function LightboxModal({
           <div className="flex h-full w-[280px] shrink-0 flex-col">
             <div className="flex-1 overflow-y-auto space-y-5 text-base-fg min-h-0 pb-2">
               {creator ? (
-                <div className="sticky top-0 z-10 flex items-center gap-2.5 bg-ui-modal pb-3 pr-10 border-b border-white/5">
+                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-20 border-b border-white/10">
                   {creator.core_info ? (
                     <Gravatar
                       size={36}
@@ -747,10 +747,10 @@ export function LightboxModal({
                       backgroundIndex={
                         creator.core_info.default_avatar.color_index
                       }
-                      className="rounded-xl border-white/10"
+                      className="rounded-none border-white/15"
                     />
                   ) : (
-                    <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/10 text-white/50 border border-white/5">
+                    <div className="h-9 w-9 shrink-0 flex items-center justify-center bg-white/10 text-white/50 border border-white/15">
                       <UserIcon />
                     </div>
                   )}
@@ -758,27 +758,28 @@ export function LightboxModal({
                     <span className="text-base-fg text-sm font-semibold leading-none truncate">
                       {creator.display_name}
                     </span>
-                    <span className="text-base-fg/60 text-xs font-medium">
+                    <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       Author
                     </span>
                   </div>
                 </div>
               ) : promptLoading ? (
-                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-10 border-b border-white/5 animate-pulse">
-                  <div className="h-9 w-9 shrink-0 rounded-xl bg-white/10" />
+                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-20 border-b border-white/10 animate-pulse">
+                  <div className="h-9 w-9 shrink-0 bg-white/10" />
                   <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                    <div className="h-3.5 w-24 rounded bg-white/10" />
-                    <div className="h-3 w-12 rounded bg-white/10" />
+                    <div className="h-3.5 w-24 bg-white/10" />
+                    <div className="h-3 w-12 bg-white/10" />
                   </div>
                 </div>
               ) : null}
               {(hasPromptToken || promptLoading) && (
                 <>
                   {/* Prompt */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium text-base-fg/90">
-                        Prompt
+                      <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+                        <PencilIcon />
+                        <span>Prompt</span>
                       </div>
                       {!promptLoading && prompt && (
                         <button
@@ -814,16 +815,13 @@ export function LightboxModal({
                       )}
                     </div>
                     <div
-                      className="text-sm text-base-fg break-words p-3 rounded-lg leading-relaxed"
-                      style={{
-                        background: "rgb(var(--st-controls-rgb) / 0.20)",
-                      }}
+                      className="text-sm text-base-fg/90 break-words px-4 py-3 bg-black/20 leading-relaxed border border-white/10"
                     >
                       {promptLoading ? (
                         <div className="animate-pulse space-y-2">
-                          <div className="h-3 w-full rounded bg-white/10" />
-                          <div className="h-3 w-4/5 rounded bg-white/10" />
-                          <div className="h-3 w-3/5 rounded bg-white/10" />
+                          <div className="h-3 w-full bg-white/10" />
+                          <div className="h-3 w-4/5 bg-white/10" />
+                          <div className="h-3 w-3/5 bg-white/10" />
                         </div>
                       ) : (
                         <div
@@ -877,30 +875,25 @@ export function LightboxModal({
                     /* Skeleton placeholders while fetching metadata */
                     <>
                       {/* Reference Images skeleton */}
-                      <div className="space-y-1.5 animate-pulse">
-                        <div className="h-3.5 w-28 rounded bg-white/10" />
+                      <div className="space-y-2 animate-pulse">
+                        <div className="h-3.5 w-28 bg-white/10" />
                         <div className="flex gap-1.5">
-                          <div className="h-12 w-12 rounded-lg bg-white/10" />
-                          <div className="h-12 w-12 rounded-lg bg-white/10" />
-                          <div className="h-12 w-12 rounded-lg bg-white/10" />
+                          <div className="h-12 w-12 bg-white/10" />
+                          <div className="h-12 w-12 bg-white/10" />
+                          <div className="h-12 w-12 bg-white/10" />
                         </div>
                       </div>
                       {/* Information skeleton */}
-                      <div className="space-y-1.5 animate-pulse">
-                        <div className="h-3.5 w-24 rounded bg-white/10" />
-                        <div
-                          className="flex flex-col rounded-lg border border-ui-panel-border overflow-hidden"
-                          style={{
-                            background: "rgb(var(--st-controls-rgb) / 0.20)",
-                          }}
-                        >
+                      <div className="space-y-2 animate-pulse">
+                        <div className="h-3.5 w-24 bg-white/10" />
+                        <div className="flex flex-col bg-black/20 border border-white/10 overflow-hidden">
                           {Array.from({ length: 5 }).map((_, i) => (
                             <div
                               key={i}
-                              className="flex items-center justify-between py-2.5 px-3 border-b border-white/5 last:border-0"
+                              className="flex items-center justify-between py-2.5 px-3 border-b border-white/10 last:border-0"
                             >
-                              <div className="h-3.5 w-16 rounded bg-white/10" />
-                              <div className="h-3.5 w-24 rounded bg-white/10" />
+                              <div className="h-3.5 w-16 bg-white/10" />
+                              <div className="h-3.5 w-24 bg-white/10" />
                             </div>
                           ))}
                         </div>
@@ -909,9 +902,10 @@ export function LightboxModal({
                   ) : (
                     <>
                       {contextImages && contextImages.length > 0 && (
-                        <div className="space-y-1.5">
-                          <div className="text-sm font-medium text-base-fg/90">
-                            Reference Media
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+                            <ImageIcon />
+                            <span>Reference Media</span>
                           </div>
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
@@ -936,7 +930,7 @@ export function LightboxModal({
                                     <div className="flex flex-col gap-1.5 min-w-[100px]">
                                       {!isAudio && !isVideoRef && (
                                         <button
-                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
+                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setRefPreviewUrl(fullSize);
@@ -950,7 +944,7 @@ export function LightboxModal({
                                       )}
                                       {onNavigateToMedia && (
                                         <button
-                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
+                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onNavigateToMedia(
@@ -968,7 +962,7 @@ export function LightboxModal({
                                   }
                                 >
                                   <div
-                                    className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer"
+                                    className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
                                     onClick={() => {
                                       if (isAudio) {
                                         handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url);
@@ -1045,7 +1039,7 @@ export function LightboxModal({
 
             {/* buttons with spacing */}
             {actionUrl && (
-              <div className="mt-4 grid grid-cols-2 gap-1.5">
+              <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
                 {onRecreateClicked &&
                   hasPromptToken &&
                   promptData &&
@@ -1241,7 +1235,7 @@ export function LightboxModal({
                 {selectedMediaToken && onDeleteClicked && (
                   <Button
                     icon={Trash2Icon}
-                    className="w-full py-1.5 text-[13px]"
+                    className="w-full border border-red-500/20 bg-red-500/10 py-1.5 text-[13px] text-red-500 hover:bg-red-500/20"
                     variant="destructive"
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -1262,7 +1256,7 @@ export function LightboxModal({
         <Modal
           isOpen={true}
           onClose={() => setRefPreviewUrl(null)}
-          className="rounded-xl bg-ui-modal w-auto h-auto max-w-[75vw] max-h-[75vh] p-4"
+          className="rounded-none border-white/15 bg-ui-modal w-auto h-auto max-w-[75vw] max-h-[75vh] p-4"
           draggable
           allowBackgroundInteraction={true}
           showClose={true}
@@ -1272,9 +1266,9 @@ export function LightboxModal({
           expandable={false}
         >
           <Modal.DragHandle>
-            <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+            <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move" />
           </Modal.DragHandle>
-          <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-black/30">
+          <div className="relative flex items-center justify-center overflow-hidden bg-black">
             <img
               src={addCorsParam(refPreviewUrl) || refPreviewUrl}
               alt="Reference preview"
@@ -1323,12 +1317,12 @@ function InfoSection({
   if (!hasAnyInfo) return null;
 
   return (
-    <div className="space-y-1.5">
-      <div className="text-sm font-medium text-base-fg/90">Information</div>
-      <div
-        className="flex flex-col rounded-lg border border-ui-panel-border overflow-hidden"
-        style={{ background: "rgb(var(--st-controls-rgb) / 0.20)" }}
-      >
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+        <InfoIcon />
+        <span>Information</span>
+      </div>
+      <div className="flex flex-col bg-black/20 border border-white/10 overflow-hidden">
         {modelType && (
           <InfoRow
             label="Model"
@@ -1386,9 +1380,11 @@ function InfoSection({
 
 function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 border-b border-white/5 last:border-0">
-      <span className="text-sm text-base-fg/70 font-medium">{label}</span>
-      <span className="text-sm text-base-fg flex items-center gap-2">
+    <div className="flex items-start justify-between gap-4 px-3 py-2.5 border-b border-white/10 last:border-0">
+      <span className="shrink-0 pt-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+        {label}
+      </span>
+      <span className="min-w-0 text-right text-sm text-base-fg font-medium flex items-center justify-end gap-2">
         {value}
       </span>
     </div>

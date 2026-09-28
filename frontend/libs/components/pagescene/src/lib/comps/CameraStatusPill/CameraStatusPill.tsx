@@ -1,11 +1,13 @@
 import { useContext } from "react";
 import { MoveIcon, VideoIcon } from "lucide-react";
-import { DynamicIcon } from "@storyteller/icons";
+import { Button } from "@storyteller/ui-button";
+import { twMerge } from "tailwind-merge";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { EngineContext } from "../../contexts/EngineContext";
 import { toggleCameraView } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { EditorStates } from "../../enums";
+import { TOOLBAR_BUTTON_CLASS_NAME } from "../toolbarStyles";
 
 // Small status pill (top-left) showing which camera the viewport is driving:
 // the free "Viewport" camera vs looking through a render camera. Clicking it
@@ -28,21 +30,19 @@ export const CameraStatusPill = () => {
       position="bottom"
       delay={300}
     >
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        icon={inCameraView ? VideoIcon : MoveIcon}
+        aria-pressed={inCameraView}
         onClick={() => editor && toggleCameraView(editor)}
-        className={
-          inCameraView
-            ? "flex h-[34px] items-center gap-2 rounded-full bg-brand-primary px-3 text-xs font-medium text-white shadow-xl transition-all duration-200"
-            : "glass glass-no-hover flex h-[34px] items-center gap-2 rounded-full px-3 text-xs font-medium text-base-fg/70 shadow-xl transition-all duration-200 hover:text-base-fg"
-        }
+        className={twMerge(
+          TOOLBAR_BUTTON_CLASS_NAME,
+          inCameraView && "border-white/30 bg-white/10",
+        )}
       >
-        <DynamicIcon
-          icon={inCameraView ? VideoIcon : MoveIcon}
-          className="h-3 w-3"
-        />
         {inCameraView ? renderCameraLabel : "Viewport"}
-      </button>
+      </Button>
     </Tooltip>
   );
 };

@@ -57,15 +57,15 @@ export function Cheatsheet({
       <div
         data-keybinds-cheatsheet
         className={twMerge(
-          "max-h-[80%] w-[min(680px,90%)] overflow-auto rounded-xl border border-white/15 bg-black/70 p-6 text-white/90 shadow-2xl backdrop-blur-sm",
+          "max-h-[80%] w-[min(680px,90%)] overflow-auto rounded-none border border-white/15 bg-ui-panel/95 p-6 text-white/90",
           pinned && "pointer-events-auto",
         )}
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs uppercase tracking-widest text-white/50">
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">
             Keyboard shortcuts
           </span>
-          <span className="text-xs capitalize text-white/40">
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
             {selectedPreset} preset
           </span>
         </div>
@@ -75,7 +75,7 @@ export function Cheatsheet({
             if (!rows?.length) return null;
             return (
               <div key={group}>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/60">
+                <div className="mb-2 font-mono text-[11px] font-medium uppercase tracking-[0.13em] text-white/45">
                   {group}
                 </div>
                 <ul className="flex flex-col gap-1.5">
@@ -94,7 +94,7 @@ export function Cheatsheet({
           })}
         </div>
         {pinned && (
-          <div className="mt-5 border-t border-white/10 pt-3 text-center text-xs text-white/40">
+          <div className="mt-5 border-t border-white/15 pt-3 text-center font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
             Press Esc or click outside to close
           </div>
         )}

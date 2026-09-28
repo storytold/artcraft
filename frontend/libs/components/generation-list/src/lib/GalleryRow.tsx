@@ -1,5 +1,13 @@
 import { memo, useCallback, type ReactNode } from "react";
-import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
+import {
+  BoxIcon,
+  CheckIcon,
+  EyeIcon,
+  ImageIcon,
+  MusicIcon,
+  PlayIcon,
+  VideoIcon,
+} from "lucide-react";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -54,7 +62,13 @@ export const GalleryRow = memo(function GalleryRow({
       : isAudio
         ? MusicIcon
         : ImageIcon;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
+  const mediaLabel = isVideo
+    ? "Video"
+    : is3D
+      ? "3D"
+      : isAudio
+        ? "Audio"
+        : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
   const modelDisplayName = effectiveModelId
@@ -90,23 +104,23 @@ export const GalleryRow = memo(function GalleryRow({
       tabIndex={0}
       onClick={handleRowClick}
       onKeyDown={handleRowKeyDown}
-      className={`group flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60 ${selected ? "bg-primary-400/10" : ""}`}
+      className={`group flex cursor-pointer items-center gap-3 rounded-[3px] px-2.5 py-2 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60 ${selected ? "bg-primary-400/10" : ""}`}
     >
       {/* Selection checkbox (select mode only) */}
       {selectMode && (
         <div
-          className={`pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+          className={`pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border transition-colors ${
             selected
               ? "border-primary-400 bg-primary-400 text-white"
               : "border-white/60 bg-black/40 text-transparent"
           } ${item.fullImage ? "" : "invisible"}`}
         >
-          <CheckIcon  className="text-[10px]" />
+          <CheckIcon className="text-[10px]" />
         </div>
       )}
 
       {/* Thumbnail */}
-      <div className={`relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none ${lastViewed ? "ring-2 ring-primary-400/50" : ""}`}>
+      <div className={`relative size-[100px] shrink-0 overflow-hidden bg-ui-controls/40 leading-none ${lastViewed ? "ring-2 ring-primary-400/50" : ""}`}>
         <GalleryThumbnail
           thumbnail={item.thumbnail}
           stillThumbnail={item.stillThumbnail}
@@ -119,9 +133,7 @@ export const GalleryRow = memo(function GalleryRow({
         {isVideo && item.thumbnail && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-              <PlayIcon
-                
-                className="ml-0.5 text-[9px] text-white/90" />
+              <PlayIcon className="ml-0.5 text-[9px] text-white/90" />
             </span>
           </div>
         )}
@@ -138,7 +150,7 @@ export const GalleryRow = memo(function GalleryRow({
       {/* Title + model / media meta */}
       <div className="min-w-0 flex-1">
         {loading ? (
-          <div className="relative h-4 w-2/3 max-w-[280px] overflow-hidden rounded bg-white/[0.06]">
+          <div className="relative h-4 w-2/3 max-w-[280px] overflow-hidden bg-white/[0.06]">
             <div className="animate-shimmer absolute inset-0" />
           </div>
         ) : (
@@ -155,7 +167,7 @@ export const GalleryRow = memo(function GalleryRow({
           </div>
         )}
         {isAudio && item.fullImage && (
-          <div className="mt-1.5 max-w-md rounded-md bg-white/[0.04]">
+          <div className="mt-1.5 max-w-md bg-white/[0.04]">
             <WaveformAudioPlayer
               src={item.fullImage}
               durationMillis={item.durationMillis}

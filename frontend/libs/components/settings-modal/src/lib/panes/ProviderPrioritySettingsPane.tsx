@@ -64,13 +64,13 @@ const SortableItem = ({
       {...attributes}
       {...listeners}
       className={`
-        flex items-center justify-between rounded-lg p-3 transition-colors duration-200 border border-ui-controls-border bg-ui-controls/60 text-base-fg
+        flex items-center justify-between rounded-[3px] p-3 transition-colors duration-200 border border-ui-controls-border bg-base-fg/[0.03] text-base-fg
         ${
           isUpdating
             ? "opacity-60 cursor-not-allowed"
-            : "cursor-move hover:bg-ui-controls/80"
+            : "cursor-move hover:border-base-fg/30 hover:bg-base-fg/[0.06]"
         }
-        ${isDragging ? "opacity-70 shadow-lg" : ""}
+        ${isDragging ? "opacity-70" : ""}
       `}
     >
       <div className="flex items-center gap-3">
@@ -80,9 +80,7 @@ const SortableItem = ({
         <span className="font-medium">{name}</span>
       </div>
       <div className="flex items-center">
-        <GripVerticalIcon
-          
-          className="text-base-fg/40 text-sm" />
+        <GripVerticalIcon className="text-base-fg/40 text-sm" />
       </div>
     </div>
   );
@@ -188,9 +186,9 @@ export const ProviderPrioritySettingsPane = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-3">
       <div>
-        <p className="text-sm text-base-fg/70 mb-4">
+        <p className="text-xs text-base-fg/70 mb-4">
           Drag and drop to reorder model provider priority. Higher items will be
           tried first. You can use this to control favorite services and
           spending.
@@ -218,8 +216,8 @@ export const ProviderPrioritySettingsPane = () => {
       </DndContext>
 
       {isUpdating && (
-        <div className="text-xs rounded-full animate-pulse mt-4 flex items-center gap-2 text-base-fg/70">
-          <LoaderCircleIcon  className="animate-spin" />
+        <div className="mt-4 flex animate-pulse items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/70">
+          <LoaderCircleIcon className="animate-spin" />
           Updating...
         </div>
       )}

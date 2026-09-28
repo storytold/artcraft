@@ -56,20 +56,20 @@ export default function ProfileDropdown() {
       >
         <Menu.Items
           static
-          className="absolute right-[-5px] mt-2.5 w-36 overflow-hidden rounded-lg bg-brand-secondary shadow-lg focus:outline-none"
+          className="absolute right-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-[3px] border border-white/15 bg-[#101014] focus:outline-none"
         >
           <Menu.Item key={0}>
             {({ active }) => (
               <a
                 className={twMerge(
-                  "duration-50 group flex w-full items-center gap-2 bg-action/60 px-3 py-[10px] text-start text-sm font-medium text-white transition-all",
-                  active && "bg-action-500/80",
+                  "group flex w-full items-center gap-2 px-4 py-2 text-start text-sm text-white/70 transition-colors",
+                  active && "bg-white/10",
                 )}
                 href={profileUrl}
                 target="_blank"
                 rel="noreferrer"
               >
-                <UserIcon />
+                <UserIcon className="text-[11px] text-white/50" />
                 My Profile
               </a>
             )}
@@ -79,12 +79,15 @@ export default function ProfileDropdown() {
               {({ active }) => (
                 <button
                   className={twMerge(
-                    "duration-50 group flex w-full items-center gap-2 bg-action/60 px-3 py-[10px] text-start text-sm font-medium text-white transition-all",
-                    active && "bg-action-500/80",
+                    "group flex w-full items-center gap-2 px-4 py-2 text-start text-sm text-white/70 transition-colors",
+                    active && "bg-white/10",
                   )}
                   onClick={() => option.onClick()}
                 >
-                  <DynamicIcon icon={option.icon} />
+                  <DynamicIcon
+                    icon={option.icon}
+                    className="text-[11px] text-white/50"
+                  />
                   {option.label}
                 </button>
               )}

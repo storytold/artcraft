@@ -1,6 +1,5 @@
 .panel {
   position: relative;
-  isolation: isolate;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -8,60 +7,44 @@
   overflow: hidden;
   padding: 56px 32px;
   text-align: center;
-  background: radial-gradient(ellipse at 50% 0%, rgb(94 234 212 / 9%), transparent 70%);
   animation: arrive 450ms ease-out both;
-}
-
-.glow {
-  position: absolute;
-  z-index: -1;
-  top: -52px;
-  left: calc(50% - 144px);
-  width: 288px;
-  height: 288px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgb(94 234 212 / 24%), rgb(129 140 248 / 12%) 45%, transparent 70%);
-  filter: blur(24px);
-  pointer-events: none;
-  animation: glow 2400ms ease-in-out infinite;
 }
 
 .badge {
   display: flex;
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   align-items: center;
   justify-content: center;
   margin-bottom: 28px;
-  border: 1px solid rgb(153 246 228 / 35%);
-  border-radius: 50%;
-  color: #b4f7de;
-  background: linear-gradient(145deg, rgb(153 246 228 / 16%), rgb(94 234 212 / 4%));
-  box-shadow: 0 0 0 8px rgb(94 234 212 / 4%), 0 0 44px rgb(94 234 212 / 18%), inset 0 1px 0 rgb(255 255 255 / 12%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  color: #ffffff;
+  background: rgb(255 255 255 / 5%);
 }
 
 .heading {
   margin: 0;
   max-width: 100%;
-  color: rgb(255 255 255 / 80%);
-  font-size: 18px;
-  font-weight: 500;
+  color: rgb(255 255 255 / 60%);
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   line-height: 1.5;
+  text-transform: uppercase;
 }
 
 .username {
   display: block;
-  margin-top: 4px;
+  margin-top: 10px;
   overflow-wrap: anywhere;
-  color: #b4f7de;
-  background: linear-gradient(100deg, #d4ffec, #99f6e4 55%, #c7d2fe);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
   font-size: 30px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.025em;
-  line-height: 1.25;
+  line-height: 1.1;
+  text-transform: none;
 }
 
 .caption {
@@ -72,15 +55,10 @@
 }
 
 @keyframes arrive {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes glow {
-  0%, 100% { opacity: 0.7; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.06); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel, .glow { animation: none; }
+  .panel { animation: none; }
 }

@@ -37,11 +37,11 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
         transition={{ duration: 0.1, ease: "easeOut" }}
         drag
         dragMomentum={false}
-        className="pointer-events-auto z-10 flex w-72 flex-col overflow-hidden rounded-xl border border-ui-panel-border bg-ui-panel shadow-2xl"
+        className="pointer-events-auto z-10 flex w-72 flex-col overflow-hidden border border-white/15 bg-ui-panel"
       >
-        <div className="bg-ui-panel-header flex cursor-move select-none items-center justify-between border-b border-ui-panel-border px-4 py-3">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-fg">
-            <CoinsIcon  className="text-yellow-400" />
+        <div className="flex cursor-move select-none items-center justify-between border-b border-white/15 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
+            <CoinsIcon className="text-primary" />
             Cost Breakdown
           </div>
           <button
@@ -53,10 +53,10 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
         </div>
 
         <div className="space-y-4 bg-ui-panel p-4">
-          <div className="border-ui-controls-border rounded-lg border bg-ui-controls/50 p-3">
+          <div className="border border-white/15 bg-white/5 p-3">
             <div className="mb-1 flex items-center justify-between">
               <span className="text-sm text-base-fg/80">Total Cost</span>
-              <span className="text-lg font-bold text-base-fg">
+              <span className="text-lg font-semibold tabular-nums tracking-tight text-base-fg">
                 {credits} Credits
               </span>
             </div>
@@ -66,7 +66,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-base-fg/80">
+            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
               Currency
             </label>
             <Select
@@ -77,7 +77,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
             />
           </div>
 
-          <div className="mt-2 border-t border-ui-panel-border pt-3 text-center text-[10px] text-base-fg/40">
+          <div className="mt-2 border-t border-white/15 pt-3 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/40">
             1 Credit = $0.01 USD
           </div>
         </div>

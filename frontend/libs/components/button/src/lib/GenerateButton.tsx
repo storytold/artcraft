@@ -37,8 +37,8 @@ export const GenerateButton = ({
               disabled && "opacity-50",
             )}
           >
-            <CoinsIcon  className="text-xs text-white" />
-            <span className="text-[13px] font-bold text-white/90">
+            <CoinsIcon className="text-xs" />
+            <span className="text-[13px] font-bold">
               {credits}
             </span>
           </div>

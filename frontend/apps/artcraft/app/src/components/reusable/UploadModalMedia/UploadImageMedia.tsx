@@ -85,7 +85,7 @@ export const UploadImageMedia = ({
           <H6 className="z-10 text-red"> {assetFile.error} </H6>
         )}
 
-        <div className="relative m-auto aspect-square w-full overflow-hidden rounded-lg bg-brand-secondary">
+        <div className="relative m-auto aspect-square w-full overflow-hidden border border-white/15 bg-ui-controls">
           {!assetFile.value && (
             <H6 className="absolute left-0 top-1/2 -mt-5 w-full text-center">
               File Preview

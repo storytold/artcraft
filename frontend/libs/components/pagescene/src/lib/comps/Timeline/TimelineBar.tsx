@@ -25,22 +25,24 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
 
   return (
     <div
-      className="glass glass-no-hover flex w-full select-none items-center gap-3 rounded-2xl px-4 py-2 text-white shadow-xl"
+      className="border border-ui-panel-border bg-ui-controls flex w-full select-none items-center gap-3 rounded-none px-4 py-2 text-white"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       <button
         type="button"
         onClick={togglePlay}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/80 hover:bg-white/10"
+        aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
+        className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/80 hover:bg-white/10"
       >
         <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="h-3.5 w-3.5" />
       </button>
-      <span className="w-9 shrink-0 tabular-nums text-xs text-base-fg/70">
+      <span className="w-9 shrink-0 font-mono tabular-nums text-xs text-base-fg/70">
         {formatTimecode(playhead)}
       </span>
       <input
         type="range"
+        aria-label="Timeline playhead"
         min={0}
         max={duration}
         step={0.01}
@@ -53,7 +55,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         className="h-1 flex-1 cursor-pointer accent-white"
       />
       {readOnly ? (
-        <span className="w-9 shrink-0 text-right tabular-nums text-xs text-base-fg/70">
+        <span className="w-9 shrink-0 text-right font-mono tabular-nums text-xs text-base-fg/70">
           {formatTimecode(duration)}
         </span>
       ) : (
@@ -64,7 +66,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
           type="button"
           title="Expand timeline"
           onClick={() => setExpanded(true)}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/60 hover:bg-white/10"
         >
           <ChevronUpIcon  className="h-3 w-3" />
         </button>

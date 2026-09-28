@@ -10,11 +10,13 @@ export const AccountSettingsPane = ({
   globalAccountLogoutCallback,
 }: AccountSettingsPaneProps) => {
   return (
-    <div className="space-y-4 text-base-fg">
+    <div className="flex flex-col gap-5 pt-3 text-base-fg">
       <ArtcraftAccountBlock
         globalAccountLogoutCallback={globalAccountLogoutCallback}
       />
+      <hr className="border-ui-panel-border" />
       <GrokAccountBlock />
+      <hr className="border-ui-panel-border" />
       <MidjourneyAccountBlock />
     </div>
   );

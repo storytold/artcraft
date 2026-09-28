@@ -6,6 +6,7 @@ import { CameraAspectRatio } from "../../enums";
 import { setCameraAspect } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { EngineContext } from "../../contexts/EngineContext";
+import { TOOLBAR_BUTTON_CLASS_NAME } from "../toolbarStyles";
 
 // Render-frame aspect ratio picker. Same popover pattern as the prompt
 // boxes' AspectRatioPicker, but driving the 3D editor's camera letterbox
@@ -52,7 +53,7 @@ export const AspectRatioMenu = () => {
         position="bottom"
         panelTitle="Aspect Ratio"
         showIconsInList
-        buttonClassName="glass glass-no-hover h-[34px] rounded-full px-3 text-xs font-medium shadow-xl"
+        buttonClassName={TOOLBAR_BUTTON_CLASS_NAME}
         triggerIcon={<AspectRatioIcon ratio={current.proportions} />}
       />
     </Tooltip>

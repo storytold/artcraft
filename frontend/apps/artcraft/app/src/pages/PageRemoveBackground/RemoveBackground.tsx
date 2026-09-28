@@ -543,12 +543,12 @@ export const RemoveBackground = () => {
 
   return (
     <>
-      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
         <div className="flex flex-1 items-center justify-center overflow-y-auto p-16">
           <main className="flex h-full w-full flex-col items-center justify-center">
             {showUploadScreen ? (
               <div className="w-full max-w-5xl">
-                <div className="relative aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="relative aspect-video overflow-hidden border border-ui-panel-border bg-ui-background">
                   <UploadEntryCard
                     icon={WandSparklesIcon}
                     title="Remove Background"
@@ -564,7 +564,7 @@ export const RemoveBackground = () => {
                     disabled={isLoadingImage}
                   />
                   {isLoadingImage && (
-                    <div className="bg-ui-panel/80 absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-ui-panel/80 absolute inset-0 flex items-center justify-center">
                       <LoadingSpinner className="h-12 w-12" />
                     </div>
                   )}
@@ -580,9 +580,9 @@ export const RemoveBackground = () => {
                       onMouseDown={handleCompareMouseDown}
                       disabled={!activeImage || isProcessing}
                       className={twMerge(
-                        "border-ui-controls-border select-none border-2 px-6 py-2.5 text-sm font-semibold transition-all",
+                        "border-ui-controls-border select-none border px-6 py-2.5 text-sm font-semibold transition-all",
                         isHoldingCompare
-                          ? "border-primary bg-primary/20"
+                          ? "border-white bg-white/10"
                           : "border-ui-controls-border",
                         (!activeImage || isProcessing) &&
                           "cursor-not-allowed opacity-50",
@@ -598,7 +598,7 @@ export const RemoveBackground = () => {
                       onClick={handleDownload}
                       disabled={!activeImage || isProcessing}
                       className={twMerge(
-                        "select-none border-2 border-primary px-6 py-2.5 text-sm font-semibold transition-all",
+                        "select-none px-6 py-2.5 text-sm font-semibold transition-all",
                         (!activeImage || isProcessing) &&
                           "cursor-not-allowed opacity-50",
                       )}
@@ -610,11 +610,11 @@ export const RemoveBackground = () => {
 
                 <div className="flex flex-1 items-center justify-center">
                   <div
-                    className="relative overflow-hidden rounded-2xl border border-ui-panel-border shadow-xl"
+                    className="relative overflow-hidden border border-ui-panel-border"
                     style={imageContainerStyle}
                   >
                     {isProcessing && (
-                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70">
                         {currentOriginalUrl && (
                           <img
                             src={currentOriginalUrl}
@@ -624,12 +624,12 @@ export const RemoveBackground = () => {
                         )}
                         <div className="relative z-10 flex flex-col items-center gap-4">
                           <div className="relative">
-                            <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary-500/30 border-t-primary-500" />
+                            <div className="h-16 w-16 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                             <WandSparklesIcon
                               
-                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-primary-400" />
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-white" />
                           </div>
-                          <span className="text-lg font-semibold text-white">
+                          <span className="font-mono text-sm font-semibold uppercase tracking-[0.12em] text-white">
                             Removing Background...
                           </span>
                         </div>
@@ -679,7 +679,7 @@ export const RemoveBackground = () => {
 
                         <div
                           ref={progressBarRef}
-                          className="absolute bottom-0 top-0 w-1 bg-primary-500 shadow-lg shadow-primary-500/50"
+                          className="absolute bottom-0 top-0 w-1 bg-white"
                           style={{
                             left: `${revealProgressRef.current}%`,
                             transform: "translateX(-50%)",
@@ -695,7 +695,7 @@ export const RemoveBackground = () => {
                   </div>
                 </div>
 
-                <div className="mt-auto flex shrink-0 items-center gap-3 rounded-xl border border-ui-panel-border bg-ui-background p-2">
+                <div className="mt-auto flex shrink-0 items-center gap-3 border border-ui-panel-border bg-ui-background p-2">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -711,7 +711,7 @@ export const RemoveBackground = () => {
                     position="top"
                     showIconsInList
                     buttonClassName={twMerge(
-                      "h-14 w-14 border-2 border-dashed border-ui-panel-border bg-ui-controls/50",
+                      "h-14 w-14 rounded-[3px] border border-dashed border-white/20 bg-white/[0.015] hover:border-white/40 hover:bg-white/5",
                       isProcessing && "cursor-not-allowed opacity-50",
                     )}
                     triggerIcon={
@@ -724,10 +724,10 @@ export const RemoveBackground = () => {
                       key={img.id}
                       onClick={() => handleThumbnailClick(img)}
                       className={twMerge(
-                        "relative h-14 w-14 overflow-hidden rounded-lg border-2 transition-all",
+                        "relative h-14 w-14 overflow-hidden rounded-[3px] border transition-all",
                         img.id === activeImageId
-                          ? "border-primary ring-2 ring-primary/30"
-                          : "border-transparent hover:border-primary/50",
+                          ? "border-white"
+                          : "border-white/15 hover:border-white/30",
                       )}
                     >
                       <img

@@ -1,15 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
+import { CreateEmptyState } from "./CreateEmptyState";
 
 // Shared page chrome for the desktop Generate Image / Generate Video pages,
-// mirroring the webapp's CreateMediaPageShell: a centered hero over the
-// decorative background, and a scrollable generation feed (padded past the
-// fixed promptbox) once there is anything to show.
+// mirroring the webapp's CreateMediaPageShell: a centered empty-state panel,
+// and a scrollable generation feed (padded past the fixed promptbox) once
+// there is anything to show.
 //
-// The hero + background behave like a splash screen: they stay up while the
-// feed is still loading (pages remount on tab switches, so this covers the
-// reload) and fade out once content arrives. With a genuinely empty library
-// they simply stay — they ARE the empty state.
+// The empty state (and optional background) behave like a splash screen:
+// they stay up while the feed is still loading (pages remount on tab
+// switches, so this covers the reload) and fade out once content arrives.
+// With a genuinely empty library they simply stay.
 
 const SPLASH_FADE_MS = 700;
 
@@ -17,7 +18,8 @@ interface DesktopCreatePageShellProps {
   hasContent: boolean;
   emptyStateTitle: string;
   emptyStateSubtitle: string;
-  /** Decorative page background (fixed-position); fades out with the hero. */
+  /** Optional decorative page background (fixed-position); fades out with
+   *  the empty state. */
   background?: ReactNode;
   /** Height of the fixed promptbox area, used to pad the feed's bottom. */
   bottomOffset: number;
@@ -55,11 +57,11 @@ export function DesktopCreatePageShell({
   }, [hasContent, splashState]);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background">
+    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background text-white">
       <div className="relative h-full w-full">
         {hasContent && (
           <div
-            className="h-full w-full overflow-y-auto pt-4"
+            className="h-full w-full overflow-y-auto pt-0.5"
             style={{ paddingBottom: bottomOffset + 24 }}
           >
             {listContent}
@@ -73,15 +75,14 @@ export function DesktopCreatePageShell({
               splashState === "fading" ? "opacity-0" : "opacity-100",
             )}
           >
-            <div className="flex h-full w-full flex-col items-center justify-center pb-52">
-              <div className="relative z-20 flex flex-col items-center justify-center text-center drop-shadow-xl">
-                <h1 className="text-7xl font-bold text-base-fg">
-                  {emptyStateTitle}
-                </h1>
-                <span className="pt-2 text-xl text-base-fg opacity-80">
-                  {emptyStateSubtitle}
-                </span>
-              </div>
+            <div
+              className="relative z-20 flex h-full w-full items-center justify-center px-6"
+              style={{ paddingBottom: bottomOffset }}
+            >
+              <CreateEmptyState
+                title={emptyStateTitle}
+                subtitle={emptyStateSubtitle}
+              />
             </div>
             {background}
           </div>
@@ -92,7 +93,7 @@ export function DesktopCreatePageShell({
         {hasContent && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-64 bg-gradient-to-t from-ui-background to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-48 bg-gradient-to-t from-ui-background to-transparent"
           />
         )}
 

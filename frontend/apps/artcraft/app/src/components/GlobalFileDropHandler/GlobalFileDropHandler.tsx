@@ -191,11 +191,11 @@ export function GlobalFileDropHandler() {
   return (
     <>
       {isDragging && modalType === null && (
-        <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
-          <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-white/60 bg-black/30 px-16 py-12 text-white backdrop-blur-sm">
-            <Maximize2Icon  className="text-4xl opacity-80" />
-            <div className="text-xl font-semibold">Drop to Upload</div>
-            <div className="text-sm opacity-60">GLB, PNG, JPG, JPEG, SPZ</div>
+        <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+          <div className="flex flex-col items-center gap-3 border border-dashed border-white/60 bg-ui-panel px-16 py-12 text-white">
+            <Maximize2Icon className="text-3xl opacity-60" />
+            <div className="font-display text-2xl tracking-tight">Drop to Upload</div>
+            <div className="hud-label text-white/50">GLB, PNG, JPG, JPEG, SPZ</div>
           </div>
         </div>
       )}

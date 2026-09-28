@@ -2,29 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Subtle 3px corners on interactive controls (matches artcraft-webapp).
+   The brutalist system keeps large surfaces (panels, modals, tables),
+   passive labels, and media tiles square; anything pressable gets a soft
+   corner for affordance. Tailwind radius utilities (rounded-full,
+   rounded-none) still win — the utilities layer is emitted after base. */
+@layer base {
+  button,
+  select,
+  textarea,
+  input:not([type="radio"]):not([type="range"]),
+  [role="button"] {
+    border-radius: 3px;
+  }
+}
+
 @layer components {
   .filter-tab {
-    @apply text-nowrap rounded-lg border border-[#363636] bg-ui-controls-button px-2.5 py-1 text-[13px] font-medium text-white/80 transition-all duration-150 hover:border-brand-primary/50 hover:bg-assets-background/80;
+    @apply text-nowrap rounded-[3px] border border-white/15 bg-white/5 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition-colors duration-150 hover:border-white/25 hover:bg-white/[0.07] hover:text-white;
   }
 
   .filter-tab.active {
-    @apply border border-brand-primary text-white hover:border-brand-primary hover:bg-ui-controls-button;
+    @apply border-white bg-white text-black hover:border-white hover:bg-white hover:text-black;
   }
 
   .filter-tab:disabled {
-    @apply border-transparent bg-ui-controls-button/50 hover:border-transparent disabled:text-white/30;
+    @apply border-transparent bg-white/[0.03] text-white/30 hover:border-transparent hover:bg-white/[0.03];
   }
 
+  /* Brutalist system: former "glass" surfaces are flat near-black panels
+     with white/15 hairline borders (class name kept for lib compatibility). */
   .glass {
-    @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-    @apply bg-[#303032]/90 !important;
+    @apply relative rounded-[3px] border border-white/15 backdrop-blur-sm transition-colors duration-300;
+    @apply bg-[#1E1F22]/95 !important;
   }
 
   /* Light theme: the glass surface must be a light panel, not the dark
      hard-coded fill above. Tint + border swapped to read on a light bg. */
   .theme-light .glass {
-    @apply border-black/10 !important;
-    background-color: rgb(248 248 248 / 0.92) !important;
+    @apply border-black/15 !important;
+    background-color: rgb(248 248 248 / 0.95) !important;
   }
 }
 

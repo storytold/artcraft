@@ -56,12 +56,12 @@ const AllTabSection = ({
     <div className="mb-2 flex items-center justify-between">
       <h3 className="text-md ml-2 font-semibold opacity-90">{label}</h3>
       <Button
-        variant="secondary"
-        className="mr-3 flex items-center gap-1 px-2 py-1 text-xs"
+        variant="ghost"
+        className="mr-3 h-6 gap-1 px-1.5 py-0 text-[10px] tracking-[0.08em] leading-none"
         onClick={onViewAll}
       >
         View all
-        <ChevronRightIcon  className="text-xs opacity-70" />
+        <ChevronRightIcon className="h-3 w-3 shrink-0 opacity-70" />
       </Button>
     </div>
     <div className="h-[170px]">
@@ -487,7 +487,7 @@ export const AssetModal = () => {
       <Modal
         isOpen={assetModalVisible}
         onClose={handleClose}
-        className="relative h-[640px] max-w-4xl"
+        className="relative h-[640px] max-w-4xl bg-ui-controls"
         childPadding={false}
         showClose={false}
         backdropClassName="bg-transparent"
@@ -507,8 +507,8 @@ export const AssetModal = () => {
         </Modal.DragHandle>
         <div className="grid h-full grid-cols-12 gap-3">
           <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
-            <div className="flex items-center justify-between gap-2.5 py-0.5">
-              <h2 className="text-[18px] font-semibold opacity-80">
+            <div className="flex h-10 items-center justify-between gap-2.5">
+              <h2 className="font-display text-lg tracking-tight text-white">
                 ArtCraft Presets
               </h2>
             </div>
@@ -519,9 +519,9 @@ export const AssetModal = () => {
                   key={tab.id}
                   variant={activeAssetTab === tab.id ? "primary" : "secondary"}
                   className={twMerge(
-                    "w-full justify-start rounded-xl border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
+                    "w-full justify-start rounded-[3px] border border-transparent bg-transparent px-3.5 py-2.5 text-left hover:bg-white/15",
                     activeAssetTab === tab.id &&
-                      "border-primary bg-primary/10 hover:bg-primary/10",
+                      "border-white/15 bg-white/10 text-white hover:bg-white/10",
                   )}
                   onClick={() => setActiveAssetTab(tab.id)}
                 >
@@ -551,13 +551,13 @@ export const AssetModal = () => {
                       ref={searchInputRef}
                       placeholder="Search"
                       className="relative z-[51] grow"
-                      inputClassName="pr-2.5"
+                      inputClassName="bg-white/5 pr-10 placeholder-white/40"
                       icon={SearchIcon}
                       value={searchTerm}
                       onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         setSearchTerm(e.target.value)
                       }
-                      iconClassName="text-white/60"
+                      iconClassName="pointer-events-none left-3 top-1/2 h-4 w-4 -translate-y-1/2 p-0 text-white/50"
                     />
                     {searchTerm && (
                       <CloseButton

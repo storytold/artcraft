@@ -146,19 +146,21 @@ export const DownloadsSettingsPane = () => {
   };
 
   return (
-    <div className="space-y-4 text-base-fg">
+    <div className="space-y-4 pt-3 text-base-fg">
       {settingsError && <p role="alert" className="text-red-400">{settingsError}</p>}
       <div className="space-y-2">
         <Label htmlFor="download-path">Default Download Directory</Label>
-        <p className="opacity-80">
+        <p className="text-xs opacity-70">
           This is where downloads are placed after downloading. The current path
           is:
         </p>
-        <div className="py-1.5 px-2 rounded-md mt-1 bg-ui-panel border border-ui-panel-border text-base-fg">
-          <pre>{currentDownloadLabel}</pre>
+        <div className="mt-1 border border-ui-panel-border bg-ui-sunken px-3 py-2 text-base-fg">
+          <pre className="whitespace-pre-wrap break-all font-mono text-xs">
+            {currentDownloadLabel}
+          </pre>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button variant="primary" onClick={openDirectoryPicker}>
           <FolderIcon />
           Choose Directory
@@ -237,7 +239,7 @@ export const DownloadsSettingsPane = () => {
                 onChange={(event) => setCustomFormat(event.target.value)}
                 placeholder={DEFAULT_CUSTOM_FORMAT}
                 spellCheck={false}
-                className="min-w-0 flex-1 rounded-md border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-xs"
+                className="min-w-0 flex-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-xs outline-none focus:border-base-fg/40"
               />
               <Button variant="secondary" onClick={saveCustomFormat}>Save format</Button>
             </div>

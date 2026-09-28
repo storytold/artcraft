@@ -57,9 +57,15 @@ export const GrokAccountBlock = () => {
   };
 
   return(
-    <div className="flex justify-between items-center">
-      <span>Grok Account:</span>
-      <pre>{grokSession?.payload?.maybe_email || "Not logged in"}</pre>
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
+          Grok account
+        </p>
+        <p className="truncate text-sm font-medium text-base-fg/80">
+          {grokSession?.payload?.maybe_email || "Not logged in"}
+        </p>
+      </div>
       <Button
         variant={
           grokSession?.payload?.can_clear_state && !isCheckingGrokSession
@@ -68,14 +74,12 @@ export const GrokAccountBlock = () => {
             ? "primary"
             : "secondary"
         }
-        className="h-[30px]"
+        className="h-9 shrink-0 px-3"
         onClick={handleGrokButton}
         disabled={isCheckingGrokSession}
       >
         {isCheckingGrokSession ? (
-          <LoaderCircleIcon
-            
-            className="animate-spin text-sm" />
+          <LoaderCircleIcon className="animate-spin text-sm" />
         ) : grokSession?.payload?.can_clear_state ? (
           "Disconnect"
         ) : (

@@ -18,8 +18,11 @@ export const UploadImagesButton = ({ className }: Props) => {
         <Button
           variant="secondary"
           icon={UploadIcon}
-          iconClassName="h-5 w-5 shrink-0"
-          className={twMerge("h-[38px] w-[38px] p-0", className)}
+          iconClassName="h-4 w-4 shrink-0"
+          className={twMerge(
+            "h-8 w-8 rounded-[3px] border border-white/15 bg-transparent p-0 text-white/80 shadow-none hover:border-white/30 hover:bg-white/10",
+            className,
+          )}
           onClick={() => setIsOpen(true)}
         />
       </Tooltip>

@@ -32,7 +32,7 @@ export const FailedCard = memo(function FailedCard({
   const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
 
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
+    <div className="relative aspect-square w-full overflow-hidden rounded-[3px] bg-red-500/10">
       {refImageUrl && (
         <img
           src={refImageUrl}
@@ -42,9 +42,7 @@ export const FailedCard = memo(function FailedCard({
         />
       )}
       <div className="relative flex h-full flex-col items-center justify-center gap-2 px-4 sm:px-6">
-        <CircleAlertIcon
-          
-          className="text-2xl text-red-400" />
+        <CircleAlertIcon className="text-2xl text-red-400" />
         <span className="text-center text-xs font-medium text-red-400">
           {failureReason || "Generation failed"}
         </span>
@@ -58,7 +56,7 @@ export const FailedCard = memo(function FailedCard({
           <button
             type="button"
             onClick={() => onDismiss(id)}
-            className="flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
+            className="flex items-center gap-1.5 rounded-[3px] bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
           >
             <XIcon />
             Dismiss

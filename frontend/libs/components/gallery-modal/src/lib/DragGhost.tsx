@@ -133,7 +133,7 @@ export function DragGhost({
         zIndex: 10000,
         pointerEvents: "none",
       }}
-      className="flex cursor-grabbing flex-col overflow-hidden rounded-xl shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/20"
+      className="flex cursor-grabbing flex-col overflow-hidden shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/20"
     >
       <img
         src={state.thumbnail}
@@ -143,7 +143,7 @@ export function DragGhost({
       />
       {state.indicator && (
         <div
-          className={`absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full shadow-md ring-1 ring-black/30 ${
+          className={`absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center shadow-md ring-1 ring-black/30 ${
             state.indicator === "ok" ? "bg-emerald-500" : "bg-red-500"
           }`}
         >

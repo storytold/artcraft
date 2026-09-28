@@ -169,14 +169,14 @@ export const Controls3D = ({
   return (
     <>
       <div className="flex justify-center pt-3">
-        <div className="glass rounded-2xl p-1.5 text-white shadow-xl h-fit">
+        <div className="border border-ui-panel-border bg-ui-controls rounded-none p-1.5 text-white h-fit">
           <div className="flex items-center justify-center gap-1.5">
             <div className="flex items-center gap-1.5">
               <div className="relative">
                 {showEmptySceneTooltip && (
                   <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 transform whitespace-nowrap">
-                    <div className="animate-bounce rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-lg">
-                      Click + to add your first 3D asset!
+                    <div className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-white">
+                      Click + to add your first 3D asset
                       <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 transform bg-primary" />
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export const Controls3D = ({
                     ]}
                     onPanelAction={handleAddAssetAction}
                     showIconsInList
-                    buttonClassName={`h-9 w-9 p-2 rounded-xl text-lg ${
+                    buttonClassName={`h-9 w-9 p-2 rounded-[3px] text-lg ${
                       showEmptySceneTooltip
                         ? "bg-primary/90 hover:bg-primary/70"
                         : "border-transparent bg-primary/90 hover:bg-primary/70"
@@ -254,7 +254,7 @@ export const Controls3D = ({
                 >
                   <Button
                     icon={WandSparklesIcon}
-                    className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
+                    className="text-md h-9 w-9 rounded-[3px] bg-white/15 transition-colors hover:bg-white/25"
                     variant="secondary"
                     onClick={handleOpenCreate3dModal}
                   />
@@ -262,13 +262,14 @@ export const Controls3D = ({
               )}
             </div>
 
-            <span className="opacity-10">|</span>
+            <span aria-hidden="true" className="h-5 w-px bg-white/15" />
             <ButtonIconSelect
               options={modes}
               onOptionChange={handleModeChange}
               selectedOption={selectedMode}
+              buttonClassName="rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
             />
-            <span className="opacity-10">|</span>
+            <span aria-hidden="true" className="h-5 w-px bg-white/15" />
             {selectedMode === "scale" ? (
               <Tooltip
                 content="Scale is always in local space"
@@ -277,7 +278,7 @@ export const Controls3D = ({
               >
                 <button
                   disabled
-                  className="flex min-w-[92px] cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-base-fg opacity-40 transition-colors duration-150"
+                  className="flex min-w-[92px] cursor-not-allowed items-center justify-center gap-2 rounded-[3px] border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-base-fg opacity-40 transition-colors duration-150"
                 >
                   <BoxIcon className="h-3 w-3 text-base-fg/60" />
                   Local
@@ -290,7 +291,7 @@ export const Controls3D = ({
                 delay={300}
               >
                 <button
-                  className="flex min-w-[92px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-base-fg transition-colors duration-150 hover:bg-white/[0.08]"
+                  className="flex min-w-[92px] items-center justify-center gap-2 rounded-[3px] border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-base-fg transition-colors duration-150 hover:bg-white/[0.08]"
                   onClick={() => editor?.gizmo.toggleTransformSpace()}
                 >
                   <DynamicIcon
