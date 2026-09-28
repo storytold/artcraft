@@ -6,8 +6,8 @@ import {
   CharactersApi,
   Character,
   MediaUploadApi,
-  downloadFileFromUrl,
 } from "@storyteller/api";
+import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { toast } from "@storyteller/ui-toaster";
 import { v4 as uuidv4 } from "uuid";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";

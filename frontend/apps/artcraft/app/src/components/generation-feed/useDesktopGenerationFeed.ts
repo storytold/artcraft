@@ -35,6 +35,11 @@ import {
 
 const POLL_INTERVAL_MS = 5000;
 
+// Newly completed videos that arrived without a thumbnail URL are looked up
+// again on this interval, for up to MISSING_THUMBNAIL_GIVE_UP_MS.
+const MISSING_THUMBNAIL_POLL_MS = 15_000;
+const MISSING_THUMBNAIL_GIVE_UP_MS = 10 * 60_000;
+
 const FAILED_STATUSES = new Set([
   "complete_failure",
   "attempt_failed",
@@ -197,6 +202,71 @@ export function useDesktopGenerationFeed(options: {
     load();
   });
 
+  // Newly completed videos occasionally arrive without a thumbnail URL (the
+  // Rust media-file lookup fails open). The library copy would have it, but the
+  // newly completed item takes precedence in the feed, so look it up again
+  // until the URL shows up. GalleryThumbnail then re-checks the image itself.
+  const newlyCompletedRef = useRef(newlyCompleted);
+  newlyCompletedRef.current = newlyCompleted;
+  const missingThumbnailSinceRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (mediaType !== "video") return;
+    let cancelled = false;
+    let running = false;
+
+    const lookUpMissingThumbnails = async () => {
+      if (running) return; // A slow round is still going.
+      running = true;
+      try {
+        await lookUpMissingThumbnailsOnce();
+      } finally {
+        running = false;
+      }
+    };
+
+    const lookUpMissingThumbnailsOnce = async () => {
+      const now = Date.now();
+      const missing = newlyCompletedRef.current.filter((item) => {
+        if (item.thumbnail) return false;
+        const since = missingThumbnailSinceRef.current.get(item.id) ?? now;
+        missingThumbnailSinceRef.current.set(item.id, since);
+        return now - since < MISSING_THUMBNAIL_GIVE_UP_MS;
+      });
+      for (const item of missing) {
+        const response = await mediaApiRef.current.GetMediaFileByToken({
+          mediaFileToken: item.id,
+        });
+        if (cancelled) return;
+        const links = response.success
+          ? (response.data?.media_links as VideoMediaLinks | undefined)
+          : undefined;
+        // Without a preview or template, getMediaThumbnail would fall back to
+        // the .mp4 itself, which an <img> can't show. Try again next round.
+        if (!links?.maybe_video_previews?.animated && !links?.maybe_thumbnail_template) {
+          continue;
+        }
+        const thumbnail = getMediaThumbnail(links, "video", {
+          size: THUMBNAIL_SIZES.LARGE,
+        });
+        const stillThumbnail = getMediaStillThumbnail(links, {
+          size: THUMBNAIL_SIZES.LARGE,
+        });
+        setNewlyCompleted((prev) =>
+          prev.map((i) =>
+            i.id === item.id ? { ...i, thumbnail, stillThumbnail } : i,
+          ),
+        );
+      }
+    };
+
+    const intervalId = setInterval(lookUpMissingThumbnails, MISSING_THUMBNAIL_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [mediaType]);
+
   // Poll + reload on Tauri generation events and local "task-queue-update"
   // dispatches (fired by the pages right after enqueueing).
   useEffect(() => {
@@ -247,6 +317,20 @@ export function useDesktopGenerationFeed(options: {
     dismissFailed,
     refresh: load,
   };
+}
+
+// ── Types ───────────────────────────────────────────────────────────────────
+
+// The media-file API's link fields used for video thumbnails. (The shared
+// MediaFile type predates these fields.)
+interface VideoMediaLinks {
+  cdn_url?: string | null;
+  maybe_thumbnail_template?: string | null;
+  maybe_video_previews?: {
+    animated?: string | null;
+    still?: string | null;
+    still_thumbnail_template?: string | null;
+  } | null;
 }
 
 // ── Task mapping helpers ────────────────────────────────────────────────────

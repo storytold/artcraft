@@ -2,12 +2,15 @@ import toast from "react-hot-toast";
 import {
   FilterMediaClasses,
   PromptsApi,
+} from "@storyteller/api";
+import type { Prompts } from "@storyteller/api";
+import {
+  DownloadUrl,
+  useModelsStore,
   downloadUrlToPath,
   pickDownloadDirectory,
   promptDownloadLocationIfNeeded,
-} from "@storyteller/api";
-import type { Prompts } from "@storyteller/api";
-import { DownloadUrl, useModelsStore } from "@storyteller/tauri-api";
+} from "@storyteller/tauri-api";
 import {
   RefImage,
   RefVideo,

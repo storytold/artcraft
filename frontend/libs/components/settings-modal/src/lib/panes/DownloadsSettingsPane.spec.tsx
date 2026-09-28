@@ -9,6 +9,8 @@ vi.mock("@storyteller/tauri-api", () => ({
   GetAppPreferences: api.get,
   UpdateAppPreferences: api.update,
   DownloadDirectoryReveal: vi.fn(),
+  getAskLocationBeforeDownload: () => false,
+  setAskLocationBeforeDownload: vi.fn(),
   PreferenceName: {
     AutoDownload: "auto_download",
     PreferredDownloadDirectory: "preferred_download_directory",
@@ -16,10 +18,6 @@ vi.mock("@storyteller/tauri-api", () => ({
   },
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
-vi.mock("@storyteller/api", () => ({
-  getAskLocationBeforeDownload: () => false,
-  setAskLocationBeforeDownload: vi.fn(),
-}));
 
 beforeEach(() => {
   vi.stubGlobal("ResizeObserver", class {

@@ -1,7 +1,7 @@
 
 import { download } from "@tauri-apps/plugin-upload";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { DownloadUrl, GetDownloadPath } from "@storyteller/tauri-api";
+import { DownloadUrl, GetDownloadPath } from "./DownloadUrl";
 
 const ASK_LOCATION_BEFORE_DOWNLOAD_KEY = "artcraft_ask_location_before_download";
 
