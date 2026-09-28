@@ -4,7 +4,11 @@ import { JobContextType } from "@storyteller/common";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
+import {
+  ToggleButton,
+  GenerateIconButton,
+  NEUTRAL_BUTTON_HOVER_CLASSES,
+} from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest, commandErrorMessage } from "@storyteller/tauri-api";
 import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -1317,7 +1321,7 @@ export const PromptBoxVideo = ({
       <button
         type="button"
         onClick={() => setIsCharactersModalOpen(true)}
-        className="flex h-9 items-center justify-center gap-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg transition-colors duration-150 hover:bg-ui-controls/80"
+        className={`flex h-[34px] items-center justify-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-colors duration-150 ${NEUTRAL_BUTTON_HOVER_CLASSES}`}
       >
         @Characters
       </button>
@@ -1531,11 +1535,6 @@ export const PromptBoxVideo = ({
                     icon={AudioLinesIcon}
                     activeIcon={AudioLinesIcon}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
-                    className={
-                      generateWithSound
-                        ? "bg-white/10 hover:bg-white/15 border-white/40"
-                        : undefined
-                    }
                   />
                 </Tooltip>
               )}

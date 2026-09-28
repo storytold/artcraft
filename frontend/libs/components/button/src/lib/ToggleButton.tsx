@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import { Button } from "./button";
+import { Button, NEUTRAL_BUTTON_HOVER_CLASSES } from "./button";
 import { twMerge } from "tailwind-merge";
 
 interface ToggleButtonProps {
@@ -26,14 +26,14 @@ export const ToggleButton = ({
   return (
     <Button
       className={twMerge(
-        // 34px matches the sibling toolbar controls (GenerateButton, the
-        // PopoverMenu triggers). Flat control surface + hairline border,
-        // same idiom as the PopoverMenu triggers beside it.
-        "flex h-[34px] items-center justify-center rounded-[3px] border border-ui-controls-border bg-ui-controls text-white transition-colors",
+        // Same box and type as the PopoverMenu triggers beside it (34px,
+        // text-sm sans, flat control surface + hairline border), overriding
+        // the Button base's mono uppercase label.
+        "flex h-[34px] items-center justify-center rounded-[3px] border border-ui-controls-border bg-ui-controls py-0 font-sans text-sm font-medium normal-case tracking-normal text-base-fg transition-colors",
         hasLabel ? "px-3" : "w-[34px] p-0",
         isActive
-          ? "border-white/30 bg-brand-primary/40 hover:border-white/30 hover:bg-brand-primary/40"
-          : "hover:bg-ui-controls hover:bg-[linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07))]",
+          ? "border-white/40 bg-white/10 hover:border-white/40 hover:bg-white/15"
+          : NEUTRAL_BUTTON_HOVER_CLASSES,
         className,
       )}
       variant="secondary"
@@ -47,7 +47,7 @@ export const ToggleButton = ({
           />
         )}
         {label && (
-          <span className="whitespace-nowrap text-white/90">{label}</span>
+          <span className="whitespace-nowrap">{label}</span>
         )}
       </span>
     </Button>

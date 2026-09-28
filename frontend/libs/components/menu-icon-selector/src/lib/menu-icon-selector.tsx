@@ -94,7 +94,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
         {/* Active tab background */}
         {selectedIndex >= 0 && (
           <div
-            className="absolute z-10 rounded-[2px] bg-base-fg transition-all duration-150 ease-in-out"
+            className="absolute z-10 rounded-[2px] bg-base-fg/[0.08] transition-all duration-150 ease-in-out after:absolute after:inset-x-1.5 after:-bottom-1 after:h-0.5 after:bg-base-fg"
             style={{
               left: activeStyle.left,
               width: activeStyle.width,
@@ -106,7 +106,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
         {/* Hover background (only if hovering a different tab) */}
         {hoveredIndex !== -1 && hoveredIndex !== selectedIndex && (
           <div
-            className="absolute z-20 rounded-[2px] bg-base-fg/10 transition-all duration-150 ease-in-out pointer-events-none"
+            className="absolute z-20 rounded-[2px] bg-base-fg/[0.08] transition-all duration-150 ease-in-out pointer-events-none"
             style={{
               left: hoverStyle.left,
               width: hoverStyle.width,
@@ -136,10 +136,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
               closeOnClick={true}
               interactive={interactive}
               disabled={disabled}
-              className={twMerge(
-                "text-sm font-semibold",
-                item.large && "text-md",
-              )}
+              className="font-sans text-xs font-medium normal-case tracking-normal"
               imageSrc={imageSrc || undefined}
               description={description || undefined}
             >
@@ -153,7 +150,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
                 className={twMerge(
                   "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-[2px] transition-colors duration-150",
                   idx === selectedIndex
-                    ? "text-ui-panel"
+                    ? "text-base-fg"
                     : "text-base-fg/70 hover:text-base-fg",
                   disabled ? "cursor-not-allowed opacity-60" : "",
                 )}

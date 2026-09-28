@@ -90,7 +90,9 @@ function AppCard({ app }: { app: FullAppItem }) {
                 <span
                   className={twMerge(
                     "shrink-0 border px-1.5 py-1 font-mono text-[9px] font-medium leading-none tracking-wider",
-                    getBadgeStyles(app.badge),
+                    app.badge === "SOON"
+                      ? getBadgeStyles(app.badge)
+                      : "border-primary/30 text-ui-accent-ink",
                   )}
                 >
                   {app.badge}

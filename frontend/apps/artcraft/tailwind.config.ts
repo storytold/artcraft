@@ -326,6 +326,9 @@ export default {
   },
   plugins: [],
   safelist: [
+    // lucide-react adds this class at runtime; keep the base-layer sizing rule
+    // in styles/tailwind.css from being purged.
+    "lucide",
     "bg-character-selected",
     "bg-character-unselected",
     "bg-character-clip",
