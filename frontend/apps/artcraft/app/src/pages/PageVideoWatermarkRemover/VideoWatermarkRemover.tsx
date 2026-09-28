@@ -203,7 +203,7 @@ export const VideoWatermarkRemover = () => {
 
   return (
     <>
-      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-background text-base-fg">
         <div className="flex-1 overflow-y-auto">
           <main
             className={
@@ -214,7 +214,7 @@ export const VideoWatermarkRemover = () => {
           >
             {!videoUrl ? (
               <div className="w-full max-w-5xl">
-                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <UploadEntryCard
                     icon={DropletIcon}
                     title="Remove Video Watermark"
@@ -232,7 +232,7 @@ export const VideoWatermarkRemover = () => {
               </div>
             ) : (
               <div className="flex w-full max-w-5xl flex-col gap-5">
-                <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="w-full overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <div className="relative aspect-video w-full bg-black">
                     <Button
                       icon={RotateCwIcon}
@@ -241,7 +241,7 @@ export const VideoWatermarkRemover = () => {
                         setVideoUrl("");
                         setCurrentTime(0);
                       }}
-                      className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
+                      className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
                       Switch Video
                     </Button>
@@ -256,11 +256,11 @@ export const VideoWatermarkRemover = () => {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
                         ref={progressBarRef}
-                        className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
+                        className="group relative mb-3 h-3 cursor-pointer bg-white/15"
                         onClick={handleProgressBarClick}
                       >
                         <div
-                          className="absolute h-full overflow-hidden rounded-full bg-primary"
+                          className="absolute h-full overflow-hidden bg-white"
                           style={{
                             width: `${duration ? (currentTime / duration) * 100 : 0}%`,
                           }}
@@ -270,7 +270,7 @@ export const VideoWatermarkRemover = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => seekToFrame("first")}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                             title="First Frame"
                           >
                             <SkipBackIcon
@@ -279,7 +279,7 @@ export const VideoWatermarkRemover = () => {
                           </button>
                           <button
                             onClick={togglePlayPause}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
+                            className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-white/20 transition-colors hover:bg-white/30"
                           >
                             <DynamicIcon
                               icon={isPlaying ? PauseIcon : PlayIcon}
@@ -288,7 +288,7 @@ export const VideoWatermarkRemover = () => {
                           </button>
                           <button
                             onClick={() => seekToFrame("last")}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                             title="Last Frame"
                           >
                             <SkipForwardIcon
@@ -298,7 +298,7 @@ export const VideoWatermarkRemover = () => {
                           <div className="mx-1 h-6 w-px bg-white/20" />
                           <button
                             onClick={toggleMute}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                           >
                             <DynamicIcon
                               icon={isMuted ? VolumeXIcon : Volume2Icon}
@@ -317,7 +317,7 @@ export const VideoWatermarkRemover = () => {
                             className="w-20 accent-white"
                           />
                         </div>
-                        <div className="font-mono text-sm text-white">
+                        <div className="font-mono text-sm tabular-nums text-white">
                           {formatTime(currentTime)} / {formatTime(duration)}
                         </div>
                       </div>
@@ -338,12 +338,12 @@ export const VideoWatermarkRemover = () => {
                   </Button>
                 </div>
 
-                <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                <div className="border border-ui-panel-border bg-ui-panel p-6">
                   <div>
-                    <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                    <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       <VideoIcon
                         
-                        className="text-primary" />
+                        className="text-ui-accent-ink" />
                       Video Information
                     </div>
                     <div className="space-y-3 text-sm">
@@ -351,7 +351,7 @@ export const VideoWatermarkRemover = () => {
                         <span className="font-medium text-base-fg/70">
                           Duration
                         </span>
-                        <span className="font-mono text-lg font-bold text-base-fg">
+                        <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                           {formatTime(duration)}
                         </span>
                       </div>
@@ -360,7 +360,7 @@ export const VideoWatermarkRemover = () => {
                           <span className="font-medium text-base-fg/70">
                             Resolution
                           </span>
-                          <span className="font-mono font-bold text-base-fg">
+                          <span className="font-mono font-semibold tabular-nums text-base-fg">
                             {videoRef.current.videoWidth} ×{" "}
                             {videoRef.current.videoHeight}
                           </span>

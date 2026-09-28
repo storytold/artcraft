@@ -25,7 +25,7 @@ export const ExitCameraView = ({ className }: { className?: string }) => {
       type="button"
       onClick={() => editor && toggleCameraView(editor)}
       className={twMerge(
-        "flex h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-brand-primary px-4 text-sm font-medium text-white shadow-xl transition-colors hover:bg-brand-primary/90",
+        "flex h-11 items-center gap-2 whitespace-nowrap rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-colors hover:bg-brand-primary/90",
         className,
       )}
     >

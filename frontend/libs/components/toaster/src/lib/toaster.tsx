@@ -57,6 +57,9 @@ export function Toaster({
     <RHToaster
       position={position}
       toastOptions={{
+        style: {
+          borderRadius: "3px",
+        },
         success: {
           style: {
             background: "#ffffff",

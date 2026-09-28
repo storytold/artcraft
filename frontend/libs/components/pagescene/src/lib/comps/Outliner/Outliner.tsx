@@ -58,9 +58,9 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
     <div
       role="button"
       className={twMerge(
-        "flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2 outline-none transition-colors duration-100 hover:bg-white/5 focus:outline-none",
+        "flex cursor-pointer items-center justify-between gap-2 rounded-[3px] border border-transparent px-3 py-2 transition-colors duration-100 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-300",
         isSelected &&
-          "border-brand-primary bg-brand-primary/15 hover:bg-brand-primary/15",
+          "border-white/20 bg-white/10 hover:bg-white/10",
       )}
       onDoubleClick={handleDoubleClick}
       onClick={handleSelect}
@@ -146,7 +146,7 @@ export const Outliner = () => {
       as="div"
       show={showing}
       className={twMerge(
-        "flex h-[45vh] w-[260px] flex-col overflow-hidden rounded-xl border border-ui-panel-border bg-ui-panel shadow-lg",
+        "flex h-[45vh] w-[260px] flex-col overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-controls",
       )}
       enter="transition-opacity duration-150"
       enterFrom="opacity-0"
@@ -155,18 +155,23 @@ export const Outliner = () => {
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
     >
-      <div className="flex items-center px-4 pb-1 pt-3">
-        <h1 className="grow text-base font-semibold">Scene</h1>
+      <div className="flex items-center border-b border-ui-panel-border px-3 py-2.5">
+        <h2 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">Scene</h2>
         <Button
           icon={PlusIcon}
-          className="h-6 bg-transparent px-1.5 text-sm font-medium text-white/80 hover:bg-transparent hover:text-white"
+          variant="ghost"
+          iconClassName="h-3.5 w-3.5 shrink-0"
+          className="h-7 gap-1 px-1.5 py-0 text-[11px] leading-none text-white/70 hover:text-white"
           onClick={openAssetModal}
         >
           Add
         </Button>
         <Button
           icon={XIcon}
-          className="h-5 bg-transparent p-0 text-xl opacity-50 hover:bg-transparent hover:opacity-90"
+          variant="ghost"
+          aria-label="Close scene panel"
+          iconClassName="h-4 w-4 shrink-0"
+          className="h-7 w-7 p-0 text-white/50 hover:text-white"
           onClick={() => {
             usePageSceneStore.getState().setOutlinerShowing(false);
           }}

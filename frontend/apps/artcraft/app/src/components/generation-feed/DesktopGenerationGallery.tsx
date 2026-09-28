@@ -180,7 +180,7 @@ function SelectionDownloadBar({
         type="button"
         onClick={handleDownload}
         disabled={isDownloading || selectedItems.length === 0}
-        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
+        className="flex items-center gap-2 border border-white/15 bg-ui-controls/60 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:opacity-60"
       >
         <DynamicIcon
           icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
@@ -226,8 +226,8 @@ function ItemActions({
 
   const buttonClass =
     variant === "card"
-      ? "flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
-      : "flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60";
+      ? "flex h-7 w-7 items-center justify-center text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
+      : "flex h-8 w-8 items-center justify-center text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60";
 
   const handleRecreate = useCallback(
     async (e: React.MouseEvent) => {
@@ -305,7 +305,7 @@ function ItemActions({
             aria-label="Make Video"
             className={buttonClass}
           >
-            <VideoIcon  className="text-sm" />
+            <VideoIcon className="text-sm" />
           </button>
         </Tooltip>
       )}

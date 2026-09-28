@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
 import { PromptBoxImage } from "@storyteller/ui-promptbox";
 import { UploadImageMedia, FilterMediaClasses } from "@storyteller/api";
-import BackgroundGallery from "./BackgroundGallery";
 import {
   useTextToImagePageModelList,
   ModelPage,
@@ -158,7 +157,6 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
       hasContent={hasContent}
       emptyStateTitle="Create Image"
       emptyStateSubtitle="Add a prompt, then generate"
-      background={<BackgroundGallery />}
       bottomOffset={promptHeight + 40}
       listContent={
         <DesktopGenerationGallery

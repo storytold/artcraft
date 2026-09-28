@@ -106,8 +106,8 @@ export const UploadEntryCard = ({
   return (
     <div
       className={twMerge(
-        "bg-ui-background/60 relative flex h-full flex-col items-center justify-center gap-8 overflow-hidden rounded-2xl border-2 border-dashed border-ui-panel-border p-10 text-center transition-colors",
-        isDragActive && "border-primary/80 bg-primary/5",
+        "relative flex h-full flex-col items-center justify-center gap-6 overflow-hidden rounded-[3px] border border-dashed border-white/15 bg-ui-background p-8 text-center transition-colors hover:border-white/40",
+        isDragActive && "border-white bg-white/10 hover:border-white",
         disabled && "pointer-events-none opacity-60",
       )}
       onDragEnter={handleDragEnter}
@@ -124,35 +124,28 @@ export const UploadEntryCard = ({
         onChange={handleFileChange}
         disabled={disabled}
       />
-      <div className="flex flex-col items-center gap-6">
-        <div className="relative">
-          <div
-            className={twMerge(
-              "relative flex h-32 w-32 items-center justify-center rounded-2xl border-2 shadow-xl backdrop-blur-sm",
-              accentBackgroundClass,
-              accentBorderClass,
-            )}
-          >
-            <DynamicIcon
-              icon={icon}
-              className="text-5xl text-white drop-shadow-lg"
-            />
-          </div>
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className={twMerge(
+            "flex h-14 w-14 items-center justify-center border",
+            accentBackgroundClass,
+            accentBorderClass,
+          )}
+        >
+          <DynamicIcon icon={icon} className="text-xl text-white" />
         </div>
-        <div className="space-y-3">
-          <h3 className="text-4xl font-bold tracking-tight text-base-fg">
-            {title}
-          </h3>
-          <p className="mx-auto max-w-md text-base leading-relaxed text-base-fg/70">
+        <div>
+          <h3 className="text-lg font-semibold text-base-fg">{title}</h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-base-fg/60">
             {description}
           </p>
         </div>
-        <div className="mt-4 flex flex-wrap justify-center gap-4">
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
           <Button
             variant="primary"
             icon={primaryIcon}
             onClick={handlePrimaryClick}
-            className="px-8 py-3 text-base font-semibold shadow-lg"
+            className="px-3 py-2"
             disabled={disabled}
           >
             {primaryLabel}
@@ -162,7 +155,7 @@ export const UploadEntryCard = ({
               variant="action"
               icon={secondaryIcon}
               onClick={onSecondaryClick}
-              className="border-2 px-8 py-3 text-base font-semibold"
+              className="px-3 py-2"
               disabled={disabled}
             >
               {secondaryLabel}
@@ -173,7 +166,7 @@ export const UploadEntryCard = ({
               variant="action"
               icon={tertiaryIcon}
               onClick={onTertiaryClick}
-              className="border-2 px-8 py-3 text-base font-semibold"
+              className="px-3 py-2"
               disabled={disabled}
             >
               {tertiaryLabel}

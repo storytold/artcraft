@@ -242,7 +242,7 @@ export const AudioReferenceRow = forwardRef<
               type="button"
               onClick={() => audioInputRef.current?.click()}
               disabled={isUploadingAudio}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
+              className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
             >
               <PlusIcon  className="h-3 w-3" />
               {isUploadingAudio ? "Uploading…" : "Add audio"}
@@ -252,7 +252,7 @@ export const AudioReferenceRow = forwardRef<
                 type="button"
                 onClick={onPickAudioFromLibrary}
                 disabled={isUploadingAudio}
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
+                className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
                 <FolderOpenIcon  className="h-3 w-3" />
                 From library
@@ -270,7 +270,7 @@ export const AudioReferenceRow = forwardRef<
             {referenceImages.map((image) => (
               <div
                 key={image.id}
-                className="group relative h-9 w-9 overflow-hidden rounded-lg border border-ui-controls-border"
+                className="group relative h-9 w-9 overflow-hidden rounded-[3px] border border-ui-controls-border"
               >
                 <img
                   src={image.url}
@@ -294,7 +294,7 @@ export const AudioReferenceRow = forwardRef<
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isUploadingImage}
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
+                className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
                 <PlusIcon  className="h-3 w-3" />
                 {isUploadingImage ? "Uploading…" : "Add image"}
@@ -337,7 +337,7 @@ function AudioRefTile({
   }, [audio.url, isPlaying]);
 
   return (
-    <div className="group flex h-9 items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-2.5">
+    <div className="group flex h-9 items-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-2.5">
       <button
         type="button"
         aria-label={isPlaying ? "Stop" : "Play"}
@@ -356,7 +356,7 @@ function AudioRefTile({
         type="button"
         aria-label="Remove audio"
         onClick={() => onRemove(audio.id)}
-        className="flex h-4 w-4 items-center justify-center rounded text-base-fg/40 transition-colors hover:text-base-fg"
+        className="flex h-4 w-4 items-center justify-center rounded-[3px] text-base-fg/40 transition-colors hover:text-base-fg"
       >
         <XIcon  className="h-2.5 w-2.5" />
       </button>

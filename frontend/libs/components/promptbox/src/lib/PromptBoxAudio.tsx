@@ -6,7 +6,7 @@ import {
 } from "@storyteller/ui-gallery-modal";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { GenerateButton, ToggleButton } from "@storyteller/ui-button";
+import { GenerateIconButton, ToggleButton } from "@storyteller/ui-button";
 import { ChevronDownIcon, ChevronUpIcon, MicIcon, MicOffIcon, RepeatIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import type { OmniGenAudioModelDetails, OmniGenAudioRequest, OmniGenAudioGenerateResponse, UploadMediaFn } from "@storyteller/api";
@@ -556,23 +556,21 @@ export const PromptBoxAudio = ({
       <div className="relative z-20 flex flex-col">
         <div
           className={twMerge(
-            "glass relative w-full rounded-2xl p-4",
-            isFocused
-              ? "ring-1 ring-primary border-primary"
-              : "ring-1 ring-transparent",
+            "glass relative w-full p-4 !transition-all duration-200",
+            isFocused && "border-primary",
           )}
           {...drop.dropZoneProps}
         >
           {dropOverlay}
           {referenceRow}
 
-          <div className="flex justify-center gap-2">
+          <div className="flex gap-3">
             <div className="promptbox-resize-wrap relative flex-1">
               <textarea
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe the music or sound you want..."
-                className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
+                className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -588,13 +586,13 @@ export const PromptBoxAudio = ({
             <StylePromptRow value={stylePrompt} onChange={setStylePrompt} />
           )}
 
-          <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="mt-3.5 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
               {toggleButtons}
               {settingsPopovers}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {missingRequiredAudioRef && (
                 <span className="flex animate-pulse items-center gap-1.5 text-xs font-medium text-red-500">
                   Audio track required
@@ -605,16 +603,12 @@ export const PromptBoxAudio = ({
                 disabled={!hasClearableContent}
                 confirmClear={hasAttachedRefs}
               />
-              <GenerateButton
-                className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                icon={undefined}
+              <GenerateIconButton
                 onClick={handleEnqueue}
                 disabled={!prompt.trim() || missingRequiredAudioRef}
                 loading={isEnqueueing}
                 credits={credits}
-              >
-                Generate
-              </GenerateButton>
+              />
             </div>
           </div>
 
@@ -675,7 +669,7 @@ export const PromptBoxAudio = ({
       >
         <textarea
           placeholder="Describe the music or sound you want..."
-          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}

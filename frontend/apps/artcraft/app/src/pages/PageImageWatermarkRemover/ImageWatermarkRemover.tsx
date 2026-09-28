@@ -104,7 +104,7 @@ export const ImageWatermarkRemover = () => {
 
   return (
     <>
-      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-background text-base-fg">
         <div className="flex-1 overflow-y-auto">
           <main
             className={
@@ -115,7 +115,7 @@ export const ImageWatermarkRemover = () => {
           >
             {!imageUrl ? (
               <div className="w-full max-w-5xl">
-                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <UploadEntryCard
                     icon={DropletIcon}
                     title="Remove Image Watermark"
@@ -133,7 +133,7 @@ export const ImageWatermarkRemover = () => {
               </div>
             ) : (
               <div className="flex w-full max-w-5xl flex-col gap-5">
-                <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="w-full overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <div className="relative w-full bg-black">
                     <Button
                       icon={RotateCwIcon}
@@ -142,7 +142,7 @@ export const ImageWatermarkRemover = () => {
                         setImageUrl("");
                         setImageDimensions(null);
                       }}
-                      className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
+                      className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
                       Switch Image
                     </Button>
@@ -151,7 +151,7 @@ export const ImageWatermarkRemover = () => {
                         ref={imageRef}
                         src={imageUrl}
                         alt="Selected pic"
-                        className="max-h-[70vh] max-w-full rounded-lg object-contain shadow-2xl"
+                        className="max-h-[70vh] max-w-full object-contain"
                         onLoad={(e) => {
                           const img = e.currentTarget;
                           setImageDimensions({
@@ -177,12 +177,12 @@ export const ImageWatermarkRemover = () => {
                   </Button>
                 </div>
 
-                <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                <div className="border border-ui-panel-border bg-ui-panel p-6">
                   <div>
-                    <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                    <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       <ImagesIcon
                         
-                        className="text-primary" />
+                        className="text-ui-accent-ink" />
                       Image Information
                     </div>
                     {imageDimensions ? (
@@ -191,7 +191,7 @@ export const ImageWatermarkRemover = () => {
                           <span className="font-medium text-base-fg/70">
                             Resolution
                           </span>
-                          <span className="font-mono text-lg font-bold text-base-fg">
+                          <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                             {imageDimensions.width} × {imageDimensions.height}
                           </span>
                         </div>
@@ -199,7 +199,7 @@ export const ImageWatermarkRemover = () => {
                           <span className="font-medium text-base-fg/70">
                             Aspect Ratio
                           </span>
-                          <span className="font-mono text-lg font-bold text-base-fg">
+                          <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                             {(
                               imageDimensions.width / imageDimensions.height
                             ).toFixed(2)}

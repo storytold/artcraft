@@ -40,11 +40,11 @@ const formatTime = (s: number): string => {
 const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
   <div className="flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-background">
     <div className="flex flex-col items-center gap-4 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5">
+      <div className="flex h-20 w-20 items-center justify-center border border-white/15 bg-white/[0.015]">
         <ImagesIcon  className="text-4xl text-base-fg/40" />
       </div>
       <div>
-        <p className="text-lg font-semibold text-base-fg">No shots yet</p>
+        <p className="font-display text-2xl tracking-tight text-base-fg">No shots yet</p>
         <p className="mt-1 text-sm text-base-fg/50">Add your first shot to get started</p>
       </div>
       <Button variant="primary" icon={PlusIcon} onClick={onAdd}>
@@ -68,63 +68,63 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
   <aside className="flex w-[280px] shrink-0 flex-col border-r border-ui-panel-border bg-ui-panel">
     <div className="flex-1 overflow-y-auto p-4">
       <div className="flex flex-col gap-3">
-        <div className="text-xs font-medium uppercase tracking-wider text-base-fg/40">
+        <div className="hud-label text-base-fg/40">
           Shot {board.shotNumber}
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-base-fg/60">Title</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Title</label>
           <input
             type="text"
             value={board.title}
             onChange={(e) => onUpdate({ title: e.target.value })}
             placeholder="Shot title"
-            className="w-full rounded-md border border-ui-panel-border bg-ui-background px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-primary focus:outline-none"
+            className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-white/60 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-base-fg/60">Dialogue</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
           <textarea
             value={board.dialogue}
             onChange={(e) => onUpdate({ dialogue: e.target.value })}
             placeholder="Character dialogue..."
             rows={3}
-            className="w-full resize-none rounded-md border border-ui-panel-border bg-ui-background px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-primary focus:outline-none"
+            className="w-full resize-none rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-white/60 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-base-fg/60">Action</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
           <textarea
             value={board.action}
             onChange={(e) => onUpdate({ action: e.target.value })}
             placeholder="On-screen action..."
             rows={3}
-            className="w-full resize-none rounded-md border border-ui-panel-border bg-ui-background px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-primary focus:outline-none"
+            className="w-full resize-none rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-white/60 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-base-fg/60">Notes</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
           <textarea
             value={board.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}
             placeholder="Director notes..."
             rows={3}
-            className="w-full resize-none rounded-md border border-ui-panel-border bg-ui-background px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-primary focus:outline-none"
+            className="w-full resize-none rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder:text-base-fg/30 focus:border-white/60 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-base-fg/60">Duration (seconds)</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Duration (seconds)</label>
           <input
             type="number"
             min={0}
             step={0.5}
             value={board.duration}
             onChange={(e) => onUpdate({ duration: parseFloat(e.target.value) || 0 })}
-            className="w-full rounded-md border border-ui-panel-border bg-ui-background px-3 py-2 text-sm text-base-fg focus:border-primary focus:outline-none"
+            className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 font-mono text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"
           />
         </div>
       </div>
@@ -170,7 +170,7 @@ const MainPreview = ({
           style={{ pointerEvents: "none" }}
         />
         {board.title && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 border border-white/15 bg-black/70 px-4 py-2">
             <p className="text-sm font-medium text-white">{board.title}</p>
           </div>
         )}
@@ -178,7 +178,7 @@ const MainPreview = ({
     ) : (
       <button
         onClick={onUploadClick}
-        className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-ui-panel-border p-12 text-base-fg/40 transition-colors hover:border-primary/50 hover:text-base-fg/70"
+        className="flex flex-col items-center gap-3 border border-dashed border-white/20 bg-white/[0.015] p-12 text-base-fg/40 transition-colors hover:border-white/40 hover:bg-white/5 hover:text-base-fg/70"
       >
         <UploadIcon  className="text-3xl" />
         <span className="text-sm">Click to upload an image</span>
@@ -332,9 +332,9 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
       onClick={() => setTool(t)}
       title={label}
       className={twMerge(
-        "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+        "flex h-8 w-8 items-center justify-center rounded-[3px] transition-colors",
         tool === t
-          ? "bg-primary text-white"
+          ? "bg-white text-black"
           : "text-base-fg/60 hover:bg-white/10 hover:text-base-fg",
       )}
     >
@@ -352,7 +352,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
         <div className="mx-1 h-5 w-px bg-ui-panel-border" />
 
         {/* Color picker */}
-        <label className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-ui-panel-border" title="Stroke color">
+        <label className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-[3px] border border-white/15 hover:border-white/30" title="Stroke color">
           <span
             className="h-4 w-4 rounded-sm border border-white/20"
             style={{ background: color }}
@@ -367,16 +367,16 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
 
         {/* Brush size */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-base-fg/40">Size</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/40">Size</span>
           <input
             type="range"
             min={1}
             max={32}
             value={brushSize}
             onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="w-20 accent-primary"
+            className="w-20 accent-white"
           />
-          <span className="w-5 text-center text-[10px] text-base-fg/50">{brushSize}</span>
+          <span className="w-5 text-center font-mono text-[10px] tabular-nums text-base-fg/50">{brushSize}</span>
         </div>
 
         <div className="mx-1 h-5 w-px bg-ui-panel-border" />
@@ -385,7 +385,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           onClick={handleUndo}
           disabled={undoStack.length === 0}
           title="Undo"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-30"
+          className="flex h-8 w-8 items-center justify-center rounded-[3px] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-30"
         >
           <RotateCcwIcon  className="text-sm" />
         </button>
@@ -393,7 +393,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
         <button
           onClick={handleClear}
           title="Clear canvas"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-base-fg/60 transition-colors hover:bg-white/10 hover:text-red-400"
+          className="flex h-8 w-8 items-center justify-center rounded-[3px] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-red-400"
         >
           <XIcon  className="text-sm" />
         </button>
@@ -401,7 +401,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
         <button
           onClick={onExit}
           title="Done sketching"
-          className="ml-auto flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-white transition-colors hover:bg-primary-400"
+          className="ml-auto flex h-8 items-center gap-1.5 rounded-[3px] bg-white px-3 text-xs font-medium text-black transition-colors hover:bg-white/85"
         >
           <CheckIcon  className="text-xs" />
           Done
@@ -421,7 +421,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
             touchAction: "none",
             display: "block",
           }}
-          className="rounded shadow-xl"
+          className="border border-white/15"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -467,11 +467,11 @@ const ThumbnailItem = ({
     onDragEnd={onDragEnd}
     onClick={onSelect}
     className={twMerge(
-      "relative flex h-[60px] w-[100px] shrink-0 cursor-pointer overflow-hidden rounded-md border-2 transition-all select-none",
+      "relative flex h-[60px] w-[100px] shrink-0 cursor-pointer overflow-hidden rounded-[3px] border transition-all select-none",
       isSelected
-        ? "border-primary ring-2 ring-primary/30"
-        : "border-transparent hover:border-white/20",
-      isDragOver && "border-primary/60 opacity-60",
+        ? "border-white"
+        : "border-white/15 hover:border-white/30",
+      isDragOver && "border-white/60 opacity-60",
     )}
   >
     {board.imageDataUrl ? (
@@ -482,7 +482,7 @@ const ThumbnailItem = ({
       </div>
     )}
     <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
-      <span className="text-[10px] text-white/70">{board.shotNumber}</span>
+      <span className="font-mono text-[10px] tabular-nums text-white/85">{board.shotNumber}</span>
     </div>
   </div>
 );
@@ -515,7 +515,7 @@ const Filmstrip = ({
   <div className="flex h-[80px] shrink-0 items-center gap-2 overflow-x-auto border-t border-ui-panel-border bg-ui-panel px-3">
     <button
       onClick={onAdd}
-      className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-md border-2 border-dashed border-ui-panel-border bg-transparent text-base-fg/40 transition-colors hover:border-primary/50 hover:text-primary"
+      className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[3px] border border-dashed border-white/20 bg-white/[0.015] text-base-fg/40 transition-colors hover:border-white/40 hover:bg-white/5 hover:text-base-fg"
       title="Add shot"
     >
       <PlusIcon />
@@ -705,12 +705,12 @@ const Timeline = ({
   const playheadLeft = currentTimeSeconds * PIXELS_PER_SECOND;
 
   return (
-    <div className="shrink-0 border-t border-ui-panel-border bg-[#1a1a1a]">
+    <div className="shrink-0 border-t border-ui-panel-border bg-ui-panel">
       {/* Header row */}
       <div className="flex items-center justify-between border-b border-ui-panel-border/40 px-3 py-1">
-        <span className="font-mono text-xs text-base-fg/50">{formatTime(currentTimeSeconds)}</span>
-        <span className="text-xs text-base-fg/25">Timeline</span>
-        <span className="font-mono text-xs text-base-fg/50">{formatTime(totalDuration)}</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/50">{formatTime(currentTimeSeconds)}</span>
+        <span className="hud-label text-base-fg/25">Timeline</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/50">{formatTime(totalDuration)}</span>
       </div>
 
       {/* Lane */}
@@ -729,7 +729,7 @@ const Timeline = ({
               style={{ left: i * PIXELS_PER_SECOND }}
             >
               <div className="h-2 w-px bg-white/10" />
-              <span className="text-[9px] text-base-fg/25">{i}s</span>
+              <span className="font-mono text-[9px] tabular-nums text-base-fg/25">{i}s</span>
             </div>
           ))}
 
@@ -743,9 +743,9 @@ const Timeline = ({
               <div
                 key={board.id}
                 className={twMerge(
-                  "absolute top-6 bottom-1 flex items-stretch overflow-hidden rounded border transition-colors",
+                  "absolute top-6 bottom-1 flex items-stretch overflow-hidden border transition-colors",
                   isSelected
-                    ? "border-primary bg-primary/25"
+                    ? "border-white bg-white/15"
                     : "border-white/15 bg-white/5 hover:bg-white/10",
                 )}
                 style={{
@@ -776,13 +776,13 @@ const Timeline = ({
                       "{board.dialogue}"
                     </span>
                   )}
-                  <span className="text-[9px] text-base-fg/30">{board.duration.toFixed(1)}s</span>
+                  <span className="font-mono text-[9px] tabular-nums text-base-fg/30">{board.duration.toFixed(1)}s</span>
                 </div>
 
                 {/* Resize handle */}
                 <div
                   data-resize="true"
-                  className="absolute right-0 top-0 bottom-0 w-2 rounded-r opacity-0 transition-opacity hover:bg-white/30 hover:opacity-100"
+                  className="absolute right-0 top-0 bottom-0 w-2 opacity-0 transition-opacity hover:bg-white/30 hover:opacity-100"
                   style={{ cursor: "ew-resize" }}
                   onPointerDown={(e) => handleResizePointerDown(e, board.id, board.duration)}
                   title="Drag to resize duration"
@@ -804,10 +804,10 @@ const Timeline = ({
 
           {/* Playhead */}
           <div
-            className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-primary"
+            className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-white"
             style={{ left: playheadLeft }}
           >
-            <div className="absolute -left-[4px] top-0 h-0 w-0 border-x-[4px] border-t-[7px] border-x-transparent border-t-primary" />
+            <div className="absolute -left-[4px] top-0 h-0 w-0 border-x-[4px] border-t-[7px] border-x-transparent border-t-white" />
           </div>
         </div>
       </div>
@@ -845,14 +845,14 @@ const PlaybackControls = ({
   onNextScene,
 }: PlaybackControlsProps) => {
   const transportBtnClass =
-    "flex h-9 w-9 items-center justify-center rounded-md text-base-fg/70 transition-colors hover:bg-white/10 hover:text-base-fg active:scale-95";
+    "flex h-9 w-9 items-center justify-center rounded-[3px] text-base-fg/70 transition-colors hover:bg-white/10 hover:text-base-fg active:scale-95";
 
   return (
-    <div className="flex h-[52px] shrink-0 items-center border-t border-ui-panel-border bg-[#111] px-4">
+    <div className="flex h-[52px] shrink-0 items-center border-t border-ui-panel-border bg-ui-background px-4">
       {/* Left stats */}
       <div className="flex w-32 flex-col">
-        <span className="font-mono text-xs text-base-fg/60">{formatTime(currentTimeSeconds)}</span>
-        <span className="text-[10px] text-base-fg/30">
+        <span className="font-mono text-xs tabular-nums text-base-fg/60">{formatTime(currentTimeSeconds)}</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">
           {currentBoardNumber !== null ? `Shot ${currentBoardNumber}` : "—"}
         </span>
       </div>
@@ -876,7 +876,7 @@ const PlaybackControls = ({
 
         {/* Play / Pause */}
         <button
-          className="mx-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition-all hover:bg-primary-400 active:scale-95"
+          className="mx-1 flex h-10 w-10 items-center justify-center rounded-[3px] bg-white text-black transition-all hover:bg-white/85 active:scale-95"
           onClick={isPlaying ? onPause : onPlay}
           title={isPlaying ? "Pause" : "Play"}
         >
@@ -901,8 +901,8 @@ const PlaybackControls = ({
 
       {/* Right stats */}
       <div className="flex w-32 flex-col items-end">
-        <span className="font-mono text-xs text-base-fg/60">{formatTime(totalDuration)}</span>
-        <span className="text-[10px] text-base-fg/30">{totalBoards} shot{totalBoards !== 1 ? "s" : ""}</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/60">{formatTime(totalDuration)}</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">{totalBoards} shot{totalBoards !== 1 ? "s" : ""}</span>
       </div>
     </div>
   );

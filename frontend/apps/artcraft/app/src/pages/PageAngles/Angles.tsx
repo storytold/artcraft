@@ -481,7 +481,7 @@ export const Angles = () => {
           /* ──── Upload screen ──── */
           <div className="flex flex-1 items-center justify-center p-8 lg:p-16">
             <div className="w-full max-w-5xl">
-              <div className="relative aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-panel shadow-lg">
+              <div className="relative aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                 <UploadEntryCard
                   icon={CrosshairIcon}
                   title="Angles"
@@ -497,7 +497,7 @@ export const Angles = () => {
                   disabled={isLoadingImage}
                 />
                 {isLoadingImage && (
-                  <div className="bg-ui-panel/80 absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                  <div className="bg-ui-panel/80 absolute inset-0 flex items-center justify-center">
                     <LoadingSpinner className="h-12 w-12" />
                   </div>
                 )}
@@ -518,7 +518,7 @@ export const Angles = () => {
             {/* Full-bleed image display */}
             <div className="flex h-full w-full items-center justify-center px-16 pb-56 pt-16">
               <div
-                className="relative overflow-hidden rounded-xl shadow-lg"
+                className="relative overflow-hidden"
                 style={imageContainerStyle}
               >
                 {activeAngle ? (
@@ -583,12 +583,12 @@ export const Angles = () => {
 
             {/* ── Floating bottom angle controls ── */}
             <div className="absolute bottom-4 left-1/2 z-10 w-[calc(100%-32px)] max-w-[860px] -translate-x-1/2">
-              <div className="glass flex items-center gap-4 rounded-xl px-4 lg:gap-5 lg:px-5">
+              <div className="glass flex items-center gap-4 rounded-none px-4 lg:gap-5 lg:px-5">
                 {/* Orbit sphere */}
                 <div className="relative shrink-0 px-5 py-5">
                   <button
                     onClick={() => handleTiltStep(1)}
-                    className="absolute left-1/2 top-0 z-10 -translate-x-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
+                    className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronUpIcon
                       
@@ -596,7 +596,7 @@ export const Angles = () => {
                   </button>
                   <button
                     onClick={() => handleTiltStep(-1)}
-                    className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
+                    className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronDownIcon
                       
@@ -604,7 +604,7 @@ export const Angles = () => {
                   </button>
                   <button
                     onClick={() => handleRotationStep(-1)}
-                    className="absolute left-0 top-1/2 z-10 -translate-y-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
+                    className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronLeftIcon
                       
@@ -612,7 +612,7 @@ export const Angles = () => {
                   </button>
                   <button
                     onClick={() => handleRotationStep(1)}
-                    className="absolute right-0 top-1/2 z-10 -translate-y-1/2 p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
+                    className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronRightIcon
                       
@@ -632,7 +632,7 @@ export const Angles = () => {
                 {/* Sliders group */}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex items-center gap-3">
-                    <span className="w-14 shrink-0 text-xs font-medium text-base-fg">
+                    <span className="w-16 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       Rotation
                     </span>
                     <div className="min-w-0 flex-1">
@@ -645,13 +645,13 @@ export const Angles = () => {
                         suffix="°"
                       />
                     </div>
-                    <span className="w-10 shrink-0 text-left text-xs tabular-nums text-base-fg/70">
+                    <span className="w-10 shrink-0 text-left font-mono text-xs tabular-nums text-base-fg/70">
                       {rotationToDisplay(angleConfig.rotation)}°
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="w-14 shrink-0 text-xs font-medium text-base-fg">
+                    <span className="w-16 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       Tilt
                     </span>
                     <div className="min-w-0 flex-1">
@@ -664,13 +664,13 @@ export const Angles = () => {
                         suffix="°"
                       />
                     </div>
-                    <span className="w-9 shrink-0 text-left text-xs tabular-nums text-base-fg/70">
+                    <span className="w-9 shrink-0 text-left font-mono text-xs tabular-nums text-base-fg/70">
                       {angleConfig.tilt}°
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="w-14 shrink-0 text-xs font-medium text-base-fg">
+                    <span className="w-16 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       Zoom
                     </span>
                     <div className="min-w-0 flex-1">
@@ -682,7 +682,7 @@ export const Angles = () => {
                         onChange={handleZoomSlider}
                       />
                     </div>
-                    <span className="w-9 shrink-0 text-left text-xs tabular-nums text-base-fg/70">
+                    <span className="w-9 shrink-0 text-left font-mono text-xs tabular-nums text-base-fg/70">
                       {angleConfig.zoom}
                     </span>
                   </div>

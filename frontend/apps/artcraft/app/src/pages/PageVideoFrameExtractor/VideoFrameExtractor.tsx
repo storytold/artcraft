@@ -457,7 +457,7 @@ export const VideoFrameExtractor = () => {
 
   return (
     <>
-      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-background text-base-fg">
         <div className="flex-1 overflow-y-auto">
           <main
             className={
@@ -468,7 +468,7 @@ export const VideoFrameExtractor = () => {
           >
             {!videoUrl ? (
               <div className="w-full max-w-5xl">
-                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <UploadEntryCard
                     icon={ImagesIcon}
                     title="Extract Video Frames"
@@ -486,7 +486,7 @@ export const VideoFrameExtractor = () => {
               </div>
             ) : (
               <div className="flex w-full max-w-5xl flex-col gap-5">
-                <div className="w-full overflow-hidden rounded-xl border border-ui-panel-border bg-ui-controls/40">
+                <div className="w-full overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <div className="relative aspect-video w-full bg-black">
                     <Button
                       icon={RotateCwIcon}
@@ -500,7 +500,7 @@ export const VideoFrameExtractor = () => {
                         setSavedFrames(new Set());
                         setConvertingFrames(new Set());
                       }}
-                      className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
+                      className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
                       Switch Video
                     </Button>
@@ -516,17 +516,17 @@ export const VideoFrameExtractor = () => {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
                         ref={progressBarRef}
-                        className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
+                        className="group relative mb-3 h-3 cursor-pointer bg-white/15"
                         onClick={handleProgressBarClick}
                       >
                         <div
-                          className="absolute h-full overflow-hidden rounded-full bg-primary"
+                          className="absolute h-full overflow-hidden bg-white"
                           style={{
                             width: `${duration ? (currentTime / duration) * 100 : 0}%`,
                           }}
                         />
                         <div
-                          className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 cursor-ew-resize rounded-full bg-yellow-400 shadow-lg"
+                          className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 cursor-ew-resize bg-yellow-400"
                           style={{
                             left: `${duration ? (startTime / duration) * 100 : 0}%`,
                           }}
@@ -570,7 +570,7 @@ export const VideoFrameExtractor = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => seekToFrame("first")}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                             title="First Frame"
                           >
                             <SkipBackIcon
@@ -579,7 +579,7 @@ export const VideoFrameExtractor = () => {
                           </button>
                           <button
                             onClick={togglePlayPause}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
+                            className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-white/20 transition-colors hover:bg-white/30"
                           >
                             <DynamicIcon
                               icon={isPlaying ? PauseIcon : PlayIcon}
@@ -588,7 +588,7 @@ export const VideoFrameExtractor = () => {
                           </button>
                           <button
                             onClick={() => seekToFrame("last")}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                             title="Last Frame"
                           >
                             <SkipForwardIcon
@@ -598,7 +598,7 @@ export const VideoFrameExtractor = () => {
                           <div className="mx-1 h-6 w-px bg-white/20" />
                           <button
                             onClick={toggleMute}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                           >
                             <DynamicIcon
                               icon={isMuted ? VolumeXIcon : Volume2Icon}
@@ -617,7 +617,7 @@ export const VideoFrameExtractor = () => {
                             className="w-20 accent-white"
                           />
                         </div>
-                        <div className="font-mono text-sm text-white">
+                        <div className="font-mono text-sm tabular-nums text-white">
                           {formatTime(currentTime)} / {formatTime(duration)}
                         </div>
                       </div>
@@ -640,24 +640,24 @@ export const VideoFrameExtractor = () => {
 
                 <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
                   <div className="flex flex-col gap-5">
-                    <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                    <div className="group border border-ui-panel-border bg-ui-panel p-6">
                       <div>
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                        <div className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                           Start Time
                         </div>
-                        <div className="font-mono text-3xl font-bold text-primary drop-shadow-sm">
+                        <div className="font-mono text-3xl font-semibold tabular-nums text-ui-accent-ink">
                           {formatTimePrecise(startTime)}
                         </div>
                         <div className="mt-3 flex items-center gap-2 text-xs text-base-fg/60">
-                          <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400 shadow-lg shadow-yellow-400/50" />
+                          <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400" />
                           <span>Adjust via the yellow marker on the video</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                    <div className="group border border-ui-panel-border bg-ui-panel p-6">
                       <div>
-                        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                        <div className="mb-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                           Video Information
                         </div>
                         <div className="space-y-3 text-sm">
@@ -665,7 +665,7 @@ export const VideoFrameExtractor = () => {
                             <span className="font-medium text-base-fg/70">
                               Duration
                             </span>
-                            <span className="font-mono text-lg font-bold text-base-fg">
+                            <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                               {formatTime(duration)}
                             </span>
                           </div>
@@ -674,7 +674,7 @@ export const VideoFrameExtractor = () => {
                               <span className="font-medium text-base-fg/70">
                                 Resolution
                               </span>
-                              <span className="font-mono font-bold text-base-fg">
+                              <span className="font-mono font-semibold tabular-nums text-base-fg">
                                 {videoRef.current.videoWidth} ×{" "}
                                 {videoRef.current.videoHeight}
                               </span>
@@ -685,12 +685,12 @@ export const VideoFrameExtractor = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                  <div className="border border-ui-panel-border bg-ui-panel p-6">
                     <div>
-                      <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-base-fg/60">
+                      <h3 className="mb-5 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                         <SparklesIcon
                           
-                          className="text-primary" />
+                          className="text-ui-accent-ink" />
                         Extraction Settings
                       </h3>
 
@@ -698,7 +698,7 @@ export const VideoFrameExtractor = () => {
                         <div>
                           <label
                             htmlFor="numFrames"
-                            className="mb-2.5 block text-sm font-semibold text-base-fg"
+                            className="mb-1.5 block text-xs font-medium text-base-fg/60"
                           >
                             Number of Frames
                           </label>
@@ -716,14 +716,14 @@ export const VideoFrameExtractor = () => {
                                 ),
                               )
                             }
-                            className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label
                             htmlFor="frameDistance"
-                            className="mb-2.5 block text-sm font-semibold text-base-fg"
+                            className="mb-1.5 block text-xs font-medium text-base-fg/60"
                           >
                             Distance (ms)
                           </label>
@@ -738,11 +738,11 @@ export const VideoFrameExtractor = () => {
                                 Math.max(1, parseInt(e.target.value) || 1),
                               )
                             }
-                            className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"
                           />
                         </div>
 
-                        <div className="text-xs leading-relaxed text-base-fg/80">
+                        <div className="text-xs leading-relaxed text-base-fg/60">
                           Extracting multiple frames helps capture a sharp,
                           non-blurred frame.
                         </div>
@@ -754,26 +754,26 @@ export const VideoFrameExtractor = () => {
                 {extractedFrames.length > 0 && (
                   <div
                     ref={extractedFramesRef}
-                    className="rounded-2xl border border-ui-panel-border bg-ui-controls p-6 shadow-lg"
+                    className="border border-ui-panel-border bg-ui-panel p-6"
                   >
                     <div>
-                      <div className="mb-6 flex items-center justify-between">
-                        <h3 className="flex items-center gap-2 text-xl font-bold uppercase tracking-wider text-base-fg">
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-sm font-semibold text-base-fg">
                           <ImagesIcon
                             
-                            className="text-primary" />
+                            className="text-ui-accent-ink" />
                           Extracted Frames
                         </h3>
-                        <div className="bg-ui-badge rounded-full border-2 border-primary/30 px-5 py-2 text-sm font-bold text-base-fg shadow-lg">
+                        <div className="border border-white/20 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase leading-none tracking-[0.12em] text-base-fg/70">
                           {extractedFrames.length}{" "}
                           {extractedFrames.length === 1 ? "Frame" : "Frames"}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-5">
+                      <div className="grid grid-cols-2 gap-3">
                         {extractedFrames.map((frame, index) => (
                           <div
                             key={frame.id}
-                            className="group relative overflow-hidden rounded-xl border-2 border-ui-panel-border bg-ui-controls"
+                            className="group relative overflow-hidden border border-ui-panel-border bg-ui-background transition-colors hover:border-white/30"
                           >
                             <div className="aspect-video overflow-hidden bg-black">
                               <img
@@ -782,12 +782,12 @@ export const VideoFrameExtractor = () => {
                                 className="h-full w-full object-contain"
                               />
                             </div>
-                            <div className="space-y-2 bg-ui-background p-3">
+                            <div className="space-y-2 border-t border-ui-panel-border/60 bg-ui-background p-3">
                               <div className="flex items-center justify-between">
-                                <span className="bg-ui-badge rounded border border-ui-panel-border px-2 py-1 text-xs font-bold text-base-fg">
+                                <span className="border border-white/20 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase leading-none tracking-[0.12em] text-base-fg/70">
                                   #{index + 1}
                                 </span>
-                                <div className="font-mono text-xs font-semibold text-base-fg/70">
+                                <div className="font-mono text-xs tabular-nums text-base-fg/70">
                                   {formatTimePrecise(frame.timestamp)}
                                 </div>
                               </div>

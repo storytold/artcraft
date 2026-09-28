@@ -60,11 +60,12 @@ export function ProviderBillingModal({
         setShowModal(false);
       }}
       className={twMerge(
-        "bg-ui-panel border border-ui-panel-border transition-all duration-300 overflow-y-auto",
+        "rounded-none border transition-all duration-300 overflow-y-auto",
         isArtcraft
-          ? "max-w-screen-2xl max-h-[90vh]"
-          : "max-w-2xl max-h-[500px]",
+          ? "max-w-screen-xl max-h-[90vh] border-white/15 bg-[#101014]"
+          : "max-w-2xl max-h-[500px] border-ui-panel-border bg-ui-panel",
       )}
+      childPadding={!isArtcraft}
       showClose={true}
     >
       <div

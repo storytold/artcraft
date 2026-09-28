@@ -330,7 +330,7 @@ export const PromptBoxEdit = ({
         {(supportsMaskedInpainting || isNanoBananaModel) && (
           <div
             className={twMerge(
-              "glass w-fit mx-auto rounded-xl px-2 py-2 flex items-center gap-3",
+              "glass w-fit mx-auto rounded-[3px] px-2 py-2 flex items-center gap-3",
               selectedImageModel?.canUseImagePrompt &&
                 isImageRowVisible &&
                 "mb-[72px]",
@@ -346,7 +346,7 @@ export const PromptBoxEdit = ({
               <Tooltip content="Undo" position="top" delay={200}>
                 <button
                   onClick={onUndo}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex h-8 w-8 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={!onUndo}
                 >
                   <RotateCcwIcon  className="h-4 w-4" />
@@ -355,7 +355,7 @@ export const PromptBoxEdit = ({
               <Tooltip content="Redo" position="top" delay={200}>
                 <button
                   onClick={onRedo}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex h-8 w-8 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={!onRedo}
                 >
                   <Redo2Icon  className="h-4 w-4" />
@@ -383,14 +383,14 @@ export const PromptBoxEdit = ({
           )}
           <div
             className={twMerge(
-              "glass relative w-[860px] rounded-xl p-4",
-              isFocused && "ring-1 ring-primary border-primary",
+              "glass relative w-[860px] p-4",
+              isFocused && "border-primary",
               selectedImageModel?.canUseImagePrompt &&
                 isImageRowVisible &&
                 "rounded-t-none",
             )}
           >
-            <div className="flex justify-center gap-2">
+            <div className="flex gap-3">
               {selectedImageModel?.canUseImagePrompt && (
                 <Tooltip
                   content="Add Image"
@@ -402,7 +402,7 @@ export const PromptBoxEdit = ({
                     variant="action"
                     className={twMerge(
                       "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
-                      isImageRowVisible && "text-primary",
+                      isImageRowVisible && "text-white",
                     )}
                     onClick={() => setShowImagePrompts((prev) => !prev)}
                   >
@@ -428,7 +428,7 @@ export const PromptBoxEdit = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Write what you want to change in your image and click generate..."
-                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
+                  className={`promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -438,14 +438,14 @@ export const PromptBoxEdit = ({
                 />
                 <PromptFullscreenButton onClick={openFullscreen} />
                 <span
-                  className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
+                  className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
                 >
                   {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
                 </span>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="mt-3.5 flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {selectedImageModel?.supportsNewAspectRatio() && (
                   <AspectRatioPicker
                     model={selectedImageModel}
@@ -497,11 +497,6 @@ export const PromptBoxEdit = ({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <PromptClearAllButton
-                  onClick={handleClearAll}
-                  disabled={!hasClearableContent}
-                  confirmClear={referenceImages.length > 0}
-                />
                 {onFitPressed && (
                   <Tooltip
                     content={"Fit canvas to screen"}
@@ -526,8 +521,13 @@ export const PromptBoxEdit = ({
                     onGenerationCountChange?.(count);
                   }}
                 />
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={referenceImages.length > 0}
+                />
                 <GenerateButton
-                  className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center border-none bg-white px-3 text-sm font-bold text-black hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
                   icon={undefined}
                   onClick={handleGenerate}
                   disabled={isDisabled || !prompt.trim()}
@@ -583,14 +583,14 @@ export const PromptBoxEdit = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage}
-              className="relative top-auto rounded-2xl"
+              className="relative top-auto rounded-[3px]"
             />
           ) : undefined
         }
       >
         <textarea
           placeholder="Write what you want to change in your image and click generate..."
-          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}

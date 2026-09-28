@@ -83,7 +83,6 @@ export const PromptFullscreenModal = ({
       closeOnOutsideClick
       closeOnEsc
       className="w-full max-w-4xl"
-      backdropClassName="backdrop-blur-md"
     >
       {/* Explicit inline height (not a Tailwind arbitrary class) so the column
           is reliably bounded across the modal's nested wrappers — that's what

@@ -1,0 +1,55 @@
+.pricing-hud {
+  font-family: var(--font-geist-mono, "Geist Mono"), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.pricing-sale-badge {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.website-plan-card {
+  --plan: #555;
+  --plan-ink: #ddd;
+  min-width: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--plan) 14%, transparent),
+      transparent 50%
+    ),
+    var(--pricing-surface, #101014);
+}
+.website-plan-card.plan-green {
+  --plan: #00a873;
+  --plan-ink: #2fd39c;
+}
+.website-plan-card.plan-purple {
+  --plan: #9d4cff;
+  --plan-ink: #c08fff;
+}
+.website-plan-card.plan-orange {
+  --plan: #d97700;
+  --plan-ink: #ffb347;
+}
+.website-plan-card.plan-enterprise {
+  --plan: #3568c9;
+  --plan-ink: #7ea3ee;
+}
+.website-plan-card[data-highlight] {
+  box-shadow: inset 0 0 0 2px var(--plan);
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--plan) 22%, transparent),
+      color-mix(in srgb, var(--plan) 4%, transparent)
+    ),
+    var(--pricing-surface, #101014);
+}
+.website-plan-check {
+  background: color-mix(in srgb, var(--plan) 16%, transparent);
+  color: var(--plan-ink);
+}

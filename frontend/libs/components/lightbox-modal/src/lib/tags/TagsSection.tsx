@@ -236,7 +236,7 @@ export function TagsSection({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-medium text-base-fg/60">
+        <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
           <TagIcon />
           <span>Tags</span>
         </div>

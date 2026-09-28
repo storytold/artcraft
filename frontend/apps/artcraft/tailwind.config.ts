@@ -12,6 +12,36 @@ export default {
     extend: {
       fontFamily: {
         "custom-font": ["Fira Sans", "sans-serif"],
+        // Brutalist type system, matching artcraft-webapp.
+        mono: [
+          "Geist Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Consolas",
+          "monospace",
+        ],
+        display: [
+          "Archivo",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+        sans: [
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
       },
       keyframes: {
         fadeIn: {
@@ -225,12 +255,20 @@ export default {
         wrapper: "#39394d",
       },
       ui: {
+        // Brutalist system (matches artcraft-webapp): near-black surfaces
+        // with white/15 hairline borders. Values come from the --st-* theme
+        // variables in app/src/styles/base.css.
         background: "var(--st-bg)",
         panel: "var(--st-panel)",
         "panel-border": "var(--st-panel-border)",
+        border: "var(--st-panel-border)",
         controls: "rgb(var(--st-controls-rgb) / <alpha-value>)",
         "controls-button": "rgb(var(--st-controls-rgb) / <alpha-value>)",
+        "controls-border": "var(--st-controls-border)",
         divider: "var(--st-divider)",
+        ink: "rgb(var(--st-fg-rgb) / <alpha-value>)",
+        "accent-ink": "#74aaff",
+        sunken: "var(--st-sunken)",
       },
       "base-fg": "rgb(var(--st-fg-rgb) / <alpha-value>)",
       media: {
@@ -288,6 +326,9 @@ export default {
   },
   plugins: [],
   safelist: [
+    // lucide-react adds this class at runtime; keep the base-layer sizing rule
+    // in styles/tailwind.css from being purged.
+    "lucide",
     "bg-character-selected",
     "bg-character-unselected",
     "bg-character-clip",

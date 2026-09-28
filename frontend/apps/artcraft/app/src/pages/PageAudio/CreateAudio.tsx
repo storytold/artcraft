@@ -8,7 +8,6 @@ import {
   FilterMediaClasses,
 } from "@storyteller/api";
 import { useOmniGenAudioModels, useAudioCostEstimate } from "@storyteller/omni-gen";
-import BackgroundGallery from "../PageImage/BackgroundGallery";
 import {
   galleryModalLightboxImage,
   galleryModalLightboxMediaId,
@@ -149,7 +148,6 @@ const CreateAudio = () => {
       hasContent={hasContent}
       emptyStateTitle="Create Audio"
       emptyStateSubtitle="Describe a song, a sound, or a sample"
-      background={<BackgroundGallery />}
       bottomOffset={promptHeight + 40}
       listContent={
         <DesktopGenerationGallery

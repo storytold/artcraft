@@ -252,7 +252,7 @@ export const ReferenceDeck = ({
           <button
             type="button"
             onClick={handleAddClick}
-            className="glass flex aspect-square w-14 -rotate-6 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all duration-200 hover:rotate-0 hover:scale-105 hover:bg-ui-controls/60 dark:border-white/25"
+            className="glass flex aspect-square w-14 -rotate-6 flex-col items-center justify-center gap-0.5 rounded-[3px] border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all duration-200 hover:rotate-0 hover:scale-105 hover:bg-ui-controls/60 dark:border-white/25"
           >
             <PlusIcon className="text-lg opacity-80" />
             <span className="text-[9px] font-medium leading-none opacity-70">
@@ -270,7 +270,7 @@ export const ReferenceDeck = ({
   const expandedPanel = (
     <div
       className={twMerge(
-        "glass w-max rounded-xl border border-white/10 p-2 shadow-2xl",
+        "glass w-max rounded-[3px] border border-white/10 p-2 shadow-2xl",
         // In-flow (fullscreen modal): cap at the container width so the
         // cards wrap into rows instead of overflowing the modal.
         alwaysExpanded
@@ -296,7 +296,7 @@ export const ReferenceDeck = ({
           <button
             type="button"
             onClick={onClearAll}
-            className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-base-fg/60 transition-colors hover:text-red-400"
+            className="flex items-center gap-1 rounded-[3px] px-1 py-0.5 text-[11px] text-base-fg/60 transition-colors hover:text-red-400"
           >
             <Trash2Icon className="h-2.5 w-2.5" />
             Clear all
@@ -362,7 +362,7 @@ export const ReferenceDeck = ({
             <button
               type="button"
               onClick={handleAddClick}
-              className="glass flex aspect-square w-14 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all hover:bg-ui-controls/60 dark:border-white/25"
+              className="glass flex aspect-square w-14 shrink-0 items-center justify-center rounded-[3px] border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all hover:bg-ui-controls/60 dark:border-white/25"
             >
               <PlusIcon className="text-xl opacity-80" />
             </button>,

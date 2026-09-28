@@ -121,6 +121,9 @@
       "path": "./libs/components/pricing-modal"
     },
     {
+      "path": "./libs/components/pricing-table"
+    },
+    {
       "path": "./libs/model-list"
     },
     {

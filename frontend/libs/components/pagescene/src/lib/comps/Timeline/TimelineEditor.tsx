@@ -317,24 +317,25 @@ export const TimelineEditor = () => {
   return (
     <div
       id="timeline-editor"
-      className="glass glass-no-hover absolute bottom-4 left-1/2 w-[90vw] max-w-5xl -translate-x-1/2 select-none rounded-2xl p-3 text-white shadow-xl"
+      className="border border-ui-panel-border bg-ui-controls absolute bottom-4 left-1/2 w-[90vw] max-w-5xl -translate-x-1/2 select-none rounded-none p-3 text-white"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       {/* transport + collapse */}
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-ui-panel-border pb-2">
         <button
           type="button"
           title="Go to start"
           onClick={() => editor && seekTimeline(editor, 0)}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10"
         >
           <SkipBackIcon  className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={togglePlay}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/90 hover:bg-white/10"
+          aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/90 hover:bg-white/10"
         >
           <DynamicIcon
             icon={isPlaying ? PauseIcon : PlayIcon}
@@ -345,11 +346,11 @@ export const TimelineEditor = () => {
           type="button"
           title="Go to end"
           onClick={() => editor && seekTimeline(editor, duration)}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10"
         >
           <SkipForwardIcon  className="h-3.5 w-3.5" />
         </button>
-        <span className="ml-2 tabular-nums text-xs text-base-fg/60">
+        <span className="ml-2 font-mono tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
         </span>
         {/* ml-auto lives on a wrapper: Tooltip's className styles the popup
@@ -368,7 +369,7 @@ export const TimelineEditor = () => {
             <button
               type="button"
               onClick={() => setFocusSelected(!focusSelected)}
-              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+              className={`flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors ${
                 focusSelected
                   ? "bg-primary/20 text-white"
                   : "text-base-fg/60 hover:bg-white/10"
@@ -382,7 +383,7 @@ export const TimelineEditor = () => {
           type="button"
           title="Collapse timeline"
           onClick={() => setExpanded(false)}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/60 hover:bg-white/10"
+          className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/60 hover:bg-white/10"
         >
           <ChevronDownIcon  className="h-3 w-3" />
         </button>
@@ -552,7 +553,7 @@ export const TimelineEditor = () => {
               footer={
                 <button
                   type="button"
-                  className="mt-2 w-full rounded-md border border-ui-controls-border/60 px-2 py-1.5 text-[11px] text-base-fg/80 transition-colors hover:bg-ui-controls/40"
+                  className="mt-2 w-full rounded-[3px] border border-ui-controls-border/60 px-2 py-1.5 text-[11px] text-base-fg/80 transition-colors hover:bg-ui-controls/40"
                   onClick={() => {
                     if (editor) {
                       setClipTransitionEasing(

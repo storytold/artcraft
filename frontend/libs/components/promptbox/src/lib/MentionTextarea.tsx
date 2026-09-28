@@ -83,9 +83,9 @@ interface ChipMenuState {
 // itself bg-ui-controls, so the default bg-ui-controls/80 chip disappears
 // against it.
 const CHIP_CLASS =
-  "mention-chip mx-0.5 inline-flex max-w-[10rem] cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-ui-controls/80 px-1.5 py-0.5 align-middle leading-tight transition-colors hover:border-white/25 hover:bg-white/15 [@media(hover:none)]:bg-black/30 [@media(hover:none)]:border-white/15";
+  "mention-chip mx-0.5 inline-flex max-w-[10rem] cursor-pointer items-center gap-1 rounded-[3px] border border-white/10 bg-ui-controls/80 px-1.5 py-0.5 align-middle leading-tight transition-colors hover:border-white/25 hover:bg-white/15 [@media(hover:none)]:bg-black/30 [@media(hover:none)]:border-white/15";
 const CHIP_IMG_CLASS =
-  "pointer-events-none h-4 w-4 shrink-0 rounded object-cover select-none";
+  "pointer-events-none h-4 w-4 shrink-0 object-cover select-none";
 const CHIP_NAME_CLASS = "pointer-events-none truncate";
 
 /** Coarse-pointer (touch) device — no hover, on-screen keyboard. */
@@ -496,7 +496,7 @@ function MentionDropdown({
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
       onScroll={() => (lastScrollTs.current = performance.now())}
-      className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+      className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
       style={{
         pointerEvents: "auto",
         ...(placement
@@ -523,7 +523,7 @@ function MentionDropdown({
             key={item.token ?? `${item.label}-${i}`}
             type="button"
             className={twMerge(
-              "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base-fg transition-colors cursor-pointer",
+              "flex w-full items-center gap-2 rounded-[3px] px-2 py-2 text-sm text-base-fg transition-colors cursor-pointer",
               i === activeIndex ? "bg-ui-controls/80" : "hover:bg-ui-controls/60",
             )}
             // Selection happens on pointerup, not click: on mobile the
@@ -570,7 +570,7 @@ function MentionDropdown({
             onClick={() => onSelect(item)}
             onMouseEnter={() => onHover(i)}
           >
-            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/10 flex items-center justify-center bg-black/20">
+            <div className="h-8 w-8 flex-shrink-0 overflow-hidden border border-white/10 flex items-center justify-center bg-black/20">
               {item.type === "character" && item.preview ? (
                 <img
                   src={item.preview}

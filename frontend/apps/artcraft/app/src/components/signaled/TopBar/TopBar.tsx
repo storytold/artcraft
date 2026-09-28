@@ -1,8 +1,7 @@
-import { CalculatorIcon, CheckIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
+import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 import { useCreditsState, type CreditsIconStatus } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
@@ -42,7 +41,7 @@ import {
 } from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import {
   applyMakeVideoFromImage,
@@ -167,10 +166,10 @@ const CreditsCoinWithStatus = ({
       }
     >
       <span className="relative inline-flex">
-        <CoinsIcon  className="text-primary" />
+        <CoinsIcon className="text-[11px] text-primary" />
         {showBadge && (
           <span
-            className={`absolute -right-1.5 -top-1.5 flex h-3 w-3 items-center justify-center rounded-full ring-1 ring-ui-background ${badgeColorClass}`}
+            className={`absolute -right-1.5 -top-1.5 flex h-3 w-3 items-center justify-center ring-1 ring-ui-panel ${badgeColorClass}`}
           >
             <DynamicIcon icon={badgeIconDef} className="text-[7px]" />
           </span>
@@ -347,40 +346,50 @@ export const TopBar = ({ pageName }: Props) => {
     }
   };
 
-  const getPageTitle = (): string => {
+  const getPageCrumbs = (): string[] => {
     switch (tabStore.activeTabId) {
       case "2D":
-        return "Canvas";
+        return ["Studio", "Canvas"];
       case "3D":
-        return "3D Editor";
+        return ["Studio", "3D Editor"];
       case "IMAGE":
-        return "Create Image";
+        return ["Create", "Image"];
       case "VIDEO":
-        return "Create Video";
+        return ["Create", "Video"];
       case "AUDIO":
-        return "Create Audio";
+        return ["Create", "Audio"];
       case "EDIT":
-        return "Edit Image";
+        return ["Studio", "Edit Image"];
       case "VIDEO_FRAME_EXTRACTOR":
-        return "Video Frame Extractor";
+        return ["Studio", "Frame Extractor"];
       case "VIDEO_WATERMARK_REMOVAL":
-        return "Video Watermark Remover";
+        return ["Studio", "Video Watermark Remover"];
       case "IMAGE_WATERMARK_REMOVAL":
-        return "Image Watermark Remover";
+        return ["Studio", "Image Watermark Remover"];
       case "IMAGE_TO_3D_OBJECT":
-        return "Image to 3D Object";
+        return ["Create", "3D Object"];
       case "IMAGE_TO_3D_WORLD":
-        return "Image to 3D World";
-      case "APPS":
-        return "ArtCraft";
+        return ["Create", "3D World"];
+      case "REMOVE_BACKGROUND":
+        return ["Studio", "Remove Background"];
+      case "ANGLES":
+        return ["Create", "Angles"];
+      case "STORYBOARD":
+        return ["Create", "Storyboard"];
       case "BACKGROUND_CHANGE":
-        return "Background Change";
+        return ["Studio", "Background Change"];
+      case "VIDEO_EDITOR":
+        return ["Studio", "Edit Video"];
+      case "MOODBOARD":
+        return ["Studio", "Moodboard"];
+      case "APPS":
+        return ["Home"];
       default:
-        return "Artcraft";
+        return ["ArtCraft"];
     }
   };
 
-  const pageTitle = getPageTitle();
+  const pageCrumbs = getPageCrumbs();
 
   const { toggleModal: toggleSubscriptionModal } = usePricingModalStore();
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
@@ -418,7 +427,7 @@ export const TopBar = ({ pageName }: Props) => {
   return (
     <>
       <header
-        className="fixed left-0 top-0 z-[60] w-full border-b border-ui-panel-border bg-ui-background"
+        className="fixed left-0 top-0 z-[60] w-full border-b border-ui-border bg-ui-panel"
         data-tauri-drag-region
       >
         <nav
@@ -479,27 +488,47 @@ export const TopBar = ({ pageName }: Props) => {
           </div>
 
           <div
-            className={`${tabStore.activeTabId === "3D" ? "no-drag" : ""} flex items-center justify-center gap-2 font-medium`}
+            className={`${tabStore.activeTabId === "3D" ? "no-drag" : ""} flex min-w-0 items-center justify-center gap-2 font-medium`}
             data-tauri-drag-region
           >
             {tabStore.activeTabId === "3D" ? (
               <SceneTitleInput pageName={pageName} />
             ) : (
               <h1
-                className="flex items-center gap-2.5 text-base-fg"
+                className="hud-label flex min-w-0 items-center gap-1.5 text-base-fg/70"
                 data-tauri-drag-region
               >
-                {getCreatorIcon(
-                  ModelCreator.ArtCraft,
-                  "h-5 w-5 icon-auto-contrast opacity-50",
-                )}
-                {pageTitle}
+                {pageCrumbs.map((crumb, i) => {
+                  const isLast = i === pageCrumbs.length - 1;
+                  return (
+                    <Fragment key={`${crumb}-${i}`}>
+                      {i > 0 && (
+                        <ChevronRightIcon
+                          aria-hidden="true"
+                          className="h-3 w-3 shrink-0 text-base-fg/50"
+                          data-tauri-drag-region
+                        />
+                      )}
+                      <span
+                        className={
+                          isLast
+                            ? "truncate bg-ui-ink px-1.5 py-1 text-ui-panel"
+                            : "truncate"
+                        }
+                        aria-current={isLast ? "page" : undefined}
+                        data-tauri-drag-region
+                      >
+                        {crumb}
+                      </span>
+                    </Fragment>
+                  );
+                })}
               </h1>
             )}
           </div>
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
-            <div className="no-drag flex items-center gap-1.5">
+            <div className="no-drag flex items-center gap-1.5 sm:gap-2">
               {(tabStore.activeTabId === "IMAGE" ||
                 tabStore.activeTabId === "VIDEO") && <GallerySelectToggle />}
               {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
@@ -508,26 +537,26 @@ export const TopBar = ({ pageName }: Props) => {
                 tabStore.activeTabId === "AUDIO") && <GalleryViewToggle />}
               <PopoverMenu
                 position="bottom"
-                align="center"
+                align="end"
                 triggerIcon={
                   <CreditsCoinWithStatus iconStatus={creditsIconStatus} />
                 }
                 triggerLabel={
                   <span className="whitespace-nowrap text-sm font-medium">
-                    {sumTotalCredits} Credits
+                    {sumTotalCredits.toLocaleString()}
                   </span>
                 }
-                buttonClassName="h-[30px] px-2 ps-1.5 bg-transparent hover:bg-ui-controls/30 border-0 shadow-none"
-                panelClassName="mt-3 bg-ui-panel border border-ui-panel-border text-base-fg"
+                buttonClassName="h-8 px-3 ps-2.5 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-[3px] gap-1.5"
+                panelClassName="mt-2 bg-[#101014] border border-white/15 text-white rounded-[3px]"
               >
                 {(close) => (
-                  <div className="w-72 p-2.5 text-base-fg">
+                  <div className="w-72 p-3 text-white">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-sm font-medium text-base-fg/80">
+                      <span className="text-sm font-medium text-white/70">
                         Your credit balance
                       </span>
                       <button
-                        className="text-sm font-medium text-primary-400 transition-all hover:text-primary-300"
+                        className="text-sm font-medium text-primary transition-colors hover:text-primary-300"
                         onClick={() => {
                           close();
                           toggleCreditsModal();
@@ -536,15 +565,13 @@ export const TopBar = ({ pageName }: Props) => {
                         Buy credits
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 text-4xl font-bold text-base-fg">
-                      <CoinsIcon
-                        
-                        className="text-2xl text-primary" />
-                      {sumTotalCredits}
+                    <div className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-white">
+                      <CoinsIcon className="text-xl text-primary" />
+                      {sumTotalCredits.toLocaleString()}
                     </div>
 
                     <button
-                      className="mt-2 flex items-center gap-1.5 text-xs text-base-fg/50 transition-colors hover:text-primary"
+                      className="mt-2 flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50 transition-colors hover:text-white"
                       onClick={() => {
                         close();
                         useCostBreakdownModalStore.getState().openModal();
@@ -556,7 +583,7 @@ export const TopBar = ({ pageName }: Props) => {
 
                     <div className="mt-3 flex gap-2">
                       <Button
-                        variant="action"
+                        variant="secondary"
                         className="h-9 grow"
                         onClick={() => {
                           close();
@@ -586,21 +613,35 @@ export const TopBar = ({ pageName }: Props) => {
                   variant="primary"
                   icon={GemIcon}
                   onClick={toggleSubscriptionModal}
-                  className="transition-all duration-300"
+                  className="h-8 px-3"
                 >
                   Upgrade
                 </Button>
               )}
 
-              <UploadImagesButton className="h-[34px] w-[34px]" />
+              <TaskQueue />
+
+              <button
+                type="button"
+                onClick={handleOpenGalleryModal}
+                aria-label="My Library"
+                className="flex h-8 items-center gap-1.5 rounded-[3px] border border-white/15 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/30 hover:bg-white/10"
+              >
+                <ImagesIcon className="text-[11px]" />
+                <span className="hidden whitespace-nowrap xl:block">
+                  My Library
+                </span>
+              </button>
+
+              <UploadImagesButton />
 
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
                   aria-label="Settings"
                   variant="secondary"
                   icon={SettingsIcon}
-                  iconClassName="h-5 w-5 shrink-0"
-                  className="h-[34px] w-[34px] p-0"
+                  iconClassName="h-4 w-4 shrink-0"
+                  className="h-8 w-8 border-white/15 bg-transparent p-0 text-white/80 hover:border-white/30 hover:bg-white/10"
                   onClick={() => {
                     setSettingsSection("general");
                     setIsSettingsModalOpen(true);
@@ -608,19 +649,6 @@ export const TopBar = ({ pageName }: Props) => {
                   }}
                 />
               </Tooltip>
-
-              <Button
-                variant="secondary"
-                icon={ImagesIcon}
-                onClick={handleOpenGalleryModal}
-              >
-                <span className="hidden whitespace-nowrap text-base-fg xl:block">
-                  My Library
-                </span>
-              </Button>
-
-              {/* <Activity /> */}
-              <TaskQueue />
             </div>
 
             <div className="no-drag">
@@ -631,14 +659,14 @@ export const TopBar = ({ pageName }: Props) => {
               <div className="no-drag flex items-center">
                 <Button
                   variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
+                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-white/10 hover:opacity-100"
                   onClick={minimize}
                 >
-                  <MinusIcon  className="text-xs" />
+                  <MinusIcon className="text-xs" />
                 </Button>
                 <Button
                   variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
+                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-white/10 hover:opacity-100"
                   onClick={toggleMaximize}
                 >
                   <DynamicIcon
@@ -648,10 +676,10 @@ export const TopBar = ({ pageName }: Props) => {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-red/10 hover:text-red"
+                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-red hover:text-white hover:opacity-100"
                   onClick={close}
                 >
-                  <XIcon  className="text-lg" />
+                  <XIcon className="text-lg" />
                 </Button>
               </div>
             )}

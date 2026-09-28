@@ -619,9 +619,9 @@ export const UploadFiles3D = ({
             previewSkeletonVisible ? "Hide skeleton" : "Show skeleton"
           }
           onClick={handleSkeletonToggle}
-          className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+          className={`flex h-10 w-10 items-center justify-center rounded-[3px] border transition-colors ${
             previewSkeletonVisible
-              ? "border-primary bg-primary/20 text-white"
+              ? "border-white bg-white/10 text-white"
               : "border-ui-controls-border bg-ui-controls text-white/70 hover:text-white"
           }`}
         >
@@ -698,11 +698,11 @@ export const UploadFiles3D = ({
       {isMulti ? (
         <PanelGroup direction="horizontal">
           <Panel defaultSize={33} minSize={20}>
-          <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-lg bg-brand-secondary p-2">
+          <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-none border border-white/15 bg-black/30 p-2">
             {fileEntries.map((entry, i) => (
               <li
                 key={i}
-                className={`group flex cursor-pointer items-center justify-between gap-1.5 rounded px-2 py-1 text-sm transition-colors ${
+                className={`group flex cursor-pointer items-center justify-between gap-1.5 rounded-[3px] px-2 py-1 text-sm transition-colors ${
                   i === previewIndex ? "bg-white/10" : "hover:bg-white/5"
                 }`}
                 onClick={() => setPreviewIndex(i)}
@@ -759,14 +759,14 @@ export const UploadFiles3D = ({
 
           <PanelResizeHandle className="flex w-4 items-center justify-center">
             <div
-              className="h-8 w-1 rounded-full bg-white/20 transition-colors hover:bg-white/40"
+              className="h-8 w-1 rounded-none bg-white/20 transition-colors hover:bg-white/40"
               onPointerDown={(e) => e.stopPropagation()}
             />
           </PanelResizeHandle>
 
           <Panel defaultSize={67} minSize={25}>
           <div className="flex h-full flex-col gap-2">
-            <div className="relative w-full min-h-48 overflow-hidden rounded-lg bg-brand-secondary">
+            <div className="relative w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
               <canvas
                 className="pointer-events-none h-full min-h-48 !w-full"
                 ref={canvasCallbackRef}
@@ -814,7 +814,7 @@ export const UploadFiles3D = ({
           </Panel>
         </PanelGroup>
       ) : (
-        <div className="relative m-auto w-full min-h-48 overflow-hidden rounded-lg bg-brand-secondary">
+        <div className="relative m-auto w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
           <canvas
             className="pointer-events-none h-full min-h-48 !w-full"
             ref={canvasCallbackRef}

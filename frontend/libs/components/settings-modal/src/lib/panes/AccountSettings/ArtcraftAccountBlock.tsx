@@ -64,9 +64,15 @@ export const ArtcraftAccountBlock = ({
   };
 
   return (
-    <div className="flex justify-between items-center">
-      <span>ArtCraft Account:</span>
-      <pre>{artcraftSession?.display_name}</pre>
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
+          ArtCraft account
+        </p>
+        <p className="truncate text-sm font-medium text-base-fg/80">
+          {artcraftSession?.display_name || "Not logged in"}
+        </p>
+      </div>
       <Button
         variant={
           isCheckingArtcraftSession
@@ -75,14 +81,12 @@ export const ArtcraftAccountBlock = ({
             ? "destructive"
             : "primary"
         }
-        className="h-[30px]"
+        className="h-9 shrink-0 px-3"
         onClick={handleArtcraftButton}
         disabled={isCheckingArtcraftSession}
       >
         {isCheckingArtcraftSession ? (
-          <LoaderCircleIcon
-            
-            className="animate-spin text-sm" />
+          <LoaderCircleIcon className="animate-spin text-sm" />
         ) : isLoggedIn ? (
           "Log Out"
         ) : (

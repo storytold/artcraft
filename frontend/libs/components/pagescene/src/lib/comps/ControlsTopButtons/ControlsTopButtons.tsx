@@ -15,6 +15,8 @@ import { DEFAULT_CAMERA_ASPECT_RATIO, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
 
+import { TOOLBAR_BUTTON_CLASS_NAME } from "../toolbarStyles";
+
 const isNumberString = (s: string): boolean => /^\d+$/.test(s);
 
 export const ControlsTopButtons = () => {
@@ -239,11 +241,11 @@ export const ControlsTopButtons = () => {
 
   return (
     <div className="flex flex-col gap-2 pl-3 pt-3">
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-1.5">
         <ButtonDropdown
           label="File"
           icon={FileIcon}
-          className="shadow-xl"
+          className={TOOLBAR_BUTTON_CLASS_NAME}
           options={[
             {
               label: "New scene",
@@ -379,7 +381,7 @@ export const ControlsTopButtons = () => {
 
         <Button
           icon={outlinerShowing ? SquareCheckIcon : SquareIcon}
-          className="shadow-xl"
+          className={TOOLBAR_BUTTON_CLASS_NAME}
           iconClassName={twMerge(
             "text-[16px]",
             outlinerShowing ? "text-white" : "text-white/20",
@@ -397,7 +399,7 @@ export const ControlsTopButtons = () => {
         <Button
           icon={KeyboardIcon}
           variant="secondary"
-          className="shadow-xl"
+          className={TOOLBAR_BUTTON_CLASS_NAME}
           iconClassName={twMerge(
             "text-[16px]",
             cheatsheetPinned ? "text-white" : "text-white/20",

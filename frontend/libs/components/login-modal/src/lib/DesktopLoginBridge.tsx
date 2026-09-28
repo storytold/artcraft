@@ -112,21 +112,21 @@ export function DesktopLoginBridge({ onSuccess, onStart, onActiveChange }: { onS
   };
 
   const remaining = challenge ? Math.max(0, Math.ceil((Date.parse(challenge.expires_at) - now) / 1000)) : 0;
-  return <section aria-label="Website login" className="mb-6 rounded-xl border border-white/15 p-4 text-center">
+  return <section aria-label="Website login" className="mb-6 border border-white/15 bg-white/[0.03] p-4 text-center">
     {isActive && <div className="mb-4 text-left">
-      <button type="button" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white" onClick={back}>
+      <button type="button" className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 transition-colors hover:text-white" onClick={back}>
         <ArrowLeftIcon size={16} aria-hidden="true" /> Back
       </button>
     </div>}
     {challenge ? <>
       <p className="mb-3 text-sm text-white/70">Scan with your phone or approve in your browser.</p>
-      <QRCodeSVG value={challenge.verification_url} size={192} marginSize={4} title="Scan to approve desktop login" className="mx-auto rounded-lg" />
-      <p className="my-3 font-mono text-2xl tracking-widest">{challenge.confirmation_code.slice(0, 4)}-{challenge.confirmation_code.slice(4)}</p>
-      <p className="mb-3 text-xs text-white/60">Verify this code on the website. Expires in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}</p>
-      <button type="button" className="rounded-lg border border-white/30 px-4 py-2" onClick={() => OpenUrl(challenge.verification_url).catch(() => setMessage("Unable to open the browser. Scan the QR code instead."))}>Open website</button>
-    </> : busy ? <p className="text-sm text-white/70" role="status">Preparing login…</p> : <div className="flex flex-col gap-2">
-      <button type="button" className="rounded-lg bg-white px-4 py-3 font-medium text-black" onClick={() => start(true)}>Login with Website</button>
-      <button type="button" className="rounded-lg border border-white/30 px-4 py-2" onClick={() => start(false)}>Scan to Login</button>
+      <QRCodeSVG value={challenge.verification_url} size={192} marginSize={4} title="Scan to approve desktop login" className="mx-auto" />
+      <p className="my-3 font-mono text-2xl tracking-[0.2em]">{challenge.confirmation_code.slice(0, 4)}-{challenge.confirmation_code.slice(4)}</p>
+      <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/50">Verify this code on the website. Expires in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}</p>
+      <button type="button" className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10" onClick={() => OpenUrl(challenge.verification_url).catch(() => setMessage("Unable to open the browser. Scan the QR code instead."))}>Open website</button>
+    </> : busy ? <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/60" role="status">Preparing login…</p> : <div className="flex flex-col gap-2">
+      <button type="button" className="h-10 rounded-[3px] bg-white px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/90" onClick={() => start(true)}>Login with Website</button>
+      <button type="button" className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10" onClick={() => start(false)}>Scan to Login</button>
       <p className="text-xs text-white/50">Use Google or any account already signed in on the website.</p>
     </div>}
     {message && <p className="mt-3 text-sm text-white/70" role="status">{message}</p>}

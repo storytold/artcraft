@@ -10,7 +10,6 @@ import {
   UploadAudioMedia,
   FilterMediaClasses,
 } from "@storyteller/api";
-import BackgroundGallery from "./BackgroundGallery";
 import {
   ClassyModelSelector,
   useImageToVideoPageModelList,
@@ -186,7 +185,6 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
       hasContent={hasContent}
       emptyStateTitle="Create Video"
       emptyStateSubtitle="Choose an image, add a prompt, then generate"
-      background={<BackgroundGallery />}
       bottomOffset={promptHeight + 40}
       listContent={
         <DesktopGenerationGallery

@@ -27,7 +27,7 @@ export const PrecisionSelector = () => {
         <span
           onMouseEnter={() => handleMouseEnterItem(scale)}
           key={index}
-          className="flex bg-ui-panel text-sm justify-center align-middle justify-items-center px-2 hover:bg-ui-controls"
+          className="flex bg-ui-controls text-sm justify-center align-middle justify-items-center px-2 hover:bg-white/10"
         >
           {scale}
         </span>

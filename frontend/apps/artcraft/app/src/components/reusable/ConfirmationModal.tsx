@@ -24,7 +24,7 @@ export const ConfirmationModal = ({
   onClose,
   onOk,
   okText = "OK",
-  okColor = "bg-brand-success",
+  okColor = "",
   onCancel,
   cancelText = "Cancel",
   canHide,
@@ -52,7 +52,7 @@ export const ConfirmationModal = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/40" />
+          <div className="fixed inset-0 bg-black/80" />
         </Transition.Child>
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           <Transition.Child
@@ -64,15 +64,15 @@ export const ConfirmationModal = ({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl border border-ui-panel-border bg-ui-panel p-5 text-left align-middle shadow-xl transition-all">
+            <Dialog.Panel className="w-full max-w-md transform overflow-hidden border border-white/15 bg-ui-modal p-5 text-left align-middle transition-all">
               <Dialog.Title
                 as="h4"
-                className="mb-4 text-xl font-bold text-white"
+                className="mb-4 font-display text-xl tracking-tight text-white"
               >
                 {title}
               </Dialog.Title>
 
-              <div className="mt-2">{text}</div>
+              <div className="mt-2 text-sm leading-relaxed text-white/70">{text}</div>
               {canHide && (
                 <div className="mt-2">
                   <Checkbox id="hide-dialog" label="Do not show this again" />
@@ -84,7 +84,7 @@ export const ConfirmationModal = ({
                   <Button
                     type="button"
                     onClick={onCancel}
-                    className="rounded-lg px-3 py-2"
+                    className="px-3 py-2"
                     variant="secondary"
                   >
                     {cancelText}
@@ -94,7 +94,7 @@ export const ConfirmationModal = ({
                   <Button
                     type="button"
                     onClick={handleOk}
-                    className={[okColor, "rounded-lg px-3 py-2"].join(" ")}
+                    className={[okColor, "px-3 py-2"].join(" ").trim()}
                   >
                     {okText}
                   </Button>

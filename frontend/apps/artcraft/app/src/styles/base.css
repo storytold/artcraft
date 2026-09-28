@@ -1,6 +1,6 @@
 * {
   scrollbar-width: thin;
-  scrollbar-color: #363636 #171717;
+  scrollbar-color: #2c2c2f #0b0b0c;
 }
 
 /* Works on Chrome, Edge, and Safari */
@@ -9,13 +9,12 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: #171717;
+  background: #0b0b0c;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #363636;
-  border-radius: 4px;
-  border: 2px solid #171717;
+  background-color: #2c2c2f;
+  border: 2px solid #0b0b0c;
 }
 
 /* Light theme: the scrollbar track/thumb must be light, not the dark defaults. */
@@ -46,18 +45,37 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* Display face: Archivo, matching artcraft-webapp. */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family: "Outfit", sans-serif;
+  font-family:
+    "Archivo",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  letter-spacing: -0.03em;
+}
+
+/* Only display-scale headings run expanded on the wdth axis; compact
+   headings (card titles, section labels) stay at normal width so they
+   don't truncate in tight layouts. */
+h1,
+h2 {
+  font-stretch: 118%;
+  font-weight: 620;
 }
 
 body {
   font-family:
-    "Source Sans 3",
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
@@ -70,22 +88,61 @@ body {
   background-color: var(--st-bg);
   color-scheme: var(--st-color-scheme, dark);
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #2d81ff;
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid #74aaff;
+  outline-offset: 3px;
+}
+
+/* Mono HUD micro-label, matching the webapp/marketing site's .hud-label. */
+.hud-label {
+  font-family:
+    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.font-serif-italic {
+  font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Display utility carries the ax-display treatment (Archivo at weight 620,
+   118% width). Plain (unlayered) rule so it wins over font-weight
+   utilities like font-semibold. */
+.font-display {
+  font-stretch: 118%;
+  font-weight: 620;
 }
 
 /* ===================== THEME VARIABLES ===================== */
+/* The default (the "gray" theme id) is the brutalist system shared with
+   artcraft-webapp: near-black surfaces, white/15 hairline borders. */
 :root {
-  --st-bg: #121212;
-  /* gray theme default */
-  --st-panel: #1f1f1f;
-  --st-panel-border: #3f3f3f;
-  --st-modal: #1f1f1f;
+  --st-bg: #121316;
+  --st-panel: #101014;
+  --st-panel-border: rgba(255, 255, 255, 0.15);
+  --st-modal: #101014;
   /* default modal surface (can be gradient per theme) */
-  --st-controls: #3e3e41;
-  --st-controls-rgb: 62 62 65;
-  --st-controls-border: #3f3f3f;
-  --st-fg: #ffffff;
-  --st-fg-rgb: 255 255 255;
-  --st-divider: #515168;
+  --st-controls: #1e1f22;
+  --st-controls-rgb: 30 31 34;
+  --st-controls-border: rgba(255, 255, 255, 0.15);
+  --st-sunken: #060607;
+  --st-fg: #f2f1ee;
+  --st-fg-rgb: 242 241 238;
+  --st-divider: rgba(255, 255, 255, 0.15);
   --st-gallery-vignette-alpha: 0.6;
   /* Photo tint (default neutral) */
   --st-photo-tint-rgb: 0 0 0;
@@ -95,28 +152,45 @@ body {
   --st-badge-alpha: 0.4;
 
   /* shadcn design tokens consumed by @storyteller/ui-video-editor.
-     Dark-theme palette — the editor only runs in dark mode today.
-     --primary matches the webapp's brand blue (#2d81ff) so the
-     selection ring is consistent across hosts. */
-  --background: 0 0% 9%;
+     Same values as artcraft-webapp's styles.css. */
+  --background: 225 10% 8%;
   --foreground: 0 0% 98%;
-  --card: 0 0% 12%;
+  --card: 240 11% 7%;
   --card-foreground: 0 0% 98%;
-  --popover: 0 0% 12%;
+  --popover: 240 11% 7%;
   --popover-foreground: 0 0% 98%;
   --primary: 216 100% 59%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 24%;
+  --secondary: 240 4% 9%;
   --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 18%;
+  --muted: 240 4% 9%;
   --muted-foreground: 0 0% 64%;
-  --accent: 0 0% 16%;
+  --accent: 240 4% 9%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 18%;
-  --input: 0 0% 18%;
-  --ring: 217 91% 60%;
+  --border: 0 0% 100% / 0.15;
+  --input: 0 0% 100% / 0.15;
+  --ring: 217 100% 73%;
+
+  /* Motion tokens, mirrored from artcraft-webapp. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-emphasis: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 340ms;
+  --dur-page: 260ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+    --dur-page: 1ms;
+  }
 }
 
 /* Light theme */
@@ -130,6 +204,7 @@ body {
   --st-controls-rgb: 238 238 239;
   --st-controls-border: #dcdcdf;
   /* requested light button border */
+  --st-sunken: #ececef;
   --st-fg: #111827;
   --st-fg-rgb: 17 24 39;
   --st-divider: #d1d5db;
@@ -141,18 +216,19 @@ body {
   --st-badge-alpha: 0.1;
 }
 
-/* Gray (current) */
+/* Default dark (brutalist, matches artcraft-webapp) */
 .theme-gray {
-  --st-bg: #121212;
-  --st-panel: #1f1f1f;
-  --st-panel-border: #272727;
-  --st-modal: #1f1f1f;
-  --st-controls: #3e3e41;
-  --st-controls-rgb: 62 62 65;
-  --st-controls-border: #464646;
-  --st-fg: #ffffff;
-  --st-fg-rgb: 255 255 255;
-  --st-divider: #272727;
+  --st-bg: #121316;
+  --st-panel: #101014;
+  --st-panel-border: rgba(255, 255, 255, 0.15);
+  --st-modal: #101014;
+  --st-controls: #1e1f22;
+  --st-controls-rgb: 30 31 34;
+  --st-controls-border: rgba(255, 255, 255, 0.15);
+  --st-sunken: #060607;
+  --st-fg: #f2f1ee;
+  --st-fg-rgb: 242 241 238;
+  --st-divider: rgba(255, 255, 255, 0.15);
   --st-color-scheme: dark;
   --st-gallery-vignette-alpha: 0.3;
   --st-photo-tint-rgb: 0 0 0;
@@ -165,11 +241,12 @@ body {
 .theme-black {
   --st-bg: #000000;
   --st-panel: #0a0a0a;
-  --st-panel-border: #242424;
+  --st-panel-border: rgba(255, 255, 255, 0.15);
   --st-modal: #0a0a0a;
   --st-controls: #111111;
   --st-controls-rgb: 17 17 17;
-  --st-controls-border: #242424;
+  --st-controls-border: rgba(255, 255, 255, 0.15);
+  --st-sunken: #000000;
   --st-fg: #ffffff;
   --st-fg-rgb: 255 255 255;
   --st-divider: #303030;
@@ -193,7 +270,8 @@ body {
     radial-gradient(520px 280px at 110% 120%, #1cb6be33, transparent), #0f1220;
   --st-controls: #1a1f35;
   --st-controls-rgb: 26 31 53;
-  --st-controls-border: #1e2237;
+  --st-controls-border: rgba(255, 255, 255, 0.15);
+  --st-sunken: #05070d;
   --st-fg: #f8fafc;
   --st-fg-rgb: 248 250 252;
   --st-divider: #2a3152;
@@ -217,7 +295,8 @@ body {
     radial-gradient(700px 360px at 115% 120%, #fb923c88, transparent), #1a121a;
   --st-controls: #271927;
   --st-controls-rgb: 39 25 39;
-  --st-controls-border: #3a253a;
+  --st-controls-border: rgba(255, 255, 255, 0.15);
+  --st-sunken: #0d070b;
   --st-fg: #f8fafc;
   --st-fg-rgb: 248 250 252;
   --st-divider: #4a2e3a;
@@ -238,14 +317,10 @@ body {
   background: var(--st-panel);
 }
 
+/* Panel surface. Brutalist system: flat, no gradient (class name kept
+   for lib compatibility). */
 .bg-ui-panel-gradient {
-  background:
-    radial-gradient(
-      60.68% 60.68% at 50% 0%,
-      rgba(255, 255, 255, 0.08) 0%,
-      rgba(0, 0, 0, 0) 70%
-    ),
-    var(--st-panel);
+  background: var(--st-panel);
   background-color: var(--st-panel);
 }
 
@@ -331,7 +406,6 @@ img {
 
 .promptbox-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
 }
 
 .promptbox-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -729,4 +803,61 @@ img {
 
 .promptbox-drop-chip {
   animation: promptbox-drop-chip-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ===================== Brutalist extras (from artcraft-webapp) ========== */
+
+.liquid-glass {
+  background: rgba(11, 11, 12, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.2s ease-out both;
+}
+
+.bg-dots {
+  background-image: radial-gradient(#ffffff20 1px, transparent 0);
+  background-color: var(--st-panel);
+  background-size: 33px 33px;
+  background-position: center;
+}
+
+/* Fine registration marks echo the landing page section corners. */
+.frame-corner-mark {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -5px;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4))
+      center / 1px 11px no-repeat,
+    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4))
+      center / 11px 1px no-repeat;
+}
+
+/* Contained section borders match the landing without decorative extensions. */
+.create-empty-section {
+  margin-inline: 12px;
+  border: 1px solid rgba(242, 241, 238, 0.2);
+  background: rgba(242, 241, 238, 0.015);
+}
+
+@media (min-width: 640px) {
+  .create-empty-section {
+    margin-inline: 32px;
+  }
 }

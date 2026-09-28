@@ -20,12 +20,12 @@ export const PromptFullscreenButton = ({
 }: PromptFullscreenButtonProps) => {
   return (
     <div className={`absolute right-0 top-0 z-10 ${className ?? ""}`}>
-      <Tooltip content="Focus mode" position="left">
+      <Tooltip content="Focus mode" position="top" delay={200}>
         <button
           type="button"
           aria-label="Expand prompt to focus mode"
           onClick={onClick}
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
+          className="flex h-6 w-6 items-center justify-center bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
         >
           <Maximize2Icon
             

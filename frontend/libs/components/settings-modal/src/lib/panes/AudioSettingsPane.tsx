@@ -106,9 +106,9 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex flex-col">
-          <Label htmlFor="play-sounds">
+      <div className="space-y-4 pt-3 text-base-fg">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="play-sounds" className="mb-0">
             Play Notification Sounds for Events?
           </Label>
           <Switch enabled={playSounds} setEnabled={setPlaySounds} />

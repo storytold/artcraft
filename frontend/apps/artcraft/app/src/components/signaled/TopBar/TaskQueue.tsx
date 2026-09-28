@@ -41,6 +41,7 @@ import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 import { twMerge } from "tailwind-merge";
+import dayjs from "dayjs";
 
 type InProgressTask = {
   id: string;
@@ -159,7 +160,7 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
       delay={300}
     >
       <button
-        className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+        className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
         aria-label="Copy prompt"
         onClick={(e) => {
           e.stopPropagation();
@@ -195,7 +196,7 @@ const InProgressCard = ({
   const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
   const thumbnailContent = hasRefImages ? (
-    <div className="relative h-[86px] w-[86px] shrink-0 overflow-hidden rounded">
+    <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden">
       <img
         src={task.refImageUrls![0]}
         alt="Reference"
@@ -212,13 +213,13 @@ const InProgressCard = ({
           size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
-        <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
+        <div className="absolute bottom-0.5 right-0.5 bg-black/60 px-1 text-[9px] text-white/80">
           +{task.refImageUrls!.length - 1}
         </div>
       )}
     </div>
   ) : (
-    <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+    <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-ui-controls">
       <LoaderCircleIcon
         
         className="animate-spin text-base-fg/60"
@@ -227,7 +228,7 @@ const InProgressCard = ({
   );
 
   return (
-    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+    <div className="p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
         {thumbnailContent}
         <div className="min-w-0 flex-1">
@@ -239,7 +240,7 @@ const InProgressCard = ({
                   content="Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages."
                   position="top"
                   strategy="fixed"
-                  className="w-[200px] text-wrap bg-yellow-400/60 backdrop-blur-3xl"
+                  className="w-[200px] text-wrap bg-yellow-400/60"
                   zIndex={50}
                   delay={100}
                 >
@@ -249,7 +250,7 @@ const InProgressCard = ({
                 </Tooltip>
               )}
             </div>
-            <div className="ml-2 shrink-0 text-[11px] tabular-nums text-base-fg/60">
+            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
               {progressPercent}%
             </div>
           </div>
@@ -259,9 +260,9 @@ const InProgressCard = ({
             </div>
           )}
           <div className="mt-1.5 flex items-center gap-2">
-            <div className="h-1.5 min-w-0 flex-1 rounded bg-ui-controls">
+            <div className="h-1.5 min-w-0 flex-1 bg-ui-controls">
               <div
-                className="h-1.5 rounded bg-brand-primary-400"
+                className="h-1.5 bg-white"
                 style={{
                   width: `${Math.max(0, Math.min(100, task.progress))}%`,
                 }}
@@ -269,7 +270,7 @@ const InProgressCard = ({
             </div>
           </div>
           {timeLabel && (
-            <div className="mt-1 text-[11px] text-base-fg/50">{timeLabel}</div>
+            <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>
           )}
           {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
         </div>
@@ -277,7 +278,7 @@ const InProgressCard = ({
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
               aria-label="Dismiss"
               onClick={(e) => {
                 e.stopPropagation();
@@ -304,12 +305,12 @@ const CompletedCard = ({
 }) => {
   return (
     <div
-      className="flex cursor-pointer items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-ui-controls/40"
+      className="flex cursor-pointer items-center gap-2.5 p-2 transition-colors hover:bg-ui-controls/40"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
     >
-      <div className="h-[86px] w-[86px] shrink-0 overflow-hidden rounded bg-ui-controls">
+      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden bg-ui-controls">
         {task.thumbnailUrl ? (
           <img
             src={task.thumbnailUrl}
@@ -342,7 +343,7 @@ const CompletedCard = ({
         )}
         {task.completedAt && (
           <div className="text-xs text-base-fg opacity-60">
-            {task.completedAt.toISOString()}
+            {dayjs(task.completedAt).format("MMM D, h:mm A")}
           </div>
         )}
         {task.prompt && <PromptLine prompt={task.prompt} />}
@@ -351,7 +352,7 @@ const CompletedCard = ({
         {task.prompt && <CopyPromptButton prompt={task.prompt} />}
         {onDismiss && (
           <button
-            className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+            className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
             aria-label="Dismiss"
             onClick={(e) => {
               e.stopPropagation();
@@ -398,7 +399,7 @@ const FailedCard = ({
   const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
   const thumbnailContent = hasRefImages ? (
-    <div className="relative h-[86px] w-[86px] shrink-0 overflow-hidden rounded">
+    <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden">
       <img
         src={task.refImageUrls![0]}
         alt="Reference"
@@ -415,13 +416,13 @@ const FailedCard = ({
           size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
-        <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
+        <div className="absolute bottom-0.5 right-0.5 bg-black/60 px-1 text-[9px] text-white/80">
           +{task.refImageUrls!.length - 1}
         </div>
       )}
     </div>
   ) : (
-    <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+    <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-red-500/10">
       <CircleAlertIcon
         
         className="text-red-400"
@@ -430,7 +431,7 @@ const FailedCard = ({
   );
 
   return (
-    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+    <div className="p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
         {thumbnailContent}
         <div className="min-w-0 flex-1">
@@ -445,7 +446,7 @@ const FailedCard = ({
             </div>
           )}
           <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
-            <span className="shrink-0 rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
+            <span className="shrink-0 bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
               {statusLabel}
             </span>
             {task.failureReason && (
@@ -478,13 +479,18 @@ const FailedCard = ({
               </div>
             )}
           </div>
+          {task.failedAt && (
+            <div className="mt-0.5 text-[11px] text-base-fg/40">
+              {dayjs(task.failedAt).format("MMM D, h:mm A")}
+            </div>
+          )}
           {task.prompt && <PromptLine prompt={task.prompt} />}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
               aria-label="Dismiss"
               onClick={(e) => {
                 e.stopPropagation();
@@ -1002,23 +1008,21 @@ export const TaskQueue = () => {
       <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
         <div className="relative">
           {badgeCount > 0 && (
-            <div className="absolute -right-1 -top-1 z-20 flex h-[17px] w-[17px] items-center justify-center rounded-full bg-brand-primary-400 text-[13px] font-medium text-white">
+            <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center bg-white px-1 font-mono text-[10px] font-semibold text-black ring-2 ring-[#0b0b0c]">
               {badgeCount}
             </div>
           )}
           <PopoverMenu
             mode="default"
-            buttonClassName="h-[34px] w-[34px] !p-0 relative"
-            panelClassName="w-[400px] p-2 bg-ui-panel mt-2.5"
+            buttonClassName="h-8 w-8 !p-0 relative bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/80 rounded-[3px] shadow-none"
+            panelClassName="w-[400px] p-2 bg-[#101014] border border-white/15 mt-2 rounded-[3px]"
             position="bottom"
             align="end"
             triggerIcon={
               inProgressCount > 0 ? (
-                <LoaderCircleIcon
-                  
-                  className="animate-spin" />
+                <LoaderCircleIcon className="animate-spin text-[11px]" />
               ) : (
-                <ListChecksIcon />
+                <ListChecksIcon className="text-[11px]" />
               )
             }
             onOpenChange={handleOpenChange}
@@ -1037,7 +1041,7 @@ export const TaskQueue = () => {
                       <div>
                         {inProgress.length > 0 && (
                           <div className="mb-4">
-                            <div className="mb-1 px-1 text-xs uppercase tracking-wide text-base-fg/50">
+                            <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                               In Progress
                             </div>
                             {inProgress.map((t) => (
@@ -1056,7 +1060,7 @@ export const TaskQueue = () => {
                         {failed.length > 0 && (
                           <div className="mb-4">
                             <div className="mb-1 flex items-center justify-between px-1">
-                              <div className="text-xs font-semibold uppercase tracking-wide text-red-400/70">
+                              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">
                                 Failed
                               </div>
                               <button
@@ -1081,7 +1085,7 @@ export const TaskQueue = () => {
                         {completed.length > 0 && (
                           <div>
                             <div className="mb-1 flex items-center justify-between px-1">
-                              <div className="text-xs font-semibold uppercase tracking-wide text-base-fg/50">
+                              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                                 Completed
                               </div>
                               <button
@@ -1159,7 +1163,7 @@ export const TaskQueue = () => {
         showClose={false}
       >
         <div className="flex h-full flex-col">
-          <div className="rounded-t-xl border-ui-panel-border bg-ui-panel">
+          <div className="border-b border-ui-panel-border bg-ui-panel">
             <div className="flex items-center justify-between p-3">
               <h2 className="text-lg font-semibold">Task Queue</h2>
               <div className="flex items-center gap-2">
@@ -1207,7 +1211,7 @@ export const TaskQueue = () => {
               <div>
                 {inProgress.length > 0 && (
                   <div className="mb-4">
-                    <div className="mb-2 px-1 text-xs uppercase tracking-wide text-base-fg/50">
+                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                       In Progress
                     </div>
                     {inProgress.map((t) => (
@@ -1223,7 +1227,7 @@ export const TaskQueue = () => {
                 )}
                 {failed.length > 0 && (
                   <div className="mb-4">
-                    <div className="mb-2 px-1 text-xs uppercase tracking-wide text-red-400/70">
+                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">
                       Failed
                     </div>
                     {failed.map((t) => (
@@ -1237,7 +1241,7 @@ export const TaskQueue = () => {
                 )}
                 {completed.length > 0 && (
                   <div>
-                    <div className="mb-2 px-1 text-xs uppercase tracking-wide text-base-fg/50">
+                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                       Completed
                     </div>
                     {completed.map((t) => (

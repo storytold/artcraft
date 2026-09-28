@@ -1,6 +1,12 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import { FilmIcon, PlusIcon, RepeatIcon, SplineIcon, XIcon } from "lucide-react";
+import {
+  FilmIcon,
+  PlusIcon,
+  RepeatIcon,
+  SplineIcon,
+  XIcon,
+} from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
   addBakedClipToObject,
@@ -13,13 +19,14 @@ import {
   setClipLoop,
 } from "../../actions";
 import type { TimelineUndoSnapshot } from "../../engine/editor/TimelineController";
-import {
-  usePageSceneStore,
-  type ClipLane,
-} from "../../PageSceneStore";
+import { usePageSceneStore, type ClipLane } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
 import { ToastTypes } from "../../enums";
-import { fractionToTime, quantizeToFrame, timeToFraction } from "./timelineUtils";
+import {
+  fractionToTime,
+  quantizeToFrame,
+  timeToFraction,
+} from "./timelineUtils";
 
 interface TimelineClipRowProps {
   objectUuid: string;
@@ -64,9 +71,7 @@ export const TimelineClipRow = ({
   // effectively invisible.
   const [pickerAnchor, setPickerAnchor] = useState<DOMRect | null>(null);
   const pickerMenuRef = useRef<HTMLDivElement>(null);
-  const selectedLaneId = usePageSceneStore(
-    (s) => s.timelineSelectedClipLaneId,
-  );
+  const selectedLaneId = usePageSceneStore((s) => s.timelineSelectedClipLaneId);
 
   // A fixed-position popup can't follow its button, so any outside scroll
   // or resize closes it (scrolling INSIDE the popup's own list is exempt).
@@ -164,14 +169,14 @@ export const TimelineClipRow = ({
   return (
     <div className="flex items-center gap-3 py-0.5">
       <div className="flex w-32 shrink-0 items-center gap-2 truncate ps-6 text-xs text-base-fg/50">
-        <FilmIcon  className="h-3 w-3 opacity-60" />
+        <FilmIcon className="h-3 w-3 opacity-60" />
         <span className="truncate">Animation</span>
         {bakedClips && bakedClips.length > 0 && (
           <div className="shrink-0">
             <button
               type="button"
               title="Add one of this object's baked animations"
-              className={`flex h-4 w-4 items-center justify-center rounded-[4px] transition-colors ${
+              className={`flex h-4 w-4 items-center justify-center rounded-[3px] transition-colors ${
                 pickerAnchor
                   ? "bg-brand-primary text-white"
                   : "bg-white/10 text-base-fg/70 hover:bg-white/20 hover:text-base-fg"
@@ -182,7 +187,7 @@ export const TimelineClipRow = ({
                 )
               }
             >
-              <PlusIcon  className="h-2.5 w-2.5" />
+              <PlusIcon className="h-2.5 w-2.5" />
             </button>
             {pickerAnchor &&
               ReactDOM.createPortal(
@@ -227,7 +232,7 @@ export const TimelineClipRow = ({
         /* overflow-hidden: strips are engine-clamped into the lane, but any
            transient out-of-range placement must clip here rather than paint
            over the add-button column. */
-        className="relative h-6 flex-1 overflow-hidden rounded-md bg-black/20"
+        className="relative h-6 flex-1 overflow-hidden rounded-md bg-white/5"
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
@@ -294,7 +299,7 @@ export const TimelineClipRow = ({
                   editor && setClipLoop(editor, lane.id, !strip.loop)
                 }
               >
-                <RepeatIcon  className="h-2.5 w-2.5" />
+                <RepeatIcon className="h-2.5 w-2.5" />
               </button>
 
               <span className="min-w-0 flex-1 truncate">{strip.name}</span>
@@ -316,7 +321,7 @@ export const TimelineClipRow = ({
                       .setTimelineSelectedClipLane(null);
                   }}
                 >
-                  <XIcon  className="h-2.5 w-2.5" />
+                  <XIcon className="h-2.5 w-2.5" />
                 </button>
               )}
 
@@ -365,13 +370,13 @@ export const TimelineClipRow = ({
                 className={`absolute top-1/2 z-10 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-colors ${
                   active
                     ? "border-brand-primary bg-brand-primary text-white"
-                    : "border-dashed border-white/30 bg-black/30 text-white/40 hover:border-white/60 hover:text-white/80"
+                    : "border-dashed border-white/30 bg-white/5 text-white/40 hover:border-white/60 hover:text-white/80"
                 }`}
                 style={{ left: `${midPct}%` }}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => toggleTransition(lane)}
               >
-                <SplineIcon  className="h-2 w-2" />
+                <SplineIcon className="h-2 w-2" />
               </button>
             );
           })}

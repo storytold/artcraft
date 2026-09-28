@@ -53,6 +53,9 @@
       "path": "../tab-selector/tsconfig.lib.json"
     },
     {
+      "path": "../pricing-table/tsconfig.lib.json"
+    },
+    {
       "path": "../button/tsconfig.lib.json"
     },
     {

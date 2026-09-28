@@ -66,16 +66,16 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
         </button>
 
         <div className="article-content">
-          <h1 className="text-2xl font-bold mb-2">{selectedPost.title}</h1>
+          <h1 className="font-display text-2xl font-bold mb-2">{selectedPost.title}</h1>
           {selectedPost.date && (
-            <p className="text-xs text-white/50 mb-4">{selectedPost.date}</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/50 mb-4">{selectedPost.date}</p>
           )}
 
           {selectedPost.thumbnail && (
             <img
               src={selectedPost.thumbnail}
               alt={selectedPost.title}
-              className="w-full h-48 object-cover rounded-lg mb-4 border border-white/10"
+              className="w-full h-48 object-cover rounded-none mb-4 border border-white/15"
             />
           )}
 
@@ -86,17 +86,17 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
         </div>
         <style>{`
           .article-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; }
-          .article-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #93c5fd; }
+          .article-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #ffffff; }
           .article-content h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
           .article-content p { margin-bottom: 0.75rem; line-height: 1.6; }
           .article-content ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
           .article-content li { margin-bottom: 0.25rem; }
-          .article-content img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1); margin: 1rem 0; }
-          .article-content a { color: #3b82f6; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
-          .article-content a:hover { border-bottom-color: #3b82f6; }
+          .article-content img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 0; border: 1px solid rgba(255,255,255,0.15); margin: 1rem 0; }
+          .article-content a { color: #74aaff; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+          .article-content a:hover { border-bottom-color: #74aaff; }
           
           /* Video embed styles */
-          .article-content .video-embed { position: relative; width: 100%; margin: 1.5rem 0; border-radius: 0.5rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #000; }
+          .article-content .video-embed { position: relative; width: 100%; margin: 1.5rem 0; border-radius: 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); background: #000; }
           .article-content .youtube-embed { padding-bottom: 56.25%; /* 16:9 aspect ratio */ height: 0; }
           .article-content .youtube-embed iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
           .article-content .video-embed video { display: block; width: 100%; height: auto; max-height: 50vh; }
@@ -111,18 +111,18 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
         <div
           key={item.slug}
           onClick={() => setSelectedSlug(item.slug)}
-          className="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-lg cursor-pointer transition-all group"
+          className="bg-white/5 hover:bg-white/[0.07] border border-white/15 hover:border-white/25 p-4 rounded-none cursor-pointer transition-colors group"
         >
           <div className="flex justify-between items-start">
-            <h3 className="text-lg font-semibold group-hover:text-blue-300 transition-colors flex items-center gap-2">
+            <h3 className="text-lg font-semibold group-hover:text-white transition-colors flex items-center gap-2">
               {item.title}
               <ArrowRightIcon
                 
                 size="xs"
-                className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-blue-400" />
+                className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-white" />
             </h3>
             {item.date && (
-              <span className="text-xs text-white/40 font-mono whitespace-nowrap ml-2">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40 whitespace-nowrap ml-2">
                 {item.date}
               </span>
             )}
@@ -372,7 +372,7 @@ export function HelpMenuButton({
                     key={item.id}
                     type="button"
                     onClick={() => viewTutorial(item)}
-                    className="group block overflow-hidden rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-left"
+                    className="group block overflow-hidden rounded-none border border-white/15 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/[0.07] text-left"
                   >
                     <div className="aspect-video w-full overflow-hidden">
                       <img
@@ -402,12 +402,12 @@ export function HelpMenuButton({
               >
                 Back
               </Button>
-              <div className="text-lg font-bold text-base-fg">
+              <div className="font-display text-lg font-bold text-base-fg">
                 Tutorial: {selected.title}
               </div>
             </div>
             <div className="w-full">
-              <div className="aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-black">
+              <div className="aspect-video w-full overflow-hidden rounded-none border border-white/15 bg-black">
                 <div ref={playerContainerRef} className="h-full w-full" />
               </div>
             </div>

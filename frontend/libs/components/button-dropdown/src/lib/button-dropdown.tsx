@@ -101,7 +101,7 @@ export const ButtonDropdown = ({
           <Menu.Items
             static
             className={twMerge(
-              "absolute z-20 mt-1 w-max divide-y divide-gray-100 overflow-hidden rounded-lg bg-brand-secondary py-1.5 shadow-xl focus:outline-none",
+              "absolute z-20 mt-2 w-max min-w-48 overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-controls p-1.5 text-base-fg focus:outline-none",
               align === "left" ? "left-0" : "right-0",
             )}
           >
@@ -109,19 +109,19 @@ export const ButtonDropdown = ({
               {options.map((option, index) => (
                 <Fragment key={index}>
                   {option.divider && (
-                    <div className="my-1.5 border-t border-white/5" />
+                    <div className="my-1.5 border-t border-white/15" />
                   )}
                   <Menu.Item>
                     {({ active }) => (
                       <button
                         disabled={option.disabled}
                         className={twMerge(
-                          "duration-50 bg-brand-secondary font-medium text-white transition-all",
-                          active ? "bg-brand-secondary-800" : "",
+                          "rounded-[3px] bg-transparent font-medium text-base-fg transition-colors duration-150",
+                          active ? "bg-white/10" : "",
                           option.disabled
                             ? "pointer-events-none opacity-40"
                             : "",
-                          "group flex w-full items-center py-1.5 pl-7 pr-4 text-sm",
+                          "group flex w-full items-center gap-2 px-2.5 py-2 text-sm",
                           option.className,
                         )}
                         onClick={() => handleOptionClick(index)}
@@ -130,11 +130,11 @@ export const ButtonDropdown = ({
                           {option.icon && (
                             <DynamicIcon
                               icon={option.icon}
-                              className="mr-2"
+                              className="mr-2 h-4 w-4 shrink-0"
                             />
                           )}
                           <div className="grow text-start">{option.label}</div>
-                          <div className="ml-10 font-normal text-white/75">
+                          <div className="ml-6 font-mono text-[11px] font-normal text-white/45">
                             {option.description && option.description}
                           </div>
                           {showSelected && (

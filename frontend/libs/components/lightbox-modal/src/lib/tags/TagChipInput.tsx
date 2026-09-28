@@ -134,14 +134,14 @@ export function TagChipInput({
   };
 
   const chipClass = (value: string) =>
-    `flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-all ${
+    `flex items-center gap-1 break-all text-left rounded-[3px] border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-all ${
       flashValue === value ? "ring-2 ring-primary" : ""
     }`;
 
   return (
     <div className="relative">
       <div
-        className={`flex flex-wrap items-center gap-1.5 rounded-xl bg-black/20 border border-white/5 px-3 py-2.5 ${
+        className={`flex flex-wrap items-center gap-1.5 rounded-[3px] bg-ui-panel border border-ui-panel-border focus-within:border-primary/60 px-3 py-2.5 ${
           disabled ? "" : "cursor-text"
         }`}
         onClick={() => inputRef.current?.focus()}
@@ -183,6 +183,7 @@ export function TagChipInput({
               setFocused(false);
               if (draft.trim()) commit(draft);
             }}
+            aria-label="Tags"
             placeholder={chips.length === 0 ? "Add tags (comma separated)" : "Add tag"}
             className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
           />
@@ -191,7 +192,7 @@ export function TagChipInput({
 
       {dropdownOpen && (
         <div
-          className={`absolute left-0 right-0 z-30 max-h-48 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl ${
+          className={`absolute left-0 right-0 z-30 max-h-48 overflow-y-auto rounded-none border border-ui-panel-border bg-ui-panel p-1 shadow-xl ${
             dropUp ? "bottom-full mb-1" : "top-full mt-1"
           }`}
         >
@@ -203,7 +204,7 @@ export function TagChipInput({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pickSuggestion(suggestion.value)}
               onMouseEnter={() => setHighlightIndex(index)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-base-fg transition-colors ${
+              className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-sm text-base-fg transition-colors ${
                 highlight === index ? "bg-ui-controls/60" : "hover:bg-ui-controls/40"
               }`}
             >

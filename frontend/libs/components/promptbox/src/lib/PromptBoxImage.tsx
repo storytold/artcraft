@@ -473,15 +473,13 @@ export const PromptBoxImage = ({
       <div className="relative z-20 flex flex-col">
         <div
           className={twMerge(
-            "glass relative w-full rounded-2xl p-4",
-            isFocused
-              ? "ring-1 ring-primary border-primary"
-              : "ring-1 ring-transparent",
+            "glass relative w-full p-4 !transition-all duration-200",
+            isFocused && "border-primary",
           )}
           {...drop.dropZoneProps}
         >
           {dropOverlay}
-          <div className="flex justify-center gap-2">
+          <div className="flex gap-3">
             {renderReferenceDeck()}
 
             <div className="promptbox-resize-wrap relative flex-1">
@@ -489,7 +487,7 @@ export const PromptBoxImage = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe what you want in the image..."
-                className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
+                className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -499,14 +497,14 @@ export const PromptBoxImage = ({
               />
               <PromptFullscreenButton onClick={openFullscreen} />
               <span
-                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
                 {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
               </span>
             </div>
           </div>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="mt-3.5 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
               {selectedModel?.supportsNewAspectRatio() && (
                 <AspectRatioPicker
@@ -568,18 +566,18 @@ export const PromptBoxImage = ({
                 />
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <PromptClearAllButton
-                onClick={handleClearAll}
-                disabled={!hasClearableContent}
-                confirmClear={referenceImages.length > 0}
-              />
+            <div className="flex items-center gap-1.5">
               <GenerationCountPicker
                 currentModel={selectedModel}
                 currentCount={generationCount}
                 handleCountChange={(count) => {
                   setGenerationCount(count);
                 }}
+              />
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={referenceImages.length > 0}
               />
               <GenerateIconButton
                 onClick={handleEnqueue}
@@ -628,7 +626,7 @@ export const PromptBoxImage = ({
       >
         <textarea
           placeholder="Describe what you want in the image..."
-          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}

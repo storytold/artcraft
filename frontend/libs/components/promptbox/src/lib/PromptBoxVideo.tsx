@@ -4,7 +4,11 @@ import { JobContextType } from "@storyteller/common";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
+import {
+  ToggleButton,
+  GenerateIconButton,
+  NEUTRAL_BUTTON_HOVER_CLASSES,
+} from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest, commandErrorMessage } from "@storyteller/tauri-api";
 import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -1317,7 +1321,7 @@ export const PromptBoxVideo = ({
       <button
         type="button"
         onClick={() => setIsCharactersModalOpen(true)}
-        className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+        className={`flex h-[34px] items-center justify-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-colors duration-150 ${NEUTRAL_BUTTON_HOVER_CLASSES}`}
       >
         @Characters
       </button>
@@ -1342,16 +1346,14 @@ export const PromptBoxVideo = ({
       <div className="relative z-20 flex flex-col gap-3">
         <div
           className={twMerge(
-            "glass relative w-full rounded-2xl p-4",
-            isFocused
-              ? "ring-1 ring-primary border-primary"
-              : "ring-1 ring-transparent",
+            "glass relative w-full p-4 !transition-all duration-200",
+            isFocused && "border-primary",
           )}
           {...drop.dropZoneProps}
         >
           {dropOverlay}
           {selectedModel?.textToVideoSupported === false && (
-            <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
+            <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon
                 
                 className="h-3 w-3 shrink-0" />
@@ -1361,7 +1363,7 @@ export const PromptBoxVideo = ({
               </span>
             </div>
           )}
-          <div className="relative flex justify-center gap-3">
+          <div className="relative flex gap-3">
             {isReferenceMode ? renderReferenceDeck() : renderKeyframeCards()}
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
@@ -1378,7 +1380,7 @@ export const PromptBoxVideo = ({
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                       : "Describe what you want to happen in the video..."
                   }
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg"
+                  className="promptbox-scrollbar text-md relative min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg"
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
                     const isSubmitCombo = enterToGenerate && !e.shiftKey;
@@ -1401,7 +1403,7 @@ export const PromptBoxVideo = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Describe what you want to happen in the video..."
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                  className="promptbox-scrollbar text-md relative min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 focus:outline-none"
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -1412,14 +1414,14 @@ export const PromptBoxVideo = ({
               )}
               <PromptFullscreenButton onClick={openFullscreen} />
               <span
-                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
                 {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
               </span>
             </div>
           </div>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="mt-3.5 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
               <Tooltip
                 content="Aspect Ratio"
@@ -1495,7 +1497,7 @@ export const PromptBoxVideo = ({
                     }
                     triggerLabel={`${effectiveDuration}s`}
                   >
-                    <div className="w-48 pb-0.5">
+                    <div className="w-[min(16rem,calc(100vw-2rem))] pb-0.5">
                       <div className="flex items-center gap-2.5">
                         <div className="flex-1">
                           <SliderV2
@@ -1512,7 +1514,7 @@ export const PromptBoxVideo = ({
                           {effectiveDuration}s
                         </span>
                       </div>
-                      <div className="mt-1.5 flex justify-between px-0.5 text-[11px] text-base-fg/40">
+                      <div className="mt-1.5 flex justify-between px-0.5 text-[11px] tabular-nums text-base-fg/40">
                         <span>{durationRange.min}s</span>
                         <span>{durationRange.max}s</span>
                       </div>
@@ -1541,18 +1543,13 @@ export const PromptBoxVideo = ({
 
               {characterButtonEl}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {modelNeedsAnImageButNoneAreSelected && (
                 <span className="flex items-center gap-1.5 text-xs text-red-500 font-medium animate-pulse">
                   <InfoIcon />
                   Starting frame required
                 </span>
               )}
-              <PromptClearAllButton
-                onClick={handleClearAll}
-                disabled={!hasClearableContent}
-                confirmClear={hasAttachedRefs}
-              />
               {generationCounts.length > 1 && (
                 <VideoGenerationCountPicker
                   counts={generationCounts}
@@ -1560,6 +1557,11 @@ export const PromptBoxVideo = ({
                   handleCountChange={setGenerationCount}
                 />
               )}
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={hasAttachedRefs}
+              />
               <Tooltip
                 content="Add a starting image before generating"
                 position="top"
@@ -1672,13 +1674,13 @@ export const PromptBoxVideo = ({
                 ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                 : "Describe what you want to happen in the video..."
             }
-            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg"
             style={{ resize: "none" }}
           />
         ) : (
           <textarea
             placeholder="Describe what you want to happen in the video..."
-            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
             value={prompt}
             onChange={handleChange}
             onPaste={handlePaste}

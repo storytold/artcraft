@@ -4,9 +4,8 @@ import styles from "./LoginSuccess.module.css";
 export function LoginSuccess({ username }: { username: string }) {
   return (
     <div className={styles.panel} role="status" aria-live="polite" aria-atomic="true">
-      <div className={styles.glow} aria-hidden="true" />
       <div className={styles.badge} aria-hidden="true">
-        <CheckIcon size={34} strokeWidth={2} />
+        <CheckIcon size={28} strokeWidth={2} />
       </div>
       <h2 className={styles.heading}>
         Logged in as{" "}
