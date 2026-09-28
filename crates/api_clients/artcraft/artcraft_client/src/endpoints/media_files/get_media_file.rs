@@ -29,7 +29,7 @@ pub async fn get_media_file(api_host: &ApiHost, media_file_token: &MediaFileToke
 
   debug!("Requesting {:?}", &url);
 
-  let response = http_get_anonymous(url).await?;
+  let response = http_get_anonymous(api_host, url).await?;
   let response = filter_bad_response(response).await?;
   let response_body = &response.text().await
       .map_err(|err| StorytellerError::Api(ApiError::from(err)))?;

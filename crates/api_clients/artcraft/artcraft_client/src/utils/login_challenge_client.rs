@@ -7,7 +7,7 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::utils::api_host::ApiHost;
-use crate::utils::constants::USER_AGENT;
+use crate::utils::storyteller_client_builder::storyteller_client_builder;
 
 /// Native transport for the session bridge. No request/response bodies, cookies,
 /// or challenge credentials are logged, even at debug level. Never follows redirects.
@@ -25,14 +25,13 @@ pub struct LoginChallengeClientError {
 
 impl LoginChallengeClient {
   pub fn new(api_host: &ApiHost) -> Result<Self, LoginChallengeClientError> {
-    let mut builder = Client::builder();
+    let mut builder = storyteller_client_builder(api_host);
     if matches!(api_host, ApiHost::Localhost { .. }) {
       builder = builder.no_proxy();
     }
     let client = builder
       .timeout(Duration::from_secs(15))
       .redirect(reqwest::redirect::Policy::none())
-      .user_agent(USER_AGENT)
       .build()
       .map_err(|_| LoginChallengeClientError::invalid("Unable to initialize login client"))?;
     Ok(Self {

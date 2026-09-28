@@ -1,0 +1,17 @@
+[package]
+name = "artcraft_client_identity"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "artcraft_client_identity"
+path = "src/lib.rs"
+
+[dependencies]
+
+# External
+url.workspace = true
+
+[dev-dependencies]
+# (None)

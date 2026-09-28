@@ -36,6 +36,7 @@ urlpattern = "0.3"
 regex = "1"
 
 [dependencies]
+artcraft_client_identity = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { workspace = true }

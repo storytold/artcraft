@@ -16,6 +16,7 @@ members = [
   "crates/api_clients/worldlabs_api_client",
   "crates/api_clients/worldlabs_consumer_client",
   "crates/desktop/artcraft",
+  "crates/lib/artcraft_client_identity",
   "crates/lib/browser_emulation",
   "crates/lib/build_metadata",
   "crates/lib/caching/memory_store",
@@ -49,6 +50,7 @@ publish = false
 [workspace.dependencies]
 artcraft_api_defs = { path = "crates/api_clients/artcraft/artcraft_api_defs" }
 artcraft_client = { path = "crates/api_clients/artcraft/artcraft_client" }
+artcraft_client_identity = { path = "crates/lib/artcraft_client_identity" }
 artcraft_router = { path = "crates/api_clients/artcraft/artcraft_router" }
 browser_emulation = { path = "crates/lib/browser_emulation" }
 cookie_store_wrapper = { path = "crates/lib/cookie_store_wrapper" }

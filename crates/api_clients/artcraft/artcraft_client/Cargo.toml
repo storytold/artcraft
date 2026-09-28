@@ -19,6 +19,7 @@ path = "src/lib.rs"
 
 # Internal
 artcraft_api_defs.workspace = true
+artcraft_client_identity.workspace = true
 cloudflare_errors.workspace = true
 enums.workspace = true
 errors.workspace = true

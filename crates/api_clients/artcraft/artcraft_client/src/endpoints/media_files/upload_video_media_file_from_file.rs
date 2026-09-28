@@ -1,7 +1,8 @@
 use crate::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use crate::error::api_error::ApiError;
 use crate::utils::api_host::ApiHost;
-use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
+use crate::utils::constants::APPLICATION_JSON;
+use crate::utils::storyteller_client_builder::storyteller_client_builder;
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
 use enums::common::generation_provider::GenerationProvider;
@@ -9,7 +10,6 @@ use chrono::{DateTime, Utc};
 use uuid_utils::uuid::generate_random_uuid;
 use log::debug;
 use reqwest::multipart::{Form, Part};
-use reqwest::Client;
 use serde_derive::{Deserialize, Serialize};
 use std::path::Path;
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -58,8 +58,7 @@ pub async fn upload_video_media_file_from_file<P: AsRef<Path>>(
 
   debug!("Requesting {:?}", &url);
 
-  let client = Client::builder()
-      .gzip(true)
+  let client = storyteller_client_builder(args.api_host)
       .build()?;
 
   let file_bytes = std::fs::read(args.path.as_ref())?;
@@ -78,7 +77,6 @@ pub async fn upload_video_media_file_from_file<P: AsRef<Path>>(
   }
 
   let mut request_builder = client.post(url)
-      .header("User-Agent", USER_AGENT)
       .header("Accept", APPLICATION_JSON);
   
   if let Some(creds) = args.maybe_creds {

@@ -33,6 +33,11 @@ Only after the real frontend socket is bound does it start Tauri with that exact
 through native Tauri IPC and needs no separate HTTP port. Configuration overrides
 are passed in memory, without changing the checked-in Tauri config.
 
+The native HTTP bridge normalizes loopback development origins for first-party
+API requests so an automatically selected port does not break login or media
+loading. See the [desktop session regression checks](../docs/desktop-session-regression.md)
+when changing ports, the launcher, or authentication.
+
 JavaScript, TypeScript, React, and CSS changes use Vite hot reload; compatible
 React component edits use Fast Refresh. Changes that cannot be hot-replaced
 reload the page. Rust changes use `cargo tauri dev`'s automatic **rebuild and app
