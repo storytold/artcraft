@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { downloadFileFromUrl, type UploadMediaFn } from "@storyteller/api";
+import { type UploadMediaFn } from "@storyteller/api";
+import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
 import {

@@ -11,7 +11,6 @@ export * from "./lib/JobsApi.js";
 export * from "./lib/MediaFilesApi.js";
 export * from "./lib/MediaUploadApi.js";
 export * from "./lib/MiscApi.js";
-export * from "./lib/LocalApi.js";
 export * from "./lib/ProjectsApi.js";
 export * from "./lib/PromptsApi.js";
 export * from "./lib/TagsApi.js";

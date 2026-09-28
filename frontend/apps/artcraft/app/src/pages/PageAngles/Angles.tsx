@@ -5,7 +5,6 @@ import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   MediaUploadApi,
   MediaFilesApi,
-  downloadFileFromUrl,
 } from "@storyteller/api";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
@@ -25,7 +24,7 @@ import { twMerge } from "tailwind-merge";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 // import { Switch } from "@headlessui/react";
-import { GenerateImage } from "@storyteller/tauri-api";
+import { GenerateImage, downloadFileFromUrl } from "@storyteller/tauri-api";
 import {
   ClassyModelSelector,
   useAnglesPageModelList,

@@ -9,7 +9,7 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { downloadFileFromUrl } from "@storyteller/api";
+import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { ImageIcon, ImagesIcon, LoaderCircleIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { RefImage, RefVideo, RefAudio } from "./promptStore";

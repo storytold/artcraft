@@ -8,13 +8,14 @@ import { BoxIcon, ImagesIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useImageTo3DStore } from "../../pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "../../pages/PageImageTo3DWorld/ImageTo3DWorldStore";
-import { MediaUploadApi, downloadFileFromUrl } from "@storyteller/api";
+import { MediaUploadApi } from "@storyteller/api";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   GenerateMesh,
   EnqueueImageTo3dObjectModel,
   GenerateSplat,
   commandErrorMessage,
+  downloadFileFromUrl,
 } from "@storyteller/tauri-api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";

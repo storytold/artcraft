@@ -1,5 +1,5 @@
 import { ImagesIcon, MaximizeIcon, PencilIcon } from "lucide-react";
-import { downloadFileFromUrl } from "libs/api/src/lib/LocalApi";
+import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useState } from "react";
 import toast from "react-hot-toast";

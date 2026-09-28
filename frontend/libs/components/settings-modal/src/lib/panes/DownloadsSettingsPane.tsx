@@ -9,16 +9,14 @@ import {
   PreferredDownloadFilename,
   SystemDirectory,
   UpdateAppPreferences,
+  getAskLocationBeforeDownload,
+  setAskLocationBeforeDownload,
 } from "@storyteller/tauri-api";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Label } from "@storyteller/ui-label";
 import { Switch } from "@storyteller/ui-switch";
 import { Select } from "@storyteller/ui-select";
 import { FolderIcon, RotateCcwIcon, SearchIcon } from "lucide-react";
-import {
-  getAskLocationBeforeDownload,
-  setAskLocationBeforeDownload,
-} from "@storyteller/api";
 
 const DEFAULT_CUSTOM_FORMAT = "{model}_{date}";
 const FILENAME_OPTIONS = [

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { DownloadIcon, EyeIcon, ImagesIcon, PlusIcon, UploadIcon, WandSparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { downloadFileFromUrl } from "@storyteller/api";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { UploadEntryCard } from "../../components/media/UploadEntryCard";
@@ -13,6 +12,7 @@ import {
 import {
   EnqueueImageBgRemoval,
   useCanvasBgRemovedEvent,
+  downloadFileFromUrl,
 } from "@storyteller/tauri-api";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { twMerge } from "tailwind-merge";

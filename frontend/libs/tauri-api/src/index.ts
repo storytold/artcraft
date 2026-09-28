@@ -6,6 +6,7 @@ export * from "./lib/artcraft/task_queue/TasksNukeAll.js";
 export * from "./lib/common/CommandStatus.js";
 export * from "./lib/download/DownloadDirectoryReveal.js";
 export * from "./lib/download/DownloadUrl.js";
+export * from "./lib/download/LocalDownloads.js";
 export * from "./lib/enqueue/EnqueueEditImage.js";
 export * from "./lib/enqueue/EnqueueImageBgRemovalCommand.js";
 export * from "./lib/enqueue/EnqueueImageInpaint.js";

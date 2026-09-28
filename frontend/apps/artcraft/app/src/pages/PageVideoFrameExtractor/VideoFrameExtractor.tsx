@@ -4,10 +4,10 @@ import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
-  downloadFileFromUrl,
   MediaUploadApi,
   EIntermediateFile,
 } from "@storyteller/api";
+import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";

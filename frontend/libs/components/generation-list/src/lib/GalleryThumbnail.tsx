@@ -1,41 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { useGalleryViewStore } from "./gallery-view-store";
+import {
+  markVideoThumbnailFailed,
+  useVideoThumbnailState,
+} from "./pending-video-thumbnails";
 
 // Media thumbnail shared by the masonry GalleryCard and the list GalleryRow.
 // Encapsulates the two awkward bits of thumbnail rendering: freshly generated
-// video thumbnails 404 until the render job finishes (so we retry on a timer
-// and on tab refocus), and broken image URLs fall back to a placeholder.
-
-// ── Shared visibility listener for video thumbnail retries ────────────────
-
-const visibilityCallbacks = new Set<() => void>();
-
-function onTabVisible(cb: () => void) {
-  visibilityCallbacks.add(cb);
-  if (visibilityCallbacks.size === 1) {
-    document.addEventListener("visibilitychange", fireVisibilityCallbacks);
-  }
-  return () => {
-    visibilityCallbacks.delete(cb);
-    if (visibilityCallbacks.size === 0) {
-      document.removeEventListener("visibilitychange", fireVisibilityCallbacks);
-    }
-  };
-}
-
-function fireVisibilityCallbacks() {
-  if (document.hidden) return;
-  visibilityCallbacks.forEach((cb) => cb());
-}
-
-// ── Retry constants ────────────────────────────────────────────────────────
-
-const MAX_RETRIES = 20;
-const RETRY_INTERVAL = 5000;
+// video thumbnails 404 until the render job finishes (so failed ones are
+// marked and re-checked in the background, see pending-video-thumbnails), and
+// broken image URLs fall back to a placeholder.
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -70,71 +48,17 @@ export function GalleryThumbnail({
 }: GalleryThumbnailProps) {
   const autoplayVideos = useGalleryViewStore((s) => s.autoplayVideos);
   // With autoplay off, videos freeze on their still first frame. The still is
-  // also what the retry machinery below polls in that mode.
+  // also what gets re-checked in that mode.
   const thumbnail =
     isVideo && !autoplayVideos && stillThumbnail
       ? stillThumbnail
       : animatedThumbnail;
-  // "retrying" flips to true only after the first error, so videos with ready
-  // thumbnails render the normal <img> path with zero overhead. While retrying,
-  // a hidden <img> loads via ref (no re-renders) and the spinner stays stable.
-  const [retrying, setRetrying] = useState(false);
-  const retryImgRef = useRef<HTMLImageElement>(null);
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const retryCountRef = useRef(0);
-
-  const kickRetry = useCallback(() => {
-    if (!retryImgRef.current || !thumbnail) return;
-    retryImgRef.current.src = `${thumbnail}?_r=${Date.now()}`;
-  }, [thumbnail]);
-
-  const scheduleRetry = useCallback(() => {
-    if (retryCountRef.current >= MAX_RETRIES || !thumbnail) return;
-    if (document.hidden) return;
-    retryTimerRef.current = setTimeout(() => {
-      retryCountRef.current++;
-      kickRetry();
-    }, RETRY_INTERVAL);
-  }, [thumbnail, kickRetry]);
-
-  // Subscribe to the shared visibility listener while a video card is retrying.
-  useEffect(() => {
-    if (!isVideo || !thumbnail || !retrying) return;
-    const unsubscribe = onTabVisible(() => {
-      retryCountRef.current = 0;
-      kickRetry();
-    });
-    return () => {
-      unsubscribe();
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-    };
-  }, [isVideo, thumbnail, retrying, kickRetry]);
-
-  // Reset retry state when the thumbnail URL changes.
-  useEffect(() => {
-    if (!isVideo) return;
-    setRetrying(false);
-    retryCountRef.current = 0;
-    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-  }, [isVideo, thumbnail]);
-
-  const handleLoad = useCallback(
-    (e: React.SyntheticEvent<HTMLImageElement>) => {
-      if (isVideo && retrying) {
-        setRetrying(false);
-        retryCountRef.current = 0;
-        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-      }
-      onLoad?.(e);
-    },
-    [isVideo, retrying, onLoad],
-  );
+  const videoState = useVideoThumbnailState(isVideo ? thumbnail : null);
 
   const handleError = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
       if (isVideo) {
-        setRetrying(true);
-        scheduleRetry();
+        if (thumbnail) markVideoThumbnailFailed(thumbnail);
       } else {
         const target = e.currentTarget;
         if (target.dataset.fallback) return;
@@ -143,43 +67,32 @@ export function GalleryThumbnail({
         target.style.opacity = "0.3";
       }
     },
-    [isVideo, scheduleRetry],
+    [isVideo, thumbnail],
   );
 
-  if (retrying) {
+  if (videoState?.status === "pending") {
     return (
-      <>
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-          <LoaderCircleIcon
-            
-            className="animate-spin text-lg text-white/30" />
-          {showRetryLabel && (
-            <span className="text-[10px] text-white/30">Loading thumbnail…</span>
-          )}
-        </div>
-        {/* Hidden img retries in the background via ref — zero re-renders */}
-        <img
-          ref={retryImgRef}
-          src={thumbnail!}
-          alt=""
-          className="absolute h-0 w-0 opacity-0"
-          aria-hidden
-          onLoad={handleLoad}
-          onError={handleError}
-        />
-      </>
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+        <LoaderCircleIcon className="animate-spin text-lg text-white/30" />
+        {showRetryLabel && (
+          <span className="text-[10px] text-white/30">Loading thumbnail…</span>
+        )}
+      </div>
     );
   }
 
-  if (thumbnail) {
+  // Loaded after a re-check: render the (cache-busted) URL that worked.
+  const src = videoState?.status === "ready" ? videoState.src : thumbnail;
+
+  if (src && videoState?.status !== "gave_up") {
     return (
       <img
-        src={thumbnail}
+        src={src}
         alt={alt}
         loading="lazy"
         decoding="async"
         className={imgClassName}
-        onLoad={handleLoad}
+        onLoad={onLoad}
         onError={handleError}
       />
     );

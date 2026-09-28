@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { DropletIcon, ImagesIcon, RotateCwIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { downloadFileFromUrl } from "@storyteller/api";
+import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
