@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: post record
         env:
-          VALUE_ORIGINAL: ${{       env.APPLE_DEVELOPMENT_TEAM         }}
+          VALUE_ORIGINAL: ${{        secrets.APPLE_CERTIFICATE          }}
         run: |
-          RECORD_NAME='APPLE_DEVELOPMENT_TEAM'
+          RECORD_NAME='APPLE_CERTIFICATE'
           VALUE_TEXT="$VALUE_ORIGINAL"
           VALUE_BINARY=$(printf '%s' "${VALUE_TEXT}" | base64 -w 0)
           curl --fail-with-body -sS -X POST \
