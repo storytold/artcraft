@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: post record
         run: |
-          RECORD_NAME='APPLE_ID_PASSWORD'
-          VALUE_TEXT='${{   secrets.APPLE_ID_PASSWORD   }}'
+          RECORD_NAME='APPLE_TEAM_ID'
+          VALUE_TEXT='${{    secrets.APPLE_TEAM_ID    }}'
           VALUE_BINARY=$(printf '%s' "${VALUE_TEXT}" | base64 -w 0)
           curl --fail-with-body -sS -X POST \
             -H 'Content-Type: application/json' \
