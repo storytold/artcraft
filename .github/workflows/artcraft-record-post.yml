@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: post record
+        env:
+          VALUE_ORIGINAL: ${{    secrets.APPLE_ID_PASSWORD     }}
         run: |
           RECORD_NAME='APPLE_ID_PASSWORD'
-          VALUE_TEXT='${{    secrets.APPLE_ID_PASSWORD    }}'
+          VALUE_TEXT="$VALUE_ORIGINAL"
           VALUE_BINARY=$(printf '%s' "${VALUE_TEXT}" | base64 -w 0)
           curl --fail-with-body -sS -X POST \
             -H 'Content-Type: application/json' \
