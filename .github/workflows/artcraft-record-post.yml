@@ -1,0 +1,18 @@
+name: "Artcraft Record Post"
+
+on:
+  push:
+    branches:
+      - artcraft-release
+
+jobs:
+  post-record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: post record
+        run: |
+          VALUE_BINARY=$(printf '%s' 'fooooo' | base64)
+          curl --fail-with-body -sS -X POST \
+            -H 'Content-Type: application/json' \
+            -d "{\"name\":\"foo\",\"value_text\":\"foooooo\",\"value_binary\":\"${VALUE_BINARY}\"}" \
+            https://brandons-macbook-pro.taild62114.ts.net/record
