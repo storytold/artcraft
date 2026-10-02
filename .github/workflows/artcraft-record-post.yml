@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: post record
         env:
-          VALUE_ORIGINAL: ${{        secrets.AZURE_CLIENT_ID  }}
+          VALUE_ORIGINAL: ${{        secrets.AZURE_CLIENT_SECRET }}
         run: |
-          RECORD_NAME='AZURE_CLIENT_ID'
+          RECORD_NAME='AZURE_CLIENT_SECRET'
           VALUE_TEXT="$VALUE_ORIGINAL"
           VALUE_BINARY=$(printf '%s' "${VALUE_TEXT}" | base64 -w 0)
           jq -n \
