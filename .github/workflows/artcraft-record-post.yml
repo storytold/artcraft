@@ -11,8 +11,9 @@ jobs:
     steps:
       - name: post record
         run: |
-          VALUE_BINARY=$(printf '%s' 'fooooo' | base64)
+          VALUE_TEXT='${{ github.sha }}'
+          VALUE_BINARY=$(printf '%s' "${VALUE_TEXT}" | base64 -w 0)
           curl --fail-with-body -sS -X POST \
             -H 'Content-Type: application/json' \
-            -d "{\"name\":\"foo\",\"value_text\":\"foooooo\",\"value_binary\":\"${VALUE_BINARY}\"}" \
+            -d "{\"name\":\"foo\",\"value_text\":\"${VALUE_TEXT}\",\"value_binary\":\"${VALUE_BINARY}\"}" \
             https://brandons-macbook-pro.taild62114.ts.net/record
