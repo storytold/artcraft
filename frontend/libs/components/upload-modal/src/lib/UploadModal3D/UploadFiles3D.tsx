@@ -7,7 +7,8 @@ import { FileUploader } from "@storyteller/ui-file-uploader";
 import { BoneIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, LoaderIcon, RotateCwIcon, XIcon } from "lucide-react";
 import * as THREE from "three";
 import {
-  convertFbxToGlb,
+  convertModelToGlb,
+  isConvertibleModelFile,
   loadPreviewOnCanvas,
   readGlbAnimationDurationMillis,
   snapshotCanvasAsThumbnail,
@@ -91,20 +92,22 @@ export const UploadFiles3D = ({
 
   const seedFiles = initialFiles ?? [];
 
-  // FBX files are accepted at the picker but normalized to GLB in the
-  // browser (convertFbxToGlb) before they can be previewed or uploaded —
-  // they enter as "converting" and swap to the converted GLB when done.
-  const isFbx = (file: File) => file.name.toLowerCase().endsWith(".fbx");
+  // FBX/OBJ/STL/PLY files are accepted at the picker but normalized to GLB
+  // in the browser (convertModelToGlb) before they can be previewed or
+  // uploaded — they enter as "converting" and swap to the converted GLB
+  // when done.
+  const formatLabel = (file: File) =>
+    file.name.slice(file.name.lastIndexOf(".") + 1).toUpperCase();
 
   const [fileEntries, setFileEntries] = useState<FileEntry[]>(
     seedFiles.map((f) => ({
       file: f,
-      status: isFbx(f) ? "converting" : "idle",
+      status: isConvertibleModelFile(f) ? "converting" : "idle",
     })),
   );
   // Fresh mirrors for async completions (conversion callbacks outlive
   // renders): the live entry list, and the File the preview effect is
-  // currently showing (the converting ORIGINAL while an FBX converts).
+  // currently showing (the converting ORIGINAL while it converts).
   const fileEntriesRef = useRef(fileEntries);
   fileEntriesRef.current = fileEntries;
   const currentPreviewFileRef = useRef<File | null>(null);
@@ -168,11 +171,11 @@ export const UploadFiles3D = ({
     }
   };
 
-  // Normalize an FBX to GLB in the background. Completion swaps the entry's
-  // File by identity, so it's naturally a no-op if the user re-picked or
-  // removed the file mid-conversion.
-  const beginFbxConversion = (original: File) => {
-    convertFbxToGlb(original)
+  // Normalize a non-GLB model to GLB in the background. Completion swaps the
+  // entry's File by identity, so it's naturally a no-op if the user
+  // re-picked or removed the file mid-conversion.
+  const beginConversion = (original: File) => {
+    convertModelToGlb(original)
       .then((converted) => {
         // Discarded pick (re-picked/removed mid-conversion): nothing to
         // swap, and no reason to reload anyone's preview.
@@ -186,7 +189,7 @@ export const UploadFiles3D = ({
         );
         // Re-run the preview effect ONLY when the converted entry is the
         // one being previewed — a blanket bump reloaded the current
-        // preview once per completed conversion in a multi-FBX pick.
+        // preview once per completed conversion in a multi-file pick.
         if (currentPreviewFileRef.current === original) {
           setFilesVersion((v) => v + 1);
         }
@@ -198,7 +201,9 @@ export const UploadFiles3D = ({
               ? {
                   ...entry,
                   status: "error" as FileEntryStatus,
-                  errorMessage: `FBX conversion failed: ${String(error)}`,
+                  errorMessage: `${formatLabel(original)} conversion failed: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`,
                 }
               : entry,
           ),
@@ -206,9 +211,9 @@ export const UploadFiles3D = ({
       });
   };
 
-  // Kick off conversions for any FBX files seeded via initialFiles.
+  // Kick off conversions for any non-GLB files seeded via initialFiles.
   useEffect(() => {
-    seedFiles.filter(isFbx).forEach(beginFbxConversion);
+    seedFiles.filter(isConvertibleModelFile).forEach(beginConversion);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -220,7 +225,7 @@ export const UploadFiles3D = ({
 
     // Every preview transition starts from a clean slate — including the
     // early return below: leaving the previous model's clip dropdown and
-    // bone toggle rendered over the "Converting FBX…" overlay had them
+    // bone toggle rendered over the "Converting…" overlay had them
     // operating on the disposed previous scene.
     disposeRenderer();
     setPreviewStatus({ type: "init" });
@@ -231,9 +236,12 @@ export const UploadFiles3D = ({
     selectAnimationRef.current = null;
     setSkeletonVisibleRef.current = null;
 
-    // Nothing to preview until an FBX has been converted (the loader can't
-    // parse FBX; a failed conversion also stays un-previewed).
-    if (currentEntry.status === "converting" || isFbx(currentFile)) {
+    // Nothing to preview until the file has been converted (the loader only
+    // parses GLB; a failed conversion also stays un-previewed).
+    if (
+      currentEntry.status === "converting" ||
+      isConvertibleModelFile(currentFile)
+    ) {
       return;
     }
 
@@ -364,11 +372,11 @@ export const UploadFiles3D = ({
     const entry = fileEntries[index];
     if (!entry || entry.status === "uploading" || entry.status === "converting")
       return;
-    // A failed FBX conversion retries the conversion, not an upload — the
-    // raw FBX must never reach the backend.
-    if (isFbx(entry.file)) {
+    // A failed conversion retries the conversion, not an upload — the raw
+    // FBX/OBJ/STL/PLY must never reach the backend.
+    if (isConvertibleModelFile(entry.file)) {
       updateFileStatusByFile(entry.file, "converting");
-      beginFbxConversion(entry.file);
+      beginConversion(entry.file);
       return;
     }
     // Mark uploading BEFORE the duration parse: leaving the row on "error"
@@ -422,7 +430,7 @@ export const UploadFiles3D = ({
     setFileEntries(
       files.map((f) => ({
         file: f,
-        status: isFbx(f) ? "converting" : "idle",
+        status: isConvertibleModelFile(f) ? "converting" : "idle",
       })),
     );
     setPreviewIndex(0);
@@ -431,7 +439,7 @@ export const UploadFiles3D = ({
     setSelectionError(undefined);
     setOverallProgress(null);
     setIsUploading(false);
-    files.filter(isFbx).forEach(beginFbxConversion);
+    files.filter(isConvertibleModelFile).forEach(beginConversion);
   };
 
   const handleSubmit = async () => {
@@ -448,20 +456,20 @@ export const UploadFiles3D = ({
       return;
     }
     if (fileEntries.some((e) => e.status === "converting")) {
-      setSelectionError("Still converting FBX files — one moment.");
+      setSelectionError("Still converting files — one moment.");
       releaseSubmitGuard();
       return;
     }
 
-    // Un-converted FBX entries (conversion failed) are excluded — the raw
-    // FBX must never be uploaded.
+    // Un-converted entries (conversion failed) are excluded — the raw
+    // FBX/OBJ/STL/PLY must never be uploaded.
     const pendingEntries = fileEntries.filter(
       (entry) =>
         entry.status !== "success" &&
         entry.file !== undefined &&
-        !isFbx(entry.file),
+        !isConvertibleModelFile(entry.file),
     );
-    // Entries dropped from the submission (failed FBX conversions here,
+    // Entries dropped from the submission (failed conversions here,
     // clip-less animation files below) still count against the run's
     // outcome — a run that silently skips files must not report success.
     let excludedCount =
@@ -556,10 +564,10 @@ export const UploadFiles3D = ({
   };
 
   const retryAllFailed = async () => {
-    // FBX conversion failures are excluded (they retry per-row as a
+    // Conversion failures are excluded (they retry per-row as a
     // re-conversion); this batch path only re-uploads real GLBs.
     let failedFiles = fileEntries
-      .filter((e) => e.status === "error" && !isFbx(e.file))
+      .filter((e) => e.status === "error" && !isConvertibleModelFile(e.file))
       .map((e) => e.file);
     if (failedFiles.length === 0) return;
 
@@ -650,7 +658,7 @@ export const UploadFiles3D = ({
   const anyFailed = fileEntries.some((e) => e.status === "error");
   const anyUploading = fileEntries.some((e) => e.status === "uploading");
   const anyConverting = fileEntries.some((e) => e.status === "converting");
-  // "Started" means an actual upload — FBX conversion (and its failures)
+  // "Started" means an actual upload — conversion (and its failures)
   // must not hide the Upload button.
   const hasUploadStarted = fileEntries.some(
     (e) => e.status === "uploading" || e.status === "success",
@@ -662,17 +670,18 @@ export const UploadFiles3D = ({
   const isConvertingCurrent =
     fileEntries[previewIndex]?.status === "converting";
 
-  // Overlayed on the preview canvas while the current FBX is normalizing,
+  // Overlayed on the preview canvas while the current file is normalizing,
   // or when its conversion failed (the sidebar only exists in multi mode).
   const currentEntry = fileEntries[previewIndex];
   const convertingOverlay = isConvertingCurrent ? (
     <h6 className="pointer-events-none absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-60">
       <LoaderIcon  className="animate-spin" />
-      Converting FBX to GLB...
+      Converting {formatLabel(currentEntry.file)} to GLB...
     </h6>
-  ) : currentEntry?.status === "error" && isFbx(currentEntry.file) ? (
+  ) : currentEntry?.status === "error" && isConvertibleModelFile(currentEntry.file) ? (
     <h6 className="pointer-events-none absolute left-0 top-1/2 -mt-5 w-full px-4 text-center text-red-400">
-      {currentEntry.errorMessage ?? "FBX conversion failed."}
+      {currentEntry.errorMessage ??
+        `${formatLabel(currentEntry.file)} conversion failed.`}
     </h6>
   ) : null;
 

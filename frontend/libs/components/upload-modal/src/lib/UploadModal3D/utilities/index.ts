@@ -1,4 +1,4 @@
-export * from "./convertFbxToGlb";
+export * from "./convertModelToGlb";
 export * from "./loadPreviewOnCanvas";
 export * from "./readGlbAnimationDuration";
 export * from "./thumbnailHelpers";
