@@ -13,7 +13,10 @@ import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { ensureInternalBbox } from "./internalBbox";
-import { collectObjectTextures, disposeObject3D } from "./disposeObject3D";
+import {
+  collectObjectTextures,
+  disposeObject3D,
+} from "@storyteller/ui-viewer-3d";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
