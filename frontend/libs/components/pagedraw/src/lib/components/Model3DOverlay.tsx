@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import Konva from "konva";
+import { disposeObject3D } from "@storyteller/ui-viewer-3d";
 import { Node } from "../Node";
 import {
   Model3DParams,
@@ -226,11 +227,17 @@ export const Model3DOverlay = React.forwardRef<Model3DOverlayHandle, Model3DOver
       front.position.set(0, 4, 10);
       scene.add(front);
 
-      // Load model
+      // Load model. Set by cleanup: a model that finishes loading after the
+      // overlay closed or switched models is freed instead of added.
+      let cancelled = false;
       const loader = new GLTFLoader();
       loader.load(
         node.modelUrl!,
         (gltf) => {
+          if (cancelled) {
+            disposeObject3D(gltf.scene);
+            return;
+          }
           const model = gltf.scene;
 
           // Auto-fit + apply user scale
@@ -261,18 +268,15 @@ export const Model3DOverlay = React.forwardRef<Model3DOverlayHandle, Model3DOver
       animate();
 
       return () => {
+        cancelled = true;
         if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
         controls.dispose();
-        scene.traverse((obj) => {
-          if (obj instanceof THREE.Mesh) {
-            obj.geometry?.dispose();
-            const mats = Array.isArray(obj.material)
-              ? obj.material
-              : [obj.material];
-            mats.forEach((m) => m?.dispose());
-          }
-        });
+        disposeObject3D(scene);
         renderer.dispose();
+        // A model change re-runs this effect on the same canvas, which hands
+        // the next renderer this same context, so only force the loss once
+        // the canvas has left the DOM (the overlay closed).
+        if (!canvas.isConnected) renderer.forceContextLoss();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node.modelUrl]);

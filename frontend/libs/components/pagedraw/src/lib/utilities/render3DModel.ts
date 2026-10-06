@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { disposeObject3D } from "@storyteller/ui-viewer-3d";
 
 export interface Model3DParams {
   cameraPosition: { x: number; y: number; z: number };
@@ -76,18 +77,16 @@ function normalizeAndPlaceModel(
   model.position.y = -scaledBox.min.y;
 }
 
+// The renderer and its canvas are throwaway, so free the scene and then the
+// context itself; otherwise each render holds a WebGL context until the
+// canvas is garbage collected.
 function disposeScene(
   scene: THREE.Scene,
   renderer: THREE.WebGLRenderer,
 ): void {
-  scene.traverse((obj) => {
-    if (obj instanceof THREE.Mesh) {
-      obj.geometry?.dispose();
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach((m) => m?.dispose());
-    }
-  });
+  disposeObject3D(scene);
   renderer.dispose();
+  renderer.forceContextLoss();
 }
 
 export async function render3DModelToDataUrl(
