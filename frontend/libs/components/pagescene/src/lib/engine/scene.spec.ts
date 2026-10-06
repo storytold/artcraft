@@ -151,7 +151,10 @@ function makeScene(): Scene {
 
 // Scene only tracks Water instances by identity; a plain mesh stands in.
 function waterLikeMesh(): THREE.Mesh {
-  return new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshBasicMaterial());
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(),
+    new THREE.MeshBasicMaterial(),
+  );
 }
 
 // jsdom does not implement media playback, so stub the calls stopVideo makes.

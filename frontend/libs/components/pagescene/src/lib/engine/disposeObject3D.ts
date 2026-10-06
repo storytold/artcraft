@@ -33,7 +33,9 @@ export function disposeObject3D(root: THREE.Object3D): void {
 
 // Every texture the tree's materials reference, as material properties or
 // ShaderMaterial uniforms, deduplicated.
-export function collectObjectTextures(root: THREE.Object3D): Set<THREE.Texture> {
+export function collectObjectTextures(
+  root: THREE.Object3D,
+): Set<THREE.Texture> {
   return collectMaterialTextures(collectMaterials(root));
 }
 
