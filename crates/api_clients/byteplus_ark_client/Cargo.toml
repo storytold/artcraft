@@ -1,0 +1,24 @@
+[package]
+name = "byteplus_ark_client"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "byteplus_ark_client"
+path = "src/lib.rs"
+
+[dependencies]
+
+# External
+base64.workspace = true
+log.workspace = true
+# Trust the OS certificate store too, so ModelArk calls work behind corporate TLS-inspecting
+# gateways (their root CA lives in the macOS keychain / Windows cert store, not webpki roots).
+reqwest = { workspace = true, features = ["rustls-tls-native-roots"] }
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }

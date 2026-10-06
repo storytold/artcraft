@@ -43,6 +43,7 @@ export function ProviderBillingModal({
     case GenerationProvider.Picsart:
     case GenerationProvider.Pixverse:
     case GenerationProvider.Runway:
+    case GenerationProvider.Byteplus:
       // NB: We're just going to ask users to set up billing on the provider's website.
       block = <GenericProviderBillingBlock provider={provider} />;
       break;

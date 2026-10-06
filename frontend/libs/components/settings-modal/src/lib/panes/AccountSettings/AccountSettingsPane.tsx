@@ -1,6 +1,7 @@
 import { ArtcraftAccountBlock } from "./ArtcraftAccountBlock";
 import { MidjourneyAccountBlock } from "./MidjourneyAccountBlock";
 import { GrokAccountBlock } from "./GrokAccountBlock";
+import { BytePlusAccountBlock } from "./BytePlusAccountBlock";
 
 interface AccountSettingsPaneProps {
   globalAccountLogoutCallback: () => void;
@@ -18,6 +19,8 @@ export const AccountSettingsPane = ({
       <GrokAccountBlock />
       <hr className="border-ui-panel-border" />
       <MidjourneyAccountBlock />
+      <hr className="border-ui-panel-border" />
+      <BytePlusAccountBlock />
     </div>
   );
 };

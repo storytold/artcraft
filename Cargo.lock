@@ -190,6 +190,7 @@ dependencies = [
  "base64 0.22.1",
  "browser_emulation",
  "build_metadata",
+ "byteplus_ark_client",
  "bytes",
  "chrono",
  "cookie_store 0.0.1",
@@ -928,6 +929,19 @@ name = "byteorder-lite"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
+
+[[package]]
+name = "byteplus_ark_client"
+version = "0.0.1"
+dependencies = [
+ "base64 0.22.1",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+]
 
 [[package]]
 name = "bytes"

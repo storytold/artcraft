@@ -52,6 +52,7 @@ helpers go in the parent `mod tests` so sub-modules can `use super::*`.
 - `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, KinoviWeb, Grok, GMICloud, WorldLabs)
 - `artcraft_api_defs` — shared HTTP API type definitions
 - `kinovi_web_client` — HTTP client for the Kinovi/KinoviWeb video generation service
+- `byteplus_ark_client` — HTTP client for BytePlus ModelArk (Seedance, Seedream, Seed 2.0, 3D), Seed Audio and AI MediaKit, using the user's own keys
 - `enums` — database-backed enums stored as VARCHAR fields
 - `tokens` — primary key identifiers with Stripe-like prefixes (e.g. `user_`, `mf_`)
 

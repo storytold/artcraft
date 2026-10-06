@@ -30,6 +30,7 @@ cookie_store_wrapper = { workspace = true, features = ["wreq"] }
 artcraft_api_defs.workspace = true
 artcraft_client.workspace = true
 artcraft_router.workspace = true
+byteplus_ark_client.workspace = true
 build_metadata.workspace = true
 cookie_store.workspace = true
 enums.workspace = true

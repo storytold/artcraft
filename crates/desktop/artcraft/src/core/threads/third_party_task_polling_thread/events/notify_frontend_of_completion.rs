@@ -285,6 +285,7 @@ fn provider_to_generation_service(provider: GenerationProvider) -> GenerationSer
     GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
     GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
     GenerationProvider::Runway => GenerationServiceProvider::Runway,
+    GenerationProvider::Byteplus => GenerationServiceProvider::Byteplus,
   }
 }
 

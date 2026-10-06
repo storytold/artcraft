@@ -49,6 +49,7 @@ impl TaskEnqueueSuccess{
       GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
       GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
       GenerationProvider::Runway => GenerationServiceProvider::Runway,
+      GenerationProvider::Byteplus => GenerationServiceProvider::Byteplus,
     }
   }
   
