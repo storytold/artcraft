@@ -18,32 +18,23 @@ import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 // its own (scene.ts builds one per load), and undo re-loads deleted
 // objects from their snapshot rather than reusing the instance.
 export function disposeObject3D(root: THREE.Object3D): void {
-  const materials = new Set<THREE.Material>();
   root.traverse((child) => {
     if (child instanceof SplatMesh) child.dispose();
     if (child instanceof SparkRenderer) disposeSparkRenderer(child);
     if (child instanceof THREE.SkinnedMesh) child.skeleton?.dispose();
-
-    const { geometry, material } = child as Partial<THREE.Mesh>;
-    geometry?.dispose();
-    const childMaterials = Array.isArray(material) ? material : [material];
-    for (const childMaterial of childMaterials) {
-      if (childMaterial) materials.add(childMaterial);
-    }
+    (child as Partial<THREE.Mesh>).geometry?.dispose();
   });
 
-  const textures = new Set<THREE.Texture>();
-  for (const material of materials) {
-    collectTextures(Object.values(material), textures);
-    if (material instanceof THREE.ShaderMaterial) {
-      collectTextures(
-        Object.values(material.uniforms).map((uniform) => uniform?.value),
-        textures,
-      );
-    }
-    material.dispose();
-  }
+  const materials = collectMaterials(root);
+  const textures = collectMaterialTextures(materials);
+  for (const material of materials) material.dispose();
   for (const texture of textures) texture.dispose();
+}
+
+// Every texture the tree's materials reference, as material properties or
+// ShaderMaterial uniforms, deduplicated.
+export function collectObjectTextures(root: THREE.Object3D): Set<THREE.Texture> {
+  return collectMaterialTextures(collectMaterials(root));
 }
 
 // A SparkRenderer is added to the scene automatically the first time a
@@ -59,7 +50,35 @@ function disposeSparkRenderer(spark: SparkRenderer): void {
   for (const accumulator of freeAccumulators) accumulator.splats.dispose();
 }
 
-function collectTextures(values: unknown[], into: Set<THREE.Texture>): void {
+function collectMaterials(root: THREE.Object3D): Set<THREE.Material> {
+  const materials = new Set<THREE.Material>();
+  root.traverse((child) => {
+    const { material } = child as Partial<THREE.Mesh>;
+    const childMaterials = Array.isArray(material) ? material : [material];
+    for (const childMaterial of childMaterials) {
+      if (childMaterial) materials.add(childMaterial);
+    }
+  });
+  return materials;
+}
+
+function collectMaterialTextures(
+  materials: Iterable<THREE.Material>,
+): Set<THREE.Texture> {
+  const textures = new Set<THREE.Texture>();
+  for (const material of materials) {
+    addTextures(Object.values(material), textures);
+    if (material instanceof THREE.ShaderMaterial) {
+      addTextures(
+        Object.values(material.uniforms).map((uniform) => uniform?.value),
+        textures,
+      );
+    }
+  }
+  return textures;
+}
+
+function addTextures(values: unknown[], into: Set<THREE.Texture>): void {
   for (const value of values) {
     if (value instanceof THREE.Texture) {
       into.add(value);

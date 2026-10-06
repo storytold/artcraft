@@ -128,9 +128,9 @@ export class StoryTellerProxyScene {
   ) {
     if (scene_json == null || this.scene == null) return;
 
-    while (this.scene.scene.children.length > 0) {
-      this.scene.scene.remove(this.scene.scene.children[0]);
-    }
+    // Free the outgoing scene before loading over it; removing the
+    // children alone left all of their GPU resources allocated.
+    this.scene.disposeContents();
 
     // Warm Scene's URL cache up front so per-asset loadObject() calls
     // never hit the network for token→URL resolution. One batch call

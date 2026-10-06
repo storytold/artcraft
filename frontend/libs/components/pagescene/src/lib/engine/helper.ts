@@ -3,7 +3,6 @@ import type { SelectionOutlinePass } from "./SelectionOutlinePass";
 import type { TransformControls } from "./TransformControls.js";
 
 import Scene from "./scene";
-import { disposeObject3D } from "./disposeObject3D";
 import type { EngineEventBus } from "./events/EngineEventBus";
 import {
   InspectorPanelChangedEvent,
@@ -153,7 +152,7 @@ function removeObject3D(object3D) {
     // Undo re-loads deleted objects from a snapshot (DeleteAction), so
     // nothing reuses this instance.
     this.scene.scene.remove(obj);
-    disposeObject3D(obj);
+    this.scene.disposeObject(obj);
 
     this.deps.bus.emit(new ObjectRemovedEvent(uuid));
     this.deps.clearSelected();

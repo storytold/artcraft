@@ -13,7 +13,7 @@ import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { ensureInternalBbox } from "./internalBbox";
-import { disposeObject3D } from "./disposeObject3D";
+import { collectObjectTextures, disposeObject3D } from "./disposeObject3D";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
@@ -135,18 +135,53 @@ class Scene {
   }
 
   clear() {
-    // Free the outgoing scene's GPU resources before dropping it. Assigning
-    // `children = []` released nothing and left every child pointing at
-    // this scene as its parent.
-    disposeObject3D(this.scene);
-    this.scene.clear();
-    // hot_items held detached keyframe-point refs across reloads; reset it
-    // so it never carries stale objects from a previous scene.
-    this.hot_items = [];
+    this.disposeContents();
     this._createGrid();
     this._create_base_lighting();
     this._create_skybox();
     this._create_camera_obj();
+  }
+
+  // Remove everything from the scene and free its GPU resources. The
+  // background is left in place: _create_skybox frees it when it is
+  // replaced, and teardown frees it through disposeBackground.
+  disposeContents() {
+    this.disposeObject(this.scene);
+    this.scene.clear();
+    // hot_items held detached keyframe-point refs across reloads; reset it
+    // so it never carries stale objects from a previous scene.
+    this.hot_items = [];
+  }
+
+  // Free an object tree that has left the scene for good: its GPU
+  // resources, plus its entries in the per-object registries (Water
+  // shaders ticked every frame, video elements, MMD animation).
+  disposeObject(root: THREE.Object3D) {
+    const inTree = new Set<THREE.Object3D>();
+    root.traverse((child) => inTree.add(child));
+    this.shader_objects = this.shader_objects.filter(
+      (water) => !inTree.has(water),
+    );
+    for (const mesh of [...(this.helper?.meshes ?? [])]) {
+      if (inTree.has(mesh)) this.helper.remove(mesh);
+    }
+
+    const videos = new Set<HTMLVideoElement>();
+    for (const texture of collectObjectTextures(root)) {
+      if (texture instanceof THREE.VideoTexture) videos.add(texture.image);
+    }
+    for (const video of videos) stopVideo(video);
+    this.video_planes = this.video_planes.filter(
+      (video) => !videos.has(video),
+    );
+
+    disposeObject3D(root);
+  }
+
+  disposeBackground() {
+    if (this.scene.background instanceof THREE.Texture) {
+      this.scene.background.dispose();
+    }
   }
 
   async instantiate(
@@ -1125,9 +1160,7 @@ class Scene {
     const loader = new THREE.CubeTextureLoader();
     // Every branch below replaces the background, so free the cube texture
     // being replaced (skybox switches and New Scene used to leak it).
-    if (this.scene.background instanceof THREE.Texture) {
-      this.scene.background.dispose();
-    }
+    this.disposeBackground();
 
     // Theme-aware: in light mode, use a near-white background for better contrast with UI
     try {
@@ -1280,6 +1313,14 @@ class Scene {
     this.scene.add(this.groundPlane);
   }
 
+}
+
+// Pausing alone keeps the decoder and buffered media alive; dropping the
+// source and reloading is what releases them.
+function stopVideo(video: HTMLVideoElement) {
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
 }
 
 export default Scene;
