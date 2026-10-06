@@ -1,14 +1,20 @@
 import * as THREE from "three";
-import { SplatMesh } from "@sparkjsdev/spark";
+import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 import { disposeObject3D } from "./disposeObject3D";
 
-// A real SplatMesh needs Spark's WASM decoder; only `instanceof` and
-// dispose() matter here.
+// A real SplatMesh / SparkRenderer needs Spark's WASM decoder and a WebGL
+// renderer; only `instanceof` and the dispose() calls matter here.
 vi.mock("@sparkjsdev/spark", async () => {
   const { Object3D } = await import("three");
+  const accumulator = () => ({ splats: { dispose: vi.fn() } });
   return {
     SplatMesh: class extends Object3D {
       dispose = vi.fn();
+    },
+    SparkRenderer: class extends Object3D {
+      defaultView = { dispose: vi.fn() };
+      active = accumulator();
+      freeAccumulators = [accumulator(), accumulator()];
     },
   };
 });
@@ -78,6 +84,58 @@ describe("disposeObject3D", () => {
     disposeObject3D(root);
 
     expect(splat.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("frees a SparkRenderer's viewpoint and accumulators", () => {
+    const spark = new SparkRenderer({} as never);
+    const root = new THREE.Group();
+    root.add(spark);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { freeAccumulators } = spark as any;
+
+    disposeObject3D(root);
+
+    expect(spark.defaultView.dispose).toHaveBeenCalledTimes(1);
+    expect(spark.active.splats.dispose).toHaveBeenCalledTimes(1);
+    for (const accumulator of freeAccumulators) {
+      expect(accumulator.splats.dispose).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("disposes textures held in ShaderMaterial uniforms", () => {
+    const normals = new THREE.Texture();
+    const mirror = new THREE.WebGLRenderTarget(4, 4).texture;
+    const layers = [new THREE.Texture(), new THREE.Texture()];
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        normalSampler: { value: normals },
+        mirrorSampler: { value: mirror },
+        layerSamplers: { value: layers },
+        size: { value: 1.0 },
+      },
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), material);
+
+    const disposed = trackDisposals([normals, mirror, ...layers]);
+    disposeObject3D(mesh);
+
+    expect(disposed).toEqual(new Set([normals, mirror, ...layers]));
+  });
+
+  it("disposes a texture shared by a property and a uniform once", () => {
+    const video = new THREE.Texture();
+    const material = new THREE.ShaderMaterial({
+      uniforms: { map: { value: video } },
+    });
+    // ChromaKeyMaterial keeps its VideoTexture both here and in a uniform.
+    (material as unknown as { texture: THREE.Texture }).texture = video;
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), material);
+
+    const onDispose = vi.fn();
+    video.addEventListener("dispose", onDispose);
+    disposeObject3D(mesh);
+
+    expect(onDispose).toHaveBeenCalledTimes(1);
   });
 
   it("skips objects without geometry or material", () => {
