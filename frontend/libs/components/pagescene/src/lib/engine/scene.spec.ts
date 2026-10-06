@@ -110,6 +110,23 @@ describe("Scene disposal", () => {
     });
   });
 
+  it("dispose frees the contents and the background", () => {
+    const scene = makeScene();
+    const geometry = new THREE.BoxGeometry();
+    const background = new THREE.CubeTexture();
+    const disposed = new Set<unknown>();
+    geometry.addEventListener("dispose", () => disposed.add(geometry));
+    background.addEventListener("dispose", () => disposed.add(background));
+    scene.scene.add(new THREE.Mesh(geometry));
+    scene.scene.background = background;
+
+    scene.dispose();
+
+    expect(disposed).toEqual(new Set([geometry, background]));
+    expect(scene.scene.children).toHaveLength(0);
+    expect(scene.scene.background).toBeNull();
+  });
+
   it("disposeBackground frees a texture background", () => {
     const scene = makeScene();
     const background = new THREE.CubeTexture();

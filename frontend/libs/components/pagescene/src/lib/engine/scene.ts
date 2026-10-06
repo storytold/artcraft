@@ -178,6 +178,15 @@ class Scene {
     disposeObject3D(root);
   }
 
+  // Final teardown when the owning Editor unmounts: free the contents and
+  // the background. The Scene is not used again — every mount builds a new
+  // Editor, and EngineProvider serializes the scene before unmounting.
+  dispose() {
+    this.disposeContents();
+    this.disposeBackground();
+    this.scene.background = null;
+  }
+
   disposeBackground() {
     if (this.scene.background instanceof THREE.Texture) {
       this.scene.background.dispose();

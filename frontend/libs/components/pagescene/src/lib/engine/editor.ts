@@ -1128,6 +1128,16 @@ class Editor {
     this.bus.emit(new SceneLoadedEvent(false));
     this.stopRenderLoop();
 
+    // Free the scene's GPU resources. EngineProvider serialized the scene
+    // before calling us, and the next mount builds a fresh Editor, so
+    // nothing reads this scene again. The gizmo's dispose also removes its
+    // pointer listeners from the canvas. No forceContextLoss: a scene
+    // change mounts the next Editor on these same canvases, which hands it
+    // this same WebGL context.
+    this.entranceAnimator.clear();
+    this.gizmo.control?.dispose();
+    this.activeScene.dispose();
+
     // Fix: dispose 3D contexts
     this.renderer?.dispose();
     this.postProcessing.dispose();
