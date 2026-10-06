@@ -13,6 +13,7 @@ import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { ensureInternalBbox } from "./internalBbox";
+import { disposeObject3D } from "./disposeObject3D";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
@@ -134,7 +135,11 @@ class Scene {
   }
 
   clear() {
-    this.scene.children = [];
+    // Free the outgoing scene's GPU resources before dropping it. Assigning
+    // `children = []` released nothing and left every child pointing at
+    // this scene as its parent.
+    disposeObject3D(this.scene);
+    this.scene.clear();
     // hot_items held detached keyframe-point refs across reloads; reset it
     // so it never carries stale objects from a previous scene.
     this.hot_items = [];
@@ -1118,6 +1123,11 @@ class Scene {
   // default skybox.
   _create_skybox() {
     const loader = new THREE.CubeTextureLoader();
+    // Every branch below replaces the background, so free the cube texture
+    // being replaced (skybox switches and New Scene used to leak it).
+    if (this.scene.background instanceof THREE.Texture) {
+      this.scene.background.dispose();
+    }
 
     // Theme-aware: in light mode, use a near-white background for better contrast with UI
     try {
