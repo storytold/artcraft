@@ -229,7 +229,10 @@ export class StoryTellerProxyScene {
     );
 
     const settled = await Promise.allSettled(tasks);
-    if (ticket?.cancelled) return;
+    if (ticket?.cancelled) {
+      this.discardLoadedObjects(settled);
+      return;
+    }
 
     // Synchronous transform-application pass. We walk results in
     // original JSON order to preserve scene.children insertion
@@ -294,5 +297,22 @@ export class StoryTellerProxyScene {
 
     this.scene._createGrid();
     this.scene.updateSkybox(skybox_media_id);
+  }
+
+  // A cancelled load has still added whatever finished loading to the
+  // scene. Take those objects back out and free them, or they would leak
+  // and, when a newer load superseded this one, show up in its scene.
+  // Lights are skipped: Scene tracks its base lights in fields that a
+  // newer load may have re-pointed at them.
+  private discardLoadedObjects(
+    settled: PromiseSettledResult<{ obj: THREE.Object3D | undefined }>[],
+  ) {
+    for (const result of settled) {
+      if (result.status !== "fulfilled") continue;
+      const { obj } = result.value;
+      if (!obj || obj instanceof THREE.Light) continue;
+      obj.removeFromParent();
+      this.scene.disposeObject(obj);
+    }
   }
 }
