@@ -36,6 +36,14 @@ pub async fn estimate_image_cost_command(request: OmniRequest, app: AppHandle) -
       "has_watermark": false,
     })).into());
   }
+  if matches!(request.provider, Some(GenerationProvider::Byteplus)) {
+    // Billed by BytePlus to the user's own ModelArk key, with no ArtCraft credit charge.
+    return Ok(OmniResponse(serde_json::json!({
+      "success": true, "cost_in_credits": 0, "cost_in_usd_cents": null,
+      "is_free": false, "is_unlimited": false, "is_rate_limited": false,
+      "has_watermark": false,
+    })).into());
+  }
   if request.uses_artcraft() && !request.uses_legacy_image_endpoint() {
     return omni::estimate(request, Modality::Image, &app).await;
   }

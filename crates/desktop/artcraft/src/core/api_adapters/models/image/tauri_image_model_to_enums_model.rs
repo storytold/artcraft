@@ -23,6 +23,7 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::Seedream4 => Some(CommonImageModel::Seedream4),
     TauriImageModel::Seedream4p5 => Some(CommonImageModel::Seedream4p5),
     TauriImageModel::Seedream5Lite => Some(CommonImageModel::Seedream5Lite),
+    TauriImageModel::Seedream5p0Pro => Some(CommonImageModel::Seedream5p0Pro),
     TauriImageModel::QwenEdit2511Angles => Some(CommonImageModel::QwenEdit2511Angles),
     TauriImageModel::Flux2LoraAngles => Some(CommonImageModel::Flux2LoraAngles),
     TauriImageModel::Midjourney7 => Some(CommonImageModel::Midjourney7),

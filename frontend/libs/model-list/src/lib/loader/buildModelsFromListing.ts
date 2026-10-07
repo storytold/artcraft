@@ -95,6 +95,17 @@ export const buildVideoModelsFromListing = (
   offeredModelIds: string[] = [],
 ): VideoModel[] => build(overlay, listing, offeredModelIds, mergedVideoModel);
 
+// Image models the user can also run on their own provider account, next to ArtCraft.
+const DIRECT_IMAGE_PROVIDERS: Record<string, GenerationProvider[]> = {
+  midjourney_7: [GenerationProvider.Artcraft, GenerationProvider.Midjourney],
+  midjourney_7_niji: [GenerationProvider.Artcraft, GenerationProvider.Midjourney],
+  midjourney_8: [GenerationProvider.Artcraft, GenerationProvider.Midjourney],
+  seedream_4: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+  seedream_4p5: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+  seedream_5_lite: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+  seedream_5p0_pro: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+};
+
 // ── Core assembly ──────────────────────────────────────────────────────────
 
 // Membership: a model appears in the picker when it is
@@ -196,9 +207,7 @@ const mergedImageModel = (
     canEditAngles: o?.canEditAngles ?? false,
 
     // Desktop-native provider knowledge.
-    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
-      ? [GenerationProvider.Artcraft, GenerationProvider.Midjourney]
-      : o?.getProviders(),
+    providers: DIRECT_IMAGE_PROVIDERS[tauriId] ?? o?.getProviders(),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.

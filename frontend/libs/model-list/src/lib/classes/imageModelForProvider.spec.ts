@@ -22,3 +22,19 @@ it("switches Midjourney capabilities without changing the ArtCraft catalog model
   expect(model.canUseImagePrompt).toBe(true);
   expect(model.predefinedGenerationCounts).toEqual([1, 2, 4]);
 });
+
+it("offers BytePlus for Seedream with ModelArk's input limits", () => {
+  const [lite, pro] = buildImageModelsFromListing([], [
+    { model: "seedream_5_lite", batch_size_options: [1, 2], image_refs_supported: true, image_refs_max: 6 },
+    { model: "seedream_5p0_pro", batch_size_options: [1, 2], image_refs_supported: true, image_refs_max: 6 },
+  ]);
+  expect(lite.getProviders()).toEqual([GenerationProvider.Artcraft, GenerationProvider.Byteplus]);
+
+  const directLite = imageModelForProvider(lite, GenerationProvider.Byteplus)!;
+  expect(directLite.maxImagePromptCount).toBe(14);
+  expect(directLite.isValidGenerationCount(4)).toBe(true);
+  expect(imageModelForProvider(pro, GenerationProvider.Byteplus)!.maxImagePromptCount).toBe(10);
+
+  expect(imageModelForProvider(lite, GenerationProvider.Artcraft)).toBe(lite);
+  expect(lite.maxImagePromptCount).toBe(6);
+});

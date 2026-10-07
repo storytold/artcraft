@@ -81,6 +81,8 @@ export const PromptBoxImage = ({
     [catalogModel, selectedProvider],
   );
   const isDirectMidjourney = selectedProvider === GenerationProvider.Midjourney;
+  // Billed to the user's own BytePlus account, not ArtCraft credits.
+  const isDirectBytePlus = selectedProvider === GenerationProvider.Byteplus;
 
 
   console.debug(
@@ -583,7 +585,7 @@ export const PromptBoxImage = ({
                 onClick={handleEnqueue}
                 disabled={!prompt.trim()}
                 loading={isEnqueueing}
-                credits={isDirectMidjourney ? 0 : credits}
+                credits={isDirectMidjourney || isDirectBytePlus ? 0 : credits}
               />
             </div>
           </div>

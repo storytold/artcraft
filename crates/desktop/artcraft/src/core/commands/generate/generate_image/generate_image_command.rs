@@ -8,6 +8,8 @@ use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCrede
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_router::handle_router;
+use crate::core::commands::generate::generate_image::providers::byteplus::byteplus_image_job::{run_byteplus_image_job, ByteplusImageJob};
+use crate::core::commands::generate::generate_image::providers::byteplus::handle_byteplus_image::handle_byteplus_image;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };
@@ -48,6 +50,9 @@ async fn generate_image_native(
 
   let provider = request.provider.unwrap_or(GenerationProvider::Artcraft);
 
+  // Seedream on BytePlus answers synchronously: its job runs once the task is recorded.
+  let mut maybe_byteplus_job: Option<ByteplusImageJob> = None;
+
   let result = match provider {
     GenerationProvider::Artcraft => {
       handle_artcraft(
@@ -58,6 +63,13 @@ async fn generate_image_native(
     }
     GenerationProvider::Midjourney => {
       handle_midjourney(&request, &app_env_configs, &app.state(), &storyteller_creds_manager).await
+    }
+    GenerationProvider::Byteplus => {
+      handle_byteplus_image(&request, &app_env_configs, &credential_cache, &storyteller_creds_manager).await
+        .map(|(success, job)| {
+          maybe_byteplus_job = Some(job);
+          success
+        })
     }
     // All other providers go through the router.
     other => {
@@ -72,7 +84,13 @@ async fn generate_image_native(
   };
 
   match result {
-    Ok(success) => handle_success_behavior(&app, &task_database, &request, success).await,
+    Ok(success) => {
+      let response = handle_success_behavior(&app, &task_database, &request, success).await;
+      if let Some(job) = maybe_byteplus_job {
+        tauri::async_runtime::spawn(run_byteplus_image_job(app.clone(), job));
+      }
+      response
+    }
     Err(err) => handle_error_behavior(&app, err).await,
   }
 }
@@ -139,10 +157,14 @@ async fn handle_error_behavior(
   if matches!(&err, GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo)) {
     ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Midjourney, app);
   }
+  if matches!(&err, GenerateError::MissingCredentials(MissingCredentialsReason::NeedsBytePlusApiKey)) {
+    ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Byteplus, app);
+  }
 
   let error_type = match &err {
     GenerateError::BadInput(_) => TauriGenerateImageErrorType::BadInput,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => TauriGenerateImageErrorType::NeedsFalApiKey,
+    GenerateError::MissingCredentials(MissingCredentialsReason::NeedsBytePlusApiKey) => TauriGenerateImageErrorType::NeedsBytePlusApiKey,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials) => TauriGenerateImageErrorType::NeedsGrokCredentials,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo) => TauriGenerateImageErrorType::NeedsMidjourneyCredentials,
     GenerateError::MissingCredentials(_) => TauriGenerateImageErrorType::NeedsStorytellerCredentials,

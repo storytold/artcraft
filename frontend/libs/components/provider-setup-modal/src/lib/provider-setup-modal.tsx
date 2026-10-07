@@ -34,6 +34,9 @@ export function ProviderSetupModal({
 
   let modalDescription;
   switch (provider) {
+    case GenerationProvider.Byteplus:
+      modalDescription = `ArtCraft generates with your own ${serviceProviderName} account. Add your ModelArk API key in Settings → Accounts, and activate the models you want to use in the ModelArk console.`;
+      break;
     case GenerationProvider.Grok:
       modalDescription = `You can add your ${serviceProviderName} account to ArtCraft by simply logging in. Use can then use it directly within Artcraft. You can add all of your AI accounts to Artcraft to use them all in one place and build the ultimate AI art tool.`;
       break;
@@ -42,7 +45,10 @@ export function ProviderSetupModal({
       break;
   }
 
-  const modalButtonText = `Set up ${serviceProviderName}`;
+  const modalButtonText =
+    provider === GenerationProvider.Byteplus
+      ? "Got it"
+      : `Set up ${serviceProviderName}`;
 
   const buttonOnClick = async () => {
     switch (provider) {

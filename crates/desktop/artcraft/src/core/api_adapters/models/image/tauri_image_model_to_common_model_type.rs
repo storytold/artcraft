@@ -23,6 +23,7 @@ pub fn tauri_image_model_to_common_model_type(model: TauriImageModel) -> CommonM
     TauriImageModel::Seedream4 => CommonModelType::Seedream4,
     TauriImageModel::Seedream4p5 => CommonModelType::Seedream4p5,
     TauriImageModel::Seedream5Lite => CommonModelType::Seedream5Lite,
+    TauriImageModel::Seedream5p0Pro => CommonModelType::Seedream5p0Pro,
     TauriImageModel::Midjourney => CommonModelType::Midjourney,
     TauriImageModel::Midjourney7 => CommonModelType::Midjourney7,
     TauriImageModel::Midjourney7Niji => CommonModelType::Midjourney7Niji,

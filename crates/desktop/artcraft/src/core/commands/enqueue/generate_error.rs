@@ -76,6 +76,7 @@ pub enum BadInputReason {
 
 #[derive(Debug)]
 pub enum MissingCredentialsReason {
+  NeedsBytePlusApiKey,
   NeedsGrokCredentials,
   NeedsFalApiKey,
   NeedsMidjourneyCredentials,
