@@ -16,10 +16,11 @@ use crate::core::api_adapters::models::video::tauri_video_model_to_generation_mo
 use crate::core::api_adapters::models::video::tauri_video_model_to_router_model::tauri_video_model_to_router_model;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason, ProviderFailureReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
+use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::commands::generate::byteplus::byteplus_common::read_byteplus_api_key;
 use crate::core::commands::generate::byteplus::byteplus_video_models::{
   byteplus_video_model_id, first_frame_sets_ratio, max_reference_images, max_reference_videos,
-  seedance_ratio, seedance_resolution, ADAPTIVE_RATIO,
+  seedance_ratio, seedance_resolution, supports_draft, ADAPTIVE_RATIO, DRAFT_RESOLUTION, SEEDANCE_2P5_DRAFT_MODEL,
 };
 use crate::core::commands::generate::common::router_video_request_to_artcraft_prompt::{
   router_aspect_ratio_to_enums, router_resolution_to_enums, video_model_to_common_model_type,
@@ -54,6 +55,13 @@ pub async fn handle_byteplus_video(
     }
   };
 
+  let is_draft = request.draft.unwrap_or(false);
+  if is_draft && !supports_draft(model) {
+    return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments(
+      "Draft mode is only available on Seedance 2.5.".to_string(),
+    )));
+  }
+
   if request.reference_character_tokens.as_ref().is_some_and(|tokens| !tokens.is_empty()) {
     warn!("Seedance on BytePlus doesn't take ArtCraft characters; ignoring them.");
   }
@@ -73,20 +81,24 @@ pub async fn handle_byteplus_video(
   let task_request = CreateVideoTaskRequest {
     model: ark_model_id.to_string(),
     content: build_content(&prompt, &inputs),
-    resolution: seedance_resolution(model, request.resolution).map(str::to_string),
+    resolution: if is_draft {
+      Some(DRAFT_RESOLUTION.to_string())
+    } else {
+      seedance_resolution(model, request.resolution).map(str::to_string)
+    },
     ratio: Some(ratio.to_string()),
     duration: request.duration_seconds.map(i32::from),
     generate_audio: request.generate_audio,
     seed: None,
     camera_fixed: None,
-    draft: None,
+    draft: is_draft.then_some(true),
     watermark: false,
   };
 
   let maybe_prompt_token = create_prompt_record(request, &inputs, app_env_configs, storyteller_creds_manager).await;
 
-  info!("Creating Seedance task: model={}, ratio={}, resolution={:?}, duration={:?}",
-    ark_model_id, ratio, task_request.resolution, task_request.duration);
+  info!("Creating Seedance task: model={}, ratio={}, resolution={:?}, duration={:?}, draft={}",
+    ark_model_id, ratio, task_request.resolution, task_request.duration, is_draft);
 
   let task = create_video_task(&api_key, &task_request).await
     .map_err(|err| {
@@ -98,7 +110,11 @@ pub async fn handle_byteplus_video(
 
   Ok(TaskEnqueueSuccess {
     task_type: TaskType::VideoGeneration,
-    model: Some(tauri_video_model_to_generation_model(model)),
+    model: Some(if is_draft {
+      GenerationModel::Unknown(SEEDANCE_2P5_DRAFT_MODEL.to_string())
+    } else {
+      tauri_video_model_to_generation_model(model)
+    }),
     provider: GenerationProvider::Byteplus,
     provider_job_id: Some(task.id),
     maybe_queue_status_url: None,

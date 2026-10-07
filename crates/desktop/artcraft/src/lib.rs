@@ -36,6 +36,8 @@ use crate::core::commands::providers::provider_clear_command::provider_clear_com
 use crate::core::commands::providers::provider_list_command::provider_list_command;
 use crate::core::commands::providers::provider_set_api_key_command::provider_set_api_key_command;
 use crate::core::commands::providers::provider_validate_byteplus_api_key_command::provider_validate_byteplus_api_key_command;
+use crate::core::commands::byteplus::get_seedance_draft_command::get_seedance_draft_command;
+use crate::core::commands::byteplus::render_seedance_final_command::render_seedance_final_command;
 use crate::core::commands::task_queue::get_task_queue_command::get_task_queue_command;
 use crate::core::commands::task_queue::mark_task_as_dismissed_command::mark_task_as_dismissed_command;
 use crate::core::commands::task_queue::tasks_nuke_all_command::tasks_nuke_all_command;
@@ -255,6 +257,8 @@ pub fn run() {
     provider_list_command,
     provider_set_api_key_command,
     provider_validate_byteplus_api_key_command,
+    get_seedance_draft_command,
+    render_seedance_final_command,
     grok_clear_credentials_command,
     grok_get_credential_info_command,
     grok_open_login_command,

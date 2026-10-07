@@ -168,6 +168,8 @@ interface PromptVideoStore {
   outputFormat: string | null;
   inputMode: VideoInputMode;
   generationCount: number;
+  /** Seedance 2.5 on BytePlus: 480p draft takes to pick from before rendering the final video. */
+  draftMode: boolean;
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution | string) => void;
   setAspectRatio: (aspectRatio: string | null) => void;
@@ -182,6 +184,7 @@ interface PromptVideoStore {
   setOutputFormat: (outputFormat: string | null) => void;
   setInputMode: (mode: VideoInputMode) => void;
   setGenerationCount: (count: number) => void;
+  setDraftMode: (draftMode: boolean) => void;
 }
 
 export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
@@ -199,6 +202,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   outputFormat: null,
   inputMode: "reference",
   generationCount: 1,
+  draftMode: false,
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
@@ -213,6 +217,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   setOutputFormat: (outputFormat) => set({ outputFormat }),
   setInputMode: (inputMode) => set({ inputMode }),
   setGenerationCount: (generationCount) => set({ generationCount }),
+  setDraftMode: (draftMode) => set({ draftMode }),
 }));
 
 // ----- Audio Prompt Box Store -----

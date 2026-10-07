@@ -41,6 +41,8 @@ export interface GenerateVideoRequest {
   output_format?: string;
   duration_seconds?: number;
   generate_audio?: boolean;
+  // BytePlus Seedance 2.5 only: a 480p draft whose task can later render the final video.
+  draft?: boolean;
   video_batch_count?: number;
 
   // Deprecated on the Rust side (still read by some legacy handlers).

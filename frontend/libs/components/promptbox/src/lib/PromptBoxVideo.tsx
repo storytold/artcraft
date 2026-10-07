@@ -10,7 +10,7 @@ import {
   NEUTRAL_BUTTON_HOVER_CLASSES,
 } from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest, commandErrorMessage } from "@storyteller/tauri-api";
-import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
+import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon, PenLineIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
@@ -89,6 +89,9 @@ const DEFAULT_RESOLUTIONS: SizeOption[] = [
   },
 ];
 
+// Seedance 2.5 drafts always render at this resolution.
+const DRAFT_RESOLUTION = "480p";
+
 interface PromptBoxVideoProps {
   useJobContext: () => JobContextType;
   onEnqueuePressed?: (
@@ -144,6 +147,8 @@ export const PromptBoxVideo = ({
     (s) => s.setGenerateWithSound,
   );
   const resolution = usePromptVideoStore((s) => s.resolution);
+  const draftMode = usePromptVideoStore((s) => s.draftMode);
+  const setDraftMode = usePromptVideoStore((s) => s.setDraftMode);
   const setResolution = usePromptVideoStore((s) => s.setResolution);
   const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
   const setAspectRatio = usePromptVideoStore((s) => s.setAspectRatio);
@@ -434,8 +439,16 @@ export const PromptBoxVideo = ({
     if (selectedModel) setDuration(resolveVideoDuration(selectedModel, value, inputMode === "reference"));
   };
 
-  const resolutionPickerOptions: PopoverItem[] | null =
-    selectedModel?.resolutionOptions
+  // Seedance 2.5 on the user's BytePlus account can draft at 480p first; a draft's
+  // "Render final" (in the lightbox) reuses it for the 1080p video.
+  const supportsDraft =
+    selectedProvider === GenerationProvider.Byteplus &&
+    selectedModel?.tauriId === "seedance_2p5";
+  const isDraft = supportsDraft && draftMode;
+
+  const resolutionPickerOptions: PopoverItem[] | null = isDraft
+    ? [{ label: DRAFT_RESOLUTION, selected: true }]
+    : selectedModel?.resolutionOptions
       ? selectedModel.resolutionOptions.map((r) => ({
           label: r,
           selected: r === resolution,
@@ -443,6 +456,8 @@ export const PromptBoxVideo = ({
       : null;
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
+    // Drafts are fixed at 480p; keep the user's resolution for when draft is off.
+    if (isDraft) return;
     setResolution(selectedItem.label);
   };
 
@@ -1173,6 +1188,11 @@ export const PromptBoxVideo = ({
         request.resolution = videoResolutionValue(resolution);
       }
 
+      if (isDraft) {
+        request.draft = true;
+        request.resolution = videoResolutionValue(DRAFT_RESOLUTION);
+      }
+
       switch (selectedModel?.tauriId) {
         case "grok_video": // Legacy id
         case "grok_imagine_video":
@@ -1535,6 +1555,27 @@ export const PromptBoxVideo = ({
                     icon={AudioLinesIcon}
                     activeIcon={AudioLinesIcon}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
+                  />
+                </Tooltip>
+              )}
+
+              {supportsDraft && (
+                <Tooltip
+                  content={
+                    isDraft
+                      ? "Draft: 480p takes, then render the one you like at 1080p"
+                      : "Draft: OFF"
+                  }
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                >
+                  <ToggleButton
+                    isActive={isDraft}
+                    icon={PenLineIcon}
+                    activeIcon={PenLineIcon}
+                    label="Draft"
+                    onClick={() => setDraftMode(!draftMode)}
                   />
                 </Tooltip>
               )}

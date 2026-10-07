@@ -44,6 +44,7 @@ import {
   formatResolution,
 } from "@storyteller/common";
 import { TagsSection } from "./tags/TagsSection";
+import { SeedanceDraftRenderButton } from "./SeedanceDraftRenderButton";
 
 interface LightboxModalProps {
   isOpen: boolean;
@@ -1061,6 +1062,10 @@ export function LightboxModal({
                       Recreate
                     </Button>
                   )}
+
+                {derivedMediaClass === "video" && (
+                  <SeedanceDraftRenderButton mediaFileToken={selectedMediaToken} />
+                )}
 
                 {onEditClicked &&
                   actionUrl &&

@@ -3,6 +3,8 @@ export * from "./lib/artcraft/ArtcraftGetSubscription.js";
 export * from "./lib/artcraft/task_queue/GetTaskQueue.js";
 export * from "./lib/artcraft/task_queue/MarkTaskAsDismissed.js";
 export * from "./lib/artcraft/task_queue/TasksNukeAll.js";
+export * from "./lib/byteplus/GetSeedanceDraft.js";
+export * from "./lib/byteplus/RenderSeedanceFinal.js";
 export * from "./lib/common/CommandStatus.js";
 export * from "./lib/download/DownloadDirectoryReveal.js";
 export * from "./lib/download/DownloadUrl.js";

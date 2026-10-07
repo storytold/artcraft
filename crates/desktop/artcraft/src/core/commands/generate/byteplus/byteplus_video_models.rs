@@ -6,6 +6,15 @@ use crate::core::commands::generate::generate_video::request::TauriVideoModel;
 /// Seedance `ratio` that follows the input frame (or picks one) instead of a fixed shape.
 pub const ADAPTIVE_RATIO: &str = "adaptive";
 
+/// Seedance 2.5 drafts render at this resolution.
+pub const DRAFT_RESOLUTION: &str = "480p";
+
+/// The final video rendered from a Seedance 2.5 draft.
+pub const FINAL_RESOLUTION: &str = "1080p";
+
+/// Task model recorded for Seedance 2.5 drafts, so a finished draft can be told apart later.
+pub const SEEDANCE_2P5_DRAFT_MODEL: &str = "seedance_2p5_draft";
+
 /// ModelArk (ap-southeast) model ids for the Seedance entries in the video catalog, as listed on
 /// 2026-09-15. Seedance 1.0 Lite and 1.5 Pro are retired on ModelArk and not offered.
 pub fn byteplus_video_model_id(model: TauriVideoModel) -> Option<&'static str> {
@@ -47,6 +56,11 @@ pub fn max_resolution(model: TauriVideoModel) -> &'static str {
 /// Seedance 2.5 keeps a first frame's shape and refuses any `ratio` but `adaptive` with one;
 /// the others crop the frame to the chosen ratio.
 pub fn first_frame_sets_ratio(model: TauriVideoModel) -> bool {
+  matches!(model, TauriVideoModel::Seedance2p5)
+}
+
+/// Draft mode (a 480p preview, then the final video from its task id) exists on Seedance 2.5.
+pub fn supports_draft(model: TauriVideoModel) -> bool {
   matches!(model, TauriVideoModel::Seedance2p5)
 }
 

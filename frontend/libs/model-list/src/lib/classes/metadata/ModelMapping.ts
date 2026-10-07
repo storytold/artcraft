@@ -96,6 +96,7 @@ export const getModelDisplayName = (
     seedance_2p0_bpu_fast: "Seedance 2.0 Plus Ultra Fast",
     seedance_2p0_bpu_mini: "Seedance 2.0 Plus Ultra Mini",
     seedance_2p5: "Seedance 2.5",
+    seedance_2p5_draft: "Seedance 2.5 Draft",
     seedance_2p5_u: "Seedance 2.5 Ultra",
     seedance_2p5_preview: "Seedance 2.5 Preview",
     wan_3p0: "Wan 3.0",

@@ -114,6 +114,9 @@ pub struct TauriGenerateVideoRequest {
   pub generate_audio: Option<bool>,
   pub video_batch_count: Option<u16>,
 
+  /// BytePlus Seedance 2.5 only: render a 480p draft whose task can later render the final video.
+  pub draft: Option<bool>,
+
   #[deprecated(note = "Use start_frame_image_media_token instead")]
   pub sora_orientation: Option<SoraOrientation>,
 
