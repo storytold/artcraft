@@ -60,6 +60,12 @@ pub enum TauriVideoModel {
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
 
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+
   #[serde(rename = "sora_2")]
   Sora2,
 
@@ -147,6 +153,7 @@ pub enum TauriGenerateVideoErrorType {
   NoProviderAvailable,
   ServerError,
   NeedsFalApiKey,
+  NeedsBytePlusApiKey,
   FalError,
   NeedsStorytellerCredentials,
 }

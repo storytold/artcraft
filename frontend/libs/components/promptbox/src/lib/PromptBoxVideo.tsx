@@ -1574,7 +1574,8 @@ export const PromptBoxVideo = ({
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
-                    credits={credits}
+                    // Billed to the user's own BytePlus account, not ArtCraft credits.
+                    credits={selectedProvider === GenerationProvider.Byteplus ? 0 : credits}
                   />
                 </div>
               </Tooltip>

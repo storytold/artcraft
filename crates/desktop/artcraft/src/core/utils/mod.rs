@@ -7,6 +7,7 @@ pub mod enum_conversion;
 pub mod get_url_file_extension;
 pub mod image;
 pub mod large_file_transfer;
+pub mod mp4_hevc_tag;
 pub mod object_store;
 pub mod save_base64_image_to_temp_dir;
 pub mod simple_http_download;

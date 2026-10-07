@@ -106,6 +106,14 @@ const DIRECT_IMAGE_PROVIDERS: Record<string, GenerationProvider[]> = {
   seedream_5p0_pro: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
 };
 
+// Video models the user can also run on their own provider account, next to ArtCraft.
+const DIRECT_VIDEO_PROVIDERS: Record<string, GenerationProvider[]> = {
+  seedance_2p0: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+  seedance_2p0_fast: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+  seedance_2p0_mini: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+  seedance_2p5: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
+};
+
 // ── Core assembly ──────────────────────────────────────────────────────────
 
 // Membership: a model appears in the picker when it is
@@ -263,7 +271,7 @@ const mergedVideoModel = (
     supportsSystemPrompt: o?.supportsSystemPrompt,
 
     // Desktop-native provider knowledge.
-    providers: o?.getProviders(),
+    providers: DIRECT_VIDEO_PROVIDERS[tauriId] ?? o?.getProviders(),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.

@@ -20,6 +20,8 @@ pub fn tauri_video_model_to_generation_model(model: TauriVideoModel) -> Generati
     TauriVideoModel::Seedance1p5Pro => GenerationModel::Seedance1p5Pro,
     TauriVideoModel::Seedance2p0 => GenerationModel::Seedance2p0,
     TauriVideoModel::Seedance2p0Fast => GenerationModel::Seedance2p0Fast,
+    TauriVideoModel::Seedance2p0Mini => GenerationModel::Unknown("seedance_2p0_mini".to_string()),
+    TauriVideoModel::Seedance2p5 => GenerationModel::Unknown("seedance_2p5".to_string()),
     TauriVideoModel::Sora2 => GenerationModel::Sora2,
     TauriVideoModel::Sora2Pro => GenerationModel::Sora2Pro,
     TauriVideoModel::Veo2 => GenerationModel::Veo2,

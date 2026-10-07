@@ -19,7 +19,7 @@ use crate::core::commands::generate::byteplus::byteplus_image_models::{byteplus_
 use crate::core::commands::generate::byteplus::byteplus_image_size::{seedream_pro_size, seedream_size};
 use crate::core::commands::generate::byteplus::image_format::detect_image_format;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::utils::map_media_files_to_urls::map_media_file_tokens_to_cdn_urls;
-use crate::core::commands::generate::generate_image::providers::byteplus::byteplus_image_job::ByteplusImageJob;
+use crate::core::commands::generate::generate_image::providers::byteplus::byteplus_image_job::{ByteplusImageJob, RunningSeedreamJob};
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
@@ -107,6 +107,7 @@ pub async fn handle_byteplus_image(
   };
 
   let job = ByteplusImageJob {
+    running: RunningSeedreamJob::register(&provider_job_id),
     provider_job_id,
     api_key,
     ark_model_id,

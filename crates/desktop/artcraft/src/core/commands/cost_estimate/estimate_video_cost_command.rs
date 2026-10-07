@@ -1,4 +1,5 @@
-use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
+use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResponse, OmniResult};
+use enums::common::generation_provider::GenerationProvider;
 use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
 use tauri::{AppHandle, Manager};
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
@@ -18,6 +19,14 @@ impl SerializeMarker for EstimateVideoCostResponse {}
 
 #[tauri::command]
 pub async fn estimate_video_cost_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  if matches!(request.provider, Some(GenerationProvider::Byteplus)) {
+    // Billed by BytePlus to the user's own ModelArk key, with no ArtCraft credit charge.
+    return Ok(OmniResponse(serde_json::json!({
+      "success": true, "cost_in_credits": 0, "cost_in_usd_cents": null,
+      "is_free": false, "is_unlimited": false, "is_rate_limited": false,
+      "has_watermark": false,
+    })).into());
+  }
   if request.uses_artcraft() {
     return omni::estimate(request, Modality::Video, &app).await;
   }

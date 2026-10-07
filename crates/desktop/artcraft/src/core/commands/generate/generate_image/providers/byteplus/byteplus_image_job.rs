@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::sync::{LazyLock, Mutex};
+
 use byteplus_ark_client::creds::ark_api_key::ArkApiKey;
 use byteplus_ark_client::error::ark_api_error::ArkApiError;
 use byteplus_ark_client::error::ark_error::ArkError;
@@ -21,9 +24,15 @@ use crate::core::threads::third_party_task_polling_thread::handlers::byteplus::h
 };
 use crate::core::threads::third_party_task_polling_thread::handlers::byteplus::handle_byteplus_failure::handle_byteplus_failure;
 
+/// Seedream jobs running in this app session, by provider job id. A pending Seedream task that
+/// isn't here was left behind when the app quit.
+static RUNNING_SEEDREAM_JOBS: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+
 /// A Seedream generation whose task has been recorded but not yet run.
 pub struct ByteplusImageJob {
   pub provider_job_id: String,
+  /// Keeps the job listed as running until the job is dropped.
+  pub running: RunningSeedreamJob,
   pub api_key: ArkApiKey,
   pub ark_model_id: &'static str,
   pub prompt: String,
@@ -96,6 +105,33 @@ pub async fn run_byteplus_image_job(app: AppHandle, job: ByteplusImageJob) {
   }
 }
 
+/// True while the Seedream job with this provider job id is running in this app session.
+pub fn is_seedream_job_running(provider_job_id: &str) -> bool {
+  running_jobs().contains(provider_job_id)
+}
+
+/// Lists a Seedream job as running from creation until it's dropped.
+pub struct RunningSeedreamJob {
+  provider_job_id: String,
+}
+
+impl RunningSeedreamJob {
+  pub fn register(provider_job_id: &str) -> Self {
+    running_jobs().insert(provider_job_id.to_string());
+    Self { provider_job_id: provider_job_id.to_string() }
+  }
+}
+
+impl Drop for RunningSeedreamJob {
+  fn drop(&mut self) {
+    running_jobs().remove(&self.provider_job_id);
+  }
+}
+
+fn running_jobs() -> std::sync::MutexGuard<'static, HashSet<String>> {
+  RUNNING_SEEDREAM_JOBS.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 struct JobOutcome {
   results: Vec<ByteplusResult>,
   /// The first failure, kept to explain the job when nothing succeeded.
@@ -129,4 +165,17 @@ fn collect_results(responses: Vec<Result<ImageGenerationResponse, ArkError>>) ->
   }
 
   outcome
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn a_job_counts_as_running_until_dropped() {
+    let job = RunningSeedreamJob::register("seedream_test_job");
+    assert!(is_seedream_job_running("seedream_test_job"));
+    drop(job);
+    assert!(!is_seedream_job_running("seedream_test_job"));
+  }
 }

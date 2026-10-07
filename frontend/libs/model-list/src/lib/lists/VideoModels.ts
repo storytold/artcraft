@@ -345,6 +345,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   new VideoModel({
     id: "seedance_2p0",
     tauriId: "seedance_2p0",
+    providers: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
     generationCountOptions: [1, 2, 3, 4],
     defaultGenerationCount: 1,
     fullName: "Seedance 2.0",
@@ -406,6 +407,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   new VideoModel({
     id: "seedance_2p0_fast",
     tauriId: "seedance_2p0_fast",
+    providers: [GenerationProvider.Artcraft, GenerationProvider.Byteplus],
     fullName: "Seedance 2.0 Fast",
     category: "video",
     creator: ModelCreator.Bytedance,

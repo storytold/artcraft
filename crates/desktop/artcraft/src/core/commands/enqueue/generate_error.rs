@@ -103,6 +103,8 @@ pub enum BillingProvider {
 
 #[derive(Debug)]
 pub enum ProviderFailureReason {
+  /// A user-facing message from BytePlus ModelArk (eg. model not activated, moderation).
+  BytePlusError(String),
   GrokError(GrokError),
   /// NB: The Grok client doesn't say why certain errors (eg. missing fields) happen, so we synthesize this.
   GrokJobEnqueueFailed,

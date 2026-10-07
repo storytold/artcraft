@@ -19,6 +19,8 @@ pub fn tauri_video_model_to_router_model(model: TauriVideoModel) -> RouterVideoM
     TauriVideoModel::Seedance1p5Pro => RouterVideoModel::Seedance1p5Pro,
     TauriVideoModel::Seedance2p0 => RouterVideoModel::Seedance2p0,
     TauriVideoModel::Seedance2p0Fast => RouterVideoModel::Seedance2p0Fast,
+    TauriVideoModel::Seedance2p0Mini => RouterVideoModel::Seedance2p0Mini,
+    TauriVideoModel::Seedance2p5 => RouterVideoModel::Seedance2p5,
     TauriVideoModel::Sora2 => RouterVideoModel::Sora2,
     TauriVideoModel::Sora2Pro => RouterVideoModel::Sora2Pro,
     TauriVideoModel::Veo2 => RouterVideoModel::Veo2,

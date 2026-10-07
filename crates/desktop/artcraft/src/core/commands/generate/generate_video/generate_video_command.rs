@@ -2,9 +2,12 @@ use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniRes
 use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
 use tauri::Manager;
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
-use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
+use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason, ProviderFailureReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_video::handle_video_artcraft;
+use crate::core::commands::generate::generate_video::byteplus::handle_byteplus_video::handle_byteplus_video;
+use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
+use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::commands::generate::generate_video::grok::handle_grok_video::handle_grok_video;
 use crate::core::commands::generate::generate_video::request::{
   TauriGenerateVideoErrorType, TauriGenerateVideoRequest, TauriGenerateVideoResponse,
@@ -90,35 +93,48 @@ async fn generate_video_native(
 
       let mut status = CommandErrorStatus::ServerError;
       let mut error_type = TauriGenerateVideoErrorType::ServerError;
-      let mut error_message = "A server error occurred. Please try again. If it continues, please tell our staff about the problem.";
+      let mut error_message = "A server error occurred. Please try again. If it continues, please tell our staff about the problem.".to_string();
 
       match err {
         GenerateError::BadInput(BadInputReason::NoModelSpecified) => {
           status = CommandErrorStatus::BadRequest;
           error_type = TauriGenerateVideoErrorType::ModelNotSpecified;
-          error_message = "No model specified for video generation";
+          error_message = "No model specified for video generation".to_string();
         }
         GenerateError::NoProviderAvailable => {
           status = CommandErrorStatus::ServerError;
           error_type = TauriGenerateVideoErrorType::NoProviderAvailable;
-          error_message = "No configured provider available for video generation";
+          error_message = "No configured provider available for video generation".to_string();
         }
         GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => {
           status = CommandErrorStatus::Unauthorized;
           error_type = TauriGenerateVideoErrorType::NeedsFalApiKey;
-          error_message = "You need to set a FAL api key";
+          error_message = "You need to set a FAL api key".to_string();
+        },
+        GenerateError::MissingCredentials(MissingCredentialsReason::NeedsBytePlusApiKey) => {
+          ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Byteplus, &app);
+          status = CommandErrorStatus::Unauthorized;
+          error_type = TauriGenerateVideoErrorType::NeedsBytePlusApiKey;
+          error_message = "Add your BytePlus API key in Settings → Accounts.".to_string();
+        },
+        GenerateError::ProviderFailure(ProviderFailureReason::BytePlusError(message)) => {
+          error_message = message;
+        },
+        GenerateError::BadInput(BadInputReason::WrongImageArguments(message)) => {
+          status = CommandErrorStatus::BadRequest;
+          error_message = message;
         },
         GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials) => {
           status = CommandErrorStatus::Unauthorized;
           error_type = TauriGenerateVideoErrorType::NeedsStorytellerCredentials;
-          error_message = "You need to be logged into Artcraft.";
+          error_message = "You need to be logged into Artcraft.".to_string();
         }
         _ => {}, // Fall-through
       }
 
       Err(CommandErrorResponseWrapper {
         status,
-        error_message: Some(error_message.to_string()),
+        error_message: Some(error_message),
         error_type: Some(error_type),
         error_details: None,
       })
@@ -180,6 +196,14 @@ async fn handle_request(
         app_data_root,
         app_env_configs,
         grok_creds_manager,
+      ).await
+    }
+    GenerationProvider::Byteplus => {
+      handle_byteplus_video(
+        &request,
+        app_env_configs,
+        &app.state::<ProviderCredentialLoadingCache>(),
+        storyteller_creds_manager,
       ).await
     }
     GenerationProvider::Sora => {

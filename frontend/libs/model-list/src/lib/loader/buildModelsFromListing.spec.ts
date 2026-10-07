@@ -236,3 +236,17 @@ it("offers ArtCraft and direct Midjourney only for supported Midjourney models",
   }
   expect(models[3].getProviders()).toEqual([GenerationProvider.Artcraft]);
 });
+
+describe("BytePlus as a direct provider", () => {
+  it("offers BytePlus next to ArtCraft for Seedance 2.x", () => {
+    const models = buildVideoModelsFromListing([], [
+      { model: "seedance_2p5" },
+      { model: "seedance_2p0_mini" },
+      { model: "kling_3p0_pro" },
+    ]);
+    const providersOf = (id: string) => models.find((m) => m.tauriId === id)!.getProviders();
+    expect(providersOf("seedance_2p5")).toEqual([GenerationProvider.Artcraft, GenerationProvider.Byteplus]);
+    expect(providersOf("seedance_2p0_mini")).toEqual([GenerationProvider.Artcraft, GenerationProvider.Byteplus]);
+    expect(providersOf("kling_3p0_pro")).toEqual([GenerationProvider.Artcraft]);
+  });
+});

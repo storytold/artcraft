@@ -6,6 +6,7 @@ use crate::core::threads::third_party_task_polling_thread::events::notify_fronte
   notify_frontend_of_completion, CompletionData,
 };
 use crate::core::utils::auto_download::{auto_download_task_urls, clear_auto_download_checkpoint};
+use crate::core::utils::mp4_hevc_tag::retag_hevc_for_playback;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -64,7 +65,7 @@ pub async fn handle_byteplus_complete(
   let mut maybe_primary_media_file_token: Option<MediaFileToken> = None;
 
   for (i, result) in results.iter().enumerate() {
-    let download_path = download_result(app, &result.url, &result.extension, i).await?;
+    let download_path = download_result(app, result, i).await?;
     let upload = upload_to_backend(
       &creds,
       &app_env_configs,
@@ -144,12 +145,15 @@ pub struct ByteplusResult {
 
 async fn download_result(
   app: &AppHandle,
-  url: &str,
-  extension: &str,
+  result: &ByteplusResult,
   index: usize,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-  let bytes = reqwest::get(url).await?.error_for_status()?.bytes().await?;
-  let filename = format!("byteplus_{}_{}.{}", generate_random_uuid(), index, extension);
+  let mut bytes = reqwest::get(&result.url).await?.error_for_status()?.bytes().await?.to_vec();
+  if result.media_class == TaskMediaFileClass::Video {
+    // Seedance's 10-bit output is HEVC tagged `hev1`, which the app's players show as black.
+    retag_hevc_for_playback(&mut bytes);
+  }
+  let filename = format!("byteplus_{}_{}.{}", generate_random_uuid(), index, result.extension);
   let download_path = app.state::<AppDataRoot>().temp_dir().path().join(filename);
   tokio::fs::write(&download_path, &bytes).await?;
   Ok(download_path)

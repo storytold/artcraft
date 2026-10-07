@@ -46,7 +46,7 @@ fn determine_video_generation_mode(request: &GenerateVideoRequestBuilder) -> Com
   }
 }
 
-fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonModelType> {
+pub(crate) fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonModelType> {
   match model {
     RouterVideoModel::GrokVideo => Some(CommonModelType::GrokVideo),
     RouterVideoModel::Kling16Pro => Some(CommonModelType::Kling16Pro),
@@ -106,7 +106,7 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
   }
 }
 
-fn router_aspect_ratio_to_enums(ar: RouterAspectRatio) -> EnumsAspectRatio {
+pub(crate) fn router_aspect_ratio_to_enums(ar: RouterAspectRatio) -> EnumsAspectRatio {
   match ar {
     RouterAspectRatio::Auto => EnumsAspectRatio::Auto,
     RouterAspectRatio::Square => EnumsAspectRatio::Square,
@@ -129,7 +129,7 @@ fn router_aspect_ratio_to_enums(ar: RouterAspectRatio) -> EnumsAspectRatio {
   }
 }
 
-fn router_resolution_to_enums(res: RouterResolution) -> EnumsResolution {
+pub(crate) fn router_resolution_to_enums(res: RouterResolution) -> EnumsResolution {
   match res {
     RouterResolution::OneK => EnumsResolution::OneK,
     RouterResolution::TwoK => EnumsResolution::TwoK,
