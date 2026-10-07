@@ -124,6 +124,9 @@
     },
     {
       "path": "../../icons/tsconfig.lib.json"
+    },
+    {
+      "path": "../viewer-3d/tsconfig.lib.json"
     }
   ]
 }

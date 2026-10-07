@@ -1127,11 +1127,27 @@ class Editor {
 
     this.bus.emit(new SceneLoadedEvent(false));
     this.stopRenderLoop();
+    this.viewport.dispose();
+
+    // Free the scene's GPU resources. EngineProvider serialized the scene
+    // before calling us, and the next mount builds a fresh Editor, so
+    // nothing reads this scene again. The gizmo's dispose also removes its
+    // pointer listeners from the canvas.
+    this.entranceAnimator.clear();
+    this.gizmo.control?.dispose();
+    this.activeScene.dispose();
 
     // Fix: dispose 3D contexts
     this.renderer?.dispose();
     this.postProcessing.dispose();
     this.rawRenderer?.dispose();
+    // dispose() leaves the GL objects themselves (render targets, programs)
+    // in the context. Leaving the page detaches the canvases, and the
+    // context then lingers until garbage collection, two per visit. A
+    // scene change keeps the canvases mounted and the next Editor reuses
+    // their contexts, so only release a context whose canvas is gone.
+    releaseContextIfDetached(this.renderer);
+    releaseContextIfDetached(this.rawRenderer);
 
     this.isMounted = false;
     this.bus.emit(new EngineInitializedEvent(false));
@@ -1142,6 +1158,12 @@ class Editor {
     this.skeletonHelpers.clear();
     this.storeBridge.dispose();
     console.log("3D Editor Engine unmounted");
+  }
+}
+
+function releaseContextIfDetached(renderer: THREE.WebGLRenderer | undefined) {
+  if (renderer && !renderer.domElement.isConnected) {
+    renderer.forceContextLoss();
   }
 }
 

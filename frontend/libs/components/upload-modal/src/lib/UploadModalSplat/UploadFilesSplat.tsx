@@ -92,12 +92,13 @@ export const UploadFilesSplat = ({
   const [overallProgress, setOverallProgress] = useState<{ current: number; total: number } | null>(null);
   const [selectionError, setSelectionError] = useState<string | undefined>();
 
+  // Tears down the current preview: stops its loop, cancels in-flight
+  // loads and frees its scene and renderer (see loadPreviewOnCanvas).
+  const disposePreviewRef = useRef<(() => void) | null>(null);
   const disposeRenderer = () => {
-    if (rendererRef.current) {
-      rendererRef.current.setAnimationLoop(null);
-      rendererRef.current.dispose();
-      rendererRef.current = null;
-    }
+    disposePreviewRef.current?.();
+    disposePreviewRef.current = null;
+    rendererRef.current = null;
   };
 
   useEffect(() => {
@@ -107,12 +108,13 @@ export const UploadFilesSplat = ({
     disposeRenderer();
     setPreviewStatus({ type: "init" });
 
-    const { renderer, camera } = loadPreviewOnCanvas({
+    const { renderer, camera, dispose } = loadPreviewOnCanvas({
       file: currentFile,
       canvas: canvasRef.current,
       statusCallback: setPreviewStatus,
     });
     rendererRef.current = renderer;
+    disposePreviewRef.current = dispose;
     cameraRef.current = camera;
 
     return disposeRenderer;
