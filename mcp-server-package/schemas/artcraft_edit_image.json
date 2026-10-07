@@ -1,0 +1,1 @@
+{"name":"artcraft_edit_image","description":"Re-edit an image using Flux Pro Kontext Max, Gemini 2.5 Flash, GPT-Image 1, Qwen, or SeedEdit 3.","parameters":{"properties":{"image_media_token":{"type":"string"},"model":{"type":"string"},"prompt":{"type":"string"}},"required":["model","prompt","image_media_token"],"type":"object"}}

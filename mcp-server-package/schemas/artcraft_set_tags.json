@@ -1,0 +1,1 @@
+{"name":"artcraft_set_tags","description":"Add or remove tags on a media file.","parameters":{"properties":{"add":{"type":"boolean"},"media_token":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"}},"required":["media_token","tags","add"],"type":"object"}}

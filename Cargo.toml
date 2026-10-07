@@ -41,6 +41,7 @@ members = [
   "crates/testing/test_data",
   "crates/testing/test_utils",
   "crates/vendor/tauri-plugin-http",
+  "crates/cli/artcraft-mcp",
 ]
 default-members = ["crates/desktop/artcraft"]
 

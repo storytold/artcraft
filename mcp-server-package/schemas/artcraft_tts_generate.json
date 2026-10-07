@@ -1,0 +1,1 @@
+{"name":"artcraft_tts_generate","description":"Generate speech from text using available TTS models.","parameters":{"properties":{"text":{"type":"string"},"voice_model":{"type":"string"}},"required":["text","voice_model"],"type":"object"}}

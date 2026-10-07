@@ -1,0 +1,1 @@
+{"name":"artcraft_list_weights","description":"List available model weights (LoRAs).","parameters":{"properties":{"cursor":{"type":"string"},"limit":{"type":"integer"}},"type":"object"}}

@@ -1,0 +1,1 @@
+{"name":"artcraft_delete_character","description":"Delete a character.","parameters":{"properties":{"character_token":{"type":"string"}},"required":["character_token"],"type":"object"}}

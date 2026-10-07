@@ -1,0 +1,1 @@
+{"name":"artcraft_create_referral_code","description":"Create a referral code.","parameters":{"properties":{"code":{"type":"string"}},"required":["code"],"type":"object"}}

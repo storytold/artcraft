@@ -1,0 +1,1 @@
+{"name":"artcraft_rate_media","description":"Rate a media file (thumbs up/down).","parameters":{"properties":{"media_token":{"type":"string"},"rating":{"enum":["up","down"],"type":"string"}},"required":["media_token","rating"],"type":"object"}}

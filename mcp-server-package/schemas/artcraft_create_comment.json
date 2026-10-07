@@ -1,0 +1,1 @@
+{"name":"artcraft_create_comment","description":"Comment on a media file.","parameters":{"properties":{"media_token":{"type":"string"},"text":{"type":"string"}},"required":["media_token","text"],"type":"object"}}

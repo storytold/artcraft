@@ -1,0 +1,1 @@
+{"name":"artcraft_get_session_info","description":"Get the currently authenticated user's info.","parameters":{"properties":{},"type":"object"}}

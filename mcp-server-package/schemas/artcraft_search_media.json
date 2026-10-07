@@ -1,0 +1,1 @@
+{"name":"artcraft_search_media","description":"Search session or featured media.","parameters":{"properties":{"query":{"type":"string"}},"required":["query"],"type":"object"}}

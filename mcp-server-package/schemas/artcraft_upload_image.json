@@ -1,0 +1,1 @@
+{"name":"artcraft_upload_image","description":"Upload an image for use as reference or keyframe in generation.","parameters":{"properties":{"file_path":{"description":"Local file path to image","type":"string"}},"required":["file_path"],"type":"object"}}
