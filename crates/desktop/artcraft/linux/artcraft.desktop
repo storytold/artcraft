@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name={{name}}
+GenericName=AI Image and Video Creator
+{{#if comment}}
+Comment={{comment}}
+{{/if}}
+Exec={{exec}}
+TryExec={{exec}}
+Icon={{icon}}
+Terminal=false
+StartupNotify=true
+StartupWMClass={{exec}}
+Categories={{categories}}
+Keywords=ai;image;video;generation;3d;art;design;film;
