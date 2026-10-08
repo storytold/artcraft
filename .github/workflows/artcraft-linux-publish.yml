@@ -1,0 +1,93 @@
+name: "Artcraft Linux Publish"
+
+on:
+  push:
+    branches:
+      - release
+      - artcraft-release
+      - artcraft-linux  # Additional branch for Linux testing
+
+# This workflow creates Linux builds (.deb, .rpm and AppImage).
+# On each push to the release branches it will create or update a GitHub release, build your app, and upload the artifacts to the release.
+
+jobs:
+  publish-artcraft-linux:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu 22.04 keeps the glibc floor low enough for current Debian, Fedora and Arch.
+          - platform: 'ubuntu-22.04'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install Tauri and wreq dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libxdo-dev \
+            patchelf \
+            build-essential \
+            cmake \
+            perl \
+            nasm \
+            clang
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: install frontend dependencies
+        run: |
+          cd ./frontend
+          npm ci
+
+          echo "=== Version Information ==="
+          node --version
+          npm --version
+          npm list --depth=0 | grep nx
+
+      - name: Pre-build frontend to avoid Tauri build issues
+        run: |
+          cd ./frontend
+
+          # Increase Node.js memory limit for the build
+          export NODE_OPTIONS="--max-old-space-size=8192"
+          npx nx run artcraft:build
+
+          echo "Checking build output..."
+          ls apps/artcraft/dist/ | head -10
+
+          # Skip Tauri's beforeBuildCommand (the frontend is already built)
+          cd "${{ github.workspace }}/crates/desktop/artcraft"
+          cp tauri.conf.json tauri.conf.json.bak
+          jq '.build.beforeBuildCommand = ""' tauri.conf.json.bak > tauri.conf.json
+
+      - name: build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use the SQLx query cache for SQLite
+          SQLX_OFFLINE: true
+        with:
+          projectPath: ./crates/desktop/artcraft
+          tagName: artcraft-v__VERSION__ # the action automatically replaces __VERSION__ with the app version.
+          releaseName: "ArtCraft v__VERSION__"
+          releaseBody: "Production build of ArtCraft. See the assets below to download and install."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
