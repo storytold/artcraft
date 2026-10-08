@@ -43,6 +43,8 @@ import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
 
+const LAST_READ_AT_KEY = "taskQueueLastReadAt";
+
 type InProgressTask = {
   id: string;
   title: string;
@@ -511,10 +513,7 @@ export const TaskQueue = () => {
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
   const [completed, setCompleted] = useState<CompletedTask[]>([]);
   const [failed, setFailed] = useState<FailedTask[]>([]);
-  const [lastReadAt, setLastReadAt] = useState<number>(() => {
-    const stored = localStorage.getItem("taskQueueLastReadAt");
-    return stored ? parseInt(stored, 10) : 0;
-  });
+  const [lastReadAt, setLastReadAt] = useState<number>(readLastReadAt);
 
   // remove unread state; unread tracking handled via IDs below
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -933,7 +932,7 @@ export const TaskQueue = () => {
     if (open) {
       const now = Date.now();
       setLastReadAt(now);
-      localStorage.setItem("taskQueueLastReadAt", String(now));
+      writeLastReadAt(now);
       setUnreadCompletedIds([]);
     }
   };
@@ -1297,5 +1296,23 @@ export const TaskQueue = () => {
     </>
   );
 };
+
+// This optional timestamp must not let a storage error prevent TaskQueue from mounting.
+function readLastReadAt(): number {
+  try {
+    const parsed = parseInt(localStorage.getItem(LAST_READ_AT_KEY) ?? "", 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeLastReadAt(timestamp: number) {
+  try {
+    localStorage.setItem(LAST_READ_AT_KEY, String(timestamp));
+  } catch {
+    // Best-effort persistence; the in-memory state still updates.
+  }
+}
 
 export default TaskQueue;
