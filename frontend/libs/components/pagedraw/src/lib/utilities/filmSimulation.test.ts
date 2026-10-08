@@ -6,7 +6,8 @@ function pixel(r: number, g: number, b: number, a = 255): ImageData {
 }
 
 describe("film simulation", () => {
-  it("offers unique preset identifiers", () => {
+  it("offers the 20 film simulation modes plus Original", () => {
+    expect(FILM_PRESETS).toHaveLength(21);
     expect(new Set(FILM_PRESETS.map((p) => p.id)).size).toBe(FILM_PRESETS.length);
   });
 
@@ -22,6 +23,14 @@ describe("film simulation", () => {
     expect(input.data[3]).toBe(95);
     expect(Math.abs(input.data[0] - input.data[1])).toBeLessThanOrEqual(1);
     expect(Math.abs(input.data[1] - input.data[2])).toBeLessThanOrEqual(1);
+  });
+
+  it("renders every mode without changing alpha", () => {
+    for (const preset of FILM_PRESETS) {
+      const image = pixel(52, 130, 204, 77);
+      applyFilmSimulation(image, preset.id, 100);
+      expect(image.data[3]).toBe(77);
+    }
   });
 
   it("clamps out-of-range strength to 0-100", () => {
