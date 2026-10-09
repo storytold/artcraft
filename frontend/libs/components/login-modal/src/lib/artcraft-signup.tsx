@@ -43,21 +43,24 @@ export const ArtCraftSignUp = ({
     } else {
       setLocalError(undefined);
     }
-  }, [errorMessage]);
+  }, [errorMessage, isSignUp]);
+
+  const handleToggleMode = () => {
+    setLocalError(undefined);
+    onToggleMode();
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
+    const formData = new FormData(form);
+
     if (isSignUp) {
-      const username = (form.elements.namedItem("username") as HTMLInputElement)
-        .value;
-      const email = (form.elements.namedItem("email") as HTMLInputElement)
-        .value;
-      const password = (form.elements.namedItem("password") as HTMLInputElement)
-        .value;
-      const confirmPassword = (
-        form.elements.namedItem("confirmPassword") as HTMLInputElement
-      ).value;
+      const username = ((formData.get("username") as string) || "").trim();
+      const email = ((formData.get("email") as string) || "").trim();
+      const password = (formData.get("password") as string) || "";
+      const confirmPassword = (formData.get("confirmPassword") as string) || "";
+
       if (password !== confirmPassword) {
         setLocalError("Passwords do not match.");
         return;
@@ -65,10 +68,9 @@ export const ArtCraftSignUp = ({
       onSubmit(username, email, password, confirmPassword);
     } else {
       const usernameOrEmail = (
-        form.elements.namedItem("usernameOrEmail") as HTMLInputElement
-      ).value;
-      const password = (form.elements.namedItem("password") as HTMLInputElement)
-        .value;
+        (formData.get("usernameOrEmail") as string) || ""
+      ).trim();
+      const password = (formData.get("password") as string) || "";
       onSubmit(usernameOrEmail, "", password, "");
     }
   };
@@ -189,7 +191,7 @@ export const ArtCraftSignUp = ({
         {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
         <button
           type="button"
-          onClick={onToggleMode}
+          onClick={handleToggleMode}
           className="font-semibold text-primary transition-colors hover:text-primary-400"
         >
           {isSignUp ? "Log in" : "Sign up"}
