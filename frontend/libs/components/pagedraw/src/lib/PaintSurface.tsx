@@ -20,6 +20,7 @@ import Konva from "konva";
 import { LineNode, SceneState, useSceneStore } from "./stores/SceneState";
 import { Node } from "./Node";
 import "./pagedraw.css";
+import { FILM_PRESETS, renderFilmImage, type FilmPreset } from "./utilities/filmSimulation";
 import SplitPane from "./components/ui/SplitPane";
 import { useRightPanelLayoutManagement } from "./hooks/useRightPanelLayoutManagement";
 import { useStageCentering } from "./hooks/useCenteredStage";
@@ -126,6 +127,27 @@ export const PaintSurface = ({
 
   const mouseMoveThrottle = React.useRef(-1);
   const imageRef = React.useRef<Konva.Image>(null);
+  const [filmPreset, setFilmPreset] = useState<FilmPreset>("none");
+  const [filmStrength, setFilmStrength] = useState(80);
+  const [filmImage, setFilmImage] = useState<HTMLCanvasElement | null>(null);
+  const [filmError, setFilmError] = useState(false);
+
+  // Preserve the original bitmap and only replace the canvas preview.
+  useEffect(() => {
+    if (!baseImageBitmap || filmPreset === "none" || filmStrength === 0) {
+      setFilmImage(null);
+      setFilmError(false);
+      return;
+    }
+    try {
+      setFilmImage(renderFilmImage(baseImageBitmap, filmPreset, filmStrength));
+      setFilmError(false);
+    } catch {
+      setFilmImage(null);
+      setFilmError(true);
+    }
+  }, [baseImageBitmap, filmPreset, filmStrength]);
+
   const leftPanelRef = React.useRef<Konva.Layer>(null);
   // Tracks which draw-node ids we've already shown, so only freshly added
   // images/shapes get the entrance fade — not the whole canvas on scene restore.
@@ -1678,8 +1700,27 @@ export const PaintSurface = ({
       left={
         <div
           ref={containerRef}
-          className="flex h-full w-full items-center justify-center overflow-hidden"
+          className="relative flex h-full w-full items-center justify-center overflow-hidden"
         >
+          <div className="absolute right-4 top-4 z-30 w-56 rounded-xl border border-white/20 bg-neutral-950/90 p-3 text-white shadow-xl" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="mb-2 text-sm font-semibold">Film Simulation</div>
+            <label htmlFor="film-preset" className="mb-1 block text-xs">Color recipe</label>
+            <select id="film-preset" aria-label="Film simulation preset" value={filmPreset}
+              onChange={(event) => setFilmPreset(event.target.value as FilmPreset)}
+              className="w-full rounded bg-neutral-800 p-2 text-xs text-white">
+              {FILM_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>{preset.label}</option>
+              ))}
+            </select>
+            <label htmlFor="film-strength" className="mt-3 flex justify-between text-xs">
+              <span>Intensity</span><span>{filmStrength}%</span>
+            </label>
+            <input id="film-strength" aria-label="Film simulation intensity" type="range" min={0} max={100}
+              value={filmStrength} disabled={filmPreset === "none"}
+              onChange={(event) => setFilmStrength(Number(event.target.value))} className="w-full" />
+            {filmError && <p role="alert" className="mt-2 text-xs text-amber-300">Image source restricts pixel access.</p>}
+            <p className="mt-1 text-[10px] text-neutral-400">Film-inspired colors; original preserved.</p>
+          </div>
           <Stage
             ref={stageRef}
             width={containerDimensions.width * (leftPct / 100)}
@@ -1753,7 +1794,7 @@ export const PaintSurface = ({
                 ref={baseImageRef}
                 x={0}
                 y={0}
-                image={baseImageBitmap || undefined}
+                image={filmImage || baseImageBitmap || undefined}
                 width={getAspectRatioDimensions().width}
                 height={getAspectRatioDimensions().height}
                 listening={false}
