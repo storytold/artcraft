@@ -81,9 +81,15 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
       editor.project.closeProject();
     } catch (error) {
       console.error("Failed to prepare project exit:", error);
+      toast.error("Failed to save project", {
+        description:
+          error instanceof Error ? error.message : "Please try again",
+      });
+      return;
     } finally {
-      navigate(exitTo);
+      setIsExiting(false);
     }
+    navigate(exitTo);
   };
 
   const handleSaveProjectName = async (newName: string) => {

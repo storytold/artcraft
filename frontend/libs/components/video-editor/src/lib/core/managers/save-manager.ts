@@ -8,6 +8,7 @@ export class SaveManager {
   private debounceMs: number;
   private isPaused = false;
   private isSaving = false;
+  private savePromise: Promise<void> | null = null;
   private hasPendingSave = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private unsubscribeHandlers: Array<() => void> = [];
@@ -64,6 +65,9 @@ export class SaveManager {
 
   async flush(): Promise<void> {
     this.hasPendingSave = true;
+    // Exit callers must wait for the current snapshot, then persist any edit
+    // queued while that write was in flight before closing the project.
+    if (this.savePromise) await this.savePromise;
     await this.saveNow();
   }
 
@@ -82,7 +86,10 @@ export class SaveManager {
   }
 
   private async saveNow(): Promise<void> {
-    if (this.isSaving) return;
+    if (this.isSaving) {
+      await this.savePromise;
+      return;
+    }
     if (!this.hasPendingSave) return;
 
     const activeProject = this.editor.project.getActive();
@@ -95,8 +102,10 @@ export class SaveManager {
     this.clearTimer();
 
     try {
-      await this.editor.project.saveCurrentProject();
+      this.savePromise = this.editor.project.saveCurrentProject();
+      await this.savePromise;
     } finally {
+      this.savePromise = null;
       this.isSaving = false;
       if (this.hasPendingSave) {
         this.queueSave();
