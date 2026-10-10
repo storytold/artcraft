@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -319,20 +320,41 @@ function AudioRefTile({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  useEffect(() => {
+    setIsPlaying(false);
+    return () => {
+      const element = audioRef.current;
+      audioRef.current = null;
+      if (element) {
+        element.onended = null;
+        element.pause();
+      }
+    };
+  }, [audio.url]);
+
   const togglePlay = useCallback(() => {
     if (isPlaying) {
-      audioRef.current?.pause();
+      const element = audioRef.current;
       audioRef.current = null;
+      if (element) {
+        element.onended = null;
+        element.pause();
+      }
       setIsPlaying(false);
       return;
     }
     const element = new Audio(audio.url);
     element.onended = () => {
+      if (audioRef.current !== element) return;
       audioRef.current = null;
       setIsPlaying(false);
     };
     audioRef.current = element;
-    void element.play().catch(() => setIsPlaying(false));
+    void element.play().catch(() => {
+      if (audioRef.current !== element) return;
+      audioRef.current = null;
+      setIsPlaying(false);
+    });
     setIsPlaying(true);
   }, [audio.url, isPlaying]);
 
