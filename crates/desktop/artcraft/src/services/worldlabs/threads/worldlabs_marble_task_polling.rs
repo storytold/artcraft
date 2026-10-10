@@ -1,5 +1,6 @@
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
+use crate::core::events::functional_events::gaussian_generation_complete_event::{GaussianGenerationCompleteEvent, GeneratedGaussian};
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
@@ -343,6 +344,23 @@ async fn upload_spz_splat(
 
   if let Err(err) = event.send(&app_handle) {
     error!("Failed to send GenerationCompleteEvent: {:?}", err); // Fail open
+  }
+
+  // Notify the page that requested the world so its history/preview updates.
+  if let (Some(media_token), Some(cdn_url)) = (
+    maybe_primary_media_file_token.as_ref(),
+    maybe_cdn_url.as_deref().and_then(|url| Url::parse(url).ok()),
+  ) {
+    let event = GaussianGenerationCompleteEvent {
+      generated_gaussian: Some(GeneratedGaussian {
+        media_token: media_token.clone(),
+        cdn_url,
+        maybe_thumbnail_template: maybe_thumbnail_url_template.clone(),
+      }),
+      maybe_frontend_subscriber_id: local_task.frontend_subscriber_id.clone(),
+      maybe_frontend_subscriber_payload: local_task.frontend_subscriber_payload.clone(),
+    };
+    event.send_infallible(app_handle);
   }
 
   //let result = maybe_handle_text_to_image_complete_event(
