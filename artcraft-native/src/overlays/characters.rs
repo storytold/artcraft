@@ -154,6 +154,7 @@ impl CharactersModal {
       // "Create New" first.
       let create = cell(0);
       let resp = ui.interact(create, Id::new("character-create"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+      resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Create New"));
       ui.painter().rect_filled(create, theme::RADIUS, theme::fade(theme::CONTROLS, if resp.hovered() { 0.7 } else { 0.4 }));
       icons::dashed_rect(ui.painter(), create.shrink(1.0), Stroke::new(1.5, theme::LINE_DASHED), 5.0, 4.0);
       icons::paint(ui.painter(), Rect::from_center_size(create.center() - vec2(0.0, 10.0), vec2(22.0, 22.0)), Icon::Plus, theme::INK);
@@ -173,6 +174,7 @@ impl CharactersModal {
       for (i, c) in characters.iter().enumerate() {
         let r = cell(1 + pending.len() + i);
         let resp = ui.interact(r, Id::new(("character", &c.token)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &c.name));
         thumbnail(ui, r, c.avatar_url().as_deref(), cache);
         if resp.hovered() {
           ui.painter().rect_stroke(r, theme::RADIUS, Stroke::new(2.0, theme::fade(theme::ACCENT_400, 0.7)), egui::StrokeKind::Inside);
@@ -333,5 +335,68 @@ fn caption(ui: &Ui, tile: Rect, name: &str, note: &str) {
   ui.painter().with_clip_rect(Rect::from_min_size(pos2(tile.left(), y - 10.0), vec2(tile.width(), 20.0))).galley(pos2(tile.left(), y - galley.size().y / 2.0), galley, theme::INK);
   if !note.is_empty() {
     ui.painter().text(pos2(tile.left() + w + 6.0, y), Align2::LEFT_CENTER, note, FontId::new(11.5, egui::FontFamily::Proportional), theme::MUTED);
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use egui_kittest::Harness;
+  use egui_kittest::kittest::Queryable;
+
+  struct State {
+    _rt: tokio::runtime::Runtime,
+    cache: MediaCache,
+    modal: CharactersModal,
+    characters: Vec<Character>,
+    actions: Vec<String>,
+    fonts_ready: bool,
+  }
+
+  fn harness() -> Harness<'static, State> {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+    let cache = MediaCache::new(rt.handle().clone(), reqwest::Client::new());
+    let characters = vec![Character { token: "c1".into(), name: "Mira".into(), ..Default::default() }];
+    let state = State { _rt: rt, cache, modal: CharactersModal::new(), characters, actions: Vec::new(), fonts_ready: false };
+    let mut harness = Harness::builder().with_size(egui::vec2(1000.0, 800.0)).build_ui_state(
+      |ui, s: &mut State| {
+        // The harness draws one frame while building: fonts are installed then, used from the next.
+        if !s.fonts_ready {
+          crate::theme::apply(ui.ctx());
+          s.fonts_ready = true;
+          return;
+        }
+        let actions = s.modal.show(ui.ctx(), &s.characters, &[], &mut s.cache);
+        s.actions.extend(actions.iter().map(|a| format!("{a:?}")));
+      },
+      state,
+    );
+    harness.run();
+    harness
+  }
+
+  #[test]
+  fn picking_a_character_mentions_it() {
+    let mut harness = harness();
+    harness.get_by_label("Mira").click();
+    harness.run();
+    assert!(harness.state().actions.iter().any(|a| a.contains("Select") && a.contains("Mira")), "{:?}", harness.state().actions);
+  }
+
+  #[test]
+  fn creating_needs_a_name_and_a_reference() {
+    let mut harness = harness();
+    harness.get_by_label("Create New").click();
+    harness.run();
+    harness.get_by_label("Create").click();
+    harness.run();
+    assert_eq!(harness.state().actions, [r#"Toast("Please enter a character name")"#]);
+    harness.get_by_role(egui::accesskit::Role::TextInput).focus();
+    harness.run();
+    harness.get_by_role(egui::accesskit::Role::TextInput).type_text("Mira");
+    harness.run();
+    harness.get_by_label("Create").click();
+    harness.run();
+    assert_eq!(harness.state().actions.last().map(String::as_str), Some(r#"Toast("Please upload a reference image")"#));
   }
 }
