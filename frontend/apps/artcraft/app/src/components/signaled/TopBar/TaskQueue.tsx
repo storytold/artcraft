@@ -680,7 +680,6 @@ export const TaskQueue = () => {
         const result = await GetTaskQueue();
 
         if (cancelled) return;
-        console.log("TaskQueue:GetTaskQueue result", result);
 
         const { tasks } = result;
 
