@@ -1,6 +1,7 @@
 import { Button } from "@storyteller/ui-button";
 import { Transition, TransitionChild } from "@headlessui/react";
 import { useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { ArrowRightIcon } from "lucide-react";
 import { DiscordIcon } from "@storyteller/icons";
 import type { UserInfo } from "@storyteller/api";
@@ -28,6 +29,12 @@ interface LoginModalProps {
   isSignUp?: boolean;
   /** Optional direct media URL for the right-pane showcase video. */
   videoUrl?: string;
+  /**
+   * Window chrome (minimize / maximize / close) to pin to the top-right of the
+   * overlay. The overlay covers the app's TopBar, so without this a frameless
+   * desktop window can't be moved or closed until the user signs in.
+   */
+  windowControls?: ReactNode;
   // Accepted for backwards compatibility with existing call sites (MainApp
   // passes these); no longer used now that the showcase is a single video.
   videoSrc2D?: string;
@@ -40,6 +47,7 @@ export function LoginModal({
   onArtCraftAuthSuccess,
   isSignUp: initialIsSignUp = true,
   videoUrl = DEFAULT_SHOWCASE_VIDEO,
+  windowControls,
 }: LoginModalProps) {
   const { isOpen, recheckTrigger, closeModal } = useLoginModalStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -310,6 +318,16 @@ export function LoginModal({
             </div>
           </TransitionChild>
         </div>
+        {/* ── Desktop title bar ── mirrors the TopBar's 56px drag strip so the
+            window stays movable and closable while sign-in is required. */}
+        {windowControls && (
+          <div
+            className="fixed inset-x-0 top-0 flex h-[56px] items-center justify-end"
+            data-tauri-drag-region
+          >
+            {windowControls}
+          </div>
+        )}
       </div>
     </Transition>
   );
