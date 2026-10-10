@@ -6,7 +6,7 @@ use crate::core::threads::third_party_task_polling_thread::handlers::fal::poll_f
 use crate::core::utils::task_database_pending_statuses::TASK_DATABASE_PENDING_STATUSES;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
-use log::{error, info, warn};
+use log::{debug, error, info};
 use sqlite_tasks::queries::list_non_artcraft_pending_tasks::{
   list_non_artcraft_pending_tasks, ListNonArtcraftPendingTasksArgs,
 };
@@ -84,8 +84,10 @@ async fn poll_iteration(
     .collect();
 
   if !non_fal_tasks.is_empty() {
+    // NB: This is debug because other providers' pending tasks show up here on
+    // every iteration, which spams the logs while their own threads handle them.
     for task in &non_fal_tasks {
-      warn!(
+      debug!(
         "[ThirdPartyPolling] Skipping non-FAL task: id={}, provider={:?}, type={:?}",
         task.id.as_str(),
         task.provider,
