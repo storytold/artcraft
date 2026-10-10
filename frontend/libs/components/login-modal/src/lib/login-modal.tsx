@@ -242,7 +242,7 @@ export function LoginModal({
                 ) : (
                   <>
                     {/* ── Form pane ── (no dismiss control — login is required) */}
-                    <div className="relative flex w-full flex-col lg:w-1/2">
+                    <div className="relative z-10 flex w-full flex-col lg:w-1/2">
                       <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
                         <div className="w-full">
                           <div className="mb-8 text-left">
@@ -327,7 +327,12 @@ function LoginShowcase({ videoUrl }: { videoUrl: string }) {
         loop
         playsInline
         preload="auto"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+        // Give WebKit a dedicated compositing layer for the video, independent
+        // of sibling stacking. WebKitGTK on Linux runs with compositing
+        // disabled, where a video layer paints above all sibling DOM unless it
+        // is isolated on its own layer.
+        style={{ transform: "translateZ(0)" }}
       />
 
       <div
