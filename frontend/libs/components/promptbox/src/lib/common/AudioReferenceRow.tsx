@@ -2,6 +2,7 @@ import {
   forwardRef,
   useCallback,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -73,9 +74,15 @@ export const AudioReferenceRow = forwardRef<
 
   // Latest-value refs so async upload callbacks append to fresh state.
   const referenceAudiosRef = useRef(referenceAudios);
-  referenceAudiosRef.current = referenceAudios;
   const referenceImagesRef = useRef(referenceImages);
-  referenceImagesRef.current = referenceImages;
+  const limitsRef = useRef({ maxAudioCount, maxAudioRefDuration, imageSupported });
+  useLayoutEffect(() => {
+    referenceAudiosRef.current = referenceAudios;
+    referenceImagesRef.current = referenceImages;
+    limitsRef.current = { maxAudioCount, maxAudioRefDuration, imageSupported };
+  }, [
+    referenceAudios, referenceImages, maxAudioCount, maxAudioRefDuration, imageSupported,
+  ]);
 
   const processAudioFiles = async (files: File[]) => {
     if (files.length === 0) return;
@@ -90,13 +97,14 @@ export const AudioReferenceRow = forwardRef<
 
     for (const file of filesToProcess) {
       const duration = await getAudioFileDuration(file);
+      if (referenceAudiosRef.current.length >= limitsRef.current.maxAudioCount) break;
       const currentTotal = referenceAudiosRef.current.reduce(
         (sum, audio) => sum + audio.duration,
         0,
       );
-      if (currentTotal + duration > maxAudioRefDuration) {
+      if (currentTotal + duration > limitsRef.current.maxAudioRefDuration) {
         toast.error(
-          `Total audio duration cannot exceed ${maxAudioRefDuration}s`,
+          `Total audio duration cannot exceed ${limitsRef.current.maxAudioRefDuration}s`,
         );
         break;
       }
@@ -108,6 +116,14 @@ export const AudioReferenceRow = forwardRef<
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
+              setIsUploadingAudio(false);
+              const current = referenceAudiosRef.current;
+              if (current.length >= limitsRef.current.maxAudioCount) return;
+              const currentDuration = current.reduce((sum, audio) => sum + audio.duration, 0);
+              if (currentDuration + duration > limitsRef.current.maxAudioRefDuration) {
+                toast.error(`Total audio duration cannot exceed ${limitsRef.current.maxAudioRefDuration}s`);
+                return;
+              }
               const refAudio: RefAudio = {
                 id: Math.random().toString(36).substring(7),
                 url: URL.createObjectURL(file),
@@ -115,11 +131,8 @@ export const AudioReferenceRow = forwardRef<
                 mediaToken: newState.data,
                 duration,
               };
-              setIsUploadingAudio(false);
-              onReferenceAudiosChange([
-                ...referenceAudiosRef.current,
-                refAudio,
-              ]);
+              referenceAudiosRef.current = [...current, refAudio];
+              onReferenceAudiosChange(referenceAudiosRef.current);
             } else if (
               newState.status === UploaderStates.assetError ||
               newState.status === UploaderStates.imageCreateError
@@ -149,13 +162,15 @@ export const AudioReferenceRow = forwardRef<
       assetFile: file,
       progressCallback: (newState) => {
         if (newState.status === UploaderStates.success && newState.data) {
+          setIsUploadingImage(false);
+          if (!limitsRef.current.imageSupported) return;
           const refImage: RefImage = {
             id: Math.random().toString(36).substring(7),
             url: URL.createObjectURL(file),
             file,
             mediaToken: newState.data,
           };
-          setIsUploadingImage(false);
+          referenceImagesRef.current = [refImage];
           onReferenceImagesChange?.([refImage]);
         } else if (
           newState.status === UploaderStates.assetError ||
@@ -187,7 +202,8 @@ export const AudioReferenceRow = forwardRef<
   );
 
   const removeAudio = (id: string) => {
-    onReferenceAudiosChange(referenceAudios.filter((a) => a.id !== id));
+    referenceAudiosRef.current = referenceAudiosRef.current.filter((a) => a.id !== id);
+    onReferenceAudiosChange(referenceAudiosRef.current);
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
