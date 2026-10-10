@@ -68,6 +68,8 @@ pub enum PromptBoxAction {
   ClearAll,
   DroppedFiles(Vec<PathBuf>),
   PastedImage(Vec<u8>),
+  /// A mention picked from the dropdown: (label, character token).
+  MentionPicked(String, Option<String>),
 }
 
 /// UI state that outlives a frame.
@@ -98,6 +100,9 @@ pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut Pro
         state.focused = out.focused;
         if out.submit {
           actions.push(PromptBoxAction::Generate);
+        }
+        if let Some((label, token)) = out.picked {
+          actions.push(PromptBoxAction::MentionPicked(label, token));
         }
         if out.open_fullscreen {
           state.fullscreen = true;

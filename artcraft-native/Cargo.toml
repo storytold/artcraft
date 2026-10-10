@@ -31,6 +31,7 @@ open = "5"
 reqwest = { workspace = true, features = ["multipart"] }
 resvg = "0.45"
 rfd = "0.16"
+rodio = { version = "0.20", default-features = false, features = ["symphonia-all"] }
 serde.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "fs"] }

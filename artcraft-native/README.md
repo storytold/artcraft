@@ -69,10 +69,11 @@ How the backend works:
 | Live credit cost on the generate button                         | Done                                    |
 | Validation: starting frame, text-only banner, limits, uploads   | Done                                    |
 | Clear all (confirms when references are attached)               | Done                                    |
-| `@Character` mentions and the Characters modal (Seedance 2.0)   | Not yet                                 |
+| `@Character` mentions and the Characters modal (create/edit/delete) | Done                                |
 | Provider choice (Midjourney direct, fal)                        | Not yet; everything runs via ArtCraft   |
-| In-app video and audio playback                                 | Opens in the system player instead      |
-| Animated video previews in the feed                             | Still frames only                       |
+| In-app video playback                                           | Done with FFmpeg on the PATH; otherwise opens in the system player |
+| Audio reference playback (click to play/stop)                   | Done                                    |
+| Animated video previews in the feed (with a stills toggle)      | Done                                    |
 
 Feed and lightbox:
 

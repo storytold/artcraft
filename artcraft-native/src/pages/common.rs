@@ -34,23 +34,48 @@ pub struct Env<'a> {
   pub signed_in: bool,
   pub enter_to_generate: bool,
   pub view_mode: ViewMode,
+  pub autoplay: bool,
   pub ratios: &'a mut RatioCache,
   pub prompts: &'a std::collections::HashMap<String, String>,
   pub requests: &'a mut Vec<AppRequest>,
+  /// The user's characters, newest first.
+  pub characters: &'a [crate::backend::wire::Character],
 }
 
 /// Things only the app can do.
 #[derive(Debug)]
 pub enum AppRequest {
   SignIn,
-  Open { kind: MediaKind, token: String },
-  PickFromLibrary { kind: RefKind, slot: ImageSlot, max: usize, page: MediaKind },
-  MakeVideo { token: String },
-  Recreate { kind: MediaKind, token: String },
+  Open {
+    kind: MediaKind,
+    token: String,
+  },
+  PickFromLibrary {
+    kind: RefKind,
+    slot: ImageSlot,
+    max: usize,
+    page: MediaKind,
+  },
+  MakeVideo {
+    token: String,
+  },
+  Recreate {
+    kind: MediaKind,
+    token: String,
+  },
   Share(String),
   Download(Vec<String>),
   CopyText(String),
   Preview(String),
+  /// Play or stop an audio reference.
+  ToggleAudio {
+    ref_id: u64,
+    url: String,
+  },
+  /// Open a file in the system's player.
+  PlayExternally(String),
+  /// Open the characters dialog (it mentions the picked one in the video prompt).
+  OpenCharacters,
   LoadMoreLibrary(FeedKey),
 }
 
@@ -87,7 +112,7 @@ pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str
   let area = ui.max_rect();
   let bottom_offset = *box_height + 40.0;
   if feed.has_content() {
-    let view = FeedView { id: Id::new(("feed", kind.label())), mode: env.view_mode, pending: &feed.pending, failed: &feed.failed, items: &feed.items, has_more: feed.has_more, loading: feed.loading, selecting: feed.selecting, selected: &feed.selected, last_viewed: feed.last_viewed.as_deref(), prompts: env.prompts, make_video: kind == MediaKind::Image, bottom_padding: bottom_offset + 24.0 };
+    let view = FeedView { id: Id::new(("feed", kind.label())), mode: env.view_mode, pending: &feed.pending, failed: &feed.failed, items: &feed.items, has_more: feed.has_more, loading: feed.loading, selecting: feed.selecting, selected: &feed.selected, last_viewed: feed.last_viewed.as_deref(), prompts: env.prompts, make_video: kind == MediaKind::Image, autoplay: env.autoplay, bottom_padding: bottom_offset + 24.0 };
     let mut feed_ui = ui.new_child(egui::UiBuilder::new().max_rect(area.shrink2(vec2(12.0, 0.0))));
     let actions = grid::show(&mut feed_ui, &view, env.cache, env.ratios, env.catalog);
     handle_feed_actions(env, kind, feed, actions);

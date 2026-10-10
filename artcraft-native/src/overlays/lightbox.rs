@@ -4,6 +4,7 @@
 use egui::{Align2, Color32, FontId, Id, Key, Rect, Sense, Ui, pos2, vec2};
 
 use crate::backend::media_cache::{Lookup, MediaCache};
+use crate::backend::video::{self, VideoPlayer};
 use crate::backend::wire::Prompt;
 use crate::feed::grid::ModelNames;
 use crate::feed::types::{FeedItem, MediaKind};
@@ -18,6 +19,8 @@ pub struct Lightbox {
   pub token: String,
   confirm_delete: bool,
   prompt_expanded: bool,
+  /// The in-app player for videos (when FFmpeg is installed).
+  player: Option<VideoPlayer>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -35,7 +38,7 @@ pub enum LightboxAction {
 
 impl Lightbox {
   pub fn new(kind: MediaKind, token: String) -> Self {
-    Self { kind, token, confirm_delete: false, prompt_expanded: false }
+    Self { kind, token, confirm_delete: false, prompt_expanded: false, player: None }
   }
 
   pub fn show(&mut self, ctx: &egui::Context, item: &FeedItem, order: &[String], prompt: Option<&Prompt>, names: &dyn ModelNames, cache: &mut MediaCache) -> Vec<LightboxAction> {
@@ -80,7 +83,22 @@ impl Lightbox {
   }
 
   #[allow(clippy::too_many_arguments)]
-  fn media(&self, ui: &mut Ui, rect: Rect, item: &FeedItem, cache: &mut MediaCache, prev: &Option<String>, next: &Option<String>, actions: &mut Vec<LightboxAction>) {
+  fn media(&mut self, ui: &mut Ui, rect: Rect, item: &FeedItem, cache: &mut MediaCache, prev: &Option<String>, next: &Option<String>, actions: &mut Vec<LightboxAction>) {
+    if item.kind == MediaKind::Video && video::ffmpeg_available() {
+      if self.player.as_ref().is_none_or(|p| p.url() != item.full_url) {
+        self.player = Some(VideoPlayer::new(&item.full_url));
+      }
+      let poster = match item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)) {
+        Some(Lookup::Ready(t)) => Some(t),
+        _ => None,
+      };
+      if let Some(player) = &mut self.player {
+        player.ui(ui, rect, poster.as_ref());
+      }
+      self.nav_buttons(ui, rect, prev, next, actions);
+      return;
+    }
+    self.player = None;
     ui.painter().rect_filled(rect, 0.0, Color32::BLACK);
     let url = if item.kind == MediaKind::Image { Some(item.full_url.as_str()) } else { item.thumbnail.as_deref() };
     match url.map(|u| cache.get(ui.ctx(), u)) {
@@ -109,6 +127,11 @@ impl Lightbox {
         actions.push(LightboxAction::Play(item.full_url.clone()));
       }
     }
+    self.nav_buttons(ui, rect, prev, next, actions);
+  }
+
+  /// Previous / next arrows at the media's sides (shown while hovering it).
+  fn nav_buttons(&self, ui: &mut Ui, rect: Rect, prev: &Option<String>, next: &Option<String>, actions: &mut Vec<LightboxAction>) {
     let hovering = ui.rect_contains_pointer(rect);
     for (target, left, tip) in [(prev, true, "Previous item"), (next, false, "Next item")] {
       let Some(token) = target else {

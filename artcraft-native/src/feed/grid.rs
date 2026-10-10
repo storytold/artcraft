@@ -61,6 +61,8 @@ pub struct FeedView<'a> {
   /// Prompt texts by prompt token (list view and pending cards).
   pub prompts: &'a HashMap<String, String>,
   pub make_video: bool,
+  /// Play videos' animated previews instead of their still frames.
+  pub autoplay: bool,
   pub bottom_padding: f32,
 }
 
@@ -230,7 +232,13 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
   let resp = ui.interact(rect, view.id.with(("item", &item.token)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
   let hovered = resp.hovered();
   ui.painter().rect_filled(rect, theme::RADIUS, theme::fade(theme::CONTROLS, 0.4));
-  match item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)) {
+  // Videos play their animated preview when previews are on (the still shows while it loads).
+  let animated = item.animated.as_deref().filter(|_| view.autoplay && item.kind == MediaKind::Video).map(|u| cache.get_animated(ui.ctx(), u));
+  let lookup = match animated {
+    Some(Lookup::Ready(t)) => Some(Lookup::Ready(t)),
+    _ => item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)),
+  };
+  match lookup {
     Some(Lookup::Ready(t)) => {
       let size = t.size_vec2();
       if size.x > 0.0 && !ratios.0.contains_key(&item.token) {
@@ -241,7 +249,7 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
     Some(Lookup::Loading) => shimmer(ui, rect),
     _ => icons::paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(28.0, 28.0)), if item.kind == MediaKind::Video { Icon::Video } else { Icon::Image }, theme::FAINT),
   }
-  if item.kind == MediaKind::Video {
+  if item.kind == MediaKind::Video && !(view.autoplay && item.animated.is_some()) {
     let badge = Rect::from_center_size(rect.center(), vec2(40.0, 40.0));
     ui.painter().circle_filled(badge.center(), 20.0, Color32::from_black_alpha(110));
     icons::paint(ui.painter(), badge.shrink(12.0).translate(vec2(1.5, 0.0)), Icon::Play, theme::fade(Color32::WHITE, 0.9));

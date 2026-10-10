@@ -39,6 +39,8 @@ pub struct FeedItem {
   pub prompt_token: Option<String>,
   pub batch_token: Option<String>,
   pub duration_secs: Option<f32>,
+  /// A video's animated preview (shown when previews play).
+  pub animated: Option<String>,
 }
 
 /// A generation the server is still working on.

@@ -128,7 +128,7 @@ fn typing_at_offers_mentions_and_enter_inserts_one() {
   harness.key_press(egui::Key::Enter);
   harness.run();
   assert_eq!(harness.state().prompt, "put @Image2 ");
-  assert!(harness.state().actions.is_empty(), "Enter picked a mention, it didn't generate");
+  assert_eq!(harness.state().actions, [r#"MentionPicked("@Image2", None)"#], "Enter picked a mention, it didn't generate");
 }
 
 #[test]

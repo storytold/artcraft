@@ -42,6 +42,17 @@ impl MediaLinks {
   }
 }
 
+impl MediaLinks {
+  /// A video's animated preview, `width` pixels wide where the CDN can resize.
+  pub fn animated_preview(&self, width: u32) -> Option<String> {
+    let previews = self.maybe_video_previews.as_ref()?;
+    if !previews.animated_thumbnail_template.is_empty() {
+      return Some(previews.animated_thumbnail_template.replace("{WIDTH}", &width.to_string()));
+    }
+    (!previews.animated.is_empty()).then(|| previews.animated.clone())
+  }
+}
+
 /// `GET /v1/media_files/list/user/{username}`.
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
@@ -192,6 +203,36 @@ pub struct ContextImage {
   pub media_token: String,
   pub semantic: String,
   pub media_links: MediaLinks,
+}
+
+/// A saved character (`GET /v1/characters/session`).
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct Character {
+  pub token: String,
+  pub name: String,
+  pub maybe_description: Option<String>,
+  pub maybe_avatar: Option<MediaLinks>,
+  pub maybe_full_image: Option<MediaLinks>,
+  pub models: Vec<String>,
+}
+
+impl Character {
+  pub fn avatar_url(&self) -> Option<String> {
+    self.maybe_avatar.as_ref().or(self.maybe_full_image.as_ref()).and_then(|l| l.thumbnail(256))
+  }
+
+  pub fn full_url(&self) -> Option<String> {
+    self.maybe_full_image.as_ref().or(self.maybe_avatar.as_ref()).map(|l| l.cdn_url.clone()).filter(|u| !u.is_empty())
+  }
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct CharactersPage {
+  pub success: bool,
+  pub characters: Vec<Character>,
+  pub next_cursor: Option<i64>,
 }
 
 /// `GET /v1/session` (only the parts the app shows).

@@ -1,8 +1,10 @@
 //! Everything that talks to the ArtCraft API. Calls run on a tokio runtime and report back as
 //! [`Event`]s, which the UI drains once per frame; nothing here blocks the UI thread.
 
+pub mod audio;
 pub mod media_cache;
 pub mod session;
+pub mod video;
 pub mod wire;
 
 use std::future::Future;
@@ -36,7 +38,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::feed::types::MediaKind;
 use crate::models::{self, ModelInfo};
 use session::Credentials;
-use wire::{BatchMedia, MediaFile, PromptResponse, SessionInfo, SessionJobs, SessionUser, UploadResponse, UserMediaList};
+use wire::{BatchMedia, CharactersPage, MediaFile, PromptResponse, SessionInfo, SessionJobs, SessionUser, UploadResponse, UserMediaList};
 
 /// Items per library page (`useGalleryData`'s `PAGE_SIZE`).
 pub const LIBRARY_PAGE_SIZE: u32 = 40;
@@ -45,6 +47,8 @@ const MODEL_LIST_ATTEMPTS: u32 = 3;
 const MODEL_LIST_BACKOFF: Duration = Duration::from_millis(250);
 /// The share link base (`SHARE_URL_BASE`).
 pub const SHARE_URL_BASE: &str = "https://getartcraft.com/media/";
+/// Characters are made for this model (the Tauri app's `CharactersModal`).
+const CHARACTER_MODEL: &str = "seedance_2p0";
 /// Sent on every request (`artcraft_client_identity::ARTCRAFT_DESKTOP_USER_AGENT`).
 const USER_AGENT: &str = "storyteller-client/1.0";
 
@@ -119,6 +123,14 @@ pub enum Event {
     items: Vec<MediaFile>,
   },
   Prompt(wire::Prompt),
+  /// The user's characters, newest first.
+  Characters(Vec<wire::Character>),
+  /// A character is being made by job `job_token`.
+  CharacterCreating {
+    job_token: String,
+    name: String,
+  },
+  CharacterChanged,
   Deleted(String),
   Saved(PathBuf),
   Toast {
@@ -485,6 +497,92 @@ impl Backend {
     });
   }
 
+  /// Loads every page of the user's characters.
+  pub fn load_characters(&self) {
+    let api = self.api();
+    if api.creds.is_none() {
+      return;
+    }
+    self.spawn(move |tx| async move {
+      let mut all = Vec::new();
+      let mut cursor: Option<i64> = None;
+      loop {
+        let path = match cursor {
+          Some(c) => format!("/v1/characters/session?cursor={c}"),
+          None => "/v1/characters/session".to_owned(),
+        };
+        match api.request_json::<CharactersPage>(reqwest::Method::GET, &path, None).await {
+          Ok(page) => {
+            all.extend(page.characters);
+            match page.next_cursor {
+              Some(next) if Some(next) != cursor => cursor = Some(next),
+              _ => break,
+            }
+          },
+          Err(err) => {
+            warn!("Loading characters failed: {err}");
+            break;
+          },
+        }
+      }
+      let _ = tx.send(Event::Characters(all));
+    });
+  }
+
+  /// Starts making a character from an uploaded reference image (`POST /v1/character/create`).
+  pub fn create_character(&self, image_token: String, name: String, description: Option<String>) {
+    let api = self.api();
+    self.spawn(move |tx| async move {
+      let body = serde_json::json!({ "image_media_token": image_token, "model": CHARACTER_MODEL, "uuid_idempotency_token": uuid::Uuid::new_v4().to_string(), "character_name": name, "character_description": description });
+      match api.request_json::<Value>(reqwest::Method::POST, "/v1/character/create", Some(body)).await {
+        Ok(r) => match r.get("inference_job_token").and_then(Value::as_str) {
+          Some(job) => {
+            let _ = tx.send(Event::CharacterCreating { job_token: job.to_owned(), name });
+          },
+          None => {
+            let _ = tx.send(Event::Toast { error: true, message: "Failed to create character".to_owned() });
+          },
+        },
+        Err(err) => {
+          let _ = tx.send(Event::Toast { error: true, message: if err.is_empty() { "Failed to create character".to_owned() } else { err } });
+        },
+      }
+    });
+  }
+
+  /// Renames or re-describes a character (`POST /v1/character/edit`).
+  pub fn edit_character(&self, token: String, name: String, description: String) {
+    let api = self.api();
+    self.spawn(move |tx| async move {
+      let body = serde_json::json!({ "token": token, "updated_name": name, "updated_description": description });
+      match api.request_json::<Value>(reqwest::Method::POST, "/v1/character/edit", Some(body)).await {
+        Ok(_) => {
+          let _ = tx.send(Event::Toast { error: false, message: "Character updated".to_owned() });
+          let _ = tx.send(Event::CharacterChanged);
+        },
+        Err(err) => {
+          let _ = tx.send(Event::Toast { error: true, message: format!("Failed to update character: {err}") });
+        },
+      }
+    });
+  }
+
+  /// `DELETE /v1/character/{token}`.
+  pub fn delete_character(&self, token: String, name: String) {
+    let api = self.api();
+    self.spawn(move |tx| async move {
+      match api.request_json::<Value>(reqwest::Method::DELETE, &format!("/v1/character/{token}"), None).await {
+        Ok(_) => {
+          let _ = tx.send(Event::Toast { error: false, message: format!("Character \"{name}\" deleted") });
+          let _ = tx.send(Event::CharacterChanged);
+        },
+        Err(err) => {
+          let _ = tx.send(Event::Toast { error: true, message: format!("Failed to delete character: {err}") });
+        },
+      }
+    });
+  }
+
   pub fn delete_media(&self, token: String) {
     let api = self.api();
     self.spawn(move |tx| async move {
@@ -589,8 +687,16 @@ struct Api {
 impl Api {
   /// A GET with the desktop app's identity headers and cookies, decoded leniently.
   async fn get_json<T: DeserializeOwned>(&self, path: &str) -> Result<T, String> {
+    self.request_json(reqwest::Method::GET, path, None).await
+  }
+
+  /// Any JSON call with the desktop app's identity headers and cookies, decoded leniently.
+  async fn request_json<T: DeserializeOwned>(&self, method: reqwest::Method, path: &str, body: Option<Value>) -> Result<T, String> {
     let url = format!("{}{path}", self.host.to_api_hostname_and_scheme());
-    let mut request = self.http.get(&url).header("Accept", "application/json").header("Origin", self.host.request_origin());
+    let mut request = self.http.request(method, &url).header("Accept", "application/json").header("Origin", self.host.request_origin());
+    if let Some(body) = body {
+      request = request.json(&body);
+    }
     if let Some(cookie) = self.creds.as_ref().and_then(StorytellerCredentialSet::maybe_as_cookie_header) {
       request = request.header("Cookie", cookie);
     }

@@ -143,6 +143,7 @@ impl CreateImagePage {
         DeckAction::SwapFrames => {},
       },
       PromptBoxAction::DroppedFiles(paths) => self.add_dropped(env, &paths, max_images),
+      PromptBoxAction::MentionPicked(..) => {},
       PromptBoxAction::PastedImage(png) => {
         if self.refs.images.len() >= max_images {
           env.toasts.error(max_images_message(max_images));

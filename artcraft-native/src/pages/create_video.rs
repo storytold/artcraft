@@ -67,6 +67,8 @@ pub struct CreateVideoPage {
   pub generating: bool,
   box_state: PromptBoxState,
   box_height: f32,
+  /// Which character each mentioned name means, when the user picked one explicitly.
+  character_picks: std::collections::HashMap<String, String>,
 }
 
 impl CreateVideoPage {
@@ -104,7 +106,11 @@ impl CreateVideoPage {
       (DeckMode::References(l), _) => [(RefKind::Image, l.max_images), (RefKind::Video, l.max_videos), (RefKind::Audio, l.max_audios)].into_iter().filter(|(_, n)| *n > 0).map(|(k, _)| k).collect(),
       _ => Vec::new(),
     };
-    let mentions = if reference { self.mentions() } else { Vec::new() };
+    let characters_on = model.is_some_and(supports_characters);
+    let mut mentions = if reference { self.mentions() } else { Vec::new() };
+    if characters_on {
+      mentions.extend(editor::character_mentions(env.characters.iter().map(|c| (c.name.as_str(), c.token.as_str(), c.avatar_url()))));
+    }
     let needs_start = model.is_some_and(|m| self.needs_start_frame(m));
     let banner = model.filter(|m| !m.text_to_video && !self.has_image_input()).map(|_| TEXT_ONLY_BANNER);
     let props = PromptBoxProps { id: Id::new("video-prompt-box"), placeholder: if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER }, enter_to_generate: env.enter_to_generate, mentions: &mentions, max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)), deck, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start, generating: self.generating, generate_tooltip: if needs_start { "Add a starting image before generating" } else { "Generate" }, warning: needs_start.then_some("Starting frame required"), banner };
@@ -116,12 +122,16 @@ impl CreateVideoPage {
     let with_refs = reference && !self.refs.images.is_empty();
     let mut picked_model = None;
     let mut picked_mode = None;
+    let mut open_characters = false;
     let mut left = |ui: &mut Ui| {
       if let Some(id) = model_selector(ui, Id::new("video-model"), models, model, true) {
         picked_model = Some(id);
       }
       if let Some(m) = model {
         picked_mode = video_toolbar(ui, m, settings, with_refs).or(picked_mode);
+        if characters_on && crate::prompt_box::pickers::toggle(ui, Id::new("video-characters"), Icon::User, "@Characters", false, "Characters") {
+          open_characters = true;
+        }
       }
     };
     let mut picked_count = None;
@@ -140,6 +150,9 @@ impl CreateVideoPage {
     }
     if let Some(mode) = picked_mode {
       switch_mode(&mut self.settings, &mut self.refs, mode);
+    }
+    if open_characters {
+      env.requests.push(AppRequest::OpenCharacters);
     }
     for action in actions {
       self.handle(action, env, model, limits.as_ref());
@@ -176,14 +189,27 @@ impl CreateVideoPage {
           let item = self.refs.images.remove(from);
           self.refs.images.insert(to.min(self.refs.images.len()), item);
         },
-        DeckAction::Preview(id) => {
-          if let Some(url) = self.refs.find_mut(id).and_then(|r| r.full_url.clone().or_else(|| r.preview.clone())) {
-            env.requests.push(AppRequest::Preview(url));
-          }
+        DeckAction::Preview(id) => match self.refs.find_mut(id) {
+          // Audio cards play and stop on click (the webapp's DeckCard).
+          Some(r) if r.kind == RefKind::Audio => {
+            if let Some(url) = r.full_url.clone() {
+              env.requests.push(AppRequest::ToggleAudio { ref_id: id, url });
+            }
+          },
+          Some(r) => {
+            if let Some(url) = r.full_url.clone().or_else(|| r.preview.clone()) {
+              env.requests.push(if r.kind == RefKind::Video { AppRequest::PlayExternally(url) } else { AppRequest::Preview(url) });
+            }
+          },
+          None => {},
         },
         DeckAction::SwapFrames => self.refs.swap_frames(),
       },
       PromptBoxAction::DroppedFiles(paths) => self.add_files(env, &paths, ImageSlot::Reference, limits),
+      PromptBoxAction::MentionPicked(label, Some(token)) => {
+        self.character_picks.insert(label.trim_start_matches('@').to_owned(), token);
+      },
+      PromptBoxAction::MentionPicked(_, None) => {},
       PromptBoxAction::PastedImage(png) => match self.settings.input_mode {
         InputMode::Keyframe => match self.free_keyframe(model) {
           Some(slot) => common::upload_png(env, &mut self.refs, png, slot),
@@ -288,7 +314,27 @@ impl CreateVideoPage {
     self.generating = true;
     let ref_image = self.refs.first_frame.as_ref().or(self.refs.images.first()).and_then(|r| r.preview.clone());
     let meta = EnqueueMeta { prompt: self.settings.prompt.clone(), model_id: model.id.clone(), batch_count: u32::from(model.valid_batch(self.settings.count)), ref_image };
-    env.backend.generate(Modality::Video, self.fields(model, false), meta);
+    let mut fields = self.fields(model, false);
+    if supports_characters(model) {
+      let tokens = mentioned_characters(&self.settings.prompt, env.characters, &self.character_picks);
+      if !tokens.is_empty() {
+        fields.insert("reference_character_tokens".into(), json!(tokens));
+      }
+    }
+    env.backend.generate(Modality::Video, fields, meta);
+  }
+
+  /// The characters dialog picked `name`: mention it at the end of the prompt.
+  pub fn mention_character(&mut self, name: &str, token: &str) {
+    let p = &mut self.settings.prompt;
+    if !p.is_empty() && !p.ends_with(char::is_whitespace) {
+      p.push(' ');
+    }
+    p.push('@');
+    p.push_str(name);
+    p.push(' ');
+    self.character_picks.insert(name.to_owned(), token.to_owned());
+    self.box_state.editor.focus_requested = true;
   }
 
   /// The OmniGen request (`GenerateVideoRequest` after `api_fields`).
@@ -506,6 +552,33 @@ fn switch_mode(s: &mut VideoSettings, refs: &mut References, mode: InputMode) {
   s.input_mode = mode;
 }
 
+/// Whether the model takes `@Character` mentions (the listing says so; Seedance 2.0 always does).
+fn supports_characters(m: &ModelInfo) -> bool {
+  m.character_refs_max > 0 || m.id == "seedance_2p0"
+}
+
+/// One token per character named in the prompt (`@Name`, not inside a longer word): the user's
+/// explicit pick for that name, else the newest character with it.
+fn mentioned_characters(prompt: &str, characters: &[crate::backend::wire::Character], picks: &std::collections::HashMap<String, String>) -> Vec<String> {
+  let mut names: Vec<&str> = characters.iter().map(|c| c.name.as_str()).filter(|n| !n.is_empty()).collect();
+  names.sort_by_key(|n| std::cmp::Reverse(n.len()));
+  names.dedup();
+  let mut tokens = Vec::new();
+  for name in names {
+    let needle = format!("@{name}");
+    let mentioned = prompt.match_indices(&needle).any(|(i, _)| !prompt[i + needle.len()..].chars().next().is_some_and(|c| c.is_alphanumeric() || c == '_'));
+    if !mentioned {
+      continue;
+    }
+    let candidates: Vec<&crate::backend::wire::Character> = characters.iter().filter(|c| c.name == name).collect();
+    let chosen = picks.get(name).and_then(|t| candidates.iter().find(|c| &c.token == t)).or(candidates.first());
+    if let Some(c) = chosen {
+      tokens.push(c.token.clone());
+    }
+  }
+  tokens
+}
+
 fn deck_limits(m: &ModelInfo, library: bool) -> DeckLimits {
   DeckLimits { max_images: m.image_refs_max, max_videos: m.video_refs_max, max_video_secs: m.video_refs_max_secs.map(f32::from), max_audios: m.audio_refs_max, max_audio_secs: m.audio_refs_max_secs.map(f32::from), library }
 }
@@ -537,5 +610,27 @@ fn frames_full_message(model: Option<&ModelInfo>) -> &'static str {
     "First and last frames are already set"
   } else {
     "The first frame is already set"
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::backend::wire::Character;
+
+  fn character(token: &str, name: &str) -> Character {
+    Character { token: token.into(), name: name.into(), ..Default::default() }
+  }
+
+  #[test]
+  fn mentions_resolve_to_one_token_per_name() {
+    // Newest first, as the server lists them.
+    let characters = [character("c3", "Bob"), character("c2", "Bob2"), character("c1", "Bob"), character("c0", "Ann")];
+    let none = std::collections::HashMap::new();
+    assert_eq!(mentioned_characters("@Bob2 waves", &characters, &none), ["c2"], "@Bob2 isn't @Bob");
+    assert_eq!(mentioned_characters("@Bob, then @Ann.", &characters, &none), ["c3", "c0"], "newest Bob by default");
+    let picks = std::collections::HashMap::from([("Bob".to_owned(), "c1".to_owned())]);
+    assert_eq!(mentioned_characters("hi @Bob", &characters, &picks), ["c1"], "the explicit pick wins");
+    assert!(mentioned_characters("no mentions", &characters, &none).is_empty());
   }
 }

@@ -7,6 +7,7 @@ use std::time::Duration;
 use egui::{Id, Ui};
 use serde::{Deserialize, Serialize};
 
+use crate::backend::audio::AudioPlayer;
 use crate::backend::media_cache::MediaCache;
 use crate::backend::wire::{Prompt, SessionUser};
 use crate::backend::{Backend, Event, Modality, SHARE_URL_BASE};
@@ -14,7 +15,9 @@ use crate::feed::grid::{RatioCache, ViewMode};
 use crate::feed::store::{FeedNotice, FeedStore};
 use crate::feed::types::{FeedItem, MediaKind};
 use crate::models::Catalog;
+use crate::backend::wire::{Character, JobPhase};
 use crate::overlays::account::{LoginAction, LoginDialog, SettingsAction, settings_dialog};
+use crate::overlays::characters::{CharactersAction, CharactersModal};
 use crate::overlays::library_picker::{LibraryPicker, PickerAction};
 use crate::overlays::lightbox::{Lightbox, LightboxAction, fit_inside};
 use crate::pages::common::{self, AppRequest, Env, FeedKey};
@@ -22,7 +25,7 @@ use crate::pages::create_image::{CreateImagePage, ImageSettings};
 use crate::pages::create_video::{CreateVideoPage, VideoSettings};
 use crate::pages::other;
 use crate::prompt_box::refs::{RefKind, RefMedia};
-use crate::shell::{self, Account, Page, ShellAction};
+use crate::shell::{self, Account, FeedToggles, Page, ShellAction};
 use crate::theme;
 use crate::ui::toast::Toasts;
 use crate::ui::{creator_icons, widgets, window};
@@ -31,7 +34,7 @@ use crate::ui::{creator_icons, widgets, window};
 /// borrowed mutably alongside it).
 macro_rules! env {
   ($app:ident, $ctx:expr) => {
-    Env { ctx: $ctx.clone(), backend: &$app.backend, cache: &mut $app.cache, toasts: &mut $app.toasts, catalog: &$app.catalog, signed_in: $app.user.is_some(), enter_to_generate: $app.enter_to_generate, view_mode: $app.view_mode, ratios: &mut $app.ratios, prompts: &$app.prompts, requests: &mut $app.requests }
+    Env { ctx: $ctx.clone(), backend: &$app.backend, cache: &mut $app.cache, toasts: &mut $app.toasts, catalog: &$app.catalog, signed_in: $app.user.is_some(), enter_to_generate: $app.enter_to_generate, view_mode: $app.view_mode, autoplay: $app.autoplay, ratios: &mut $app.ratios, prompts: &$app.prompts, requests: &mut $app.requests, characters: &$app.characters }
   };
 }
 
@@ -49,6 +52,7 @@ struct Saved {
   page: Page,
   enter_to_generate: bool,
   view_mode: ViewMode,
+  autoplay: bool,
   sidebar_open: bool,
   image: ImageSettings,
   video: VideoSettings,
@@ -56,13 +60,14 @@ struct Saved {
 
 impl Default for Saved {
   fn default() -> Self {
-    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default() }
+    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default() }
   }
 }
 
 pub struct ArtcraftApp {
   backend: Backend,
   cache: MediaCache,
+  audio: AudioPlayer,
   toasts: Toasts,
   catalog: Catalog,
   user: Option<SessionUser>,
@@ -70,6 +75,7 @@ pub struct ArtcraftApp {
   page: Page,
   enter_to_generate: bool,
   view_mode: ViewMode,
+  autoplay: bool,
   sidebar_open: bool,
   image: CreateImagePage,
   video: CreateVideoPage,
@@ -86,6 +92,10 @@ pub struct ArtcraftApp {
   lightbox: Option<Lightbox>,
   picker: Option<LibraryPicker>,
   login: Option<LoginDialog>,
+  characters_modal: Option<CharactersModal>,
+  characters: Vec<Character>,
+  /// Characters being made: (job token, name).
+  pending_characters: Vec<(String, String)>,
   settings_open: bool,
   preview: Option<String>,
   requests: Vec<AppRequest>,
@@ -105,10 +115,11 @@ impl ArtcraftApp {
     }
     let backend = Backend::new(cc.egui_ctx.clone());
     let cache = MediaCache::new(backend.runtime(), backend.http());
+    let audio = AudioPlayer::new(backend.runtime(), backend.http());
     backend.load_models(Modality::Image);
     backend.load_models(Modality::Video);
     backend.refresh_session();
-    Self { cache, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, settings_open: false, preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
+    Self { cache, audio, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
   }
 
   // --- Events from the backend -------------------------------------------------------------
@@ -126,6 +137,9 @@ impl ArtcraftApp {
         }
         if self.user.is_some() {
           self.login = None;
+          if changed {
+            self.backend.load_characters();
+          }
         } else {
           self.credits = None;
           if let Some(login) = &mut self.login {
@@ -176,6 +190,16 @@ impl ArtcraftApp {
         }
       },
       Event::Uploaded { ref_id, result } => {
+        if let Some(modal) = &mut self.characters_modal {
+          match modal.apply_upload(ref_id, result.clone()) {
+            Some(Err(err)) => {
+              self.toasts.error(format!("Failed to upload the reference image: {err}"));
+              return;
+            },
+            Some(Ok(())) => return,
+            None => {},
+          }
+        }
         if self.image.refs.find_mut(ref_id).is_some() {
           common::apply_upload(&mut self.toasts, &mut self.image.refs, ref_id, result);
         } else if common::apply_upload(&mut self.toasts, &mut self.video.refs, ref_id, result) {
@@ -184,6 +208,20 @@ impl ArtcraftApp {
         }
       },
       Event::Jobs(jobs) => {
+        // Characters being made finish as jobs too.
+        let before = self.pending_characters.len();
+        let toasts = &mut self.toasts;
+        self.pending_characters.retain(|(job, name)| match jobs.iter().find(|j| &j.job_token == job).map(|j| j.status.phase()) {
+          Some(JobPhase::Succeeded) => false,
+          Some(JobPhase::Failed) => {
+            toasts.error(format!("Character \u{201c}{name}\u{201d} failed to create"));
+            false
+          },
+          _ => true,
+        });
+        if self.pending_characters.len() != before {
+          self.backend.load_characters();
+        }
         for (kind, notices) in [(MediaKind::Image, self.image.feed.apply_jobs(MediaKind::Image, &jobs, &self.catalog)), (MediaKind::Video, self.video.feed.apply_jobs(MediaKind::Video, &jobs, &self.catalog))] {
           for notice in notices {
             match notice {
@@ -239,6 +277,13 @@ impl ArtcraftApp {
         }
         self.prompt_records.insert(prompt.token.clone(), prompt);
       },
+      Event::Characters(list) => self.characters = list,
+      Event::CharacterCreating { job_token, name } => {
+        self.toasts.success(format!("Character \u{201c}{name}\u{201d} is being created"));
+        self.pending_characters.push((job_token, name));
+        self.next_poll = 0.0;
+      },
+      Event::CharacterChanged => self.backend.load_characters(),
       Event::Deleted(token) => {
         for feed in [&mut self.image.feed, &mut self.video.feed, &mut self.library] {
           feed.remove_item(&token);
@@ -314,6 +359,20 @@ impl ArtcraftApp {
       },
       AppRequest::Download(tokens) => self.download(&tokens),
       AppRequest::Preview(url) => self.preview = Some(url),
+      AppRequest::ToggleAudio { ref_id, url } => self.audio.toggle(ctx, &format!("ref:{ref_id}"), &url),
+      AppRequest::OpenCharacters => {
+        if self.user.is_none() {
+          self.open_login();
+          return;
+        }
+        self.backend.load_characters();
+        self.characters_modal = Some(CharactersModal::new());
+      },
+      AppRequest::PlayExternally(url) => {
+        if let Err(err) = open::that(&url) {
+          self.toasts.error(format!("Couldn't open the file: {err}"));
+        }
+      },
       AppRequest::LoadMoreLibrary(key) => {
         let Some(user) = &self.user else {
           return;
@@ -453,6 +512,7 @@ impl ArtcraftApp {
       },
       ShellAction::OpenSettings => self.settings_open = true,
       ShellAction::SetViewMode(mode) => self.view_mode = mode,
+      ShellAction::SetAutoplay(on) => self.autoplay = on,
       ShellAction::ToggleSelect => {
         if let Some(feed) = self.current_feed() {
           feed.selecting = !feed.selecting;
@@ -469,9 +529,9 @@ impl ArtcraftApp {
     let gap = shell::PANEL_GAP;
     let margin = egui::Margin { left: if self.sidebar_open { 0 } else { gap }, right: gap, top: 0, bottom: gap };
     let toggles = match self.page {
-      Page::CreateImage => Some((self.view_mode, self.image.feed.selecting)),
-      Page::CreateVideo => Some((self.view_mode, self.video.feed.selecting)),
-      Page::Library => Some((self.view_mode, self.library.selecting)),
+      Page::CreateImage => Some(FeedToggles { mode: self.view_mode, selecting: self.image.feed.selecting, autoplay: None }),
+      Page::CreateVideo => Some(FeedToggles { mode: self.view_mode, selecting: self.video.feed.selecting, autoplay: Some(self.autoplay) }),
+      Page::Library => Some(FeedToggles { mode: self.view_mode, selecting: self.library.selecting, autoplay: Some(self.autoplay) }),
       _ => None,
     };
     let mut header_action = None;
@@ -584,6 +644,27 @@ impl ArtcraftApp {
         None => {},
       }
     }
+    if let Some(modal) = &mut self.characters_modal {
+      let pending: Vec<String> = self.pending_characters.iter().map(|(_, n)| n.clone()).collect();
+      for action in modal.show(ctx, &self.characters, &pending, &mut self.cache) {
+        match action {
+          CharactersAction::Close => self.characters_modal = None,
+          CharactersAction::Select { token, name } => {
+            self.video.mention_character(&name, &token);
+            self.characters_modal = None;
+          },
+          CharactersAction::Upload { ref_id, path } => self.backend.upload_file(ref_id, RefKind::Image, path),
+          CharactersAction::Create { image_token, name, description } => self.backend.create_character(image_token, name, description),
+          CharactersAction::Edit { token, name, description } => self.backend.edit_character(token, name, description),
+          CharactersAction::Delete { token, name } => self.backend.delete_character(token, name),
+          CharactersAction::Preview(url) => self.preview = Some(url),
+          CharactersAction::Toast(message) => self.toasts.error(message),
+        }
+        if self.characters_modal.is_none() {
+          break;
+        }
+      }
+    }
     if self.settings_open {
       let username = self.user.as_ref().map(|u| u.username.clone());
       match settings_dialog(ctx, &mut self.enter_to_generate, username.as_deref(), self.credits, self.backend.data_root()) {
@@ -663,6 +744,11 @@ impl eframe::App for ArtcraftApp {
   fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
     let ctx = ui.ctx().clone();
     self.cache.poll(&ctx);
+    if let Some(err) = self.audio.poll() {
+      self.toasts.error(err);
+    }
+    let playing = [&self.video.refs, &self.image.refs].iter().flat_map(|r| r.audios.iter()).map(|r| r.id).find(|id| self.audio.is_playing(&format!("ref:{id}")));
+    crate::prompt_box::deck::set_playing_audio(&ctx, playing);
     self.shell(ui);
     self.page_ui(ui);
     for request in std::mem::take(&mut self.requests) {
@@ -677,7 +763,7 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone() };
+    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone() };
     eframe::set_value(storage, STORAGE_KEY, &saved);
   }
 

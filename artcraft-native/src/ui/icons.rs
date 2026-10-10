@@ -46,6 +46,7 @@ pub enum Icon {
   SquareCheck,
   Trash,
   Upload,
+  User,
   Video,
   Volume,
   VolumeOff,
@@ -298,6 +299,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
       g.line(p, &[(12.0, 15.0), (12.0, 3.0)]);
       g.line(p, &[(7.0, 8.0), (12.0, 3.0), (17.0, 8.0)]);
       g.line(p, &[(4.0, 21.0), (20.0, 21.0)]);
+    },
+    Icon::User => {
+      g.circle(p, 12.0, 8.0, 4.5);
+      g.arc(p, 12.0, 22.0, 8.0, 180.0, 360.0);
     },
     Icon::Video => {
       g.rect(p, 2.0, 6.0, 14.0, 12.0, 2.0);

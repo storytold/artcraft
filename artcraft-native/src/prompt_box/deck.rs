@@ -309,12 +309,14 @@ fn paint_card(ui: &Ui, painter: &egui::Painter, rect: Rect, tilt: f32, item: &Re
       image.paint_at(ui, rect.shrink(2.0));
     },
     None => {
+      let playing = item.kind == RefKind::Audio && playing_audio(ui) == Some(item.id);
       let icon = match item.kind {
         RefKind::Image => Icon::Image,
         RefKind::Video => Icon::Video,
-        RefKind::Audio => Icon::Music,
+        RefKind::Audio if playing => Icon::Volume,
+        RefKind::Audio => Icon::Play,
       };
-      icons::paint(painter, Rect::from_center_size(rect.center(), vec2(20.0, 20.0)), icon, theme::MUTED);
+      icons::paint(painter, Rect::from_center_size(rect.center(), vec2(20.0, 20.0)), icon, if playing { theme::ACCENT_INK } else { theme::MUTED });
     },
   }
   if item.kind != RefKind::Image && tilt == 0.0 {
@@ -333,6 +335,17 @@ fn paint_card(ui: &Ui, painter: &egui::Painter, rect: Rect, tilt: f32, item: &Re
   let border = theme::fade(Color32::WHITE, if hovered { 0.8 } else { 0.3 });
   painter.add(Shape::closed_line(corners.to_vec(), Stroke::new(2.0, border)));
 }
+
+/// The audio reference playing right now (the app sets it each frame).
+pub fn set_playing_audio(ctx: &egui::Context, id: Option<u64>) {
+  ctx.data_mut(|d| d.insert_temp(Id::new(PLAYING_AUDIO), id));
+}
+
+fn playing_audio(ui: &Ui) -> Option<u64> {
+  ui.data(|d| d.get_temp::<Option<u64>>(Id::new(PLAYING_AUDIO))).flatten()
+}
+
+const PLAYING_AUDIO: &str = "deck-playing-audio";
 
 /// The hover-revealed round × in a card's top-right corner. Returns whether it was clicked.
 fn remove_button(ui: &mut Ui, id: Id, card: Rect, card_hovered: bool) -> bool {

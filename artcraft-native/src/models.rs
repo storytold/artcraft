@@ -45,6 +45,8 @@ pub struct ModelInfo {
   pub video_refs_max_secs: Option<u16>,
   pub audio_refs_max: usize,
   pub audio_refs_max_secs: Option<u16>,
+  /// `@Character` mentions (0 = not supported).
+  pub character_refs_max: usize,
   pub duration_options: Vec<u16>,
   pub duration_min: Option<u16>,
   pub duration_max: Option<u16>,
@@ -162,6 +164,7 @@ pub fn video_model(d: &artcraft_client::endpoints::omni_gen::models::video::omni
   m.video_refs_max_secs = d.video_references_max_total_duration_seconds;
   m.audio_refs_max = max(d.audio_references_supported, d.audio_references_max);
   m.audio_refs_max_secs = d.audio_references_max_total_duration_seconds;
+  m.character_refs_max = max(d.character_references_supported, d.character_references_max);
   m.aspect_ratios = strings(&d.aspect_ratio_options);
   m.aspect_default = d.aspect_ratio_default.clone().map(String::from);
   m.resolutions = strings(&d.resolution_options);
