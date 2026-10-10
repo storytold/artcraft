@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ai.artcraft.app</id>
+  <name>ArtCraft</name>
+  <summary>The IDE for interactive AI image and video creation</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <description>
+    <p>
+      ArtCraft is a desktop IDE for composing in 2D, staging scenes in 3D,
+      and generating AI images and video with a choice of model providers.
+    </p>
+  </description>
+  <launchable type="desktop-id">ai.artcraft.app.desktop</launchable>
+  <url type="homepage">https://getartcraft.com/</url>
+  <url type="bugtracker">https://github.com/storytold/artcraft/issues</url>
+  <url type="vcs-browser">https://github.com/storytold/artcraft</url>
+  <content_rating type="oars-1.1"/>
+  <developer id="ai.artcraft">
+    <name>ArtCraft</name>
+  </developer>
+</component>

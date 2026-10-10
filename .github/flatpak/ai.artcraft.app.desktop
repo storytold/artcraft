@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ArtCraft
+Comment=Create and compose AI images and video
+Exec=artcraft
+Icon=ai.artcraft.app
+Terminal=false
+Categories=Graphics;2DGraphics;3DGraphics;
+StartupNotify=true
+StartupWMClass=ai.artcraft.app
