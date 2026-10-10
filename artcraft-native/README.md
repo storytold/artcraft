@@ -37,8 +37,8 @@ The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
 | `pages`            | Create Image, Create Video, Home, Library, and the shared page shell            |
 | `feed`             | Generation feed: running, failed and finished jobs, library paging, grid and list |
 | `overlays`         | Lightbox, library picker, sign-in and settings dialogs                         |
-| `shell`            | Sidebar and top bar                                                            |
-| `theme`, `ui`      | Colour and type tokens, Lucide-style vector icons, widgets, toasts             |
+| `shell`            | Custom title bar, sidebar flush to the window edge, content panel header       |
+| `theme`, `ui`      | Tokens, Lucide-style icons, widgets, toasts, window chrome (drag, resize, caption buttons) |
 
 How the backend works:
 

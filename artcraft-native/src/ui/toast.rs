@@ -9,8 +9,8 @@ use crate::ui::icons::{self, Icon};
 
 const DEFAULT_DURATION: Duration = Duration::from_secs(4);
 const MAX_WIDTH: f32 = 448.0;
-/// Below the top bar, like the webapp's `top-16 right-5`.
-const TOP_OFFSET: f32 = 64.0;
+/// Below the title bar and the panel header (the webapp's `top-16 right-5`, shifted).
+const TOP_OFFSET: f32 = 100.0;
 const RIGHT_OFFSET: f32 = 20.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

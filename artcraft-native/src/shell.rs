@@ -1,16 +1,19 @@
-//! The app frame from the webapp: a floating sidebar (`app-sidebar`) and the top bar with
-//! breadcrumbs, feed toggles, credits and the account menu (`topbar`).
+//! The app frame: a custom title bar (mark, sidebar toggle, account, caption buttons), a sidebar
+//! flush with the window edge, and the content panel's header (breadcrumbs and feed toggles).
 
 use egui::{Align2, Color32, FontId, Id, Rect, Sense, Stroke, Ui, pos2, vec2};
 
 use crate::feed::grid::ViewMode;
 use crate::theme;
 use crate::ui::icons::{self, Icon};
-use crate::ui::widgets;
+use crate::ui::{widgets, window};
 
-const SIDEBAR_WIDTH: f32 = 232.0;
-const SIDEBAR_INSET: f32 = 8.0;
-const TOPBAR_HEIGHT: f32 = 57.0;
+pub const SIDEBAR_WIDTH: f32 = 232.0;
+pub const TITLEBAR_HEIGHT: f32 = 40.0;
+pub const HEADER_HEIGHT: f32 = 48.0;
+/// The content panel's gap to the window edges, and its corner radius (Claude-app style).
+pub const PANEL_GAP: i8 = 8;
+pub const PANEL_RADIUS: u8 = 8;
 const ROW_HEIGHT: f32 = 32.0;
 pub const DISCORD_URL: &str = "https://discord.gg/artcraft";
 pub const GITHUB_URL: &str = "https://github.com/storytold/artcraft";
@@ -133,26 +136,66 @@ pub enum ShellAction {
   ToggleSelect,
 }
 
-/// The sidebar. Returns the user's action, if any.
-pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>, logo: &egui::TextureHandle) -> Option<ShellAction> {
+/// The custom title bar: the ArtCraft mark (home) and the sidebar toggle at the left, the
+/// account and (on Windows and Linux) the caption buttons at the right; the rest drags the window.
+pub fn titlebar(ui: &mut Ui, account: &Account<'_>, mark: &egui::TextureHandle) -> Option<ShellAction> {
   let mut action = None;
-  let rect = ui.max_rect().shrink(SIDEBAR_INSET);
-  ui.painter().rect(rect, theme::RADIUS, theme::CONTROLS, theme::hairline(), egui::StrokeKind::Inside);
-  let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink2(vec2(14.0, 10.0))));
+  window::title_bar_drag(ui);
+  let rect = ui.max_rect();
+  let mut bar = ui.new_child(egui::UiBuilder::new().max_rect(rect).layout(egui::Layout::left_to_right(egui::Align::Center)));
+  let ui = &mut bar;
+  ui.spacing_mut().item_spacing.x = 4.0;
+  ui.add_space(window::leading_inset() + 10.0);
+  let (mark_rect, mark_resp) = ui.allocate_exact_size(vec2(28.0, 28.0), Sense::click());
+  let hovered = mark_resp.hovered();
+  if hovered {
+    ui.painter().rect_filled(mark_rect, theme::RADIUS, theme::WASH);
+  }
+  ui.painter().image(mark.id(), Rect::from_center_size(mark_rect.center(), vec2(18.0, 16.0)), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), theme::ACCENT);
+  if mark_resp.on_hover_text("Home").on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+    action = Some(ShellAction::Navigate(Page::Home));
+  }
+  if widgets::ghost(ui, Icon::PanelLeft, None, "Toggle Sidebar", false).clicked() {
+    action = Some(ShellAction::ToggleSidebar);
+  }
+  ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+    ui.spacing_mut().item_spacing.x = 8.0;
+    if window::custom_caption_buttons() {
+      ui.spacing_mut().item_spacing.x = 0.0;
+      window::caption_buttons(ui, TITLEBAR_HEIGHT);
+      ui.add_space(12.0);
+      ui.spacing_mut().item_spacing.x = 8.0;
+    } else {
+      ui.add_space(12.0);
+    }
+    match account.username {
+      Some(_) => {
+        if let Some(a) = account_menu(ui, account) {
+          action = Some(a);
+        }
+        if let Some(credits) = account.credits {
+          if credits_pill(ui, credits).clicked() {
+            ui.ctx().open_url(egui::OpenUrl::new_tab(format!("{WEB_APP_URL}/pricing")));
+          }
+        }
+      },
+      None => {
+        if widgets::button(ui, None, "Sign in", widgets::Kind::Primary, 0.0, 28.0).clicked() {
+          action = Some(ShellAction::SignIn);
+        }
+      },
+    }
+  });
+  action
+}
+
+/// The sidebar, flush with the window's left edge. Returns the user's action, if any.
+pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>) -> Option<ShellAction> {
+  let mut action = None;
+  let rect = ui.max_rect();
+  let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink2(vec2(10.0, 4.0))));
   let ui = &mut inner;
   ui.spacing_mut().item_spacing.y = 2.0;
-
-  ui.horizontal(|ui| {
-    let h = 20.0;
-    let w = h * logo.size_vec2().x / logo.size_vec2().y.max(1.0);
-    ui.add(egui::Image::new(logo).fit_to_exact_size(vec2(w, h)));
-    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-      if widgets::ghost(ui, Icon::PanelLeft, None, "Toggle Sidebar", false).clicked() {
-        action = Some(ShellAction::ToggleSidebar);
-      }
-    });
-  });
-  ui.add_space(6.0);
   if nav_row(ui, Page::Home, page == Page::Home) {
     action = Some(ShellAction::Navigate(Page::Home));
   }
@@ -174,12 +217,11 @@ pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>, logo: &egui::Text
   }
 
   // The account sits at the bottom, like the webapp's download button.
-  let bottom = Rect::from_min_max(pos2(rect.left() + 10.0, rect.bottom() - 58.0), pos2(rect.right() - 10.0, rect.bottom() - 10.0));
+  let bottom = Rect::from_min_max(pos2(rect.left() + 10.0, rect.bottom() - 56.0), pos2(rect.right() - 10.0, rect.bottom() - 8.0));
   let mut foot = ui.new_child(egui::UiBuilder::new().max_rect(bottom));
   match account.username {
     Some(username) => {
-      let resp = account_row(&mut foot, account.display_name.unwrap_or(username), account.credits);
-      if resp.clicked() {
+      if account_row(&mut foot, account.display_name.unwrap_or(username), account.credits).clicked() {
         action = Some(ShellAction::OpenSettings);
       }
     },
@@ -190,11 +232,6 @@ pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>, logo: &egui::Text
     },
   }
   action
-}
-
-/// The sidebar's full width (including its inset), for the panel.
-pub fn sidebar_width() -> f32 {
-  SIDEBAR_WIDTH + SIDEBAR_INSET * 2.0
 }
 
 fn nav_row(ui: &mut Ui, page: Page, selected: bool) -> bool {
@@ -249,61 +286,33 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
   resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text("Settings")
 }
 
-/// The top bar. `feed_toggles` shows the select and grid/list toggles (create pages).
-pub fn topbar(ui: &mut Ui, page: Page, account: &Account<'_>, feed_toggles: Option<(ViewMode, bool)>, sidebar_open: bool) -> Option<ShellAction> {
+/// The content panel's header: breadcrumbs, and the select and grid/list toggles on feed pages.
+pub fn page_header(ui: &mut Ui, page: Page, feed_toggles: Option<(ViewMode, bool)>) -> Option<ShellAction> {
   let mut action = None;
   let rect = ui.max_rect();
-  ui.painter().rect_filled(rect, 0.0, theme::PANEL);
   ui.painter().hline(rect.x_range(), rect.bottom() - 0.5, theme::hairline());
   let mut bar = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink2(vec2(20.0, 0.0))).layout(egui::Layout::left_to_right(egui::Align::Center)));
   let ui = &mut bar;
   ui.spacing_mut().item_spacing.x = 8.0;
-  if !sidebar_open && widgets::ghost(ui, Icon::PanelLeft, None, "Toggle Sidebar", false).clicked() {
-    action = Some(ShellAction::ToggleSidebar);
-  }
   let (section, leaf) = page.crumbs();
   widgets::hud(ui, section, theme::MUTED);
   let (chev, _) = ui.allocate_exact_size(vec2(10.0, 10.0), Sense::hover());
   icons::paint(ui.painter(), chev, Icon::ChevronRight, theme::FAINT);
-  let galley = widgets::caps(ui, leaf, theme::HUD_SIZE, theme::mono(), theme::HUD_SPACING, theme::PANEL);
+  let galley = widgets::caps(ui, leaf, theme::HUD_SIZE, theme::mono(), theme::HUD_SPACING, theme::BG);
   let (crumb, _) = ui.allocate_exact_size(galley.size() + vec2(12.0, 8.0), Sense::hover());
   ui.painter().rect_filled(crumb, 0.0, theme::INK);
-  ui.painter().galley(crumb.center() - galley.size() / 2.0, galley, theme::PANEL);
-
-  ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-    ui.spacing_mut().item_spacing.x = 8.0;
-    match account.username {
-      Some(_) => {
-        if let Some(a) = account_menu(ui, account) {
-          action = Some(a);
-        }
-        if let Some(credits) = account.credits {
-          let resp = credits_pill(ui, credits);
-          if resp.clicked() {
-            ui.ctx().open_url(egui::OpenUrl::new_tab(format!("{WEB_APP_URL}/pricing")));
-          }
-        }
-      },
-      None => {
-        if widgets::button(ui, None, "Sign in", widgets::Kind::Primary, 0.0, 32.0).clicked() {
-          action = Some(ShellAction::SignIn);
-        }
-      },
-    }
-    if let Some((mode, selecting)) = feed_toggles {
+  ui.painter().galley(crumb.center() - galley.size() / 2.0, galley, theme::BG);
+  if let Some((mode, selecting)) = feed_toggles {
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
       if let Some(m) = view_toggle(ui, mode) {
         action = Some(ShellAction::SetViewMode(m));
       }
       if segmented(ui, &[(Icon::SquareCheck, if selecting { "Exit selection" } else { "Select items" }, selecting)]).is_some() {
         action = Some(ShellAction::ToggleSelect);
       }
-    }
-  });
+    });
+  }
   action
-}
-
-pub fn topbar_height() -> f32 {
-  TOPBAR_HEIGHT
 }
 
 fn credits_pill(ui: &mut Ui, credits: u64) -> egui::Response {
