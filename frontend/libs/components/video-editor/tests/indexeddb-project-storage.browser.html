@@ -1,0 +1,135 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Native IndexedDB project-storage checks</title>
+<pre id="results">Running native IndexedDB checks...</pre>
+<script type="module">
+  import { createIndexedDBProjectStorage } from "./indexeddb-storage.js";
+
+  // Route the adapter to a dedicated test database. Transactions, structured
+  // cloning, error events, aborts, and version upgrades remain native browser APIs.
+  const TEST_DB = "artcraft-project-storage-browser-check";
+  const nativeOpen = indexedDB.open.bind(indexedDB);
+  const nativeClose = IDBDatabase.prototype.close;
+  const nativePut = IDBObjectStore.prototype.put;
+  const connections = new Set();
+  const results = [];
+  const storage = createIndexedDBProjectStorage();
+  const project = {
+    id: "native-proof", name: "Native", updatedAt: 100, data: { value: 1 },
+  };
+
+  indexedDB.open = (name, ...args) => {
+    const request = nativeOpen(name === "video-editor" ? TEST_DB : name, ...args);
+    request.addEventListener("success", () => connections.add(new WeakRef(request.result)));
+    return request;
+  };
+  IDBDatabase.prototype.close = function () {
+    for (const ref of connections) {
+      if (ref.deref() === this) connections.delete(ref);
+    }
+    return nativeClose.call(this);
+  };
+
+  await check("control: save/load/list/delete round trip", async () => {
+    await storage.saveProject(project);
+    expect(await storage.loadProject(project.id), project, "saved data");
+    expect(await storage.listProjects(), [
+      { id: project.id, name: project.name, updatedAt: 100 },
+    ], "list");
+    await storage.deleteProject(project.id);
+    expect(await storage.loadProject(project.id), null, "deleted data");
+  });
+
+  await check("success: settled save/load/list release connections", async () => {
+    await storage.saveProject(project);
+    await storage.loadProject(project.id);
+    await storage.listProjects();
+    expect([...connections].filter((ref) => ref.deref()).length, 0, "open connections after settled operations");
+  });
+
+  await check("success: completed storage does not block an upgrade", async () => {
+    await storage.saveProject(project);
+    await new Promise((resolve, reject) => {
+      const request = nativeOpen(TEST_DB, 2);
+      request.onblocked = () => {
+        reject(new Error("Upgrade blocked by a completed storage operation"));
+        for (const ref of [...connections]) ref.deref()?.close();
+      };
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        request.result.close();
+        resolve();
+      };
+    });
+  });
+
+  await check("request construction failure releases its connection", async () => {
+    let error;
+    try {
+      await storage.saveProject({ ...project, data: () => {} });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error?.name, "DataCloneError", "native cloning error");
+    expect([...connections].filter((ref) => ref.deref()).length, 0, "open connections after failed request construction");
+  });
+
+  await check("native transaction abort releases connection and writes nothing", async () => {
+    IDBObjectStore.prototype.put = function (...args) {
+      const request = nativePut.apply(this, args);
+      this.transaction.abort();
+      return request;
+    };
+    let error;
+    try {
+      await storage.saveProject(project);
+    } catch (caught) {
+      error = caught;
+    }
+    if (!error) throw new Error("Aborted save must reject");
+    expect([...connections].filter((ref) => ref.deref()).length, 0, "open connections after aborted write");
+    IDBObjectStore.prototype.put = nativePut;
+    expect(await storage.loadProject(project.id), null, "aborted data");
+  });
+
+  await check("control: create and delete public methods", async () => {
+    const created = await storage.createProject("Created");
+    expect((await storage.loadProject(created.id))?.name, "Created", "created name");
+    await storage.deleteProject(created.id);
+    expect(await storage.loadProject(created.id), null, "deleted created project");
+  });
+
+  indexedDB.open = nativeOpen;
+  IDBDatabase.prototype.close = nativeClose;
+  IDBObjectStore.prototype.put = nativePut;
+  globalThis.runResult = {
+    userAgent: navigator.userAgent,
+    origin: location.origin,
+    nativeIndexedDB: typeof IDBFactory === "function",
+    results,
+  };
+  document.querySelector("#results").textContent = JSON.stringify(globalThis.runResult, null, 2);
+
+  async function check(name, run) {
+    try {
+      await run();
+      results.push({ name, status: "PASS" });
+    } catch (error) {
+      results.push({ name, status: "FAIL", error: String(error) });
+    } finally {
+      for (const ref of [...connections]) ref.deref()?.close();
+      IDBObjectStore.prototype.put = nativePut;
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(TEST_DB);
+        request.onsuccess = resolve;
+        request.onerror = () => reject(request.error);
+      });
+    }
+  }
+
+  function expect(value, expected, label) {
+    if (JSON.stringify(value) !== JSON.stringify(expected)) {
+      throw new Error(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(value)}`);
+    }
+  }
+</script>
