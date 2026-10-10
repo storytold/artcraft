@@ -1,0 +1,49 @@
+ArtCraft
+Copyright (c) 2026 ArtCraft Team and the ArtCraft contributors.
+Licensed under the MIT License or the Apache License, Version 2.0, at your option
+(LICENSE-MIT, LICENSE-APACHE).
+
+The ArtCraft name, wordmark and logos are trademarks of the ArtCraft Team. They are not covered
+by the license above.
+
+Third-party material
+
+This product bundles third-party material under its own licenses, listed below.
+
+ammo.js (frontend/apps/artcraft/app/public/jsm/libs/ammo.wasm.*) — zlib License. A port of the
+  Bullet Physics engine. https://github.com/kripken/ammo.js
+tauri-plugin-http (crates/vendor/tauri-plugin-http/) — MIT or Apache-2.0. Copyright (c) 2017 -
+  Present Tauri Apps Contributors; Copyright 2019-2023 Tauri Programme within The Commons
+  Conservancy. Modified fork; see that directory's LICENSE_MIT and LICENSE_APACHE-2.0.
+normalize.css v8.0.1 (frontend/apps/artcraft/app/src/styles/normalize.css) — MIT License.
+  Copyright (c) Nicolas Gallagher and Jonathan Neal. https://github.com/necolas/normalize.css
+three-dots v0.3.2 (portion of frontend/apps/artcraft/app/src/styles/base.css) — MIT License.
+  Copyright (c) 2018 nzbin. https://nzbin.github.io/three-dots/
+Font Awesome Free icons (frontend/libs/icons/src/lib/brand-icons.tsx,
+  frontend/apps/artcraft/app/public/resources/images/services/generic.svg) — CC BY 4.0.
+  Copyright Fonticons, Inc. https://fontawesome.com/license/free
+Carter One font (frontend/apps/artcraft/app/public/resources/fonts/CarterOneRegular.json) —
+  SIL Open Font License 1.1. https://fonts.google.com/specimen/Carter+One
+
+Third-party trademarks
+
+The AI provider and service logos in frontend/apps/artcraft/app/public/resources/images/services/
+are trademarks of their respective owners. They are used only to identify those services and are
+not covered by the license above.
+
+Material not covered by the license above
+
+The following files are owned by third parties. They are not licensed under MIT or Apache-2.0,
+and no rights to them are granted by this repository. They remain the property of their
+respective owners.
+
+frontend/apps/artcraft/app/public/resources/sound/ — sound effects from Nintendo games (Golden
+  Sun, Metroid Prime, The Legend of Zelda: Ocarina of Time, Super Mario RPG).
+frontend/apps/artcraft/app/public/resources/memes/ — meme images and likenesses owned by their
+  respective rights holders.
+frontend/apps/artcraft/app/public/resources/skybox/gray/ and skybox/night/ — skybox textures
+  from a third-party asset pack.
+frontend/apps/artcraft/app/public/resources/pose/Lumine Idle cycle.vmd — third-party MMD motion
+  data.
+frontend/apps/artcraft/app/public/resources/characters_gif/ — renders of Mixamo animations
+  (Adobe).
