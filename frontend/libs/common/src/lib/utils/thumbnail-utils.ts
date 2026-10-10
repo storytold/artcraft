@@ -33,7 +33,22 @@ export function getThumbnailUrl(
 
 export function addCorsParam(url: string | null | undefined): string | null {
   if (!url) return null;
-  return `${url}?cors=1`;
+  const fragmentIndex = url.indexOf("#");
+  const requestUrl = fragmentIndex === -1 ? url : url.slice(0, fragmentIndex);
+  const fragment = fragmentIndex === -1 ? "" : url.slice(fragmentIndex);
+  // Preserve the other query bytes (including signed values) and put the
+  // parameter before the fragment, which is never sent to the CDN.
+  const queryIndex = requestUrl.indexOf("?");
+  if (queryIndex !== -1) {
+    const query = requestUrl.slice(queryIndex + 1);
+    const corsParam = /(^|&)cors(?:=[^&]*)?(?=&|$)/g;
+    if (corsParam.test(query)) {
+      return requestUrl.slice(0, queryIndex + 1) +
+        query.replace(corsParam, "$1cors=1") + fragment;
+    }
+  }
+  const separator = requestUrl.includes("?") ? "&" : "?";
+  return `${requestUrl}${separator}cors=1${fragment}`;
 }
 
 interface MediaThumbnailOptions {
