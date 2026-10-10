@@ -38,7 +38,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::feed::types::MediaKind;
 use crate::models::{self, ModelInfo};
 use session::Credentials;
-use wire::{BatchMedia, CharactersPage, MediaFile, PromptResponse, SessionInfo, SessionJobs, SessionUser, UploadResponse, UserMediaList};
+use wire::{AudioModels, BatchMedia, CharactersPage, MediaFile, PromptResponse, SessionInfo, SessionJobs, SessionUser, UploadResponse, UserMediaList};
 
 /// Items per library page (`useGalleryData`'s `PAGE_SIZE`).
 pub const LIBRARY_PAGE_SIZE: u32 = 40;
@@ -57,6 +57,7 @@ const USER_AGENT: &str = "storyteller-client/1.0";
 pub enum Modality {
   Image,
   Video,
+  Audio,
 }
 
 impl Modality {
@@ -64,6 +65,7 @@ impl Modality {
     match self {
       Modality::Image => "image",
       Modality::Video => "video",
+      Modality::Audio => "audio",
     }
   }
 }
@@ -73,6 +75,7 @@ impl From<MediaKind> for Modality {
     match kind {
       MediaKind::Image => Modality::Image,
       MediaKind::Video => Modality::Video,
+      MediaKind::Audio => Modality::Audio,
     }
   }
 }
@@ -102,6 +105,8 @@ pub enum Event {
   EnqueueFailed {
     modality: Modality,
     message: String,
+    /// The HTTP status, when the server answered.
+    status: Option<u16>,
   },
   Uploaded {
     ref_id: u64,
@@ -334,7 +339,8 @@ impl Backend {
 
   /// Fetches the OmniGen model listing for `modality`.
   pub fn load_models(&self, modality: Modality) {
-    let host = self.host.clone();
+    let api = self.api();
+    let host = api.host.clone();
     self.spawn(move |tx| async move {
       let mut last_err = String::new();
       for attempt in 0..MODEL_LIST_ATTEMPTS {
@@ -342,15 +348,16 @@ impl Backend {
           tokio::time::sleep(MODEL_LIST_BACKOFF).await;
         }
         let result = match modality {
-          Modality::Image => omni_gen_list_image_models(OmniGenListImageModelsArgs { api_host: &host, maybe_creds: None, provider: None }).await.map(|r| r.models.iter().map(models::image_model).collect::<Vec<_>>()),
-          Modality::Video => omni_gen_list_video_models(OmniGenListVideoModelsArgs { api_host: &host, maybe_creds: None, provider: None }).await.map(|r| r.models.iter().map(models::video_model).collect::<Vec<_>>()),
+          Modality::Image => omni_gen_list_image_models(OmniGenListImageModelsArgs { api_host: &host, maybe_creds: None, provider: None }).await.map(|r| r.models.iter().map(models::image_model).collect::<Vec<_>>()).map_err(|e| api_message(&e)),
+          Modality::Video => omni_gen_list_video_models(OmniGenListVideoModelsArgs { api_host: &host, maybe_creds: None, provider: None }).await.map(|r| r.models.iter().map(models::video_model).collect::<Vec<_>>()).map_err(|e| api_message(&e)),
+          Modality::Audio => api.get_json::<AudioModels>("/v1/omni_gen/models/audio").await.map(|r| r.models.iter().map(models::audio_model).collect::<Vec<_>>()),
         };
         match result {
           Ok(models) => {
             let _ = tx.send(Event::Models(modality, Ok(models)));
             return;
           },
-          Err(err) => last_err = api_message(&err),
+          Err(err) => last_err = err,
         }
       }
       error!("Listing {modality:?} models failed: {last_err}");
@@ -379,7 +386,7 @@ impl Backend {
     let api = self.api();
     self.spawn(move |tx| async move {
       let Some(creds) = api.creds.as_ref() else {
-        let _ = tx.send(Event::EnqueueFailed { modality, message: "Please sign in to generate.".to_owned() });
+        let _ = tx.send(Event::EnqueueFailed { modality, message: "Please sign in to generate.".to_owned(), status: None });
         return;
       };
       fields.entry("idempotency_token").or_insert_with(|| Value::String(uuid::Uuid::new_v4().to_string()));
@@ -388,14 +395,14 @@ impl Backend {
         Ok(response) => {
           let tokens = job_tokens(&response);
           if tokens.is_empty() {
-            let _ = tx.send(Event::EnqueueFailed { modality, message: "The server didn't start a job.".to_owned() });
+            let _ = tx.send(Event::EnqueueFailed { modality, message: "The server didn't start a job.".to_owned(), status: None });
           } else {
             let _ = tx.send(Event::Enqueued { modality, job_tokens: tokens, meta });
           }
           api.send_credits(&tx).await;
         },
         Err(err) => {
-          let _ = tx.send(Event::EnqueueFailed { modality, message: api_message(&err) });
+          let _ = tx.send(Event::EnqueueFailed { modality, message: api_message(&err), status: api_status(&err) });
         },
       }
     });
@@ -750,7 +757,7 @@ impl Api {
     }
     let info = self.get_json::<FileResponse>(&format!("/v1/media_files/file/{token}")).await.ok();
     let file = info.map(|r| r.media_file);
-    UploadedMedia { duration_secs: file.as_ref().and_then(|f| f.maybe_duration_millis).map_or(0.0, |ms| ms as f32 / 1000.0), thumbnail: file.as_ref().and_then(|f| f.media_links.thumbnail(256)), full_url: file.as_ref().map(|f| f.media_links.cdn_url.clone()).filter(|u| !u.is_empty()), token }
+    UploadedMedia { duration_secs: file.as_ref().and_then(|f| f.maybe_duration_millis).map_or(0.0, |ms| ms as f32 / 1000.0), thumbnail: file.as_ref().and_then(|f| f.thumbnail(256)), full_url: file.as_ref().map(|f| f.media_links.cdn_url.clone()).filter(|u| !u.is_empty()), token }
   }
 }
 
@@ -791,6 +798,24 @@ pub fn api_message(err: &StorytellerError) -> String {
     StorytellerError::Api(api) => api_error_message(api),
     StorytellerError::Client(client) => format!("{client:?}"),
   }
+}
+
+/// The HTTP status behind a client error, when there was a response.
+fn api_status(err: &StorytellerError) -> Option<u16> {
+  let StorytellerError::Api(api) = err else {
+    return None;
+  };
+  Some(match api {
+    ApiError::InvalidRequest(_) => 400,
+    ApiError::Unauthorized(_) => 401,
+    ApiError::PaymentRequired(_) => 402,
+    ApiError::Forbidden(_) => 403,
+    ApiError::NotFound(_) => 404,
+    ApiError::TooManyRequests(_) => 429,
+    ApiError::InternalServerError { .. } => 500,
+    ApiError::UncategorizedBadResponseWithStatusAndBody { status_code, .. } => status_code.as_u16(),
+    _ => return None,
+  })
 }
 
 fn api_error_message(err: &ApiError) -> String {

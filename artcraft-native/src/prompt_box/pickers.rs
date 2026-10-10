@@ -90,14 +90,19 @@ pub fn popover(anchor: &Response, popup_id: Id, content: impl FnOnce(&mut Ui)) {
   });
 }
 
+/// A toolbar pill that opens a popover of custom `content` above it.
+pub fn popover_pill(ui: &mut Ui, id: Id, lead: Leading<'_>, label: &str, tooltip: &str, content: impl FnOnce(&mut Ui)) {
+  let popup_id = ui.make_persistent_id(id).with("popup");
+  let open = Popup::is_id_open(ui.ctx(), popup_id);
+  let resp = ui.push_id(id, |ui| widgets::pill(ui, lead, label, open)).inner.on_hover_text(tooltip);
+  popover(&resp, popup_id, content);
+}
+
 /// The duration popover: a clock pill reading `5s`, opening a 1-second-step slider between the
 /// model's minimum and maximum. Returns the new value.
 pub fn duration_picker(ui: &mut Ui, id: Id, current: u32, min: u32, max: u32) -> Option<u32> {
-  let popup_id = ui.make_persistent_id(id).with("popup");
-  let open = Popup::is_id_open(ui.ctx(), popup_id);
-  let resp = ui.push_id(id, |ui| widgets::pill(ui, Leading::Icon(Icon::Clock), &format!("{current}s"), open)).inner.on_hover_text("Duration");
   let mut value = current;
-  popover(&resp, popup_id, |ui| {
+  popover_pill(ui, id, Leading::Icon(Icon::Clock), &format!("{current}s"), "Duration", |ui| {
     ui.set_width(240.0);
     widgets::menu_header(ui, "Duration");
     ui.add_space(4.0);

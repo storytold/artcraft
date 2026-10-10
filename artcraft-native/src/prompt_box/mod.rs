@@ -58,6 +58,21 @@ pub struct PromptBoxProps<'a> {
   pub warning: Option<&'a str>,
   /// An info strip above the prompt.
   pub banner: Option<&'a str>,
+  /// Something clear-all also clears besides the prompt and references (the audio style).
+  pub extra_input: bool,
+}
+
+/// Where a page draws into the box.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Slot {
+  /// Rows above the prompt (the audio box's references).
+  AbovePrompt,
+  /// Rows below the prompt (the audio box's style).
+  BelowPrompt,
+  /// The toolbar's left: the model selector and pickers.
+  ToolbarLeft,
+  /// The toolbar's right, before clear-all: the count picker.
+  ToolbarRight,
 }
 
 /// Something the page should do.
@@ -81,11 +96,10 @@ pub struct PromptBoxState {
   focused: bool,
 }
 
-/// Draws the box in `ui` (which should be as wide as the box). `toolbar_left` holds the model
-/// selector and pickers; `toolbar_right` the count picker. Both may be drawn twice in a frame
-/// (box and focus mode), each under its own id.
-#[allow(clippy::too_many_arguments)]
-pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut PromptBoxState, props: &PromptBoxProps<'_>, cache: &mut MediaCache, toolbar_left: &mut dyn FnMut(&mut Ui), toolbar_right: &mut dyn FnMut(&mut Ui)) -> Vec<PromptBoxAction> {
+/// Draws the box in `ui` (which should be as wide as the box). `slots` draws the page's parts
+/// into each [`Slot`]; the toolbar's left may be drawn twice in a frame (box and focus mode), each
+/// under its own id.
+pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut PromptBoxState, props: &PromptBoxProps<'_>, cache: &mut MediaCache, slots: &mut dyn FnMut(&mut Ui, Slot)) -> Vec<PromptBoxAction> {
   let mut actions = Vec::new();
   let frame = egui::Frame::new().fill(theme::fade(theme::CONTROLS, 0.95)).stroke(Stroke::new(1.0, if state.focused { theme::ACCENT } else { theme::LINE })).corner_radius(theme::RADIUS).inner_margin(16);
   let response = frame.show(ui, |ui| {
@@ -96,6 +110,7 @@ pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut Pro
       ui.spacing_mut().item_spacing.x = 12.0;
       deck_widget(ui, props, refs, cache, false, &mut actions);
       ui.vertical(|ui| {
+        slots(ui, Slot::AbovePrompt);
         let out = editor_ui(ui, prompt, state, props, cache, None);
         state.focused = out.focused;
         if out.submit {
@@ -107,17 +122,18 @@ pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut Pro
         if out.open_fullscreen {
           state.fullscreen = true;
         }
+        slots(ui, Slot::BelowPrompt);
       });
     });
     ui.add_space(14.0);
     ui.horizontal(|ui| {
       ui.spacing_mut().item_spacing.x = 8.0;
-      toolbar_left(ui);
+      slots(ui, Slot::ToolbarLeft);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         ui.spacing_mut().item_spacing.x = 6.0;
         generate_cluster(ui, props, &mut actions);
-        clear_all_button(ui, prompt, refs, state, &mut actions);
-        toolbar_right(ui);
+        clear_all_button(ui, prompt, refs, state, props.extra_input, &mut actions);
+        slots(ui, Slot::ToolbarRight);
         if let Some(warning) = props.warning {
           warning_label(ui, warning);
         }
@@ -129,7 +145,7 @@ pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut Pro
   drop_target(ui, props, rect, &mut actions);
   paste_images(ui, props, &mut actions);
   if state.fullscreen {
-    focus_mode(ui.ctx(), prompt, refs, state, props, cache, toolbar_left, &mut actions);
+    focus_mode(ui.ctx(), prompt, refs, state, props, cache, slots, &mut actions);
   }
   if state.confirm_clear {
     confirm_clear(ui.ctx(), props.id, state, &mut actions);
@@ -172,10 +188,10 @@ fn generate_cluster(ui: &mut Ui, props: &PromptBoxProps<'_>, actions: &mut Vec<P
 }
 
 /// The eraser button and the hairline after it (`PromptClearAllButton`).
-fn clear_all_button(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut PromptBoxState, actions: &mut Vec<PromptBoxAction>) {
+fn clear_all_button(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut PromptBoxState, extra_input: bool, actions: &mut Vec<PromptBoxAction>) {
   let (rule, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
   ui.painter().rect_filled(rule, 0.0, theme::fade(theme::INK, 0.15));
-  let clearable = !prompt.is_empty() || !refs.is_empty();
+  let clearable = !prompt.is_empty() || !refs.is_empty() || extra_input;
   let resp = ui.add_enabled_ui(clearable, |ui| widgets::ghost(ui, Icon::Eraser, None, "Clear all", false)).inner;
   if resp.clicked() {
     if refs.is_empty() {
@@ -312,7 +328,7 @@ fn paste_images(ui: &mut Ui, props: &PromptBoxProps<'_>, actions: &mut Vec<Promp
 
 /// Focus mode: a large editor in a modal, with the deck and toolbar at hand.
 #[allow(clippy::too_many_arguments)]
-fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state: &mut PromptBoxState, props: &PromptBoxProps<'_>, cache: &mut MediaCache, toolbar_left: &mut dyn FnMut(&mut Ui), actions: &mut Vec<PromptBoxAction>) {
+fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state: &mut PromptBoxState, props: &PromptBoxProps<'_>, cache: &mut MediaCache, slots: &mut dyn FnMut(&mut Ui, Slot), actions: &mut Vec<PromptBoxAction>) {
   let height = ctx.content_rect().height() * 0.7;
   let mut done = false;
   let closed = widgets::modal(ctx, props.id.with("focus-mode"), 896.0, |ui| {
@@ -335,12 +351,12 @@ fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state
     ui.push_id("focus-deck", |ui| deck_widget(ui, props, refs, cache, true, actions));
     ui.add_space(12.0);
     ui.horizontal(|ui| {
-      ui.push_id("focus-toolbar", |ui| ui.horizontal(|ui| toolbar_left(ui)));
+      ui.push_id("focus-toolbar", |ui| ui.horizontal(|ui| slots(ui, Slot::ToolbarLeft)));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if widgets::button(ui, None, "Done", widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
           done = true;
         }
-        ui.push_id("focus-clear", |ui| clear_all_button(ui, prompt, refs, state, actions));
+        ui.push_id("focus-clear", |ui| clear_all_button(ui, prompt, refs, state, props.extra_input, actions));
       });
     });
   });

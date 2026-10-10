@@ -1,8 +1,9 @@
-//! The lightbox (`lightbox-modal`): the media large on black, prev/next through the feed, and a
-//! side column with the prompt, details and actions.
+//! The lightbox (`lightbox-modal`): the media large on black (audio as a player panel), prev/next
+//! through the feed, and a side column with the prompt, details and actions.
 
 use egui::{Align2, Color32, FontId, Id, Key, Rect, Sense, Ui, pos2, vec2};
 
+use crate::backend::audio::AudioPlayer;
 use crate::backend::media_cache::{Lookup, MediaCache};
 use crate::backend::video::{self, VideoPlayer};
 use crate::backend::wire::Prompt;
@@ -10,9 +11,12 @@ use crate::feed::grid::ModelNames;
 use crate::feed::types::{FeedItem, MediaKind};
 use crate::theme;
 use crate::ui::icons::{self, Icon};
-use crate::ui::{creator_icons, widgets};
+use crate::ui::{creator_icons, waveform, widgets};
 
 const SIDE_WIDTH: f32 = 280.0;
+/// The audio panel's widest (`max-w-xl`) and its padding.
+const AUDIO_PANEL_MAX: f32 = 576.0;
+const AUDIO_PANEL_PAD: f32 = 24.0;
 
 pub struct Lightbox {
   pub kind: MediaKind,
@@ -41,7 +45,8 @@ impl Lightbox {
     Self { kind, token, confirm_delete: false, prompt_expanded: false, player: None }
   }
 
-  pub fn show(&mut self, ctx: &egui::Context, item: &FeedItem, order: &[String], prompt: Option<&Prompt>, names: &dyn ModelNames, cache: &mut MediaCache) -> Vec<LightboxAction> {
+  #[allow(clippy::too_many_arguments)]
+  pub fn show(&mut self, ctx: &egui::Context, item: &FeedItem, order: &[String], prompt: Option<&Prompt>, names: &dyn ModelNames, cache: &mut MediaCache, audio: &mut AudioPlayer) -> Vec<LightboxAction> {
     let mut actions = Vec::new();
     let screen = ctx.content_rect();
     let size = vec2((screen.width() - 80.0).min(1200.0), (screen.height() - 80.0).min(760.0));
@@ -65,7 +70,7 @@ impl Lightbox {
       ui.horizontal_top(|ui| {
         let media_rect = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width() - SIDE_WIDTH - 16.0, size.y - 32.0));
         ui.allocate_rect(media_rect, Sense::hover());
-        self.media(ui, media_rect, item, cache, &prev, &next, &mut actions);
+        self.media(ui, media_rect, item, cache, audio, &prev, &next, &mut actions);
         ui.add_space(16.0);
         ui.vertical(|ui| {
           ui.set_width(SIDE_WIDTH);
@@ -83,7 +88,14 @@ impl Lightbox {
   }
 
   #[allow(clippy::too_many_arguments)]
-  fn media(&mut self, ui: &mut Ui, rect: Rect, item: &FeedItem, cache: &mut MediaCache, prev: &Option<String>, next: &Option<String>, actions: &mut Vec<LightboxAction>) {
+  fn media(&mut self, ui: &mut Ui, rect: Rect, item: &FeedItem, cache: &mut MediaCache, audio: &mut AudioPlayer, prev: &Option<String>, next: &Option<String>, actions: &mut Vec<LightboxAction>) {
+    if item.kind == MediaKind::Audio {
+      self.player = None;
+      ui.painter().rect_filled(rect, 0.0, Color32::BLACK);
+      audio_panel(ui, rect, item, audio);
+      self.nav_buttons(ui, rect, prev, next, actions);
+      return;
+    }
     if item.kind == MediaKind::Video && video::ffmpeg_available() {
       if self.player.as_ref().is_none_or(|p| p.url() != item.full_url) {
         self.player = Some(VideoPlayer::new(&item.full_url));
@@ -237,7 +249,8 @@ impl Lightbox {
 
     ui.add_space(16.0);
     let w = (ui.available_width() - 8.0) / 2.0;
-    if item.prompt_token.is_some() && widgets::button(ui, Some(Icon::RotateCw), "Recreate", widgets::Kind::Primary, ui.available_width(), theme::CONTROL_H).clicked() {
+    // Audio can't be recreated yet (`Audio v1`).
+    if item.prompt_token.is_some() && item.kind != MediaKind::Audio && widgets::button(ui, Some(Icon::RotateCw), "Recreate", widgets::Kind::Primary, ui.available_width(), theme::CONTROL_H).clicked() {
       actions.push(LightboxAction::Recreate);
     }
     ui.horizontal_wrapped(|ui| {
@@ -280,6 +293,17 @@ impl Lightbox {
       actions.push(LightboxAction::Delete);
     }
   }
+}
+
+/// Audio in the lightbox: a bordered panel with the music tile and the full-size player.
+fn audio_panel(ui: &mut Ui, rect: Rect, item: &FeedItem, audio: &mut AudioPlayer) {
+  let width = (rect.width() - 48.0).min(AUDIO_PANEL_MAX);
+  let panel = Rect::from_center_size(rect.center(), vec2(width, AUDIO_PANEL_PAD * 2.0 + 64.0 + 20.0 + 44.0));
+  ui.painter().rect(panel, theme::RADIUS, theme::fade(theme::CONTROLS, 0.6), theme::hairline(), egui::StrokeKind::Inside);
+  waveform::music_tile(ui, Rect::from_center_size(pos2(panel.center().x, panel.top() + AUDIO_PANEL_PAD + 32.0), vec2(64.0, 64.0)), false);
+  let bar = Rect::from_min_max(pos2(panel.left() + AUDIO_PANEL_PAD, panel.bottom() - AUDIO_PANEL_PAD - 44.0), pos2(panel.right() - AUDIO_PANEL_PAD, panel.bottom() - AUDIO_PANEL_PAD));
+  let mut child = ui.new_child(egui::UiBuilder::new().max_rect(bar));
+  waveform::player(&mut child, Id::new(("lightbox-player", &item.token)), audio, &item.full_url, item.duration_secs, false);
 }
 
 fn info_row(ui: &mut Ui, label: &str, value: impl FnOnce(&mut Ui)) {

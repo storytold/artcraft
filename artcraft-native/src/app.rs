@@ -21,10 +21,11 @@ use crate::overlays::characters::{CharactersAction, CharactersModal};
 use crate::overlays::library_picker::{LibraryPicker, PickerAction};
 use crate::overlays::lightbox::{Lightbox, LightboxAction, fit_inside};
 use crate::pages::common::{self, AppRequest, Env, FeedKey};
+use crate::pages::create_audio::{AudioSettings, CreateAudioPage};
 use crate::pages::create_image::{CreateImagePage, ImageSettings};
 use crate::pages::create_video::{CreateVideoPage, VideoSettings};
 use crate::pages::other;
-use crate::prompt_box::refs::{RefKind, RefMedia};
+use crate::prompt_box::refs::{RefKind, RefMedia, References};
 use crate::shell::{self, Account, FeedToggles, Page, ShellAction};
 use crate::theme;
 use crate::ui::toast::Toasts;
@@ -34,7 +35,7 @@ use crate::ui::{creator_icons, widgets, window};
 /// borrowed mutably alongside it).
 macro_rules! env {
   ($app:ident, $ctx:expr) => {
-    Env { ctx: $ctx.clone(), backend: &$app.backend, cache: &mut $app.cache, toasts: &mut $app.toasts, catalog: &$app.catalog, signed_in: $app.user.is_some(), enter_to_generate: $app.enter_to_generate, view_mode: $app.view_mode, autoplay: $app.autoplay, ratios: &mut $app.ratios, prompts: &$app.prompts, requests: &mut $app.requests, characters: &$app.characters }
+    Env { ctx: $ctx.clone(), backend: &$app.backend, cache: &mut $app.cache, audio: &mut $app.player, toasts: &mut $app.toasts, catalog: &$app.catalog, signed_in: $app.user.is_some(), enter_to_generate: $app.enter_to_generate, view_mode: $app.view_mode, autoplay: $app.autoplay, ratios: &mut $app.ratios, prompts: &$app.prompts, requests: &mut $app.requests, characters: &$app.characters }
   };
 }
 
@@ -44,6 +45,8 @@ const CREDITS_INTERVAL: f64 = 60.0;
 const MODEL_RETRY_INTERVAL: f64 = 15.0;
 /// List view: prompt records fetched per frame at most.
 const PROMPT_FETCHES_PER_FRAME: usize = 8;
+/// Every create page's model listing.
+const MODALITIES: [Modality; 3] = [Modality::Image, Modality::Video, Modality::Audio];
 
 /// Preferences that survive restarts.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -56,18 +59,19 @@ struct Saved {
   sidebar_open: bool,
   image: ImageSettings,
   video: VideoSettings,
+  audio: AudioSettings,
 }
 
 impl Default for Saved {
   fn default() -> Self {
-    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default() }
+    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
   }
 }
 
 pub struct ArtcraftApp {
   backend: Backend,
   cache: MediaCache,
-  audio: AudioPlayer,
+  player: AudioPlayer,
   toasts: Toasts,
   catalog: Catalog,
   user: Option<SessionUser>,
@@ -79,6 +83,7 @@ pub struct ArtcraftApp {
   sidebar_open: bool,
   image: CreateImagePage,
   video: CreateVideoPage,
+  audio: CreateAudioPage,
   library: FeedStore,
   ratios: RatioCache,
   /// Prompt texts by prompt token (list view, lightbox).
@@ -115,11 +120,12 @@ impl ArtcraftApp {
     }
     let backend = Backend::new(cc.egui_ctx.clone());
     let cache = MediaCache::new(backend.runtime(), backend.http());
-    let audio = AudioPlayer::new(backend.runtime(), backend.http());
-    backend.load_models(Modality::Image);
-    backend.load_models(Modality::Video);
+    let player = AudioPlayer::new(backend.runtime(), backend.http());
+    for modality in MODALITIES {
+      backend.load_models(modality);
+    }
     backend.refresh_session();
-    Self { cache, audio, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
+    Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
   }
 
   // --- Events from the backend -------------------------------------------------------------
@@ -130,9 +136,9 @@ impl ArtcraftApp {
         let changed = self.user.as_ref().map(|u| &u.username) != user.as_ref().map(|u| &u.username);
         self.user = user;
         if changed {
-          self.image.feed.reset();
-          self.video.feed.reset();
-          self.library.reset();
+          for feed in self.feeds_mut() {
+            feed.reset();
+          }
           self.next_poll = 0.0;
         }
         if self.user.is_some() {
@@ -163,6 +169,7 @@ impl ArtcraftApp {
       Event::Models(modality, Ok(models)) => match modality {
         Modality::Image => self.catalog.set_image(models),
         Modality::Video => self.catalog.set_video(models),
+        Modality::Audio => self.catalog.set_audio(models),
       },
       Event::Models(_, Err(message)) => {
         if self.models_retry_at.is_none() {
@@ -171,22 +178,25 @@ impl ArtcraftApp {
         self.models_retry_at = Some(ctx.input(|i| i.time) + MODEL_RETRY_INTERVAL);
       },
       Event::Cost { key, credits } => {
-        self.image.cost.apply(&key, credits);
-        self.video.cost.apply(&key, credits);
+        for cost in [&mut self.image.cost, &mut self.video.cost, &mut self.audio.cost] {
+          cost.apply(&key, credits);
+        }
       },
       Event::Enqueued { modality, job_tokens, meta } => {
         let mut env = env!(self, ctx);
         match modality {
           Modality::Image => self.image.on_enqueued(&mut env, &job_tokens, &meta),
           Modality::Video => self.video.on_enqueued(&mut env, &job_tokens, &meta),
+          Modality::Audio => self.audio.on_enqueued(&mut env, &job_tokens, &meta),
         }
         self.next_poll = ctx.input(|i| i.time) + 2.0;
       },
-      Event::EnqueueFailed { modality, message } => {
+      Event::EnqueueFailed { modality, message, status } => {
         let mut env = env!(self, ctx);
         match modality {
           Modality::Image => self.image.on_enqueue_failed(&mut env, &message),
           Modality::Video => self.video.on_enqueue_failed(&mut env, &message),
+          Modality::Audio => self.audio.on_enqueue_failed(&mut env, &message, status),
         }
       },
       Event::Uploaded { ref_id, result } => {
@@ -202,6 +212,10 @@ impl ArtcraftApp {
         }
         if self.image.refs.find_mut(ref_id).is_some() {
           common::apply_upload(&mut self.toasts, &mut self.image.refs, ref_id, result);
+        } else if self.audio.refs.find_mut(ref_id).is_some() {
+          if common::apply_upload(&mut self.toasts, &mut self.audio.refs, ref_id, result) {
+            self.audio.check_durations(&mut self.toasts, ref_id);
+          }
         } else if common::apply_upload(&mut self.toasts, &mut self.video.refs, ref_id, result) {
           let mut env = env!(self, ctx);
           self.video.check_durations(&mut env, ref_id);
@@ -222,7 +236,7 @@ impl ArtcraftApp {
         if self.pending_characters.len() != before {
           self.backend.load_characters();
         }
-        for (kind, notices) in [(MediaKind::Image, self.image.feed.apply_jobs(MediaKind::Image, &jobs, &self.catalog)), (MediaKind::Video, self.video.feed.apply_jobs(MediaKind::Video, &jobs, &self.catalog))] {
+        for (kind, notices) in [(MediaKind::Image, self.image.feed.apply_jobs(MediaKind::Image, &jobs, &self.catalog)), (MediaKind::Video, self.video.feed.apply_jobs(MediaKind::Video, &jobs, &self.catalog)), (MediaKind::Audio, self.audio.feed.apply_jobs(MediaKind::Audio, &jobs, &self.catalog))] {
           for notice in notices {
             match notice {
               FeedNotice::Completed => {
@@ -238,33 +252,30 @@ impl ArtcraftApp {
           }
         }
       },
-      Event::LibraryPage { key, page, items, total_pages } => match key.as_str() {
-        "picker" => {
+      // The picker's pages come back under its own name.
+      Event::LibraryPage { key, page, items, total_pages } => match FeedKey::from_name(&key) {
+        Some(feed) => self.feed_mut(feed).apply_library_page(feed.kind(), page, &items, total_pages),
+        None => {
           if let Some(p) = &mut self.picker {
             p.apply_page(page, items, total_pages);
           }
         },
-        "image" => self.image.feed.apply_library_page(MediaKind::Image, page, &items, total_pages),
-        "video" => self.video.feed.apply_library_page(MediaKind::Video, page, &items, total_pages),
-        _ => self.library.apply_library_page(MediaKind::Image, page, &items, total_pages),
       },
       Event::LibraryFailed { key, message } => {
-        match key.as_str() {
-          "picker" => {
+        match FeedKey::from_name(&key) {
+          Some(feed) => self.feed_mut(feed).library_failed(),
+          None => {
             if let Some(p) = &mut self.picker {
               p.loading = false;
               p.has_more = false;
             }
           },
-          "image" => self.image.feed.library_failed(),
-          "video" => self.video.feed.library_failed(),
-          _ => self.library.library_failed(),
         }
         self.toasts.error(format!("Couldn't load your library: {message}"));
       },
-      Event::Batch { job_token, items } => match self.batch_kinds.remove(&job_token) {
-        Some(MediaKind::Video) => self.video.feed.apply_batch(MediaKind::Video, &items),
-        _ => self.image.feed.apply_batch(MediaKind::Image, &items),
+      Event::Batch { job_token, items } => {
+        let kind = self.batch_kinds.remove(&job_token).unwrap_or(MediaKind::Image);
+        self.feed_mut(FeedKey::of(kind)).apply_batch(kind, &items);
       },
       Event::Prompt(prompt) => {
         if let Some(text) = &prompt.maybe_positive_prompt {
@@ -285,7 +296,7 @@ impl ArtcraftApp {
       },
       Event::CharacterChanged => self.backend.load_characters(),
       Event::Deleted(token) => {
-        for feed in [&mut self.image.feed, &mut self.video.feed, &mut self.library] {
+        for feed in self.feeds_mut() {
           feed.remove_item(&token);
         }
         if self.lightbox.as_ref().is_some_and(|l| l.token == token) {
@@ -319,7 +330,7 @@ impl ArtcraftApp {
           self.open_login();
           return;
         };
-        let refs = if page == MediaKind::Image { &self.image.refs } else { &self.video.refs };
+        let refs = self.refs(page);
         let attached: HashSet<String> = refs.list(kind).iter().chain(refs.first_frame.iter()).chain(refs.last_frame.iter()).filter_map(|r| r.token.clone()).collect();
         let mut picker = LibraryPicker::new(kind, slot, page, max, attached);
         picker.loading = true;
@@ -332,8 +343,7 @@ impl ArtcraftApp {
         };
         let image = RefMedia::from_library(RefKind::Image, item.token.clone(), item.thumbnail.clone(), Some(item.full_url.clone()), 0.0);
         self.video.set_start_image(image);
-        self.lightbox = None;
-        self.page = Page::CreateVideo;
+        self.navigate(Page::CreateVideo);
       },
       AppRequest::Recreate { kind, token } => {
         let Some(prompt_token) = self.find_item(&token).and_then(|i| i.prompt_token.clone()) else {
@@ -359,7 +369,7 @@ impl ArtcraftApp {
       },
       AppRequest::Download(tokens) => self.download(&tokens),
       AppRequest::Preview(url) => self.preview = Some(url),
-      AppRequest::ToggleAudio { ref_id, url } => self.audio.toggle(ctx, &format!("ref:{ref_id}"), &url),
+      AppRequest::ToggleAudio { ref_id, url } => self.player.toggle(ctx, &format!("ref:{ref_id}"), &url),
       AppRequest::OpenCharacters => {
         if self.user.is_none() {
           self.open_login();
@@ -377,13 +387,9 @@ impl ArtcraftApp {
         let Some(user) = &self.user else {
           return;
         };
-        let (feed, name) = match key {
-          FeedKey::Image => (&mut self.image.feed, "image"),
-          FeedKey::Video => (&mut self.video.feed, "video"),
-          FeedKey::Library => (&mut self.library, "library"),
-        };
-        if let Some(page) = feed.next_library_page() {
-          self.backend.load_library(name.to_owned(), user.username.clone(), key.media_classes(), page);
+        let username = user.username.clone();
+        if let Some(page) = self.feed_mut(key).next_library_page() {
+          self.backend.load_library(key.name().to_owned(), username, key.media_classes(), page);
         }
       },
     }
@@ -393,14 +399,15 @@ impl ArtcraftApp {
     match kind {
       MediaKind::Image => {
         self.image.apply_prompt(prompt);
-        self.page = Page::CreateImage;
+        self.navigate(Page::CreateImage);
       },
       MediaKind::Video => {
         self.video.apply_prompt(prompt);
-        self.page = Page::CreateVideo;
+        self.navigate(Page::CreateVideo);
       },
+      // Audio isn't recreated yet (no Recreate button offers it).
+      MediaKind::Audio => {},
     }
-    self.lightbox = None;
   }
 
   fn download(&mut self, tokens: &[String]) {
@@ -418,7 +425,7 @@ impl ArtcraftApp {
           for item in many {
             self.backend.save_url(item.full_url.clone(), dir.join(file_name_for(item)));
           }
-          for feed in [&mut self.image.feed, &mut self.video.feed, &mut self.library] {
+          for feed in self.feeds_mut() {
             feed.selecting = false;
             feed.selected.clear();
           }
@@ -428,7 +435,52 @@ impl ArtcraftApp {
   }
 
   fn find_item(&self, token: &str) -> Option<&FeedItem> {
-    self.image.feed.find(token).or_else(|| self.video.feed.find(token)).or_else(|| self.library.find(token))
+    self.feeds().into_iter().find_map(|f| f.find(token))
+  }
+
+  fn feeds(&self) -> [&FeedStore; 4] {
+    [&self.image.feed, &self.video.feed, &self.audio.feed, &self.library]
+  }
+
+  fn feeds_mut(&mut self) -> [&mut FeedStore; 4] {
+    [&mut self.image.feed, &mut self.video.feed, &mut self.audio.feed, &mut self.library]
+  }
+
+  fn feed(&self, key: FeedKey) -> &FeedStore {
+    match key {
+      FeedKey::Image => &self.image.feed,
+      FeedKey::Video => &self.video.feed,
+      FeedKey::Audio => &self.audio.feed,
+      FeedKey::Library => &self.library,
+    }
+  }
+
+  fn feed_mut(&mut self, key: FeedKey) -> &mut FeedStore {
+    match key {
+      FeedKey::Image => &mut self.image.feed,
+      FeedKey::Video => &mut self.video.feed,
+      FeedKey::Audio => &mut self.audio.feed,
+      FeedKey::Library => &mut self.library,
+    }
+  }
+
+  /// The references of the page that makes `kind`.
+  fn refs(&self, kind: MediaKind) -> &References {
+    match kind {
+      MediaKind::Image => &self.image.refs,
+      MediaKind::Video => &self.video.refs,
+      MediaKind::Audio => &self.audio.refs,
+    }
+  }
+
+  /// Opens `page`, closing the lightbox. Leaving a page stops its audio, like the webapp's
+  /// players unmounting.
+  fn navigate(&mut self, page: Page) {
+    if page != self.page {
+      self.player.stop();
+    }
+    self.page = page;
+    self.lightbox = None;
   }
 
   fn request_prompt(&mut self, prompt_token: Option<String>) {
@@ -445,12 +497,13 @@ impl ArtcraftApp {
     }
   }
 
-  /// The feed the top bar's toggles act on.
-  fn current_feed(&mut self) -> Option<&mut FeedStore> {
+  /// The feed the page shows (and the top bar's toggles act on).
+  fn page_feed(&self) -> Option<FeedKey> {
     match self.page {
-      Page::CreateImage => Some(&mut self.image.feed),
-      Page::CreateVideo => Some(&mut self.video.feed),
-      Page::Library => Some(&mut self.library),
+      Page::CreateImage => Some(FeedKey::Image),
+      Page::CreateVideo => Some(FeedKey::Video),
+      Page::CreateAudio => Some(FeedKey::Audio),
+      Page::Library => Some(FeedKey::Library),
       _ => None,
     }
   }
@@ -469,11 +522,10 @@ impl ArtcraftApp {
     }
     if self.models_retry_at.is_some_and(|t| now >= t) {
       self.models_retry_at = None;
-      if self.catalog.image.is_empty() {
-        self.backend.load_models(Modality::Image);
-      }
-      if self.catalog.video.is_empty() {
-        self.backend.load_models(Modality::Video);
+      for (modality, loaded) in MODALITIES.into_iter().zip([&self.catalog.image, &self.catalog.video, &self.catalog.audio]) {
+        if loaded.is_empty() {
+          self.backend.load_models(modality);
+        }
       }
     }
     ctx.request_repaint_after(Duration::from_secs(1));
@@ -500,10 +552,7 @@ impl ArtcraftApp {
 
   fn apply_shell_action(&mut self, action: ShellAction) {
     match action {
-      ShellAction::Navigate(page) => {
-        self.page = page;
-        self.lightbox = None;
-      },
+      ShellAction::Navigate(page) => self.navigate(page),
       ShellAction::ToggleSidebar => self.sidebar_open = !self.sidebar_open,
       ShellAction::SignIn => self.open_login(),
       ShellAction::SignOut => {
@@ -514,7 +563,8 @@ impl ArtcraftApp {
       ShellAction::SetViewMode(mode) => self.view_mode = mode,
       ShellAction::SetAutoplay(on) => self.autoplay = on,
       ShellAction::ToggleSelect => {
-        if let Some(feed) = self.current_feed() {
+        if let Some(key) = self.page_feed() {
+          let feed = self.feed_mut(key);
           feed.selecting = !feed.selecting;
           feed.selected.clear();
         }
@@ -528,13 +578,10 @@ impl ArtcraftApp {
     let ctx = ui.ctx().clone();
     let gap = shell::PANEL_GAP;
     let margin = egui::Margin { left: if self.sidebar_open { 0 } else { gap }, right: gap, top: 0, bottom: gap };
-    let toggles = match self.page {
-      Page::CreateImage => Some(FeedToggles { mode: self.view_mode, selecting: self.image.feed.selecting, autoplay: None }),
-      Page::CreateVideo => Some(FeedToggles { mode: self.view_mode, selecting: self.video.feed.selecting, autoplay: Some(self.autoplay) }),
-      Page::Library => Some(FeedToggles { mode: self.view_mode, selecting: self.library.selecting, autoplay: Some(self.autoplay) }),
-      _ => None,
-    };
+    // Only feeds with videos offer the preview autoplay toggle.
+    let toggles = self.page_feed().map(|key| FeedToggles { mode: self.view_mode, selecting: self.feed(key).selecting, autoplay: matches!(key, FeedKey::Video | FeedKey::Library).then_some(self.autoplay) });
     let mut header_action = None;
+    let mut open_page = None;
     egui::CentralPanel::default().frame(egui::Frame::NONE.fill(theme::CHROME).inner_margin(margin)).show(ui, |ui| {
       let panel = egui::Frame::new().fill(theme::BG).stroke(theme::hairline()).corner_radius(shell::PANEL_RADIUS);
       panel.show(ui, |ui| {
@@ -545,13 +592,10 @@ impl ArtcraftApp {
         egui::CentralPanel::default().frame(egui::Frame::NONE).show(ui, |ui| {
           let mut env = env!(self, ctx);
           match self.page {
-            Page::Home => {
-              if let Some(page) = other::home(ui, env.signed_in, env.requests) {
-                self.page = page;
-              }
-            },
+            Page::Home => open_page = other::home(ui, env.signed_in, env.requests),
             Page::CreateImage => self.image.ui(ui, &mut env),
             Page::CreateVideo => self.video.ui(ui, &mut env),
+            Page::CreateAudio => self.audio.ui(ui, &mut env),
             Page::Library => other::library(ui, &mut env, &mut self.library),
             page => other::coming_soon(ui, page),
           }
@@ -561,39 +605,33 @@ impl ArtcraftApp {
     if let Some(action) = header_action {
       self.apply_shell_action(action);
     }
-    self.prefetch_list_prompts();
+    if let Some(page) = open_page {
+      self.navigate(page);
+    }
+    self.prefetch_prompts();
   }
 
-  /// The list view shows prompt texts: fetch the records for the visible feed, a few at a time.
-  fn prefetch_list_prompts(&mut self) {
-    if self.view_mode != ViewMode::List {
+  /// The list view and audio cards show prompt texts: fetch the records for the visible feed, a
+  /// few at a time.
+  fn prefetch_prompts(&mut self) {
+    let Some(key) = self.page_feed() else {
       return;
-    }
-    let feed = match self.page {
-      Page::CreateImage => &self.image.feed,
-      Page::CreateVideo => &self.video.feed,
-      Page::Library => &self.library,
-      _ => return,
     };
-    let wanted: Vec<String> = feed.items.iter().filter_map(|i| i.prompt_token.clone()).filter(|t| !self.requested_prompts.contains(t)).take(PROMPT_FETCHES_PER_FRAME).collect();
+    let list = self.view_mode == ViewMode::List;
+    let wanted: Vec<String> = self.feed(key).items.iter().filter(|i| list || i.kind == MediaKind::Audio).filter_map(|i| i.prompt_token.clone()).filter(|t| !self.requested_prompts.contains(t)).take(PROMPT_FETCHES_PER_FRAME).collect();
     for token in wanted {
       self.request_prompt(Some(token));
     }
   }
 
   fn overlays(&mut self, ctx: &egui::Context) {
-    if let Some(lb) = &mut self.lightbox {
-      let feed = match lb.kind {
-        _ if self.page == Page::Library => &self.library,
-        MediaKind::Image => &self.image.feed,
-        MediaKind::Video => &self.video.feed,
-      };
-      let order = feed.ordered_tokens();
-      let item = self.image.feed.find(&lb.token).or_else(|| self.video.feed.find(&lb.token)).or_else(|| self.library.find(&lb.token)).cloned();
-      match item {
+    if let Some((kind, token)) = self.lightbox.as_ref().map(|lb| (lb.kind, lb.token.clone())) {
+      let key = if self.page == Page::Library { FeedKey::Library } else { FeedKey::of(kind) };
+      let order = self.feed(key).ordered_tokens();
+      match self.find_item(&token).cloned() {
         Some(item) => {
           let prompt = item.prompt_token.as_ref().and_then(|t| self.prompt_records.get(t));
-          let actions = lb.show(ctx, &item, &order, prompt, &self.catalog, &mut self.cache);
+          let actions = self.lightbox.as_mut().map(|lb| lb.show(ctx, &item, &order, prompt, &self.catalog, &mut self.cache, &mut self.player)).unwrap_or_default();
           for action in actions {
             self.lightbox_action(ctx, action, &item);
           }
@@ -615,8 +653,11 @@ impl ArtcraftApp {
           },
           PickerAction::Confirm(picks) => {
             if let Some(p) = self.picker.take() {
-              let refs = if p.page == MediaKind::Image { &mut self.image.refs } else { &mut self.video.refs };
-              common::attach_from_library(refs, p.kind, p.slot, picks);
+              match p.page {
+                MediaKind::Image => common::attach_from_library(&mut self.image.refs, p.kind, p.slot, picks),
+                MediaKind::Video => common::attach_from_library(&mut self.video.refs, p.kind, p.slot, picks),
+                MediaKind::Audio => self.audio.attach_from_library(&mut self.toasts, &self.catalog, p.kind, picks),
+              }
             }
           },
         }
@@ -706,7 +747,7 @@ impl ArtcraftApp {
         if let Some(next) = self.find_item(&token).cloned() {
           self.request_prompt(next.prompt_token);
         }
-        for feed in [&mut self.image.feed, &mut self.video.feed, &mut self.library] {
+        for feed in self.feeds_mut() {
           if feed.find(&token).is_some() {
             feed.last_viewed = Some(token.clone());
           }
@@ -744,10 +785,10 @@ impl eframe::App for ArtcraftApp {
   fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
     let ctx = ui.ctx().clone();
     self.cache.poll(&ctx);
-    if let Some(err) = self.audio.poll() {
+    if let Some(err) = self.player.poll() {
       self.toasts.error(err);
     }
-    let playing = [&self.video.refs, &self.image.refs].iter().flat_map(|r| r.audios.iter()).map(|r| r.id).find(|id| self.audio.is_playing(&format!("ref:{id}")));
+    let playing = [&self.video.refs, &self.image.refs].iter().flat_map(|r| r.audios.iter()).map(|r| r.id).find(|id| self.player.is_playing(&format!("ref:{id}")));
     crate::prompt_box::deck::set_playing_audio(&ctx, playing);
     self.shell(ui);
     self.page_ui(ui);
@@ -763,7 +804,7 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone() };
+    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
     eframe::set_value(storage, STORAGE_KEY, &saved);
   }
 
@@ -819,6 +860,11 @@ impl ScreenshotRequest {
 
 /// `artcraft_<token>.<ext>`, the extension taken from the URL.
 fn file_name_for(item: &FeedItem) -> String {
-  let ext = item.full_url.rsplit('.').next().filter(|e| e.len() <= 4 && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or(if item.kind == MediaKind::Video { "mp4" } else { "png" });
+  let fallback = match item.kind {
+    MediaKind::Image => "png",
+    MediaKind::Video => "mp4",
+    MediaKind::Audio => "mp3",
+  };
+  let ext = item.full_url.rsplit('.').next().filter(|e| e.len() <= 4 && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or(fallback);
   format!("artcraft_{}.{ext}", item.token)
 }

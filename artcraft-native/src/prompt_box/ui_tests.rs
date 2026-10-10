@@ -11,7 +11,7 @@ use crate::pages::toolbar;
 use crate::prompt_box::deck::DeckLimits;
 use crate::prompt_box::editor::{MentionKind, mention_items};
 use crate::prompt_box::refs::{RefKind, References};
-use crate::prompt_box::{DeckMode, PromptBoxProps, PromptBoxState, show};
+use crate::prompt_box::{DeckMode, PromptBoxProps, PromptBoxState, Slot, show};
 
 struct State {
   // Keeps the media cache's runtime alive.
@@ -45,15 +45,16 @@ fn build(state: State) -> Harness<'static, State> {
         return;
       }
       let mentions = if s.with_mentions { mention_items(MentionKind::Image, [None, None].into_iter()) } else { Vec::new() };
-      let props = PromptBoxProps { id: egui::Id::new("test-box"), placeholder: "Describe what you want in the image...", enter_to_generate: s.enter_to_generate, mentions: &mentions, max_length: Some(Some(1000)), deck: DeckMode::References(DeckLimits { max_images: 4, max_videos: 0, max_video_secs: None, max_audios: 0, max_audio_secs: None, library: false }), accepts: &[RefKind::Image], credits: Some(15), generate_enabled: !s.prompt.trim().is_empty(), generating: false, generate_tooltip: "Generate", warning: None, banner: None };
+      let props = PromptBoxProps { id: egui::Id::new("test-box"), placeholder: "Describe what you want in the image...", enter_to_generate: s.enter_to_generate, mentions: &mentions, max_length: Some(Some(1000)), deck: DeckMode::References(DeckLimits { max_images: 4, max_videos: 0, max_video_secs: None, max_audios: 0, max_audio_secs: None, library: false }), accepts: &[RefKind::Image], credits: Some(15), generate_enabled: !s.prompt.trim().is_empty(), generating: false, generate_tooltip: "Generate", warning: None, banner: None, extra_input: false };
       let (model, aspect) = (&s.model, &mut s.aspect);
-      let mut left = |ui: &mut egui::Ui| {
-        if let Some(v) = toolbar::aspect_ratio(ui, egui::Id::new("test-aspect"), model, aspect) {
-          *aspect = v;
+      let mut slots = |ui: &mut egui::Ui, slot: Slot| {
+        if slot == Slot::ToolbarLeft {
+          if let Some(v) = toolbar::aspect_ratio(ui, egui::Id::new("test-aspect"), model, aspect) {
+            *aspect = v;
+          }
         }
       };
-      let mut right = |_: &mut egui::Ui| {};
-      let actions = show(ui, &mut s.prompt, &s.refs, &mut s.box_state, &props, &mut s.cache, &mut left, &mut right);
+      let actions = show(ui, &mut s.prompt, &s.refs, &mut s.box_state, &props, &mut s.cache, &mut slots);
       s.actions.extend(actions.iter().map(|a| format!("{a:?}")));
     },
     state,

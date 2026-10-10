@@ -20,7 +20,7 @@ use crate::prompt_box::editor::{self, MentionItem, MentionKind};
 use crate::prompt_box::model_selector::model_selector;
 use crate::prompt_box::pickers::{self, PickOption, Trigger};
 use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia, References};
-use crate::prompt_box::{self, DeckMode, PromptBoxAction, PromptBoxProps, PromptBoxState};
+use crate::prompt_box::{self, DeckMode, PromptBoxAction, PromptBoxProps, PromptBoxState, Slot};
 use crate::ui::icons::Icon;
 use crate::ui::widgets::Leading;
 
@@ -113,7 +113,7 @@ impl CreateVideoPage {
     }
     let needs_start = model.is_some_and(|m| self.needs_start_frame(m));
     let banner = model.filter(|m| !m.text_to_video && !self.has_image_input()).map(|_| TEXT_ONLY_BANNER);
-    let props = PromptBoxProps { id: Id::new("video-prompt-box"), placeholder: if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER }, enter_to_generate: env.enter_to_generate, mentions: &mentions, max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)), deck, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start, generating: self.generating, generate_tooltip: if needs_start { "Add a starting image before generating" } else { "Generate" }, warning: needs_start.then_some("Starting frame required"), banner };
+    let props = PromptBoxProps { id: Id::new("video-prompt-box"), placeholder: if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER }, enter_to_generate: env.enter_to_generate, mentions: &mentions, max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)), deck, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start, generating: self.generating, generate_tooltip: if needs_start { "Add a starting image before generating" } else { "Generate" }, warning: needs_start.then_some("Starting frame required"), banner, extra_input: false };
 
     let models = &env.catalog.video_page;
     let mut prompt = std::mem::take(&mut self.settings.prompt);
@@ -122,25 +122,28 @@ impl CreateVideoPage {
     let with_refs = reference && !self.refs.images.is_empty();
     let mut picked_model = None;
     let mut picked_mode = None;
-    let mut open_characters = false;
-    let mut left = |ui: &mut Ui| {
-      if let Some(id) = model_selector(ui, Id::new("video-model"), models, model, true) {
-        picked_model = Some(id);
-      }
-      if let Some(m) = model {
-        picked_mode = video_toolbar(ui, m, settings, with_refs).or(picked_mode);
-        if characters_on && crate::prompt_box::pickers::toggle(ui, Id::new("video-characters"), Icon::User, "@Characters", false, "Characters") {
-          open_characters = true;
-        }
-      }
-    };
     let mut picked_count = None;
-    let mut right = |ui: &mut Ui| {
-      if let Some(m) = model {
-        picked_count = toolbar::count(ui, Id::new("video-count"), m, count, "videos");
-      }
+    let mut open_characters = false;
+    let mut slots = |ui: &mut Ui, slot: Slot| match (slot, model) {
+      (Slot::ToolbarLeft, _) => {
+        if let Some(id) = model_selector(ui, Id::new("video-model"), models, model, true) {
+          picked_model = Some(id);
+        }
+        if let Some(m) = model {
+          picked_mode = video_toolbar(ui, m, settings, with_refs).or(picked_mode);
+          if characters_on && pickers::toggle(ui, Id::new("video-characters"), Icon::User, "@Characters", false, "Characters") {
+            open_characters = true;
+          }
+        }
+      },
+      (Slot::ToolbarRight, Some(m)) => {
+        if let Some(n) = toolbar::count(ui, Id::new("video-count"), m, count, "videos") {
+          picked_count = Some(n);
+        }
+      },
+      _ => {},
     };
-    let actions = prompt_box::show(ui, &mut prompt, &self.refs, &mut self.box_state, &props, env.cache, &mut left, &mut right);
+    let actions = prompt_box::show(ui, &mut prompt, &self.refs, &mut self.box_state, &props, env.cache, &mut slots);
     self.settings.prompt = prompt;
     if let Some(id) = picked_model {
       self.settings.model = Some(id);
@@ -479,7 +482,7 @@ impl CreateVideoPage {
         "audioref" => RefKind::Audio,
         _ => RefKind::Image,
       };
-      let item = RefMedia::from_library(kind, c.media_token.clone(), c.media_links.thumbnail(256), Some(c.media_links.cdn_url.clone()), 0.0);
+      let item = RefMedia::from_library(kind, c.media_token.clone(), c.media_links.thumbnail(256).filter(|_| kind != RefKind::Audio), Some(c.media_links.cdn_url.clone()), 0.0);
       match (c.semantic.as_str(), kind) {
         ("vid_end_frame", _) => self.refs.last_frame = Some(item),
         (_, RefKind::Image) if s.input_mode == InputMode::Keyframe && self.refs.first_frame.is_none() => self.refs.first_frame = Some(item),
