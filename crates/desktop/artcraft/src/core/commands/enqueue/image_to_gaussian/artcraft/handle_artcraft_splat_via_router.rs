@@ -54,7 +54,7 @@ pub(super) async fn handle_artcraft_splat_via_router(
       .ok_or(GenerateError::ResponseHadNoJobTokens)?;
 
   Ok(TaskEnqueueSuccess {
-    task_type: TaskType::ImageGeneration,
+    task_type: TaskType::GaussianGeneration,
     model: Some(generation_model),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_id),
