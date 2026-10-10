@@ -1,0 +1,1 @@
+{"name":"artcraft_list_jobs","description":"List all session jobs with optional state filters.","parameters":{"properties":{"cursor":{"type":"string"},"limit":{"type":"integer"},"status":{"enum":["pending","started","completed","failed","cancelled"],"type":"string"}},"type":"object"}}

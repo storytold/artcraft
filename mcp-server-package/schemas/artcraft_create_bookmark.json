@@ -1,0 +1,1 @@
+{"name":"artcraft_create_bookmark","description":"Bookmark a media file.","parameters":{"properties":{"media_token":{"type":"string"}},"required":["media_token"],"type":"object"}}

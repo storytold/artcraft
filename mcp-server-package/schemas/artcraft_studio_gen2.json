@@ -1,0 +1,1 @@
+{"name":"artcraft_studio_gen2","description":"Video style transfer / image+video compositing (Studio Gen2).","parameters":{"properties":{"image_media_token":{"type":"string"},"prompt":{"type":"string"},"video_media_token":{"type":"string"}},"required":["image_media_token","video_media_token","prompt"],"type":"object"}}

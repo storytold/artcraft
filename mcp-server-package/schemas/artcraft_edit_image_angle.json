@@ -1,0 +1,1 @@
+{"name":"artcraft_edit_image_angle","description":"Manipulate camera angle of an image using Flux 2 LoRA or Qwen.","parameters":{"properties":{"horizontal_angle":{"type":"number"},"image_media_token":{"type":"string"},"vertical_angle":{"type":"number"},"zoom":{"type":"number"}},"required":["image_media_token"],"type":"object"}}

@@ -1,0 +1,1 @@
+{"name":"artcraft_set_media_visibility","description":"Set media visibility to public or private.","parameters":{"properties":{"is_public":{"type":"boolean"},"media_token":{"type":"string"}},"required":["media_token","is_public"],"type":"object"}}

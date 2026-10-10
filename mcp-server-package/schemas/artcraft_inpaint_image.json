@@ -1,0 +1,1 @@
+{"name":"artcraft_inpaint_image","description":"Inpaint an image using a mask and prompt.","parameters":{"properties":{"image_media_token":{"type":"string"},"mask_media_token":{"type":"string"},"model":{"type":"string"},"prompt":{"type":"string"}},"required":["prompt","image_media_token"],"type":"object"}}

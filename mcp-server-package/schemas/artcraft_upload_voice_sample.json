@@ -1,0 +1,1 @@
+{"name":"artcraft_upload_voice_sample","description":"Add an audio sample to a voice dataset.","parameters":{"properties":{"dataset_token":{"type":"string"},"file_path":{"type":"string"}},"required":["dataset_token","file_path"],"type":"object"}}

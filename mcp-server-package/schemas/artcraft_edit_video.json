@@ -1,0 +1,1 @@
+{"name":"artcraft_edit_video","description":"Edit a video using Beeble SwitchX.","parameters":{"properties":{"prompt":{"type":"string"},"video_media_token":{"type":"string"}},"required":["video_media_token","prompt"],"type":"object"}}
