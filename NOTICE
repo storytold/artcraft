@@ -24,6 +24,9 @@ Font Awesome Free icons (frontend/libs/icons/src/lib/brand-icons.tsx,
   Copyright Fonticons, Inc. https://fontawesome.com/license/free
 Carter One font (frontend/apps/artcraft/app/public/resources/fonts/CarterOneRegular.json) —
   SIL Open Font License 1.1. https://fonts.google.com/specimen/Carter+One
+Inter, Archivo and Geist Mono fonts (artcraft-native/assets/fonts/) — SIL Open Font License 1.1;
+  each font's license is next to it. https://rsms.me/inter/ ·
+  https://fonts.google.com/specimen/Archivo · https://vercel.com/font
 
 Third-party trademarks
 
