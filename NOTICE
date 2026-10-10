@@ -45,5 +45,4 @@ frontend/apps/artcraft/app/public/resources/skybox/gray/ and skybox/night/ — s
   from a third-party asset pack.
 frontend/apps/artcraft/app/public/resources/pose/Lumine Idle cycle.vmd — third-party MMD motion
   data.
-frontend/apps/artcraft/app/public/resources/characters_gif/ — renders of Mixamo animations
-  (Adobe).
+frontend/apps/artcraft/app/public/resources/characters_gif/ — renders of Mixamo animations.
