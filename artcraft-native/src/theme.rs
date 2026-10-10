@@ -24,6 +24,8 @@ pub const BG: Color32 = hex(0x121316);
 pub const PANEL: Color32 = hex(0x101014);
 /// `ui-controls`: the sidebar, the prompt box and toolbar buttons.
 pub const CONTROLS: Color32 = hex(0x1e1f22);
+/// The window chrome behind the content panel: the title bar and the sidebar.
+pub const CHROME: Color32 = hex(0x0a0a0c);
 /// `ui-sunken`: wells and inputs.
 pub const SUNKEN: Color32 = hex(0x060607);
 

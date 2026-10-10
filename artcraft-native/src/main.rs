@@ -21,6 +21,8 @@ fn main() -> eframe::Result {
   if let Some(icon) = app_icon() {
     viewport = viewport.with_icon(icon);
   }
+  // The app draws its own title bar; macOS keeps its traffic lights over it.
+  viewport = if cfg!(target_os = "macos") { viewport.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false) } else { viewport.with_decorations(false) };
   let options = eframe::NativeOptions { viewport, persist_window: true, ..Default::default() };
   eframe::run_native("ArtCraft", options, Box::new(|cc| Ok(Box::new(app::ArtcraftApp::new(cc)))))
 }

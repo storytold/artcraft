@@ -25,7 +25,7 @@ use crate::prompt_box::refs::{RefKind, RefMedia};
 use crate::shell::{self, Account, Page, ShellAction};
 use crate::theme;
 use crate::ui::toast::Toasts;
-use crate::ui::widgets;
+use crate::ui::{creator_icons, widgets, window};
 
 /// Builds the page environment from the app's fields (disjoint borrows, so pages can be
 /// borrowed mutably alongside it).
@@ -88,7 +88,6 @@ pub struct ArtcraftApp {
   login: Option<LoginDialog>,
   settings_open: bool,
   preview: Option<String>,
-  logo: egui::TextureHandle,
   requests: Vec<AppRequest>,
   screenshot: Option<ScreenshotRequest>,
   next_poll: f64,
@@ -109,7 +108,7 @@ impl ArtcraftApp {
     backend.load_models(Modality::Image);
     backend.load_models(Modality::Video);
     backend.refresh_session();
-    Self { cache, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, settings_open: false, preview: None, logo: load_logo(&cc.egui_ctx), requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
+    Self { cache, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, settings_open: false, preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
   }
 
   // --- Events from the backend -------------------------------------------------------------
@@ -421,63 +420,87 @@ impl ArtcraftApp {
     ctx.request_repaint_after(Duration::from_secs(1));
   }
 
+  /// The title bar and the sidebar (both on the window chrome).
   fn shell(&mut self, ui: &mut Ui) {
     let account = Account { username: self.user.as_ref().map(|u| u.username.as_str()), display_name: self.user.as_ref().map(|u| u.display_name.as_str()).filter(|n| !n.is_empty()), credits: self.credits };
+    let mark = creator_icons::texture(ui.ctx(), "artcraft");
     let mut actions = Vec::new();
+    let chrome = egui::Frame::NONE.fill(theme::CHROME);
+    egui::Panel::top("titlebar").exact_size(shell::TITLEBAR_HEIGHT).resizable(false).frame(chrome).show(ui, |ui| {
+      actions.extend(shell::titlebar(ui, &account, &mark));
+    });
     if self.sidebar_open {
-      egui::Panel::left("sidebar").exact_size(shell::sidebar_width()).resizable(false).frame(egui::Frame::NONE.fill(theme::BG)).show(ui, |ui| {
-        actions.extend(shell::sidebar(ui, self.page, &account, &self.logo));
+      egui::Panel::left("sidebar").exact_size(shell::SIDEBAR_WIDTH).resizable(false).frame(chrome).show(ui, |ui| {
+        actions.extend(shell::sidebar(ui, self.page, &account));
       });
     }
+    for action in actions {
+      self.apply_shell_action(action);
+    }
+  }
+
+  fn apply_shell_action(&mut self, action: ShellAction) {
+    match action {
+      ShellAction::Navigate(page) => {
+        self.page = page;
+        self.lightbox = None;
+      },
+      ShellAction::ToggleSidebar => self.sidebar_open = !self.sidebar_open,
+      ShellAction::SignIn => self.open_login(),
+      ShellAction::SignOut => {
+        self.backend.logout();
+        self.settings_open = false;
+      },
+      ShellAction::OpenSettings => self.settings_open = true,
+      ShellAction::SetViewMode(mode) => self.view_mode = mode,
+      ShellAction::ToggleSelect => {
+        if let Some(feed) = self.current_feed() {
+          feed.selecting = !feed.selecting;
+          feed.selected.clear();
+        }
+      },
+    }
+  }
+
+  /// The content panel: inset from the window edges with rounded corners, its header on top
+  /// and the page below.
+  fn page_ui(&mut self, ui: &mut Ui) {
+    let ctx = ui.ctx().clone();
+    let gap = shell::PANEL_GAP;
+    let margin = egui::Margin { left: if self.sidebar_open { 0 } else { gap }, right: gap, top: 0, bottom: gap };
     let toggles = match self.page {
       Page::CreateImage => Some((self.view_mode, self.image.feed.selecting)),
       Page::CreateVideo => Some((self.view_mode, self.video.feed.selecting)),
       Page::Library => Some((self.view_mode, self.library.selecting)),
       _ => None,
     };
-    egui::Panel::top("topbar").exact_size(shell::topbar_height()).resizable(false).frame(egui::Frame::NONE).show(ui, |ui| {
-      actions.extend(shell::topbar(ui, self.page, &account, toggles, self.sidebar_open));
-    });
-    for action in actions {
-      match action {
-        ShellAction::Navigate(page) => {
-          self.page = page;
-          self.lightbox = None;
-        },
-        ShellAction::ToggleSidebar => self.sidebar_open = !self.sidebar_open,
-        ShellAction::SignIn => self.open_login(),
-        ShellAction::SignOut => {
-          self.backend.logout();
-          self.settings_open = false;
-        },
-        ShellAction::OpenSettings => self.settings_open = true,
-        ShellAction::SetViewMode(mode) => self.view_mode = mode,
-        ShellAction::ToggleSelect => {
-          if let Some(feed) = self.current_feed() {
-            feed.selecting = !feed.selecting;
-            feed.selected.clear();
+    let mut header_action = None;
+    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(theme::CHROME).inner_margin(margin)).show(ui, |ui| {
+      let panel = egui::Frame::new().fill(theme::BG).stroke(theme::hairline()).corner_radius(shell::PANEL_RADIUS);
+      panel.show(ui, |ui| {
+        ui.set_min_size(ui.available_size());
+        egui::Panel::top("page-header").exact_size(shell::HEADER_HEIGHT).resizable(false).frame(egui::Frame::NONE).show(ui, |ui| {
+          header_action = shell::page_header(ui, self.page, toggles);
+        });
+        egui::CentralPanel::default().frame(egui::Frame::NONE).show(ui, |ui| {
+          let mut env = env!(self, ctx);
+          match self.page {
+            Page::Home => {
+              if let Some(page) = other::home(ui, env.signed_in, env.requests) {
+                self.page = page;
+              }
+            },
+            Page::CreateImage => self.image.ui(ui, &mut env),
+            Page::CreateVideo => self.video.ui(ui, &mut env),
+            Page::Library => other::library(ui, &mut env, &mut self.library),
+            page => other::coming_soon(ui, page),
           }
-        },
-      }
+        });
+      });
+    });
+    if let Some(action) = header_action {
+      self.apply_shell_action(action);
     }
-  }
-
-  fn page_ui(&mut self, ui: &mut Ui) {
-    let ctx = ui.ctx().clone();
-    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(theme::BG)).show(ui, |ui| {
-      let mut env = env!(self, ctx);
-      match self.page {
-        Page::Home => {
-          if let Some(page) = other::home(ui, env.signed_in, env.requests) {
-            self.page = page;
-          }
-        },
-        Page::CreateImage => self.image.ui(ui, &mut env),
-        Page::CreateVideo => self.video.ui(ui, &mut env),
-        Page::Library => other::library(ui, &mut env, &mut self.library),
-        page => other::coming_soon(ui, page),
-      }
-    });
     self.prefetch_list_prompts();
   }
 
@@ -647,6 +670,7 @@ impl eframe::App for ArtcraftApp {
     }
     self.overlays(&ctx);
     self.toasts.show(&ctx);
+    window::window_edges(&ctx);
     if let Some(shot) = &mut self.screenshot {
       shot.tick(&ctx);
     }
@@ -658,7 +682,7 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
-    theme::BG.to_normalized_gamma_f32()
+    theme::CHROME.to_normalized_gamma_f32()
   }
 }
 
@@ -711,19 +735,4 @@ impl ScreenshotRequest {
 fn file_name_for(item: &FeedItem) -> String {
   let ext = item.full_url.rsplit('.').next().filter(|e| e.len() <= 4 && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or(if item.kind == MediaKind::Video { "mp4" } else { "png" });
   format!("artcraft_{}.{ext}", item.token)
-}
-
-/// The ArtCraft wordmark (the Tauri app's white-on-dark SVG), rasterized for the sidebar.
-fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {
-  const LOGO: &[u8] = include_bytes!("../../frontend/apps/artcraft/app/public/resources/logo/artcraft-logo-color-white.svg");
-  /// Twice the 20 pt the sidebar draws it at, for high-DPI screens.
-  const HEIGHT_PX: f32 = 48.0;
-  let image = resvg::usvg::Tree::from_data(LOGO, &resvg::usvg::Options::default()).ok().and_then(|tree| {
-    let scale = HEIGHT_PX / tree.size().height();
-    let (w, h) = ((tree.size().width() * scale).ceil() as u32, HEIGHT_PX as u32);
-    let mut pixmap = resvg::tiny_skia::Pixmap::new(w, h)?;
-    resvg::render(&tree, resvg::tiny_skia::Transform::from_scale(scale, scale), &mut pixmap.as_mut());
-    Some(egui::ColorImage::from_rgba_premultiplied([w as usize, h as usize], pixmap.data()))
-  });
-  ctx.load_texture("artcraft-logo", image.unwrap_or_else(|| egui::ColorImage::filled([1, 1], egui::Color32::TRANSPARENT)), egui::TextureOptions::LINEAR)
 }
