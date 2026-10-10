@@ -6,12 +6,14 @@ use std::collections::{HashMap, HashSet};
 use crate::backend::wire::{Job, JobPhase, MediaFile, unix_secs};
 use crate::backend::EnqueueMeta;
 use crate::feed::types::{FailedJob, FeedItem, MediaKind, PendingJob};
-use crate::models::Catalog;
+use crate::models::{self, Catalog};
 
 /// Failures older than this are history, not news.
 const FAILURE_WINDOW_SECS: i64 = 24 * 60 * 60;
 /// Thumbnails are requested at this width (`getMediaThumbnail(@512)`).
 pub const THUMBNAIL_WIDTH: u32 = 512;
+/// Animated previews are requested smaller: every frame becomes a texture.
+const ANIMATED_WIDTH: u32 = 320;
 
 /// Something the store wants the app to do or say after an update.
 #[derive(Debug, PartialEq)]
@@ -54,7 +56,7 @@ impl FeedStore {
   /// Shows the jobs a generate call just started, before the next poll catches up.
   pub fn add_enqueued(&mut self, kind: MediaKind, job_tokens: &[String], meta: &EnqueueMeta, catalog: &Catalog) {
     let now = chrono::Utc::now().timestamp();
-    let expected = catalog.find(&meta.model_id).map_or(30.0, |m| m.expected_secs);
+    let expected = catalog.find(&meta.model_id).map_or_else(|| models::expected_secs(&meta.model_id, kind), |m| m.expected_secs);
     for token in job_tokens {
       self.meta.insert(token.clone(), meta.clone());
       self.seen_running.insert(token.clone());
@@ -79,7 +81,7 @@ impl FeedStore {
       match job.status.phase() {
         JobPhase::Running => {
           self.seen_running.insert(job.job_token.clone());
-          let expected = model_id.as_deref().and_then(|id| catalog.find(id)).map_or(if kind == MediaKind::Video { 900.0 } else { 30.0 }, |m| m.expected_secs);
+          let expected = model_id.as_deref().and_then(|id| catalog.find(id)).map_or_else(|| models::expected_secs(model_id.as_deref().unwrap_or_default(), kind), |m| m.expected_secs);
           pending.push(PendingJob { job_token: job.job_token.clone(), kind, prompt, model_id, created_at: unix_secs(&job.created_at), server_progress: Some(job.status.progress_percentage), expected_secs: expected, batch_count: meta.map_or(1, |m| m.batch_count) });
         },
         JobPhase::Failed => {
@@ -103,7 +105,8 @@ impl FeedStore {
           };
           // The finished card takes the pending card's place: date it by the job.
           let created_at = unix_secs(&job.created_at);
-          self.push_item(FeedItem { token: result.entity_token.clone(), kind, thumbnail: result.media_links.thumbnail(THUMBNAIL_WIDTH), full_url: result.media_links.cdn_url.clone(), created_at, model_id: model_id.clone(), prompt_token: job.request.maybe_prompt_token.clone(), batch_token: result.maybe_batch_token.clone(), duration_secs: None });
+          let thumbnail = result.media_links.thumbnail(THUMBNAIL_WIDTH).filter(|_| kind != MediaKind::Audio);
+          self.push_item(FeedItem { token: result.entity_token.clone(), kind, title: None, thumbnail, full_url: result.media_links.cdn_url.clone(), created_at, model_id: model_id.clone(), prompt_token: job.request.maybe_prompt_token.clone(), batch_token: result.maybe_batch_token.clone(), duration_secs: None, animated: result.media_links.animated_preview(ANIMATED_WIDTH) });
           if let Some(batch) = &result.maybe_batch_token {
             notices.push(FeedNotice::LoadBatch { job_token: job.job_token.clone(), batch_token: batch.clone() });
           }
@@ -207,19 +210,23 @@ pub fn feed_item(kind: MediaKind, file: &MediaFile) -> FeedItem {
     kind: match file.media_class.as_deref() {
       Some("video") => MediaKind::Video,
       Some("image") => MediaKind::Image,
+      Some("audio") => MediaKind::Audio,
       _ => kind,
     },
-    thumbnail: file.media_links.thumbnail(THUMBNAIL_WIDTH),
+    title: file.maybe_title.clone().filter(|t| !t.is_empty()),
+    thumbnail: file.thumbnail(THUMBNAIL_WIDTH),
     full_url: file.media_links.cdn_url.clone(),
     created_at: unix_secs(&file.created_at),
     model_id: file.maybe_model_type.clone().or_else(|| file.maybe_origin_model_type.clone()),
     prompt_token: file.maybe_prompt_token.clone(),
     batch_token: file.maybe_batch_token.clone(),
     duration_secs: file.maybe_duration_millis.map(|ms| ms as f32 / 1000.0),
+    animated: file.media_links.animated_preview(ANIMATED_WIDTH),
   }
 }
 
-/// Whether a job made an image or a video: by its model, else by its category.
+/// Whether a job made an image, a video or audio: by its model, else by its category
+/// (`useGenerationJobs` checks video before image before audio).
 fn job_kind(job: &Job, catalog: &Catalog) -> Option<MediaKind> {
   if let Some(model) = job.request.maybe_model_type.as_deref() {
     if catalog.image.iter().any(|m| m.id == model) {
@@ -228,12 +235,17 @@ fn job_kind(job: &Job, catalog: &Catalog) -> Option<MediaKind> {
     if catalog.video.iter().any(|m| m.id == model) {
       return Some(MediaKind::Video);
     }
+    if catalog.audio.iter().any(|m| m.id == model) {
+      return Some(MediaKind::Audio);
+    }
   }
   let category = job.request.inference_category.as_str();
   if category.contains("video") {
     Some(MediaKind::Video)
   } else if category.contains("image") {
     Some(MediaKind::Image)
+  } else if category.contains("audio") {
+    Some(MediaKind::Audio)
   } else {
     None
   }

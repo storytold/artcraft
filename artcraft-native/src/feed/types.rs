@@ -4,6 +4,7 @@
 pub enum MediaKind {
   Image,
   Video,
+  Audio,
 }
 
 impl MediaKind {
@@ -11,6 +12,7 @@ impl MediaKind {
     match self {
       MediaKind::Image => "Image",
       MediaKind::Video => "Video",
+      MediaKind::Audio => "Audio",
     }
   }
 
@@ -18,17 +20,20 @@ impl MediaKind {
     match self {
       MediaKind::Image => "images",
       MediaKind::Video => "videos",
+      MediaKind::Audio => "audio clips",
     }
   }
 }
 
-/// A finished image or video in the user's library.
+/// A finished image, video or audio clip in the user's library.
 #[derive(Clone, Debug)]
 pub struct FeedItem {
   /// The media file token.
   pub token: String,
   pub kind: MediaKind,
-  /// A thumbnail URL (512 px wide where the CDN can resize).
+  /// The file's title (`maybe_title`), when it has one.
+  pub title: Option<String>,
+  /// A thumbnail URL (512 px wide where the CDN can resize); audio has none.
   pub thumbnail: Option<String>,
   /// The original file.
   pub full_url: String,
@@ -39,6 +44,8 @@ pub struct FeedItem {
   pub prompt_token: Option<String>,
   pub batch_token: Option<String>,
   pub duration_secs: Option<f32>,
+  /// A video's animated preview (shown when previews play).
+  pub animated: Option<String>,
 }
 
 /// A generation the server is still working on.

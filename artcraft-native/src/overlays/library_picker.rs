@@ -153,7 +153,7 @@ impl LibraryPicker {
   }
 
   fn picks(&self) -> Vec<RefMedia> {
-    self.selected.iter().filter_map(|t| self.items.iter().find(|i| i.token == *t)).map(|f| RefMedia::from_library(self.kind, f.token.clone(), f.media_links.thumbnail(256), Some(f.media_links.cdn_url.clone()), f.maybe_duration_millis.map_or(0.0, |ms| ms as f32 / 1000.0))).collect()
+    self.selected.iter().filter_map(|t| self.items.iter().find(|i| i.token == *t)).map(|f| RefMedia::from_library(self.kind, f.token.clone(), f.thumbnail(256), Some(f.media_links.cdn_url.clone()), f.maybe_duration_millis.map_or(0.0, |ms| ms as f32 / 1000.0))).collect()
   }
 }
 
@@ -162,7 +162,7 @@ fn tile_ui(ui: &mut egui::Ui, rect: Rect, item: &MediaFile, kind: RefKind, attac
   let resp = ui.interact(rect, Id::new(("picker-tile", &item.token)), if attached { Sense::hover() } else { Sense::click() });
   let p = ui.painter();
   p.rect_filled(rect, 0.0, theme::fade(theme::CONTROLS, 0.6));
-  match item.media_links.thumbnail(256).map(|u| cache.get(ui.ctx(), &u)) {
+  match item.thumbnail(256).map(|u| cache.get(ui.ctx(), &u)) {
     Some(Lookup::Ready(t)) => {
       let image = egui::Image::new(&t).uv(cover_uv(t.size_vec2()));
       let image = if attached { image.tint(Color32::from_gray(90)) } else { image };

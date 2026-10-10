@@ -18,6 +18,7 @@ pub enum Icon {
   Coins,
   Copy,
   Download,
+  Drum,
   Eraser,
   Eye,
   ExternalLink,
@@ -35,17 +36,24 @@ pub enum Icon {
   LogIn,
   LogOut,
   Maximize,
+  Mic,
+  MicOff,
   Music,
   PanelLeft,
+  Pause,
   Pencil,
   Play,
   Plus,
+  Repeat,
   RotateCw,
   Settings,
+  SlidersHorizontal,
   Sparkles,
   SquareCheck,
+  Tags,
   Trash,
   Upload,
+  User,
   Video,
   Volume,
   VolumeOff,
@@ -157,6 +165,14 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
       g.line(p, &[(7.0, 10.0), (12.0, 15.0), (17.0, 10.0)]);
       g.line(p, &[(4.0, 21.0), (20.0, 21.0)]);
     },
+    Icon::Drum => {
+      g.line(p, &[(2.0, 2.0), (10.0, 8.0)]);
+      g.line(p, &[(22.0, 2.0), (14.0, 8.0)]);
+      g.closed(p, &[(2.0, 9.0), (6.0, 6.5), (12.0, 5.5), (18.0, 6.5), (22.0, 9.0), (18.0, 11.5), (12.0, 12.5), (6.0, 11.5)]);
+      g.line(p, &[(2.0, 9.0), (2.0, 17.0), (6.0, 19.5), (12.0, 20.5), (18.0, 19.5), (22.0, 17.0), (22.0, 9.0)]);
+      g.line(p, &[(7.0, 11.8), (7.0, 19.8)]);
+      g.line(p, &[(17.0, 11.8), (17.0, 19.8)]);
+    },
     Icon::Eraser => {
       g.closed(p, &[(7.0, 21.0), (3.5, 17.5), (14.0, 7.0), (21.0, 14.0), (14.0, 21.0)]);
       g.line(p, &[(22.0, 21.0), (7.0, 21.0)]);
@@ -248,6 +264,14 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
       g.line(p, &[(21.0, 3.0), (14.0, 10.0)]);
       g.line(p, &[(3.0, 21.0), (10.0, 14.0)]);
     },
+    Icon::Mic | Icon::MicOff => {
+      g.rect(p, 9.0, 2.0, 6.0, 13.0, 3.0);
+      g.line(p, &[(19.0, 10.0), (19.0, 12.0), (17.0, 16.0), (12.0, 19.0), (7.0, 16.0), (5.0, 12.0), (5.0, 10.0)]);
+      g.line(p, &[(12.0, 19.0), (12.0, 22.0)]);
+      if icon == Icon::MicOff {
+        g.line(p, &[(2.0, 2.0), (22.0, 22.0)]);
+      }
+    },
     Icon::Music => {
       g.line(p, &[(9.0, 18.0), (9.0, 5.0), (21.0, 3.0), (21.0, 16.0)]);
       g.circle(p, 6.0, 18.0, 3.0);
@@ -256,6 +280,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
     Icon::PanelLeft => {
       g.rect(p, 3.0, 3.0, 18.0, 18.0, 2.0);
       g.line(p, &[(9.0, 3.0), (9.0, 21.0)]);
+    },
+    Icon::Pause => {
+      p.rect_filled(Rect::from_min_size(g.p(6.0, 4.0), vec2(4.0, 16.0) * g.scale), 1.0, color);
+      p.rect_filled(Rect::from_min_size(g.p(14.0, 4.0), vec2(4.0, 16.0) * g.scale), 1.0, color);
     },
     Icon::Pencil => {
       g.closed(p, &[(17.0, 3.0), (21.0, 7.0), (7.5, 20.5), (2.0, 22.0), (3.5, 16.5)]);
@@ -269,6 +297,12 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
       g.line(p, &[(5.0, 12.0), (19.0, 12.0)]);
       g.line(p, &[(12.0, 5.0), (12.0, 19.0)]);
     },
+    Icon::Repeat => {
+      g.line(p, &[(17.0, 2.0), (21.0, 6.0), (17.0, 10.0)]);
+      g.line(p, &[(3.0, 11.0), (3.0, 10.0), (5.0, 7.0), (7.0, 6.0), (21.0, 6.0)]);
+      g.line(p, &[(7.0, 22.0), (3.0, 18.0), (7.0, 14.0)]);
+      g.line(p, &[(21.0, 13.0), (21.0, 14.0), (19.0, 17.0), (17.0, 18.0), (3.0, 18.0)]);
+    },
     Icon::RotateCw => {
       g.arc(p, 12.0, 12.0, 9.0, -60.0, 250.0);
       g.line(p, &[(21.0, 3.0), (21.0, 8.5), (15.5, 8.5)]);
@@ -281,6 +315,17 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
         g.line(p, &[(12.0 + 7.5 * a.cos(), 12.0 + 7.5 * a.sin()), (12.0 + 10.0 * a.cos(), 12.0 + 10.0 * a.sin())]);
       }
     },
+    Icon::SlidersHorizontal => {
+      g.line(p, &[(21.0, 4.0), (14.0, 4.0)]);
+      g.line(p, &[(10.0, 4.0), (3.0, 4.0)]);
+      g.line(p, &[(21.0, 12.0), (12.0, 12.0)]);
+      g.line(p, &[(8.0, 12.0), (3.0, 12.0)]);
+      g.line(p, &[(21.0, 20.0), (16.0, 20.0)]);
+      g.line(p, &[(12.0, 20.0), (3.0, 20.0)]);
+      g.line(p, &[(14.0, 2.0), (14.0, 6.0)]);
+      g.line(p, &[(8.0, 10.0), (8.0, 14.0)]);
+      g.line(p, &[(16.0, 18.0), (16.0, 22.0)]);
+    },
     Icon::Sparkles => {
       let star = |cx: f32, cy: f32, r: f32| {
         let k = r * 0.28;
@@ -288,6 +333,11 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
       };
       star(10.0, 12.0, 8.0);
       star(19.0, 5.0, 3.0);
+    },
+    Icon::Tags => {
+      g.closed(p, &[(3.0, 5.0), (5.0, 3.0), (10.6, 3.0), (18.0, 10.4), (18.0, 12.6), (12.6, 18.0), (10.4, 18.0), (3.0, 10.6)]);
+      g.line(p, &[(15.0, 3.0), (22.0, 10.0), (22.0, 12.0), (17.0, 17.0)]);
+      g.dot(p, 7.5, 7.5, 1.1);
     },
     Icon::Trash => {
       g.line(p, &[(3.0, 6.0), (21.0, 6.0)]);
@@ -298,6 +348,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
       g.line(p, &[(12.0, 15.0), (12.0, 3.0)]);
       g.line(p, &[(7.0, 8.0), (12.0, 3.0), (17.0, 8.0)]);
       g.line(p, &[(4.0, 21.0), (20.0, 21.0)]);
+    },
+    Icon::User => {
+      g.circle(p, 12.0, 8.0, 4.5);
+      g.arc(p, 12.0, 22.0, 8.0, 180.0, 360.0);
     },
     Icon::Video => {
       g.rect(p, 2.0, 6.0, 14.0, 12.0, 2.0);

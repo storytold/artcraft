@@ -8,10 +8,15 @@ use crate::feed::types::MediaKind;
 /// Default models (`defaultModelForPage.ts`).
 pub const DEFAULT_IMAGE_MODEL: &str = "nano_banana_pro";
 pub const DEFAULT_VIDEO_MODEL: &str = "seedance_2p0";
+pub const DEFAULT_AUDIO_MODEL: &str = "suno_music";
 /// The fallback prompt limit (`maxPromptLength ?? 1000`).
 pub const DEFAULT_PROMPT_MAX: usize = 1000;
 /// The model pickers group by family once they list this many models.
 const GROUP_THRESHOLD: usize = 8;
+/// Audio models that work from exactly one audio track (`AUDIO_MODELS_REQUIRING_AUDIO_REF`).
+const AUDIO_MODELS_REQUIRING_AUDIO_REF: [&str; 2] = ["suno_remix", "suno_sample"];
+/// The musical keys (`SoundsSettingsPopover`; there are no E keys): value, label, short label.
+pub const MUSICAL_KEYS: [(&str, &str, &str); 13] = [("auto", "Auto", "Auto"), ("c_major", "C Major", "C"), ("c_minor", "C Minor", "Cm"), ("d_major", "D Major", "D"), ("d_minor", "D Minor", "Dm"), ("f_major", "F Major", "F"), ("f_minor", "F Minor", "Fm"), ("g_major", "G Major", "G"), ("g_minor", "G Minor", "Gm"), ("a_major", "A Major", "A"), ("a_minor", "A Minor", "Am"), ("b_major", "B Major", "B"), ("b_minor", "B Minor", "Bm")];
 
 /// One generation model and what it accepts.
 #[derive(Clone, Debug, Default)]
@@ -45,6 +50,8 @@ pub struct ModelInfo {
   pub video_refs_max_secs: Option<u16>,
   pub audio_refs_max: usize,
   pub audio_refs_max_secs: Option<u16>,
+  /// `@Character` mentions (0 = not supported).
+  pub character_refs_max: usize,
   pub duration_options: Vec<u16>,
   pub duration_min: Option<u16>,
   pub duration_max: Option<u16>,
@@ -54,8 +61,40 @@ pub struct ModelInfo {
   pub bitrate_default: Option<String>,
   pub output_formats: Vec<String>,
   pub output_format_default: Option<String>,
+  /// Audio only.
+  pub audio: AudioCaps,
   /// How long a generation usually takes (drives the estimated progress bar).
   pub expected_secs: f32,
+}
+
+/// What an audio model takes besides the prompt and references.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct AudioCaps {
+  pub style_prompt: bool,
+  pub instrumental: bool,
+  pub keep_lyrics: bool,
+  pub loopable: bool,
+  pub bpm: bool,
+  pub musical_key: bool,
+  pub sample_rates: Vec<u32>,
+  pub sample_rate_default: Option<u32>,
+  pub speed: bool,
+  pub volume: bool,
+  pub pitch: bool,
+  /// Remixes and samples work from exactly one audio track.
+  pub requires_audio_ref: bool,
+}
+
+impl AudioCaps {
+  /// Whether the Tuning popover shows.
+  pub fn has_tuning(&self) -> bool {
+    !self.sample_rates.is_empty() || self.speed || self.volume || self.pitch
+  }
+
+  /// `picked` if the model offers it, else its default, else its first rate.
+  pub fn sample_rate(&self, picked: Option<u32>) -> Option<u32> {
+    picked.filter(|hz| self.sample_rates.contains(hz)).or(self.sample_rate_default).or_else(|| self.sample_rates.first().copied())
+  }
 }
 
 impl ModelInfo {
@@ -162,6 +201,7 @@ pub fn video_model(d: &artcraft_client::endpoints::omni_gen::models::video::omni
   m.video_refs_max_secs = d.video_references_max_total_duration_seconds;
   m.audio_refs_max = max(d.audio_references_supported, d.audio_references_max);
   m.audio_refs_max_secs = d.audio_references_max_total_duration_seconds;
+  m.character_refs_max = max(d.character_references_supported, d.character_references_max);
   m.aspect_ratios = strings(&d.aspect_ratio_options);
   m.aspect_default = d.aspect_ratio_default.clone().map(String::from);
   m.resolutions = strings(&d.resolution_options);
@@ -179,6 +219,22 @@ pub fn video_model(d: &artcraft_client::endpoints::omni_gen::models::video::omni
   m.duration_default = d.duration_seconds_default;
   m.batch_sizes = batch_sizes(d.batch_size_options.as_deref(), d.batch_size_min, d.batch_size_max);
   m.batch_default = d.batch_size_default.unwrap_or(1);
+  m
+}
+
+/// Builds a model from the server's audio listing.
+pub fn audio_model(d: &crate::backend::wire::AudioModel) -> ModelInfo {
+  let mut m = base(&d.model, MediaKind::Audio, d.full_name.as_deref(), d.model_creator.clone());
+  if let Some(short) = d.extra_info_short.as_deref().filter(|s| !s.is_empty()) {
+    m.description = short.to_owned();
+  }
+  m.disabled = d.is_disabled;
+  m.prompt_supported = d.text_prompt_supported.unwrap_or(true);
+  m.prompt_max = None;
+  let max = |supported: bool, max: Option<u16>| if supported { max.map_or(1, usize::from) } else { 0 };
+  m.audio_refs_max = max(d.audio_references_supported, d.audio_references_max);
+  m.image_refs_max = max(d.image_references_supported, d.image_references_max);
+  m.audio = AudioCaps { style_prompt: d.style_prompt_supported, instrumental: d.instrumental_toggle_supported, keep_lyrics: d.keep_lyrics_supported, loopable: d.loopable_toggle_supported, bpm: d.bpm_supported, musical_key: d.musical_key_supported, sample_rates: d.sample_rate_hz_options.clone(), sample_rate_default: d.sample_rate_hz_default, speed: d.speed_supported, volume: d.volume_supported, pitch: d.pitch_supported, requires_audio_ref: AUDIO_MODELS_REQUIRING_AUDIO_REF.contains(&d.model.as_str()) };
   m
 }
 
@@ -209,7 +265,7 @@ fn base(id: &str, kind: MediaKind, full_name: Option<&str>, creator: Option<Stri
 
 /// Families whose picker names the app curates (the static model lists' `selectorName`s).
 fn has_curated_name(id: &str) -> bool {
-  const PREFIXES: [&str; 11] = ["flux_", "nano_banana", "gpt_image", "seedream", "seedance", "kling", "veo_", "sora", "happy_horse", "grok_imagine", "qwen"];
+  const PREFIXES: [&str; 13] = ["flux_", "nano_banana", "gpt_image", "seedream", "seedance", "kling", "veo_", "sora", "happy_horse", "grok_imagine", "qwen", "suno", "seed_audio"];
   PREFIXES.iter().any(|p| id.starts_with(p))
 }
 
@@ -289,12 +345,17 @@ fn description(id: &str) -> &'static str {
     "grok_video" | "grok_imagine_video" => "Fastest video model",
     "sora_2" => "Smart video model",
     "veo_3" => "Slow, high-quality model",
+    "suno_music" => "Full songs from a text prompt",
+    "suno_remix" => "Remix an existing track",
+    "suno_sounds" => "Sound effects with beat control",
+    "suno_sample" => "Build a song from a sample",
+    "seed_audio_1p0" => "Sound generation with fine tuning",
     _ => "",
   }
 }
 
-/// Typical generation time (the static list's `progressBarTime`).
-fn expected_secs(id: &str, kind: MediaKind) -> f32 {
+/// Typical generation time (the static list's `progressBarTime`, else the feed's per-kind default).
+pub fn expected_secs(id: &str, kind: MediaKind) -> f32 {
   match id {
     "grok_image" | "grok_imagine_image" | "flux_pro_1p1" | "flux_1_dev" | "flux_1_schnell" => 10.0,
     "grok_video" | "grok_imagine_video" => 50.0,
@@ -304,19 +365,20 @@ fn expected_secs(id: &str, kind: MediaKind) -> f32 {
     "gpt_image_1" | "gpt_image_1p5" | "gpt_image_2p5_flare" | "seedream_4" | "seedream_4p5" | "seedream_5_lite" => 60.0,
     "gpt_image_2" | "gpt_image_2p5_sunburst" => 120.0,
     _ if kind == MediaKind::Video => 900.0,
+    _ if kind == MediaKind::Audio => 120.0,
     _ => 30.0,
   }
 }
 
 /// The maker, by id prefix, when the server doesn't say.
 pub fn creator_for(id: &str) -> &'static str {
-  const PREFIXES: [(&str, &str); 16] = [("flux", "black_forest_labs"), ("nano_banana", "google"), ("gemini", "google"), ("veo", "google"), ("imagen", "google"), ("gpt_image", "openai"), ("sora", "openai"), ("seedream", "bytedance"), ("seedance", "bytedance"), ("seededit", "bytedance"), ("kling", "kling"), ("grok", "grok"), ("midjourney", "midjourney"), ("qwen", "alibaba"), ("happy_horse", "alibaba"), ("minimax", "minimax")];
+  const PREFIXES: [(&str, &str); 18] = [("suno", "suno"), ("seed_audio", "bytedance"), ("flux", "black_forest_labs"), ("nano_banana", "google"), ("gemini", "google"), ("veo", "google"), ("imagen", "google"), ("gpt_image", "openai"), ("sora", "openai"), ("seedream", "bytedance"), ("seedance", "bytedance"), ("seededit", "bytedance"), ("kling", "kling"), ("grok", "grok"), ("midjourney", "midjourney"), ("qwen", "alibaba"), ("happy_horse", "alibaba"), ("minimax", "minimax")];
   PREFIXES.iter().find(|(p, _)| id.starts_with(p)).map_or("artcraft", |(_, c)| c)
 }
 
 /// The picker family (`getModelFamilyName`).
 fn family(id: &str) -> &'static str {
-  const FAMILIES: [(&str, &str); 22] = [("seedance", "Seedance"), ("kling", "Kling"), ("veo", "Veo"), ("sora", "Sora"), ("happy_horse", "Happy Horse"), ("wan", "Wan"), ("vidu", "Vidu"), ("preview", "Preview"), ("nano_banana", "Nano Banana"), ("gemini_25_flash", "Nano Banana"), ("seedream", "Seedream"), ("seededit", "SeedEdit"), ("gpt_image", "GPT Image"), ("flux", "Flux"), ("midjourney", "Midjourney"), ("grok", "Grok"), ("qwen", "Qwen"), ("recraft", "Recraft"), ("imagen", "Imagen"), ("minimax", "MiniMax"), ("marble", "World Labs"), ("suno", "Suno")];
+  const FAMILIES: [(&str, &str); 23] = [("seed_audio", "Seed Audio"), ("seedance", "Seedance"), ("kling", "Kling"), ("veo", "Veo"), ("sora", "Sora"), ("happy_horse", "Happy Horse"), ("wan", "Wan"), ("vidu", "Vidu"), ("preview", "Preview"), ("nano_banana", "Nano Banana"), ("gemini_25_flash", "Nano Banana"), ("seedream", "Seedream"), ("seededit", "SeedEdit"), ("gpt_image", "GPT Image"), ("flux", "Flux"), ("midjourney", "Midjourney"), ("grok", "Grok"), ("qwen", "Qwen"), ("recraft", "Recraft"), ("imagen", "Imagen"), ("minimax", "MiniMax"), ("marble", "World Labs"), ("suno", "Suno")];
   FAMILIES.iter().find(|(p, _)| id.starts_with(p)).map_or("Other", |(_, f)| f)
 }
 
@@ -386,13 +448,16 @@ fn video_page_models(models: &[ModelInfo]) -> Vec<ModelInfo> {
   list
 }
 
-/// Both catalogs, for looking up names in the feed, and each create page's picker list.
+/// Every catalog, for looking up names in the feed, and each create page's picker list.
 #[derive(Default)]
 pub struct Catalog {
   pub image: Vec<ModelInfo>,
   pub video: Vec<ModelInfo>,
+  pub audio: Vec<ModelInfo>,
   pub image_page: Vec<ModelInfo>,
   pub video_page: Vec<ModelInfo>,
+  /// The audio page's list: enabled, in the server's order.
+  pub audio_page: Vec<ModelInfo>,
 }
 
 impl Catalog {
@@ -406,8 +471,13 @@ impl Catalog {
     self.video = models;
   }
 
+  pub fn set_audio(&mut self, models: Vec<ModelInfo>) {
+    self.audio_page = models.iter().filter(|m| !m.disabled).cloned().collect();
+    self.audio = models;
+  }
+
   pub fn find(&self, id: &str) -> Option<&ModelInfo> {
-    self.image.iter().chain(&self.video).find(|m| m.id == id)
+    self.image.iter().chain(&self.video).chain(&self.audio).find(|m| m.id == id)
   }
 }
 
@@ -502,6 +572,15 @@ pub fn quality_label(value: &str) -> String {
   .to_owned()
 }
 
+/// Sample rate labels (`formatSampleRateHz`): 44100 → "44.1 kHz", 24000 → "24 kHz".
+pub fn sample_rate_label(hz: u32) -> String {
+  if hz.is_multiple_of(1000) {
+    format!("{} kHz", hz / 1000)
+  } else {
+    format!("{:.1} kHz", hz as f32 / 1000.0)
+  }
+}
+
 /// Bitrate labels.
 pub fn bitrate_label(value: &str) -> String {
   match value {
@@ -530,6 +609,8 @@ mod tests {
       assert_eq!(display_name("kling_3p0_pro"), "Kling 3.0 Pro");
       assert_eq!(display_name("nano_banana"), "Nano Banana");
       assert_eq!(display_name("seedance_2p0_bpu"), "Seedance 2.0 Plus Ultra");
+      assert_eq!(display_name("seed_audio_1p0"), "Seed Audio 1.0");
+      assert_eq!(display_name("suno_music"), "Suno Music");
     }
 
     #[test]
@@ -544,6 +625,8 @@ mod tests {
 
     #[test]
     fn falls_back_to_creator_by_prefix() {
+      assert_eq!(creator_for("seed_audio_1p0"), "bytedance");
+      assert_eq!(creator_for("suno_remix"), "suno");
       assert_eq!(creator_for("seedream_4p5"), "bytedance");
       assert_eq!(creator_for("veo_3"), "google");
       assert_eq!(creator_for("something_new"), "artcraft");
@@ -571,6 +654,21 @@ mod tests {
       assert_eq!(ModelInfo::resolve(Some("tall"), &opts, Some(&default)).as_deref(), Some("wide_sixteen_by_nine"));
       assert_eq!(ModelInfo::resolve(None, &opts, None).as_deref(), Some("square"));
       assert_eq!(ModelInfo::resolve(None, &[], None), None);
+    }
+
+    #[test]
+    fn audio_listing_maps_capabilities() {
+      let d: crate::backend::wire::AudioModel = serde_json::from_value(serde_json::json!({ "model": "seed_audio_1p0", "model_creator": "artcraft", "audio_references_supported": true, "audio_references_max": 3, "image_references_supported": true, "sample_rate_hz_options": [8000, 24000, 44100], "sample_rate_hz_default": 24000, "speed_supported": true })).unwrap();
+      let m = audio_model(&d);
+      assert_eq!((m.name.as_str(), m.creator.as_str(), m.description.as_str()), ("Seed Audio 1.0", "bytedance", "Sound generation with fine tuning"));
+      assert_eq!((m.audio_refs_max, m.image_refs_max, m.prompt_max), (3, 1, None));
+      assert!(m.audio.has_tuning() && !m.audio.requires_audio_ref && !m.audio.style_prompt);
+      assert_eq!(m.audio.sample_rate(Some(44100)), Some(44100));
+      assert_eq!(m.audio.sample_rate(Some(11025)), Some(24000), "unsupported picks fall back to the default");
+      let remix = audio_model(&serde_json::from_value(serde_json::json!({ "model": "suno_remix", "audio_references_supported": true })).unwrap());
+      assert!(remix.audio.requires_audio_ref && !remix.audio.has_tuning());
+      assert_eq!((remix.audio_refs_max, remix.audio.sample_rate(None)), (1, None));
+      assert_eq!((sample_rate_label(44100).as_str(), sample_rate_label(24000).as_str()), ("44.1 kHz", "24 kHz"));
     }
 
     #[test]

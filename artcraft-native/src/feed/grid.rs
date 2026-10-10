@@ -1,16 +1,17 @@
 //! The generation feed as a masonry grid (`GenerationGridView`) or a list (`GenerationListView`):
 //! running jobs first-class alongside failures and finished media, newest first, loading more as
-//! the user scrolls.
+//! the user scrolls. Audio plays in place, with its waveform.
 
 use std::collections::{HashMap, HashSet};
 
 use egui::{Align2, Color32, CornerRadius, FontFamily, FontId, Id, Mesh, Rect, Sense, Stroke, Ui, pos2, vec2};
 
+use crate::backend::audio::AudioPlayer;
 use crate::backend::media_cache::{Lookup, MediaCache};
 use crate::feed::types::{FailedJob, FeedItem, MediaKind, PendingJob, pending_status, time_ago};
 use crate::theme;
 use crate::ui::icons::{self, Icon};
-use crate::ui::{creator_icons, widgets};
+use crate::ui::{creator_icons, waveform, widgets};
 
 /// `react-masonry-css` gutter and the cap on tall portraits (≈ 5:7).
 const GAP: f32 = 8.0;
@@ -18,6 +19,8 @@ const MAX_RATIO: f32 = 1.4;
 /// Start loading the next page this far before the end.
 const LOAD_MORE_MARGIN: f32 = 400.0;
 const LIST_THUMB: f32 = 100.0;
+/// The list's compact audio player is at most `max-w-md` wide.
+const LIST_PLAYER_MAX: f32 = 448.0;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ViewMode {
@@ -61,6 +64,8 @@ pub struct FeedView<'a> {
   /// Prompt texts by prompt token (list view and pending cards).
   pub prompts: &'a HashMap<String, String>,
   pub make_video: bool,
+  /// Play videos' animated previews instead of their still frames.
+  pub autoplay: bool,
   pub bottom_padding: f32,
 }
 
@@ -84,7 +89,7 @@ impl Entry<'_> {
 #[derive(Clone, Default)]
 pub struct RatioCache(HashMap<String, f32>);
 
-pub fn show(ui: &mut Ui, view: &FeedView<'_>, cache: &mut MediaCache, ratios: &mut RatioCache, names: &dyn ModelNames) -> Vec<FeedAction> {
+pub fn show(ui: &mut Ui, view: &FeedView<'_>, cache: &mut MediaCache, ratios: &mut RatioCache, audio: &mut AudioPlayer, names: &dyn ModelNames) -> Vec<FeedAction> {
   let mut entries: Vec<Entry<'_>> = view.pending.iter().map(Entry::Pending).chain(view.failed.iter().map(Entry::Failed)).chain(view.items.iter().map(Entry::Item)).collect();
   entries.sort_by_key(|e| std::cmp::Reverse(e.time()));
   let mut actions = Vec::new();
@@ -111,10 +116,10 @@ pub fn show(ui: &mut Ui, view: &FeedView<'_>, cache: &mut MediaCache, ratios: &m
       match (entry, view.mode) {
         (Entry::Pending(job), ViewMode::Grid) => pending_card(ui, rect, job, now, names),
         (Entry::Failed(job), ViewMode::Grid) => failed_card(ui, view.id, rect, job, cache, names, &mut actions),
-        (Entry::Item(item), ViewMode::Grid) => item_card(ui, view, rect, item, cache, ratios, names, &mut actions),
+        (Entry::Item(item), ViewMode::Grid) => item_card(ui, view, rect, item, cache, ratios, audio, names, &mut actions),
         (Entry::Pending(job), ViewMode::List) => pending_row(ui, rect, job, now, names),
         (Entry::Failed(job), ViewMode::List) => failed_row(ui, view.id, rect, job, names, &mut actions),
-        (Entry::Item(item), ViewMode::List) => item_row(ui, view, rect, item, cache, names, now, &mut actions),
+        (Entry::Item(item), ViewMode::List) => item_row(ui, view, rect, item, cache, audio, names, now, &mut actions),
       }
     }
 
@@ -226,25 +231,15 @@ fn failed_card(ui: &mut Ui, id: Id, rect: Rect, job: &FailedJob, cache: &mut Med
 }
 
 #[allow(clippy::too_many_arguments)]
-fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache: &mut MediaCache, ratios: &mut RatioCache, names: &dyn ModelNames, actions: &mut Vec<FeedAction>) {
+fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache: &mut MediaCache, ratios: &mut RatioCache, audio: &mut AudioPlayer, names: &dyn ModelNames, actions: &mut Vec<FeedAction>) {
   let resp = ui.interact(rect, view.id.with(("item", &item.token)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
-  let hovered = resp.hovered();
-  ui.painter().rect_filled(rect, theme::RADIUS, theme::fade(theme::CONTROLS, 0.4));
-  match item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)) {
-    Some(Lookup::Ready(t)) => {
-      let size = t.size_vec2();
-      if size.x > 0.0 && !ratios.0.contains_key(&item.token) {
-        ratios.0.insert(item.token.clone(), size.y / size.x);
-      }
-      egui::Image::new(&t).uv(cover_uv_for(size, rect.size())).corner_radius(theme::RADIUS).paint_at(ui, rect);
-    },
-    Some(Lookup::Loading) => shimmer(ui, rect),
-    _ => icons::paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(28.0, 28.0)), if item.kind == MediaKind::Video { Icon::Video } else { Icon::Image }, theme::FAINT),
-  }
-  if item.kind == MediaKind::Video {
-    let badge = Rect::from_center_size(rect.center(), vec2(40.0, 40.0));
-    ui.painter().circle_filled(badge.center(), 20.0, Color32::from_black_alpha(110));
-    icons::paint(ui.painter(), badge.shrink(12.0).translate(vec2(1.5, 0.0)), Icon::Play, theme::fade(Color32::WHITE, 0.9));
+  // The pointer may be on an action button (or the audio player) rather than the card itself.
+  let hovered = resp.hovered() || ui.rect_contains_pointer(rect);
+  let is_audio = item.kind == MediaKind::Audio;
+  if is_audio {
+    audio_face(ui, view, rect, item, audio);
+  } else {
+    visual_face(ui, view, rect, item, cache, ratios);
   }
   let selected = view.selected.contains(&item.token);
   let ring = if selected {
@@ -276,25 +271,17 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
     p.galley(pos2(badge.left() + 20.0, badge.center().y - galley.size().y / 2.0), galley, Color32::WHITE);
   }
   let mut action_clicked = false;
-  // The pointer may be on an action button rather than the card itself.
-  if (hovered || ui.rect_contains_pointer(rect)) && !view.selecting {
-    let footer = bottom_gradient(ui, rect, 56.0, 178);
-    let chip_y = footer.bottom() - 18.0;
-    let mut x = footer.left() + 8.0;
-    x = chip(ui, pos2(x, chip_y), Some(if item.kind == MediaKind::Video { Icon::Video } else { Icon::Image }), None, item.kind.label());
+  if hovered && !view.selecting {
+    // Audio keeps its player at the bottom, so its chips and actions go on top.
+    let band = edge_fade(ui, rect, 56.0, 178, is_audio);
+    let chip_y = if is_audio { band.top() + 18.0 } else { band.bottom() - 18.0 };
+    let mut x = band.left() + 8.0;
+    x = chip(ui, pos2(x, chip_y), Some(kind_icon(item.kind)), None, item.kind.label());
     if let Some(model) = item.model_id.as_deref() {
       chip(ui, pos2(x + 6.0, chip_y), None, Some(&names.creator(model)), &truncate(&names.display_name(model), 16));
     }
-    let mut buttons: Vec<(Icon, &str, FeedAction)> = Vec::new();
-    if item.prompt_token.is_some() {
-      buttons.push((Icon::RotateCw, "Recreate", FeedAction::Recreate(item.token.clone())));
-    }
-    if view.make_video && item.kind == MediaKind::Image {
-      buttons.push((Icon::Video, "Make Video", FeedAction::MakeVideo(item.token.clone())));
-    }
-    buttons.push((Icon::Link, "Share", FeedAction::Share(item.token.clone())));
-    buttons.push((Icon::Download, "Download", FeedAction::Download(item.token.clone())));
-    let pill = Rect::from_min_size(pos2(footer.right() - 8.0 - 8.0 - 28.0 * buttons.len() as f32, chip_y - 18.0), vec2(8.0 + 28.0 * buttons.len() as f32, 36.0));
+    let buttons = item_actions(view, item, None);
+    let pill = Rect::from_min_size(pos2(band.right() - 8.0 - 8.0 - 28.0 * buttons.len() as f32, chip_y - 18.0), vec2(8.0 + 28.0 * buttons.len() as f32, 36.0));
     ui.painter().rect_filled(pill, 0.0, Color32::from_black_alpha(153));
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(pill.shrink(4.0)).layout(egui::Layout::left_to_right(egui::Align::Center)));
     child.spacing_mut().item_spacing.x = 0.0;
@@ -307,6 +294,87 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
   }
   if resp.clicked() && !action_clicked {
     actions.push(if view.selecting { FeedAction::ToggleSelect(item.token.clone()) } else { FeedAction::Open(item.token.clone()) });
+  }
+}
+
+/// An image or video card's face: the thumbnail (or animated preview) and a video's play badge.
+fn visual_face(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache: &mut MediaCache, ratios: &mut RatioCache) {
+  ui.painter().rect_filled(rect, theme::RADIUS, theme::fade(theme::CONTROLS, 0.4));
+  // Videos play their animated preview when previews are on (the still shows while it loads).
+  let animated = item.animated.as_deref().filter(|_| view.autoplay && item.kind == MediaKind::Video).map(|u| cache.get_animated(ui.ctx(), u));
+  let lookup = match animated {
+    Some(Lookup::Ready(t)) => Some(Lookup::Ready(t)),
+    _ => item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)),
+  };
+  match lookup {
+    Some(Lookup::Ready(t)) => {
+      let size = t.size_vec2();
+      if size.x > 0.0 && !ratios.0.contains_key(&item.token) {
+        ratios.0.insert(item.token.clone(), size.y / size.x);
+      }
+      egui::Image::new(&t).uv(cover_uv_for(size, rect.size())).corner_radius(theme::RADIUS).paint_at(ui, rect);
+    },
+    Some(Lookup::Loading) => shimmer(ui, rect),
+    _ => icons::paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(28.0, 28.0)), kind_icon(item.kind), theme::FAINT),
+  }
+  if item.kind == MediaKind::Video && !(view.autoplay && item.animated.is_some()) {
+    let badge = Rect::from_center_size(rect.center(), vec2(40.0, 40.0));
+    ui.painter().circle_filled(badge.center(), 20.0, Color32::from_black_alpha(110));
+    icons::paint(ui.painter(), badge.shrink(12.0).translate(vec2(1.5, 0.0)), Icon::Play, theme::fade(Color32::WHITE, 0.9));
+  }
+}
+
+/// An audio card's face (`GalleryCard`'s audio branch, a square tile): the title, a music note
+/// and the waveform player along the bottom.
+fn audio_face(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, audio: &mut AudioPlayer) {
+  let mut mesh = Mesh::default();
+  let (top, bottom) = (theme::fade(theme::ACCENT, 0.14), theme::fade(theme::CONTROLS, 0.6));
+  mesh.colored_vertex(rect.left_top(), top);
+  mesh.colored_vertex(rect.right_top(), top);
+  mesh.colored_vertex(rect.right_bottom(), bottom);
+  mesh.colored_vertex(rect.left_bottom(), bottom);
+  mesh.add_triangle(0, 1, 2);
+  mesh.add_triangle(0, 2, 3);
+  ui.painter().add(mesh);
+  // Clear of the selection checkbox when selecting.
+  let inset = if view.selecting { 36.0 } else { 12.0 };
+  let title = item.prompt_token.as_deref().and_then(|t| view.prompts.get(t)).cloned().unwrap_or_else(|| fallback_title(item));
+  let galley = clamp_lines(ui, &title, 13.0, theme::fade(Color32::WHITE, 0.85), rect.width() - inset - 12.0, 2);
+  ui.painter().galley(pos2(rect.left() + inset, rect.top() + 12.0), galley, Color32::WHITE);
+  waveform::music_tile(ui, Rect::from_center_size(rect.center() - vec2(0.0, 12.0), vec2(48.0, 48.0)), true);
+  let bar = Rect::from_min_max(pos2(rect.left() + 12.0, rect.bottom() - 56.0), pos2(rect.right() - 12.0, rect.bottom() - 12.0));
+  let mut child = ui.new_child(egui::UiBuilder::new().max_rect(bar));
+  waveform::player(&mut child, view.id.with(("player", &item.token)), audio, &item.full_url, item.duration_secs, false);
+}
+
+/// The hover actions for an item: copy prompt (list rows, when the text is known), recreate,
+/// make video, share and download. Audio only shares and downloads (`Audio v1`).
+fn item_actions<'a>(view: &FeedView<'_>, item: &FeedItem, prompt: Option<&String>) -> Vec<(Icon, &'a str, FeedAction)> {
+  let mut buttons = Vec::new();
+  if let Some(text) = prompt {
+    buttons.push((Icon::Copy, "Copy prompt", FeedAction::CopyPrompt(text.clone())));
+  }
+  if item.prompt_token.is_some() && item.kind != MediaKind::Audio {
+    buttons.push((Icon::RotateCw, "Recreate", FeedAction::Recreate(item.token.clone())));
+  }
+  if view.make_video && item.kind == MediaKind::Image {
+    buttons.push((Icon::Video, "Make Video", FeedAction::MakeVideo(item.token.clone())));
+  }
+  buttons.push((Icon::Link, "Share", FeedAction::Share(item.token.clone())));
+  buttons.push((Icon::Download, "Download", FeedAction::Download(item.token.clone())));
+  buttons
+}
+
+/// What an item is called without its prompt: its title, else "Audio Generation" and the like.
+fn fallback_title(item: &FeedItem) -> String {
+  item.title.clone().unwrap_or_else(|| format!("{} Generation", item.kind.label()))
+}
+
+fn kind_icon(kind: MediaKind) -> Icon {
+  match kind {
+    MediaKind::Image => Icon::Image,
+    MediaKind::Video => Icon::Video,
+    MediaKind::Audio => Icon::Music,
   }
 }
 
@@ -359,7 +427,7 @@ fn failed_row(ui: &mut Ui, id: Id, rect: Rect, job: &FailedJob, names: &dyn Mode
 }
 
 #[allow(clippy::too_many_arguments)]
-fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache: &mut MediaCache, names: &dyn ModelNames, now: i64, actions: &mut Vec<FeedAction>) {
+fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache: &mut MediaCache, audio: &mut AudioPlayer, names: &dyn ModelNames, now: i64, actions: &mut Vec<FeedAction>) {
   let resp = ui.interact(rect, view.id.with(("row", &item.token)), Sense::click());
   let hovered = resp.hovered();
   if hovered {
@@ -367,7 +435,10 @@ fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache
   }
   let thumb = Rect::from_min_size(rect.min + vec2(0.0, 12.0), vec2(LIST_THUMB, LIST_THUMB));
   ui.painter().rect_filled(thumb, theme::RADIUS, theme::fade(theme::CONTROLS, 0.4));
-  if let Some(Lookup::Ready(t)) = item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)) {
+  let is_audio = item.kind == MediaKind::Audio;
+  if is_audio {
+    waveform::music_tile(ui, thumb, false);
+  } else if let Some(Lookup::Ready(t)) = item.thumbnail.as_deref().map(|u| cache.get(ui.ctx(), u)) {
     egui::Image::new(&t).uv(crate::prompt_box::deck::cover_uv(t.size_vec2())).corner_radius(theme::RADIUS).paint_at(ui, thumb);
   }
   if view.selected.contains(&item.token) {
@@ -378,7 +449,8 @@ fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache
   let prompt = item.prompt_token.as_deref().and_then(|t| view.prompts.get(t));
   match prompt {
     Some(text) => {
-      let g = clamp_lines(ui, text, 14.0, theme::INK, w, 3);
+      // Audio keeps room for its player under the text.
+      let g = clamp_lines(ui, text, 14.0, theme::INK, w, if is_audio { 2 } else { 3 });
       ui.painter().galley(pos2(x, thumb.top()), g, theme::INK);
     },
     None if item.prompt_token.is_some() => {
@@ -387,8 +459,12 @@ fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache
       }
     },
     None => {
-      ui.painter().text(pos2(x, thumb.top() + 8.0), Align2::LEFT_CENTER, format!("{} Generation", item.kind.label()), FontId::new(14.0, FontFamily::Proportional), theme::MUTED);
+      ui.painter().text(pos2(x, thumb.top() + 8.0), Align2::LEFT_CENTER, fallback_title(item), FontId::new(14.0, FontFamily::Proportional), theme::MUTED);
     },
+  }
+  if is_audio {
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(Rect::from_min_size(pos2(x, thumb.top() + 44.0), vec2(w.min(LIST_PLAYER_MAX), 32.0))));
+    waveform::player(&mut child, view.id.with(("row-player", &item.token)), audio, &item.full_url, item.duration_secs, true);
   }
   let meta_y = thumb.bottom() - 10.0;
   let mut mx = x;
@@ -400,18 +476,7 @@ fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache
   ui.painter().text(pos2(rect.right(), thumb.top() + 8.0), Align2::RIGHT_CENTER, time_ago(item.created_at, now), FontId::new(11.0, FontFamily::Proportional), theme::FAINT);
   let mut action_clicked = false;
   if hovered && !view.selecting {
-    let mut buttons: Vec<(Icon, &str, FeedAction)> = Vec::new();
-    if let Some(text) = prompt {
-      buttons.push((Icon::Copy, "Copy prompt", FeedAction::CopyPrompt(text.clone())));
-    }
-    if item.prompt_token.is_some() {
-      buttons.push((Icon::RotateCw, "Recreate", FeedAction::Recreate(item.token.clone())));
-    }
-    if view.make_video && item.kind == MediaKind::Image {
-      buttons.push((Icon::Video, "Make Video", FeedAction::MakeVideo(item.token.clone())));
-    }
-    buttons.push((Icon::Link, "Share", FeedAction::Share(item.token.clone())));
-    buttons.push((Icon::Download, "Download", FeedAction::Download(item.token.clone())));
+    let buttons = item_actions(view, item, prompt);
     let bar = Rect::from_min_size(pos2(rect.right() - 28.0 * buttons.len() as f32, thumb.bottom() - 28.0), vec2(28.0 * buttons.len() as f32, 28.0));
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(bar).layout(egui::Layout::left_to_right(egui::Align::Center)));
     child.spacing_mut().item_spacing.x = 0.0;
@@ -464,9 +529,15 @@ fn model_chip(ui: &Ui, left_center: egui::Pos2, model_id: &str, names: &dyn Mode
 
 /// Darkens the bottom of `rect` (`bg-gradient-to-t from-black/70`), returning the faded band.
 fn bottom_gradient(ui: &Ui, rect: Rect, height: f32, alpha: u8) -> Rect {
-  let band = Rect::from_min_max(pos2(rect.left(), (rect.bottom() - height).max(rect.top())), rect.max);
+  edge_fade(ui, rect, height, alpha, false)
+}
+
+/// Darkens `rect` toward its top or bottom edge over `height`, returning the faded band.
+fn edge_fade(ui: &Ui, rect: Rect, height: f32, alpha: u8, top_edge: bool) -> Rect {
+  let band = if top_edge { Rect::from_min_max(rect.min, pos2(rect.right(), (rect.top() + height).min(rect.bottom()))) } else { Rect::from_min_max(pos2(rect.left(), (rect.bottom() - height).max(rect.top())), rect.max) };
   let mut mesh = Mesh::default();
-  let (top, bottom) = (Color32::TRANSPARENT, Color32::from_black_alpha(alpha));
+  let (clear, dark) = (Color32::TRANSPARENT, Color32::from_black_alpha(alpha));
+  let (top, bottom) = if top_edge { (dark, clear) } else { (clear, dark) };
   mesh.colored_vertex(band.left_top(), top);
   mesh.colored_vertex(band.right_top(), top);
   mesh.colored_vertex(band.right_bottom(), bottom);

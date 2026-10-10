@@ -22,12 +22,15 @@ const RIGHT_GUTTER: f32 = 32.0;
 const IMAGE_COLORS: [Color32; 5] = [Color32::from_rgb(96, 165, 250), Color32::from_rgb(251, 146, 60), Color32::from_rgb(167, 139, 250), Color32::from_rgb(52, 211, 153), Color32::from_rgb(251, 113, 133)];
 const VIDEO_COLORS: [Color32; 3] = [Color32::from_rgb(250, 204, 21), Color32::from_rgb(245, 158, 11), Color32::from_rgb(74, 222, 128)];
 const AUDIO_COLORS: [Color32; 2] = [Color32::from_rgb(192, 132, 252), Color32::from_rgb(232, 121, 249)];
+/// Teal, emerald, sky.
+const CHARACTER_COLORS: [Color32; 3] = [Color32::from_rgb(45, 212, 191), Color32::from_rgb(34, 197, 94), Color32::from_rgb(14, 165, 233)];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MentionKind {
   Image,
   Video,
   Audio,
+  Character,
 }
 
 /// Something the prompt can reference by name, e.g. `@Image2`.
@@ -39,6 +42,8 @@ pub struct MentionItem {
   pub index: usize,
   /// Media cache key of a thumbnail, if there is one.
   pub preview: Option<String>,
+  /// The character this mention names (several can share a name).
+  pub token: Option<String>,
 }
 
 impl MentionItem {
@@ -48,6 +53,7 @@ impl MentionItem {
       MentionKind::Image => IMAGE_COLORS[i % IMAGE_COLORS.len()],
       MentionKind::Video => VIDEO_COLORS[i % VIDEO_COLORS.len()],
       MentionKind::Audio => AUDIO_COLORS[i % AUDIO_COLORS.len()],
+      MentionKind::Character => CHARACTER_COLORS[i % CHARACTER_COLORS.len()],
     }
   }
 }
@@ -93,6 +99,8 @@ pub struct EditorOutput {
   pub submit: bool,
   pub open_fullscreen: bool,
   pub focused: bool,
+  /// A mention the user picked from the dropdown: (label, character token).
+  pub picked: Option<(String, Option<String>)>,
 }
 
 /// Draws the editor in the available width.
@@ -105,7 +113,7 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
   // Keys the field mustn't see: dropdown navigation, and Enter when it generates.
   if had_focus {
     if !filtered.is_empty() {
-      handle_dropdown_keys(ui, id, prompt, state, &filtered);
+      out.picked = handle_dropdown_keys(ui, id, prompt, state, &filtered);
     } else if opts.enter_to_generate && consume_plain_enter(ui) {
       out.submit = true;
     }
@@ -183,7 +191,9 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
   }
 
   if !filtered.is_empty() && out.focused {
-    mention_dropdown(ui, id, field_rect, prompt, state, &filtered, thumbnails);
+    if let Some(picked) = mention_dropdown(ui, id, field_rect, prompt, state, &filtered, thumbnails) {
+      out.picked = Some(picked);
+    }
   }
   out
 }
@@ -214,12 +224,10 @@ fn consume_plain_enter(ui: &Ui) -> bool {
   })
 }
 
-fn handle_dropdown_keys(ui: &Ui, id: Id, prompt: &mut String, state: &mut EditorState, filtered: &[&MentionItem]) {
+fn handle_dropdown_keys(ui: &Ui, id: Id, prompt: &mut String, state: &mut EditorState, filtered: &[&MentionItem]) -> Option<(String, Option<String>)> {
   let n = filtered.len();
   let (down, up, accept, escape) = ui.input_mut(|i| (i.consume_key(Modifiers::NONE, Key::ArrowDown), i.consume_key(Modifiers::NONE, Key::ArrowUp), i.consume_key(Modifiers::NONE, Key::Enter) || i.consume_key(Modifiers::NONE, Key::Tab), i.consume_key(Modifiers::NONE, Key::Escape)));
-  let Some(query) = state.mention.as_mut() else {
-    return;
-  };
+  let query = state.mention.as_mut()?;
   if down {
     query.selected = (query.selected + 1) % n;
   }
@@ -228,12 +236,14 @@ fn handle_dropdown_keys(ui: &Ui, id: Id, prompt: &mut String, state: &mut Editor
   }
   if escape {
     state.mention = None;
-    return;
+    return None;
   }
-  if accept {
-    let label = filtered[query.selected.min(n - 1)].label.clone();
-    insert_mention(ui.ctx(), id, prompt, state, &label);
+  if !accept {
+    return None;
   }
+  let item = filtered[query.selected.min(n - 1)];
+  insert_mention(ui.ctx(), id, prompt, state, &item.label);
+  Some((item.label.clone(), item.token.clone()))
 }
 
 /// Opens, updates or closes the dropdown from the text before the cursor.
@@ -284,7 +294,7 @@ fn insert_mention(ctx: &egui::Context, id: Id, prompt: &mut String, state: &mut 
   }
 }
 
-fn mention_dropdown(ui: &Ui, id: Id, field: Rect, prompt: &mut String, state: &mut EditorState, filtered: &[&MentionItem], thumbnails: &mut dyn FnMut(&Ui, &str) -> Option<egui::TextureHandle>) {
+fn mention_dropdown(ui: &Ui, id: Id, field: Rect, prompt: &mut String, state: &mut EditorState, filtered: &[&MentionItem], thumbnails: &mut dyn FnMut(&Ui, &str) -> Option<egui::TextureHandle>) -> Option<(String, Option<String>)> {
   let selected = state.mention.as_ref().map_or(0, |q| q.selected);
   let row_h = 44.0;
   let h = 28.0 + row_h * filtered.len() as f32;
@@ -317,23 +327,25 @@ fn mention_dropdown(ui: &Ui, id: Id, field: Rect, prompt: &mut String, state: &m
             MentionKind::Image => Icon::Image,
             MentionKind::Video => Icon::Video,
             MentionKind::Audio => Icon::Music,
+            MentionKind::Character => Icon::User,
           };
           icons::paint(ui.painter(), tile.shrink(9.0), icon, theme::fade(Color32::WHITE, 0.6));
         },
       }
       ui.painter().text(pos2(tile.right() + 10.0, row.center().y), Align2::LEFT_CENTER, &item.label, FontId::new(14.0, theme::medium()), item.color());
       if resp.clicked() {
-        picked = Some(item.label.clone());
+        picked = Some((item.label.clone(), item.token.clone()));
       }
     }
   });
   if let (Some(i), Some(q)) = (hovered, state.mention.as_mut()) {
     q.selected = i;
   }
-  if let Some(label) = picked {
-    insert_mention(ui.ctx(), id, prompt, state, &label);
+  if let Some((label, _)) = &picked {
+    insert_mention(ui.ctx(), id, prompt, state, label);
     ui.memory_mut(|m| m.request_focus(id));
   }
+  picked
 }
 
 /// The three-line grip that resizes the field (`.promptbox-resize-wrap::after`).
@@ -382,14 +394,20 @@ fn highlight(text: &str, mentions: &[MentionItem]) -> LayoutJob {
   job
 }
 
+/// `@Name` mentions for characters (newest first), coloured by position.
+pub fn character_mentions<'a>(characters: impl Iterator<Item = (&'a str, &'a str, Option<String>)>) -> Vec<MentionItem> {
+  characters.enumerate().map(|(i, (name, token, avatar))| MentionItem { label: format!("@{name}"), kind: MentionKind::Character, index: i + 1, preview: avatar, token: Some(token.to_owned()) }).collect()
+}
+
 /// Mention labels for `n` items of `kind` (`@Image1`, `@Image2`, …).
 pub fn mention_items(kind: MentionKind, previews: impl Iterator<Item = Option<String>>) -> Vec<MentionItem> {
   let name = match kind {
     MentionKind::Image => "Image",
     MentionKind::Video => "Video",
     MentionKind::Audio => "Audio",
+    MentionKind::Character => "Character",
   };
-  previews.enumerate().map(|(i, preview)| MentionItem { label: format!("@{name}{}", i + 1), kind, index: i + 1, preview }).collect()
+  previews.enumerate().map(|(i, preview)| MentionItem { label: format!("@{name}{}", i + 1), kind, index: i + 1, preview, token: None }).collect()
 }
 
 #[cfg(test)]

@@ -7,6 +7,7 @@ use std::sync::Arc;
 use egui::{Align2, Color32, Id, Mesh, Order, Rect, Ui, pos2, vec2};
 use serde_json::{Map, Value};
 
+use crate::backend::audio::AudioPlayer;
 use crate::backend::media_cache::MediaCache;
 use crate::backend::{Backend, Modality, UploadedMedia};
 use crate::feed::grid::{self, FeedAction, FeedView, RatioCache, ViewMode};
@@ -29,28 +30,55 @@ pub struct Env<'a> {
   pub ctx: egui::Context,
   pub backend: &'a Backend,
   pub cache: &'a mut MediaCache,
+  /// Plays reference clips and feed tracks.
+  pub audio: &'a mut AudioPlayer,
   pub toasts: &'a mut Toasts,
   pub catalog: &'a Catalog,
   pub signed_in: bool,
   pub enter_to_generate: bool,
   pub view_mode: ViewMode,
+  pub autoplay: bool,
   pub ratios: &'a mut RatioCache,
   pub prompts: &'a std::collections::HashMap<String, String>,
   pub requests: &'a mut Vec<AppRequest>,
+  /// The user's characters, newest first.
+  pub characters: &'a [crate::backend::wire::Character],
 }
 
 /// Things only the app can do.
 #[derive(Debug)]
 pub enum AppRequest {
   SignIn,
-  Open { kind: MediaKind, token: String },
-  PickFromLibrary { kind: RefKind, slot: ImageSlot, max: usize, page: MediaKind },
-  MakeVideo { token: String },
-  Recreate { kind: MediaKind, token: String },
+  Open {
+    kind: MediaKind,
+    token: String,
+  },
+  PickFromLibrary {
+    kind: RefKind,
+    slot: ImageSlot,
+    max: usize,
+    page: MediaKind,
+  },
+  MakeVideo {
+    token: String,
+  },
+  Recreate {
+    kind: MediaKind,
+    token: String,
+  },
   Share(String),
   Download(Vec<String>),
   CopyText(String),
   Preview(String),
+  /// Play or stop an audio reference.
+  ToggleAudio {
+    ref_id: u64,
+    url: String,
+  },
+  /// Open a file in the system's player.
+  PlayExternally(String),
+  /// Open the characters dialog (it mentions the picked one in the video prompt).
+  OpenCharacters,
   LoadMoreLibrary(FeedKey),
 }
 
@@ -59,6 +87,7 @@ pub enum AppRequest {
 pub enum FeedKey {
   Image,
   Video,
+  Audio,
   Library,
 }
 
@@ -67,6 +96,7 @@ impl FeedKey {
     match kind {
       MediaKind::Image => FeedKey::Image,
       MediaKind::Video => FeedKey::Video,
+      MediaKind::Audio => FeedKey::Audio,
     }
   }
 
@@ -75,8 +105,32 @@ impl FeedKey {
     match self {
       FeedKey::Image => "image",
       FeedKey::Video => "video",
-      FeedKey::Library => "image,video",
+      FeedKey::Audio => "audio",
+      FeedKey::Library => "image,video,audio",
     }
+  }
+
+  /// What the feed's items default to (the library mixes kinds; each file says its own).
+  pub fn kind(self) -> MediaKind {
+    match self {
+      FeedKey::Image | FeedKey::Library => MediaKind::Image,
+      FeedKey::Video => MediaKind::Video,
+      FeedKey::Audio => MediaKind::Audio,
+    }
+  }
+
+  /// The backend's name for this feed's library requests.
+  pub fn name(self) -> &'static str {
+    match self {
+      FeedKey::Image => "image",
+      FeedKey::Video => "video",
+      FeedKey::Audio => "audio",
+      FeedKey::Library => "library",
+    }
+  }
+
+  pub fn from_name(name: &str) -> Option<Self> {
+    [FeedKey::Image, FeedKey::Video, FeedKey::Audio, FeedKey::Library].into_iter().find(|k| k.name() == name)
   }
 }
 
@@ -87,9 +141,9 @@ pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str
   let area = ui.max_rect();
   let bottom_offset = *box_height + 40.0;
   if feed.has_content() {
-    let view = FeedView { id: Id::new(("feed", kind.label())), mode: env.view_mode, pending: &feed.pending, failed: &feed.failed, items: &feed.items, has_more: feed.has_more, loading: feed.loading, selecting: feed.selecting, selected: &feed.selected, last_viewed: feed.last_viewed.as_deref(), prompts: env.prompts, make_video: kind == MediaKind::Image, bottom_padding: bottom_offset + 24.0 };
+    let view = FeedView { id: Id::new(("feed", kind.label())), mode: env.view_mode, pending: &feed.pending, failed: &feed.failed, items: &feed.items, has_more: feed.has_more, loading: feed.loading, selecting: feed.selecting, selected: &feed.selected, last_viewed: feed.last_viewed.as_deref(), prompts: env.prompts, make_video: kind == MediaKind::Image, autoplay: env.autoplay, bottom_padding: bottom_offset + 24.0 };
     let mut feed_ui = ui.new_child(egui::UiBuilder::new().max_rect(area.shrink2(vec2(12.0, 0.0))));
-    let actions = grid::show(&mut feed_ui, &view, env.cache, env.ratios, env.catalog);
+    let actions = grid::show(&mut feed_ui, &view, env.cache, env.ratios, env.audio, env.catalog);
     handle_feed_actions(env, kind, feed, actions);
     bottom_fade(ui, area);
   } else {

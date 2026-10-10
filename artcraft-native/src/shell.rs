@@ -87,6 +87,7 @@ impl Page {
       "home" => Page::Home,
       "create-image" | "image" => Page::CreateImage,
       "create-video" | "video" => Page::CreateVideo,
+      "create-audio" | "audio" => Page::CreateAudio,
       "library" => Page::Library,
       _ => return None,
     })
@@ -94,7 +95,7 @@ impl Page {
 
   /// Pages the native app has; the rest open a "coming soon" page.
   pub fn is_ready(self) -> bool {
-    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::Library)
+    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Library)
   }
 
   /// The same tool in the web app.
@@ -133,6 +134,7 @@ pub enum ShellAction {
   SignOut,
   OpenSettings,
   SetViewMode(ViewMode),
+  SetAutoplay(bool),
   ToggleSelect,
 }
 
@@ -286,8 +288,17 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
   resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text("Settings")
 }
 
-/// The content panel's header: breadcrumbs, and the select and grid/list toggles on feed pages.
-pub fn page_header(ui: &mut Ui, page: Page, feed_toggles: Option<(ViewMode, bool)>) -> Option<ShellAction> {
+/// The feed toggles a page's header shows.
+pub struct FeedToggles {
+  pub mode: ViewMode,
+  pub selecting: bool,
+  /// Shown on pages with videos (`GalleryAutoplayToggle`).
+  pub autoplay: Option<bool>,
+}
+
+/// The content panel's header: breadcrumbs, and the select, previews and grid/list toggles on
+/// feed pages.
+pub fn page_header(ui: &mut Ui, page: Page, feed_toggles: Option<FeedToggles>) -> Option<ShellAction> {
   let mut action = None;
   let rect = ui.max_rect();
   ui.painter().hline(rect.x_range(), rect.bottom() - 0.5, theme::hairline());
@@ -302,12 +313,18 @@ pub fn page_header(ui: &mut Ui, page: Page, feed_toggles: Option<(ViewMode, bool
   let (crumb, _) = ui.allocate_exact_size(galley.size() + vec2(12.0, 8.0), Sense::hover());
   ui.painter().rect_filled(crumb, 0.0, theme::INK);
   ui.painter().galley(crumb.center() - galley.size() / 2.0, galley, theme::BG);
-  if let Some((mode, selecting)) = feed_toggles {
+  if let Some(t) = feed_toggles {
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-      if let Some(m) = view_toggle(ui, mode) {
+      if let Some(m) = view_toggle(ui, t.mode) {
         action = Some(ShellAction::SetViewMode(m));
       }
-      if segmented(ui, &[(Icon::SquareCheck, if selecting { "Exit selection" } else { "Select items" }, selecting)]).is_some() {
+      if let Some(playing) = t.autoplay {
+        // Right-to-left: stills first so "play" ends up on the left.
+        if let Some(i) = segmented(ui, &[(Icon::Image, "Still thumbnails", !playing), (Icon::Play, "Play video previews", playing)]) {
+          action = Some(ShellAction::SetAutoplay(i == 1));
+        }
+      }
+      if segmented(ui, &[(Icon::SquareCheck, if t.selecting { "Exit selection" } else { "Select items" }, t.selecting)]).is_some() {
         action = Some(ShellAction::ToggleSelect);
       }
     });

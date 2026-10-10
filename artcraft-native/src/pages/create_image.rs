@@ -15,7 +15,7 @@ use crate::pages::toolbar;
 use crate::prompt_box::deck::{DeckAction, DeckLimits};
 use crate::prompt_box::model_selector::model_selector;
 use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia, References};
-use crate::prompt_box::{self, DeckMode, PromptBoxAction, PromptBoxProps, PromptBoxState, editor};
+use crate::prompt_box::{self, DeckMode, PromptBoxAction, PromptBoxProps, PromptBoxState, Slot, editor};
 
 const PLACEHOLDER: &str = "Describe what you want in the image...";
 
@@ -69,38 +69,41 @@ impl CreateImagePage {
     let deck = if max_images > 0 { DeckMode::References(DeckLimits { max_images, max_videos: 0, max_video_secs: None, max_audios: 0, max_audio_secs: None, library: env.signed_in }) } else { DeckMode::None };
     let accepts: &[RefKind] = if max_images > 0 { &[RefKind::Image] } else { &[] };
     let prompt_max = model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max);
-    let props = PromptBoxProps { id: Id::new("image-prompt-box"), placeholder: PLACEHOLDER, enter_to_generate: env.enter_to_generate, mentions: &[], max_length: Some(prompt_max), deck, accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some(), generating: self.generating, generate_tooltip: "Generate", warning: None, banner: None };
+    let props = PromptBoxProps { id: Id::new("image-prompt-box"), placeholder: PLACEHOLDER, enter_to_generate: env.enter_to_generate, mentions: &[], max_length: Some(prompt_max), deck, accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some(), generating: self.generating, generate_tooltip: "Generate", warning: None, banner: None, extra_input: false };
     let models = &env.catalog.image_page;
     let settings = &mut self.settings;
-    let mut picked_model = None;
-    let mut left = |ui: &mut Ui| {
-      if let Some(id) = model_selector(ui, Id::new("image-model"), models, model, false) {
-        picked_model = Some(id);
-      }
-      let Some(m) = model else {
-        return;
-      };
-      let aspect = ModelInfo::resolve(settings.aspect_ratio.as_deref(), &m.aspect_ratios, m.aspect_default.as_ref());
-      if let Some(v) = toolbar::aspect_ratio(ui, Id::new("image-aspect"), m, aspect.as_deref().unwrap_or("")) {
-        settings.aspect_ratio = Some(v);
-      }
-      let resolution = ModelInfo::resolve(settings.resolution.as_deref(), &m.resolutions, m.resolution_default.as_ref());
-      if let Some(v) = toolbar::resolution(ui, Id::new("image-resolution"), m, resolution.as_deref().unwrap_or("")) {
-        settings.resolution = Some(v);
-      }
-      let quality = ModelInfo::resolve(settings.quality.as_deref(), &m.qualities, m.quality_default.as_ref());
-      if let Some(v) = toolbar::quality(ui, Id::new("image-quality"), m, quality.as_deref().unwrap_or("")) {
-        settings.quality = Some(v);
-      }
-    };
     let count = settings.count;
+    let mut picked_model = None;
     let mut picked_count = None;
-    let mut right = |ui: &mut Ui| {
-      if let Some(m) = model {
-        picked_count = toolbar::count(ui, Id::new("image-count"), m, count, "images");
-      }
+    let mut slots = |ui: &mut Ui, slot: Slot| match (slot, model) {
+      (Slot::ToolbarLeft, _) => {
+        if let Some(id) = model_selector(ui, Id::new("image-model"), models, model, false) {
+          picked_model = Some(id);
+        }
+        let Some(m) = model else {
+          return;
+        };
+        let aspect = ModelInfo::resolve(settings.aspect_ratio.as_deref(), &m.aspect_ratios, m.aspect_default.as_ref());
+        if let Some(v) = toolbar::aspect_ratio(ui, Id::new("image-aspect"), m, aspect.as_deref().unwrap_or("")) {
+          settings.aspect_ratio = Some(v);
+        }
+        let resolution = ModelInfo::resolve(settings.resolution.as_deref(), &m.resolutions, m.resolution_default.as_ref());
+        if let Some(v) = toolbar::resolution(ui, Id::new("image-resolution"), m, resolution.as_deref().unwrap_or("")) {
+          settings.resolution = Some(v);
+        }
+        let quality = ModelInfo::resolve(settings.quality.as_deref(), &m.qualities, m.quality_default.as_ref());
+        if let Some(v) = toolbar::quality(ui, Id::new("image-quality"), m, quality.as_deref().unwrap_or("")) {
+          settings.quality = Some(v);
+        }
+      },
+      (Slot::ToolbarRight, Some(m)) => {
+        if let Some(n) = toolbar::count(ui, Id::new("image-count"), m, count, "images") {
+          picked_count = Some(n);
+        }
+      },
+      _ => {},
     };
-    let actions = prompt_box::show(ui, &mut settings.prompt, &self.refs, &mut self.box_state, &props, env.cache, &mut left, &mut right);
+    let actions = prompt_box::show(ui, &mut settings.prompt, &self.refs, &mut self.box_state, &props, env.cache, &mut slots);
     if let Some(id) = picked_model {
       self.settings.model = Some(id);
     }
@@ -143,6 +146,7 @@ impl CreateImagePage {
         DeckAction::SwapFrames => {},
       },
       PromptBoxAction::DroppedFiles(paths) => self.add_dropped(env, &paths, max_images),
+      PromptBoxAction::MentionPicked(..) => {},
       PromptBoxAction::PastedImage(png) => {
         if self.refs.images.len() >= max_images {
           env.toasts.error(max_images_message(max_images));

@@ -42,6 +42,17 @@ impl MediaLinks {
   }
 }
 
+impl MediaLinks {
+  /// A video's animated preview, `width` pixels wide where the CDN can resize.
+  pub fn animated_preview(&self, width: u32) -> Option<String> {
+    let previews = self.maybe_video_previews.as_ref()?;
+    if !previews.animated_thumbnail_template.is_empty() {
+      return Some(previews.animated_thumbnail_template.replace("{WIDTH}", &width.to_string()));
+    }
+    (!previews.animated.is_empty()).then(|| previews.animated.clone())
+  }
+}
+
 /// `GET /v1/media_files/list/user/{username}`.
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
@@ -70,8 +81,54 @@ pub struct MediaFile {
   pub maybe_model_type: Option<String>,
   pub maybe_origin_model_type: Option<String>,
   pub maybe_duration_millis: Option<u64>,
+  pub maybe_title: Option<String>,
   pub media_links: MediaLinks,
   pub created_at: String,
+}
+
+impl MediaFile {
+  /// The file's still thumbnail; audio files have none (their CDN link is the audio itself).
+  pub fn thumbnail(&self, width: u32) -> Option<String> {
+    if self.media_class.as_deref() == Some("audio") {
+      return None;
+    }
+    self.media_links.thumbnail(width)
+  }
+}
+
+/// `GET /v1/omni_gen/models/audio`. The client has no binding for it (and the API's type only
+/// serializes), so it's read here; capability flags are left out when false.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct AudioModels {
+  pub success: bool,
+  pub models: Vec<AudioModel>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct AudioModel {
+  pub model: String,
+  pub model_creator: Option<String>,
+  pub full_name: Option<String>,
+  pub extra_info_short: Option<String>,
+  pub text_prompt_supported: Option<bool>,
+  pub style_prompt_supported: bool,
+  pub audio_references_supported: bool,
+  pub audio_references_max: Option<u16>,
+  pub image_references_supported: bool,
+  pub image_references_max: Option<u16>,
+  pub keep_lyrics_supported: bool,
+  pub instrumental_toggle_supported: bool,
+  pub loopable_toggle_supported: bool,
+  pub bpm_supported: bool,
+  pub musical_key_supported: bool,
+  pub sample_rate_hz_options: Vec<u32>,
+  pub sample_rate_hz_default: Option<u32>,
+  pub speed_supported: bool,
+  pub volume_supported: bool,
+  pub pitch_supported: bool,
+  pub is_disabled: bool,
 }
 
 /// `GET /v1/media_files/batch_gen_redux/{token}`.
@@ -192,6 +249,36 @@ pub struct ContextImage {
   pub media_token: String,
   pub semantic: String,
   pub media_links: MediaLinks,
+}
+
+/// A saved character (`GET /v1/characters/session`).
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct Character {
+  pub token: String,
+  pub name: String,
+  pub maybe_description: Option<String>,
+  pub maybe_avatar: Option<MediaLinks>,
+  pub maybe_full_image: Option<MediaLinks>,
+  pub models: Vec<String>,
+}
+
+impl Character {
+  pub fn avatar_url(&self) -> Option<String> {
+    self.maybe_avatar.as_ref().or(self.maybe_full_image.as_ref()).and_then(|l| l.thumbnail(256))
+  }
+
+  pub fn full_url(&self) -> Option<String> {
+    self.maybe_full_image.as_ref().or(self.maybe_avatar.as_ref()).map(|l| l.cdn_url.clone()).filter(|u| !u.is_empty())
+  }
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct CharactersPage {
+  pub success: bool,
+  pub characters: Vec<Character>,
+  pub next_cursor: Option<i64>,
 }
 
 /// `GET /v1/session` (only the parts the app shows).
