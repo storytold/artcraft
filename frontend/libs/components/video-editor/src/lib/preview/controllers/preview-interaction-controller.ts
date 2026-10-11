@@ -77,6 +77,10 @@ export interface EditingTextState {
   readonly trackId: string;
   readonly elementId: string;
   readonly element: TextElement;
+  readonly editPoint: {
+    readonly clientX: number;
+    readonly clientY: number;
+  };
 }
 
 export interface PreviewViewportAdapter {
@@ -322,6 +326,7 @@ export class PreviewInteractionController {
       trackId: hit.trackId,
       elementId: hit.elementId,
       element: hit.element,
+      editPoint: { clientX, clientY },
     };
     this.notify();
   }
