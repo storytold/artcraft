@@ -21,6 +21,11 @@ export function thumbnailSize({
     targetWidth = Math.round(targetHeight * aspectRatio);
   }
 
+  if (width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height)) {
+    targetWidth = Math.max(1, targetWidth);
+    targetHeight = Math.max(1, targetHeight);
+  }
+
   return { width: targetWidth, height: targetHeight };
 }
 
