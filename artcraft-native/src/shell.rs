@@ -35,6 +35,7 @@ pub enum Page {
   VideoEditor,
   RemoveBackground,
   FrameExtractor,
+  ShotList,
   Library,
 }
 
@@ -52,6 +53,7 @@ impl Page {
       Page::VideoEditor => "Edit Video",
       Page::RemoveBackground => "BG Remove",
       Page::FrameExtractor => "Frame Extract",
+      Page::ShotList => "Shot List",
       Page::Library => "Library",
     }
   }
@@ -67,6 +69,7 @@ impl Page {
       Page::EditImage => Icon::Pencil,
       Page::VideoEditor | Page::FrameExtractor => Icon::Film,
       Page::RemoveBackground => Icon::Wand,
+      Page::ShotList => Icon::List,
       Page::Library => Icon::Library,
     }
   }
@@ -89,13 +92,14 @@ impl Page {
       "create-video" | "video" => Page::CreateVideo,
       "create-audio" | "audio" => Page::CreateAudio,
       "library" => Page::Library,
+      "shot-list" => Page::ShotList,
       _ => return None,
     })
   }
 
   /// Pages the native app has; the rest open a "coming soon" page.
   pub fn is_ready(self) -> bool {
-    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Library)
+    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Library | Page::ShotList)
   }
 
   /// The same tool in the web app.
@@ -111,12 +115,13 @@ impl Page {
       Page::FrameExtractor => "/frame-extractor",
       Page::CreateVideo => "/create-video",
       Page::Library => "/library",
+      Page::ShotList => "/shot-list",
       _ => "/create-image",
     }
   }
 }
 
-const SECTIONS: [(&str, &[Page]); 3] = [("Create", &[Page::CreateImage, Page::CreateVideo, Page::CreateAudio, Page::Object3d, Page::World3d]), ("Studio", &[Page::EditImage, Page::Stage3d, Page::VideoEditor, Page::RemoveBackground, Page::FrameExtractor]), ("Assets", &[Page::Library])];
+const SECTIONS: [(&str, &[Page]); 3] = [("Create", &[Page::CreateImage, Page::CreateVideo, Page::CreateAudio, Page::Object3d, Page::World3d]), ("Studio", &[Page::ShotList, Page::EditImage, Page::Stage3d, Page::VideoEditor, Page::RemoveBackground, Page::FrameExtractor]), ("Assets", &[Page::Library])];
 
 /// Who's signed in, for the sidebar and top bar.
 pub struct Account<'a> {
@@ -417,5 +422,12 @@ mod tests {
     assert_eq!(group_thousands(5663), "5,663");
     assert_eq!(group_thousands(1_234_567), "1,234,567");
     assert_eq!(group_thousands(15), "15");
+  }
+
+  #[test]
+  fn shot_list_slug_is_ready() {
+    assert_eq!(Page::from_slug("shot-list"), Some(Page::ShotList));
+    assert!(Page::ShotList.is_ready());
+    assert_eq!(Page::ShotList.label(), "Shot List");
   }
 }
