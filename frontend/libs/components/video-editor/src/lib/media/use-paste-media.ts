@@ -42,6 +42,7 @@ export function usePasteMedia() {
   const { toast, mediaSource } = useEditorAdapters();
 
   useEffect(() => {
+    let mounted = true;
     const handlePaste = async (event: ClipboardEvent) => {
       const activeElement = document.activeElement as HTMLElement;
 
@@ -62,22 +63,38 @@ export function usePasteMedia() {
 
       const activeProject = editor.project.getActive();
       if (!activeProject) return;
+      const activeScene = editor.scenes.getActiveSceneOrNull();
+      if (!activeScene) return;
+      const projectId = activeProject.metadata.id;
+      const sceneId = activeScene.id;
+      const isContextActive = () =>
+        mounted &&
+        editor.project.getActiveOrNull()?.metadata.id === projectId &&
+        editor.scenes.getActiveSceneOrNull()?.id === sceneId;
 
       try {
         await showMediaUploadToast({
           filesCount: files.length,
           toast,
           promise: async () => {
+            if (!isContextActive()) {
+              return { uploadedCount: 0, assetNames: [] };
+            }
             const processedAssets = await processMediaAssets({
               files,
               toast,
               mediaSource,
             });
+            // Uploads can outlive the listener or the selected project/scene.
+            // Never execute their commands against the newly active context.
+            if (!isContextActive()) {
+              return { uploadedCount: 0, assetNames: [] };
+            }
             const startTime = editor.playback.getCurrentTime();
 
             for (const asset of processedAssets) {
               const addMediaCmd = new AddMediaAssetCommand({
-                projectId: activeProject.metadata.id,
+                projectId,
                 asset,
               });
               const assetId = addMediaCmd.getAssetId();
@@ -119,6 +136,9 @@ export function usePasteMedia() {
     };
 
     window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
+    return () => {
+      mounted = false;
+      window.removeEventListener("paste", handlePaste);
+    };
   }, [editor, toast, mediaSource]);
 }

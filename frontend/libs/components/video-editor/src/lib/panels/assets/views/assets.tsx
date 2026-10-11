@@ -95,15 +95,17 @@ export function MediaView() {
             mediaSource,
             onProgress: ({ progress }) => setProgress(progress),
           });
+          const importedAssets: MediaAsset[] = [];
           for (const asset of processedAssets) {
-            await editor.media.addMediaAsset({
+            const importedAsset = await editor.media.addMediaAsset({
               projectId: activeProject.metadata.id,
               asset,
             });
+            if (importedAsset) importedAssets.push(importedAsset);
           }
           return {
-            uploadedCount: processedAssets.length,
-            assetNames: processedAssets.map((asset) => asset.name),
+            uploadedCount: importedAssets.length,
+            assetNames: importedAssets.map((asset) => asset.name),
           };
         },
       });
@@ -205,15 +207,17 @@ export function MediaView() {
             existingResolved: successes.map((entry) => entry.resolved),
             onProgress: ({ progress }) => setProgress(progress),
           });
+          const importedAssets: MediaAsset[] = [];
           for (const asset of processedAssets) {
-            await editor.media.addMediaAsset({
+            const importedAsset = await editor.media.addMediaAsset({
               projectId: activeProject.metadata.id,
               asset,
             });
+            if (importedAsset) importedAssets.push(importedAsset);
           }
           return {
-            uploadedCount: processedAssets.length,
-            assetNames: processedAssets.map((asset) => asset.name),
+            uploadedCount: importedAssets.length,
+            assetNames: importedAssets.map((asset) => asset.name),
           };
         },
       });
