@@ -169,7 +169,7 @@ mod tests {
   use super::*;
   use crate::core::commands::generate::generate_image::providers::midjourney::handle_midjourney::handle_midjourney;
   use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
-  use crate::services::midjourney::state::midjourney_credential::MidjourneyCredential;
+  use midjourney_client::credentials::credential_file::MidjourneyCredential;
   use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
   use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
   use artcraft_client::utils::api_host::ApiHost;

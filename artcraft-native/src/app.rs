@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::backend::audio::AudioPlayer;
 use crate::backend::media_cache::MediaCache;
 use crate::backend::wire::{Prompt, SessionUser};
+use crate::backend::providers::Provider;
 use crate::backend::{Backend, Event, Modality, SHARE_URL_BASE};
 use crate::feed::grid::{RatioCache, ViewMode};
 use crate::feed::store::{FeedNotice, FeedStore};
@@ -20,6 +21,7 @@ use crate::overlays::account::{LoginAction, LoginDialog, SettingsAction, setting
 use crate::overlays::characters::{CharactersAction, CharactersModal};
 use crate::overlays::library_picker::{LibraryPicker, PickerAction};
 use crate::overlays::lightbox::{Lightbox, LightboxAction, fit_inside};
+use crate::overlays::providers::{AccountAction, AccountsView, LoginEvent, MidjourneyLogin, SetupAction, setup_dialog};
 use crate::pages::common::{self, AppRequest, Env, FeedKey};
 use crate::pages::create_audio::{AudioSettings, CreateAudioPage};
 use crate::pages::create_image::{CreateImagePage, ImageSettings};
@@ -102,6 +104,11 @@ pub struct ArtcraftApp {
   /// Characters being made: (job token, name).
   pending_characters: Vec<(String, String)>,
   settings_open: bool,
+  /// "Set up {provider}", after generating needed an account that isn't connected.
+  provider_setup: Option<Provider>,
+  midjourney_login: Option<MidjourneyLogin>,
+  /// The fal key being typed (setup dialog and Settings).
+  fal_key_input: String,
   preview: Option<String>,
   requests: Vec<AppRequest>,
   screenshot: Option<ScreenshotRequest>,
@@ -125,7 +132,20 @@ impl ArtcraftApp {
       backend.load_models(modality);
     }
     backend.refresh_session();
-    Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend }
+    let mut app = Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
+    app.restore_provider_jobs();
+    // Diagnostics: `ARTCRAFT_OPEN=settings` or `midjourney-login` opens that dialog at launch.
+    match std::env::var("ARTCRAFT_OPEN").as_deref() {
+      Ok("settings") => app.settings_open = true,
+      Ok("midjourney-login") => app.account_action(AccountAction::ConnectMidjourney),
+      _ => {},
+    }
+    app
+  }
+
+  /// Pending cards for the Midjourney and fal jobs still running.
+  fn restore_provider_jobs(&mut self) {
+    self.image.feed.restore_local(&self.backend.provider_jobs(), &self.catalog);
   }
 
   // --- Events from the backend -------------------------------------------------------------
@@ -139,6 +159,7 @@ impl ArtcraftApp {
           for feed in self.feeds_mut() {
             feed.reset();
           }
+          self.restore_provider_jobs();
           self.next_poll = 0.0;
         }
         if self.user.is_some() {
@@ -295,6 +316,23 @@ impl ArtcraftApp {
         self.next_poll = 0.0;
       },
       Event::CharacterChanged => self.backend.load_characters(),
+      Event::ProviderSetupNeeded(provider) => {
+        self.image.generating = false;
+        self.provider_setup = Some(provider);
+      },
+      Event::ProviderJobFinished { job_id, batch_token } => {
+        if self.image.feed.finish_local(&job_id) {
+          self.toasts.success("Image generation complete!");
+        }
+        // The batch brings the images into the feed.
+        self.batch_kinds.insert(job_id.clone(), MediaKind::Image);
+        self.backend.load_batch(job_id, batch_token);
+      },
+      Event::ProviderJobFailed { job_id, reason } => {
+        self.image.feed.fail_local(&job_id, &reason);
+        self.toasts.error(reason);
+      },
+      Event::ProviderAccountsChanged => {},
       Event::Deleted(token) => {
         for feed in self.feeds_mut() {
           feed.remove_item(&token);
@@ -624,7 +662,7 @@ impl ArtcraftApp {
     }
   }
 
-  fn overlays(&mut self, ctx: &egui::Context) {
+  fn overlays(&mut self, ctx: &egui::Context, frame: &eframe::Frame) {
     if let Some((kind, token)) = self.lightbox.as_ref().map(|lb| (lb.kind, lb.token.clone())) {
       let key = if self.page == Page::Library { FeedKey::Library } else { FeedKey::of(kind) };
       let order = self.feed(key).ordered_tokens();
@@ -706,9 +744,11 @@ impl ArtcraftApp {
         }
       }
     }
-    if self.settings_open {
+    if self.settings_open && self.midjourney_login.is_none() {
       let username = self.user.as_ref().map(|u| u.username.clone());
-      match settings_dialog(ctx, &mut self.enter_to_generate, username.as_deref(), self.credits, self.backend.data_root()) {
+      let accounts = self.backend.accounts();
+      let view = AccountsView { midjourney: accounts.midjourney_account(), fal_key_hint: accounts.fal_key_hint() };
+      match settings_dialog(ctx, &mut self.enter_to_generate, username.as_deref(), self.credits, &view, &mut self.fal_key_input, self.backend.data_root()) {
         Some(SettingsAction::Close) => self.settings_open = false,
         Some(SettingsAction::SignOut) => {
           self.settings_open = false;
@@ -718,6 +758,32 @@ impl ArtcraftApp {
           self.settings_open = false;
           self.open_login();
         },
+        Some(SettingsAction::Account(action)) => self.account_action(action),
+        None => {},
+      }
+    }
+    if let Some(provider) = self.provider_setup.filter(|_| self.midjourney_login.is_none()) {
+      match setup_dialog(ctx, provider, &mut self.fal_key_input) {
+        Some(SetupAction::Close) => self.provider_setup = None,
+        Some(SetupAction::ConnectMidjourney) => {
+          self.provider_setup = None;
+          self.account_action(AccountAction::ConnectMidjourney);
+        },
+        Some(SetupAction::SaveFalKey) => {
+          self.provider_setup = None;
+          self.account_action(AccountAction::SaveFalKey);
+        },
+        None => {},
+      }
+    }
+    if let Some(login) = &mut self.midjourney_login {
+      match login.show(ctx, frame) {
+        Some(LoginEvent::Captured(cookies)) => {
+          self.midjourney_login = None;
+          self.backend.save_midjourney_login(cookies);
+          self.toasts.success("Midjourney connected");
+        },
+        Some(LoginEvent::Closed) => self.midjourney_login = None,
         None => {},
       }
     }
@@ -737,6 +803,26 @@ impl ArtcraftApp {
       if close {
         self.preview = None;
       }
+    }
+  }
+
+  /// Connects or disconnects a provider account.
+  fn account_action(&mut self, action: AccountAction) {
+    match action {
+      AccountAction::ConnectMidjourney => self.midjourney_login = Some(MidjourneyLogin::new(self.backend.data_root())),
+      AccountAction::DisconnectMidjourney => self.backend.disconnect_midjourney(),
+      AccountAction::SaveFalKey => match self.backend.accounts().set_fal_key(&self.fal_key_input) {
+        Ok(()) => {
+          self.fal_key_input.clear();
+          self.toasts.success("FAL API key saved");
+        },
+        Err(err) => self.toasts.error(format!("Failed to save API key: {err}")),
+      },
+      AccountAction::RemoveFalKey => {
+        if let Err(err) = self.backend.accounts().clear_fal_key() {
+          self.toasts.error(format!("Failed to clear provider credential: {err}"));
+        }
+      },
     }
   }
 
@@ -782,7 +868,7 @@ impl eframe::App for ArtcraftApp {
     self.timers(ctx);
   }
 
-  fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
+  fn ui(&mut self, ui: &mut Ui, frame: &mut eframe::Frame) {
     let ctx = ui.ctx().clone();
     self.cache.poll(&ctx);
     if let Some(err) = self.player.poll() {
@@ -795,7 +881,7 @@ impl eframe::App for ArtcraftApp {
     for request in std::mem::take(&mut self.requests) {
       self.handle_request(&ctx, request);
     }
-    self.overlays(&ctx);
+    self.overlays(&ctx, frame);
     self.toasts.show(&ctx);
     window::window_edges(&ctx);
     if let Some(shot) = &mut self.screenshot {

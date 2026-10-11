@@ -1,21 +1,24 @@
+//! The ArtCraft prompt record for an image request sent to another provider (Midjourney, fal),
+//! created first so the results can be attributed to it.
+
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
-use artcraft_router::api::router_image_model::RouterImageModel;
-use artcraft_router::api::router_resolution::RouterResolution;
-use artcraft_router::api::router_provider::RouterProvider;
-use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution as EnumsResolution;
 use enums::common::generation_provider::GenerationProvider;
-use uuid_utils::uuid::generate_random_uuid;
+
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_image_model::RouterImageModel;
+use crate::api::router_provider::RouterProvider;
+use crate::api::router_resolution::RouterResolution;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
 pub fn router_image_request_to_artcraft_prompt(
   request: &GenerateImageRequestBuilder,
 ) -> CreatePromptRequest {
   CreatePromptRequest {
-    uuid_idempotency_token: generate_random_uuid(),
+    uuid_idempotency_token: uuid::Uuid::new_v4().to_string(),
     positive_prompt: request.prompt.clone(),
     negative_prompt: None,
     model_type: image_model_to_common_model_type(request.model),
@@ -120,7 +123,7 @@ fn router_resolution_to_enums(res: RouterResolution) -> EnumsResolution {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+  use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
@@ -165,7 +168,7 @@ mod tests {
 
   #[test]
   fn edit_mode_when_images_present() {
-    use artcraft_router::api::image_list_ref::ImageListRef;
+    use crate::api::image_list_ref::ImageListRef;
     let builder = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
       ..base_builder()

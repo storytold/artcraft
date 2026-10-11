@@ -1,7 +1,8 @@
 # ArtCraft Native
 
 ArtCraft's desktop app in pure Rust: an [egui](https://github.com/emilk/egui) UI over the same
-ArtCraft API client crates the Tauri app uses. There is no Tauri, no webview and no JavaScript.
+ArtCraft API client crates the Tauri app uses. There is no Tauri and no JavaScript; the only
+webview is the Midjourney sign-in window, which exists to capture Midjourney's login cookies.
 
 The look follows the brutalist webapp (`artcraft-services/frontend/apps/artcraft-webapp`). That
 means near-black surfaces with white/15 hairlines and 3 px corners on controls. Type is Archivo for
@@ -33,11 +34,12 @@ The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
 | `backend::session` | Credentials: own file, Tauri cookie import, env config                         |
 | `backend::media_cache` | Thumbnails and previews: downloaded and decoded off-thread, evicted when unused |
 | `backend::audio`   | One clip at a time: reference previews, feed tracks (pause, seek, volume), waveforms |
+| `backend::providers` | Midjourney and fal: accounts, submitting, and a worker that finishes jobs into the library |
 | `models`           | Model catalog from OmniGen listings, plus names, families and limits           |
 | `prompt_box`       | The shared prompt box: editor, reference deck, keyframes, pickers, model selector |
 | `pages`            | Create Image, Video and Audio, Home, Library, and the shared page shell        |
 | `feed`             | Generation feed: running, failed and finished jobs, library paging, grid and list |
-| `overlays`         | Lightbox, library picker, sign-in and settings dialogs                         |
+| `overlays`         | Lightbox, library picker, sign-in, settings, provider setup and the Midjourney sign-in window |
 | `shell`            | Custom title bar, sidebar flush to the window edge, content panel header       |
 | `theme`, `ui`      | Tokens, Lucide-style icons, widgets, toasts, window chrome (drag, resize, caption buttons) |
 
@@ -52,6 +54,11 @@ How the backend works:
   with lenient structs.
 - **Identity headers.** Every request sends the desktop identity headers: `Origin` and
   `User-Agent`.
+- **Other providers.** Images can also run on Midjourney (your own account) or fal (your own API
+  key), through `artcraft_router` like the Tauri app. The accounts live in the same files
+  (`~/Artcraft/credentials`), so connecting in either app works in both. Those jobs are tracked in
+  `~/Artcraft/state/native_provider_jobs.json` and their results uploaded into your library, resuming
+  after a restart.
 
 ## Prompt box parity
 
@@ -72,7 +79,7 @@ How the backend works:
 | Validation: starting frame, text-only banner, limits, uploads   | Done                                    |
 | Clear all (confirms when references are attached)               | Done                                    |
 | `@Character` mentions and the Characters modal (create/edit/delete) | Done                                |
-| Provider choice (Midjourney direct, fal)                        | Not yet; everything runs via ArtCraft   |
+| Provider choice (Midjourney direct, fal), "Select Provider"     | Done (images; video runs on ArtCraft)   |
 | In-app video playback                                           | Done with FFmpeg on the PATH; otherwise opens in the system player |
 | Audio reference playback (click to play/stop)                   | Done                                    |
 | Animated video previews in the feed (with a stills toggle)      | Done                                    |
@@ -93,8 +100,9 @@ Feed and lightbox:
 ## Diagnostics
 
 Set `ARTCRAFT_SCREENSHOT=<file.png>` to save a screenshot once the window has settled.
-`ARTCRAFT_PAGE` (`home`, `create-image`, `create-video`, `create-audio` or `library`) picks the page, and
-`ARTCRAFT_SCREENSHOT_EXIT=1` closes the app afterwards.
+`ARTCRAFT_PAGE` (`home`, `create-image`, `create-video`, `create-audio` or `library`) picks the page,
+`ARTCRAFT_OPEN` (`settings` or `midjourney-login`) opens a dialog, and `ARTCRAFT_SCREENSHOT_EXIT=1`
+closes the app afterwards. The screenshot shows egui only, not the sign-in webview.
 
 ## Tests
 

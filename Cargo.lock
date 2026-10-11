@@ -487,8 +487,10 @@ dependencies = [
  "arboard",
  "artcraft_api_defs",
  "artcraft_client",
+ "artcraft_router",
  "chrono",
  "cookie",
+ "cookie_store_wrapper",
  "directories",
  "eframe",
  "egui",
@@ -496,8 +498,10 @@ dependencies = [
  "egui_kittest",
  "enums",
  "env_logger",
+ "fal_client",
  "image",
  "log",
+ "midjourney_client",
  "open",
  "reqwest 0.12.23",
  "resvg",
@@ -505,9 +509,12 @@ dependencies = [
  "rodio",
  "serde",
  "serde_json",
+ "tempfile",
  "tokens",
  "tokio",
+ "url",
  "uuid 1.22.0",
+ "wry",
 ]
 
 [[package]]
@@ -5009,7 +5016,9 @@ name = "midjourney_client"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "browser_emulation",
+ "chrono",
  "ciborium",
  "cloudflare_errors",
  "cookie_store_wrapper",
@@ -5020,10 +5029,13 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "tempfile",
  "test_data",
  "test_utils",
  "tokio",
+ "toml 1.1.8+spec-1.1.0",
  "url",
+ "uuid_utils",
  "wreq",
  "wreq-util",
 ]
