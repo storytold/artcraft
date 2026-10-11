@@ -1,0 +1,183 @@
+name: Publish Flatpak repository
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published ArtCraft release tag (artcraft-vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flatpak-pages-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-release:
+    name: Resolve published release
+    runs-on: ubuntu-24.04
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
+    steps:
+      - id: release
+        name: Validate published release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            release_tag="$EVENT_RELEASE_TAG"
+          else
+            release_tag="$INPUT_RELEASE_TAG"
+          fi
+
+          if [[ ! "$release_tag" =~ ^artcraft-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo 'Release tag must use the semantic-version format artcraft-vX.Y.Z' >&2
+            exit 2
+          fi
+
+          release_json="$RUNNER_TEMP/release.json"
+          curl --fail-with-body --location --retry 3 \
+            --header 'Accept: application/vnd.github+json' \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            --output "$release_json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$release_tag"
+
+          jq --exit-status --arg release_tag "$release_tag" \
+            '.tag_name == $release_tag and .draft == false and .published_at != null' \
+            "$release_json" >/dev/null || {
+              echo "$release_tag is not a published GitHub release" >&2
+              exit 1
+            }
+
+          echo "release_tag=$release_tag" >>"$GITHUB_OUTPUT"
+
+  flatpak:
+    name: Build signed Flatpak repository
+    needs: resolve-release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+      FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+      PAGES_URL: ${{ vars.FLATPAK_REPOSITORY_URL }}
+      RELEASE_TAG: ${{ needs.resolve-release.outputs.release_tag }}
+    steps:
+      - name: Require repository signing secrets
+        run: |
+          test -n "$FLATPAK_GPG_KEY_ID" || {
+            echo 'FLATPAK_GPG_KEY_ID is required' >&2
+            exit 1
+          }
+          test -n "$FLATPAK_GPG_PRIVATE_KEY" || {
+            echo 'FLATPAK_GPG_PRIVATE_KEY is required' >&2
+            exit 1
+          }
+
+      - name: Check out the released tag
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.resolve-release.outputs.release_tag }}
+
+      - id: version
+        name: Verify released tag and application version
+        run: |
+          set -euo pipefail
+          tag_commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          head_commit="$(git rev-parse HEAD)"
+          if [[ "$head_commit" != "$tag_commit" ]]; then
+            echo "HEAD $head_commit does not match $RELEASE_TAG ($tag_commit)" >&2
+            exit 1
+          fi
+          release_version="$(
+            node .github/scripts/verify-flatpak-pages-release.cjs "$RELEASE_TAG"
+          )"
+          echo "release_version=$release_version" >>"$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies and build
+        working-directory: frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          npm ci --no-audit --no-fund
+          npx --no-install nx run artcraft:build
+
+      - name: Install Flatpak and signing tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            flatpak flatpak-builder gnupg ostree
+          flatpak remote-add --user --if-not-exists flathub \
+            https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Import the repository signing key
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/flatpak-gnupg"
+          install -d -m 700 "$GNUPGHOME"
+          printf '%s' "$FLATPAK_GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --list-secret-keys "$FLATPAK_GPG_KEY_ID"
+          echo "GNUPGHOME=$GNUPGHOME" >>"$GITHUB_ENV"
+
+      - name: Resolve the public repository URL
+        env:
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          if [[ -z "$PAGES_URL" ]]; then
+            owner="$(printf '%s' "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+            PAGES_URL="https://${owner}.github.io/${REPOSITORY_NAME}"
+          fi
+          PAGES_URL="${PAGES_URL%/}"
+          if [[ ! "$PAGES_URL" =~ ^https://[^[:space:]]+$ ]]; then
+            echo 'FLATPAK_REPOSITORY_URL must be an HTTPS URL' >&2
+            exit 1
+          fi
+          echo "PAGES_URL=$PAGES_URL" >>"$GITHUB_ENV"
+
+      - name: Build the Flatpak OSTree repository
+        run: .github/scripts/build-flatpak-pages-release.sh "$RELEASE_TAG" "$PAGES_URL"
+
+      - name: Upload the GitHub Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build/flatpak-repo
+          include-hidden-files: true
+
+  deploy:
+    name: Publish Flatpak repository to GitHub Pages
+    needs: [resolve-release, flatpak]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - id: deployment
+        name: Deploy GitHub Pages
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
