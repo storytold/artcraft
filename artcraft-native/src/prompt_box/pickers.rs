@@ -2,7 +2,7 @@
 //! option list, the duration slider, and on/off toggles.
 
 use egui::{Popup, PopupCloseBehavior};
-use egui::{Id, RectAlign, Response, Ui};
+use egui::{Id, Rect, RectAlign, Response, Ui};
 
 use crate::theme;
 use crate::ui::icons::Icon;
@@ -84,10 +84,18 @@ pub fn option_picker<T: Clone + PartialEq>(ui: &mut Ui, id: Id, trigger: Trigger
 
 /// Opens a popover above `anchor` (toggled by clicking it) and fills it with `content`.
 pub fn popover(anchor: &Response, popup_id: Id, content: impl FnOnce(&mut Ui)) {
-  Popup::from_toggle_button_response(anchor).id(popup_id).align(RectAlign::TOP_START).align_alternatives(&[RectAlign::BOTTOM_START, RectAlign::TOP_END]).gap(6.0).frame(widgets::popover_frame()).close_behavior(PopupCloseBehavior::CloseOnClickOutside).show(|ui| {
+  popover_with(anchor, popup_id, PopupCloseBehavior::CloseOnClickOutside, content);
+}
+
+/// Like `popover`, with the click-to-close behavior chosen by the caller; returns the popover's
+/// screen rect while it's open. Callers with flyouts (separate areas) pass `IgnoreClicks` and
+/// close the popover themselves, since a click inside a flyout counts as outside the popover.
+pub fn popover_with(anchor: &Response, popup_id: Id, close_behavior: PopupCloseBehavior, content: impl FnOnce(&mut Ui)) -> Option<Rect> {
+  let popup = Popup::from_toggle_button_response(anchor).id(popup_id).align(RectAlign::TOP_START).align_alternatives(&[RectAlign::BOTTOM_START, RectAlign::TOP_END]).gap(6.0).frame(widgets::popover_frame()).close_behavior(close_behavior);
+  popup.show(|ui| {
     ui.spacing_mut().item_spacing.y = 2.0;
     content(ui);
-  });
+  }).map(|inner| inner.response.rect)
 }
 
 /// A toolbar pill that opens a popover of custom `content` above it.
