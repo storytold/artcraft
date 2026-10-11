@@ -135,8 +135,6 @@ impl FrameExtractPage {
           return;
         }
         ui.add_space(16.0);
-        self.settings(ui, width);
-        ui.add_space(16.0);
         ui.vertical_centered(|ui| {
           let ready = self.clip.as_ref().is_some_and(|c| c.info.is_some()) && video::ffmpeg_available() && !self.extracting;
           let label = if self.extracting { "Extracting\u{2026}" } else { "Extract Frames" };
@@ -151,16 +149,18 @@ impl FrameExtractPage {
           ui.label(egui::RichText::new(notice).size(13.0).color(theme::BAD));
         }
         if !self.frames.is_empty() {
-          ui.add_space(20.0);
+          ui.add_space(16.0);
           self.grid(ui, width);
         }
+        ui.add_space(16.0);
+        self.settings(ui);
         ui.add_space(32.0);
       });
     });
   }
 
   fn preview(&mut self, ui: &mut Ui, width: f32) {
-    let height = (width * 9.0 / 16.0).clamp(200.0, 480.0);
+    let height = (width * 9.0 / 16.0).clamp(180.0, 300.0);
     let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
     ui.painter().rect_filled(rect, 0.0, Color32::BLACK);
     if let Some(clip) = self.clip.as_mut() {
@@ -179,17 +179,17 @@ impl FrameExtractPage {
     }
   }
 
-  fn settings(&mut self, ui: &mut Ui, width: f32) {
-    let gap = 16.0;
-    let col_w = (width - gap) / 2.0;
-    ui.horizontal(|ui| {
-      ui.spacing_mut().item_spacing.x = gap;
-      panel(ui, col_w, |ui| {
+  fn settings(&mut self, ui: &mut Ui) {
+    let duration = self.clip.as_ref().and_then(|c| c.info).map(|i| i.duration).unwrap_or(0.0);
+    let file = self.clip.as_ref().map(|c| file_stem(&c.path)).unwrap_or_default();
+    let info = self.clip.as_ref().and_then(|c| c.info);
+    let probe_error = self.clip.as_ref().and_then(|c| c.probe_error.clone());
+    ui.columns(2, |cols| {
+      panel(&mut cols[0], |ui| {
         widgets::hud(ui, "Start Time", theme::FAINT);
         ui.add_space(6.0);
         ui.label(egui::RichText::new(format_time_precise(self.start)).size(28.0).family(theme::mono()).color(theme::ACCENT_INK));
         ui.add_space(10.0);
-        let duration = self.clip.as_ref().and_then(|c| c.info).map(|i| i.duration).unwrap_or(0.0);
         if duration > 0.0 {
           ui.add(egui::Slider::new(&mut self.start, 0.0..=duration).show_value(false).trailing_fill(true));
           ui.add_space(6.0);
@@ -198,25 +198,22 @@ impl FrameExtractPage {
         ui.add_space(16.0);
         widgets::hud(ui, "Video Information", theme::FAINT);
         ui.add_space(8.0);
-        if let Some(clip) = self.clip.as_ref() {
-          kv(ui, "File", &file_stem(&clip.path));
-          match clip.info {
-            Some(info) => {
-              kv(ui, "Duration", &format_time_precise(info.duration));
-              kv(ui, "Resolution", &format!("{} \u{00d7} {}", info.width, info.height));
-            },
-            None => kv(ui, "Status", clip.probe_error.as_deref().unwrap_or("Reading\u{2026}")),
-          }
+        kv(ui, "File", &file);
+        match info {
+          Some(info) => {
+            kv(ui, "Duration", &format_time_precise(info.duration));
+            kv(ui, "Resolution", &format!("{} \u{00d7} {}", info.width, info.height));
+          },
+          None => kv(ui, "Status", probe_error.as_deref().unwrap_or("Reading\u{2026}")),
         }
       });
-      panel(ui, col_w, |ui| {
+      panel(&mut cols[1], |ui| {
         widgets::hud(ui, "Extraction Settings", theme::FAINT);
         ui.add_space(12.0);
         number_field(ui, "Number of Frames", &mut self.count, MIN_COUNT..=MAX_COUNT);
         ui.add_space(12.0);
         number_field(ui, "Distance (ms)", &mut self.distance_ms, MIN_DISTANCE_MS..=MAX_DISTANCE_MS);
         ui.add_space(10.0);
-        let duration = self.clip.as_ref().and_then(|c| c.info).map(|i| i.duration).unwrap_or(0.0);
         let planned = timestamps(self.start, self.count, self.distance_ms, duration);
         ui.label(egui::RichText::new(format!("{} stills from {} to {}", planned.len(), format_time_precise(planned.first().copied().unwrap_or(self.start)), format_time_precise(planned.last().copied().unwrap_or(self.start)))).size(12.5).color(theme::MUTED));
       });
@@ -234,7 +231,7 @@ impl FrameExtractPage {
       });
     });
     ui.add_space(10.0);
-    let cols = 2;
+    let cols = if width >= 900.0 { 4 } else { 2 };
     let gap = 12.0;
     let cell_w = (width - gap * (cols as f32 - 1.0)) / cols as f32;
     let mut i = 0;
@@ -559,11 +556,12 @@ fn kv(ui: &mut Ui, key: &str, value: &str) {
   });
 }
 
-fn panel(ui: &mut Ui, width: f32, content: impl FnOnce(&mut Ui)) {
-  let (rect, _) = ui.allocate_exact_size(vec2(width, 220.0), Sense::hover());
-  ui.painter().rect(rect, 0.0, theme::WASH, theme::hairline(), egui::StrokeKind::Inside);
-  let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(18.0)));
-  content(&mut inner);
+fn panel(ui: &mut Ui, content: impl FnOnce(&mut Ui)) {
+  egui::Frame::new().fill(theme::WASH).stroke(theme::hairline()).inner_margin(egui::Margin::same(18)).show(ui, |ui| {
+    ui.set_min_height(200.0);
+    ui.set_width(ui.available_width());
+    content(ui);
+  });
 }
 
 fn number_field(ui: &mut Ui, label: &str, value: &mut u32, range: std::ops::RangeInclusive<u32>) {
