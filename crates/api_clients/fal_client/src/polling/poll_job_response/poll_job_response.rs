@@ -7,6 +7,7 @@ use crate::polling::poll_job_response::raw_response::RawIncompleteJobResponse;
 use crate::polling::poll_job_response::success_case_extractors::{
   extract_contents_from_response, PollResponseExtractedContents,
 };
+use crate::polling::polling_http_client::POLLING_HTTP_CLIENT;
 use log::info;
 use serde_json::Value;
 use url::Url;
@@ -58,7 +59,7 @@ pub async fn poll_job_response(args: PollJobResponseArgs<'_>) -> Result<PollJobR
 
   info!("Polling FAL job response: {}", args.response_url);
 
-  let response = reqwest::Client::new()
+  let response = POLLING_HTTP_CLIENT
     .get(args.response_url)
     .header("Authorization", format!("Key {}", args.api_key.0))
     .send()
