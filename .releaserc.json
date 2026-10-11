@@ -1,0 +1,53 @@
+{
+  "branches": [
+    "main"
+  ],
+  "tagFormat": "artcraft-v${version}",
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "releaseRules": [
+          {
+            "header": "artcraft *",
+            "release": "minor"
+          },
+          {
+            "header": "ArtCraft *",
+            "release": "minor"
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "analyzeCommitsCmd": "printf 'patch\\n'",
+        "prepareCmd": "node .github/scripts/set-artcraft-release-version.cjs ${nextRelease.version} && node .github/scripts/verify-artcraft-release-version.cjs ${nextRelease.version}"
+      }
+    ],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "crates/desktop/artcraft/tauri.conf.json",
+          "crates/desktop/artcraft/tauri-mac.conf.json",
+          "crates/desktop/artcraft/src/version.rs"
+        ],
+        "message": "chore(release): ArtCraft ${nextRelease.version} [skip ci]"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "draftRelease": true,
+        "releaseNameTemplate": "ArtCraft v<%= nextRelease.version %>",
+        "releaseBodyTemplate": "See the assets below to download this version and install.\n\n<%= nextRelease.notes %>",
+        "successComment": false,
+        "failComment": false,
+        "releasedLabels": false
+      }
+    ]
+  ]
+}
