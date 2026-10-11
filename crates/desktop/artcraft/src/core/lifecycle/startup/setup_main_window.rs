@@ -34,6 +34,13 @@ pub async fn setup_main_window(
   let win_builder = win_builder
       .decorations(false); // NB: This breaks Mac! (And breaks resize on Linux)
 
+  // NB: On Linux, the default inner size can exceed the screen (eg. a 2560x1600 display at
+  // 125% scaling is only 2048x1280 logical), and window managers don't reliably clamp it,
+  // which pushes the window controls off-screen. Start maximized instead.
+  #[cfg(target_os = "linux")]
+  let win_builder = win_builder
+      .maximized(true);
+
   // On macOS, Cmd+A/C/V/X/Z and friends are dispatched by AppKit through the application
   // menu. Without an Edit submenu containing the standard predefined items, these
   // shortcuts never reach the WKWebView and text inputs behave as if Cmd is unmapped.
