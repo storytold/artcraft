@@ -2,7 +2,7 @@
 
 import { cn } from "../../utils/ui";
 import { clamp } from "../../utils/math";
-import { useRef, useState, useLayoutEffect, type ComponentProps } from "react";
+import { useRef, useState, useEffect, useLayoutEffect, type ComponentProps } from "react";
 import { useFocusLock } from "../../hooks/use-focus-lock";
 import { Button } from "./button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -139,9 +139,14 @@ function NumberField({
   const ghostRef = useRef<HTMLSpanElement>(null);
   const startValueRef = useRef(0);
   const cumulativeDeltaRef = useRef(0);
+  const cleanupScrubRef = useRef<((commit: boolean) => void) | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [suffixLeft, setSuffixLeft] = useState(0);
   const ghostValue = Array.isArray(value) ? value.join(", ") : String(value ?? "");
+
+  useEffect(() => () => {
+    cleanupScrubRef.current?.(false);
+  }, []);
 
   useLayoutEffect(() => {
     if (!suffix) {
@@ -166,11 +171,14 @@ function NumberField({
 
   const handleIconPointerDown = (event: React.PointerEvent) => {
     if (!onScrub || disabled || event.button !== 0) return;
+    cleanupScrubRef.current?.(false);
+    const scrubTarget = iconRef.current;
+    if (!scrubTarget) return;
     const parsed = parseFloat(String(value ?? "0"));
     startValueRef.current = Number.isNaN(parsed) ? 0 : parsed;
     cumulativeDeltaRef.current = 0;
     let hasReceivedFirstMove = false;
-    iconRef.current?.requestPointerLock();
+    scrubTarget.requestPointerLock();
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       // first movementX after pointer lock often contains a bogus warp delta
@@ -192,15 +200,28 @@ function NumberField({
       onScrub(newValue);
     };
 
-    const handlePointerUp = () => {
+    const cleanup = (commit: boolean) => {
+      if (cleanupScrubRef.current !== cleanup) return;
+      cleanupScrubRef.current = null;
       document.removeEventListener("pointermove", handlePointerMove);
       document.removeEventListener("pointerup", handlePointerUp);
-      document.exitPointerLock();
-      onScrubEnd?.();
+      document.removeEventListener("pointerlockchange", handlePointerLockChange);
+      window.removeEventListener("blur", handlePointerUp);
+      if (document.pointerLockElement === scrubTarget) {
+        document.exitPointerLock();
+      }
+      if (commit) onScrubEnd?.();
+    };
+    const handlePointerUp = () => cleanup(true);
+    const handlePointerLockChange = () => {
+      if (document.pointerLockElement !== scrubTarget) cleanup(true);
     };
 
+    cleanupScrubRef.current = cleanup;
     document.addEventListener("pointermove", handlePointerMove);
     document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointerlockchange", handlePointerLockChange);
+    window.addEventListener("blur", handlePointerUp);
   };
 
   const canScrub = Boolean(icon && onScrub);
