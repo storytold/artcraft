@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { usePreviewViewport } from "./preview-viewport";
 import { useEditor } from "../../editor/use-editor";
 import type { TextElement } from "../../timeline/types";
@@ -20,27 +20,61 @@ export function TextEditOverlay({
   trackId,
   elementId,
   element,
+  editPoint,
   onCommit,
 }: {
   trackId: string;
   elementId: string;
   element: TextElement;
+  editPoint: { clientX: number; clientY: number };
   onCommit: () => void;
 }) {
   const editor = useEditor();
   const viewport = usePreviewViewport();
   const divRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const div = divRef.current;
     if (!div) return;
     div.focus();
-    const range = document.createRange();
-    range.selectNodeContents(div);
     const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-  }, []);
+    if (!selection) return;
+
+    const documentWithCaret = document as Document & {
+      caretPositionFromPoint?: (
+        x: number,
+        y: number,
+      ) => { offsetNode: Node; offset: number } | null;
+      caretRangeFromPoint?: (x: number, y: number) => Range | null;
+    };
+    let range = documentWithCaret.caretRangeFromPoint?.(
+      editPoint.clientX,
+      editPoint.clientY,
+    );
+
+    if (!range && documentWithCaret.caretPositionFromPoint) {
+      const position = documentWithCaret.caretPositionFromPoint(
+        editPoint.clientX,
+        editPoint.clientY,
+      );
+      if (position) {
+        range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+        range.collapse(true);
+      }
+    }
+
+    if (!range || !div.contains(range.startContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(div);
+      range.collapse(false);
+    } else {
+      range.collapse(true);
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }, [editPoint.clientX, editPoint.clientY]);
 
   const handleInput = useCallback(() => {
     const div = divRef.current;
