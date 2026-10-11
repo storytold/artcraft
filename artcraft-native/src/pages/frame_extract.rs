@@ -251,28 +251,22 @@ impl FrameExtractPage {
   }
 
   fn frame_card(&mut self, ui: &mut Ui, index: usize, width: f32) {
-    let height = width * 9.0 / 16.0 + 72.0;
+    let thumb_h = width * 9.0 / 16.0;
+    let height = thumb_h + 64.0;
     let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
     ui.painter().rect(rect, 0.0, theme::WASH, theme::hairline(), egui::StrokeKind::Inside);
-    let image = Rect::from_min_size(rect.min, vec2(width, width * 9.0 / 16.0));
+    let image = Rect::from_min_size(rect.min, vec2(width, thumb_h));
     ui.painter().rect_filled(image, 0.0, Color32::BLACK);
     if let Some(tex) = self.frames.get(index).and_then(|f| f.texture.as_ref()) {
       let fit = crate::overlays::lightbox::fit_inside(tex.size_vec2(), image.shrink(4.0).size());
       egui::Image::new(tex).paint_at(ui, Rect::from_center_size(image.center(), fit));
     }
-    let meta = Rect::from_min_max(pos2(rect.left() + 12.0, image.bottom() + 8.0), pos2(rect.right() - 12.0, rect.bottom() - 10.0));
-    let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(meta));
-    inner.horizontal(|ui| {
-      ui.label(egui::RichText::new(format!("#{}", index + 1)).size(11.0).family(theme::mono()).color(theme::MUTED));
-      ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if let Some(frame) = self.frames.get(index) {
-          ui.label(egui::RichText::new(format_time_precise(frame.timestamp)).size(12.0).family(theme::mono()).color(theme::INK));
-        }
-      });
-    });
-    inner.add_space(6.0);
-    let save_w = inner.available_width();
-    if widgets::button(&mut inner, Some(Icon::Download), "Save", widgets::Kind::Secondary, save_w, 28.0).clicked() {
+    let ts = self.frames.get(index).map(|f| format_time_precise(f.timestamp)).unwrap_or_default();
+    ui.painter().text(pos2(rect.left() + 10.0, image.bottom() + 8.0), Align2::LEFT_TOP, format!("#{}", index + 1), FontId::new(11.0, theme::mono()), theme::MUTED);
+    ui.painter().text(pos2(rect.right() - 10.0, image.bottom() + 8.0), Align2::RIGHT_TOP, ts, FontId::new(12.0, theme::mono()), theme::INK);
+    let btn = Rect::from_min_max(pos2(rect.left() + 10.0, rect.bottom() - 38.0), pos2(rect.right() - 10.0, rect.bottom() - 8.0));
+    let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(btn));
+    if widgets::button(&mut inner, Some(Icon::Download), "Save", widgets::Kind::Secondary, btn.width(), 28.0).clicked() {
       self.save_one(index);
     }
   }
