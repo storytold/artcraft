@@ -170,19 +170,19 @@ export const ProviderPrioritySettingsPane = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
-      setItems((prevItems) => {
-        const oldIndex = prevItems.findIndex((item) => item.id === active.id);
-        const newIndex = prevItems.findIndex((item) => item.id === over?.id);
+    if (!over || active.id === over.id) return;
+    setItems((prevItems) => {
+      const oldIndex = prevItems.findIndex((item) => item.id === active.id);
+      const newIndex = prevItems.findIndex((item) => item.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prevItems;
 
-        const newOrder = arrayMove(prevItems, oldIndex, newIndex);
+      const newOrder = arrayMove(prevItems, oldIndex, newIndex);
 
-        // Send update to backend
-        updateProviderPriorityOnBackend(newOrder);
+      // Send update to backend
+      updateProviderPriorityOnBackend(newOrder);
 
-        return newOrder;
-      });
-    }
+      return newOrder;
+    });
   };
 
   return (
