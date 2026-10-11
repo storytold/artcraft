@@ -7,8 +7,9 @@ The look follows the brutalist webapp (`artcraft-services/frontend/apps/artcraft
 means near-black surfaces with white/15 hairlines and 3 px corners on controls. Type is Archivo for
 display, Inter for body text and Geist Mono for labels. The brand blue marks the primary actions.
 
-Create Image, Create Video and Create Audio are fully built. The other tools show a "coming soon"
-page that links to the same tool in the web app.
+Create Image, Create Video, Create Audio and Frame Extract are fully built. The other tools show
+a "coming soon" page that links to the same tool in the web app. Frame Extract reads a video on
+this computer and writes stills locally; it does not need an account.
 
 ## Running
 
@@ -35,7 +36,7 @@ The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
 | `backend::audio`   | One clip at a time: reference previews, feed tracks (pause, seek, volume), waveforms |
 | `models`           | Model catalog from OmniGen listings, plus names, families and limits           |
 | `prompt_box`       | The shared prompt box: editor, reference deck, keyframes, pickers, model selector |
-| `pages`            | Create Image, Video and Audio, Home, Library, and the shared page shell        |
+| `pages`            | Create Image, Video, Audio and Frame Extract; Home, Library, shared page shell |
 | `feed`             | Generation feed: running, failed and finished jobs, library paging, grid and list |
 | `overlays`         | Lightbox, library picker, sign-in and settings dialogs                         |
 | `shell`            | Custom title bar, sidebar flush to the window edge, content panel header       |
@@ -93,8 +94,10 @@ Feed and lightbox:
 ## Diagnostics
 
 Set `ARTCRAFT_SCREENSHOT=<file.png>` to save a screenshot once the window has settled.
-`ARTCRAFT_PAGE` (`home`, `create-image`, `create-video`, `create-audio` or `library`) picks the page, and
-`ARTCRAFT_SCREENSHOT_EXIT=1` closes the app afterwards.
+`ARTCRAFT_PAGE` (`home`, `create-image`, `create-video`, `create-audio`, `library` or
+`frame-extractor`) picks the page, and `ARTCRAFT_SCREENSHOT_EXIT=1` closes the app afterwards.
+`ARTCRAFT_OPEN_VIDEO=<path>` opens a local file on Frame Extract;
+`ARTCRAFT_EXTRACT=1` then pulls stills once the clip has been read.
 
 ## Tests
 
@@ -102,9 +105,10 @@ Set `ARTCRAFT_SCREENSHOT=<file.png>` to save a screenshot once the window has se
 cargo test -p artcraft_native
 ```
 
-There are unit tests for the catalog, feed store, wire decoding and backend helpers. Headless UI
-tests (`egui_kittest`) drive the prompt box (generate gating, Enter to generate, the pickers, `@`
-mentions, clear-all), the Characters dialog and the audio toolbar (toggles, Beat & Key, Tuning).
+There are unit tests for the catalog, feed store, wire decoding, backend helpers and Frame Extract
+(timestamp planning, file names, still export). Headless UI tests (`egui_kittest`) drive the prompt
+box (generate gating, Enter to generate, the pickers, `@` mentions, clear-all), the Characters
+dialog, the audio toolbar (toggles, Beat & Key, Tuning) and Frame Extract's empty and loaded pages.
 
 ## Fonts and brand assets
 
