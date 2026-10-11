@@ -252,6 +252,8 @@ pub enum RowLead<'a> {
   Aspect(Option<(f32, f32)>),
   /// A 36 px tile with a model maker's logo (white texture, tinted).
   Logo(&'a egui::TextureHandle),
+  /// A logo at icon size (the provider list).
+  SmallLogo(&'a egui::TextureHandle),
 }
 
 /// One option in a popover: a lead, a title, an optional muted subtitle, and a check when
@@ -283,6 +285,10 @@ pub fn menu_row(ui: &mut Ui, lead: RowLead<'_>, title: &str, subtitle: Option<&s
       p.rect(tile, theme::RADIUS, fill, Stroke::new(1.0, border), egui::StrokeKind::Inside);
       egui::Image::new(texture).tint(ink).paint_at(ui, Rect::from_center_size(tile.center(), vec2(18.0, 18.0)));
       x += 46.0;
+    },
+    RowLead::SmallLogo(texture) => {
+      egui::Image::new(texture).tint(ink).paint_at(ui, Rect::from_center_size(pos2(x + 8.0, rect.center().y), vec2(15.0, 15.0)));
+      x += 26.0;
     },
   }
   let title_font = FontId::new(13.5, theme::medium());

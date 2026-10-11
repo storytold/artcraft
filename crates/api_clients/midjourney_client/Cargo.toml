@@ -14,14 +14,19 @@ browser_emulation.workspace = true
 cloudflare_errors.workspace = true
 cookie_store_wrapper = { workspace = true, features = ["wreq"] }
 errors.workspace = true
+uuid_utils.workspace = true
 
 # External
 anyhow.workspace = true
+base64.workspace = true
+chrono.workspace = true
 futures.workspace = true
 log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tempfile.workspace = true
 tokio = { version = "1", features = ["full"] }
+toml.workspace = true
 url.workspace = true
 wreq-util.workspace = true
 wreq.workspace = true

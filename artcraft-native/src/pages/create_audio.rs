@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::backend::media_cache::Lookup;
+use crate::backend::providers::Provider;
 use crate::backend::{EnqueueMeta, Modality};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
@@ -125,7 +126,7 @@ impl CreateAudioPage {
     let mut row_actions = Vec::new();
     let mut slots = |ui: &mut Ui, slot: Slot| match (slot, model) {
       (Slot::ToolbarLeft, _) => {
-        if let Some(id) = model_selector(ui, Id::new("audio-model"), models, model, false) {
+        if let Some((id, _)) = model_selector(ui, Id::new("audio-model"), models, model, false, None) {
           picked_model = Some(id);
         }
         if let Some(m) = model {
@@ -318,7 +319,7 @@ impl CreateAudioPage {
       return;
     }
     self.generating = true;
-    let meta = EnqueueMeta { prompt: self.settings.prompt.trim().to_owned(), model_id: m.id.clone(), batch_count: 1, ref_image: None };
+    let meta = EnqueueMeta { prompt: self.settings.prompt.trim().to_owned(), model_id: m.id.clone(), batch_count: 1, ref_image: None, provider: Provider::Artcraft };
     env.backend.generate(Modality::Audio, self.fields(m, false), meta);
   }
 

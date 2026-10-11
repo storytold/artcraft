@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::backend::wire::Prompt;
+use crate::backend::providers::Provider;
 use crate::backend::{EnqueueMeta, Modality};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
@@ -126,7 +127,7 @@ impl CreateVideoPage {
     let mut open_characters = false;
     let mut slots = |ui: &mut Ui, slot: Slot| match (slot, model) {
       (Slot::ToolbarLeft, _) => {
-        if let Some(id) = model_selector(ui, Id::new("video-model"), models, model, true) {
+        if let Some((id, _)) = model_selector(ui, Id::new("video-model"), models, model, true, None) {
           picked_model = Some(id);
         }
         if let Some(m) = model {
@@ -316,7 +317,7 @@ impl CreateVideoPage {
     }
     self.generating = true;
     let ref_image = self.refs.first_frame.as_ref().or(self.refs.images.first()).and_then(|r| r.preview.clone());
-    let meta = EnqueueMeta { prompt: self.settings.prompt.clone(), model_id: model.id.clone(), batch_count: u32::from(model.valid_batch(self.settings.count)), ref_image };
+    let meta = EnqueueMeta { prompt: self.settings.prompt.clone(), model_id: model.id.clone(), batch_count: u32::from(model.valid_batch(self.settings.count)), ref_image, provider: Provider::Artcraft };
     let mut fields = self.fields(model, false);
     if supports_characters(model) {
       let tokens = mentioned_characters(&self.settings.prompt, env.characters, &self.character_picks);

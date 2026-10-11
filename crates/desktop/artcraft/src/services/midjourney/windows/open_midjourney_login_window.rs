@@ -1,4 +1,4 @@
-use crate::services::midjourney::utils::midjourney_browser_profile::MIDJOURNEY_USER_AGENT;
+use midjourney_client::utils::midjourney_browser_profile::MIDJOURNEY_USER_AGENT;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::utils::clear_all_webview_cookies::clear_all_webview_cookies;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;

@@ -367,6 +367,11 @@ pub struct CostState {
 impl CostState {
   /// Requests an estimate for `fields` once they've been stable for a moment.
   pub fn update(&mut self, ui: &Ui, backend: &Backend, modality: Modality, fields: &Map<String, Value>) {
+    self.update_with(ui, fields, |key, fields| backend.estimate_cost(modality, key, fields));
+  }
+
+  /// [`update`](Self::update), asking `request(key, fields)` for the estimate.
+  pub fn update_with(&mut self, ui: &Ui, fields: &Map<String, Value>, request: impl FnOnce(String, Map<String, Value>)) {
     let key = Value::Object(fields.clone()).to_string();
     if key == self.key {
       return;
@@ -378,7 +383,7 @@ impl CostState {
           self.key = key.clone();
           self.credits = None;
           self.pending_key = None;
-          backend.estimate_cost(modality, key, fields.clone());
+          request(key, fields.clone());
         } else {
           ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(COST_DEBOUNCE_SECS));
         }
