@@ -40,6 +40,7 @@ import {
 import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
+import { readTaskQueueLastReadAt } from "./taskQueueStorage";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
 
@@ -511,10 +512,7 @@ export const TaskQueue = () => {
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
   const [completed, setCompleted] = useState<CompletedTask[]>([]);
   const [failed, setFailed] = useState<FailedTask[]>([]);
-  const [lastReadAt, setLastReadAt] = useState<number>(() => {
-    const stored = localStorage.getItem("taskQueueLastReadAt");
-    return stored ? parseInt(stored, 10) : 0;
-  });
+  const [lastReadAt, setLastReadAt] = useState<number>(() => readTaskQueueLastReadAt());
 
   // remove unread state; unread tracking handled via IDs below
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
