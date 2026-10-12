@@ -1,0 +1,32 @@
+name: docs-check
+
+on:
+  pull_request:
+    paths: ["docs/user/**"]
+  push:
+    branches: [main]
+    paths: ["docs/user/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download the shared docs checker
+        id: fetch
+        run: |
+          url=https://raw.githubusercontent.com/storytold/artcraft-services/main/frontend/apps/artcraft-website-next/scripts/docs/core.mjs
+          if curl -fsSL "$url" -o "$RUNNER_TEMP/docs-core.mjs"; then
+            echo "ok=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The docs checker is not published yet; skipping."
+          fi
+      - name: Check docs/user
+        if: steps.fetch.outputs.ok == '1'
+        run: node "$RUNNER_TEMP/docs-core.mjs" docs/user

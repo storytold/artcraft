@@ -1,0 +1,22 @@
+name: docs-publish
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/user/**"]
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rebuild getartcraft.com
+        env:
+          HOOK: ${{ secrets.DOCS_BUILD_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "DOCS_BUILD_HOOK is not set; the nightly website build will pick this up."
+            exit 0
+          fi
+          curl -fsS -X POST -d '{}' "$HOOK?trigger_title=docs%20update%20from%20$GITHUB_REPOSITORY"

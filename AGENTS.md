@@ -74,3 +74,9 @@ Organize for top-to-bottom reading. Important things first, details later.
 
   Not: `| Model | Configuration | Credits | Speed | Score |` packed tight
   with varying widths per row.
+
+## User docs
+
+User docs live in `docs/user/` and are published at https://getartcraft.com/docs/artcraft. If a
+change alters something a user sees or does (UI labels, install, login, models, errors), update the
+matching page in `docs/user/` in the same PR, or add one. Rules: `docs/user/AGENTS.md`.
