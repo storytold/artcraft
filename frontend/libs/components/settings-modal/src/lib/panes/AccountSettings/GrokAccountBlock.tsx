@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
@@ -7,6 +8,7 @@ import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { GrokGetCredentialInfo, GrokGetCredentialInfoSuccess } from "@storyteller/tauri-api";
 
 export const GrokAccountBlock = () => {
+  const { t } = useTranslation();
   const [grokSession, setGrokSession] = useState<GrokGetCredentialInfoSuccess| undefined>(undefined);
   const [isCheckingGrokSession, setIsCheckingGrokSession] = useState(false);
 
@@ -60,10 +62,10 @@ export const GrokAccountBlock = () => {
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-          Grok account
+          {t("Grok account")}
         </p>
         <p className="truncate text-sm font-medium text-base-fg/80">
-          {grokSession?.payload?.maybe_email || "Not logged in"}
+          {grokSession?.payload?.maybe_email || t("Not logged in")}
         </p>
       </div>
       <Button
@@ -81,9 +83,9 @@ export const GrokAccountBlock = () => {
         {isCheckingGrokSession ? (
           <LoaderCircleIcon className="animate-spin text-sm" />
         ) : grokSession?.payload?.can_clear_state ? (
-          "Disconnect"
+          t("Disconnect")
         ) : (
-          "Connect"
+          t("Connect")
         )}
       </Button>
     </div>

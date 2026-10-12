@@ -13,6 +13,16 @@ const action = (
 });
 
 describe("actionMatchesQuery", () => {
+  it("matches translated labels while retaining English names and physical keys", () => {
+    const camera = action("Camera up", "Camera");
+    const bindings = [{ code: "KeyE" }];
+    const labels = ["相机上移", "相机"];
+    expect(actionMatchesQuery(camera, bindings, "相机 上移", labels)).toBe(true);
+    expect(actionMatchesQuery(camera, bindings, "camera up", labels)).toBe(true);
+    expect(actionMatchesQuery(camera, bindings, "E", labels)).toBe(true);
+    expect(actionMatchesQuery(camera, bindings, "下移", labels)).toBe(false);
+    expect(camera.label).toBe("Camera up");
+  });
   describe("by name", () => {
     it("matches a case-insensitive label substring", () => {
       expect(actionMatchesQuery(action("Rotate"), [], "rot")).toBe(true);

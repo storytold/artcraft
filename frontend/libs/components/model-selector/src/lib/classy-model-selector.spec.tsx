@@ -1,4 +1,5 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { setLocale } from "@storyteller/i18n";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -40,8 +41,9 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  await setLocale("en");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   useClassyModelSelectorStore.setState({ selectedModels: {}, selectedProviders: {} });
@@ -82,6 +84,18 @@ it("still dismisses the grouped picker on an outside press without changing sele
   expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
   expect(useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[MIDJOURNEY_MODEL.id])
     .toBe(GenerationProvider.Artcraft);
+});
+
+it("translates the open provider picker without changing model or provider identity", async () => {
+  const user = await openProviderPicker("grouped");
+  await act(() => setLocale("zh-CN"));
+  expect(screen.getByText("选择模型")).toBeTruthy();
+  expect(screen.getByText("选择服务商")).toBeTruthy();
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
+  await user.click(screen.getByRole("button", { name: /Midjourney/ }));
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(MIDJOURNEY_MODEL);
+  expect(useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[MIDJOURNEY_MODEL.id]).toBe(GenerationProvider.Midjourney);
+  expect(screen.getByRole("button", { name: new RegExp(MIDJOURNEY_MODEL.selectorName) })).toBeTruthy();
 });
 
 async function openProviderPicker(style: "grouped" | "flat") {
