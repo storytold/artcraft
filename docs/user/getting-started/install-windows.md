@@ -25,7 +25,7 @@ You can also get the installer from the [GitHub releases page](https://github.co
 
 ## Windows security prompt
 
-Windows may show a blue "Windows protected your PC" warning (Microsoft Defender SmartScreen) when you run the installer. The Windows publish workflow has no code-signing step, so the installer is not signed and this warning is expected. See Microsoft's [SmartScreen overview](https://learn.microsoft.com/en-us/windows/security/operating-system-security/virus-and-threat-protection/microsoft-defender-smartscreen/).
+Windows is likely to show a blue "Windows protected your PC" warning (Microsoft Defender SmartScreen) when you run the installer. The Windows publish workflow has no code-signing step, so the installer is probably not signed. See Microsoft's [SmartScreen overview](https://learn.microsoft.com/en-us/windows/security/operating-system-security/virus-and-threat-protection/microsoft-defender-smartscreen/).
 
 If you downloaded the file from getartcraft.com or the GitHub releases page above:
 
@@ -34,13 +34,9 @@ If you downloaded the file from getartcraft.com or the GitHub releases page abov
 
 If you got the file anywhere else, do not run it.
 
-## Where it installs
-
-This page does not say where ArtCraft installs, because that has not been checked yet.
-
 ## Update
 
-ArtCraft has no built-in updater in version 0.42.0. To get a newer version, download the latest installer from [getartcraft.com/download](https://getartcraft.com/download) and run it. The download page shows which version it offers.
+ArtCraft has no built-in updater. To get a newer version, download the latest installer from [getartcraft.com/download](https://getartcraft.com/download) and run it. The download page shows which version it offers.
 
 ## Still stuck?
 

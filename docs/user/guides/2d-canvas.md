@@ -29,7 +29,7 @@ The toolbar on the left has these tools. Hover a button to see its name.
 - **Undo** and **Redo**.
 - A red X button at the bottom of the toolbar, **Reset Canvas**. It asks "Are you sure you want to reset the canvas?" and clears all your work if you click **Reset all**. This cannot be undone.
 
-The button corners show each tool's keyboard shortcut. You can change shortcuts in **Settings**, under **Keybinds**.
+The button corners show the keyboard shortcut for some tools. You can change shortcuts in **Settings**, under **Keybinds**.
 
 ## Add images from your library
 

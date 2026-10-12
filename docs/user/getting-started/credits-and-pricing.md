@@ -11,7 +11,7 @@ Credits pay for generations that run through ArtCraft. You can see your balance 
 
 No. The pricing page says you can use ArtCraft without a subscription, and that you can bring your own compute and third-party subscriptions. See [Use your own provider accounts](connect-provider-accounts.md).
 
-The app also says: "You do not have to purchase anything from us to use ArtCraft, but you can support ArtCraft development by subscribing or buying credits."
+**Settings** > **Plan & Credits** also says: "You do not have to purchase anything from us to use ArtCraft, but you can support ArtCraft development by subscribing or buying credits."
 
 ## Two kinds of credits
 

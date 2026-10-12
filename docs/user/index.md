@@ -7,7 +7,7 @@ verified: 0.42.0
 
 ## What ArtCraft is
 
-ArtCraft is the IDE for interactive AI image and video creation. Compose in 2D, stage scenes in 3D, and choose the models that fit your work.
+ArtCraft is a desktop app for making images and video with AI models. You can write a prompt, compose on a 2D canvas, stage a scene in 3D, and pick the model for each job.
 
 ## Start here
 

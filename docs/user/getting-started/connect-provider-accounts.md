@@ -37,7 +37,9 @@ For image generation, when Midjourney is the selected provider, the prompt box s
 
 The README lists Grok, Midjourney, Sora and World Labs next to ArtCraft. In version 0.42.0, **Accounts** only has rows for ArtCraft, Grok and Midjourney. This page does not explain connecting Sora or World Labs.
 
-Using your own Fal key is not supported in the app's settings yet. A question about it in issue [#1525](https://github.com/storytold/artcraft/issues/1525) was closed without a setup guide. Fal's bring-your-own-key endpoints for OpenAI models were deprecated, see issue [#1172](https://github.com/storytold/artcraft/issues/1172).
+## Your own API key (Fal, OpenAI)
+
+Using your own Fal key is not supported in the app's settings. A question about it in issue [#1525](https://github.com/storytold/artcraft/issues/1525) was closed without a setup guide. Fal's bring-your-own-key endpoints for OpenAI models were deprecated, see issue [#1172](https://github.com/storytold/artcraft/issues/1172).
 
 ## Still stuck?
 

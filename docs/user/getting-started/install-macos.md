@@ -30,7 +30,7 @@ You can also get the file from the [GitHub releases page](https://github.com/sto
 
 ## macOS security prompt
 
-A warning is not expected. The macOS publish workflow signs the build with a Developer ID certificate and passes Apple notarization credentials to the build. Notarization itself has not been checked against a release.
+You should not see a warning. The macOS publish workflow signs the build with a Developer ID certificate.
 
 If macOS still blocks ArtCraft, and you downloaded it from getartcraft.com or the GitHub releases page:
 
@@ -47,7 +47,7 @@ Sign-up used to freeze on Monterey (issue [#1008](https://github.com/storytold/a
 
 ## Update
 
-ArtCraft has no built-in updater in version 0.42.0. To get a newer version, download the latest file from [getartcraft.com/download](https://getartcraft.com/download) and install it again.
+ArtCraft has no built-in updater. To get a newer version, download the latest file from [getartcraft.com/download](https://getartcraft.com/download) and install it again.
 
 ## Still stuck?
 

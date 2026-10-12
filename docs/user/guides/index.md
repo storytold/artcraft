@@ -28,6 +28,6 @@ Each guide covers one task. Pick the one that matches what you want to do.
 
 ## Before you start
 
-- You need an account. See [Sign up and log in](../getting-started/sign-up-and-log-in.md).
+- You need an account. See [Create an account and log in](../getting-started/sign-up-and-log-in.md).
 - Generations cost credits. See [Credits and pricing](../getting-started/credits-and-pricing.md).
 - Models differ in the settings they offer. See [Models](../reference/models.md).

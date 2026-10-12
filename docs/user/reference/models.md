@@ -5,9 +5,7 @@ order: 10
 verified: 0.42.0
 ---
 
-The table below lists the image and video models you can pick in ArtCraft. It is read from the ArtCraft service, so it is always current.
-
-The app gets its model list from the ArtCraft service. Which models appear, and their order, comes from that service. A model can be added, changed or removed without a new app version. If your picker shows something different from a guide, trust the picker.
+The table below lists the image and video models you can pick in ArtCraft. The table is built from the ArtCraft service when this site is updated. Models can change without a new app version; if your picker differs, trust the picker.
 
 Some models can run through your own provider account instead of ArtCraft credits. See [Use your own provider accounts](../getting-started/connect-provider-accounts.md). Costs depend on the model and your settings. See [Credits and pricing](../getting-started/credits-and-pricing.md).
 

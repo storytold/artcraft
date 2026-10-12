@@ -47,7 +47,7 @@ The bar at 95% is an estimate, not a real measure. The app fills the bar over th
 
 The pricing page says credits are refunded if a generation fails. In reply to a report of tasks stuck at 95%, a team member wrote that refunds are automatic for failed jobs and that stuck jobs move to failed ([#1068](https://github.com/storytold/artcraft/issues/1068)). That comment is from the issue tracker, not from this app's code, so check your balance. If a failed task was charged and not refunded, tell the team in Discord and include the details below.
 
-If a task never moves to **Failed**, do not rely on a refund. Say the task stays at 95% well past the usual time for that model and your balance dropped. Do not remove it from the list yet. Report it first, with the details under "Still stuck?". Reports like this exist: in [#1068](https://github.com/storytold/artcraft/issues/1068) a user lost 176 credits to two jobs stuck at 95%, and [#1439](https://github.com/storytold/artcraft/issues/1439) is a similar report that is still open.
+If a task never moves to **Failed**, do not rely on a refund. If the task stays at 95% well past the usual time for that model and your balance dropped, take a screenshot of the task before you remove it, then report it with the details under "Still stuck?". Reports like this exist: in [#1068](https://github.com/storytold/artcraft/issues/1068) a user lost 176 credits to two jobs stuck at 95%, and [#1439](https://github.com/storytold/artcraft/issues/1439) is an open report of the same symptom.
 
 ## Why this happens
 

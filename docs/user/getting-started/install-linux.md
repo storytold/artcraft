@@ -22,11 +22,7 @@ The repository has a build script, `script/artcraft/unix_build.sh`. In issue [#2
 
 ## Known problem: crash on Wayland
 
-A source build can crash at start on Wayland with a WebKit error. The reporter in [#2055](https://github.com/storytold/artcraft/issues/2055) started the app with this environment variable set:
-
-    WEBKIT_DISABLE_DMABUF_RENDERER=1 ./<the AppImage you built>
-
-The file name above stands for the AppImage you built yourself. It is not a download. The project's dev scripts already set this variable, so it only matters for release builds. Their fix is proposed in pull request [#2056](https://github.com/storytold/artcraft/pull/2056), which was still open when this page was checked. The workaround worked for that reporter. It has not been tested on other setups.
+A build from source can crash on launch under Wayland. See [ArtCraft crashes on launch under Wayland (Linux)](../troubleshooting/linux-wayland-crash.md) for the workaround.
 
 ## What is not supported yet
 

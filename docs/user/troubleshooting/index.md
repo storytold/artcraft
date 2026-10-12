@@ -10,6 +10,7 @@ Find the page that matches what you see.
 ## Pages
 
 - [A generation is stuck or failed](generation-stuck-or-failed.md): the progress bar stops at 95%, or a task shows **Failed**.
+- [Can't sign up](../getting-started/sign-up-and-log-in.md#if-sign-up-fails): what to check when sign-up does not work.
 - [ArtCraft crashes on launch under Wayland (Linux)](linux-wayland-crash.md): a build you made yourself closes at start with a WebKit error.
 
 Not listed? Ask in [Discord](https://discord.gg/artcraft) or open an issue in the [issue tracker](https://github.com/storytold/artcraft/issues).
