@@ -1,0 +1,70 @@
+{
+  "id": "ai.storyteller.artcraft-launcher",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "26.08",
+  "sdk": "org.freedesktop.Sdk",
+  "command": "artcraft-launcher",
+  "modules": [
+    {
+      "name": "artcraft-launcher",
+      "buildsystem": "simple",
+      "sources": [
+        {
+          "path": "stage",
+          "type": "dir"
+        }
+      ],
+      "build-commands": [
+        "install -Dm755 bin/artcraft-launcher /app/bin/artcraft-launcher",
+        "install -Dm644 share/applications/ai.storyteller.artcraft-launcher.desktop /app/share/applications/ai.storyteller.artcraft-launcher.desktop",
+        "install -Dm644 share/metainfo/ai.storyteller.artcraft-launcher.metainfo.xml /app/share/metainfo/ai.storyteller.artcraft-launcher.metainfo.xml",
+        "mkdir -p /app/share/icons /app/share/doc && cp -R share/icons/hicolor /app/share/icons/ && cp -R share/doc/artcraft-launcher /app/share/doc/",
+        "# Clean up development artifacts that cause hangs in flatpak sandbox",
+        "find /app -name '*.so.debug' -delete",
+        "find /app -name '*.debug' -delete",
+        "find /app -name '*.pdb' -delete",
+        "strip --strip-unneeded /app/bin/artcraft-launcher || true"
+      ]
+    }
+  ],
+  "finish-args": [
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--share=ipc",
+    "--device=dri",
+    "--share=network",
+    "--filesystem=home",
+    "--own-name=ai.storyteller.artcraft-launcher",
+    "--own-name=ai.artcraft.app",
+    "--talk-name=org.freedesktop.DBus",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.freedesktop.Flatpak",
+    "--talk-name=org.kde.StatusNotifierWatcher;org.freedesktop.StatusNotifierWatcher",
+    "--talk-name=org.gnome.SessionManager",
+    "--talk-name=org.freedesktop.ScreenSaver",
+    "--talk-name=org.freedesktop.login1",
+    "--env=DISPLAY=:0",
+    "--env=WAYLAND_DISPLAY=wayland-0",
+    "--env=XDG_RUNTIME_DIR=/run/user/1000",
+    "--env=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+  ],
+  "cleanup": [
+    "*.debug",
+    "*.Debug",
+    "*.pdb",
+    "/usr/share/gdb",
+    "/usr/share/man",
+    "/usr/share/doc/*",
+    "/usr/share/info",
+    "/usr/include",
+    "/usr/lib/debug",
+    "/usr/lib/pkgconfig",
+    "/usr/share/pkgconfig",
+    "/usr/lib/cmake",
+    "/usr/share/cmake",
+    "/usr/share/systemd",
+    "/usr/share/vala",
+    "/usr/share/mime"
+  ],
+  "source-date-epoch": 1791753210
+}
