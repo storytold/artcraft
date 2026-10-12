@@ -54,10 +54,11 @@ model table from the ArtCraft API. Keep it in `reference/models.md`; do not hand
 
 ## Check before you push
 
-    curl -fsSL https://raw.githubusercontent.com/storytold/artcraft-services/main/frontend/apps/artcraft-website-next/scripts/docs/core.mjs -o /tmp/docs-core.mjs
+    commit=$(awk '/CHECKER_COMMIT:/ {print $2}' .github/workflows/docs-check.yml)
+    curl -fsSL "https://raw.githubusercontent.com/storytold/artcraft-services/$commit/frontend/apps/artcraft-website-next/scripts/docs/core.mjs" -o /tmp/docs-core.mjs
     node /tmp/docs-core.mjs docs/user
 
-CI runs the same check on every PR that touches `docs/user/`.
+This uses the same pinned checker as CI (`.github/workflows/docs-check.yml`).
 
 ## Support PRs
 

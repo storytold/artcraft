@@ -10,6 +10,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # Shared docs checker from storytold/artcraft-services, pinned to one commit
+  # and its SHA-256. To update it, change both values in a reviewed PR.
+  CHECKER_COMMIT: 4db0e30fe2c57a1c4c49e390e3711f90910b8d23
+  CHECKER_SHA256: bd6b610a708b85fd0aa0491c459bd2800b716e0b8050516fea79e084cfb2a624
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -18,15 +24,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Download the shared docs checker
-        id: fetch
+      - name: Download the pinned docs checker
         run: |
-          url=https://raw.githubusercontent.com/storytold/artcraft-services/main/frontend/apps/artcraft-website-next/scripts/docs/core.mjs
-          if curl -fsSL "$url" -o "$RUNNER_TEMP/docs-core.mjs"; then
-            echo "ok=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::The docs checker is not published yet; skipping."
-          fi
+          url="https://raw.githubusercontent.com/storytold/artcraft-services/$CHECKER_COMMIT/frontend/apps/artcraft-website-next/scripts/docs/core.mjs"
+          curl -fsSL "$url" -o "$RUNNER_TEMP/docs-core.mjs"
+          echo "$CHECKER_SHA256  $RUNNER_TEMP/docs-core.mjs" | sha256sum -c -
       - name: Check docs/user
-        if: steps.fetch.outputs.ok == '1'
         run: node "$RUNNER_TEMP/docs-core.mjs" docs/user
