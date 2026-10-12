@@ -25,7 +25,14 @@ You can also get the installer from the [GitHub releases page](https://github.co
 
 ## Windows security prompt
 
-Windows can show a warning when you run a downloaded installer. This page does not cover that prompt yet, because it has not been checked against a release. If you are unsure, download only from getartcraft.com or the GitHub releases page above and ask in [Discord](https://discord.gg/artcraft).
+Windows may show a blue "Windows protected your PC" warning (Microsoft Defender SmartScreen) when you run the installer. The Windows publish workflow has no code-signing step, so the installer is not signed and this warning is expected. See Microsoft's [SmartScreen overview](https://learn.microsoft.com/en-us/windows/security/operating-system-security/virus-and-threat-protection/microsoft-defender-smartscreen/).
+
+If you downloaded the file from getartcraft.com or the GitHub releases page above:
+
+1. Click **More info** in the warning.
+2. Click **Run anyway**.
+
+If you got the file anywhere else, do not run it.
 
 ## Where it installs
 

@@ -30,7 +30,16 @@ You can also get the file from the [GitHub releases page](https://github.com/sto
 
 ## macOS security prompt
 
-macOS can show a warning for apps downloaded from the internet. The release workflow signs the macOS build with an Apple Developer ID certificate. This page does not describe the exact prompt yet, because it has not been checked on a Mac. If you are unsure, download only from getartcraft.com or the GitHub releases page and ask in [Discord](https://discord.gg/artcraft).
+A warning is not expected. The macOS publish workflow signs the build with a Developer ID certificate and passes Apple notarization credentials to the build. Notarization itself has not been checked against a release.
+
+If macOS still blocks ArtCraft, and you downloaded it from getartcraft.com or the GitHub releases page:
+
+1. Try to open ArtCraft once.
+2. Open **System Settings**, then **Privacy & Security**.
+3. Scroll down and click **Open Anyway** next to the message about ArtCraft.
+4. Click **Open** when the warning appears again.
+
+These steps are from Apple's page [Safely open apps on your Mac](https://support.apple.com/en-us/102445). If it still does not open, ask in [Discord](https://discord.gg/artcraft).
 
 ## macOS 12 (Monterey)
 
