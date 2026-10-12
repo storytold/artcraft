@@ -54,7 +54,12 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   // Apply stored theme early on mount
   useEffect(() => {
     const key = "st-theme";
-    const value = (localStorage.getItem(key) || "gray").trim();
+    let value = "gray";
+    try {
+      value = (localStorage.getItem(key) || "gray").trim();
+    } catch {
+      // ignore storage access errors
+    }
     const allowed = ["light", "gray", "black", "aurora", "sunset", "gradient"];
     const normalized = value === "gradient" ? "aurora" : value;
     const theme = allowed.includes(value) ? (normalized as string) : "gray";
