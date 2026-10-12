@@ -1,7 +1,7 @@
 ---
 title: Guides
 description: Step-by-step guides for making images and video, editing on the canvas, staging 3D scenes and managing your library in ArtCraft.
-order: 0
+order: 20
 verified: 0.42.0
 ---
 
