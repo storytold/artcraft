@@ -1,6 +1,6 @@
 ---
 title: Install ArtCraft on Windows
-description: Download the ArtCraft installer for Windows 10 or newer, run it, and update to a newer version.
+description: Download the ArtCraft installer for Windows 11 (64-bit), run it, and update to a newer version.
 order: 20
 verified: 0.42.0
 ---
@@ -9,7 +9,7 @@ Download the installer from [getartcraft.com/download](https://getartcraft.com/d
 
 ## What you need
 
-- Windows 10 (64-bit) or newer
+- Windows 11 (64-bit)
 - 8 GB of RAM recommended
 - 2 GB of free storage
 
