@@ -7,9 +7,10 @@ import { useCurrency } from "@storyteller/ui-pricing-modal";
 interface CostModalProps {
   credits?: number;
   onClose: () => void;
+  isLocalLlm?: boolean;
 }
 
-export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
+export const CostModal = ({ credits = 1, onClose, isLocalLlm = false }: CostModalProps) => {
   const {
     currency,
     setCurrency,
@@ -57,11 +58,11 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
             <div className="mb-1 flex items-center justify-between">
               <span className="text-sm text-base-fg/80">Total Cost</span>
               <span className="text-lg font-semibold tabular-nums tracking-tight text-base-fg">
-                {credits} Credits
+                {isLocalLlm ? "Free" : `${credits} Credits`}
               </span>
             </div>
             <div className="text-right text-xs text-base-fg/60">
-              ≈ {formattedPrice} {currencyOption.value}
+              {isLocalLlm ? "No credits used" : `≈ ${formattedPrice} ${currencyOption.value}`}
             </div>
           </div>
 

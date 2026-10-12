@@ -98,8 +98,9 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
     RouterProvider::Artcraft => GenerationProvider::Artcraft,
     RouterProvider::Midjourney => GenerationProvider::Midjourney,
     RouterProvider::Fal => GenerationProvider::Fal,
+    RouterProvider::LocalLlm => GenerationProvider::LocalLlm,
     // Unused providers -> ArtCraft
-    RouterProvider::KinoviWeb => GenerationProvider::Artcraft ,
+    RouterProvider::KinoviWeb => GenerationProvider::Artcraft,
     RouterProvider::GmiCloud => GenerationProvider::Artcraft,
     RouterProvider::GrokApi => GenerationProvider::Artcraft,
     RouterProvider::WorldLabs => GenerationProvider::Artcraft,

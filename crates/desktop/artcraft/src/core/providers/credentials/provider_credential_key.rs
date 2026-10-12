@@ -16,6 +16,10 @@ pub enum ProviderCredentialKey {
   HiggsfieldWebLogin,
   MidjourneyLogin,
   RunwayWebLogin,
+
+  // ========== LOCAL LLM ==========
+
+  LocalLlmConfig,
 }
 
 

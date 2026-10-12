@@ -50,6 +50,7 @@ fn map_provider_to_credential_key(
 ) -> Result<ProviderCredentialKey, GenerateError> {
   match provider {
     GenerationProvider::Fal => Ok(ProviderCredentialKey::FalApiKey),
+    GenerationProvider::LocalLlm => Err(GenerateError::NoProviderAvailable),
     _ => Err(GenerateError::NotYetImplemented(
       format!("Provider {:?} does not have a mapped credential key yet", provider),
     )),
@@ -63,6 +64,7 @@ fn map_provider_to_missing_credentials_error(provider: GenerationProvider) -> Ge
     GenerationProvider::Midjourney => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials),
     GenerationProvider::Sora => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsSoraCredentials),
     GenerationProvider::WorldLabs => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsWorldLabsCredentials),
+    GenerationProvider::LocalLlm => GenerateError::NoProviderAvailable,
     _ => GenerateError::NoProviderAvailable,
   }
 }

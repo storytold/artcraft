@@ -6,6 +6,7 @@ use artcraft_client::utils::api_host::ApiHost;
 #[derive(Clone)]
 pub struct AppEnvConfigs {
   pub storyteller_host: ApiHost,
+  pub app_data_root: AppDataRoot,
 }
 
 impl AppEnvConfigs {
@@ -32,6 +33,7 @@ impl AppEnvConfigs {
 
     Ok(Self {
       storyteller_host: storyteller_api,
+      app_data_root: root.clone(),
     })
   }
 }

@@ -84,6 +84,7 @@ pub enum MissingCredentialsReason {
   NeedsSoraCredentials,
   NeedsStorytellerCredentials,
   NeedsWorldLabsCredentials,
+  NeedsLocalLlmConfig,
 }
 
 #[derive(Debug)]
@@ -162,6 +163,10 @@ impl GenerateError {
 
   pub fn needs_worldlabs_credentials() -> Self {
     Self::MissingCredentials(MissingCredentialsReason::NeedsWorldLabsCredentials)
+  }
+
+  pub fn needs_local_llm_config() -> Self {
+    Self::MissingCredentials(MissingCredentialsReason::NeedsLocalLlmConfig)
   }
 }
 

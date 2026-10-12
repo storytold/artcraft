@@ -19,6 +19,13 @@ impl SerializeMarker for EstimateImageCostResponse {}
 
 #[tauri::command]
 pub async fn estimate_image_cost_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  if matches!(request.provider, Some(GenerationProvider::LocalLlm)) {
+    return Ok(OmniResponse(serde_json::json!({
+      "success": true, "cost_in_credits": 0, "cost_in_usd_cents": null,
+      "is_free": true, "is_unlimited": false, "is_rate_limited": false,
+      "has_watermark": false,
+    })).into());
+  }
   if matches!(request.provider, Some(GenerationProvider::Midjourney)) {
     if !matches!(request.model(), Some("midjourney" | "midjourney_7" | "midjourney_7_niji" | "midjourney_8")) {
       return Err(CommandErrorResponseWrapper {

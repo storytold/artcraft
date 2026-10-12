@@ -5,6 +5,7 @@ import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
 import { useShowProviderLoginModalEvent } from "@storyteller/tauri-events";
 import { GenerationProvider } from "@storyteller/common";
+import { LocalLlmSettingsModal } from "../../../../apps/artcraft/app/src/components/reusable/LocalLlmSettingsModal";
 
 interface ProviderSetupModalProps {
 }
@@ -44,6 +45,8 @@ export function ProviderSetupModal({
 
   const modalButtonText = `Set up ${serviceProviderName}`;
 
+  const [showLocalLlmSettings, setShowLocalLlmSettings] = useState(false);
+
   const buttonOnClick = async () => {
     switch (provider) {
       case GenerationProvider.Grok:
@@ -52,6 +55,10 @@ export function ProviderSetupModal({
       case GenerationProvider.Midjourney:
         await invoke("midjourney_open_login_command");
         break;
+      case GenerationProvider.LocalLlm:
+        setShowLocalLlmSettings(true);
+        setShowModal(false);
+        return;
       case GenerationProvider.Fal:
         break; // TODO: None yet.
       default:
@@ -98,6 +105,12 @@ export function ProviderSetupModal({
           {modalButtonText}
         </Button>
       </div>
+      {showLocalLlmSettings && (
+        <LocalLlmSettingsModal
+          isOpen={showLocalLlmSettings}
+          onClose={() => setShowLocalLlmSettings(false)}
+        />
+      )}
     </Modal>
   );
 }
@@ -126,6 +139,8 @@ function getServiceProviderName(provider: GenerationProvider) : string {
       return "PixVerse";
     case GenerationProvider.Runway:
       return "Runway";
+    case GenerationProvider.LocalLlm:
+      return "Local LLM";
     case GenerationProvider.Artcraft:
     default:
       return "Artcraft";

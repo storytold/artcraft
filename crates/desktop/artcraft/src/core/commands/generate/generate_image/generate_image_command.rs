@@ -8,6 +8,7 @@ use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCrede
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_router::handle_router;
+use crate::core::providers::local_llm::local_llm_handler::handle_local_llm;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };
@@ -58,6 +59,13 @@ async fn generate_image_native(
     }
     GenerationProvider::Midjourney => {
       handle_midjourney(&request, &app_env_configs, &app.state(), &storyteller_creds_manager).await
+    }
+    GenerationProvider::LocalLlm => {
+      handle_local_llm(
+        &request,
+        &app_env_configs,
+        &credential_cache,
+      ).await
     }
     // All other providers go through the router.
     other => {

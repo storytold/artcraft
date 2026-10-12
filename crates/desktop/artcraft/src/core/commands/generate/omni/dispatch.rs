@@ -14,6 +14,8 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::providers::local_llm::local_llm_handler::handle_local_llm;
+use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::error::api_error::ApiError;
@@ -38,6 +40,21 @@ pub type OmniResult = Response<OmniResponse, String, ()>;
 
 pub async fn generate(request: OmniRequest, modality: Modality, app: &AppHandle) -> OmniResult {
   let configs = app.state::<AppEnvConfigs>();
+
+  // LocalLlm does not require storyteller credentials — it runs locally.
+  if matches!(request.provider, Some(GenerationProvider::LocalLlm)) {
+    let credential_cache = app.state::<ProviderCredentialLoadingCache>();
+    let tauri_request: crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest =
+      decode_native(request.clone())?;
+    return match handle_local_llm(&tauri_request, configs.inner(), credential_cache.inner()).await {
+      Ok(success) => Ok(OmniResponse(serde_json::to_value(success).map_err(local_error)?).into()),
+      Err(err) => {
+        notify_frontend_of_errors(app, &err).await;
+        Err(local_error(err))
+      }
+    };
+  }
+
   let manager = app.state::<StorytellerCredentialManager>();
   let maybe_creds = manager.get_credentials().map_err(local_error)?;
   let creds = match maybe_creds {
@@ -88,6 +105,16 @@ pub async fn generate(request: OmniRequest, modality: Modality, app: &AppHandle)
 
 pub async fn estimate(request: OmniRequest, modality: Modality, app: &AppHandle) -> OmniResult {
   let configs = app.state::<AppEnvConfigs>();
+
+  // LocalLlm does not require storyteller credentials — it runs locally.
+  if matches!(request.provider, Some(GenerationProvider::LocalLlm)) {
+    return Ok(OmniResponse(serde_json::json!({
+      "success": true, "cost_in_credits": 0, "cost_in_usd_cents": null,
+      "is_free": true, "is_unlimited": false, "is_rate_limited": false,
+      "has_watermark": false,
+    })).into());
+  }
+
   let manager = app.state::<StorytellerCredentialManager>();
   let creds = manager.get_credentials().map_err(local_error)?;
   let mut fields = request.api_fields(modality);

@@ -84,6 +84,12 @@ use crate::services::worldlabs::commands::worldlabs_clear_credentials_command::w
 use crate::services::worldlabs::commands::worldlabs_get_credential_info_command::worldlabs_get_credential_info_command;
 use crate::services::worldlabs::commands::worldlabs_open_login_command::worldlabs_open_login_command;
 use crate::services::worldlabs::commands::worldlabs_receive_bearer_command::worldlabs_receive_bearer_command;
+use crate::core::providers::local_llm::local_llm_commands::{
+  check_local_llm_health_command,
+  get_local_llm_config_command,
+  save_local_llm_config_command,
+  test_local_llm_connection_command,
+};
 use crate::services::worldlabs::state::worldlabs_bearer_bridge::WorldlabsBearerBridge;
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
 use log::error;
@@ -288,6 +294,10 @@ pub fn run() {
     worldlabs_get_credential_info_command,
     worldlabs_open_login_command,
     worldlabs_receive_bearer_command,
+    save_local_llm_config_command,
+    get_local_llm_config_command,
+    test_local_llm_connection_command,
+    check_local_llm_health_command,
   ]);
 
   builder.run(tauri::generate_context!("tauri.conf.json"))
