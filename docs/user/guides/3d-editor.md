@@ -2,7 +2,7 @@
 title: Stage a scene in 3D
 description: Add objects and characters to 3D Stage, set up a camera, then generate an image from the current frame with a prompt.
 order: 50
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Open **3D Stage**, add objects with the **+** button, line up the camera, type a prompt, and click **Generate**. ArtCraft sends the current frame of your scene with the prompt, so the framing and poses carry into the image.

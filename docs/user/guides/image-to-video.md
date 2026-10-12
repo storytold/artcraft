@@ -2,7 +2,7 @@
 title: Turn an image into a video
 description: Add a starting image in Create Video, write a prompt that describes the motion, and generate a clip.
 order: 30
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Open **Create Video**, add a **First frame** image, describe what should happen, and click the round arrow button. Many models need a starting image. When one does, the box shows "Starting frame required" until you add it.

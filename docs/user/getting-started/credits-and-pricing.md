@@ -2,7 +2,7 @@
 title: Credits and pricing
 description: What ArtCraft credits are, how monthly and purchased credits differ, where to buy them, and how to see what a generation costs.
 order: 60
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Credits pay for generations that run through ArtCraft. You can see your balance in **Settings**, under **Plan & Credits**. Prices are on [getartcraft.com/pricing](https://getartcraft.com/pricing).
@@ -28,7 +28,7 @@ The app lists a Free plan for accounts without a subscription. Its plan card men
 
 1. Click the **Settings** button in the top bar.
 2. Open **Plan & Credits**.
-3. Read **Your ArtCraft credit balance**. Below it, **Monthly credits (refilled monthly)** and **Purchased credits** show the two parts.
+3. Read **Your ArtCraft credit balance**. Below it, a list shows how many are monthly credits (refilled monthly) and how many are purchased credits.
 
 ## Buy credits
 

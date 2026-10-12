@@ -2,7 +2,7 @@
 title: Turn an image into a 3D object
 description: Pick an image in Image to 3D Object, choose a model, and click Generate Object to get a 3D model you can use in 3D Stage or download as a GLB file.
 order: 60
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Open **Image to 3D Object** from **Home**, add one image, and click **Generate Object**. When the model is ready you can view it, open it in 3D Stage or download it as a GLB file.

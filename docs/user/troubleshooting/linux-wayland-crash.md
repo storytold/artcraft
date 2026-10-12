@@ -2,7 +2,7 @@
 title: ArtCraft crashes on launch under Wayland (Linux)
 description: A source-built ArtCraft closes at start on Wayland with a WebKit error. Start it with WEBKIT_DISABLE_DMABUF_RENDERER=1.
 order: 20
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Start ArtCraft with the environment variable `WEBKIT_DISABLE_DMABUF_RENDERER=1`. This fixed the crash for the person who reported it. You need it only for a build you made yourself.
@@ -17,7 +17,7 @@ Start ArtCraft with the environment variable `WEBKIT_DISABLE_DMABUF_RENDERER=1`.
 
 - The same output mentions `networkProcessCrashed`.
 
-The reporter ran ArtCraft 0.42.0 built from source as an AppImage, on CachyOS (Arch) with webkit2gtk-4.1 2.52.6. ArtCraft has no official Linux download yet. See [ArtCraft on Linux](../getting-started/install-linux.md).
+The reporter ran ArtCraft 0.42.0 built from source (unreleased code from main) as an AppImage, on CachyOS (Arch) with webkit2gtk-4.1 2.52.6. ArtCraft has no official Linux download yet. See [ArtCraft on Linux](../getting-started/install-linux.md).
 
 ## Fix
 

@@ -2,7 +2,7 @@
 title: Getting started
 description: The order of steps to get from download to your first image in ArtCraft.
 order: 10
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Follow these four steps in order: install, sign up, check your credits, make your first image.

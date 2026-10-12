@@ -2,7 +2,7 @@
 title: Install ArtCraft on macOS
 description: Download the universal ArtCraft disk image for Macs with Apple Silicon or Intel, running macOS 12 or newer.
 order: 30
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Download the one macOS file from [getartcraft.com/download](https://getartcraft.com/download). It runs on both Apple Silicon and Intel Macs and needs macOS 12.0 or newer.

@@ -2,7 +2,7 @@
 title: Models in ArtCraft
 description: The image and video models you can pick in ArtCraft, with how many images each makes per run and what inputs it accepts.
 order: 10
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 The table below lists the image and video models you can pick in ArtCraft. The table is built from the ArtCraft service when this site is updated. Models can change without a new app version; if your picker differs, trust the picker.

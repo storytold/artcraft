@@ -79,4 +79,4 @@ Organize for top-to-bottom reading. Important things first, details later.
 
 User docs live in `docs/user/` and are published at https://getartcraft.com/docs/artcraft. If a
 change alters something a user sees or does (UI labels, install, login, models, errors), update the
-matching page in `docs/user/` in the same PR, or add one. Rules: `docs/user/AGENTS.md`.
+matching page in `docs/user/` in the same PR, or add one. Rules: `docs/user/AGENTS.md`. Pages describe the latest release. For a change that is not released yet, write that it was added after <version> and is not in a release yet, or update the page when the release ships.

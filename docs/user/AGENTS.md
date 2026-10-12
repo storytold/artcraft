@@ -34,8 +34,7 @@ either. Write for an artist, not a developer.
 
 Only `key: value` and `key: [a, b]` lines work. Quote values that start with a quote or contain ` #`.
 
-Set `verified` to the version in `crates/desktop/artcraft/tauri.conf.json` whenever you check a
-page against the current code.
+Set `verified` to the latest release (the newest release tag) after checking the page against that tag with `git show <tag>:<path>`. Pages describe the latest release users download, not unreleased code on main.
 
 ## Folders
 

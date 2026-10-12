@@ -2,7 +2,7 @@
 title: Can I use local models or ComfyUI?
 description: Not yet. ArtCraft runs on cloud providers today. Local models and ComfyUI are requested and acknowledged by the team but have no release date.
 order: 10
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Not yet. ArtCraft generates with cloud services today. There is no setting to point it at a local model or a ComfyUI install.

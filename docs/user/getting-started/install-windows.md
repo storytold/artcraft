@@ -2,7 +2,7 @@
 title: Install ArtCraft on Windows
 description: Download the ArtCraft installer for Windows 11 (64-bit), run it, and update to a newer version.
 order: 20
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Download the installer from [getartcraft.com/download](https://getartcraft.com/download) and run it. ArtCraft for Windows is a 64-bit app.

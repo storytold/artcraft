@@ -2,7 +2,7 @@
 title: FAQ
 description: Short answers to common questions about ArtCraft.
 order: 70
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 ## Pages

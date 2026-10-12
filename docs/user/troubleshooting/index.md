@@ -2,7 +2,7 @@
 title: Troubleshooting
 description: Fixes for problems with ArtCraft, listed by what you see.
 order: 60
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Find the page that matches what you see.

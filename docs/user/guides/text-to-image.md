@@ -2,7 +2,7 @@
 title: Make an image from a prompt
 description: Open Create Image, pick a model, write a prompt and click the round arrow button to generate images.
 order: 10
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Open **Create Image**, write what you want in the prompt box, and click the round arrow button at the right of the box. The button is disabled until you type a prompt.

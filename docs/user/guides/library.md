@@ -2,7 +2,7 @@
 title: Find, download and delete your creations
 description: Open My Library, filter by type, download files to your computer, and delete one or many items.
 order: 70
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Click **My Library** in the top bar to see everything you have made and uploaded. Click an item to open it, then use **Download** or **Delete**. On a narrow window the button shows only an icon.

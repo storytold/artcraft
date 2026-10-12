@@ -2,7 +2,7 @@
 title: ArtCraft on Linux
 description: ArtCraft has no official Linux download yet. This page says what exists today and what is still open.
 order: 40
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 There is no official Linux download yet. Releases and the download page cover Windows and macOS only. You can build ArtCraft from source.

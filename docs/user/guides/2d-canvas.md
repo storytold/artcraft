@@ -2,7 +2,7 @@
 title: Compose on the 2D canvas
 description: What the tools in Image Editor do, how to add images and shapes, and how to generate from your layout.
 order: 40
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 **Image Editor** is a canvas for laying out images, shapes and brush strokes. When you click **Generate**, ArtCraft uses the canvas as input along with your prompt. Open it from **Image Editor** in the top bar.

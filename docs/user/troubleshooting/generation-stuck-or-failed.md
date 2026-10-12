@@ -2,7 +2,7 @@
 title: A generation is stuck or failed
 description: What to do when a task sits at 95% in the Task Queue, or shows Failed, and what to send when you report it.
 order: 10
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Open the **Task Queue** and read the task. If it shows **Failed**, point at the reason under it. If it sits at 95%, wait, then clear it and report it.

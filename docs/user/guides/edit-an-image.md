@@ -2,7 +2,7 @@
 title: Edit an image with a prompt
 description: Load an image into Image Editor, describe the change, and generate. Use the Mask tool to limit the edit to one area on models that support it.
 order: 20
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 Load an image into **Image Editor**, type what should change, and click **Generate**. To limit the edit to one area, paint a mask first. Masking only works with some models.

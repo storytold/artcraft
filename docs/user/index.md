@@ -2,7 +2,7 @@
 title: ArtCraft docs
 description: Install ArtCraft, make your first image and video, and fix common problems.
 order: 0
-verified: 0.42.0
+verified: 0.41.0
 ---
 
 ## What ArtCraft is
