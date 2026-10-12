@@ -28,7 +28,7 @@ either. Write for an artist, not a developer.
     title: App crashes on launch under Wayland (Linux)
     description: One sentence for search results, link previews and AI summaries.
     order: 10                 # optional, sorts within the folder (lower first)
-    verified: 0.9.4           # optional, app version you last checked this page against
+    verified: 0.41.0          # optional, app version you last checked this page against
     redirect_from: [old/path] # optional, old URLs (relative to /docs/artcraft)
     ---
 
