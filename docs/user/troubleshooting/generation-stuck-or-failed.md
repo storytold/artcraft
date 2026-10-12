@@ -38,13 +38,16 @@ The bar at 95% is an estimate, not a real measure. The app fills the bar over th
 
 1. Wait a few minutes. Video models can take longer than images.
 2. Open the **Task Queue** and check whether the task moved to **Failed** or to completed.
-3. After 5 minutes the task gets an X button. Click it to remove the task from the list. **Clear stale** removes all such tasks.
-4. Check your balance in **Settings**, under **Plan & Credits**. See [Credits and pricing](../getting-started/credits-and-pricing.md).
-5. If it still looks wrong, report it. See below.
+3. A task that has been running for more than 5 minutes gets an X button. Click it to remove the task from the list.
+4. To remove all of those at once, click **Show all** at the bottom of the Task Queue. In the window that opens, click **Clear stale** in the top row, next to **Clear completed**, **Clear failed** and **Remove all**. It removes every in-progress task older than 5 minutes and asks you to confirm first. It does not touch tasks under 5 minutes old.
+5. Check your balance in **Settings**, under **Plan & Credits**. See [Credits and pricing](../getting-started/credits-and-pricing.md).
+6. If it still looks wrong, report it. See below.
 
 ### Do I get my credits back?
 
 The pricing page says credits are refunded if a generation fails. In reply to a report of tasks stuck at 95%, a team member wrote that refunds are automatic for failed jobs and that stuck jobs move to failed ([#1068](https://github.com/storytold/artcraft/issues/1068)). That comment is from the issue tracker, not from this app's code, so check your balance. If a failed task was charged and not refunded, tell the team in Discord and include the details below.
+
+If a task never moves to **Failed**, do not rely on a refund. Say the task stays at 95% well past the usual time for that model and your balance dropped. Do not remove it from the list yet. Report it first, with the details under "Still stuck?". Reports like this exist: in [#1068](https://github.com/storytold/artcraft/issues/1068) a user lost 176 credits to two jobs stuck at 95%, and [#1439](https://github.com/storytold/artcraft/issues/1439) is a similar report that is still open.
 
 ## Why this happens
 
