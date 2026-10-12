@@ -54,11 +54,9 @@ model table from the ArtCraft API. Keep it in `reference/models.md`; do not hand
 
 ## Check before you push
 
-    commit=$(awk '/CHECKER_COMMIT:/ {print $2}' .github/workflows/docs-check.yml)
-    curl -fsSL "https://raw.githubusercontent.com/storytold/artcraft-services/$commit/frontend/apps/artcraft-website-next/scripts/docs/core.mjs" -o /tmp/docs-core.mjs
-    node /tmp/docs-core.mjs docs/user
+    node <path to your artcraft-services checkout>/frontend/apps/artcraft-website-next/scripts/docs/core.mjs docs/user
 
-This uses the same pinned checker as CI (`.github/workflows/docs-check.yml`).
+The checker lives in storytold/artcraft-services. A CI check will be added once it is on that repo's main branch.
 
 ## Support PRs
 
