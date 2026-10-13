@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model, ImageModel } from "@storyteller/model-list";
+import { Model, ImageModel, autoAspectRatio } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   usePromptImageStore,
@@ -84,7 +84,13 @@ export function useImageCostEstimate(
         generationCount = imageGenerationCount;
         break;
       case ModelPage.Canvas2D:
-        legacyAspectRatioStr = prompt2DAspectRatio;
+        if (prompt2DAspectRatio === "auto") {
+          // Generation keeps the base image's shape. Quote the model's own auto
+          // option, or leave the API default for models that have none.
+          aspectRatioStr = autoAspectRatio(imageModel);
+        } else {
+          legacyAspectRatioStr = prompt2DAspectRatio;
+        }
         resolutionStr = prompt2DResolution;
         referenceImageCount = prompt2DReferenceImages.length + 1;
         generationCount = prompt2DGenerationCount;

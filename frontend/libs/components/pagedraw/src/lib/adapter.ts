@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ImageModel } from "@storyteller/model-list";
+import type { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
 import type { UploadMediaFn } from "@storyteller/api";
 import type { BaseSelectorImage } from "./types";
@@ -12,8 +12,14 @@ export interface PageDrawEditRequest {
   prompt?: string;
   disableSystemPrompt?: boolean;
   imageCount?: number;
-  /** "auto" | "wide" | "tall" | "square" */
+  /** "wide" | "tall" | "square". Unset when the picker is on "auto"; see `commonAspectRatio`. */
   aspectRatio?: string;
+  /**
+   * Set instead of `aspectRatio` when the picker is on "auto": the value for
+   * `model` that keeps the base image's aspect ratio. Hosts that do not read
+   * it send no aspect ratio, which leaves the choice to the model.
+   */
+  commonAspectRatio?: CommonAspectRatio;
   /** "1k" | "2k" | "4k" */
   imageResolution?: string;
   frontendCaller?: string;

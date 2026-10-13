@@ -35,6 +35,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
 import { type BaseSelectorImage } from "./types";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
+import { editAspectRatioFields } from "./utilities/editAspectRatio";
 import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
@@ -869,6 +870,12 @@ const PageDraw = ({
           timestamp: Date.now(),
         });
 
+        const aspectRatioFields = editAspectRatioFields(
+          options?.aspectRatio,
+          selectedImageModel,
+          getAspectRatioDimensions(),
+        );
+
         let result;
 
         if (selectedImageModel?.editingIsInpainting) {
@@ -914,7 +921,7 @@ const PageDraw = ({
             imageCount: generationCount,
             frontendCaller: "image_editor",
             frontendSubscriberId: subscriberId,
-            aspectRatio: options?.aspectRatio,
+            ...aspectRatioFields,
             imageResolution: options?.resolution,
             provider: options?.selectedProvider,
           });
@@ -948,7 +955,7 @@ const PageDraw = ({
             imageCount: generationCount,
             frontendCaller: "image_editor",
             frontendSubscriberId: subscriberId,
-            aspectRatio: options?.aspectRatio,
+            ...aspectRatioFields,
             imageResolution: options?.resolution,
             disableSystemPrompt: !useSystemPrompt,
             provider: options?.selectedProvider,
@@ -966,6 +973,7 @@ const PageDraw = ({
       generationCount,
       getCompositeFile,
       getMaskArrayBuffer,
+      getAspectRatioDimensions,
       selectedImageModel,
       adapter,
       baseImageBitmap,

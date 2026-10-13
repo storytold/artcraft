@@ -105,7 +105,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
               ? !req.disableSystemPrompt
               : undefined,
           batch_size: req.imageCount,
-          aspect_ratio: mapAspectRatio(req.aspectRatio),
+          aspect_ratio: req.commonAspectRatio ?? mapAspectRatio(req.aspectRatio),
           resolution: mapResolution(req.imageResolution),
           frontend_caller: req.frontendCaller,
           frontend_subscriber_id: req.frontendSubscriberId,
