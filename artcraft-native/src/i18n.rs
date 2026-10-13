@@ -5,8 +5,15 @@
 //!
 //! Usage: `crate::i18n::t("Sign in")` at display time, and
 //! `tf("Signed in as @{}", &[user])` for patterns with `{}` placeholders.
-//! `set_language`/`language` drive the language state (persisted in `Saved`), and
+//! `set_language`/`language` drive the language state (persisted in `Saved`), and//!
+//! egui lays a label's runs left to right and runs no bidi over them, so Arabic's
+//! translations are handed out in visual order (`bidi.rs`): the runs in the order a
+//! right-to-left reader meets them, the letters inside each run in logical order for the
+//! shaper, brackets mirrored. What a user types keeps its logical order.
 
+mod bidi;
+
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 /// The UI language. English is the source language; العربية (Arabic) is right-to-left.
@@ -74,8 +81,10 @@ pub fn t(s: &str) -> String {
   if !is_arabic() {
     return s.to_string();
   }
-  match tr_ar(s) {
-    Some(ar) => ar.to_string(),
+  match tr_ar_index(s) {
+    // Arabic's translations come back in visual order (bidi.rs): the runs in the order
+    // egui draws them, left to right, so the label reads right to left.
+    Some(i) => visual_ar()[i].clone(),
     None => s.to_string(),
   }
 }
@@ -85,7 +94,22 @@ pub fn t(s: &str) -> String {
 /// to be pre-formatted); the translated pattern keeps its placeholders, so word order is
 /// free.
 pub fn tf(pattern: &str, args: &[String]) -> String {
-  let mut out = t(pattern);
+  if !is_arabic() {
+    return fill(pattern, args);
+  }
+  match tr_ar_index(pattern) {
+    // The pattern is filled in logical order and reordered afterwards (bidi.rs), so two
+    // placeholders cannot land in each other's places and a number keeps its reading spot.
+    Some(i) => bidi::visual_rtl(&fill(AR[i].1, args)),
+    None => fill(pattern, args),
+  }
+}
+
+/// `pattern` with each positional placeholder (`{}`, or a bare format spec such as `{:.1}`)
+/// replaced by the next of `args`, in order. A placeholder is never read again, so an
+/// argument containing `{` stays intact.
+fn fill(pattern: &str, args: &[String]) -> String {
+  let mut out = pattern.to_string();
   for a in args {
     // The next positional placeholder: `{}`, or `{` `:` … `}` (a format spec, no nesting).
     let mut span = None;
@@ -392,8 +416,16 @@ static AR: &[(&str, &str)] = &[
     ("\u{201c}{}\u{201d} will be removed from your characters.", "\u{201c}{}\u{201d} ستُزال من شخصياتك."),
 ];
 
-fn tr_ar(s: &str) -> Option<&'static str> {
-  AR.binary_search_by(|(k, _)| (*k).cmp(s)).ok().map(|i| AR[i].1)
+fn tr_ar_index(s: &str) -> Option<usize> {
+  AR.binary_search_by(|(k, _)| (*k).cmp(s)).ok()
+}
+
+/// The dictionary's Arabic side in visual order (`bidi.rs`), built once and shared by every
+/// `t()` call: the runs left to right as a right-to-left reader meets them, the letters
+/// inside each run in logical order for the shaper.
+fn visual_ar() -> &'static [String] {
+  static VISUAL: OnceLock<Vec<String>> = OnceLock::new();
+  VISUAL.get_or_init(|| AR.iter().map(|(_, ar)| bidi::visual_rtl(ar)).collect())
 }
 
 #[cfg(test)]
@@ -430,6 +462,16 @@ mod tests {
     set_language(Language::Arabic);
     assert_eq!(t("Not in the dictionary"), "Not in the dictionary");
     assert_eq!(t("Nano Banana Pro"), "Nano Banana Pro");
+    set_language(Language::English);
+  }
+
+  /// Arabic's lookups come back in visual order (`bidi.rs`): the runs in the order egui
+  /// draws them, the letters inside each run in logical order for the shaper.
+  #[test]
+  fn arabic_lookups_read_right_to_left() {
+    set_language(Language::Arabic);
+    assert_eq!(t("Sign in"), "الدخول تسجيل");
+    assert_eq!(t("Settings"), "الإعدادات");
     set_language(Language::English);
   }
 
