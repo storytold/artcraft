@@ -124,7 +124,10 @@ async fn polling_loop(
           if task.status == failed_status {
             continue; // NB: We're done with this task.
           }
-          handle_failed_job(app_handle, job, task, failed_status, task_database).await?;
+          if let Err(err) = handle_failed_job(app_handle, job, task, failed_status, task_database).await {
+            // A failed local update must not delay the other jobs in this batch.
+            error!("Failure status for task {} will be retried: {}", task.id.as_str(), err);
+          }
         }
       }
     }
