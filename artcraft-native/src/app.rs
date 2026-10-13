@@ -944,7 +944,9 @@ impl ScreenshotRequest {
   }
 }
 
-/// `artcraft_<token>.<ext>`, the extension taken from the URL.
+/// `artcraft_<token>.<ext>`, the extension taken from the URL. Both come from the server and a
+/// multi-file download joins the name onto the chosen folder, so the token keeps only letters,
+/// digits, `-` and `_` (anything else, path separators and dots included, becomes `_`).
 fn file_name_for(item: &FeedItem) -> String {
   let fallback = match item.kind {
     MediaKind::Image => "png",
@@ -952,5 +954,24 @@ fn file_name_for(item: &FeedItem) -> String {
     MediaKind::Audio => "mp3",
   };
   let ext = item.full_url.rsplit('.').next().filter(|e| e.len() <= 4 && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or(fallback);
-  format!("artcraft_{}.{ext}", item.token)
+  let token: String = item.token.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+  format!("artcraft_{token}.{ext}")
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn download_names_stay_inside_the_chosen_folder() {
+    for token in ["../../evil", "x\\..\\..\\AppData\\Roaming\\run", "/etc/passwd", "a/b", ".."] {
+      let name = file_name_for(&item(token, "https://cdn.example/f.mp4"));
+      assert!(!name.contains(['/', '\\']) && !name.contains(".."), "token {token:?} gave {name:?}");
+    }
+    assert_eq!(file_name_for(&item("m_abc-123", "https://cdn.example/f.png")), "artcraft_m_abc-123.png");
+  }
+
+  fn item(token: &str, full_url: &str) -> FeedItem {
+    FeedItem { token: token.to_owned(), kind: MediaKind::Video, title: None, thumbnail: None, full_url: full_url.to_owned(), created_at: 0, model_id: None, prompt_token: None, batch_token: None, duration_secs: None, animated: None }
+  }
 }
