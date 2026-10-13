@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 pub mod live_upload;
 pub mod loopback_upload;
+pub mod recovery;
 
 const MAX_BYTES: u64 = 20 * 1024 * 1024;
 const MAX_PIXELS: u64 = 40_000_000;
@@ -111,6 +112,15 @@ impl Bridge {
       Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(None),
       Err(err) => Err(err.into()),
     }
+  }
+
+  /// Explain retained evidence only. Never decrypt credentials, contact the
+  /// service, clear a claim, or require the original image to remain available.
+  pub fn recovery_report(&self, request_id: Uuid) -> Result<recovery::RecoveryReport> {
+    Ok(recovery::RecoveryReport::from_record(
+      request_id,
+      self.get(request_id)?,
+    ))
   }
 
   /// Persist before network I/O. Existing attempts never cause another POST,

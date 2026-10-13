@@ -107,6 +107,25 @@ impl ImageBridge {
       )?)
     })())
   }
+
+  #[tool(
+    description = "Explain recovery for one known import request ID from retained local evidence. No network, credentials, upload, reset, or state writes. Does not identify the latest import or prove remote ownership, integrity, or failure. Preserve uncertain claims.",
+    annotations(read_only_hint = true, open_world_hint = false)
+  )]
+  fn artcraft_explain_import_recovery(
+    &self,
+    Parameters(args): Parameters<RequestId>,
+  ) -> CallToolResult {
+    result((|| {
+      Ok(serde_json::to_value(
+        self
+          .core
+          .lock()
+          .map_err(|_| anyhow::anyhow!("Bridge unavailable"))?
+          .recovery_report(args.request_id.parse()?)?,
+      )?)
+    })())
+  }
 }
 
 impl ImageBridge {

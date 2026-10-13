@@ -12,6 +12,7 @@ import tomllib
 root = pathlib.Path(__file__).resolve().parent
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--image', type=pathlib.Path, help='Optional approved PNG/JPEG to inspect; never uploaded')
+parser.add_argument('--request-id', help='Optional known import ID to explain locally; never retried')
 args = parser.parse_args()
 config = tomllib.loads((root / '.codex/config.toml').read_text())
 server = config['mcp_servers']['artcraft_image_bridge']
@@ -58,7 +59,8 @@ try:
     send({'jsonrpc': '2.0', 'method': 'notifications/initialized'})
     tools = request(2, 'tools/list')['tools']
     assert {tool['name'] for tool in tools} == {
-        'artcraft_inspect_local_image', 'artcraft_import_local_image', 'artcraft_get_import'}
+        'artcraft_inspect_local_image', 'artcraft_import_local_image', 'artcraft_get_import',
+        'artcraft_explain_import_recovery'}
     if args.image:
         path = args.image.resolve(strict=True)
         inspected = request(3, 'tools/call', {
@@ -69,7 +71,18 @@ try:
         assert image['sha256'] == hashlib.sha256(path.read_bytes()).hexdigest()
         assert image['byte_size'] == path.stat().st_size
         assert image['width'] > 0 and image['height'] > 0
+    recovery_assessment = 'not requested'
+    if args.request_id:
+        explained = request(4, 'tools/call', {
+            'name': 'artcraft_explain_import_recovery',
+            'arguments': {'request_id': args.request_id},
+        })
+        assert not explained.get('isError', False), 'Recovery explanation failed'
+        report = json.loads(explained['content'][0]['text'])
+        assert report['remote_checked'] is False
+        recovery_assessment = report['assessment']
     print(json.dumps({'configured_server': 'passed', 'tool_count': len(tools),
+                      'recovery_assessment': recovery_assessment,
                       'inspection': 'passed' if args.image else 'not requested',
                       'uploads': 0, 'model_calls': 0}))
 finally:

@@ -19,7 +19,7 @@ async fn local_tools_survive_missing_invalid_and_misplaced_live_keys() -> anyhow
     let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_artcraft-image-bridge"));
     command.arg(&root).arg(&state).arg("--live-key").arg(key);
     let client = ().serve(TokioChildProcess::new(command)?).await?;
-    assert_eq!(client.list_all_tools().await?.len(), 3);
+    assert_eq!(client.list_all_tools().await?.len(), 4);
     let inspected = client
       .call_tool(
         CallToolRequestParams::new("artcraft_inspect_local_image")
@@ -58,6 +58,19 @@ async fn local_tools_survive_missing_invalid_and_misplaced_live_keys() -> anyhow
       .await?;
     assert_ne!(status.is_error, Some(true));
     assert_eq!(serde_json::to_value(&status)?["content"][0]["text"], "null");
+    let recovery = client
+      .call_tool(
+        CallToolRequestParams::new("artcraft_explain_import_recovery")
+          .with_arguments(json!({"request_id":id}).as_object().unwrap().clone()),
+      )
+      .await?;
+    assert_ne!(recovery.is_error, Some(true));
+    let wire = serde_json::to_value(&recovery)?;
+    let report: serde_json::Value =
+      serde_json::from_str(wire["content"][0]["text"].as_str().unwrap())?;
+    assert_eq!(report["assessment"], "no_local_record");
+    assert_eq!(report["remote_checked"], false);
+    assert!(!wire.to_string().contains(secret_marker));
     assert!(!state.join(format!("{id}.json")).exists());
     client.cancel().await?;
   }
@@ -75,7 +88,7 @@ async fn concurrent_stdio_clients_can_both_discover_tools() -> anyhow::Result<()
     let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_artcraft-image-bridge"));
     command.arg(&root).arg(&state).arg("--mock");
     let client = ().serve(TokioChildProcess::new(command)?).await?;
-    assert_eq!(client.list_all_tools().await?.len(), 3);
+    assert_eq!(client.list_all_tools().await?.len(), 4);
     clients.push(client);
   }
   for client in clients {
@@ -98,7 +111,7 @@ async fn standard_client_discovers_and_calls_stdio_tools() -> anyhow::Result<()>
     .arg("--mock");
   let client = ().serve(TokioChildProcess::new(command)?).await?;
   let tools = client.list_all_tools().await?;
-  assert_eq!(tools.len(), 3);
+  assert_eq!(tools.len(), 4);
   let wire = serde_json::to_value(&tools)?;
   assert!(wire[0].get("inputSchema").is_some());
   let inspect = client

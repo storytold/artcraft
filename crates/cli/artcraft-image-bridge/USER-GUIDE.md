@@ -50,7 +50,7 @@ to read. Do not put keys, client-confidential work, or unrelated documents there
 
 Start a fresh Codex session **in this repository folder**. Review the normal
 project-trust prompt if one appears. Run `/mcp`; expect
-`artcraft_image_bridge` to be connected with **three tools**.
+`artcraft_image_bridge` to be connected with **four tools**.
 
 Optional independent check from PowerShell:
 
@@ -101,7 +101,7 @@ Do not commit or share it. The bridge needs that account to decrypt it.
 .\setup-project-mcp.ps1 -Mode Live
 ```
 
-Start a fresh Codex session in the checkout and recheck `/mcp`. Three connected
+Start a fresh Codex session in the checkout and recheck `/mcp`. Four connected
 tools means discovery works; it does not prove the key is valid. The bridge
 checks the key when you request a live import.
 
@@ -132,6 +132,18 @@ privacy test was performed. `artcraft_get_import` reads the last saved result;
 it does not refresh the remote asset.
 
 ## 6. If something goes wrong
+
+Ask `artcraft_explain_import_recovery` about the request ID saved from your import.
+It returns the retained record, an explanation, and suggested next checks without
+contacting ArtCraft, decrypting credentials, uploading, or changing state. It
+works for live records even when the original local image is no longer available.
+Mock reports check the saved local copy's bytes. Malformed records or corrupt
+mock copies produce an error and remain untouched.
+
+Use a known request ID: existing records have no timestamp and this tool does
+not guess which import was last. A report is a snapshot; another client may
+change state after it is read. Missing or unfamiliar records do not establish
+that an upload failed or authorize a fresh upload.
 
 - **Not connected or zero tools:** confirm the session is in the correct checkout,
   review the client startup warning, and check project trust. Run the independent

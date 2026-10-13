@@ -21,6 +21,8 @@ apply to this contribution.
   hash and a stable request ID. Live imports also require direct-link acceptance.
 - `artcraft_get_import`: read persisted status. It is not a new remote integrity
   or privacy check.
+- `artcraft_explain_import_recovery`: explain retained evidence for a known
+  request ID and suggest next checks, without network access or changing state.
 
 ## Design and limits
 
@@ -34,7 +36,8 @@ A short cross-process lock protects state transactions. Multiple clients can
 connect concurrently. Before an upload, a durable claim records its request ID.
 An interrupted or uncertain attempt will not be automatically uploaded again.
 These protections depend on retaining the original state directory; they are not
-a service-wide exactly-once guarantee. There is no reset/reconciliation tool yet.
+a service-wide exactly-once guarantee. Recovery explanations are read-only;
+there is no reset or state-changing reconciliation tool yet.
 
 Live credentials are explicitly supplied Windows DPAPI files and are loaded only
 for live calls. Missing or unreadable credentials do not prevent local tools from
