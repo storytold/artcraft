@@ -50,4 +50,4 @@ arboard = { version = "3", default-features = false, features = ["image-data"] }
 wry = "0.55"
 
 [dev-dependencies]
-egui_kittest = "0.36"
+egui_kittest = { version = "0.36", features = ["wgpu"] }
