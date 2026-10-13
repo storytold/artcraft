@@ -132,7 +132,7 @@ impl Lightbox {
     }
     if item.kind == MediaKind::Video {
       let play = Rect::from_center_size(rect.center(), vec2(72.0, 72.0));
-      let resp = ui.interact(play, Id::new(("lightbox-play", &item.token)), Sense::click()).on_hover_text("Play in your video player").on_hover_cursor(egui::CursorIcon::PointingHand);
+      let resp = ui.interact(play, Id::new(("lightbox-play", &item.token)), Sense::click()).on_hover_text(crate::i18n::t("Play in your video player")).on_hover_cursor(egui::CursorIcon::PointingHand);
       ui.painter().circle_filled(play.center(), 36.0, Color32::from_black_alpha(if resp.hovered() { 200 } else { 150 }));
       icons::paint(ui.painter(), play.shrink(22.0).translate(vec2(3.0, 0.0)), Icon::Play, Color32::WHITE);
       if resp.clicked() {
@@ -177,7 +177,7 @@ impl Lightbox {
       widgets::hud(ui, "Prompt", theme::FAINT);
       if let Some(t) = &text {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if ui.add(egui::Button::new(egui::RichText::new("Copy").size(11.0)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+          if ui.add(egui::Button::new(egui::RichText::new(crate::i18n::t("Copy")).size(11.0)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
             actions.push(LightboxAction::CopyPrompt(t.clone()));
           }
         });
@@ -204,7 +204,7 @@ impl Lightbox {
         icons::paint_spinner(ui, rect, theme::FAINT);
       },
       _ => {
-        ui.label(egui::RichText::new("No prompt").size(13.0).color(theme::FAINT));
+        ui.label(egui::RichText::new(crate::i18n::t("No prompt")).size(13.0).color(theme::FAINT));
       },
     }
     ui.add_space(14.0);
@@ -275,7 +275,7 @@ impl Lightbox {
     let close = widgets::modal(ctx, Id::new("lightbox-delete"), 420.0, |ui| {
       ui.label(widgets::heading("Delete this media?", 20.0));
       ui.add_space(8.0);
-      ui.label(egui::RichText::new("This will permanently remove the media from your library. This action cannot be undone.").color(theme::MUTED));
+      ui.label(egui::RichText::new(crate::i18n::t("This will permanently remove the media from your library. This action cannot be undone.")).color(theme::MUTED));
       ui.add_space(16.0);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if widgets::button(ui, None, "Delete", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {

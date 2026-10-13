@@ -114,7 +114,7 @@ impl LibraryPicker {
           self.toggle(token);
         }
         if self.items.is_empty() && !self.loading && !self.has_more {
-          ui.painter().text(origin + vec2(w / 2.0, 80.0), Align2::CENTER_CENTER, format!("No {noun} in your library yet"), FontId::new(14.0, egui::FontFamily::Proportional), theme::MUTED);
+          ui.painter().text(origin + vec2(w / 2.0, 80.0), Align2::CENTER_CENTER, crate::i18n::tf("No {} in your library yet", &[crate::i18n::t(noun)]), FontId::new(14.0, egui::FontFamily::Proportional), theme::MUTED);
         }
         if self.loading {
           icons::paint_spinner(ui, Rect::from_center_size(origin + vec2(w / 2.0, total + 24.0), vec2(24.0, 24.0)), theme::MUTED);
@@ -124,7 +124,7 @@ impl LibraryPicker {
       });
       ui.add_space(12.0);
       ui.horizontal(|ui| {
-        widgets::hud(ui, &format!("{}/{} selected", self.selected.len(), self.max), theme::MUTED);
+        widgets::hud(ui, &crate::i18n::tf("{}/{} selected", &[self.selected.len().to_string(), self.max.to_string()]), theme::MUTED);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
           let any = !self.selected.is_empty();
           if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, "Use selected", widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
