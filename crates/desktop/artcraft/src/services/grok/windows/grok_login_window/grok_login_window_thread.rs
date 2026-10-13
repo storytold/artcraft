@@ -1,24 +1,16 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::refresh_account_state_event::RefreshAccountStateEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
-use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::events::sendable_event_trait::SendableEvent;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::utils::window::get_webview_window_hostname::get_webview_window_hostname;
 use crate::services::grok::state::grok_credential_manager::GrokCredentialManager;
 use crate::services::grok::windows::grok_login_window::grok_login_webview_extract_cookies::grok_login_webview_extract_cookies;
 use crate::services::grok::windows::grok_login_window::grok_login_window_open::GROK_LOGIN_WINDOW_NAME;
-use crate::services::sora::events::sora_login_success_event::SoraLoginSuccessEvent;
-use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
-use crate::services::sora::windows::sora_login_window::extract_sora_webview_cookies::extract_sora_webview_cookies;
-use anyhow::anyhow;
-use cookie_store::cookie_store::CookieStore;
 use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
-use log::{error, info};
-use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;
-use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
-use openai_sora_client::utils::has_session_cookie::{has_session_cookie, SessionCookiePresence};
+use grok_consumer_client::credentials::grok_full_credentials::GrokFullCredentials;
+use grok_consumer_client::recipes::request_client_secrets::{request_client_secrets, RequestClientSecretsArgs};
+use log::{error, info, warn};
 use tauri::{AppHandle, Manager, WebviewWindow};
 
 pub async fn grok_login_window_thread(
@@ -169,6 +161,14 @@ async fn check_login_window(
     return Ok(false);
   }
 
+  // Best-effort identity upgrade after cookie save. Keep cookies even if scrape fails.
+  if let Err(err) = maybe_upgrade_grok_identity_after_login(grok_creds_manager).await {
+    warn!(
+      "Grok post-login secrets scrape failed; keeping cookies. err={:?}",
+      err
+    );
+  }
+
   let event = RefreshAccountStateEvent {
     provider: Some(GenerationProvider::Grok),
   };
@@ -178,5 +178,33 @@ async fn check_login_window(
   }
 
   Ok(true)
+}
+
+async fn maybe_upgrade_grok_identity_after_login(
+  grok_creds_manager: &GrokCredentialManager,
+) -> AnyhowResult<()> {
+  let cookies = match grok_creds_manager.maybe_copy_typed_cookies()? {
+    Some(cookies) => cookies,
+    None => {
+      warn!("No Grok cookies available for post-login secrets upgrade");
+      return Ok(());
+    }
+  };
+
+  info!("Requesting Grok client secrets after login...");
+
+  let secrets = request_client_secrets(RequestClientSecretsArgs {
+    cookies: &cookies,
+  })
+      .await
+      .map_err(|err| anyhow::anyhow!("request_client_secrets failed: {}", err))?;
+
+  let full_creds = GrokFullCredentials::from_cookies_and_client_secrets(cookies, secrets);
+  // replace_full_credentials also syncs maybe_user_data from secrets.
+  grok_creds_manager.replace_full_credentials(full_creds)?;
+  grok_creds_manager.persist_to_disk()?;
+
+  info!("Grok identity upgraded after login");
+  Ok(())
 }
 
