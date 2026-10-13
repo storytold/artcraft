@@ -39,6 +39,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  resetVideoThumbnailsForTests();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -64,6 +65,54 @@ describe("checker", () => {
     failProbesFor(8 * 60_000);
     expect(probes).toHaveLength(24 + 32); // Then every 15s.
     expect(getVideoThumbnailState(THUMB)).toEqual({ status: "pending" });
+  });
+
+  it("retries a probe that never settles and ignores its late callbacks", () => {
+    markVideoThumbnailFailed(THUMB);
+    vi.advanceTimersByTime(5_000);
+    const staleLoad = probes[0].onload!;
+    const staleError = probes[0].onerror!;
+
+    vi.advanceTimersByTime(30_000);
+    expect(probes[0].onload).toBeNull();
+    expect(probes[0].onerror).toBeNull();
+    vi.advanceTimersByTime(5_000);
+    expect(probes).toHaveLength(2);
+
+    staleLoad();
+    staleError();
+    expect(getVideoThumbnailState(THUMB)).toEqual({ status: "pending" });
+
+    probes[1].onload!();
+    const recoveredSrc = probes[1].src;
+    staleLoad();
+    staleError();
+    expect(getVideoThumbnailState(THUMB)).toEqual({ status: "ready", src: recoveredSrc });
+    vi.advanceTimersByTime(60_000);
+    expect(probes).toHaveLength(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("cancels in-flight probes when reset without affecting a new entry", () => {
+    markVideoThumbnailFailed(THUMB);
+    vi.advanceTimersByTime(5_000);
+    const staleLoad = probes[0].onload!;
+    const staleError = probes[0].onerror!;
+
+    resetVideoThumbnailsForTests();
+    expect(probes[0].onload).toBeNull();
+    expect(probes[0].onerror).toBeNull();
+    expect(getVideoThumbnailState(THUMB)).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+
+    markVideoThumbnailFailed(THUMB);
+    vi.advanceTimersByTime(5_000);
+    expect(probes).toHaveLength(2);
+    staleLoad();
+    staleError();
+    expect(getVideoThumbnailState(THUMB)).toEqual({ status: "pending" });
+    probes[1].onload!();
+    expect(getVideoThumbnailState(THUMB)).toEqual({ status: "ready", src: probes[1].src });
   });
 
   it("gives up after an hour", () => {
@@ -139,6 +188,20 @@ describe("GalleryThumbnail", () => {
 
     renderVideoThumbnail();
     expect(screen.getByTestId("fallback-icon")).toBeTruthy();
+  });
+
+  it("stops showing the spinner after an hour even when probes never settle", () => {
+    renderVideoThumbnail();
+    fireEvent.error(screen.getByRole("img"));
+    expect(screen.getByText("Loading thumbnail…")).toBeTruthy();
+
+    act(() => vi.advanceTimersByTime(60 * 60_000));
+    expect(getVideoThumbnailState(THUMB)).toEqual({ status: "gave_up" });
+    expect(screen.getByTestId("fallback-icon")).toBeTruthy();
+    const probeCount = probes.length;
+    vi.advanceTimersByTime(60_000);
+    expect(probes).toHaveLength(probeCount);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("leaves image thumbnails on the placeholder fallback", () => {
