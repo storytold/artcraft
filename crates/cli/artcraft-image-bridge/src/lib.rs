@@ -11,6 +11,7 @@ use uuid::Uuid;
 pub mod live_upload;
 pub mod loopback_upload;
 pub mod recovery;
+pub mod remote_verify;
 
 const MAX_BYTES: u64 = 20 * 1024 * 1024;
 const MAX_PIXELS: u64 = 40_000_000;

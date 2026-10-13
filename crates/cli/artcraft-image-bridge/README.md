@@ -23,6 +23,9 @@ apply to this contribution.
   or privacy check.
 - `artcraft_explain_import_recovery`: explain retained evidence for a known
   request ID and suggest next checks, without network access or changing state.
+- `artcraft_verify_remote_original`: fetch metadata and download an accepted
+  live import's original, then compare its size and SHA-256 with the saved record.
+  No upload or saved-status change. Requires explicit live credentials.
 
 ## Design and limits
 
@@ -47,6 +50,12 @@ service host, no redirects, no automatic retries, and no proxy discovery.
 **Private metadata did not prevent anonymous direct-link downloads in the tested
 service.** Use shareable artwork and disclose that limitation before upload.
 Metadata verification does not compare downloaded image bytes.
+The separate original-verification tool does compare bytes, using an authenticated
+metadata lookup followed by a credential-free CDN request. It accepts only HTTPS
+`cdn-2.fakeyou.com/media/` URLs, rejects redirects and arbitrary hosts, and bounds
+download size and duration. Other CDN hosts require explicit implementation review.
+A match verifies this download against the image as imported; it does not prove
+account ownership, privacy, or that a current local source file is unchanged.
 
 The bridge makes no image-generation calls, accesses no OpenAI credentials, and
 does not implement subscription sign-in or establish subscription entitlements.
@@ -74,6 +83,10 @@ account, independently byte-matched originals, a conversational Codex import,
 and opening an imported JPEG in ArtCraft's editing canvas. These are point-in-time
 observations, not service guarantees. The latest credential-resilience changes
 were checked offline rather than by repeating those live uploads.
+The subsequent recovery and remote-original tools were also exercised through a
+normal Codex conversation against an existing accepted JPEG. The remote original
+matched the saved size and hash. Import-state hashes were separately compared
+before/after a direct tool check and remained unchanged. No new upload was needed.
 
 ## Attribution
 

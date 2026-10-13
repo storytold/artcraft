@@ -50,7 +50,7 @@ to read. Do not put keys, client-confidential work, or unrelated documents there
 
 Start a fresh Codex session **in this repository folder**. Review the normal
 project-trust prompt if one appears. Run `/mcp`; expect
-`artcraft_image_bridge` to be connected with **four tools**.
+`artcraft_image_bridge` to be connected with **five tools**.
 
 Optional independent check from PowerShell:
 
@@ -101,7 +101,7 @@ Do not commit or share it. The bridge needs that account to decrypt it.
 .\setup-project-mcp.ps1 -Mode Live
 ```
 
-Start a fresh Codex session in the checkout and recheck `/mcp`. Four connected
+Start a fresh Codex session in the checkout and recheck `/mcp`. Five connected
 tools means discovery works; it does not prove the key is valid. The bridge
 checks the key when you request a live import.
 
@@ -130,6 +130,39 @@ returned an asset token and the service returned matching token/class/visibility
 metadata. It does **not** mean a remote byte comparison, a visual check, or a
 privacy test was performed. `artcraft_get_import` reads the last saved result;
 it does not refresh the remote asset.
+
+### Verify the downloaded original separately
+
+For an accepted live import, ask `artcraft_verify_remote_original` to check the
+same request ID. This explicitly contacts ArtCraft for metadata and downloads the
+original from the supported CDN, then compares its size and SHA-256 with the saved
+import record. The CDN download carries no ArtCraft credentials. Your live key
+is used only for the metadata lookup. No image is uploaded or generated, no new
+request ID is created, and no saved record is changed.
+
+Expect `remote_original_bytes_match` on success. This verifies the download
+against the image as imported. It does not require the original local file and
+does not prove that a current local file is unchanged, that you own the remote
+asset, or that storage is confidential. The result belongs to this check only;
+`artcraft_get_import` continues to show the retained upload status.
+
+An optional explicit PowerShell check is:
+
+```powershell
+python verify-project-mcp.py --request-id <known-UUID> --verify-original
+```
+
+Replace `<known-UUID>` with the ID returned by your import. Without
+`--verify-original`, the verifier stays local-only. Verification requires an
+accepted token; it cannot resolve an unknown upload with no saved token. A missing
+asset, mismatched hash, or failed download is not permission to upload again.
+Keep the record and investigate. Unsupported CDN URLs are rejected rather than
+downloaded; this draft supports only HTTPS `cdn-2.fakeyou.com/media/` originals.
+
+For a conversational check, ask the agent to explain recovery for your known ID,
+then verify the original if the record has an accepted asset token. Explicitly
+authorize those read-only remote requests and ask it to stop on error without
+uploading, generating, resetting state, or changing configuration.
 
 ## 6. If something goes wrong
 

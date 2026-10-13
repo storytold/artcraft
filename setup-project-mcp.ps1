@@ -85,4 +85,4 @@ if ($newConfig -ne $existing) {
 }
 Write-Host "Project connection ready in $Mode mode. Global settings were not changed."
 Write-Host 'Start a fresh Codex session in this folder and accept its normal trust prompt if shown.'
-Write-Host 'Check /mcp for four ArtCraft tools, then inspect a selected image first.'
+Write-Host 'Check /mcp for five ArtCraft tools, then inspect a selected image first.'

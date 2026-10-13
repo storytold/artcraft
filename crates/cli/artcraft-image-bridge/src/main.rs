@@ -126,9 +126,45 @@ impl ImageBridge {
       )?)
     })())
   }
+
+  #[tool(
+    description = "Download the original of an existing live import and compare size and SHA-256 with its saved import record. Performs metadata/CDN GET requests only, no upload or state changes. Requires configured ArtCraft credentials and a saved accepted asset token. Does not prove ownership or privacy.",
+    annotations(read_only_hint = true, open_world_hint = true)
+  )]
+  async fn artcraft_verify_remote_original(
+    &self,
+    Parameters(args): Parameters<RequestId>,
+  ) -> CallToolResult {
+    result(self.verify_remote(args).await)
+  }
 }
 
 impl ImageBridge {
+  async fn verify_remote(&self, args: RequestId) -> anyhow::Result<serde_json::Value> {
+    let record = self
+      .core
+      .lock()
+      .map_err(|_| anyhow::anyhow!("Bridge unavailable"))?
+      .get(args.request_id.parse()?)?
+      .ok_or_else(|| anyhow::anyhow!("No saved import for this request ID"))?;
+    anyhow::ensure!(record.backend == "artcraft_live" && record.maybe_media_file_token.is_some(),
+      "Remote verification requires a live import with an accepted asset token; preserve uncertain claims");
+    let key = self
+      .maybe_live_key
+      .as_ref()
+      .ok_or_else(|| anyhow::anyhow!("Remote verification requires explicit live credentials"))?
+      .canonicalize()
+      .map_err(|_| anyhow::anyhow!("Cannot open configured encrypted key"))?;
+    anyhow::ensure!(
+      !key.starts_with(&self.image_root),
+      "Credential file must be outside the allowed image root"
+    );
+    LiveUploadClient::from_dpapi_file(&key)
+      .await?
+      .verify_original(&record)
+      .await
+  }
+
   async fn import_live(&self, key: &Path, args: ImportArgs) -> anyhow::Result<serde_json::Value> {
     anyhow::ensure!(
       args.accept_remote_link_access,

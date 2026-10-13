@@ -30,6 +30,13 @@ struct MediaInfo {
   token: String,
   media_class: String,
   creator_set_visibility: String,
+  #[serde(rename = "media_links")]
+  maybe_media_links: Option<MediaLinks>,
+}
+
+#[derive(Deserialize)]
+struct MediaLinks {
+  cdn_url: String,
 }
 
 impl LiveUploadClient {
@@ -104,6 +111,56 @@ impl LiveUploadClient {
       "Uploaded image metadata mismatch"
     );
     Ok(())
+  }
+
+  /// Authenticated metadata lookup, followed by a separate credential-free CDN GET.
+  /// The stored upload record is never updated by this check.
+  pub async fn verify_original(&self, record: &crate::ImportRecord) -> Result<serde_json::Value> {
+    ensure!(
+      record.backend == "artcraft_live",
+      "Remote verification requires a live import record"
+    );
+    let token = record
+      .maybe_media_file_token
+      .as_deref()
+      .context("No accepted asset token; reconcile the uncertain upload first")?;
+    ensure!(valid_token(token), "Invalid media token");
+    let response = self
+      .client
+      .get(format!("{BASE}/v1/media_files/file/{token}"))
+      .send()
+      .await
+      .map_err(|_| {
+        anyhow::anyhow!("Remote metadata unavailable; saved upload state is unchanged")
+      })?;
+    let read: ReadResponse = read_json(response).await?;
+    ensure!(
+      read.success && read.media_file.token == token && read.media_file.media_class == "image",
+      "Remote asset metadata mismatch"
+    );
+    let link = read
+      .media_file
+      .maybe_media_links
+      .context("Original CDN link unavailable")?;
+    let url = crate::remote_verify::validate_original_url(&link.cdn_url)?;
+    // Never forward ArtCraft's Authorization header to storage or follow redirects.
+    let public_client = Client::builder()
+      .no_proxy()
+      .https_only(true)
+      .redirect(reqwest::redirect::Policy::none())
+      .retry(reqwest::retry::never())
+      .timeout(Duration::from_secs(60))
+      .build()?;
+    let response = public_client.get(url).send().await.map_err(|_| {
+      anyhow::anyhow!("Original download unavailable; saved upload state is unchanged")
+    })?;
+    crate::remote_verify::compare_original(response, &record.image).await?;
+    Ok(serde_json::json!({
+      "request_id": record.request_id, "media_file_token": token,
+      "status": "remote_original_bytes_match", "sha256": record.image.sha256,
+      "byte_size": record.image.byte_size, "state_changed": false,
+      "warning": "Original bytes match the hash recorded at import. This does not prove account ownership, confidential storage, or that a current local file is unchanged. The CDN request carried no ArtCraft credentials."
+    }))
   }
 }
 

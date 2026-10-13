@@ -19,7 +19,7 @@ async fn local_tools_survive_missing_invalid_and_misplaced_live_keys() -> anyhow
     let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_artcraft-image-bridge"));
     command.arg(&root).arg(&state).arg("--live-key").arg(key);
     let client = ().serve(TokioChildProcess::new(command)?).await?;
-    assert_eq!(client.list_all_tools().await?.len(), 4);
+    assert_eq!(client.list_all_tools().await?.len(), 5);
     let inspected = client
       .call_tool(
         CallToolRequestParams::new("artcraft_inspect_local_image")
@@ -70,6 +70,14 @@ async fn local_tools_survive_missing_invalid_and_misplaced_live_keys() -> anyhow
       serde_json::from_str(wire["content"][0]["text"].as_str().unwrap())?;
     assert_eq!(report["assessment"], "no_local_record");
     assert_eq!(report["remote_checked"], false);
+    let remote = client
+      .call_tool(
+        CallToolRequestParams::new("artcraft_verify_remote_original")
+          .with_arguments(json!({"request_id":id}).as_object().unwrap().clone()),
+      )
+      .await?;
+    assert_eq!(remote.is_error, Some(true));
+    assert!(serde_json::to_string(&remote)?.contains("No saved import"));
     assert!(!wire.to_string().contains(secret_marker));
     assert!(!state.join(format!("{id}.json")).exists());
     client.cancel().await?;
@@ -88,7 +96,7 @@ async fn concurrent_stdio_clients_can_both_discover_tools() -> anyhow::Result<()
     let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_artcraft-image-bridge"));
     command.arg(&root).arg(&state).arg("--mock");
     let client = ().serve(TokioChildProcess::new(command)?).await?;
-    assert_eq!(client.list_all_tools().await?.len(), 4);
+    assert_eq!(client.list_all_tools().await?.len(), 5);
     clients.push(client);
   }
   for client in clients {
@@ -111,7 +119,7 @@ async fn standard_client_discovers_and_calls_stdio_tools() -> anyhow::Result<()>
     .arg("--mock");
   let client = ().serve(TokioChildProcess::new(command)?).await?;
   let tools = client.list_all_tools().await?;
-  assert_eq!(tools.len(), 4);
+  assert_eq!(tools.len(), 5);
   let wire = serde_json::to_value(&tools)?;
   assert!(wire[0].get("inputSchema").is_some());
   let inspect = client
