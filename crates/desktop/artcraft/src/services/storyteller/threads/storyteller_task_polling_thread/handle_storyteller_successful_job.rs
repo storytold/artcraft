@@ -8,6 +8,7 @@ use crate::core::utils::enum_conversion::generation_provider::to_generation_serv
 use crate::core::utils::enum_conversion::task_type::to_generation_action;
 use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use super::events::maybe_handle_frontend_caller_notification::maybe_handle_frontend_caller_notification;
+use super::sora_latency_client_log::maybe_log_sora_client_completion;
 use artcraft_api_defs::jobs::list_session_jobs::ListSessionJobsItem;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -61,6 +62,8 @@ pub async fn handle_successful_job(
 
   clear_auto_download_checkpoint(app_handle, task);
   send_additional_success_events(app_handle, app_env_configs, creds, job, task).await;
+
+  maybe_log_sora_client_completion(app_env_configs, creds, job, task, "success").await;
 
   let service = to_generation_service_provider(task.provider);
   let action = to_generation_action(task.task_type);
