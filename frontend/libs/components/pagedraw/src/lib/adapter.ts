@@ -26,7 +26,7 @@ export interface PageDrawEditRequest {
   frontendSubscriberId?: string;
 }
 
-export interface PageDrawInpaintRequest {
+export interface PageDrawInpaintRequest extends Pick<PageDrawEditRequest, "aspectRatio" | "commonAspectRatio"> {
   model?: ImageModel;
   provider?: GenerationProvider;
   imageMediaToken?: string;

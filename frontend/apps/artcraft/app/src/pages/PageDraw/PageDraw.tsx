@@ -119,6 +119,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
           model: req.model,
           image_media_tokens: req.imageMediaToken ? [req.imageMediaToken] : undefined,
           inpainting_mask_image_raw_bytes: req.maskImageRawBytes,
+          aspect_ratio: req.commonAspectRatio ?? mapAspectRatio(req.aspectRatio),
           prompt: req.prompt,
           batch_size: req.imageCount,
           frontend_caller: req.frontendCaller,

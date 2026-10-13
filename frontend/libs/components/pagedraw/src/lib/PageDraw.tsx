@@ -885,6 +885,7 @@ const PageDraw = ({
             model: selectedImageModel,
             imageMediaToken: editedImageToken,
             maskImageRawBytes: arrayBuffer,
+            ...aspectRatioFields,
             prompt: prompt,
             imageCount: generationCount,
             frontendCaller: "image_editor",
