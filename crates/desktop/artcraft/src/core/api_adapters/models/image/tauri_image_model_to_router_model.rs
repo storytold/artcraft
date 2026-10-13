@@ -8,7 +8,6 @@ pub fn tauri_image_model_to_router_model(model: TauriImageModel) -> Option<Route
   match model {
     TauriImageModel::Flux1Dev => Some(RouterImageModel::Flux1Dev), // Text-to-Image
     TauriImageModel::Flux1Schnell => Some(RouterImageModel::Flux1Schnell), // Text-to-Image
-    TauriImageModel::FluxPro1 => Some(RouterImageModel::FluxPro11), // TODO: Might be a slight mismatch
     TauriImageModel::FluxPro11 => Some(RouterImageModel::FluxPro11), // Text-to-Image
     TauriImageModel::FluxPro11Ultra => Some(RouterImageModel::FluxPro11Ultra), // Text-to-Image
     TauriImageModel::GptImage1 => Some(RouterImageModel::GptImage1), // Text-to-Image
@@ -34,5 +33,20 @@ pub fn tauri_image_model_to_router_model(model: TauriImageModel) -> Option<Route
     TauriImageModel::Midjourney => None, // NB: Generic Midjourney is served by the native Midjourney provider.
     TauriImageModel::FluxProKontextMax => None,
     TauriImageModel::FluxDevJuggernaut => None,
+    TauriImageModel::FluxPro1 => None, // NB: Inpainting. Flux Pro 1.1 is text-to-image and would drop the mask.
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn inpainting_models_have_no_router_model() {
+    // The router has no inpainting model; a text-to-image stand-in runs (and bills) a different
+    // generation that ignores the mask.
+    assert_eq!(tauri_image_model_to_router_model(TauriImageModel::FluxPro1), None);
+    assert_eq!(tauri_image_model_to_router_model(TauriImageModel::FluxDevJuggernaut), None);
+    assert_eq!(tauri_image_model_to_router_model(TauriImageModel::FluxPro11), Some(RouterImageModel::FluxPro11));
   }
 }
