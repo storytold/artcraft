@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   estimate: vi.fn(),
   setCredits: vi.fn(),
   canvas2D: {
+    sourceImageDimensions: undefined as { width: number; height: number } | undefined,
     aspectRatio: "auto",
     resolution: "1k",
     referenceImages: [],
@@ -52,6 +53,7 @@ const [NANO_BANANA_PRO, SEEDREAM_4, GPT_IMAGE_1P5] = buildImageModelsFromListing
 
 beforeEach(() => {
   mocks.canvas2D.aspectRatio = "auto";
+  mocks.canvas2D.sourceImageDimensions = undefined;
   mocks.estimate.mockReset();
   mocks.setCredits.mockReset();
   mocks.estimate.mockResolvedValue({
@@ -89,3 +91,18 @@ async function quoteCanvas2D(model: ImageModel) {
     expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.Canvas2D, 12),
   );
 }
+
+it("quotes the same fixed ratio as generation for a portrait canvas", async () => {
+  mocks.canvas2D.sourceImageDimensions = { width: 900, height: 1600 };
+  await quoteCanvas2D(GPT_IMAGE_1P5);
+  expect(mocks.estimate).toHaveBeenCalledWith(expect.objectContaining({ aspect_ratio: "tall" }));
+});
+
+it("updates the quote when the source canvas changes shape", async () => {
+  mocks.canvas2D.sourceImageDimensions = { width: 900, height: 1600 };
+  const { rerender } = renderHook(() => useImageCostEstimate(ModelPage.Canvas2D, GPT_IMAGE_1P5, "artcraft"));
+  await waitFor(() => expect(mocks.estimate).toHaveBeenLastCalledWith(expect.objectContaining({ aspect_ratio: "tall" })));
+  mocks.canvas2D.sourceImageDimensions = { width: 1600, height: 900 };
+  rerender();
+  await waitFor(() => expect(mocks.estimate).toHaveBeenLastCalledWith(expect.objectContaining({ aspect_ratio: "wide" })));
+});

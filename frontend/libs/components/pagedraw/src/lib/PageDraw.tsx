@@ -407,6 +407,11 @@ const PageDraw = ({
     redo,
   } = useSceneStore(useShallow(selector));
 
+  const sourceAspectRatioType = useSceneStore((state) => state.aspectRatioType);
+  useEffect(() => {
+    usePrompt2DStore.setState({ sourceImageDimensions: getAspectRatioDimensions() });
+  }, [baseImageBitmap, baseImageInfo, sourceAspectRatioType, getAspectRatioDimensions]);
+
   const promptStoreProvider = usePrompt2DStore;
   const generationCount = promptStoreProvider((state) => state.generationCount);
   const setGenerationCount = promptStoreProvider(

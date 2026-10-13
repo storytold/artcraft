@@ -37,6 +37,7 @@ type EditAspectRatio = "auto" | AspectRatio;
 type Resolution = "1k" | "2k" | "4k";
 
 export interface Prompt2DStore {
+  sourceImageDimensions?: { width: number; height: number };
   prompt: string;
   aspectRatio: EditAspectRatio;
   resolution: Resolution;
