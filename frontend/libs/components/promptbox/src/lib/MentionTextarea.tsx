@@ -639,6 +639,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     const isInternalUpdate = useRef(false);
     const isComposing = useRef(false);
     const pendingCaret = useRef<number | null>(null);
+    const arrowNavigationOrigin = useRef<number | null>(null);
     // One-shot guard: a programmatic edit (chip replace) leaves the caret
     // right after a mention label, which detectMention would read as a fresh
     // "@..." trigger and reopen the dropdown over the already-confirmed chip.
@@ -887,12 +888,16 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
     // Last line of defense for the frozen-input bug: browsers can still drop
     // the caret INSIDE a contenteditable=false chip (Firefox arrow keys,
-    // drag-selection collapse, IME) — typing is then silently ignored. Eject
-    // the caret to just after the chip. Guarded by activeElement so a stale
-    // selection can't steal focus back from an open popover (Chrome focuses
-    // a contentEditable on addRange into it).
+    // drag-selection collapse, IME) — typing is then silently ignored. When
+    // an arrow enters a chip, exit on the opposite edge from its origin;
+    // always exiting after it traps leftward navigation at the same chip.
+    // Other caret placements still fall back to after the chip. Guarded by
+    // activeElement so a stale selection can't steal focus back from an
+    // open popover: Chrome focuses a contentEditable on addRange into it.
     useEffect(() => {
       const handleSelectionChange = () => {
+        const origin = arrowNavigationOrigin.current;
+        arrowNavigationOrigin.current = null;
         const el = editorRef.current;
         if (!el || document.activeElement !== el) return;
         const sel = window.getSelection();
@@ -901,7 +906,14 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         if (!chip) return;
         try {
           const range = document.createRange();
-          range.setStartAfter(chip);
+          if (
+            origin !== null &&
+            origin >= getNodeStartOffset(el, chip) + nodeLength(chip)
+          ) {
+            range.setStartBefore(chip);
+          } else {
+            range.setStartAfter(chip);
+          }
           range.collapse(true);
           sel.removeAllRanges();
           sel.addRange(range);
@@ -1323,6 +1335,32 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
+        // Preserve native grapheme and bidi navigation: only remember where
+        // a bare horizontal arrow started, for the chip-ejection fallback.
+        arrowNavigationOrigin.current = null;
+        if (
+          (e.key === "ArrowLeft" || e.key === "ArrowRight") &&
+          !e.shiftKey &&
+          !e.altKey &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !isComposing.current &&
+          !e.nativeEvent.isComposing &&
+          e.nativeEvent.keyCode !== 229
+        ) {
+          const el = editorRef.current;
+          const sel = window.getSelection();
+          if (
+            el &&
+            sel?.isCollapsed &&
+            sel.anchorNode &&
+            el.contains(sel.anchorNode) &&
+            !chipContaining(el, sel.anchorNode)
+          ) {
+            arrowNavigationOrigin.current = getCaretOffset(el);
+          }
+        }
+
         if (mentionState.isOpen && filteredItems.length > 0) {
           if (e.key === "ArrowDown") {
             e.preventDefault();
@@ -1442,6 +1480,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
     const handleMouseDown = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
+        arrowNavigationOrigin.current = null;
         // Clicking a chip must not move the caret into/around it.
         const target = e.target as HTMLElement;
         if (target.closest?.("[data-mention]")) {
@@ -1590,6 +1629,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
           onKeyDown={handleKeyDown}
+          onPointerDown={() => {
+            arrowNavigationOrigin.current = null;
+          }}
           onMouseDown={handleMouseDown}
           onClick={handleClick}
           onPaste={handlePaste}
@@ -1597,6 +1639,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           onCut={handleCut}
           onFocus={onFocus}
           onBlur={(e) => {
+            arrowNavigationOrigin.current = null;
             // Mouse clicks on dropdown items preventDefault pointerdown, so
             // they never land here — but touch taps can move focus into the
             // panel (Android focuses the row button) before its click fires.
