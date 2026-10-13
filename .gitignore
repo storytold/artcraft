@@ -105,3 +105,8 @@ windows/sqlite/sqlite3.lib
 crates/desktop/src-tauri/*.dll
 windows_dlls/
 
+
+# Local image bridge builds, selected images, credentials and import records
+.build/
+.codex/config.toml
+.codex/config.toml.*.tmp
