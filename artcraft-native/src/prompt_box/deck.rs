@@ -170,7 +170,7 @@ pub fn keyframe_cards(ui: &mut Ui, id: Id, refs: &References, show_last: bool, l
         Stroke::new(1.0, theme::fade(Color32::WHITE, if both { 0.2 } else { 0.1 })),
       );
       icons::paint(p, swap.shrink(5.0), Icon::ArrowLeftRight, theme::fade(Color32::WHITE, if both { 1.0 } else { 0.5 }));
-      if both && resp.on_hover_text("Swap frames").on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+      if both && resp.on_hover_text(crate::i18n::t("Swap frames")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
         actions.push(DeckAction::SwapFrames);
       }
       slot_card(ui, id.with("last"), refs.last_frame.as_ref(), "Last frame", 6.0, ImageSlot::LastFrame, library, cache, &mut actions);
@@ -220,9 +220,9 @@ fn expanded_panel(ui: &mut Ui, id: Id, refs: &References, items: &[&RefMedia], o
   if items.len() > 1 {
     ui.horizontal(|ui| {
       let n = items.len();
-      ui.label(egui::RichText::new(format!("{n} reference{}", if n == 1 { "" } else { "s" })).size(11.0).family(theme::medium()).color(theme::MUTED));
+      ui.label(egui::RichText::new(crate::i18n::tf("{} reference{}", &[n.to_string(), (if n == 1 || crate::i18n::is_arabic() { "" } else { "s" }).to_string()])).size(11.0).family(theme::medium()).color(theme::MUTED));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        let resp = ui.add(egui::Button::new(egui::RichText::new("Clear all").size(11.0)).frame(false));
+        let resp = ui.add(egui::Button::new(egui::RichText::new(crate::i18n::t("Clear all")).size(11.0)).frame(false));
         if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
           actions.push(DeckAction::ClearAll);
         }
@@ -357,7 +357,7 @@ fn remove_button(ui: &mut Ui, id: Id, card: Rect, card_hovered: bool) -> bool {
   let fill = if resp.hovered() { theme::fade(theme::DANGER, 0.7) } else { Color32::from_black_alpha(128) };
   ui.painter().circle_filled(rect.center(), 10.0, fill);
   icons::paint(ui.painter(), rect.shrink(5.0), Icon::X, Color32::WHITE);
-  resp.on_hover_text("Remove").on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
+  resp.on_hover_text(crate::i18n::t("Remove")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
 }
 
 /// The dashed "+" card that adds a reference (straightens and grows on hover).
@@ -420,7 +420,7 @@ fn add_menu_entries(refs: &References, limits: &DeckLimits, open_kinds: &[RefKin
     .map(|&kind| {
       let count = format!("{}/{}", refs.list(kind).len(), limits.max(kind));
       let hint = match limits.max_secs(kind) {
-        Some(max) => format!("{count} \u{b7} {}/{}s", refs.total_secs(kind).round() as i64, max.round() as i64),
+        Some(max) => crate::i18n::tf("{} \u{b7} {}/{}s", &[count.to_string(), (refs.total_secs(kind).round() as i64).to_string(), (max.round() as i64).to_string()]),
         None => count,
       };
       MenuGroup { kind, hint: Some(hint), slot, library: limits.library }

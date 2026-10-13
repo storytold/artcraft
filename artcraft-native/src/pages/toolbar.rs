@@ -48,10 +48,11 @@ pub fn quality(ui: &mut Ui, id: Id, model: &ModelInfo, current: &str) -> Option<
 
 /// The number of generations (`GenerationCountPicker`): a quiet copy-icon button.
 pub fn count(ui: &mut Ui, id: Id, model: &ModelInfo, current: u16, noun: &str) -> Option<u16> {
+  let noun = crate::i18n::t(noun);
   let options: Vec<PickOption<u16>> = model.batch_options().into_iter().map(|n| PickOption::new(n, n.to_string())).collect();
   if options.len() <= 1 {
     ui.add_enabled_ui(false, |ui| crate::ui::widgets::ghost(ui, Icon::Copy, Some(&current.to_string()), "Number of generations", false));
     return None;
   }
-  pickers::option_picker(ui, id, Trigger::Ghost(Icon::Copy), &format!("No. of {noun}"), "Number of generations", &current, &options)
+  pickers::option_picker(ui, id, Trigger::Ghost(Icon::Copy), &crate::i18n::tf("No. of {}", &[noun]), "Number of generations", &current, &options)
 }

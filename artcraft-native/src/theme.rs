@@ -189,5 +189,52 @@ fn install_fonts(ctx: &egui::Context) {
     stack.extend(fallback.iter().cloned());
     fonts.families.insert(family, stack);
   }
+  install_arabic_fallback(&mut fonts);
   ctx.set_fonts(fonts);
+}
+
+/// (path, face index) candidates for an Arabic face. Appended after the Latin ones: the bundled
+/// faces carry no Arabic glyphs, so without one العربية renders as tofu. The first face that
+/// exists wins; on a system with none, the UI stays English (the language picker keeps working).
+/// Only ever reads fonts the operating system already ships (nothing is redistributed).
+const ARABIC: &[(&str, u32)] = &[
+  // Windows: Segoe UI, then Tahoma and Traditional Arabic.
+  ("C:\\Windows\\Fonts\\segoeui.ttf", 0),
+  ("C:\\Windows\\Fonts\\tahoma.ttf", 0),
+  ("C:\\Windows\\Fonts\\trado.ttf", 0),
+  ("C:\\Windows\\Fonts\\arial.ttf", 0),
+  // macOS: Geeza Pro.
+  ("/System/Library/Fonts/GeezaPro.ttc", 0),
+  ("/System/Library/Fonts/Supplemental/Arial Unicode.ttf", 0),
+  // Linux: Noto (static and variable spellings), then Naskh, KacstOne, Amiri, DejaVu.
+  ("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", 0),
+  ("/usr/share/fonts/truetype/noto/NotoSansArabic[wdth,wght].ttf", 0),
+  ("/usr/share/fonts/noto/NotoSansArabic-Regular.ttf", 0),
+  ("/usr/share/fonts/noto/NotoNaskhArabic-Regular.ttf", 0),
+  ("/usr/share/fonts/opentype/noto/NotoSansArabic-Regular.ttf", 0),
+  ("/usr/share/fonts/truetype/kacst/KacstOne.ttf", 0),
+  ("/usr/share/fonts/truetype/amiri/Amiri-Regular.ttf", 0),
+  ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 0),
+  ("/usr/share/fonts/TTF/DejaVuSans.ttf", 0),
+];
+
+/// Appends the system's own Arabic face to every family the UI draws text with, so Arabic
+/// strings render through any of them (body, medium, semibold, display and the mono HUD
+/// labels and buttons).
+fn install_arabic_fallback(fonts: &mut FontDefinitions) {
+  for (path, index) in ARABIC {
+    let Ok(bytes) = std::fs::read(path) else {
+      continue;
+    };
+    let mut data = FontData::from_owned(bytes);
+    data.index = *index;
+    fonts.font_data.insert("system-arabic".into(), Arc::new(data));
+    let families = [FontFamily::Proportional, FontFamily::Monospace, medium(), semibold(), display(), mono(), mono_bold()];
+    for family in families {
+      if let Some(stack) = fonts.families.get_mut(&family) {
+        stack.push("system-arabic".into());
+      }
+    }
+    return;
+  }
 }

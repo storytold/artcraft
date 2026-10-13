@@ -55,6 +55,7 @@ const MODALITIES: [Modality; 3] = [Modality::Image, Modality::Video, Modality::A
 #[serde(default)]
 struct Saved {
   page: Page,
+  language: crate::i18n::Language,
   enter_to_generate: bool,
   view_mode: ViewMode,
   autoplay: bool,
@@ -66,11 +67,12 @@ struct Saved {
 
 impl Default for Saved {
   fn default() -> Self {
-    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
+    Self { page: Page::CreateImage, language: crate::i18n::Language::English, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
   }
 }
 
 pub struct ArtcraftApp {
+  language: crate::i18n::Language,
   backend: Backend,
   cache: MediaCache,
   player: AudioPlayer,
@@ -122,6 +124,7 @@ impl ArtcraftApp {
     theme::apply(&cc.egui_ctx);
     egui_extras::install_image_loaders(&cc.egui_ctx);
     let mut saved: Saved = cc.storage.and_then(|s| eframe::get_value(s, STORAGE_KEY)).unwrap_or_default();
+    crate::i18n::set_language(saved.language);
     if let Some(page) = std::env::var("ARTCRAFT_PAGE").ok().and_then(|p| Page::from_slug(&p)) {
       saved.page = page;
     }
@@ -132,7 +135,7 @@ impl ArtcraftApp {
       backend.load_models(modality);
     }
     backend.refresh_session();
-    let mut app = Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
+    let mut app = Self { language: saved.language, cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
     app.restore_provider_jobs();
     // Diagnostics: `ARTCRAFT_OPEN=settings` or `midjourney-login` opens that dialog at launch.
     match std::env::var("ARTCRAFT_OPEN").as_deref() {
@@ -194,7 +197,7 @@ impl ArtcraftApp {
       },
       Event::Models(_, Err(message)) => {
         if self.models_retry_at.is_none() {
-          self.toasts.error(format!("Couldn't load models: {message}"));
+          self.toasts.error(crate::i18n::tf("Couldn't load models: {}", &[message.to_string()]));
         }
         self.models_retry_at = Some(ctx.input(|i| i.time) + MODEL_RETRY_INTERVAL);
       },
@@ -224,7 +227,7 @@ impl ArtcraftApp {
         if let Some(modal) = &mut self.characters_modal {
           match modal.apply_upload(ref_id, result.clone()) {
             Some(Err(err)) => {
-              self.toasts.error(format!("Failed to upload the reference image: {err}"));
+              self.toasts.error(crate::i18n::tf("Failed to upload the reference image: {}", &[err.to_string()]));
               return;
             },
             Some(Ok(())) => return,
@@ -249,7 +252,7 @@ impl ArtcraftApp {
         self.pending_characters.retain(|(job, name)| match jobs.iter().find(|j| &j.job_token == job).map(|j| j.status.phase()) {
           Some(JobPhase::Succeeded) => false,
           Some(JobPhase::Failed) => {
-            toasts.error(format!("Character \u{201c}{name}\u{201d} failed to create"));
+            toasts.error(crate::i18n::tf("Character \u{201c}{}\u{201d} failed to create", &[name.to_string()]));
             false
           },
           _ => true,
@@ -261,7 +264,7 @@ impl ArtcraftApp {
           for notice in notices {
             match notice {
               FeedNotice::Completed => {
-                self.toasts.success(format!("{} generation complete!", kind.label()));
+                self.toasts.success(crate::i18n::tf("{} generation complete!", &[crate::i18n::t(kind.label())]));
                 self.backend.refresh_credits();
               },
               FeedNotice::Failed(reason) => self.toasts.error(reason),
@@ -292,7 +295,7 @@ impl ArtcraftApp {
             }
           },
         }
-        self.toasts.error(format!("Couldn't load your library: {message}"));
+        self.toasts.error(crate::i18n::tf("Couldn't load your library: {}", &[message.to_string()]));
       },
       Event::Batch { job_token, items } => {
         let kind = self.batch_kinds.remove(&job_token).unwrap_or(MediaKind::Image);
@@ -311,7 +314,7 @@ impl ArtcraftApp {
       },
       Event::Characters(list) => self.characters = list,
       Event::CharacterCreating { job_token, name } => {
-        self.toasts.success(format!("Character \u{201c}{name}\u{201d} is being created"));
+        self.toasts.success(crate::i18n::tf("Character \u{201c}{}\u{201d} is being created", &[name.to_string()]));
         self.pending_characters.push((job_token, name));
         self.next_poll = 0.0;
       },
@@ -341,7 +344,7 @@ impl ArtcraftApp {
           self.lightbox = None;
         }
       },
-      Event::Saved(path) => self.toasts.success(format!("Downloaded {}", common::file_name(&path))),
+      Event::Saved(path) => self.toasts.success(crate::i18n::tf("Downloaded {}", &[common::file_name(&path).to_string()])),
       Event::Toast { error, message } => {
         if error {
           self.toasts.error(message);
@@ -418,7 +421,7 @@ impl ArtcraftApp {
       },
       AppRequest::PlayExternally(url) => {
         if let Err(err) = open::that(&url) {
-          self.toasts.error(format!("Couldn't open the file: {err}"));
+          self.toasts.error(crate::i18n::tf("Couldn't open the file: {}", &[err.to_string()]));
         }
       },
       AppRequest::LoadMoreLibrary(key) => {
@@ -748,7 +751,7 @@ impl ArtcraftApp {
       let username = self.user.as_ref().map(|u| u.username.clone());
       let accounts = self.backend.accounts();
       let view = AccountsView { midjourney: accounts.midjourney_account(), fal_key_hint: accounts.fal_key_hint() };
-      match settings_dialog(ctx, &mut self.enter_to_generate, username.as_deref(), self.credits, &view, &mut self.fal_key_input, self.backend.data_root()) {
+      match settings_dialog(ctx, &mut self.enter_to_generate, username.as_deref(), self.credits, &view, &mut self.fal_key_input, self.backend.data_root(), &mut self.language) {
         Some(SettingsAction::Close) => self.settings_open = false,
         Some(SettingsAction::SignOut) => {
           self.settings_open = false;
@@ -816,11 +819,11 @@ impl ArtcraftApp {
           self.fal_key_input.clear();
           self.toasts.success("FAL API key saved");
         },
-        Err(err) => self.toasts.error(format!("Failed to save API key: {err}")),
+        Err(err) => self.toasts.error(crate::i18n::tf("Failed to save API key: {}", &[err.to_string()])),
       },
       AccountAction::RemoveFalKey => {
         if let Err(err) = self.backend.accounts().clear_fal_key() {
-          self.toasts.error(format!("Failed to clear provider credential: {err}"));
+          self.toasts.error(crate::i18n::tf("Failed to clear provider credential: {}", &[err.to_string()]));
         }
       },
     }
@@ -853,7 +856,7 @@ impl ArtcraftApp {
       LightboxAction::CopyPrompt(text) => self.handle_request(ctx, AppRequest::CopyText(text)),
       LightboxAction::Play(url) => {
         if let Err(err) = open::that(&url) {
-          self.toasts.error(format!("Couldn't open the video: {err}"));
+          self.toasts.error(crate::i18n::tf("Couldn't open the video: {}", &[err.to_string()]));
         }
       },
     }
@@ -890,7 +893,7 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
+    let saved = Saved { page: self.page, language: crate::i18n::language(), enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
     eframe::set_value(storage, STORAGE_KEY, &saved);
   }
 

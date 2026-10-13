@@ -92,7 +92,7 @@ pub fn format_time(secs: f32) -> String {
 fn volume(ui: &mut Ui, id: Id, rect: Rect, audio: &mut AudioPlayer) {
   let popup_id = id.with("volume-popup");
   let open = Popup::is_id_open(ui.ctx(), popup_id);
-  let resp = ui.interact(rect, id.with("volume"), Sense::click()).on_hover_text("Volume").on_hover_cursor(egui::CursorIcon::PointingHand);
+  let resp = ui.interact(rect, id.with("volume"), Sense::click()).on_hover_text(crate::i18n::t("Volume")).on_hover_cursor(egui::CursorIcon::PointingHand);
   resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Volume"));
   if resp.hovered() || open {
     ui.painter().rect_filled(rect, theme::RADIUS, theme::WASH);
