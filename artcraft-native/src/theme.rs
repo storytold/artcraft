@@ -1,5 +1,5 @@
 //! Colours, type and shapes of the ArtCraft webapp's brutalist system
-//! (`artcraft-services/frontend/apps/artcraft-webapp`): near-black surfaces, white/15 hairlines,
+//! (`artcraft-services/frontend/apps/artcraft-webapp`): near-black surfaces, fine hairlines,
 //! Archivo display type, Inter body text, Geist Mono labels and 3 px corners on anything
 //! pressable. Large surfaces (panels, cards, media tiles) stay square.
 
@@ -32,27 +32,27 @@ pub const SUNKEN: Color32 = hex(0x060607);
 /// `base-fg`: body text.
 pub const INK: Color32 = hex(0xf2f1ee);
 pub const INK_STRONG: Color32 = Color32::WHITE;
-/// `base-fg/60`: secondary text and placeholders.
-pub const MUTED: Color32 = alpha(0xf2f1ee, 153);
+/// Secondary text and placeholders in the standard dark palette.
+pub const MUTED: Color32 = hex(0xa6a6a8);
 /// `base-fg/50`: idle toolbar icons.
 pub const DIM: Color32 = alpha(0xf2f1ee, 128);
-/// `base-fg/40`: counters and captions.
-pub const FAINT: Color32 = alpha(0xf2f1ee, 102);
+/// Disabled labels and captions.
+pub const FAINT: Color32 = hex(0x717176);
 /// The sidebar's link colour (`white/72`).
 pub const SIDEBAR_INK: Color32 = alpha(0xffffff, 184);
 
-/// `white/15`: every hairline.
-pub const LINE: Color32 = alpha(0xffffff, 38);
+/// Border used by the shared standard dark interface.
+pub const LINE: Color32 = hex(0x36373a);
 /// `white/25`: dashed drop targets.
 pub const LINE_DASHED: Color32 = alpha(0xffffff, 64);
-/// `base-fg/40`: outlined buttons and corner marks.
-pub const LINE_STRONG: Color32 = alpha(0xf2f1ee, 102);
+/// Strong border on controls and focusable fields.
+pub const LINE_STRONG: Color32 = hex(0x77787c);
 /// `white/5`: quiet fills.
 pub const WASH: Color32 = alpha(0xffffff, 13);
-/// `white/8`: the selected sidebar row.
-pub const WASH_SELECTED: Color32 = alpha(0xffffff, 20);
-/// `white/10`: hovered menu rows.
-pub const WASH_HOVER: Color32 = alpha(0xffffff, 26);
+/// Selected sidebar row.
+pub const WASH_SELECTED: Color32 = hex(0x203b65);
+/// Hovered menu rows.
+pub const WASH_HOVER: Color32 = hex(0x323337);
 
 /// The brand blue (`primary`).
 pub const ACCENT: Color32 = hex(0x2d81ff);
@@ -60,6 +60,8 @@ pub const ACCENT: Color32 = hex(0x2d81ff);
 pub const ACCENT_400: Color32 = hex(0x59a7ff);
 /// `ui-accent-ink`: blue text and focus rings.
 pub const ACCENT_INK: Color32 = hex(0x74aaff);
+/// Text and symbols on a solid blue accent fill.
+pub const ACCENT_ON: Color32 = SUNKEN;
 
 /// The inverted primary button (white block, near-black text).
 pub const INVERT_BG: Color32 = Color32::WHITE;
@@ -137,8 +139,8 @@ fn visuals() -> Visuals {
   v.popup_shadow = shadow();
   v.override_text_color = Some(INK);
   v.hyperlink_color = ACCENT_INK;
-  v.selection.bg_fill = ACCENT;
-  v.selection.stroke = Stroke::new(1.0, Color32::WHITE);
+  v.selection.bg_fill = WASH_SELECTED;
+  v.selection.stroke = Stroke::new(1.0, INK);
   v.text_cursor.stroke = Stroke::new(1.5, Color32::WHITE);
   v.warn_fg_color = BADGE_BETA;
   v.error_fg_color = BAD;
@@ -190,4 +192,21 @@ fn install_fonts(ctx: &egui::Context) {
     fonts.families.insert(family, stack);
   }
   ctx.set_fonts(fonts);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn standard_dark_roles_keep_selected_rows_distinct_from_blue_actions() {
+    let v = visuals();
+    assert_eq!(BG, hex(0x121316));
+    assert_eq!(PANEL, hex(0x101014));
+    assert_eq!(ACCENT, hex(0x2d81ff));
+    assert_eq!(ACCENT_ON, hex(0x060607));
+    assert_eq!(v.selection.bg_fill, hex(0x203b65));
+    assert_eq!(v.selection.stroke.color, INK);
+    assert_eq!(v.widgets.inactive.bg_stroke.color, hex(0x36373a));
+  }
 }
