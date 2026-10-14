@@ -201,6 +201,9 @@ impl FeedStore {
 
   pub fn library_failed(&mut self) {
     self.loading = false;
+    if self.next_page == 0 {
+      self.library_started = false;
+    }
   }
 
   /// Starts the library over (after signing in or out).
@@ -385,5 +388,32 @@ mod tests {
     store.apply_jobs(MediaKind::Image, &[], &c);
     assert_eq!(store.pending.len(), 1);
     assert_eq!(store.pending[0].batch_count, 2);
+  }
+
+  #[test]
+  fn initial_library_failure_can_retry_first_page() {
+    let mut store = FeedStore::default();
+
+    assert_eq!(store.next_library_page(), Some(0));
+    assert!(store.library_started());
+
+    store.library_failed();
+
+    assert!(!store.library_started());
+    assert_eq!(store.next_library_page(), Some(0));
+  }
+
+  #[test]
+  fn later_library_failure_retries_same_page_without_resetting() {
+    let mut store = FeedStore::default();
+
+    assert_eq!(store.next_library_page(), Some(0));
+    store.apply_library_page(MediaKind::Image, 0, &[], 2);
+    assert_eq!(store.next_library_page(), Some(1));
+
+    store.library_failed();
+
+    assert!(store.library_started());
+    assert_eq!(store.next_library_page(), Some(1));
   }
 }
