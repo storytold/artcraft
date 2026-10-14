@@ -47,7 +47,7 @@ pub async fn basic_json_post_request<Req: Serialize, Res: DeserializeOwned>(
   let request_body = serde_json::to_string(&request)
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 
-  debug!("Request body: {:?}", request_body);
+  debug!("Serialized request body ({} bytes)", request_body.len());
 
   let response = request_builder
       .body(request_body)
@@ -73,7 +73,7 @@ pub async fn basic_json_post_request<Req: Serialize, Res: DeserializeOwned>(
       .await
       .map_err(|err| StorytellerError::Api(ApiError::from(err)))?;
 
-  debug!("Response body: {:?}", response_body);
+  debug!("Response body received ({} bytes)", response_body.len());
 
   let response = serde_json::from_str(&response_body)
       .map_err(|err| StorytellerError::Api(ApiError::from(err)))?;

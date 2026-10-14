@@ -73,7 +73,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
   let required_headers = prepare_response.required_headers;
 
   info!("Media asset ID: {}", media_asset_id.as_str());
-  info!("Upload URL: {}", upload_url);
+  info!("Received signed upload URL for media asset");
 
   // Step 2: Upload to signed URL
   info!("Step 2 of 3: upload_to_signed_url ...");
