@@ -6,6 +6,7 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::auto_download::{auto_download_task_urls, clear_auto_download_checkpoint};
+use crate::core::utils::simple_http_download::simple_http_download;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -31,8 +32,6 @@ use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{
   update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs,
 };
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
 use tauri::AppHandle;
@@ -244,8 +243,7 @@ async fn download_file(
   app_data_root: &AppDataRoot,
   index: usize,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-  let response = reqwest::get(url).await?;
-  let bytes = response.bytes().await?;
+  let download_url = reqwest::Url::parse(url)?;
 
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
     .map(|ext| ext.as_extension_without_period())
@@ -255,8 +253,7 @@ async fn download_file(
   let filename = format!("fal_{}_{}.{}", generate_random_uuid(), index, extension);
   let download_path = tempdir.join(filename);
 
-  let mut file = File::create(&download_path)?;
-  file.write_all(&bytes)?;
+  simple_http_download(&download_url, &download_path).await?;
 
   Ok(download_path)
 }

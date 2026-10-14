@@ -30,6 +30,7 @@ scraper = "0.24.0"
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+tempfile.workspace = true
 tokio = { version = "1", features = ["full"] }
 url.workspace = true
 uuid.workspace = true

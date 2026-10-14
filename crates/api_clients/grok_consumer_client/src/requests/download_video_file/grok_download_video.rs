@@ -1,19 +1,23 @@
 use crate::client::browser_user_agents::FIREFOX_143_MAC_USER_AGENT;
 use crate::datatypes::api::file_id::FileId;
 use crate::datatypes::api::user_id::UserId;
+use crate::error::categorize_grok_http_error::categorize_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
 use crate::utils::user_and_file_id_to_video_url::user_and_file_id_to_video_url;
-use futures::{StreamExt, TryStreamExt};
-use log::{error, info, warn};
-use std::io::Write;
+use futures::TryStreamExt;
+use log::{error, info};
 use std::path::Path;
 use std::time::Duration;
+use tempfile::NamedTempFile;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use wreq::header::{ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, CONTENT_TYPE, COOKIE, ORIGIN, REFERER, TE, UPGRADE_INSECURE_REQUESTS, USER_AGENT};
-use wreq::{Client, Request, Response};
+use wreq::header::{
+  ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CONNECTION, COOKIE, REFERER, UPGRADE_INSECURE_REQUESTS,
+  USER_AGENT,
+};
+use wreq::{Client, Response, StatusCode};
 use wreq_util::Emulation;
 
 pub struct GrokDownloadVideo<'a> {
@@ -34,23 +38,16 @@ impl <'a> GrokDownloadVideo<'a> {
 
     let mut stream = response.bytes_stream();
 
-    let mut file = File::create(&path)
-        .await
+    let path = path.as_ref();
+    let directory = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let temporary = NamedTempFile::new_in(directory)
         .map_err(|err| GrokClientError::CannotOpenLocalFileForWriting(err))?;
-
-    //let _r = stream.for_each_concurrent(None, |chunk_result| async {
-    //  match chunk_result {
-    //    Ok(chunk) => {
-    //      file;
-    //      //if let Err(e) = file.write_all(&chunk).await {
-    //      //  //error!("Error writing to file: {}", e);
-    //      //}
-    //    }
-    //    Err(e) => {
-    //      //error!("Error in stream: {}", e);
-    //    }
-    //  }
-    //}).await;
+    let std_file = temporary.reopen()
+        .map_err(|err| GrokClientError::CannotOpenLocalFileForWriting(err))?;
+    let mut file = File::from_std(std_file);
 
     while let Some(chunk) = stream.try_next()
         .await
@@ -58,10 +55,19 @@ impl <'a> GrokDownloadVideo<'a> {
     {
       file.write_all(&chunk)
           .await
-          .map_err(|err| GrokClientError::CannotOpenLocalFileForWriting(err))?
+          .map_err(|err| GrokClientError::CannotWriteLocalFile(err))?
     }
 
-    file.flush().await.unwrap();
+    file.flush()
+        .await
+        .map_err(|err| GrokClientError::CannotWriteLocalFile(err))?;
+    file.sync_all()
+        .await
+        .map_err(|err| GrokClientError::CannotWriteLocalFile(err))?;
+    drop(file);
+
+    temporary.persist(path)
+        .map_err(|err| GrokClientError::CannotWriteLocalFile(err.error))?;
 
     Ok(())
   }
@@ -115,26 +121,47 @@ impl <'a> GrokDownloadVideo<'a> {
         .await
         .map_err(|err| GrokGenericApiError::WreqError(err))?;
 
-    let status = response.status();
-
-    // TODO: Classify errors
-    if !status.is_success() {
-      warn!("Not successful liking media (status: {:?})", status);
-      //  error!("Upload file request returned an error (code {}) : {:?}", status.as_u16(), response_body);
-      //  return Err(classify_general_http_status_code_and_body(status, response_body));
-    }
+    validate_download_status(response.status())?;
 
     Ok(response)
   }
 }
 
+fn validate_download_status(status: StatusCode) -> Result<(), GrokError> {
+  if status.is_success() {
+    return Ok(())
+  }
+
+  Err(categorize_grok_http_error(status, None))
+}
+
 #[cfg(test)]
 mod tests {
+  use super::validate_download_status;
   use crate::datatypes::api::file_id::FileId;
   use crate::recipes::request_client_secrets::{request_client_secrets, RequestClientSecretsArgs};
   use crate::requests::download_video_file::download_video_file::{download_video_file, DownloadVideoFileArgs};
   use crate::test_utils::get_test_cookies::get_typed_test_cookies;
   use errors::AnyhowResult;
+  use wreq::StatusCode;
+
+  #[test]
+  fn download_status_accepts_success() {
+    assert!(validate_download_status(StatusCode::OK).is_ok());
+  }
+
+  #[test]
+  fn download_status_rejects_http_errors() {
+    for status in [
+      StatusCode::UNAUTHORIZED,
+      StatusCode::FORBIDDEN,
+      StatusCode::NOT_FOUND,
+      StatusCode::TOO_MANY_REQUESTS,
+      StatusCode::INTERNAL_SERVER_ERROR,
+    ] {
+      assert!(validate_download_status(status).is_err(), "status {status} should fail");
+    }
+  }
 
   #[tokio::test]
   #[ignore] // Client side tests only
