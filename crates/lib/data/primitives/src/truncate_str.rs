@@ -21,4 +21,14 @@ mod tests {
     assert_eq!(truncate_str("hello", 10), "hello");
     assert_eq!(truncate_str("hello", 10000), "hello");
   }
+
+  #[test]
+  fn truncate_preserves_utf8_boundaries() {
+    let prefix = "a".repeat(254);
+    let accented = format!("{}éz", prefix);
+    let emoji = format!("{}😀z", prefix);
+
+    assert_eq!(truncate_str(&accented, 255), format!("{}é", prefix));
+    assert_eq!(truncate_str(&emoji, 255), format!("{}😀", prefix));
+  }
 }
