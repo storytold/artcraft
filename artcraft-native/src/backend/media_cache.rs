@@ -12,7 +12,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
 use egui::{ColorImage, TextureHandle, TextureOptions};
-use image::AnimationDecoder;
+use image::{AnimationDecoder, ImageDecoder};
 use log::warn;
 use tokio::runtime::Handle;
 use tokio::sync::Semaphore;
@@ -24,6 +24,11 @@ const MAX_DECODED_SIDE: u32 = 2048;
 /// Animated previews: longest side and frame budget (each frame is its own texture).
 const ANIMATED_SIDE: u32 = 320;
 const ANIMATED_MAX_FRAMES: usize = 48;
+/// Compressed and decoded budgets for animated previews. The decoded budget is cumulative across
+/// source frames, while the pixel limit bounds the peak size of any one composited frame.
+const ANIMATED_MAX_INPUT_BYTES: usize = 64 * 1024 * 1024;
+const ANIMATED_MAX_DECODED_BYTES: u64 = 512 * 1024 * 1024;
+const ANIMATED_MAX_FRAME_PIXELS: u64 = 16 * 1024 * 1024;
 /// Textures kept even when unused (roughly two screens of thumbnails).
 const SOFT_CAPACITY: usize = 160;
 /// Frames an image may go undrawn before it can be evicted (animations go sooner: they're heavy).
@@ -72,6 +77,12 @@ struct Loaded {
 enum Decoded {
   Still(ColorImage),
   Frames(Vec<(ColorImage, f32)>),
+}
+
+enum AnimationDecode {
+  Frames(Vec<(ColorImage, f32)>),
+  NotAnimated,
+  Rejected,
 }
 
 impl MediaCache {
@@ -187,8 +198,41 @@ async fn download(http: &reqwest::Client, url: &str, animated: bool) -> Option<D
       return None;
     },
   };
-  let bytes = response.bytes().await.ok()?;
-  tokio::task::spawn_blocking(move || if animated { decode_frames(&bytes).map(Decoded::Frames).or_else(|| decode(&bytes).map(Decoded::Still)) } else { decode(&bytes).map(Decoded::Still) }).await.ok().flatten()
+  let bytes = if animated {
+    read_bounded_response(response, ANIMATED_MAX_INPUT_BYTES).await?
+  } else {
+    response.bytes().await.ok()?.to_vec()
+  };
+  tokio::task::spawn_blocking(move || {
+    if !animated {
+      return decode(&bytes).map(Decoded::Still);
+    }
+    match decode_frames(&bytes) {
+      AnimationDecode::Frames(frames) => Some(Decoded::Frames(frames)),
+      AnimationDecode::NotAnimated => decode(&bytes).map(Decoded::Still),
+      AnimationDecode::Rejected => None,
+    }
+  }).await.ok().flatten()
+}
+
+async fn read_bounded_response(mut response: reqwest::Response, max_bytes: usize) -> Option<Vec<u8>> {
+  if let Some(length) = response.content_length() {
+    if length > max_bytes as u64 {
+      warn!("Animated preview download exceeds {max_bytes} byte input budget");
+      return None;
+    }
+  }
+
+  let capacity = response.content_length().unwrap_or(0).min(max_bytes as u64) as usize;
+  let mut bytes = Vec::with_capacity(capacity);
+  while let Some(chunk) = response.chunk().await.ok()? {
+    if bytes.len().saturating_add(chunk.len()) > max_bytes {
+      warn!("Animated preview download exceeds {max_bytes} byte input budget");
+      return None;
+    }
+    bytes.extend_from_slice(&chunk);
+  }
+  Some(bytes)
 }
 
 fn decode(bytes: &[u8]) -> Option<ColorImage> {
@@ -203,42 +247,262 @@ fn decode(bytes: &[u8]) -> Option<ColorImage> {
   Some(to_color_image(image.to_rgba8()))
 }
 
-/// The frames of an animated GIF or WebP (subsampled to the budget), or `None` when it isn't
-/// animated.
-fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
-  let frames = match image::guess_format(bytes).ok()? {
-    image::ImageFormat::Gif => image::codecs::gif::GifDecoder::new(Cursor::new(bytes)).ok()?.into_frames().collect_frames().ok()?,
-    image::ImageFormat::WebP => {
-      let decoder = image::codecs::webp::WebPDecoder::new(Cursor::new(bytes)).ok()?;
-      if !decoder.has_animation() {
-        return None;
-      }
-      decoder.into_frames().collect_frames().ok()?
-    },
-    _ => return None,
+struct SampledAnimationFrame {
+  image: ColorImage,
+  raw_secs: f32,
+  source_frames: usize,
+}
+
+/// The frames of an animated GIF or WebP (subsampled to the budget).
+fn decode_frames(bytes: &[u8]) -> AnimationDecode {
+  let format = match image::guess_format(bytes) {
+    Ok(format) => format,
+    Err(_) => return AnimationDecode::NotAnimated,
   };
-  if frames.len() < 2 {
-    return None;
+
+  match format {
+    image::ImageFormat::Gif => {
+      let decoder = match image::codecs::gif::GifDecoder::new(Cursor::new(bytes)) {
+        Ok(decoder) => decoder,
+        Err(err) => {
+          warn!("Animated GIF decode setup failed: {err}");
+          return AnimationDecode::Rejected;
+        },
+      };
+      if !animation_dimensions_within_budget(decoder.dimensions(), ANIMATED_MAX_FRAME_PIXELS) {
+        return AnimationDecode::Rejected;
+      }
+      sample_animation_frames(
+        decoder.into_frames(),
+        ANIMATED_MAX_FRAMES,
+        ANIMATED_MAX_DECODED_BYTES,
+        ANIMATED_MAX_FRAME_PIXELS,
+      )
+    },
+    image::ImageFormat::WebP => {
+      let decoder = match image::codecs::webp::WebPDecoder::new(Cursor::new(bytes)) {
+        Ok(decoder) => decoder,
+        Err(err) => {
+          warn!("Animated WebP decode setup failed: {err}");
+          return AnimationDecode::Rejected;
+        },
+      };
+      if !decoder.has_animation() {
+        return AnimationDecode::NotAnimated;
+      }
+      if !animation_dimensions_within_budget(decoder.dimensions(), ANIMATED_MAX_FRAME_PIXELS) {
+        return AnimationDecode::Rejected;
+      }
+      sample_animation_frames(
+        decoder.into_frames(),
+        ANIMATED_MAX_FRAMES,
+        ANIMATED_MAX_DECODED_BYTES,
+        ANIMATED_MAX_FRAME_PIXELS,
+      )
+    },
+    _ => AnimationDecode::NotAnimated,
   }
-  // Keep every n-th frame, folding the skipped frames' time into the kept one.
-  let step = frames.len().div_ceil(ANIMATED_MAX_FRAMES);
-  let mut out = Vec::with_capacity(frames.len() / step + 1);
-  for chunk in frames.chunks(step) {
-    let secs: f32 = chunk
-      .iter()
-      .map(|f| {
-        let (n, d) = f.delay().numer_denom_ms();
-        n as f32 / d.max(1) as f32 / 1000.0
-      })
-      .sum();
-    let image = image::DynamicImage::ImageRgba8(chunk[0].buffer().clone()).thumbnail(ANIMATED_SIDE, ANIMATED_SIDE);
-    // Some encoders write 0 ms delays; browsers treat those as ~100 ms.
-    out.push((to_color_image(image.to_rgba8()), if secs < 0.02 { 0.1 * chunk.len() as f32 } else { secs }));
+}
+
+fn animation_dimensions_within_budget(dimensions: (u32, u32), max_frame_pixels: u64) -> bool {
+  let pixels = u64::from(dimensions.0).checked_mul(u64::from(dimensions.1));
+  match pixels {
+    Some(pixels) if pixels <= max_frame_pixels => true,
+    _ => {
+      warn!("Animated preview dimensions exceed {max_frame_pixels} pixel budget");
+      false
+    },
   }
-  Some(out)
+}
+
+/// Incrementally decodes and samples an animation. At most `max_frames` thumbnails are retained.
+/// When the source grows past the current sampling window, the stride doubles and existing
+/// samples are compacted in pairs. This keeps the whole animation represented without collecting
+/// every full-size source frame first.
+fn sample_animation_frames<I>(
+  frames: I,
+  max_frames: usize,
+  max_decoded_bytes: u64,
+  max_frame_pixels: u64,
+) -> AnimationDecode
+where
+  I: IntoIterator<Item = image::ImageResult<image::Frame>>,
+{
+  if max_frames == 0 {
+    return AnimationDecode::Rejected;
+  }
+
+  let mut sampled = Vec::with_capacity(max_frames);
+  let mut stride = 1usize;
+  let mut source_frame_count = 0usize;
+  let mut decoded_bytes = 0u64;
+
+  for frame in frames {
+    let frame = match frame {
+      Ok(frame) => frame,
+      Err(err) => {
+        warn!("Animated preview frame decode failed: {err}");
+        return AnimationDecode::Rejected;
+      },
+    };
+
+    let pixels = match u64::from(frame.buffer().width()).checked_mul(u64::from(frame.buffer().height())) {
+      Some(pixels) if pixels <= max_frame_pixels => pixels,
+      _ => {
+        warn!("Animated preview frame exceeds {max_frame_pixels} pixel budget");
+        return AnimationDecode::Rejected;
+      },
+    };
+    let frame_bytes = match pixels.checked_mul(4) {
+      Some(frame_bytes) => frame_bytes,
+      None => return AnimationDecode::Rejected,
+    };
+    decoded_bytes = match decoded_bytes.checked_add(frame_bytes) {
+      Some(decoded_bytes) if decoded_bytes <= max_decoded_bytes => decoded_bytes,
+      _ => {
+        warn!("Animated preview exceeds {max_decoded_bytes} byte decoded budget");
+        return AnimationDecode::Rejected;
+      },
+    };
+
+    let index = source_frame_count;
+    source_frame_count = match source_frame_count.checked_add(1) {
+      Some(count) => count,
+      None => return AnimationDecode::Rejected,
+    };
+    if index >= max_frames.saturating_mul(stride) {
+      compact_animation_samples(&mut sampled);
+      stride = match stride.checked_mul(2) {
+        Some(stride) => stride,
+        None => return AnimationDecode::Rejected,
+      };
+    }
+
+    let (numer, denom) = frame.delay().numer_denom_ms();
+    let raw_secs = numer as f32 / denom.max(1) as f32 / 1000.0;
+    if index % stride == 0 {
+      let image = image::DynamicImage::ImageRgba8(frame.into_buffer()).thumbnail(ANIMATED_SIDE, ANIMATED_SIDE);
+      sampled.push(SampledAnimationFrame {
+        image: to_color_image(image.to_rgba8()),
+        raw_secs,
+        source_frames: 1,
+      });
+    } else if let Some(last) = sampled.last_mut() {
+      last.raw_secs += raw_secs;
+      last.source_frames += 1;
+    }
+  }
+
+  if source_frame_count < 2 {
+    return AnimationDecode::NotAnimated;
+  }
+
+  AnimationDecode::Frames(sampled
+    .into_iter()
+    .map(|frame| {
+      // Some encoders write 0 ms delays; browsers treat those as ~100 ms.
+      let secs = if frame.raw_secs < 0.02 { 0.1 * frame.source_frames as f32 } else { frame.raw_secs };
+      (frame.image, secs)
+    })
+    .collect())
+}
+
+fn compact_animation_samples(samples: &mut Vec<SampledAnimationFrame>) {
+  let mut compacted = Vec::with_capacity(samples.len().div_ceil(2));
+  let mut source = std::mem::take(samples).into_iter();
+  while let Some(mut kept) = source.next() {
+    if let Some(skipped) = source.next() {
+      kept.raw_secs += skipped.raw_secs;
+      kept.source_frames += skipped.source_frames;
+    }
+    compacted.push(kept);
+  }
+  *samples = compacted;
 }
 
 fn to_color_image(rgba: image::RgbaImage) -> ColorImage {
   let size = [rgba.width() as usize, rgba.height() as usize];
   ColorImage::from_rgba_unmultiplied(size, rgba.as_raw())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{ANIMATED_MAX_FRAMES, AnimationDecode, decode_frames, sample_animation_frames};
+  use image::{Delay, Frame, Rgba, RgbaImage};
+  use std::cell::Cell;
+
+  fn test_frame(value: u8, delay_ms: u32) -> Frame {
+    Frame::from_parts(
+      RgbaImage::from_pixel(2, 2, Rgba([value, value, value, 255])),
+      0,
+      0,
+      Delay::from_numer_denom_ms(delay_ms, 1),
+    )
+  }
+
+  #[test]
+  fn streaming_sampler_caps_retained_frames_and_preserves_duration() {
+    let frames = (0..200).map(|i| Ok(test_frame(i as u8, 100)));
+    let decoded = match sample_animation_frames(frames, 8, 1024 * 1024, 16) {
+      AnimationDecode::Frames(frames) => frames,
+      _ => panic!("animation should decode"),
+    };
+
+    assert!(decoded.len() <= 8);
+    let total: f32 = decoded.iter().map(|(_, secs)| secs).sum();
+    assert!((total - 20.0).abs() < 0.001, "duration was {total}");
+  }
+
+  #[test]
+  fn streaming_sampler_stops_at_decoded_byte_budget() {
+    let seen = Cell::new(0usize);
+    let frames = (0..10).map(|i| {
+      seen.set(seen.get() + 1);
+      Ok(test_frame(i, 100))
+    });
+
+    assert!(matches!(
+      sample_animation_frames(frames, 8, 32, 16),
+      AnimationDecode::Rejected
+    ));
+    assert_eq!(seen.get(), 3);
+  }
+
+  #[test]
+  fn streaming_sampler_rejects_oversized_frame() {
+    let frame = Frame::from_parts(
+      RgbaImage::from_pixel(4, 4, Rgba([0, 0, 0, 255])),
+      0,
+      0,
+      Delay::from_numer_denom_ms(100, 1),
+    );
+
+    assert!(matches!(
+      sample_animation_frames([Ok(frame)], 8, 1024, 8),
+      AnimationDecode::Rejected
+    ));
+  }
+
+  #[test]
+  fn single_frame_is_treated_as_still_image() {
+    assert!(matches!(
+      sample_animation_frames([Ok(test_frame(1, 100))], 8, 1024, 16),
+      AnimationDecode::NotAnimated
+    ));
+  }
+
+  #[test]
+  fn gif_decoder_uses_frame_budget() {
+    let mut bytes = Vec::new();
+    {
+      let mut encoder = image::codecs::gif::GifEncoder::new(&mut bytes);
+      encoder.encode_frames((0..64).map(|i| test_frame(i, 100))).unwrap();
+    }
+
+    let decoded = match decode_frames(&bytes) {
+      AnimationDecode::Frames(frames) => frames,
+      _ => panic!("GIF should decode as animation"),
+    };
+    assert!(decoded.len() <= ANIMATED_MAX_FRAMES);
+  }
 }
