@@ -98,7 +98,7 @@ async fn check_login_window(
 
   let cookie_store = worldlabs_login_webview_extract_cookies(webview_window)?;
 
-  info!("Current cookies (len {}): {:?}", cookie_store.len(), cookie_store.to_cookie_string());
+  info!("Current cookies count: {}", cookie_store.len());
 
   worldlabs_creds_manager.replace_cookie_store(cookie_store)?;
   

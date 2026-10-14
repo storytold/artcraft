@@ -34,8 +34,6 @@ pub async fn worldlabs_receive_bearer_command(
 ) -> SimpleResponse {
   info!("worldlabs_receive_bearer_command called");
 
-  info!("Request: {:?}", request);
-
   set_bearer(request, &bearer_bridge)
       .map_err(|err| {
         error!("Error setting bearer: {:?}", err);

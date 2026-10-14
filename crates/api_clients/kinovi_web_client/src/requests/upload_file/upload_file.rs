@@ -40,7 +40,7 @@ pub async fn upload_file(args: UploadFileArgs) -> Result<UploadFileResponse, Kin
   let host = resolve_host(args.host_override.as_ref());
   let base_url = host.api_base_url();
 
-  info!("Uploading file to: {}", args.upload_url);
+  info!("Uploading file to signed provider URL");
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
