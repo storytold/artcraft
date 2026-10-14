@@ -127,3 +127,13 @@ walkdir = "2.4.0"
 # Windows: choco install cmake strawberryperl pkgconfiglite llvm nasm
 wreq-util = "3.0.0-rc.10"
 wreq = { version = "6.0.0-rc.28", features = ["json", "query", "form", "multipart", "cookies", "ws", "stream", "gzip", "brotli", "zstd", "deflate"] }
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = 3 # `s` prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.
