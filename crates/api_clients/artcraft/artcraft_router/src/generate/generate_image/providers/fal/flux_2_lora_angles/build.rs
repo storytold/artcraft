@@ -25,11 +25,12 @@ pub fn build_fal_flux_2_lora_angles(
   }
   let num_images = plan_num_images(builder.image_batch_count, strategy)?;
   let image_size = plan_image_size(builder.aspect_ratio, strategy)?;
+  let vertical_angle = plan_vertical_angle(builder.vertical_angle, strategy)?;
 
   let request = Flux2LoraEditImageAngleRequest {
     image_urls,
     horizontal_angle: builder.horizontal_angle,
-    vertical_angle: builder.vertical_angle.map(|v| v.clamp(0.0, 60.0)),
+    vertical_angle,
     zoom: builder.zoom,
     num_images: Some(num_images),
     image_size,
@@ -74,6 +75,29 @@ fn plan_num_images(
       }
       _ => Ok(N::Four),
     },
+  }
+}
+
+fn plan_vertical_angle(
+  vertical_angle: Option<f64>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<f64>, ArtcraftRouterError> {
+  let Some(value) = vertical_angle else {
+    return Ok(None);
+  };
+
+  if (0.0..=60.0).contains(&value) {
+    return Ok(Some(value));
+  }
+
+  match strategy {
+    RequestMismatchMitigationStrategy::ErrorOut => {
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "vertical_angle",
+        value: format!("{}", value),
+      }))
+    }
+    _ => Ok(Some(value.clamp(0.0, 60.0))),
   }
 }
 
@@ -130,21 +154,50 @@ mod tests {
   }
 
   #[test]
-  fn negative_vertical_angle_clamps_to_zero() {
-    // Fal's flux-2-lora-gallery rejects vertical_angle < 0 (schema requires ge: 0.0).
+  fn strict_negative_vertical_angle_errors() {
     let builder = GenerateImageRequestBuilder {
       vertical_angle: Some(-30.0),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      ..base()
+    };
+    assert!(matches!(
+      build_fal_flux_2_lora_angles(builder),
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "vertical_angle",
+        ..
+      }))
+    ));
+  }
+
+  #[test]
+  fn strict_vertical_angle_above_sixty_errors() {
+    let builder = GenerateImageRequestBuilder {
+      vertical_angle: Some(90.0),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      ..base()
+    };
+    assert!(matches!(
+      build_fal_flux_2_lora_angles(builder),
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "vertical_angle",
+        ..
+      }))
+    ));
+  }
+
+  #[test]
+  fn permissive_vertical_angles_clamp_to_supported_range() {
+    let builder = GenerateImageRequestBuilder {
+      vertical_angle: Some(-30.0),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
       ..base()
     };
     let req = unwrap_request(build_fal_flux_2_lora_angles(builder));
     assert_eq!(req.vertical_angle, Some(0.0));
-  }
 
-  #[test]
-  fn vertical_angle_above_sixty_clamps_to_sixty() {
-    // Fal's flux-2-lora-gallery rejects vertical_angle > 60 (schema requires le: 60.0).
     let builder = GenerateImageRequestBuilder {
       vertical_angle: Some(90.0),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
       ..base()
     };
     let req = unwrap_request(build_fal_flux_2_lora_angles(builder));
@@ -190,7 +243,7 @@ mod tests {
       quality: None,
       image_batch_count: None,
       horizontal_angle: Some(45.0),
-      vertical_angle: Some(-15.0),
+      vertical_angle: Some(15.0),
       zoom: Some(2.0),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       generation_mode_mismatch_strategy: None,
