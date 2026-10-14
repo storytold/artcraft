@@ -10,12 +10,14 @@ use crate::generate::generate_video::video_generation_draft_or_request::VideoGen
 use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
 pub fn build_artcraft_seedance_2p0(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_video_request(
+  let generate_audio = builder.generate_audio;
+  let mut request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Seedance2p0,
     SupportedResolutions::FullWith4k,
     UltraWideSupport::Supported,
   )?;
+  request.generate_audio = generate_audio;
   let state = ArtcraftSeedance2p0RequestState { request };
   Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0(state)))
 }
@@ -79,6 +81,24 @@ mod tests {
     fn bitrate_passed_through() {
       let req = unwrap_request(make_builder(|b| { b.bitrate = Some(RouterBitrate::High); }));
       assert_eq!(req.request.bitrate, Some(CommonBitrateEnum::High));
+    }
+
+    #[test]
+    fn audio_preference_none_stays_none() {
+      let req = unwrap_request(make_builder(|b| { b.generate_audio = None; }));
+      assert_eq!(req.request.generate_audio, None);
+    }
+
+    #[test]
+    fn audio_preference_false_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.generate_audio = Some(false); }));
+      assert_eq!(req.request.generate_audio, Some(false));
+    }
+
+    #[test]
+    fn audio_preference_true_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.generate_audio = Some(true); }));
+      assert_eq!(req.request.generate_audio, Some(true));
     }
   }
 
