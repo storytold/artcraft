@@ -10,7 +10,7 @@ name = "artcraft-native"
 path = "src/main.rs"
 
 [dependencies]
-craft-ui = { git = "https://github.com/storytold/craft-libs", rev = "5d9c5780debff884922aa2a3fab87ba2fc61ac30" }
+craft-ui = { git = "https://github.com/storytold/craft-libs", rev = "8134693a69e0fca8ec7913ad5a95dedc05daad74" }
 # Internal (Tauri-free) API crates shared with the Tauri app.
 artcraft_api_defs.workspace = true
 artcraft_client.workspace = true

@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use craft_ui::theme::SuiteDarkPalette;
+use craft_ui::theme::SuitePalette;
 use egui::epaint::text::VariationCoords;
 use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, FontTweak, Stroke, TextStyle, Visuals};
 
@@ -20,55 +20,55 @@ const fn alpha(rgb: u32, a: u8) -> Color32 {
 }
 
 /// `ui-background`: the page behind the feed.
-pub const BG: Color32 = SuiteDarkPalette::ARTCRAFT.window;
+pub const BG: Color32 = SuitePalette::ARTCRAFT_DARK.window;
 /// `ui-panel`: the top bar, modals and the lightbox.
-pub const PANEL: Color32 = SuiteDarkPalette::ARTCRAFT.panel;
+pub const PANEL: Color32 = SuitePalette::ARTCRAFT_DARK.panel;
 /// `ui-controls`: the sidebar, the prompt box and toolbar buttons.
-pub const CONTROLS: Color32 = SuiteDarkPalette::ARTCRAFT.raised;
+pub const CONTROLS: Color32 = SuitePalette::ARTCRAFT_DARK.raised;
 /// The window chrome behind the content panel: the title bar and the sidebar.
-pub const CHROME: Color32 = SuiteDarkPalette::ARTCRAFT.chrome;
+pub const CHROME: Color32 = SuitePalette::ARTCRAFT_DARK.chrome;
 /// `ui-sunken`: wells and inputs.
-pub const SUNKEN: Color32 = SuiteDarkPalette::ARTCRAFT.input;
+pub const SUNKEN: Color32 = SuitePalette::ARTCRAFT_DARK.input;
 
 /// `base-fg`: body text.
-pub const INK: Color32 = SuiteDarkPalette::ARTCRAFT.text;
-pub const INK_STRONG: Color32 = SuiteDarkPalette::ARTCRAFT.text_strong;
+pub const INK: Color32 = SuitePalette::ARTCRAFT_DARK.text;
+pub const INK_STRONG: Color32 = SuitePalette::ARTCRAFT_DARK.text_strong;
 /// Secondary text and placeholders in the standard dark palette.
-pub const MUTED: Color32 = SuiteDarkPalette::ARTCRAFT.text_secondary;
+pub const MUTED: Color32 = SuitePalette::ARTCRAFT_DARK.text_secondary;
 /// `base-fg/50`: idle toolbar icons.
 pub const DIM: Color32 = alpha(0xf2f1ee, 128);
 /// Disabled labels and captions.
-pub const FAINT: Color32 = SuiteDarkPalette::ARTCRAFT.text_disabled;
+pub const FAINT: Color32 = SuitePalette::ARTCRAFT_DARK.text_disabled;
 /// The sidebar's link colour (`white/72`).
 pub const SIDEBAR_INK: Color32 = alpha(0xffffff, 184);
 
 /// Border used by the shared standard dark interface.
-pub const LINE: Color32 = SuiteDarkPalette::ARTCRAFT.border;
+pub const LINE: Color32 = SuitePalette::ARTCRAFT_DARK.border;
 /// `white/25`: dashed drop targets.
 pub const LINE_DASHED: Color32 = alpha(0xffffff, 64);
 /// Strong border on controls and focusable fields.
-pub const LINE_STRONG: Color32 = SuiteDarkPalette::ARTCRAFT.border_strong;
+pub const LINE_STRONG: Color32 = SuitePalette::ARTCRAFT_DARK.border_strong;
 /// `white/5`: quiet fills.
 pub const WASH: Color32 = alpha(0xffffff, 13);
 /// Selected sidebar row.
-pub const WASH_SELECTED: Color32 = SuiteDarkPalette::ARTCRAFT.selection;
+pub const WASH_SELECTED: Color32 = SuitePalette::ARTCRAFT_DARK.selection;
 /// Hovered menu rows.
-pub const WASH_HOVER: Color32 = SuiteDarkPalette::ARTCRAFT.hover;
+pub const WASH_HOVER: Color32 = SuitePalette::ARTCRAFT_DARK.hover;
 /// Pressed controls and open menus.
-pub const WASH_PRESSED: Color32 = SuiteDarkPalette::ARTCRAFT.pressed;
+pub const WASH_PRESSED: Color32 = SuitePalette::ARTCRAFT_DARK.pressed;
 
 /// The brand blue (`primary`).
-pub const ACCENT: Color32 = SuiteDarkPalette::ARTCRAFT.accent;
+pub const ACCENT: Color32 = SuitePalette::ARTCRAFT_DARK.accent;
 /// `primary-400`: progress bars and selection rings.
-pub const ACCENT_400: Color32 = SuiteDarkPalette::ARTCRAFT.accent_hover;
+pub const ACCENT_400: Color32 = SuitePalette::ARTCRAFT_DARK.accent_hover;
 /// `ui-accent-ink`: blue text and focus rings.
-pub const ACCENT_INK: Color32 = SuiteDarkPalette::ARTCRAFT.focus;
+pub const ACCENT_INK: Color32 = SuitePalette::ARTCRAFT_DARK.focus;
 /// Text and symbols on a solid blue accent fill.
-pub const ACCENT_ON: Color32 = SuiteDarkPalette::ARTCRAFT.on_accent;
+pub const ACCENT_ON: Color32 = SuitePalette::ARTCRAFT_DARK.on_accent;
 
 /// The inverted primary button (white block, near-black text).
-pub const INVERT_BG: Color32 = SuiteDarkPalette::ARTCRAFT.primary;
-pub const INVERT_FG: Color32 = SuiteDarkPalette::ARTCRAFT.on_primary;
+pub const INVERT_BG: Color32 = SuitePalette::ARTCRAFT_DARK.primary;
+pub const INVERT_FG: Color32 = SuitePalette::ARTCRAFT_DARK.on_primary;
 
 /// `red-400`: failure text.
 pub const BAD: Color32 = hex(0xf87171);
@@ -143,7 +143,7 @@ fn visuals() -> Visuals {
   v.override_text_color = Some(INK);
   v.hyperlink_color = ACCENT_INK;
   v.selection.bg_fill = WASH_SELECTED;
-  v.selection.stroke = Stroke::new(1.0, SuiteDarkPalette::ARTCRAFT.selection_text);
+  v.selection.stroke = Stroke::new(1.0, SuitePalette::ARTCRAFT_DARK.selection_text);
   v.text_cursor.stroke = Stroke::new(1.5, Color32::WHITE);
   v.warn_fg_color = BADGE_BETA;
   v.error_fg_color = BAD;
@@ -203,7 +203,7 @@ mod tests {
 
   #[test]
   fn shared_roles_preserve_inverted_controls_media_and_semantic_colors() {
-    let roles = SuiteDarkPalette::ARTCRAFT;
+    let roles = SuitePalette::ARTCRAFT_DARK;
     assert_eq!(BG, roles.window);
     assert_eq!(PANEL, roles.panel);
     assert_eq!(CONTROLS, roles.raised);
