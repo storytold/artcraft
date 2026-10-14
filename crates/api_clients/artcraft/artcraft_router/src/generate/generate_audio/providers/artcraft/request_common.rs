@@ -23,7 +23,7 @@ pub async fn send_artcraft_omni_audio_request(
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Storyteller(err)))?;
 
   Ok(GenerateAudioResponse::Artcraft(ArtcraftAudioResponsePayload {
-    inference_job_token: response.inference_job_token.clone(),
-    all_inference_job_tokens: vec![response.inference_job_token],
+    inference_job_token: response.inference_job_token,
+    all_inference_job_tokens: response.all_job_tokens,
   }))
 }

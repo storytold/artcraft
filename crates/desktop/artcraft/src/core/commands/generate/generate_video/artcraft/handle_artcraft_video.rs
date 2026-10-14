@@ -14,7 +14,7 @@ pub async fn handle_video_artcraft(
   app: &AppHandle,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
+) -> Result<Vec<TaskEnqueueSuccess>, GenerateError> {
 
   let creds = get_storyteller_creds_or_error(app, storyteller_creds_manager)?;
 

@@ -15,7 +15,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use artcraft_router::generate::generate_video::generate_video_response::{ArtcraftVideoResponsePayload, GenerateVideoResponse};
 use artcraft_router::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
@@ -27,7 +27,7 @@ pub(super) async fn handle_artcraft_video_via_router(
   creds: &StorytellerCredentialSet,
   model: RouterVideoModel,
   generation_model: GenerationModel,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
+) -> Result<Vec<TaskEnqueueSuccess>, GenerateError> {
   let client = RouterClient::Artcraft(RouterArtcraftClient::new(
     app_env_configs.storyteller_host.clone(),
     creds.clone(),
@@ -67,19 +67,21 @@ pub(super) async fn handle_artcraft_video_via_router(
   info!("Building request for artcraft_router (v2 pipeline)...");
   let response = generate_via_v2(router_request, &client).await?;
 
-  let job_id = response.get_artcraft_payload()
-    .map(|p| p.inference_job_token.to_string())
+  let payload = response.get_artcraft_payload()
     .ok_or(GenerateError::ResponseHadNoJobTokens)?;
 
-  Ok(TaskEnqueueSuccess {
-    task_type: TaskType::VideoGeneration,
-    model: Some(generation_model),
-    provider: GenerationProvider::Artcraft,
-    provider_job_id: Some(job_id),
-    maybe_queue_status_url: None,
-    maybe_prompt_token: None,
-    maybe_queue_response_url: None,
-  })
+  Ok(artcraft_video_tasks(payload, generation_model))
+}
+
+fn artcraft_video_tasks(payload: ArtcraftVideoResponsePayload, generation_model: GenerationModel) -> Vec<TaskEnqueueSuccess> {
+  let mut job_tokens = vec![payload.inference_job_token];
+  for job_token in payload.all_inference_job_tokens {
+    if !job_tokens.contains(&job_token) {
+      job_tokens.push(job_token);
+    }
+  }
+
+  job_tokens.into_iter().map(|job_token| TaskEnqueueSuccess { task_type: TaskType::VideoGeneration, model: Some(generation_model.clone()), provider: GenerationProvider::Artcraft, provider_job_id: Some(job_token.to_string()), maybe_queue_status_url: None, maybe_prompt_token: None, maybe_queue_response_url: None }).collect()
 }
 
 /// V2 pipeline: build2 → send_request (Artcraft skips draft phase).
@@ -104,4 +106,27 @@ async fn generate_via_v2(
 
   info!("V2 successfully enqueued.");
   Ok(response)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+
+  const JOBS: [&str; 3] = ["job_primary", "job_second", "job_third"];
+
+  #[test]
+  fn video_tasks_keep_primary_first_and_track_each_job_once() {
+    for all_jobs in [&JOBS[..], &JOBS[..1], &[JOBS[1], JOBS[0], JOBS[2], JOBS[1]], &[]] {
+      let payload = ArtcraftVideoResponsePayload { inference_job_token: InferenceJobToken::new_from_str(JOBS[0]), all_inference_job_tokens: all_jobs.iter().map(|job| InferenceJobToken::new_from_str(job)).collect() };
+      let tasks = artcraft_video_tasks(payload, GenerationModel::Seedance1p5Pro);
+      let expected = if all_jobs.len() > 1 { &JOBS[..] } else { &JOBS[..1] };
+      assert_eq!(tasks.iter().map(|task| task.provider_job_id.as_deref().unwrap()).collect::<Vec<_>>(), expected);
+      for task in tasks {
+        assert_eq!(task.provider, GenerationProvider::Artcraft);
+        assert_eq!(task.task_type, TaskType::VideoGeneration);
+        assert!(matches!(task.model, Some(GenerationModel::Seedance1p5Pro)));
+      }
+    }
+  }
 }
