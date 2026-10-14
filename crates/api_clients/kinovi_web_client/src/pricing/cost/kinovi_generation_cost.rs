@@ -22,13 +22,17 @@ impl KinoviGenerationCost {
   /// Build a cost from a Kinovi credit amount, deriving the USD cents via
   /// the credit-package rate.
   pub fn from_kinovi_credits(kinovi_credits: u64) -> Self {
-    let total_hundredths = kinovi_credits * 100;
+    let total_hundredths = u128::from(kinovi_credits) * 100;
+    let credits_per_dollar = u128::from(ENTERPRISE_CREDITS_PER_DOLLAR);
+    let rounded_up = total_hundredths.div_ceil(credits_per_dollar);
+    let rounded_down = total_hundredths / credits_per_dollar;
+
     Self {
       kinovi_credits,
-      // Integer ceiling / floor of (credits * 100 / ENTERPRISE_CREDITS_PER_DOLLAR).
-      usd_cents_rounded_up: total_hundredths.div_ceil(ENTERPRISE_CREDITS_PER_DOLLAR),
-      usd_cents_rounded_down: total_hundredths / ENTERPRISE_CREDITS_PER_DOLLAR,
-      usd_cents_fractional: total_hundredths as f64 / ENTERPRISE_CREDITS_PER_DOLLAR as f64,
+      // Keep the intermediate multiplication wide enough for every u64 credit amount.
+      usd_cents_rounded_up: u64::try_from(rounded_up).unwrap_or(u64::MAX),
+      usd_cents_rounded_down: u64::try_from(rounded_down).unwrap_or(u64::MAX),
+      usd_cents_fractional: total_hundredths as f64 / credits_per_dollar as f64,
     }
   }
 }
@@ -86,5 +90,24 @@ mod tests {
       assert!(cost.usd_cents_fractional <= cost.usd_cents_rounded_up as f64);
       assert!(cost.usd_cents_rounded_up - cost.usd_cents_rounded_down <= 1);
     }
+  }
+
+  #[test]
+  fn large_credit_values_do_not_overflow_intermediate_math() {
+    // `credits * 100` used to overflow u64 immediately above this threshold.
+    let threshold = u64::MAX / 100;
+
+    let cost = KinoviGenerationCost::from_kinovi_credits(threshold);
+    assert_eq!(cost.usd_cents_rounded_up, 75_912_527_052_302_682);
+    assert_eq!(cost.usd_cents_rounded_down, 75_912_527_052_302_681);
+
+    let cost = KinoviGenerationCost::from_kinovi_credits(threshold + 1);
+    assert_eq!(cost.usd_cents_rounded_up, 75_912_527_052_302_682);
+    assert_eq!(cost.usd_cents_rounded_down, 75_912_527_052_302_681);
+
+    let cost = KinoviGenerationCost::from_kinovi_credits(u64::MAX);
+    assert_eq!(cost.usd_cents_rounded_up, 7_591_252_705_230_268_155);
+    assert_eq!(cost.usd_cents_rounded_down, 7_591_252_705_230_268_154);
+    assert!(cost.usd_cents_fractional.is_finite());
   }
 }
