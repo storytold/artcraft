@@ -39,7 +39,7 @@ async fn sora_media_upload_from_bytes_inner(
 }
 
 fn resolved_mime_type(file_name: &str, explicit_mime_type: Option<&str>) -> String {
-  explicit_mime_type.map(str::to_owned).unwrap_or_else(|| inferred_mime_type(file_name).to_owned())
+  explicit_mime_type.map(|mime_type| mime_type.to_owned()).unwrap_or_else(|| inferred_mime_type(file_name).to_owned())
 }
 
 fn inferred_mime_type(file_name: &str) -> &'static str {
