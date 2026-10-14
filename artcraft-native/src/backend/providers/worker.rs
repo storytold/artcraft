@@ -155,12 +155,17 @@ impl Worker {
       Err(err) => return warn!("Midjourney login check failed: {err}"),
     };
     let now = chrono::Utc::now().timestamp();
-    for job in jobs.iter().filter(|j| now - j.created_at > MIDJOURNEY_GIVE_UP_SECS && !watch.finished.contains(&j.provider_job_id)) {
+    let pending: HashSet<String> = jobs.iter().map(|j| j.provider_job_id.clone()).collect();
+    watch.finished.retain(|id| pending.contains(id));
+    let recovery_required = jobs.iter().any(|j| {
+      midjourney_is_overdue(j.created_at, now) && !watch.finished.contains(&j.provider_job_id)
+    });
+    let recovery_checked = watch.refresh(&session, &pending, recovery_required).await;
+    for job in jobs.iter().filter(|j| {
+      should_expire_midjourney_job(j.created_at, &j.provider_job_id, now, &watch.finished, recovery_checked)
+    }) {
       self.fail(job, "Midjourney didn't finish this job");
     }
-    let pending: HashSet<String> = jobs.iter().filter(|j| now - j.created_at <= MIDJOURNEY_GIVE_UP_SECS || watch.finished.contains(&j.provider_job_id)).map(|j| j.provider_job_id.clone()).collect();
-    watch.finished.retain(|id| pending.contains(id));
-    watch.refresh(&session, &pending).await;
     let downloader = match ImageDownloaderClient::create(Some(session.browser.clone())) {
       Ok(downloader) => downloader,
       Err(err) => return warn!("Midjourney downloader unavailable: {err:?}"),
@@ -230,16 +235,21 @@ impl Worker {
 impl MidjourneyWatch {
   /// Notes which pending jobs have finished: websocket events as they come, and the feed every
   /// so often (it also covers frames the socket missed, and jobs from before a restart).
-  async fn refresh(&mut self, session: &MidjourneySession, pending: &HashSet<String>) {
+  /// Returns whether this call successfully checked the feed.
+  async fn refresh(&mut self, session: &MidjourneySession, pending: &HashSet<String>, force_feed: bool) -> bool {
     if self.socket.as_ref().is_some_and(|s| s.credential_id != session.credential_id || !s.socket.is_connected()) {
       self.close();
     }
     self.drain(pending);
     let now = Instant::now();
-    if self.next_feed.is_none_or(|t| now >= t) {
+    let mut feed_checked = false;
+    if force_feed || self.next_feed.is_none_or(|t| now >= t) {
       self.next_feed = Some(now + FEED_INTERVAL);
       match timeout(REQUEST_TIMEOUT, imagine(ImagineArgs { request: ImagineRequest { user_id: &session.user_id, page_size: None }, cookie_header: &session.cookie_header, hostname: None, browser: Some(session.browser.clone()) })).await {
-        Ok(Ok(feed)) => self.finished.extend(feed.items.into_iter().filter_map(|item| item.id).filter(|id| pending.contains(id))),
+        Ok(Ok(feed)) => {
+          feed_checked = true;
+          self.finished.extend(feed.items.into_iter().filter_map(|item| item.id).filter(|id| pending.contains(id)));
+        },
         other => warn!("Reading the Midjourney feed failed: {other:?}"),
       }
     }
@@ -258,6 +268,7 @@ impl MidjourneyWatch {
         }
       }
     }
+    feed_checked
   }
 
   fn drain(&mut self, pending: &HashSet<String>) {
@@ -293,6 +304,20 @@ async fn open_socket(session: &MidjourneySession) -> anyhow::Result<Socket> {
   let socket = open_midjourney_websocket(OpenMidjourneyWebSocketRequest { websocket_token: &token, user_id: session.user_id.clone(), hostname: None, browser: Some(session.browser.clone()) }).await?;
   let events = socket.events();
   Ok(Socket { credential_id: session.credential_id.clone(), socket, events, subscribed: HashSet::new() })
+}
+
+fn midjourney_is_overdue(created_at: i64, now: i64) -> bool {
+  now.saturating_sub(created_at) > MIDJOURNEY_GIVE_UP_SECS
+}
+
+fn should_expire_midjourney_job(
+  created_at: i64,
+  provider_job_id: &str,
+  now: i64,
+  finished: &HashSet<String>,
+  recovery_checked: bool,
+) -> bool {
+  recovery_checked && midjourney_is_overdue(created_at, now) && !finished.contains(provider_job_id)
 }
 
 /// A fal job's image links: the batch, else the single image.
@@ -331,5 +356,30 @@ mod tests {
     let single = fal_client::polling::poll_job_response::success_case_extractors::extract_contents_from_response(&serde_json::json!({ "image": { "url": "https://fal/one.png" } }));
     assert_eq!(image_urls(single.as_ref()), ["https://fal/one.png"]);
     assert!(image_urls(None).is_empty());
+  }
+
+  #[test]
+  fn overdue_midjourney_jobs_expire_only_after_successful_recovery() {
+    let now = 10_000;
+    let created_at = now - MIDJOURNEY_GIVE_UP_SECS - 1;
+    let finished = HashSet::new();
+    assert!(!should_expire_midjourney_job(created_at, "job", now, &finished, false));
+    assert!(should_expire_midjourney_job(created_at, "job", now, &finished, true));
+  }
+
+  #[test]
+  fn recovered_overdue_midjourney_job_does_not_expire() {
+    let now = 10_000;
+    let created_at = now - MIDJOURNEY_GIVE_UP_SECS - 1;
+    let finished = HashSet::from(["job".to_string()]);
+    assert!(!should_expire_midjourney_job(created_at, "job", now, &finished, true));
+  }
+
+  #[test]
+  fn fresh_midjourney_job_does_not_expire_after_recovery_check() {
+    let now = 10_000;
+    let created_at = now - MIDJOURNEY_GIVE_UP_SECS;
+    let finished = HashSet::new();
+    assert!(!should_expire_midjourney_job(created_at, "job", now, &finished, true));
   }
 }
