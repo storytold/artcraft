@@ -13,6 +13,9 @@ use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::
 use artcraft_client::utils::api_host::ApiHost;
 use enums::common::generation_provider::GenerationProvider;
 use fal_client::creds::fal_api_key::FalApiKey;
+use fal_client::error::api_generic_error::FalGenericApiError;
+use fal_client::error::client_error::FalClientError;
+use fal_client::error::fal_error_plus::FalErrorPlus;
 use fal_client::polling::poll_job_response::poll_job_response::{PollJobResponseArgs, poll_job_response};
 use fal_client::polling::poll_job_response::success_case_extractors::PollResponseExtractedContents;
 use fal_client::polling::poll_job_status::poll_job_status::{FalJobStatus, PollJobStatusArgs, poll_job_status};
@@ -127,7 +130,12 @@ impl Worker {
     };
     let status = match timeout(REQUEST_TIMEOUT, poll_job_status(PollJobStatusArgs { status_url: &status_url, api_key: key })).await {
       Ok(Ok(status)) => status,
-      other => return warn!("Polling FAL job {} failed: {other:?}", job.provider_job_id),
+      Ok(Err(err)) if fal_poll_error_is_terminal(&err) => {
+        warn!("FAL job {} returned a terminal status error", job.provider_job_id);
+        return self.fail(&job, "FAL rejected the queued job");
+      },
+      Ok(Err(_)) => return warn!("Polling FAL job {} failed (will retry)", job.provider_job_id),
+      Err(_) => return warn!("Polling FAL job {} timed out (will retry)", job.provider_job_id),
     };
     if status.status != FalJobStatus::Completed {
       return;
@@ -137,7 +145,12 @@ impl Worker {
     };
     let response = match timeout(REQUEST_TIMEOUT, poll_job_response(PollJobResponseArgs { response_url: &response_url, api_key: key })).await {
       Ok(Ok(response)) => response,
-      other => return warn!("Fetching FAL results for {} failed (will retry): {other:?}", job.provider_job_id),
+      Ok(Err(err)) if fal_poll_error_is_terminal(&err) => {
+        warn!("FAL job {} returned a terminal response error", job.provider_job_id);
+        return self.fail(&job, "FAL rejected the completed job response");
+      },
+      Ok(Err(_)) => return warn!("Fetching FAL results for {} failed (will retry)", job.provider_job_id),
+      Err(_) => return warn!("Fetching FAL results for {} timed out (will retry)", job.provider_job_id),
     };
     let urls = image_urls(response.extracted_contents.as_ref());
     if urls.is_empty() {
@@ -295,6 +308,21 @@ async fn open_socket(session: &MidjourneySession) -> anyhow::Result<Socket> {
   Ok(Socket { credential_id: session.credential_id.clone(), socket, events, subscribed: HashSet::new() })
 }
 
+fn fal_poll_error_is_terminal(err: &FalErrorPlus) -> bool {
+  match err {
+    FalErrorPlus::ClientError(FalClientError::InvalidUrl(_))
+    | FalErrorPlus::InvalidPollingUrl(_)
+    | FalErrorPlus::UrlParseError(_) => true,
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, .. }) => {
+      *status_code == reqwest::StatusCode::BAD_REQUEST
+        || *status_code == reqwest::StatusCode::NOT_FOUND
+        || *status_code == reqwest::StatusCode::GONE
+        || *status_code == reqwest::StatusCode::UNPROCESSABLE_ENTITY
+    },
+    _ => false,
+  }
+}
+
 /// A fal job's image links: the batch, else the single image.
 fn image_urls(extracted: Option<&PollResponseExtractedContents>) -> Vec<String> {
   let Some(extracted) = extracted else {
@@ -316,6 +344,14 @@ fn image_extension(url: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use fal_client::error::api_specific_error::FalSpecificApiError;
+
+  fn fal_http_error(status_code: reqwest::StatusCode) -> FalErrorPlus {
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code,
+      body: String::new(),
+    })
+  }
 
   #[test]
   fn results_keep_their_file_type() {
@@ -331,5 +367,24 @@ mod tests {
     let single = fal_client::polling::poll_job_response::success_case_extractors::extract_contents_from_response(&serde_json::json!({ "image": { "url": "https://fal/one.png" } }));
     assert_eq!(image_urls(single.as_ref()), ["https://fal/one.png"]);
     assert!(image_urls(None).is_empty());
+  }
+
+  #[test]
+  fn fal_job_specific_errors_are_terminal() {
+    assert!(fal_poll_error_is_terminal(&FalErrorPlus::ClientError(FalClientError::InvalidUrl("bad".to_string()))));
+    assert!(fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::BAD_REQUEST)));
+    assert!(fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::NOT_FOUND)));
+    assert!(fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::GONE)));
+    assert!(fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::UNPROCESSABLE_ENTITY)));
+  }
+
+  #[test]
+  fn fal_recoverable_errors_keep_retrying() {
+    assert!(!fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::UNAUTHORIZED)));
+    assert!(!fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::FORBIDDEN)));
+    assert!(!fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::REQUEST_TIMEOUT)));
+    assert!(!fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::TOO_MANY_REQUESTS)));
+    assert!(!fal_poll_error_is_terminal(&fal_http_error(reqwest::StatusCode::INTERNAL_SERVER_ERROR)));
+    assert!(!fal_poll_error_is_terminal(&FalErrorPlus::ApiSpecific(FalSpecificApiError::IncompleteJob("still in progress".to_string()))));
   }
 }
