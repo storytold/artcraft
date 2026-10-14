@@ -13,6 +13,7 @@ path = "src/lib.rs"
 # Internal
 enums.workspace = true
 errors.workspace = true
+primitives.workspace = true
 tokens.workspace = true
 
 # External

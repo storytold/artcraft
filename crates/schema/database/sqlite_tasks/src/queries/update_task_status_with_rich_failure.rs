@@ -1,7 +1,8 @@
-use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_status::TaskStatus;
+use primitives::truncate_str::truncate_str;
 use tokens::tokens::sqlite::tasks::TaskId;
 
 pub struct UpdateTaskWithRichFailureArgs<'a> {
@@ -22,9 +23,9 @@ pub async fn update_task_status_with_rich_failure(
   let status_temp = args.status.to_str();
   let maybe_failure_type_temp = args.maybe_failure_type.map(|val| val.to_str());
 
-  // Trim the message so it doesn't overflow the database column
+  // Keep failure messages bounded without slicing through a UTF-8 code point.
   let maybe_failure_message_temp = args.maybe_failure_message
-      .map(|s| if s.len() > 255 { &s[..255] } else { s });
+      .map(|s| truncate_str(s, 255));
 
   // info!("Update task id: {}, status: {}", task_id_temp, status_temp);
 
