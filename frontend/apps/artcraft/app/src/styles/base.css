@@ -93,8 +93,8 @@ body {
 }
 
 ::selection {
-  background: #203b65;
-  color: #f2f1ee;
+  background: var(--st-selection-bg, #2d81ff);
+  color: var(--st-selection-fg, #ffffff);
 }
 
 :focus-visible {
@@ -151,26 +151,26 @@ body {
   /* Theme-aware badge alpha (default dark) */
   --st-badge-alpha: 0.4;
 
-  /* HSL counterparts of the ArtCraft dark roles used by @storyteller/ui-video-editor. */
-  --background: 225 10% 7.8431%;
-  --foreground: 45 13.3333% 94.1176%;
-  --card: 240 11.1111% 7.0588%;
-  --card-foreground: 45 13.3333% 94.1176%;
-  --popover: 240 11.1111% 7.0588%;
-  --popover-foreground: 45 13.3333% 94.1176%;
-  --primary: 216 100% 58.8235%;
-  --primary-foreground: 240 7.6923% 2.549%;
-  --secondary: 225 6.25% 12.549%;
-  --secondary-foreground: 45 13.3333% 94.1176%;
-  --muted: 225 6.25% 12.549%;
-  --muted-foreground: 240 1.1364% 65.4902%;
-  --accent: 228 4.7619% 20.5882%;
-  --accent-foreground: 45 13.3333% 94.1176%;
+  /* Existing video-editor defaults also apply to the alternate themes. */
+  --background: 225 10% 8%;
+  --foreground: 0 0% 98%;
+  --card: 240 11% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 11% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 216 100% 59%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4% 9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 9%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 240 4% 9%;
+  --accent-foreground: 0 0% 98%;
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 98%;
-  --border: 225 3.5714% 21.9608%;
-  --input: 225 3.5714% 21.9608%;
-  --ring: 216.6906 100% 72.7451%;
+  --border: 0 0% 100% / 0.15;
+  --input: 0 0% 100% / 0.15;
+  --ring: 217 100% 73%;
 
   /* Motion tokens, mirrored from artcraft-webapp. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -217,6 +217,8 @@ body {
 
 /* Default dark (brutalist, matches artcraft-webapp) */
 .theme-gray {
+  --st-selection-bg: #203b65;
+  --st-selection-fg: #f2f1ee;
   --st-bg: #121316;
   --st-panel: #101014;
   --st-panel-border: #36373a;
@@ -234,6 +236,24 @@ body {
   --st-photo-tint-alpha: 0.6;
   --st-photo-grayscale: 1;
   --st-badge-alpha: 0.4;
+  /* Canonical dark HSL counterparts used by @storyteller/ui-video-editor. */
+  --background: 225 10% 7.8431%;
+  --foreground: 45 13.3333% 94.1176%;
+  --card: 240 11.1111% 7.0588%;
+  --card-foreground: 45 13.3333% 94.1176%;
+  --popover: 240 11.1111% 7.0588%;
+  --popover-foreground: 45 13.3333% 94.1176%;
+  --primary: 216 100% 58.8235%;
+  --primary-foreground: 240 7.6923% 2.549%;
+  --secondary: 225 6.25% 12.549%;
+  --secondary-foreground: 45 13.3333% 94.1176%;
+  --muted: 225 6.25% 12.549%;
+  --muted-foreground: 240 1.1364% 65.4902%;
+  --accent: 228 4.7619% 20.5882%;
+  --accent-foreground: 45 13.3333% 94.1176%;
+  --border: 225 3.5714% 21.9608%;
+  --input: 225 3.5714% 21.9608%;
+  --ring: 216.6906 100% 72.7451%;
 }
 
 /* Full black */

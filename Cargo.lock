@@ -491,6 +491,7 @@ dependencies = [
  "chrono",
  "cookie",
  "cookie_store_wrapper",
+ "craft-ui",
  "directories",
  "eframe",
  "egui",
@@ -1821,6 +1822,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53fe5e26ff1b7aef8bca9c6080520cfb8d9333c7568e1829cef191a9723e5504"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "craft-ui"
+version = "0.1.0"
+source = "git+https://github.com/storytold/craft-libs?rev=5d9c5780debff884922aa2a3fab87ba2fc61ac30#5d9c5780debff884922aa2a3fab87ba2fc61ac30"
+dependencies = [
+ "egui",
 ]
 
 [[package]]
