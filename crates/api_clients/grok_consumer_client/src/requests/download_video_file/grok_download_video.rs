@@ -20,6 +20,8 @@ use wreq::header::{
 use wreq::{Client, Response, StatusCode};
 use wreq_util::Emulation;
 
+const MAX_DOWNLOAD_ERROR_BODY_BYTES: usize = 8 * 1024;
+
 pub struct GrokDownloadVideo<'a> {
   pub cookies: &'a str,
   pub user_id: &'a UserId,
@@ -31,7 +33,7 @@ pub struct DownloadedVideoBytes {
   pub bytes: Vec<u8>,
 }
 
-impl <'a> GrokDownloadVideo<'a> {
+impl<'a> GrokDownloadVideo<'a> {
 
   pub async fn download_to_path<P: AsRef<Path>>(&self, path: P) -> Result<(), GrokError> {
     let response = self.send_request().await?;
@@ -121,24 +123,60 @@ impl <'a> GrokDownloadVideo<'a> {
         .await
         .map_err(|err| GrokGenericApiError::WreqError(err))?;
 
-    validate_download_status(response.status())?;
+    let status = response.status();
+    if let Err(status) = validate_download_status(status) {
+      let error_body = read_download_error_body(response).await;
+      return Err(categorize_download_error(status, error_body.as_deref()))
+    }
 
     Ok(response)
   }
 }
 
-fn validate_download_status(status: StatusCode) -> Result<(), GrokError> {
+async fn read_download_error_body(response: Response) -> Option<String> {
+  let mut stream = response.bytes_stream();
+  let mut body = Vec::new();
+
+  while body.len() < MAX_DOWNLOAD_ERROR_BODY_BYTES {
+    let chunk = match stream.try_next().await {
+      Ok(Some(chunk)) => chunk,
+      Ok(None) => break,
+      Err(err) => {
+        error!("Error reading Grok download error response body: {:?}", err);
+        return None
+      }
+    };
+
+    let remaining = MAX_DOWNLOAD_ERROR_BODY_BYTES - body.len();
+    let copy_len = remaining.min(chunk.len());
+    body.extend_from_slice(&chunk[..copy_len]);
+
+    if copy_len < chunk.len() {
+      break
+    }
+  }
+
+  Some(String::from_utf8_lossy(&body).into_owned())
+}
+
+fn validate_download_status(status: StatusCode) -> Result<(), StatusCode> {
   if status.is_success() {
     return Ok(())
   }
 
-  Err(categorize_grok_http_error(status, None))
+  Err(status)
+}
+
+fn categorize_download_error(status: StatusCode, maybe_body: Option<&str>) -> GrokError {
+  categorize_grok_http_error(status, maybe_body)
 }
 
 #[cfg(test)]
 mod tests {
-  use super::validate_download_status;
+  use super::{categorize_download_error, validate_download_status};
   use crate::datatypes::api::file_id::FileId;
+  use crate::error::grok_error::GrokError;
+  use crate::error::grok_specific_api_error::GrokSpecificApiError;
   use crate::recipes::request_client_secrets::{request_client_secrets, RequestClientSecretsArgs};
   use crate::requests::download_video_file::download_video_file::{download_video_file, DownloadVideoFileArgs};
   use crate::test_utils::get_test_cookies::get_typed_test_cookies;
@@ -161,6 +199,16 @@ mod tests {
     ] {
       assert!(validate_download_status(status).is_err(), "status {status} should fail");
     }
+  }
+
+  #[test]
+  fn download_status_uses_error_body_for_classification() {
+    let error = categorize_download_error(StatusCode::FORBIDDEN, Some("anti-bot rejection"));
+
+    assert!(matches!(
+      error,
+      GrokError::ApiSpecific(GrokSpecificApiError::AutomationBlocked)
+    ));
   }
 
   #[tokio::test]
