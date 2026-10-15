@@ -1,3 +1,4 @@
+use super::legacy::artcraft_flux_pro_1_inpaint::handle_flux_pro_1_inpaint;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 
 use crate::core::commands::enqueue::generate_error::GenerateError;
@@ -23,6 +24,9 @@ pub async fn handle_artcraft_via_legacy(
   let model = request.model.ok_or(GenerateError::no_model_specified())?;
 
   match model {
+    TauriImageModel::FluxPro1 => {
+      handle_flux_pro_1_inpaint(request, semantic_media_files, creds, app_env_configs).await
+    }
     TauriImageModel::FluxDevJuggernaut => {
       handle_flux_dev_juggernaut_inpaint(request, semantic_media_files, creds, app_env_configs).await
     }

@@ -59,5 +59,18 @@ fn is_legacy_only_model(model: TauriImageModel) -> bool {
       | TauriImageModel::Midjourney
       | TauriImageModel::FluxProKontextMax
       | TauriImageModel::FluxDevJuggernaut
+      | TauriImageModel::FluxPro1
   )
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn flux_inpaint_uses_legacy_but_text_to_image_uses_omni() {
+    assert!(is_legacy_only_model(TauriImageModel::FluxPro1));
+    assert!(!is_legacy_only_model(TauriImageModel::FluxPro11));
+    assert!(!is_legacy_only_model(TauriImageModel::FluxPro11Ultra));
+  }
 }
