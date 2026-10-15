@@ -10,7 +10,10 @@ use anyhow::anyhow;
 use errors::AnyhowResult;
 use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
+use crate::core::threads::main_window_thread::persist_storyteller_cookies_task::storyteller_cookie_url;
+use crate::services::storyteller::state::purge_http_credentials::purge_http_credentials;
+use tauri_plugin_http::Http;
 
 #[derive(Serialize)]
 pub struct PurgeStorytellerCredentialsCommandResponse {
@@ -43,14 +46,8 @@ async fn reset(
   storyteller_creds_manager: &StorytellerCredentialManager
 ) -> AnyhowResult<()> {
 
-  clear_main_webview_window_storyteller_cookies(&app)?;
-  
-  storyteller_creds_manager.clear_credentials()?;
-  storyteller_creds_manager.delete_persisted_copies_on_disk()?;
-  
-  // NB: Twice to be sure.
-  storyteller_creds_manager.clear_credentials()?;
-  storyteller_creds_manager.delete_persisted_copies_on_disk()?;
-  
+  let http = app.try_state::<Http>().ok_or_else(|| anyhow!("HTTP plugin unavailable"))?;
+  purge_http_credentials(&http.cookies_jar, storyteller_creds_manager, &storyteller_cookie_url(app)?).await?;
+  clear_main_webview_window_storyteller_cookies(app)?;
   Ok(())
 }

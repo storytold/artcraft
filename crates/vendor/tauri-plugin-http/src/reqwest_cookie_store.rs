@@ -6,7 +6,7 @@
 
 use std::{
     path::PathBuf,
-    sync::{mpsc::Receiver, Mutex},
+    sync::{mpsc::Receiver, Arc, Mutex},
 };
 
 // NB(bt): Re-export these for reuse
@@ -48,7 +48,8 @@ fn cookies(cookie_store: &CookieStore, url: &url::Url) -> Option<HeaderValue> {
 pub struct CookieStoreMutex {
     pub path: PathBuf,
     // NB(bt): We've made both of these public so we can access them.
-    pub store: Mutex<CookieStore>,
+    pub store: Arc<Mutex<CookieStore>>,
+    save_lock: Arc<tokio::sync::Mutex<()>>,
     pub save_task: Mutex<Option<CancellableTask>>,
 }
 
@@ -57,7 +58,8 @@ impl CookieStoreMutex {
     pub fn new(path: PathBuf, cookie_store: CookieStore) -> CookieStoreMutex {
         CookieStoreMutex {
             path,
-            store: Mutex::new(cookie_store),
+            store: Arc::new(Mutex::new(cookie_store)),
+            save_lock: Arc::new(tokio::sync::Mutex::new(())),
             save_task: Default::default(),
         }
     }
@@ -70,42 +72,29 @@ impl CookieStoreMutex {
             .map(|store| CookieStoreMutex::new(path, store))
     }
 
-    fn cookies_to_str(&self) -> Result<String, serde_json::Error> {
-        let mut cookies = Vec::new();
-        for cookie in self
-            .store
-            .lock()
-            .expect("poisoned cookie jar mutex")
-            .iter_unexpired()
-        {
-            if cookie.is_persistent() {
-                cookies.push(cookie.clone());
-            }
-        }
-        serde_json::to_string(&cookies)
+    /// Persist the current jar and wait until it reaches disk. All writers share
+    /// one lock and take their snapshot only when they own it, so an older
+    /// queued save cannot overwrite a completed purge with stale cookies.
+    pub async fn flush(&self) -> cookie_store::Result<()> {
+        persist_current(&self.path, &self.store, &self.save_lock).await
     }
 
     pub fn request_save(&self) -> cookie_store::Result<Receiver<()>> {
-        let cookie_str = self.cookies_to_str()?;
-        let path = self.path.clone();
+        let (path, store, save_lock) = (self.path.clone(), self.store.clone(), self.save_lock.clone());
         let (tx, rx) = std::sync::mpsc::channel();
         let task = tauri::async_runtime::spawn(async move {
-            match tokio::fs::write(&path, &cookie_str).await {
-                Ok(()) => {
-                    let _ = tx.send(());
-                }
+            match persist_current(&path, &store, &save_lock).await {
+                Ok(()) => { let _ = tx.send(()); }
                 Err(_e) => {
                     #[cfg(feature = "tracing")]
                     tracing::error!("failed to save cookie jar: {_e}");
                 }
             }
         });
-        self.save_task
-            .lock()
-            .unwrap()
-            .replace(CancellableTask(task));
+        self.save_task.lock().unwrap().replace(CancellableTask(task));
         Ok(rx)
     }
+
 }
 
 impl reqwest::cookie::CookieStore for CookieStoreMutex {
@@ -132,4 +121,17 @@ impl Drop for CancellableTask {
     fn drop(&mut self) {
         self.0.abort();
     }
+}
+
+async fn persist_current(path: &std::path::Path, store: &Mutex<CookieStore>, save_lock: &tokio::sync::Mutex<()>) -> cookie_store::Result<()> {
+    let _save = save_lock.lock().await;
+    let text = {
+        let jar = store.lock().expect("poisoned cookie jar mutex");
+        let cookies: Vec<_> = jar.iter_unexpired().filter(|cookie| cookie.is_persistent()).collect();
+        serde_json::to_string(&cookies)?
+    };
+    // No await between snapshot and write: cancellation of an older save must
+    // not release its lock while a detached tokio filesystem write is running.
+    std::fs::write(path, text)?;
+    Ok(())
 }
