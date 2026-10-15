@@ -5,7 +5,7 @@
 use std::{future::Future, pin::Pin, str::FromStr, sync::Arc, time::Duration};
 
 use http::{header, HeaderMap, HeaderName, HeaderValue, Method, StatusCode};
-use reqwest::{redirect::Policy, NoProxy};
+use reqwest::NoProxy;
 use serde::{Deserialize, Serialize};
 use tauri::{
     async_runtime::Mutex,
@@ -213,7 +213,7 @@ pub async fn fetch<R: Runtime>(
 
     match scheme {
         "http" | "https" => {
-            if Scope::new(
+            let scope = Scope::new(
                 command_scope
                     .allows()
                     .iter()
@@ -224,9 +224,8 @@ pub async fn fetch<R: Runtime>(
                     .iter()
                     .chain(global_scope.denies())
                     .collect(),
-            )
-            .is_allowed(&url)
-            {
+            );
+            if scope.is_allowed(&url) {
                 let mut builder = reqwest::ClientBuilder::new();
 
                 if let Some(danger_config) = danger {
@@ -251,13 +250,11 @@ pub async fn fetch<R: Runtime>(
                     builder = builder.connect_timeout(Duration::from_millis(timeout));
                 }
 
-                if let Some(max_redirections) = max_redirections {
-                    builder = builder.redirect(if max_redirections == 0 {
-                        Policy::none()
-                    } else {
-                        Policy::limited(max_redirections)
-                    });
-                }
+                builder = builder.redirect(crate::redirect::redirect_policy(
+                    command_scope.allows().iter().chain(global_scope.allows()).cloned().collect(),
+                    command_scope.denies().iter().chain(global_scope.denies()).cloned().collect(),
+                    max_redirections,
+                ));
 
                 if let Some(proxy_config) = proxy {
                     builder = attach_proxy(proxy_config, builder)?;

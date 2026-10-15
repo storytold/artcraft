@@ -20,6 +20,7 @@ pub mod error;
 #[cfg(feature = "cookies")]
 pub mod reqwest_cookie_store;
 pub mod scope;
+mod redirect;
 
 #[cfg(feature = "cookies")]
 const COOKIES_FILENAME: &str = ".cookies";
