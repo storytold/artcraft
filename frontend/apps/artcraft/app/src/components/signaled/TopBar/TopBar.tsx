@@ -1,3 +1,4 @@
+import { sendMediaToStage } from "~/components/generation-feed/sendMediaToStage";
 import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
@@ -704,6 +705,7 @@ export const TopBar = ({ pageName }: Props) => {
       <GalleryModal
         mode="view"
         onDownloadClicked={downloadFile}
+        onAddToSceneClicked={(_url, mediaId) => sendMediaToStage(mediaId)}
         onEditClicked={handleEditFromGallery}
         onTurnIntoVideoClicked={handleTurnIntoVideoFromGallery}
         onRemoveBackgroundClicked={handleRemoveBackgroundFromGallery}
