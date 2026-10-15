@@ -53,6 +53,14 @@ pub struct UploadVideoMediaFileSuccessResponse {
 pub async fn upload_video_media_file_from_file<P: AsRef<Path>>(
   args: UploadVideoFromFileArgs<'_, P>,
 ) -> Result<UploadVideoMediaFileSuccessResponse, ApiError> {
+  upload_video_media_file_from_file_with_idempotency_token(args, &generate_random_uuid()).await
+}
+
+/// Use a durable token when a lost response or restart may retry this upload.
+pub async fn upload_video_media_file_from_file_with_idempotency_token<P: AsRef<Path>>(
+  args: UploadVideoFromFileArgs<'_, P>,
+  idempotency_token: &str,
+) -> Result<UploadVideoMediaFileSuccessResponse, ApiError> {
 
   let url = get_route(args.api_host);
 
@@ -65,7 +73,7 @@ pub async fn upload_video_media_file_from_file<P: AsRef<Path>>(
   let file_name = args.path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let mut form = Form::new()
-      .text("uuid_idempotency_token", generate_random_uuid())
+      .text("uuid_idempotency_token", idempotency_token.to_owned())
       .part("file", Part::bytes(file_bytes).file_name(file_name));
 
   if let Some(prompt_token) = &args.maybe_prompt_token {
