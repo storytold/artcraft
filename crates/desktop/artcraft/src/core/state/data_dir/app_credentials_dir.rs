@@ -15,6 +15,11 @@ impl DataSubdir for AppCredentialsDir {
     }
   }
 
+  fn get_or_create_dir<P: AsRef<Path>>(dir: P) -> anyhow::Result<Self> {
+    filesys::private_file::ensure_private_directory(dir.as_ref())?;
+    Ok(Self::new_from(dir.as_ref().canonicalize()?))
+  }
+
   fn path(&self) -> &Path {
     &self.path
   }

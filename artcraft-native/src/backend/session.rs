@@ -2,6 +2,7 @@
 //! first run from the Tauri app's cookie jar so an existing ArtCraft login carries over.
 
 use std::fs;
+use filesys::private_file::{ensure_private_directory, write_private_atomic};
 use std::path::{Path, PathBuf};
 
 use artcraft_client::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
@@ -69,7 +70,10 @@ pub fn load(root: &Path) -> Option<Credentials> {
 
 pub fn save(root: &Path, creds: &Credentials) {
   let path = credentials_path(root);
-  let result = path.parent().map_or(Ok(()), fs::create_dir_all).and_then(|_| fs::write(&path, serde_json::to_vec_pretty(creds).unwrap_or_default()));
+  let result = path.parent().map_or(Ok(()), ensure_private_directory).and_then(|_| {
+    let bytes = serde_json::to_vec_pretty(creds).map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?;
+    write_private_atomic(&path, &bytes)
+  });
   if let Err(err) = result {
     warn!("Couldn't save the session to {}: {err}", path.display());
   }
