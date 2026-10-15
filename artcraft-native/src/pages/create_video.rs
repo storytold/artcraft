@@ -20,7 +20,7 @@ use crate::prompt_box::deck::{DeckAction, DeckLimits};
 use crate::prompt_box::editor::{self, MentionItem, MentionKind};
 use crate::prompt_box::model_selector::model_selector;
 use crate::prompt_box::pickers::{self, PickOption, Trigger};
-use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia, References};
+use crate::prompt_box::refs::{validate_reference_list, ImageSlot, RefKind, RefMedia, References};
 use crate::prompt_box::{self, DeckMode, PromptBoxAction, PromptBoxProps, PromptBoxState, Slot};
 use crate::ui::icons::Icon;
 use crate::ui::widgets::Leading;
@@ -315,6 +315,10 @@ impl CreateVideoPage {
       env.toasts.error("Please wait for your references to finish uploading");
       return;
     }
+    if let Err(message) = self.validate_references(model) {
+      env.toasts.error(message);
+      return;
+    }
     self.generating = true;
     let ref_image = self.refs.first_frame.as_ref().or(self.refs.images.first()).and_then(|r| r.preview.clone());
     let meta = EnqueueMeta { prompt: self.settings.prompt.clone(), model_id: model.id.clone(), batch_count: u32::from(model.valid_batch(self.settings.count)), ref_image, provider: Provider::Artcraft };
@@ -326,6 +330,20 @@ impl CreateVideoPage {
       }
     }
     env.backend.generate(Modality::Video, fields, meta);
+  }
+
+  fn validate_references(&self, model: &ModelInfo) -> Result<(), String> {
+    match self.settings.input_mode {
+      InputMode::Reference => {
+        validate_reference_list(&self.refs.images, RefKind::Image, model.image_refs_max, None)?;
+        validate_reference_list(&self.refs.videos, RefKind::Video, model.video_refs_max, model.video_refs_max_secs)?;
+        validate_reference_list(&self.refs.audios, RefKind::Audio, model.audio_refs_max, model.audio_refs_max_secs)
+      },
+      InputMode::Keyframe => {
+        validate_reference_list(self.refs.first_frame.as_slice(), RefKind::Image, usize::from(model.start_frame), None)?;
+        validate_reference_list(self.refs.last_frame.as_slice(), RefKind::Image, usize::from(model.end_frame), None)
+      },
+    }
   }
 
   /// The characters dialog picked `name`: mention it at the end of the prompt.
@@ -636,5 +654,54 @@ mod tests {
     let picks = std::collections::HashMap::from([("Bob".to_owned(), "c1".to_owned())]);
     assert_eq!(mentioned_characters("hi @Bob", &characters, &picks), ["c1"], "the explicit pick wins");
     assert!(mentioned_characters("no mentions", &characters, &none).is_empty());
+  }
+}
+
+#[cfg(test)]
+mod reference_validation_tests {
+  use super::*;
+
+  #[test]
+  fn switching_to_a_stricter_model_rejects_retained_references() {
+    let mut page = CreateVideoPage::default();
+    page.refs.images = (0..3).map(|i| RefMedia::from_library(RefKind::Image, format!("mf_{i}"), None, None, 0.0)).collect();
+    let mut model = ModelInfo { image_refs_max: 3, ..Default::default() };
+    assert!(page.validate_references(&model).is_ok());
+    model.image_refs_max = 1;
+    assert!(page.validate_references(&model).unwrap_err().contains("at most 1"));
+    model.image_refs_max = 0;
+    assert!(page.validate_references(&model).unwrap_err().contains("does not support"));
+    assert_eq!(page.refs.images.len(), 3, "validation must not silently discard user inputs");
+  }
+
+  #[test]
+  fn library_duration_limits_apply_to_aggregate_inputs_and_unknown_durations() {
+    let mut page = CreateVideoPage::default();
+    let model = ModelInfo { video_refs_max: 2, video_refs_max_secs: Some(10), ..Default::default() };
+    page.refs.videos = vec![reference(6.0), reference(6.0)];
+    assert!(page.validate_references(&model).unwrap_err().contains("cannot exceed 10s"));
+    page.refs.videos[1].duration_secs = 4.0;
+    assert!(page.validate_references(&model).is_ok());
+    for unknown in [0.0, f32::NAN, f32::INFINITY, -1.0] {
+      page.refs.videos[1].duration_secs = unknown;
+      assert!(page.validate_references(&model).unwrap_err().contains("no known duration"));
+    }
+  }
+
+  #[test]
+  fn unready_or_unsupported_keyframes_are_rejected() {
+    let mut page = CreateVideoPage::default();
+    page.settings.input_mode = InputMode::Keyframe;
+    page.refs.first_frame = Some(RefMedia::uploading(RefKind::Image, None));
+    let model = ModelInfo { start_frame: true, ..Default::default() };
+    assert!(page.validate_references(&model).is_err());
+    page.refs.first_frame = Some(RefMedia::from_library(RefKind::Image, "mf_first".into(), None, None, 0.0));
+    assert!(page.validate_references(&model).is_ok());
+    page.refs.last_frame = page.refs.first_frame.clone();
+    assert!(page.validate_references(&model).is_err());
+  }
+
+  fn reference(duration_secs: f32) -> RefMedia {
+    RefMedia::from_library(RefKind::Video, "mf_video".into(), None, None, duration_secs)
   }
 }
