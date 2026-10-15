@@ -172,18 +172,28 @@ impl WorldlabsCredentialManager {
   }
 
   pub fn clear_credentials(&self) -> anyhow::Result<()> {
-    match self.credential_data.write() {
-      Err(err) => return Err(anyhow::anyhow!("Failed to acquire write lock: {:?}", err)),
-      Ok(mut store) => *store = WorldlabsCredentialHolder::empty(),
+    let mut holder = self.credential_data.write().map_err(|_| anyhow::anyhow!("Failed to acquire credential lock"))?;
+    *holder = WorldlabsCredentialHolder::empty();
+    // Keep the lock through removal so an earlier persistence snapshot cannot
+    // restore files after disconnect. Only this provider's paths are touched.
+    let dir = self.app_data_root.credentials_dir();
+    let mut maybe_error = None;
+    for path in [dir.get_worldlabs_state_path(), dir.get_worldlabs_cookies_path(), dir.get_worldlabs_bearer_path(), dir.get_worldlabs_refresh_path()] {
+      if let Err(err) = std::fs::remove_file(path) {
+        if err.kind() != std::io::ErrorKind::NotFound { maybe_error = Some(err); }
+      }
     }
+    if let Some(err) = maybe_error { return Err(err.into()); }
     Ok(())
   }
 
   pub fn persist_to_disk(&self) -> anyhow::Result<()> {
     let creds = match self.credential_data.read() {
       Err(err) => return Err(anyhow::anyhow!("Failed to acquire read lock: {:?}", err)),
-      Ok(store) => store.clone(),
+      Ok(store) => store,
     };
+
+    if creds.browser_cookies.is_none() && creds.world_labs_bearer_token.is_none() && creds.world_labs_refresh_token.is_none() { return Ok(()); }
 
     let state = WorldlabsSerializableState {
       version: SERIALIZABLE_WORLDLABS_STATE_VERSION,
@@ -228,5 +238,28 @@ impl WorldlabsCredentialManager {
     }
 
     Ok(())
+  }
+}
+
+#[cfg(test)]
+mod provider_cleanup_tests {
+  use super::*;
+  use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
+
+  #[test]
+  fn disconnect_removes_all_owned_copies_and_preserves_other_accounts() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(temp.path()).unwrap();
+    let dir = root.credentials_dir();
+    let paths = [dir.get_worldlabs_state_path(), dir.get_worldlabs_cookies_path(), dir.get_worldlabs_bearer_path(), dir.get_worldlabs_refresh_path()];
+    for path in &paths { std::fs::write(path, "synthetic secret").unwrap(); }
+    let unrelated = dir.path().join("other-provider.txt");
+    std::fs::write(&unrelated, "keep").unwrap();
+    let manager = WorldlabsCredentialManager::initialize_empty(&root);
+    manager.clear_credentials().unwrap();
+    manager.persist_to_disk().unwrap();
+    manager.clear_credentials().unwrap();
+    for path in paths { assert!(!path.exists(), "{} survived disconnect", path.display()); }
+    assert_eq!(std::fs::read_to_string(unrelated).unwrap(), "keep");
   }
 }
