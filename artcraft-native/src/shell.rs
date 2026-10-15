@@ -36,6 +36,7 @@ pub enum Page {
   RemoveBackground,
   FrameExtractor,
   Library,
+  CraftAi,
 }
 
 impl Page {
@@ -53,6 +54,7 @@ impl Page {
       Page::RemoveBackground => "BG Remove",
       Page::FrameExtractor => "Frame Extract",
       Page::Library => "Library",
+      Page::CraftAi => "Craft AI",
     }
   }
 
@@ -68,6 +70,7 @@ impl Page {
       Page::VideoEditor | Page::FrameExtractor => Icon::Film,
       Page::RemoveBackground => Icon::Wand,
       Page::Library => Icon::Library,
+      Page::CraftAi => Icon::Sparkles,
     }
   }
 
@@ -154,7 +157,7 @@ pub fn titlebar(ui: &mut Ui, account: &Account<'_>, mark: &egui::TextureHandle) 
     ui.painter().rect_filled(mark_rect, theme::RADIUS, theme::WASH);
   }
   ui.painter().image(mark.id(), Rect::from_center_size(mark_rect.center(), vec2(18.0, 16.0)), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), theme::ACCENT);
-  if mark_resp.on_hover_text("Home").on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+  if mark_resp.on_hover_text(crate::i18n::t("Home")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
     action = Some(ShellAction::Navigate(Page::Home));
   }
   if widgets::ghost(ui, Icon::PanelLeft, None, "Toggle Sidebar", false).clicked() {
@@ -282,10 +285,10 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
   let initial = name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default();
   p.text(avatar.center(), Align2::CENTER_CENTER, initial, FontId::new(13.0, theme::semibold()), Color32::WHITE);
   p.text(pos2(avatar.right() + 10.0, rect.center().y - 8.0), Align2::LEFT_CENTER, name, FontId::new(13.5, theme::medium()), theme::INK);
-  let sub = credits.map_or_else(|| "Account".to_owned(), |c| format!("{} credits", group_thousands(c)));
+  let sub = credits.map_or_else(|| "Account".to_owned(), |c| crate::i18n::tf("{} credits", &[group_thousands(c).to_string()]));
   p.text(pos2(avatar.right() + 10.0, rect.center().y + 9.0), Align2::LEFT_CENTER, sub, FontId::new(11.5, egui::FontFamily::Proportional), theme::MUTED);
   icons::paint(p, Rect::from_center_size(pos2(rect.right() - 16.0, rect.center().y), vec2(14.0, 14.0)), Icon::Settings, theme::DIM);
-  resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text("Settings")
+  resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text(crate::i18n::t("Settings"))
 }
 
 /// The feed toggles a page's header shows.
@@ -340,7 +343,7 @@ fn credits_pill(ui: &mut Ui, credits: u64) -> egui::Response {
   ui.painter().rect(rect, theme::RADIUS, if hovered { theme::WASH_HOVER } else { theme::WASH }, theme::hairline(), egui::StrokeKind::Inside);
   icons::paint(ui.painter(), Rect::from_center_size(pos2(rect.left() + 16.0, rect.center().y), vec2(14.0, 14.0)), Icon::Coins, theme::INK);
   ui.painter().galley(pos2(rect.left() + 28.0, rect.center().y - galley.size().y / 2.0), galley, theme::INK);
-  resp.on_hover_text("Your credit balance \u{b7} Buy credits").on_hover_cursor(egui::CursorIcon::PointingHand)
+  resp.on_hover_text(crate::i18n::t("Your credit balance \u{b7} Buy credits")).on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
 fn account_menu(ui: &mut Ui, account: &Account<'_>) -> Option<ShellAction> {
