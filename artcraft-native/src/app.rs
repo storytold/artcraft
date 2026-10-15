@@ -638,6 +638,7 @@ impl ArtcraftApp {
             Page::CreateVideo => self.video.ui(ui, &mut env),
             Page::CreateAudio => self.audio.ui(ui, &mut env),
             Page::Library => other::library(ui, &mut env, &mut self.library),
+            Page::CraftAi => crate::craft_ai::show(ui),
             page => other::coming_soon(ui, page),
           }
         });

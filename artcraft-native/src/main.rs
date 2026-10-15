@@ -4,6 +4,7 @@
 
 mod app;
 mod backend;
+mod craft_ai;
 mod feed;
 mod i18n;
 mod models;

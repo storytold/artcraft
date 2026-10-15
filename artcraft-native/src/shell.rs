@@ -36,6 +36,7 @@ pub enum Page {
   RemoveBackground,
   FrameExtractor,
   Library,
+  CraftAi,
 }
 
 impl Page {
@@ -53,6 +54,7 @@ impl Page {
       Page::RemoveBackground => "BG Remove",
       Page::FrameExtractor => "Frame Extract",
       Page::Library => "Library",
+      Page::CraftAi => "Craft AI",
     }
   }
 
@@ -68,6 +70,7 @@ impl Page {
       Page::VideoEditor | Page::FrameExtractor => Icon::Film,
       Page::RemoveBackground => Icon::Wand,
       Page::Library => Icon::Library,
+      Page::CraftAi => Icon::Sparkles,
     }
   }
 
