@@ -13,13 +13,13 @@ use artcraft_client::error::api_error::ApiError;
 use artcraft_client::error::storyteller_error::StorytellerError;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::legacy_upload_media_file_from_file::{
-  legacy_upload_media_file_from_file, LegacyUploadMediaFileFromFileArgs,
+  legacy_upload_media_file_from_file_with_idempotency_token, LegacyUploadMediaFileFromFileArgs,
 };
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::{
-  upload_image_media_file_from_file, UploadImageFromFileArgs,
+  upload_image_media_file_from_file_with_idempotency_token, UploadImageFromFileArgs,
 };
 use artcraft_client::endpoints::media_files::upload_video_media_file_from_file::{
-  upload_video_media_file_from_file, UploadVideoFromFileArgs,
+  upload_video_media_file_from_file_with_idempotency_token, UploadVideoFromFileArgs,
 };
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
@@ -31,7 +31,8 @@ use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{
   update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs,
 };
-use std::fs::File;
+use tempfile::NamedTempFile;
+use super::upload_checkpoint::resume_uploads;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -39,7 +40,6 @@ use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
-use uuid_utils::uuid::generate_random_uuid;
 
 pub async fn handle_fal_complete(
   app_handle: &AppHandle,
@@ -104,38 +104,17 @@ async fn handle_fal_complete_inner(
     warn!("[FalComplete] Task {} has no prompt token, uploading without prompt association", task.id.as_str());
   }
 
-  let maybe_batch_token = if urls.len() > 1 {
-    let token = BatchGenerationToken::generate();
-    info!("[FalComplete] Using batch token for {} files: {:?}", urls.len(), token);
-    Some(token)
-  } else {
-    None
-  };
-
-  let mut maybe_primary_media_file_token: Option<MediaFileToken> = None;
-
-  for (i, url) in urls.iter().enumerate() {
-    info!("[FalComplete] Downloading result {} from: {}", i, url);
-
-    let download_path = download_file(url, app_data_root, i).await?;
-
-    info!("[FalComplete] Uploading result {} to backend...", i);
-
-    let media_token = upload_to_backend(
-      &creds,
-      app_env_configs,
-      &download_path,
-      maybe_prompt_token.as_ref(),
-      maybe_batch_token.as_ref(),
-      media_class,
-    ).await?;
-
-    info!("[FalComplete] Uploaded as media file: {:?}", media_token);
-
-    if maybe_primary_media_file_token.is_none() {
-      maybe_primary_media_file_token = Some(media_token);
+  let checkpoint_path = app_data_root.state_dir().path().join(format!("fal_upload_{}.json", task.id.as_str()));
+  let (primary_token, maybe_batch_token) = resume_uploads(&checkpoint_path, &urls, |plan| {
+    let creds = &creds;
+    let maybe_prompt_token = maybe_prompt_token.as_ref();
+    async move {
+      let download = download_file(&plan.url, app_data_root, plan.index).await?;
+      upload_to_backend(creds, app_env_configs, &download.path().to_path_buf(), maybe_prompt_token, plan.maybe_batch_token.as_ref(), media_class, &plan.idempotency_token).await
+      // The owned temporary is removed on both success and failure.
     }
-  }
+  }).await?;
+  let maybe_primary_media_file_token = Some(primary_token);
 
   // Look up CDN/thumbnail URLs for the primary media file
   let mut maybe_cdn_url: Option<reqwest::Url> = None;
@@ -168,6 +147,9 @@ async fn handle_fal_complete_inner(
   }).await?;
 
   if updated {
+    if let Err(err) = std::fs::remove_file(&checkpoint_path) {
+      if err.kind() != std::io::ErrorKind::NotFound { warn!("Could not remove FAL upload checkpoint: {err}"); }
+    }
     clear_auto_download_checkpoint(app_handle, task);
     if let Some(primary_token) = maybe_primary_media_file_token {
       let completion = CompletionData {
@@ -243,8 +225,8 @@ async fn download_file(
   url: &str,
   app_data_root: &AppDataRoot,
   index: usize,
-) -> Result<PathBuf, Box<dyn std::error::Error>> {
-  let response = reqwest::get(url).await?;
+) -> Result<NamedTempFile, Box<dyn std::error::Error>> {
+  let response = reqwest::Client::builder().timeout(Duration::from_secs(600)).build()?.get(url).send().await?.error_for_status()?;
   let bytes = response.bytes().await?;
 
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
@@ -252,13 +234,9 @@ async fn download_file(
     .unwrap_or("bin");
 
   let tempdir = app_data_root.temp_dir().path();
-  let filename = format!("fal_{}_{}.{}", generate_random_uuid(), index, extension);
-  let download_path = tempdir.join(filename);
-
-  let mut file = File::create(&download_path)?;
+  let mut file = tempfile::Builder::new().prefix(&format!("fal_{index}_")).suffix(&format!(".{extension}")).tempfile_in(tempdir)?;
   file.write_all(&bytes)?;
-
-  Ok(download_path)
+  Ok(file)
 }
 
 const MAX_UPLOAD_RETRIES: u32 = 5;
@@ -271,11 +249,12 @@ async fn upload_to_backend(
   maybe_prompt_token: Option<&PromptToken>,
   maybe_batch_token: Option<&BatchGenerationToken>,
   media_class: TaskMediaFileClass,
+  idempotency_token: &str,
 ) -> Result<MediaFileToken, Box<dyn std::error::Error>> {
   let mut retry_delay_secs = INITIAL_RETRY_DELAY_SECS;
 
   for attempt in 0..MAX_UPLOAD_RETRIES {
-    let result = try_upload(creds, app_env_configs, download_path, maybe_prompt_token, maybe_batch_token, media_class).await;
+    let result = try_upload(creds, app_env_configs, download_path, maybe_prompt_token, maybe_batch_token, media_class, idempotency_token).await;
 
     match result {
       Ok(token) => return Ok(token),
@@ -310,29 +289,30 @@ async fn try_upload(
   maybe_prompt_token: Option<&PromptToken>,
   maybe_batch_token: Option<&BatchGenerationToken>,
   media_class: TaskMediaFileClass,
+  idempotency_token: &str,
 ) -> Result<MediaFileToken, StorytellerError> {
   let media_token = match media_class {
     TaskMediaFileClass::Video => {
-      let result = upload_video_media_file_from_file(UploadVideoFromFileArgs {
+      let result = upload_video_media_file_from_file_with_idempotency_token(UploadVideoFromFileArgs {
         api_host: &app_env_configs.storyteller_host,
         maybe_creds: Some(creds),
         path: download_path,
         maybe_prompt_token,
         maybe_generation_provider: Some(GenerationProvider::Fal),
-      }).await?;
+      }, idempotency_token).await?;
       result.media_file_token
     }
     TaskMediaFileClass::Dimensional => {
-      let result = legacy_upload_media_file_from_file(LegacyUploadMediaFileFromFileArgs {
+      let result = legacy_upload_media_file_from_file_with_idempotency_token(LegacyUploadMediaFileFromFileArgs {
         api_host: &app_env_configs.storyteller_host,
         maybe_creds: Some(creds),
         path: download_path,
         maybe_generation_provider: Some(GenerationProvider::Fal),
-      }).await?;
+      }, idempotency_token).await?;
       result.media_file_token
     }
     _ => {
-      let result = upload_image_media_file_from_file(UploadImageFromFileArgs {
+      let result = upload_image_media_file_from_file_with_idempotency_token(UploadImageFromFileArgs {
         api_host: &app_env_configs.storyteller_host,
         maybe_creds: Some(creds),
         path: download_path,
@@ -340,10 +320,81 @@ async fn try_upload(
         maybe_prompt_token,
         maybe_batch_token,
         maybe_generation_provider: Some(GenerationProvider::Fal),
-      }).await?;
+      }, idempotency_token).await?;
       result.media_file_token
     }
   };
 
   Ok(media_token)
+}
+
+#[cfg(test)]
+mod fal_transfer_tests {
+  use super::*;
+  use artcraft_client::utils::api_host::ApiHost;
+  use tokio::io::{AsyncReadExt, AsyncWriteExt};
+  use tokio::net::TcpListener;
+
+  #[tokio::test]
+  async fn temporary_download_is_removed_after_use_and_http_errors_leave_no_file() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let (url, server) = http_server("200 OK", "synthetic media", 1).await;
+    let file = download_file(&url, &root, 0).await.unwrap();
+    let path = file.path().to_owned();
+    assert_eq!(std::fs::read(&path).unwrap(), b"synthetic media");
+    drop(file);
+    assert!(!path.exists());
+    server.await.unwrap();
+    let (url, server) = http_server("503 Service Unavailable", "error", 1).await;
+    assert!(download_file(&url, &root, 1).await.is_err());
+    server.await.unwrap();
+    assert_eq!(std::fs::read_dir(root.temp_dir().path()).unwrap().count(), 0);
+  }
+
+  #[tokio::test]
+  async fn image_video_and_legacy_retries_send_the_supplied_idempotency_token() {
+    const ID: &str = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
+    let (url, server) = http_server("200 OK", r#"{"success":true,"media_file_token":"mf_uploaded"}"#, 6).await;
+    let port = reqwest::Url::parse(&url).unwrap().port().unwrap();
+    let config = AppEnvConfigs { storyteller_host: ApiHost::Localhost { port: u32::from(port) } };
+    let file = NamedTempFile::new().unwrap();
+    std::fs::write(file.path(), b"synthetic media").unwrap();
+    for class in [TaskMediaFileClass::Image, TaskMediaFileClass::Video, TaskMediaFileClass::Dimensional] {
+      for _ in 0..2 {
+        let token = try_upload(&StorytellerCredentialSet::empty(), &config, &file.path().to_path_buf(), None, None, class, ID).await.unwrap();
+        assert_eq!(token.as_str(), "mf_uploaded");
+      }
+    }
+    let requests = server.await.unwrap();
+    assert_eq!(requests.len(), 6);
+    assert!(requests.iter().all(|request| request.contains("name=\"uuid_idempotency_token\"") && request.contains(ID)));
+  }
+
+  async fn http_server(status: &'static str, body: &'static str, count: usize) -> (String, tokio::task::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/media.png", listener.local_addr().unwrap());
+    let task = tokio::spawn(async move {
+      let mut requests = Vec::new();
+      for _ in 0..count {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = Vec::new();
+        let mut buffer = [0; 4096];
+        loop {
+          let n = socket.read(&mut buffer).await.unwrap();
+          assert!(n > 0);
+          request.extend_from_slice(&buffer[..n]);
+          if let Some(start) = request.windows(4).position(|part| part == b"\r\n\r\n") {
+            let headers = String::from_utf8_lossy(&request[..start]).to_ascii_lowercase();
+            let length = headers.lines().find_map(|line| line.strip_prefix("content-length:")).map(|n| n.trim().parse::<usize>().unwrap()).unwrap_or(0);
+            if request.len() >= start + 4 + length { break; }
+          }
+        }
+        requests.push(String::from_utf8_lossy(&request).into_owned());
+        socket.write_all(format!("HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).as_bytes()).await.unwrap();
+      }
+      requests
+    });
+    (url, task)
+  }
 }
