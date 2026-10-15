@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible problem in the ArtCraft desktop apps.
+title: '[Bug]: '
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: Application
+      options:
+        - ArtCraft desktop (Tauri)
+        - ArtCraft native (experimental Rust UI)
+        - Shared library or developer tooling
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit
+      description: Include the release version or Git commit used to reproduce it.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Multiple platforms
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the page, model/provider if relevant, and the smallest sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact error or a screenshot when useful.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, regression range, or related issues
+      description: Optional supporting evidence. Remove credentials and personal information from logs.
