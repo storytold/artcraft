@@ -34,6 +34,9 @@ pub enum MidjourneyClientError {
   /// Tried to send on a websocket whose background task has stopped.
   WebSocketClosed,
 
+  /// Progress was lost, possibly including the terminal event. Reconcile over HTTP.
+  WebSocketEventsLost(u64),
+
   /// The websocket opened but the `subscribe_to_user` handshake did not
   /// complete within the allotted time.
   WebSocketHandshakeTimeout,
@@ -54,6 +57,7 @@ impl Display for MidjourneyClientError {
       Self::SerializationError(err) => write!(f, "Request serialization error: {}", err),
       Self::WebSocketUpgrade(msg) => write!(f, "WebSocket upgrade failed: {}", msg),
       Self::WebSocketClosed => write!(f, "The websocket connection is closed."),
+      Self::WebSocketEventsLost(count) => write!(f, "The websocket lost {count} events; refresh the job status."),
       Self::WebSocketHandshakeTimeout => write!(f, "Timed out waiting for the websocket user handshake."),
     }
   }

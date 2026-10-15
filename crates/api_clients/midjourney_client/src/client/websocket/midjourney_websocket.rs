@@ -3,7 +3,6 @@ use crate::credentials::midjourney_user_id::MidjourneyUserId;
 use crate::error::midjourney_client_error::MidjourneyClientError;
 use log::{debug, warn};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::{broadcast, mpsc};
 use wreq::ws::WebSocket;
 use wreq::ws::message::Message;
@@ -46,7 +45,6 @@ struct WebSocketInner {
   user_id: MidjourneyUserId,
   outbound: mpsc::UnboundedSender<Message>,
   events: broadcast::Sender<Arc<MidjourneyWsEvent>>,
-  connected: Arc<AtomicBool>,
 }
 
 impl MidjourneyWebSocket {
@@ -56,11 +54,10 @@ impl MidjourneyWebSocket {
   pub(crate) fn spawn(user_id: MidjourneyUserId, websocket: WebSocket) -> Self {
     let (outbound_tx, outbound_rx) = mpsc::unbounded_channel::<Message>();
     let (events_tx, _events_rx) = broadcast::channel::<Arc<MidjourneyWsEvent>>(EVENT_CHANNEL_CAPACITY);
-    let connected = Arc::new(AtomicBool::new(true));
 
-    tokio::spawn(run_websocket_loop(websocket, outbound_rx, events_tx.clone(), connected.clone()));
+    tokio::spawn(run_websocket_loop(websocket, outbound_rx, events_tx.clone()));
 
-    Self { inner: Arc::new(WebSocketInner { user_id, outbound: outbound_tx, events: events_tx, connected }) }
+    Self { inner: Arc::new(WebSocketInner { user_id, outbound: outbound_tx, events: events_tx }) }
   }
 
   /// The user this connection is bound to.
@@ -70,7 +67,7 @@ impl MidjourneyWebSocket {
 
   /// Whether the background task is still running.
   pub fn is_connected(&self) -> bool {
-    self.inner.connected.load(Ordering::SeqCst)
+    !self.inner.outbound.is_closed()
   }
 
   /// A new receiver over the decoded event stream. Each call yields an
@@ -113,7 +110,14 @@ impl MidjourneyWebSocket {
     self.subscribe_to_job(job_id)?;
 
     loop {
-      match receiver.recv().await {
+      // Drain queued terminal events before reporting that the driver stopped. The
+      // event sender lives in this handle too, so its channel alone cannot signal EOF.
+      let event = tokio::select! {
+        biased;
+        event = receiver.recv() => event,
+        _ = self.inner.outbound.closed() => return Err(MidjourneyClientError::WebSocketClosed),
+      };
+      match event {
         Ok(event) => {
           if event.job_id() != Some(job_id) {
             continue;
@@ -124,7 +128,7 @@ impl MidjourneyWebSocket {
           }
         },
         Err(broadcast::error::RecvError::Lagged(skipped)) => {
-          warn!("Midjourney websocket consumer lagged, skipped {} events", skipped);
+          return Err(MidjourneyClientError::WebSocketEventsLost(skipped));
         },
         Err(broadcast::error::RecvError::Closed) => {
           return Err(MidjourneyClientError::WebSocketClosed);
@@ -146,16 +150,18 @@ impl MidjourneyWebSocket {
 
 /// Owns the raw socket: forwards outbound command frames and decodes inbound
 /// CBOR frames into events. Ends when the socket closes or all handles drop.
-async fn run_websocket_loop(mut websocket: WebSocket, mut outbound_rx: mpsc::UnboundedReceiver<Message>, events_tx: broadcast::Sender<Arc<MidjourneyWsEvent>>, connected: Arc<AtomicBool>) {
+async fn run_websocket_loop(mut websocket: WebSocket, mut outbound_rx: mpsc::UnboundedReceiver<Message>, events_tx: broadcast::Sender<Arc<MidjourneyWsEvent>>) {
   loop {
     tokio::select! {
       maybe_outbound = outbound_rx.recv() => {
         match maybe_outbound {
           Some(message) => {
+            let closing = matches!(&message, Message::Close(_));
             if let Err(err) = websocket.send(message).await {
               warn!("Midjourney websocket send failed: {}", err);
               break;
             }
+            if closing { break; }
           }
           // All handles dropped; nothing more will be sent.
           None => break,
@@ -185,6 +191,56 @@ async fn run_websocket_loop(mut websocket: WebSocket, mut outbound_rx: mpsc::Unb
     }
   }
 
-  connected.store(false, Ordering::SeqCst);
   debug!("Midjourney websocket loop ended.");
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+  use super::*;
+  use std::time::Duration;
+
+  #[tokio::test]
+  async fn disconnect_ends_stream_while_the_handle_is_retained() {
+    let (socket, mut outbound) = fixture(4);
+    let stream = socket.stream_job("job", |_| {});
+    let disconnect = async { outbound.recv().await.unwrap(); drop(outbound); };
+    let (result, _) = tokio::time::timeout(Duration::from_secs(1), async { tokio::join!(stream, disconnect) }).await.unwrap();
+    assert!(matches!(result, Err(MidjourneyClientError::WebSocketClosed)));
+    assert!(!socket.is_connected());
+  }
+
+  #[tokio::test]
+  async fn losing_a_terminal_event_reports_an_error() {
+    let (socket, mut outbound) = fixture(1);
+    let stream = socket.stream_job("job", |_| {});
+    let overflow = async {
+      outbound.recv().await.unwrap();
+      socket.inner.events.send(Arc::new(MidjourneyWsEvent::Completed { job_id: "job".into(), percentage_complete: 100.0 })).unwrap();
+      socket.inner.events.send(Arc::new(MidjourneyWsEvent::Unknown { maybe_kind: None })).unwrap();
+    };
+    let (result, _) = tokio::time::timeout(Duration::from_secs(1), async { tokio::join!(stream, overflow) }).await.unwrap();
+    assert!(matches!(result, Err(MidjourneyClientError::WebSocketEventsLost(1))));
+  }
+
+  #[tokio::test]
+  async fn queued_completion_wins_over_disconnect() {
+    let (socket, mut outbound) = fixture(4);
+    let mut completed = false;
+    let stream = socket.stream_job("job", |_| completed = true);
+    let finish = async {
+      outbound.recv().await.unwrap();
+      socket.inner.events.send(Arc::new(MidjourneyWsEvent::Completed { job_id: "job".into(), percentage_complete: 100.0 })).unwrap();
+      drop(outbound);
+    };
+    let (result, _) = tokio::join!(stream, finish);
+    result.unwrap();
+    assert!(completed);
+  }
+
+  fn fixture(capacity: usize) -> (MidjourneyWebSocket, mpsc::UnboundedReceiver<Message>) {
+    let (outbound, receiver) = mpsc::unbounded_channel();
+    let (events, _) = broadcast::channel(capacity);
+    let socket = MidjourneyWebSocket { inner: Arc::new(WebSocketInner { user_id: MidjourneyUserId::from_str("test"), outbound, events }) };
+    (socket, receiver)
+  }
 }
