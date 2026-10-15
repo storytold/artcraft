@@ -1,4 +1,4 @@
-use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode};
 use sqlx::SqlitePool;
 use sqlite_tasks::connection::TaskDbConnection;
 use tempfile::tempdir;
@@ -22,14 +22,14 @@ async fn checksum_failure_preserves_history_and_can_be_retried() {
   let path = dir.path().join("tasks.sqlite");
   let db = TaskDbConnection::connect_and_migrate(&path).await.unwrap();
   insert_task(db.get_pool()).await;
-  let checksum: Vec<u8> = sqlx::query_scalar("SELECT checksum FROM _sqlx_migrations LIMIT 1").fetch_one(db.get_pool()).await.unwrap();
-  sqlx::query("UPDATE _sqlx_migrations SET checksum = X'00'").execute(db.get_pool()).await.unwrap();
+  let (version, checksum): (i64, Vec<u8>) = sqlx::query_as("SELECT version, checksum FROM _sqlx_migrations ORDER BY version LIMIT 1").fetch_one(db.get_pool()).await.unwrap();
+  sqlx::query("UPDATE _sqlx_migrations SET checksum = X'00' WHERE version = ?").bind(version).execute(db.get_pool()).await.unwrap();
   db.get_pool().close().await;
 
   assert!(TaskDbConnection::connect_and_migrate(&path).await.is_err());
   let pool = SqlitePool::connect_with(SqliteConnectOptions::new().filename(&path)).await.unwrap();
   assert_task_survives(&pool).await;
-  sqlx::query("UPDATE _sqlx_migrations SET checksum = ?").bind(checksum).execute(&pool).await.unwrap();
+  sqlx::query("UPDATE _sqlx_migrations SET checksum = ? WHERE version = ?").bind(checksum).bind(version).execute(&pool).await.unwrap();
   pool.close().await;
 
   let retried = TaskDbConnection::connect_and_migrate(&path).await.unwrap();
@@ -52,7 +52,7 @@ async fn invalid_database_is_preserved_byte_for_byte() {
 async fn locked_database_is_preserved_while_another_connection_uses_it() {
   let dir = tempdir().unwrap();
   let path = dir.path().join("tasks.sqlite");
-  let pool = SqlitePool::connect_with(SqliteConnectOptions::new().filename(&path).create_if_missing(true)).await.unwrap();
+  let pool = SqlitePool::connect_with(SqliteConnectOptions::new().filename(&path).create_if_missing(true).journal_mode(SqliteJournalMode::Wal)).await.unwrap();
   sqlx::query("CREATE TABLE retained_history (value TEXT)").execute(&pool).await.unwrap();
   sqlx::query("INSERT INTO retained_history VALUES ('keep me')").execute(&pool).await.unwrap();
   let mut owner = pool.acquire().await.unwrap();
