@@ -136,4 +136,10 @@ Additional provider integrations are planned for Kling, Google, Runway, and Luma
 - [Developer documentation](./_docs)
 - [Desktop build and development scripts](./script/artcraft)
 - [Roadmap](./ROADMAP.md)
-- [License](./LICENSE.md)
+- [License](#license)
+
+## License
+
+ArtCraft is dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+Copyright (c) 2026 ArtCraft Team and the ArtCraft contributors. Required notices, including
+third-party material not covered by this license, are in [NOTICE](NOTICE).

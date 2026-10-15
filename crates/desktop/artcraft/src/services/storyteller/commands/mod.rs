@@ -4,6 +4,7 @@ pub mod storyteller_get_subscription_command;
 pub mod stripe_checkout;
 pub mod stripe_customer_portal;
 pub(crate) mod login_bridge;
+mod password_auth_error_message;
 pub mod storyteller_cancel_login_challenge_command;
 pub mod storyteller_create_login_challenge_command;
 pub mod storyteller_get_login_session_command;

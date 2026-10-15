@@ -264,6 +264,31 @@ async fn password_login_and_signup_verify_persist_and_recheck_via_native_api() {
 }
 
 #[tokio::test]
+async fn password_signup_and_login_rejections_explain_what_went_wrong() {
+  let cases = [
+    (true, 400, json!({"success":false,"error_type":"UsernameTaken","error_fields":{"username":"username is taken"}}), "That username is already taken. Please choose another."),
+    (false, 401, json!({"success":false,"error_type":"InvalidCredentials","error_message":"invalid credentials"}), "Incorrect username, email, or password."),
+  ];
+  for (signup, status, body, expected) in cases {
+    let mut rejected = step(if signup { "/v1/create_account" } else { "/v1/login" }, body);
+    rejected.status = status;
+    let server = server(vec![rejected]);
+    let h = harness();
+    let (login, signup) = if signup {
+      (None, Some(PasswordSignupRequest { username: "google_user".into(), email_address: "user@example.test".into(), password: "fixture_password".into(), password_confirmation: "fixture_password".into(), signup_source: "artcraft".into() }))
+    } else {
+      (Some(PasswordLoginRequest { username_or_email: "google_user".into(), password: "fixture_password".into() }), None)
+    };
+    let error = password_auth(&server.host, &h.manager, &h.jar, login, signup).await.err().unwrap();
+    assert_eq!(error.message, expected);
+    assert_eq!(error.status, Some(status));
+    assert!(!error.retryable);
+    assert!(h.manager.get_credentials().unwrap().is_none());
+    server.thread.join().unwrap();
+  }
+}
+
+#[tokio::test]
 async fn empty_native_cookie_jar_needs_no_session_http_request() {
   let h = harness();
   let client = LoginChallengeClient::new(&ApiHost::Localhost { port: 1 }).unwrap();

@@ -1,13 +1,18 @@
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use log::{info, warn};
 use reqwest::header::SET_COOKIE;
-use reqwest::{Client, Method, RequestBuilder};
+use reqwest::{Client, Method, RequestBuilder, Response};
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use url::Url;
 
 use crate::utils::api_host::ApiHost;
 use crate::utils::storyteller_client_builder::storyteller_client_builder;
+
+/// Rejection bodies are small JSON objects; anything larger is not one of ours.
+const MAX_REJECTION_BODY_BYTES: usize = 16 * 1024;
 
 /// Native transport for the session bridge. No request/response bodies, cookies,
 /// or challenge credentials are logged, even at debug level. Never follows redirects.
@@ -21,6 +26,19 @@ pub struct LoginChallengeClient {
 pub struct LoginChallengeClientError {
   pub status: Option<u16>,
   pub message: &'static str,
+  /// The server's explanation for a non-2xx response, when it sent one.
+  pub maybe_rejection: Option<LoginRejection>,
+}
+
+/// The error fields of a rejected login or signup response, such as
+/// `{"error_type":"UsernameTaken","error_fields":{"username":"username is taken"}}`.
+/// Only these fields are parsed, so no credential can end up in this struct.
+#[derive(Debug, Default, Deserialize)]
+pub struct LoginRejection {
+  pub error_type: Option<String>,
+  pub error_message: Option<String>,
+  #[serde(default)]
+  pub error_fields: BTreeMap<String, String>,
 }
 
 impl LoginChallengeClient {
@@ -108,6 +126,7 @@ impl LoginChallengeClient {
       return Err(LoginChallengeClientError {
         status: Some(status.as_u16()),
         message: "Login server rejected the request",
+        maybe_rejection: read_rejection(response).await,
       });
     }
     let session_cookie = response
@@ -137,14 +156,29 @@ impl LoginChallengeClientError {
     Self {
       status: None,
       message,
+      maybe_rejection: None,
     }
   }
 }
 
 impl std::fmt::Display for LoginChallengeClientError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{} (HTTP {:?})", self.message, self.status)
+    match self.status {
+      Some(status) => write!(f, "{} (HTTP {})", self.message, status),
+      None => write!(f, "{}", self.message),
+    }
   }
 }
 
 impl std::error::Error for LoginChallengeClientError {}
+
+async fn read_rejection(response: Response) -> Option<LoginRejection> {
+  if response.content_length().is_some_and(|len| len > MAX_REJECTION_BODY_BYTES as u64) {
+    return None;
+  }
+  let body = response.bytes().await.ok()?;
+  if body.len() > MAX_REJECTION_BODY_BYTES {
+    return None;
+  }
+  serde_json::from_slice(&body).ok()
+}

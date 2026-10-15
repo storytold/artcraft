@@ -3,6 +3,7 @@ resolver = "2"
 
 # Desktop application and its local build/test dependencies.
 members = [
+  "artcraft-native", # Pure Rust (egui) desktop app; no Tauri or webview
   "crates/api_clients/artcraft/artcraft_api_defs",
   "crates/api_clients/artcraft/artcraft_client",
   "crates/api_clients/artcraft/artcraft_router",
