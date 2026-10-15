@@ -1,6 +1,7 @@
 //! Reference media attached to a prompt: images, videos and audio clips, either uploaded from
 //! disk or picked from the library.
 
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
@@ -49,6 +50,8 @@ pub struct RefMedia {
   pub token: Option<String>,
   /// Media cache key of the thumbnail (a CDN URL or a `local://` key).
   pub preview: Option<String>,
+  /// Local preview source, retained only while this reference remains attached.
+  pub local_preview: Option<Arc<[u8]>>,
   /// The full-size URL, for the preview modal.
   pub full_url: Option<String>,
   /// Seconds, for videos and audio (counts toward the model's total-duration limit).
@@ -57,11 +60,11 @@ pub struct RefMedia {
 
 impl RefMedia {
   pub fn uploading(kind: RefKind, preview: Option<String>) -> Self {
-    Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed), kind, status: RefStatus::Uploading, token: None, preview, full_url: None, duration_secs: 0.0 }
+    Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed), kind, status: RefStatus::Uploading, token: None, preview, local_preview: None, full_url: None, duration_secs: 0.0 }
   }
 
   pub fn from_library(kind: RefKind, token: String, preview: Option<String>, full_url: Option<String>, duration_secs: f32) -> Self {
-    Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed), kind, status: RefStatus::Ready, token: Some(token), preview, full_url, duration_secs }
+    Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed), kind, status: RefStatus::Ready, token: Some(token), preview, local_preview: None, full_url, duration_secs }
   }
 }
 

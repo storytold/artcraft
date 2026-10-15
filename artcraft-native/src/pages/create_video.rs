@@ -477,6 +477,7 @@ impl CreateVideoPage {
       s.generate_audio = audio;
     }
     self.refs.clear();
+    s.input_mode = if prompt.maybe_context_images.iter().flatten().any(|c| matches!(c.semantic.as_str(), "vid_start_frame" | "vid_end_frame")) { InputMode::Keyframe } else { InputMode::Reference };
     for c in prompt.maybe_context_images.iter().flatten() {
       let kind = match c.semantic.as_str() {
         "vid_ref" => RefKind::Video,
@@ -485,6 +486,7 @@ impl CreateVideoPage {
       };
       let item = RefMedia::from_library(kind, c.media_token.clone(), c.media_links.thumbnail(256).filter(|_| kind != RefKind::Audio), Some(c.media_links.cdn_url.clone()), 0.0);
       match (c.semantic.as_str(), kind) {
+        ("vid_start_frame", _) => self.refs.first_frame = Some(item),
         ("vid_end_frame", _) => self.refs.last_frame = Some(item),
         (_, RefKind::Image) if s.input_mode == InputMode::Keyframe && self.refs.first_frame.is_none() => self.refs.first_frame = Some(item),
         (_, kind) => self.refs.list_mut(kind).push(item),
@@ -636,5 +638,37 @@ mod tests {
     let picks = std::collections::HashMap::from([("Bob".to_owned(), "c1".to_owned())]);
     assert_eq!(mentioned_characters("hi @Bob", &characters, &picks), ["c1"], "the explicit pick wins");
     assert!(mentioned_characters("no mentions", &characters, &none).is_empty());
+  }
+}
+
+#[cfg(test)]
+mod recreate_tests {
+  use super::*;
+  use crate::backend::wire::ContextImage;
+
+  #[test]
+  fn restores_keyframes_even_when_end_frame_is_listed_first() {
+    let mut page = CreateVideoPage::default();
+    page.apply_prompt(&prompt(&[("end", "vid_end_frame"), ("start", "vid_start_frame")]));
+    assert_eq!(page.settings.input_mode, InputMode::Keyframe);
+    let model = ModelInfo { start_frame: true, end_frame: true, ..Default::default() };
+    let fields = page.fields(&model, false);
+    assert_eq!(fields["start_frame_image_media_token"], "start");
+    assert_eq!(fields["end_frame_image_media_token"], "end");
+    assert!(!fields.contains_key("reference_image_media_tokens"));
+  }
+
+  #[test]
+  fn reference_prompt_resets_a_previous_keyframe_mode() {
+    let mut page = CreateVideoPage::default();
+    page.settings.input_mode = InputMode::Keyframe;
+    page.apply_prompt(&prompt(&[("ref", "imgref")]));
+    assert_eq!(page.settings.input_mode, InputMode::Reference);
+    assert!(page.refs.first_frame.is_none());
+    assert_eq!(page.refs.images[0].token.as_deref(), Some("ref"));
+  }
+
+  fn prompt(items: &[(&str, &str)]) -> Prompt {
+    Prompt { maybe_context_images: Some(items.iter().map(|(token, semantic)| ContextImage { media_token: token.to_string(), semantic: semantic.to_string(), ..Default::default() }).collect()), ..Default::default() }
   }
 }
