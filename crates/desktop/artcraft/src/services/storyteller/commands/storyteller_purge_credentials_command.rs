@@ -47,7 +47,7 @@ async fn reset(
 ) -> AnyhowResult<()> {
 
   let http = app.try_state::<Http>().ok_or_else(|| anyhow!("HTTP plugin unavailable"))?;
-  purge_http_credentials(&http.cookies_jar, storyteller_creds_manager, &storyteller_cookie_url(app)?).await?;
-  clear_main_webview_window_storyteller_cookies(app)?;
-  Ok(())
+  let purged = purge_http_credentials(&http.cookies_jar, storyteller_creds_manager, &storyteller_cookie_url(app)?).await;
+  let cleared_webview = clear_main_webview_window_storyteller_cookies(app);
+  purged.and(cleared_webview)
 }

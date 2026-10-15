@@ -5,7 +5,7 @@ use tauri_plugin_http::reqwest_cookie_store::CookieStoreMutex;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 pub(crate) async fn purge_http_credentials(jar: &CookieStoreMutex, manager: &StorytellerCredentialManager, api_url: &Url) -> Result<()> {
-  {
+  let cleanup = {
     // The synchronization task uses this same jar lock before updating the
     // manager. Holding it through both removals prevents a stale sync snapshot.
     let mut store = jar.store.lock().map_err(|_| anyhow!("Failed to lock HTTP cookie jar"))?;
@@ -13,11 +13,13 @@ pub(crate) async fn purge_http_credentials(jar: &CookieStoreMutex, manager: &Sto
       Some((cookie.domain.as_cow()?.into_owned(), cookie.path.to_string(), cookie.name().to_owned()))
     }).collect();
     for (domain, path, name) in keys { store.remove(&domain, &path, &name); }
-    manager.clear_credentials()?;
-    manager.delete_persisted_copies_on_disk()?;
-  }
-  jar.flush().await.map_err(|err| anyhow!("Failed to persist cleared HTTP cookies: {err}"))?;
-  Ok(())
+    let cleared = manager.clear_credentials();
+    let deleted = manager.delete_persisted_copies_on_disk();
+    cleared.and(deleted)
+  };
+  // A legacy-file error must not leave the authoritative disk jar signed in.
+  let persisted = jar.flush().await.map_err(|err| anyhow!("Failed to persist cleared HTTP cookies: {err}"));
+  cleanup.and(persisted)
 }
 
 #[cfg(test)]
@@ -26,6 +28,23 @@ mod login_bridge_tests {
   use crate::core::state::data_dir::app_data_root::AppDataRoot;
   use crate::core::threads::main_window_thread::persist_storyteller_cookies_task::sync_tauri_credentials;
   use tauri_plugin_http::reqwest_cookie_store::{CookieStore, RawCookie};
+
+  #[tokio::test]
+  async fn legacy_copy_removal_failure_still_flushes_the_authoritative_jar() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let manager = StorytellerCredentialManager::initialize_empty(&root);
+    std::fs::create_dir(root.credentials_dir().get_storyteller_session_cookie_file_path()).unwrap();
+    let url = Url::parse("https://api.storyteller.ai/").unwrap();
+    let mut store = CookieStore::default();
+    store.store_response_cookies([RawCookie::parse("session=old; Path=/; Max-Age=3600").unwrap().into_owned()].into_iter(), &url);
+    let path = directory.path().join("cookies.json");
+    let jar = CookieStoreMutex::new(path.clone(), store);
+    jar.flush().await.unwrap();
+    assert!(purge_http_credentials(&jar, &manager, &url).await.is_err());
+    let reloaded: CookieStore = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+    assert!(reloaded.get_request_values(&url).next().is_none());
+  }
 
   #[tokio::test]
   async fn local_purge_survives_queued_save_sync_and_reload_without_server_logout() {

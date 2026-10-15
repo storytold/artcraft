@@ -135,3 +135,24 @@ async fn persist_current(path: &std::path::Path, store: &Mutex<CookieStore>, sav
     std::fs::write(path, text)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod persistence_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn queued_save_snapshots_only_after_acquiring_writer_lock() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("cookies.json");
+        let mut store = CookieStore::default();
+        store.parse("session=old; Path=/; Max-Age=3600", &url::Url::parse("https://example.com/").unwrap()).unwrap();
+        let jar = CookieStoreMutex::new(path.clone(), store);
+        let blocked = jar.save_lock.lock().await;
+        let pending = jar.request_save().unwrap();
+        jar.store.lock().unwrap().clear();
+        drop(blocked);
+        tokio::task::spawn_blocking(move || pending.recv_timeout(std::time::Duration::from_secs(2))).await.unwrap().unwrap();
+        let saved: CookieStore = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(saved.iter_any().count(), 0);
+    }
+}
