@@ -150,8 +150,17 @@ export function LightboxModal({
   const [isPromptClamped, setIsPromptClamped] = useState<boolean>(false);
   const [promptCopied, setPromptCopied] = useState<boolean>(false);
   const promptCopiedTimeoutRef = useRef<number | null>(null);
-  const [batchImages, setBatchImages] = useState<string[] | null>(null);
-  const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
+  const [batch, setBatch] = useState<{
+    token: string;
+    images: string[];
+    tokens: string[];
+    loading: boolean;
+  } | null>(null);
+  const batchImages = batch && batch.token === batchImageToken ? batch.images : null;
+  const batchTokens = batch && batch.token === batchImageToken ? batch.tokens : null;
+  const isBatchLoading = Boolean(
+    batchImageToken && (!batch || batch.token !== batchImageToken || batch.loading),
+  );
   const [creator, setCreator] = useState<UserInfo | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
@@ -193,7 +202,6 @@ export function LightboxModal({
   useEffect(() => {
     if (isOpen) {
       setRefPreviewUrl(null);
-      setSelectedIndex(0);
       setMediaLoaded(false);
       setMediaWidth(null);
       setMediaHeight(null);
@@ -297,14 +305,12 @@ export function LightboxModal({
   // Fetch batch images — debounced + cancellable like fetchPrompt above.
   useEffect(() => {
     if (!batchImageToken) {
-      setBatchImages(null);
-      setBatchTokens(null);
+      setBatch(null);
       return;
     }
 
     // Clear stale batch data immediately
-    setBatchImages(null);
-    setBatchTokens(null);
+    setBatch({ token: batchImageToken, images: [], tokens: [], loading: true });
 
     let cancelled = false;
 
@@ -338,20 +344,21 @@ export function LightboxModal({
               return 0;
             });
 
-            setBatchImages(sortedItems.map((item) => item.url));
-            setBatchTokens(sortedItems.map((item) => item.token));
+            setBatch({
+              token: batchImageToken,
+              images: sortedItems.map((item) => item.url),
+              tokens: sortedItems.map((item) => item.token),
+              loading: false,
+            });
           } else {
-            setBatchImages(null);
-            setBatchTokens(null);
+            setBatch({ token: batchImageToken, images: [], tokens: [], loading: false });
           }
         } else {
-          setBatchImages(null);
-          setBatchTokens(null);
+          setBatch({ token: batchImageToken, images: [], tokens: [], loading: false });
         }
       } catch (error: unknown) {
         if (cancelled) return;
-        setBatchImages(null);
-        setBatchTokens(null);
+        setBatch({ token: batchImageToken, images: [], tokens: [], loading: false });
       }
     }, 200);
 
@@ -372,6 +379,14 @@ export function LightboxModal({
   }, [batchImages, imageUrls, imageUrl]);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // A different opening image can reorder a fetched batch; treat it as a new entry point.
+  const carouselKey = JSON.stringify([
+    batchImageToken,
+    mediaId ?? imageUrl ?? imageUrls?.[0],
+    initialIndex,
+  ]);
+  const rememberedIndices = useRef(new Map<string, number>());
+  const restoringSelection = useRef(false);
   const carouselOptions: EmblaOptionsType = useMemo(
     () => ({ loop: false }),
     [],
@@ -418,30 +433,62 @@ export function LightboxModal({
   );
 
   const onSelect = useCallback(() => {
-    if (!emblaMainApi || !emblaThumbsApi) return;
+    if (!emblaMainApi || !isOpen || restoringSelection.current) return;
     const index = emblaMainApi.selectedScrollSnap();
     setSelectedIndex(index);
-    emblaThumbsApi.scrollTo(index);
-  }, [emblaMainApi, emblaThumbsApi]);
+    emblaThumbsApi?.scrollTo(index);
+    if (!isBatchLoading) rememberedIndices.current.set(carouselKey, index);
+  }, [emblaMainApi, emblaThumbsApi, isOpen, isBatchLoading, carouselKey]);
+
+  const restoreSelection = useCallback(() => {
+    if (!isOpen) return;
+    const rememberedIndex = rememberedIndices.current.get(carouselKey);
+    const index = Math.max(
+      0,
+      Math.min(rememberedIndex ?? initialIndex ?? 0, effectiveImageUrls.length - 1),
+    );
+    const wasRestoring = restoringSelection.current;
+    restoringSelection.current = true;
+    try {
+      setSelectedIndex(index);
+      emblaMainApi?.scrollTo(index, true);
+      emblaThumbsApi?.scrollTo(index, true);
+    } finally {
+      restoringSelection.current = wasRestoring;
+    }
+  }, [
+    isOpen,
+    carouselKey,
+    initialIndex,
+    effectiveImageUrls.length,
+    emblaMainApi,
+    emblaThumbsApi,
+  ]);
 
   useEffect(() => {
     if (!emblaMainApi) return;
-    onSelect();
-    emblaMainApi.on("select", onSelect).on("reInit", onSelect);
-  }, [emblaMainApi, onSelect]);
+    emblaMainApi.on("select", onSelect).on("reInit", restoreSelection);
+    return () => {
+      emblaMainApi.off("select", onSelect).off("reInit", restoreSelection);
+    };
+  }, [emblaMainApi, onSelect, restoreSelection]);
 
-  // Re-initialize Embla when slides change so it picks up the new DOM children
+  // Restore each bundle's last selection after navigation or delayed batch loading.
   useEffect(() => {
-    emblaMainApi?.reInit();
-    emblaThumbsApi?.reInit();
-  }, [effectiveImageUrls, emblaMainApi, emblaThumbsApi]);
-
-  useEffect(() => {
-    const idx = initialIndex ?? 0;
-    setSelectedIndex(idx);
-    emblaMainApi?.scrollTo(idx, true);
-    emblaThumbsApi?.scrollTo(idx, true);
-  }, [batchImageToken, imageUrl, emblaMainApi, emblaThumbsApi]);
+    if (!isOpen) {
+      rememberedIndices.current.clear();
+      setSelectedIndex(0);
+      return;
+    }
+    restoringSelection.current = true;
+    try {
+      emblaMainApi?.reInit();
+      emblaThumbsApi?.reInit();
+      restoreSelection();
+    } finally {
+      restoringSelection.current = false;
+    }
+  }, [isOpen, effectiveImageUrls, emblaMainApi, emblaThumbsApi, restoreSelection]);
 
   const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
   const actionUrl =
