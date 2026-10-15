@@ -12,6 +12,7 @@ on:
 
 jobs:
   publish-artcraft:
+    timeout-minutes: 90
     permissions:
       contents: write
     strategy:
