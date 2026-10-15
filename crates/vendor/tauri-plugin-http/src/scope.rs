@@ -59,7 +59,7 @@ impl<'de> Deserialize<'de> for Entry {
     }
 }
 
-/// Scope for filesystem access.
+/// Scope for HTTP access.
 #[derive(Debug)]
 pub struct Scope<'a> {
     allowed: Vec<&'a Arc<Entry>>,
