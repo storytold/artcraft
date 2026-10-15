@@ -636,28 +636,6 @@ fn frames_full_message(model: Option<&ModelInfo>) -> &'static str {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-  use crate::backend::wire::Character;
-
-  fn character(token: &str, name: &str) -> Character {
-    Character { token: token.into(), name: name.into(), ..Default::default() }
-  }
-
-  #[test]
-  fn mentions_resolve_to_one_token_per_name() {
-    // Newest first, as the server lists them.
-    let characters = [character("c3", "Bob"), character("c2", "Bob2"), character("c1", "Bob"), character("c0", "Ann")];
-    let none = std::collections::HashMap::new();
-    assert_eq!(mentioned_characters("@Bob2 waves", &characters, &none), ["c2"], "@Bob2 isn't @Bob");
-    assert_eq!(mentioned_characters("@Bob, then @Ann.", &characters, &none), ["c3", "c0"], "newest Bob by default");
-    let picks = std::collections::HashMap::from([("Bob".to_owned(), "c1".to_owned())]);
-    assert_eq!(mentioned_characters("hi @Bob", &characters, &picks), ["c1"], "the explicit pick wins");
-    assert!(mentioned_characters("no mentions", &characters, &none).is_empty());
-  }
-}
-
-#[cfg(test)]
 mod reference_validation_tests {
   use super::*;
 
@@ -703,5 +681,27 @@ mod reference_validation_tests {
 
   fn reference(duration_secs: f32) -> RefMedia {
     RefMedia::from_library(RefKind::Video, "mf_video".into(), None, None, duration_secs)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::backend::wire::Character;
+
+  fn character(token: &str, name: &str) -> Character {
+    Character { token: token.into(), name: name.into(), ..Default::default() }
+  }
+
+  #[test]
+  fn mentions_resolve_to_one_token_per_name() {
+    // Newest first, as the server lists them.
+    let characters = [character("c3", "Bob"), character("c2", "Bob2"), character("c1", "Bob"), character("c0", "Ann")];
+    let none = std::collections::HashMap::new();
+    assert_eq!(mentioned_characters("@Bob2 waves", &characters, &none), ["c2"], "@Bob2 isn't @Bob");
+    assert_eq!(mentioned_characters("@Bob, then @Ann.", &characters, &none), ["c3", "c0"], "newest Bob by default");
+    let picks = std::collections::HashMap::from([("Bob".to_owned(), "c1".to_owned())]);
+    assert_eq!(mentioned_characters("hi @Bob", &characters, &picks), ["c1"], "the explicit pick wins");
+    assert!(mentioned_characters("no mentions", &characters, &none).is_empty());
   }
 }
