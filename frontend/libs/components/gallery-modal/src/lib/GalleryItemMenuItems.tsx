@@ -10,6 +10,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
+import { isLocalGeneration } from "@storyteller/tauri-api";
 import { GalleryItem } from "./gallery-modal";
 import { GalleryFolder } from "./GalleryDraggableItem";
 import { compareFolders } from "./folderUtils";
@@ -56,6 +57,8 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
   close,
 }) => {
   const [folderSubmenuOpen, setFolderSubmenuOpen] = useState(false);
+  // Images kept on this computer aren't in the library: no editing or folders.
+  const inLibrary = !isLocalGeneration(item.id);
 
   return (
     <div className="flex flex-col">
@@ -82,7 +85,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         </button>
       )}
 
-      {item.mediaClass === "image" && onEditClicked && (
+      {inLibrary && item.mediaClass === "image" && onEditClicked && (
         <button
           type="button"
           className={ROW}
@@ -100,7 +103,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
       )}
 
       {/* Add to Folder — with submenu */}
-      {onAddToFolder && (
+      {inLibrary && onAddToFolder && (
         <div
           className="relative"
           onMouseEnter={
@@ -164,7 +167,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         </div>
       )}
 
-      {onRemoveFromFolder && (
+      {inLibrary && onRemoveFromFolder && (
         <button
           type="button"
           className={ROW}

@@ -1,9 +1,9 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
+use crate::core::events::generation_events::common::GenerationServiceProvider;
 use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::threads::third_party_task_polling_thread::events::notify_frontend_of_completion::task_type_to_generation_action;
 use enums::tauri::tasks::task_status::TaskStatus;
-use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
@@ -37,16 +37,4 @@ pub async fn handle_fal_failure(
   };
 
   event.send_infallible(app_handle);
-}
-
-fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
-  match task_type {
-    TaskType::ImageGeneration => GenerationAction::GenerateImage,
-    TaskType::VideoGeneration => GenerationAction::GenerateVideo,
-    TaskType::AudioGeneration => GenerationAction::GenerateAudio,
-    TaskType::BackgroundRemoval => GenerationAction::RemoveBackground,
-    TaskType::ObjectGeneration => GenerationAction::ImageTo3d,
-    TaskType::GaussianGeneration => GenerationAction::GenerateGaussian,
-    TaskType::ImageInpaintEdit => GenerationAction::ImageInpaintEdit,
-  }
 }

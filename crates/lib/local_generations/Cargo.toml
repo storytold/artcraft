@@ -1,0 +1,18 @@
+[package]
+name = "local_generations"
+description = "Images generated without an ArtCraft account, kept on this computer (shared by both desktop apps)"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "local_generations"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid = { workspace = true, features = ["v4"] }

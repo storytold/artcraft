@@ -86,7 +86,7 @@ describe("desktop catalog", () => {
       { model: "sora_2", duration_seconds_options: [4, 8, 12] },
     ]);
     expect(images.find((model) => model.tauriId === "gpt_image_1")?.getProviders())
-      .toEqual([GenerationProvider.Artcraft]);
+      .toEqual([GenerationProvider.Artcraft, GenerationProvider.OpenRouter]);
     expect(videos.find((model) => model.tauriId === "sora_2")?.getProviders())
       .toEqual([GenerationProvider.Artcraft]);
     expect(SPLAT_MODELS.map((model) => model.tauriId)).toEqual([
@@ -224,6 +224,28 @@ it("uses the new model's default when a saved quality tier is unsupported", () =
   expect(model.resolveQuality(CommonQuality.Max)).toBe("high");
   expect(model.resolveQuality(CommonQuality.XHigh)).toBe("high");
   expect(model.resolveQuality(CommonQuality.Low)).toBe("low");
+});
+
+it("offers OpenRouter for the models OpenRouter runs", () => {
+  const openRouterIds = [
+    "nano_banana", "nano_banana_2", "nano_banana_pro", "gpt_image_1", "gpt_image_2",
+    "gpt_image_2p5_flare", "gpt_image_2p5_sunburst", "seedream_4p5", "seedream_5_lite",
+  ];
+  const models = buildImageModelsFromListing(IMAGE_MODELS, [
+    ...openRouterIds.map((model) => ({ model })),
+    { model: "flux_1_dev" }, { model: "seedream_4" }, { model: "midjourney_8" },
+  ]);
+  for (const id of openRouterIds) {
+    const providers = models.find((model) => model.tauriId === id)?.getProviders();
+    expect(providers?.[0]).toBe(GenerationProvider.Artcraft);
+    expect(providers).toContain(GenerationProvider.OpenRouter);
+  }
+  for (const id of ["flux_1_dev", "seedream_4", "midjourney_8"]) {
+    expect(models.find((model) => model.tauriId === id)?.getProviders())
+      .not.toContain(GenerationProvider.OpenRouter);
+  }
+  expect(models.find((model) => model.tauriId === "nano_banana_pro")?.getProviders())
+    .toEqual([GenerationProvider.Artcraft, GenerationProvider.Fal, GenerationProvider.OpenRouter]);
 });
 
 it("offers ArtCraft and direct Midjourney only for supported Midjourney models", () => {

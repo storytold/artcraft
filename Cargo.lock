@@ -395,12 +395,14 @@ dependencies = [
  "image",
  "images",
  "indexmap 2.13.0",
+ "local_generations",
  "log",
  "memory_store",
  "midjourney_client",
  "mimetypes",
  "once_cell",
  "openai_sora_client",
+ "openrouter_client",
  "os_info",
  "primitives",
  "rand 0.9.2",
@@ -488,6 +490,7 @@ dependencies = [
  "artcraft_api_defs",
  "artcraft_client",
  "artcraft_router",
+ "base64 0.22.1",
  "chrono",
  "cookie",
  "cookie_store_wrapper",
@@ -500,9 +503,11 @@ dependencies = [
  "env_logger",
  "fal_client",
  "image",
+ "local_generations",
  "log",
  "midjourney_client",
  "open",
+ "openrouter_client",
  "reqwest 0.12.23",
  "resvg",
  "rfd",
@@ -524,14 +529,17 @@ dependencies = [
  "anyhow",
  "artcraft_api_defs",
  "artcraft_client",
+ "base64 0.22.1",
  "browser_emulation",
  "enums",
  "fal_client",
+ "futures",
  "gmicloud_client",
  "grok_api_client",
  "kinovi_web_client",
  "log",
  "midjourney_client",
+ "openrouter_client",
  "reqwest 0.12.23",
  "serde",
  "serde_derive",
@@ -4843,6 +4851,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
 
 [[package]]
+name = "local_generations"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "log",
+ "serde",
+ "serde_json",
+ "uuid 1.22.0",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5836,6 +5856,19 @@ dependencies = [
  "uuid_utils",
  "wreq",
  "wreq-util",
+]
+
+[[package]]
+name = "openrouter_client"
+version = "0.0.1"
+dependencies = [
+ "base64 0.22.1",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

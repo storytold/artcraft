@@ -52,6 +52,7 @@ use crate::generate::generate_image::providers::kinovi::midjourney_7::build::bui
 use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::build::build_kinovi_midjourney_7_niji;
 use crate::generate::generate_image::providers::kinovi::midjourney_8::build::build_kinovi_midjourney_8;
 use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::build::build_kinovi_seedream_5p0_pro;
+use crate::generate::generate_image::providers::openrouter::build::build_openrouter;
 
 #[derive(Clone, Debug)]
 pub struct GenerateImageRequestBuilder {
@@ -162,6 +163,9 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::KinoviWeb, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
       (RouterProvider::KinoviWeb, RouterImageModel::Seedream5p0Pro) => build_kinovi_seedream_5p0_pro(self),
       (RouterProvider::KinoviWeb, RouterImageModel::Seedream5p0ProUltra) => build_kinovi_seedream_5p0_pro(self),
+
+      // OpenRouter (one builder for every model; it rejects the ones OpenRouter doesn't run)
+      (RouterProvider::OpenRouter, _) => build_openrouter(self),
 
       _ => self.unsupported_provider_and_model(),
     }

@@ -1,6 +1,7 @@
 //! The provider accounts, in the same files as the Tauri app (`~/Artcraft/credentials`), so an
 //! account connected in either app works in both: the Midjourney login
-//! (`midjourney_cookies.toml`) and the fal API key (`fal.api_key.txt`).
+//! (`midjourney_cookies.toml`) and the fal and OpenRouter API keys (`fal.api_key.txt`,
+//! `openrouter.api_key.txt`).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -12,11 +13,13 @@ const MIDJOURNEY_FILENAME: &str = "midjourney_cookies.toml";
 /// The Tauri app's pre-TOML Midjourney state, removed on disconnect so it can't come back.
 const MIDJOURNEY_LEGACY_FILENAME: &str = "midjourney_state.json";
 const FAL_KEY_FILENAME: &str = "fal.api_key.txt";
+const OPENROUTER_KEY_FILENAME: &str = "openrouter.api_key.txt";
 
 #[derive(Clone)]
 pub struct ProviderAccounts {
   pub midjourney: MidjourneyCredentialManager,
   fal_key_path: Arc<PathBuf>,
+  openrouter_key_path: Arc<PathBuf>,
 }
 
 impl ProviderAccounts {
@@ -30,7 +33,7 @@ impl ProviderAccounts {
       warn!("Couldn't load the Midjourney login: {err}");
       MidjourneyCredentialManager::new(path, legacy, None)
     });
-    Self { midjourney, fal_key_path: Arc::new(dir.join(FAL_KEY_FILENAME)) }
+    Self { midjourney, fal_key_path: Arc::new(dir.join(FAL_KEY_FILENAME)), openrouter_key_path: Arc::new(dir.join(OPENROUTER_KEY_FILENAME)) }
   }
 
   /// The connected Midjourney account's email ("" when it's connected but unknown), or `None`.
@@ -42,7 +45,7 @@ impl ProviderAccounts {
   }
 
   pub fn fal_key(&self) -> Option<String> {
-    std::fs::read_to_string(&*self.fal_key_path).ok().map(|k| k.trim().to_owned()).filter(|k| !k.is_empty())
+    read_key(&self.fal_key_path)
   }
 
   /// The key as Settings shows it (`first6********`).
@@ -55,10 +58,34 @@ impl ProviderAccounts {
   }
 
   pub fn clear_fal_key(&self) -> std::io::Result<()> {
-    match std::fs::remove_file(&*self.fal_key_path) {
-      Err(err) if err.kind() != std::io::ErrorKind::NotFound => Err(err),
-      _ => Ok(()),
-    }
+    remove_key(&self.fal_key_path)
+  }
+
+  pub fn openrouter_key(&self) -> Option<String> {
+    read_key(&self.openrouter_key_path)
+  }
+
+  pub fn openrouter_key_hint(&self) -> Option<String> {
+    self.openrouter_key().map(|k| mask_key(&k))
+  }
+
+  pub fn set_openrouter_key(&self, key: &str) -> std::io::Result<()> {
+    std::fs::write(&*self.openrouter_key_path, key.trim())
+  }
+
+  pub fn clear_openrouter_key(&self) -> std::io::Result<()> {
+    remove_key(&self.openrouter_key_path)
+  }
+}
+
+fn read_key(path: &Path) -> Option<String> {
+  std::fs::read_to_string(path).ok().map(|k| k.trim().to_owned()).filter(|k| !k.is_empty())
+}
+
+fn remove_key(path: &Path) -> std::io::Result<()> {
+  match std::fs::remove_file(path) {
+    Err(err) if err.kind() != std::io::ErrorKind::NotFound => Err(err),
+    _ => Ok(()),
   }
 }
 
@@ -88,6 +115,20 @@ mod tests {
     assert_eq!(accounts.fal_key(), None);
     assert_eq!(mask_key("short"), "********");
     assert_eq!(accounts.midjourney_account(), None);
+    let _ = std::fs::remove_dir_all(dir);
+  }
+
+  #[test]
+  fn openrouter_keys_live_in_the_tauri_apps_file() {
+    let dir = std::env::temp_dir().join(format!("artcraft-native-accounts-{}", uuid::Uuid::new_v4()));
+    let accounts = ProviderAccounts::load(&dir);
+    assert_eq!(accounts.openrouter_key(), None);
+    accounts.set_openrouter_key(" sk-or-v1-abcdef \n").unwrap();
+    assert_eq!(std::fs::read_to_string(dir.join("credentials").join("openrouter.api_key.txt")).unwrap(), "sk-or-v1-abcdef");
+    assert_eq!(accounts.openrouter_key_hint().as_deref(), Some("sk-or-********"));
+    assert_eq!(accounts.fal_key(), None, "separate from the fal key");
+    accounts.clear_openrouter_key().unwrap();
+    assert_eq!(accounts.openrouter_key(), None);
     let _ = std::fs::remove_dir_all(dir);
   }
 }

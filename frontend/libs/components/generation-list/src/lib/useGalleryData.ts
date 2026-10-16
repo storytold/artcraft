@@ -11,6 +11,7 @@ import {
 } from "@storyteller/common";
 import type { GalleryItem } from "./types";
 import { is3DMediaClass } from "./types";
+import { mergeLocalGalleryItems } from "./localGalleryItems";
 
 const PAGE_SIZE = 40;
 
@@ -58,8 +59,11 @@ export function useGalleryData(options: {
   // tell mesh objects from splat worlds apart, so the two 3D create pages pass
   // their own model ids to keep each feed showing only its own product.
   filterModelIds?: string[];
+  // Images kept on this computer (made without an account), shown with the library's items, or
+  // on their own when nobody is signed in.
+  localItems?: GalleryItem[];
 }) {
-  const { username, filterMediaClasses, excludeUploads, filterModelIds } =
+  const { username, filterMediaClasses, excludeUploads, filterModelIds, localItems } =
     options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -207,8 +211,13 @@ export function useGalleryData(options: {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const mergedItems = useMemo(
+    () => mergeLocalGalleryItems(items, localItems, { remoteComplete: !hasMore }),
+    [items, localItems, hasMore],
+  );
+
   return {
-    items,
+    items: mergedItems,
     isLoading,
     isInitialLoading,
     hasMore,

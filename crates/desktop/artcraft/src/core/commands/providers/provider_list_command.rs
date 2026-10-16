@@ -11,6 +11,7 @@ use tauri::State;
 /// All known credential keys. Add new ones here as providers are added.
 const ALL_KEYS: &[ProviderCredentialKey] = &[
   ProviderCredentialKey::FalApiKey,
+  ProviderCredentialKey::OpenRouterApiKey,
   ProviderCredentialKey::ReplicateApiKey,
   ProviderCredentialKey::GrokWebLogin,
   ProviderCredentialKey::HiggsfieldWebLogin,

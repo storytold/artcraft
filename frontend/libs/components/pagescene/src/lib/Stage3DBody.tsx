@@ -22,7 +22,6 @@ import {
 import {
   useStage3dPageModelList,
   ModelPage,
-  defaultModelForPage,
   useClassyModelSelectorStore,
   useSelectedImageModel,
   useSelectedProviderForModel,
@@ -70,6 +69,7 @@ import { useFreeCam } from "./hooks/useFreeCam";
 import { useViewportPointer } from "./hooks/useViewportPointer";
 import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
 import { useViewportSize } from "./hooks/useViewportSize";
+import { useRestoreModelSelection } from "./hooks/useRestoreModelSelection";
 import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
 import { pickDropPosition } from "./engine/pickDropPosition";
 import { AssetType, CameraAspectRatio } from "./enums";
@@ -172,25 +172,15 @@ export const Stage3DBody = ({
     (s) => s.setSelectedModel,
   );
 
-  // Seed the default model on mount when we're the only model picker
-  // on the page. ClassyModelSelector does this itself on mount, but in
-  // the prompt-box placement we don't render it — so without this
-  // effect the store stays empty and the trigger has no icon until the
-  // user opens the popover and picks a model manually.
-  useEffect(() => {
-    if (modelSelectorPlacement !== "prompt-box") return;
-    if (selectedImageModel) return;
-    const models = stage3dModelList.map((i) => i.model).filter(
-      (m): m is NonNullable<typeof m> => m !== undefined,
-    );
-    const def = defaultModelForPage(models, PAGE_ID);
-    if (def) setSelectedModel(PAGE_ID, def);
-  }, [
-    modelSelectorPlacement,
-    selectedImageModel,
-    setSelectedModel,
+  // Seed the model selection when we're the only model picker on the
+  // page. ClassyModelSelector does this itself, but in the prompt-box
+  // placement we don't render it — so without this the store stays empty
+  // and the trigger has no icon until the user picks a model manually.
+  useRestoreModelSelection(
+    PAGE_ID,
     stage3dModelList,
-  ]);
+    modelSelectorPlacement === "prompt-box",
+  );
 
   const inlineModelItems: PopoverItem[] = useMemo(
     () =>

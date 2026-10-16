@@ -13,6 +13,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { toast } from "@storyteller/ui-toaster";
+import { isLocalGeneration } from "@storyteller/tauri-api";
 
 type ModalMode = "select" | "view";
 
@@ -97,6 +98,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // Audio tiles are click-only: there is no canvas drop target for audio, so
   // they never start a gallery drag.
   const isAudio = item.mediaClass === "audio";
+  // Images kept on this computer have no library media token, so they can't be
+  // picked or dragged onto library drop targets (references, scene, folders).
+  const isLocal = isLocalGeneration(item.id);
+  const unpickable = disabled || (mode === "select" && isLocal);
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
@@ -196,7 +201,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     // No drag tracking on touch: a finger drag should scroll the page, and a
     // tap still clicks via the button's onClick.
     if (event.pointerType === "touch") return;
-    if (isAudio) return;
+    if (isAudio || isLocal) return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -227,7 +232,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // selection when bulk-selecting / in select mode (handled by the host's onClick).
   const handleButtonClick = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
-    if (disabled) return;
+    if (unpickable) return;
     if (dragStarted.current) return;
     const globalDrag = galleryDnd.getDragState();
     if (globalDrag.isDragging) return;
@@ -246,16 +251,16 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         "w-full group relative overflow-visible border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",
         selected || bulkSelected
           ? "border-primary"
-          : disabled
+          : unpickable
             ? "border-transparent"
             : disableTooltipAndBadge
               ? "border-transparent hover:border-primary/80"
               : "border-transparent hover:border-primary",
-        disabled
+        unpickable
           ? "cursor-not-allowed opacity-40"
           : mode === "select"
             ? "cursor-pointer"
-            : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio
+            : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio || isLocal
               ? "cursor-pointer"
               : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}

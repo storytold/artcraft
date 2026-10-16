@@ -88,7 +88,7 @@ impl CreateVideoPage {
     }
     let mut feed = std::mem::take(&mut self.feed);
     let mut box_height = self.box_height;
-    common::create_shell(ui, env, MediaKind::Video, "Create Video", "Choose an image, add a prompt, then generate", &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref()));
+    common::create_shell(ui, env, MediaKind::Video, "Create Video", "Choose an image, add a prompt, then generate", false, &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref()));
     self.feed = feed;
     self.box_height = box_height;
   }

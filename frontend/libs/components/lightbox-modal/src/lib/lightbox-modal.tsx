@@ -4,7 +4,7 @@ import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
 import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import { MediaFileDelete } from "@storyteller/tauri-api";
+import { isLocalGeneration, MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
@@ -219,7 +219,8 @@ export function LightboxModal({
   // Fetch prompt when mediaId changes — debounced to avoid API spam during
   // rapid next/prev navigation, with cancellation for stale responses.
   useEffect(() => {
-    if (!mediaId) {
+    // Images kept on this computer aren't on the server.
+    if (!mediaId || isLocalGeneration(mediaId)) {
       setPromptData(null);
       setHasPromptToken(false);
       setPromptLoading(false);
@@ -452,6 +453,8 @@ export function LightboxModal({
     const tokenFromProps = mediaTokens?.[selectedIndex];
     return tokenFromBatch ?? tokenFromProps ?? mediaId;
   }, [batchTokens, mediaTokens, selectedIndex, mediaId]);
+  // Images kept on this computer have no library media token: only download and delete apply.
+  const inLibrary = !selectedMediaToken || !isLocalGeneration(selectedMediaToken);
 
   useEffect(() => {
     if (!selectedImageUrl) {
@@ -1040,7 +1043,8 @@ export function LightboxModal({
             {/* buttons with spacing */}
             {actionUrl && (
               <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
-                {onRecreateClicked &&
+                {inLibrary &&
+                  onRecreateClicked &&
                   hasPromptToken &&
                   promptData &&
                   (derivedMediaClass === "image" ||
@@ -1062,7 +1066,8 @@ export function LightboxModal({
                     </Button>
                   )}
 
-                {onEditClicked &&
+                {inLibrary &&
+                  onEditClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
                     <Button
@@ -1079,7 +1084,8 @@ export function LightboxModal({
                     </Button>
                   )}
 
-                {onTurnIntoVideoClicked &&
+                {inLibrary &&
+                  onTurnIntoVideoClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
                     <Button
@@ -1099,7 +1105,8 @@ export function LightboxModal({
                     </Button>
                   )}
 
-                {onRemoveBackgroundClicked &&
+                {inLibrary &&
+                  onRemoveBackgroundClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
                     <Button
@@ -1121,7 +1128,8 @@ export function LightboxModal({
                     </Button>
                   )}
 
-                {onMake3DObjectClicked &&
+                {inLibrary &&
+                  onMake3DObjectClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
                     <Button
@@ -1143,7 +1151,8 @@ export function LightboxModal({
                     </Button>
                   )}
 
-                {onMake3DWorldClicked &&
+                {inLibrary &&
+                  onMake3DWorldClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
                     <Button
@@ -1184,7 +1193,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
-                {onAddToSceneClicked && actionUrl && (
+                {inLibrary && onAddToSceneClicked && actionUrl && (
                   <Button
                     className="w-full py-1.5 text-[13px]"
                     variant="secondary"
@@ -1200,7 +1209,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
-                {selectedMediaToken && (
+                {inLibrary && selectedMediaToken && (
                   <Button
                     className="w-full py-1.5 text-[13px]"
                     variant="secondary"

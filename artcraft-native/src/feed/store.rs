@@ -4,6 +4,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::backend::EnqueueMeta;
+use crate::backend::local_library::{LocalImage, file_url};
 use crate::backend::providers::Provider;
 use crate::backend::providers::jobs::ProviderJob;
 use crate::backend::wire::{Job, JobPhase, MediaFile, unix_secs};
@@ -163,6 +164,13 @@ impl FeedStore {
     self.pending.len() != before
   }
 
+  /// Images kept on this computer: a finished signed-out job's, or all of them at launch.
+  pub fn add_local(&mut self, images: &[LocalImage]) {
+    for image in images {
+      self.push_item(local_feed_item(image));
+    }
+  }
+
   /// A Midjourney or fal job failed: its card shows the reason until dismissed.
   pub fn fail_local(&mut self, job_id: &str, reason: &str) -> bool {
     let Some(i) = self.pending.iter().position(|p| p.job_token == job_id) else {
@@ -203,9 +211,11 @@ impl FeedStore {
     self.loading = false;
   }
 
-  /// Starts the library over (after signing in or out).
+  /// Starts the library over (after signing in or out). Local images stay: they're on this
+  /// computer whoever is signed in.
   pub fn reset(&mut self) {
-    *self = Self { dismissed: std::mem::take(&mut self.dismissed), ..Self::default() };
+    let local = std::mem::take(&mut self.items).into_iter().filter(FeedItem::is_local).collect();
+    *self = Self { dismissed: std::mem::take(&mut self.dismissed), items: local, ..Self::default() };
   }
 
   pub fn dismiss(&mut self, job_token: &str) {
@@ -256,6 +266,12 @@ pub fn feed_item(kind: MediaKind, file: &MediaFile) -> FeedItem {
     duration_secs: file.maybe_duration_millis.map(|ms| ms as f32 / 1000.0),
     animated: file.media_links.animated_preview(ANIMATED_WIDTH),
   }
+}
+
+/// A local image's feed item: its prompt is its title (there's no prompt record to look up).
+pub fn local_feed_item(image: &LocalImage) -> FeedItem {
+  let url = file_url(&image.path);
+  FeedItem { token: image.id.clone(), kind: MediaKind::Image, title: Some(image.prompt.clone()).filter(|p| !p.is_empty()), thumbnail: Some(url.clone()), full_url: url, created_at: image.created_at, model_id: Some(image.model_id.clone()), prompt_token: None, batch_token: None, duration_secs: None, animated: None }
 }
 
 /// Whether a job made an image, a video or audio: by its model, else by its category
@@ -375,6 +391,25 @@ mod tests {
     assert_eq!(store.failed[0].message.as_deref(), Some("Midjourney didn't finish this job"), "the failure stays until dismissed");
     store.dismiss("local_b");
     assert!(store.failed.is_empty());
+  }
+
+  #[test]
+  fn local_images_join_the_feed_and_outlive_sign_in_changes() {
+    let (c, mut store) = (catalog(), FeedStore::default());
+    let meta = EnqueueMeta { prompt: "a fox".into(), model_id: "nano_banana".into(), batch_count: 1, ref_image: None, provider: Provider::OpenRouter };
+    store.add_enqueued(MediaKind::Image, &["local_job".into()], &meta, &c);
+    let image = LocalImage { id: "local_file_1".into(), path: std::env::temp_dir().join("fox.png"), prompt: "a fox".into(), model_id: "nano_banana".into(), provider: "open_router".into(), created_at: 10 };
+    assert!(store.finish_local("local_job"));
+    store.add_local(&[image.clone(), image.clone()]);
+    assert_eq!(store.items.len(), 1, "added once");
+    let item = store.items[0].clone();
+    assert!(item.is_local());
+    assert_eq!((item.title.as_deref(), item.prompt_token.as_deref()), (Some("a fox"), None));
+    assert!(item.full_url.starts_with("file://") && item.thumbnail.as_deref() == Some(item.full_url.as_str()));
+    store.apply_library_page(MediaKind::Image, 0, &[], 1);
+    store.items.push(FeedItem { token: "mf_cloud".into(), ..item });
+    store.reset();
+    assert_eq!(store.items.iter().map(|i| i.token.as_str()).collect::<Vec<_>>(), ["local_file_1"], "library items go, local ones stay");
   }
 
   #[test]
