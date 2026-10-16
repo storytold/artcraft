@@ -32,6 +32,7 @@ fn svg_for_creator(creator: &str) -> &'static [u8] {
     "minimax" | "hailuo" => service_svg!("minimax"),
     "open_ai" | "openai" => service_svg!("openai"),
     "openart" | "open_art" => service_svg!("openart"),
+    "openrouter" | "open_router" => service_svg!("openrouter"),
     "recraft" => service_svg!("recraft"),
     "replicate" => service_svg!("replicate"),
     "suno" => service_svg!("suno"),

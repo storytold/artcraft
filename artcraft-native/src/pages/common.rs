@@ -4,6 +4,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
 use egui::{Align2, Color32, Id, Mesh, Order, Rect, Ui, pos2, vec2};
 use serde_json::{Map, Value};
 
@@ -49,6 +51,8 @@ pub struct Env<'a> {
 #[derive(Debug)]
 pub enum AppRequest {
   SignIn,
+  /// Create images on OpenRouter instead (asks for a key if none is saved).
+  UseOpenRouter,
   Open {
     kind: MediaKind,
     token: String,
@@ -135,9 +139,10 @@ impl FeedKey {
 }
 
 /// The page around the feed: the splash empty state (or the feed), a fade behind the prompt box,
-/// and the prompt box (drawn by `prompt_box`) floating at the bottom centre.
+/// and the prompt box (drawn by `prompt_box`) floating at the bottom centre. `offer_openrouter`
+/// puts "Or use OpenRouter" beside the empty state's sign-in button.
 #[allow(clippy::too_many_arguments)]
-pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str, subtitle: &str, feed: &mut FeedStore, box_height: &mut f32, prompt_box: impl FnOnce(&mut Ui, &mut Env<'_>)) {
+pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str, subtitle: &str, offer_openrouter: bool, feed: &mut FeedStore, box_height: &mut f32, prompt_box: impl FnOnce(&mut Ui, &mut Env<'_>)) {
   let area = ui.max_rect();
   let bottom_offset = *box_height + 40.0;
   if feed.has_content() {
@@ -147,7 +152,7 @@ pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str
     handle_feed_actions(env, kind, feed, actions);
     bottom_fade(ui, area);
   } else {
-    empty_state(ui, env, area, bottom_offset, title, subtitle);
+    empty_state(ui, env, area, bottom_offset, title, subtitle, offer_openrouter);
   }
   if env.signed_in && !feed.library_started() {
     env.requests.push(AppRequest::LoadMoreLibrary(FeedKey::of(kind)));
@@ -212,8 +217,8 @@ pub fn selection_bar(ui: &Ui, area: Rect, bottom: f32, feed: &mut FeedStore, kin
 }
 
 /// The splash: a bordered section with corner marks, the page title and a sign-in prompt for
-/// visitors (`CreateEmptyState`).
-fn empty_state(ui: &mut Ui, env: &mut Env<'_>, area: Rect, bottom_offset: f32, title: &str, subtitle: &str) {
+/// visitors (`CreateEmptyState`), with "Or use OpenRouter" beside it when `offer_openrouter`.
+fn empty_state(ui: &mut Ui, env: &mut Env<'_>, area: Rect, bottom_offset: f32, title: &str, subtitle: &str, offer_openrouter: bool) {
   let usable = Rect::from_min_max(area.min, pos2(area.right(), area.bottom() - bottom_offset));
   let width = (usable.width() - 64.0).min(768.0);
   let height = if env.signed_in { 190.0 } else { 250.0 };
@@ -227,9 +232,14 @@ fn empty_state(ui: &mut Ui, env: &mut Env<'_>, area: Rect, bottom_offset: f32, t
   child.label(egui::RichText::new(subtitle).size(16.0).color(theme::MUTED));
   if !env.signed_in {
     child.add_space(24.0);
-    if widgets::button(&mut child, Some(crate::ui::icons::Icon::Sparkles), "Sign in to create", widgets::Kind::Primary, 0.0, 44.0).clicked() {
-      env.requests.push(AppRequest::SignIn);
-    }
+    child.horizontal(|ui| {
+      if widgets::button(ui, Some(crate::ui::icons::Icon::Sparkles), "Sign in to create", widgets::Kind::Primary, 0.0, 44.0).clicked() {
+        env.requests.push(AppRequest::SignIn);
+      }
+      if offer_openrouter && widgets::button(ui, None, "Or use OpenRouter", widgets::Kind::Secondary, 0.0, 44.0).clicked() {
+        env.requests.push(AppRequest::UseOpenRouter);
+      }
+    });
   }
 }
 
@@ -266,6 +276,9 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
     let key = format!("local://{}", item.id);
     match std::fs::read(path) {
       Ok(bytes) => {
+        if !env.signed_in {
+          keep_inline(&mut item, &bytes, image_mime(path));
+        }
         env.cache.insert_bytes(&env.ctx, &key, Arc::from(bytes));
         item.preview = Some(key);
       },
@@ -275,7 +288,9 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
       },
     }
   }
-  env.backend.upload_file(item.id, kind, path.to_path_buf());
+  if item.status == RefStatus::Uploading {
+    env.backend.upload_file(item.id, kind, path.to_path_buf());
+  }
   place(refs, item, slot);
 }
 
@@ -285,8 +300,28 @@ pub fn upload_png(env: &mut Env<'_>, refs: &mut References, png: Vec<u8>, slot: 
   let key = format!("local://{}", item.id);
   env.cache.insert_bytes(&env.ctx, &key, Arc::from(png.clone()));
   item.preview = Some(key);
-  env.backend.upload_png(item.id, png);
+  if env.signed_in {
+    env.backend.upload_png(item.id, png);
+  } else {
+    keep_inline(&mut item, &png, "image/png");
+  }
   place(refs, item, slot);
+}
+
+/// Signed out there's no library to upload to: the image goes to fal or OpenRouter inline, as a
+/// `data:` URL (it has no media token, so ArtCraft's own models can't use it).
+fn keep_inline(item: &mut RefMedia, bytes: &[u8], mime: &str) {
+  item.status = RefStatus::Ready;
+  item.full_url = Some(format!("data:{mime};base64,{}", STANDARD.encode(bytes)));
+}
+
+fn image_mime(path: &Path) -> &'static str {
+  match path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).as_deref() {
+    Some("jpg" | "jpeg") => "image/jpeg",
+    Some("webp") => "image/webp",
+    Some("gif") => "image/gif",
+    _ => "image/png",
+  }
 }
 
 fn place(refs: &mut References, item: RefMedia, slot: ImageSlot) {

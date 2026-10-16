@@ -1,5 +1,7 @@
-//! Starting an image generation at Midjourney or fal (the Tauri app's `handle_midjourney` and
-//! `handle_fal`): the ArtCraft prompt record, then the provider's request through the router.
+//! Starting an image generation at Midjourney, fal or OpenRouter (the Tauri app's
+//! `handle_midjourney` and `handle_api_key_provider`): the ArtCraft prompt record, then the
+//! provider's request through the router. OpenRouter answers with the images themselves, so its
+//! requests are left for the worker to send.
 
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
@@ -16,6 +18,7 @@ use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
 use artcraft_router::generate::generate_image::router_image_request_to_artcraft_prompt::router_image_request_to_artcraft_prompt;
 use log::warn;
 use serde::de::DeserializeOwned;
@@ -56,6 +59,7 @@ pub async fn submit(host: &ApiHost, creds: Option<&StorytellerCredentialSet>, ac
   match provider {
     Provider::Midjourney => submit_midjourney(host, creds, accounts, fields, image_urls).await,
     Provider::Fal => submit_fal(host, creds, accounts, fields, image_urls).await,
+    Provider::OpenRouter => submit_openrouter(host, creds, accounts, fields, image_urls).await,
     Provider::Artcraft => Err("ArtCraft generations go through OmniGen".into()),
   }
 }
@@ -112,6 +116,31 @@ async fn submit_fal(host: &ApiHost, creds: Option<&StorytellerCredentialSet>, ac
   Ok(new_job(Provider::Fal, fields, count, request_id, response.maybe_status_url, response.maybe_response_url, maybe_prompt_token))
 }
 
+/// Checks and builds the OpenRouter requests now (so bad options fail before a card appears);
+/// the worker sends them.
+async fn submit_openrouter(host: &ApiHost, creds: Option<&StorytellerCredentialSet>, accounts: &ProviderAccounts, fields: &Map<String, Value>, image_urls: Vec<String>) -> Result<ProviderJob, SubmitError> {
+  if accounts.openrouter_key().is_none() {
+    return Err(SubmitError::NeedsAccount(Provider::OpenRouter));
+  }
+  let builder = request_builder(RouterProvider::OpenRouter, fields, image_urls)?;
+  let prompt_request = router_image_request_to_artcraft_prompt(&builder);
+  let requests = match builder.build2() {
+    Ok(ImageGenerationDraftOrRequest::Request(ImageGenerationRequest::OpenRouter(state))) => state.requests,
+    Ok(_) => return Err("Unexpected OpenRouter request".into()),
+    Err(err) => return Err(err.to_string().into()),
+  };
+  // As with fal, the prompt record is a nicety: the generation goes ahead without it.
+  let maybe_prompt_token = match creds {
+    Some(creds) => create_prompt(host, Some(creds), prompt_request).await.map(|p| p.prompt_token.to_string()).map_err(|err| warn!("Couldn't create the prompt record: {}", api_message(&err))).ok(),
+    None => None,
+  };
+  let count = requests.iter().map(|r| u32::from(r.n.unwrap_or(1))).sum();
+  let mut job = new_job(Provider::OpenRouter, fields, count, String::new(), None, None, maybe_prompt_token);
+  job.provider_job_id = job.id.clone();
+  job.openrouter_requests = requests;
+  Ok(job)
+}
+
 /// The router's request for the page's fields. The setting values are the router's own names
 /// (`wide_sixteen_by_nine`, `one_k`, `high`).
 fn request_builder(provider: RouterProvider, fields: &Map<String, Value>, image_urls: Vec<String>) -> Result<GenerateImageRequestBuilder, String> {
@@ -126,7 +155,7 @@ fn request_builder(provider: RouterProvider, fields: &Map<String, Value>, image_
 }
 
 fn new_job(provider: Provider, fields: &Map<String, Value>, batch_count: u32, provider_job_id: String, maybe_status_url: Option<String>, maybe_response_url: Option<String>, maybe_prompt_token: Option<String>) -> ProviderJob {
-  ProviderJob { id: format!("local_{}", uuid::Uuid::new_v4()), provider, model_id: model_id(fields).to_owned(), prompt: fields.get("prompt").and_then(Value::as_str).unwrap_or_default().to_owned(), created_at: chrono::Utc::now().timestamp(), batch_count, provider_job_id, maybe_status_url, maybe_response_url, maybe_prompt_token, batch_token: BatchGenerationToken::generate().to_string(), upload_tokens: Vec::new(), uploaded: Vec::new() }
+  ProviderJob { id: format!("local_{}", uuid::Uuid::new_v4()), provider, model_id: model_id(fields).to_owned(), prompt: fields.get("prompt").and_then(Value::as_str).unwrap_or_default().to_owned(), created_at: chrono::Utc::now().timestamp(), batch_count, provider_job_id, maybe_status_url, maybe_response_url, maybe_prompt_token, batch_token: BatchGenerationToken::generate().to_string(), upload_tokens: Vec::new(), uploaded: Vec::new(), openrouter_requests: Vec::new(), result_files: Vec::new() }
 }
 
 /// What the user sees for a router error: billing problems point at the provider's website
@@ -179,6 +208,25 @@ mod tests {
     assert_eq!(run(json!({ "model": "midjourney_7", "prompt": "a fox", "image_batch_count": 4 }), Vec::new()).await.unwrap_err(), SubmitError::NeedsAccount(Provider::Midjourney), "no login yet");
     let fal = submit(&host, None, &accounts, Provider::Fal, json!({ "model": "flux_1_dev" }).as_object().unwrap(), Vec::new()).await;
     assert_eq!(fal.unwrap_err(), SubmitError::NeedsAccount(Provider::Fal));
+    let _ = std::fs::remove_dir_all(dir);
+  }
+
+  #[tokio::test]
+  async fn openrouter_jobs_carry_their_requests() {
+    let dir = std::env::temp_dir().join(format!("artcraft-native-submit-{}", uuid::Uuid::new_v4()));
+    let accounts = ProviderAccounts::load(&dir);
+    let host = ApiHost::Storyteller;
+    let fields = json!({ "model": "nano_banana_pro", "prompt": "a fox", "aspect_ratio": "wide_sixteen_by_nine", "resolution": "two_k", "image_batch_count": 2 });
+    let missing = submit(&host, None, &accounts, Provider::OpenRouter, fields.as_object().unwrap(), Vec::new()).await;
+    assert_eq!(missing.unwrap_err(), SubmitError::NeedsAccount(Provider::OpenRouter), "no key yet");
+    accounts.set_openrouter_key("sk-or-test").unwrap();
+    let job = submit(&host, None, &accounts, Provider::OpenRouter, fields.as_object().unwrap(), vec!["https://cdn/ref.png".into()]).await.unwrap();
+    assert_eq!((job.provider, job.batch_count, job.provider_job_id.as_str()), (Provider::OpenRouter, 2, job.id.as_str()));
+    assert_eq!(job.openrouter_requests.len(), 2, "Gemini makes one image per request");
+    assert_eq!(job.openrouter_requests[0].model, "google/gemini-3-pro-image");
+    assert_eq!(job.openrouter_requests[0].input_references.len(), 1);
+    let unsupported = submit(&host, None, &accounts, Provider::OpenRouter, json!({ "model": "flux_1_dev", "prompt": "a fox" }).as_object().unwrap(), Vec::new()).await;
+    assert!(matches!(unsupported, Err(SubmitError::Message(_))));
     let _ = std::fs::remove_dir_all(dir);
   }
 }

@@ -103,7 +103,7 @@ impl CreateAudioPage {
     }
     let mut feed = std::mem::take(&mut self.feed);
     let mut box_height = self.box_height;
-    common::create_shell(ui, env, MediaKind::Audio, "Create Audio", "Describe a song, a sound, or a sample", &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref()));
+    common::create_shell(ui, env, MediaKind::Audio, "Create Audio", "Describe a song, a sound, or a sample", false, &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref()));
     self.feed = feed;
     self.box_height = box_height;
   }

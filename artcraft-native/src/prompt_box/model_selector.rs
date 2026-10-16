@@ -47,7 +47,7 @@ pub fn model_selector(ui: &mut Ui, id: Id, models: &[ModelInfo], selected: Optio
     let max_h = ui.ctx().content_rect().height() * 0.6;
     egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| match models::grouped(models) {
       Some(families) => {
-        let mut hovered: Option<String> = ui.data(|d| d.get_temp(hovered_family_id));
+        let mut hovered: Option<String> = ui.data(|d| d.get_temp(hovered_family_id)).flatten();
         for family in &families {
           let contains_selected = selected.is_some_and(|s| family.models.iter().any(|m| m.id == s.id));
           let first = family.models[0];
@@ -245,6 +245,21 @@ mod tests {
   }
 
   #[test]
+  fn openrouter_is_offered_and_picked_from_the_submenu() {
+    let mut harness = build();
+    harness.get_by_label("Seedream 4").click();
+    harness.run();
+    harness.get_all_by_label("Nano Banana Pro").last().expect("the model's row").hover();
+    for _ in 0..4 {
+      harness.step();
+    }
+    harness.run();
+    harness.get_by_label("OpenRouter").click();
+    harness.run();
+    assert_eq!(harness.state().picked, vec![("nano_banana_pro".to_owned(), Some(Provider::OpenRouter))]);
+  }
+
+  #[test]
   fn models_without_a_choice_have_no_submenu() {
     let mut harness = build();
     harness.get_by_label("Seedream 4").click();
@@ -257,8 +272,31 @@ mod tests {
     assert!(harness.query_by_label("FAL").is_none(), "no provider list");
   }
 
+  #[test]
+  fn a_family_flyout_stays_open_while_the_pointer_is_in_it() {
+    let families = [("seedream_4", "Seedream"), ("seedream_4_5", "Seedream"), ("nano_banana", "Nano Banana"), ("nano_banana_pro", "Nano Banana"), ("nano_banana_2", "Nano Banana"), ("gpt_image_1", "GPT Image"), ("gpt_image_1_5", "GPT Image"), ("flux_pro_11", "Flux"), ("flux_pro_11_ultra", "Flux")];
+    let models = families.iter().map(|(id, family)| ModelInfo { id: (*id).into(), name: models::display_name(id), creator: models::creator_for(id).into(), family: (*family).into(), ..Default::default() }).collect();
+    let mut harness = build_with(models);
+    harness.get_by_label("Seedream 4").click();
+    harness.run();
+    harness.get_by_label("Nano Banana").hover();
+    harness.run();
+    harness.get_by_label("Nano Banana Pro").hover();
+    for _ in 0..4 {
+      harness.step();
+    }
+    harness.run();
+    harness.get_by_label("OpenRouter").click();
+    harness.run();
+    assert_eq!(harness.state().picked, vec![("nano_banana_pro".to_owned(), Some(Provider::OpenRouter))]);
+  }
+
   fn build() -> Harness<'static, State> {
     let models = ["seedream_4", "nano_banana_pro"].iter().map(|id| ModelInfo { id: (*id).into(), name: models::display_name(id), creator: models::creator_for(id).into(), ..Default::default() }).collect();
+    build_with(models)
+  }
+
+  fn build_with(models: Vec<ModelInfo>) -> Harness<'static, State> {
     let state = State { models, picks: HashMap::new(), picked: Vec::new(), fonts_ready: false };
     let mut harness = Harness::builder().with_size(egui::vec2(1000.0, 700.0)).build_ui_state(
       |ui, s: &mut State| {
