@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useMemo, useRef, useState, ReactNode } from "react";
 import { toast } from "@storyteller/ui-toaster";
 import {
@@ -85,6 +86,7 @@ export const PromptBoxAudio = ({
   onEnqueuePressed,
   credits,
 }: PromptBoxAudioProps) => {
+  const { t } = useTranslation();
   const prompt = usePromptAudioStore((s) => s.prompt);
   const setPrompt = usePromptAudioStore((s) => s.setPrompt);
   const stylePrompt = usePromptAudioStore((s) => s.stylePrompt);
@@ -204,7 +206,7 @@ export const PromptBoxAudio = ({
   const handleReferenceAudiosChange = (audios: typeof referenceAudios) => {
     if (audios.length > 0 && referenceImages.length > 0) {
       setReferenceImages([]);
-      toast.error("Removed image reference — it can't be combined with audio");
+      toast.error(t("Removed image reference — it can't be combined with audio"));
     }
     setReferenceAudios(audios);
   };
@@ -292,7 +294,7 @@ export const PromptBoxAudio = ({
   const handleReferenceImagesChange = (images: typeof referenceImages) => {
     if (images.length > 0 && referenceAudios.length > 0) {
       setReferenceAudios([]);
-      toast.error("Removed audio reference — it can't be combined with an image");
+      toast.error(t("Removed audio reference — it can't be combined with an image"));
     }
     setReferenceImages(images);
   };
@@ -406,7 +408,7 @@ export const PromptBoxAudio = ({
 
       if (!result.success) {
         if (result.errorCode === 402) {
-          toast.error("Not enough credits for this generation");
+          toast.error(t("Not enough credits for this generation"));
         } else if (result.errorCode != null && result.errorCode >= 500) {
           toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
         } else {
@@ -418,21 +420,21 @@ export const PromptBoxAudio = ({
       await onEnqueuePressed?.(result.jobTokens);
     } catch (err) {
       console.error("PromptBoxAudio - enqueue failed", err);
-      toast.error("Failed to start audio generation. Please try again.");
+      toast.error(t("Failed to start audio generation. Please try again."));
     } finally {
       setIsEnqueueing(false);
     }
   };
 
   const modelSelector: ReactNode = (
-    <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+    <Tooltip content={t("Model")} position="top" className="z-50" closeOnClick>
       <PopoverMenu
         items={modelItems}
         onSelect={(item) => {
           if (item.action) setSelectedModelId(item.action);
         }}
         mode="toggle"
-        panelTitle="Select Model"
+        panelTitle={t("Select Model")}
         panelClassName="w-[360px]"
         richList
         triggerIcon={
@@ -451,7 +453,7 @@ export const PromptBoxAudio = ({
     <>
       {hasInstrumental && (
         <Tooltip
-          content={isInstrumental ? "Instrumental: ON" : "Instrumental: OFF"}
+          content={isInstrumental ? t("Instrumental: ON") : t("Instrumental: OFF")}
           position="top"
           className="z-50"
           delay={200}
@@ -460,14 +462,14 @@ export const PromptBoxAudio = ({
             isActive={isInstrumental}
             icon={MicOffIcon}
             activeIcon={MicOffIcon}
-            label="Instrumental"
+            label={t("Instrumental")}
             onClick={() => setIsInstrumental(!isInstrumental)}
           />
         </Tooltip>
       )}
       {hasKeepLyrics && (
         <Tooltip
-          content={keepLyrics ? "Keep lyrics: ON" : "Keep lyrics: OFF"}
+          content={keepLyrics ? t("Keep lyrics: ON") : t("Keep lyrics: OFF")}
           position="top"
           className="z-50"
           delay={200}
@@ -476,14 +478,14 @@ export const PromptBoxAudio = ({
             isActive={keepLyrics}
             icon={MicIcon}
             activeIcon={MicIcon}
-            label="Keep lyrics"
+            label={t("Keep lyrics")}
             onClick={() => setKeepLyrics(!keepLyrics)}
           />
         </Tooltip>
       )}
       {hasLoopable && (
         <Tooltip
-          content={isLoopable ? "Loop: ON" : "Loop: OFF"}
+          content={isLoopable ? t("Loop: ON") : t("Loop: OFF")}
           position="top"
           className="z-50"
           delay={200}
@@ -492,7 +494,7 @@ export const PromptBoxAudio = ({
             isActive={isLoopable}
             icon={RepeatIcon}
             activeIcon={RepeatIcon}
-            label="Loop"
+            label={t("Loop")}
             onClick={() => setIsLoopable(!isLoopable)}
           />
         </Tooltip>
@@ -569,7 +571,7 @@ export const PromptBoxAudio = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                placeholder="Describe the music or sound you want..."
+                placeholder={t("Describe the music or sound you want...")}
                 className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
@@ -595,7 +597,7 @@ export const PromptBoxAudio = ({
             <div className="flex items-center gap-1.5">
               {missingRequiredAudioRef && (
                 <span className="flex animate-pulse items-center gap-1.5 text-xs font-medium text-red-500">
-                  Audio track required
+                  {t("Audio track required")}
                 </span>
               )}
               <PromptClearAllButton
@@ -614,7 +616,7 @@ export const PromptBoxAudio = ({
 
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
             <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
+              content={isExpanded ? t("Collapse") : t("Expand")}
               position="top"
               className="-mb-2"
             >
@@ -668,7 +670,7 @@ export const PromptBoxAudio = ({
         }
       >
         <textarea
-          placeholder="Describe the music or sound you want..."
+          placeholder={t("Describe the music or sound you want...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

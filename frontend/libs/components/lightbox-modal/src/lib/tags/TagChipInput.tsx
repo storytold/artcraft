@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useMemo, useRef, useState } from "react";
 import { TagIcon, XIcon } from "lucide-react";
 
@@ -36,6 +37,7 @@ export function TagChipInput({
   onAdd,
   onRemove,
 }: TagChipInputProps) {
+  const { t: tr } = useTranslation();
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
   // -1 = free-typing (Enter commits the draft, not a suggestion).
@@ -160,7 +162,7 @@ export function TagChipInput({
                 e.stopPropagation();
                 onRemove(value);
               }}
-              title={`Remove "${value}"`}
+              title={tr('Remove "{{tag}}"', { tag: value })}
               className={`group/tag ${chipClass(value)} hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red`}
             >
               {value}
@@ -183,8 +185,8 @@ export function TagChipInput({
               setFocused(false);
               if (draft.trim()) commit(draft);
             }}
-            aria-label="Tags"
-            placeholder={chips.length === 0 ? "Add tags (comma separated)" : "Add tag"}
+            aria-label={tr("Tags")}
+            placeholder={chips.length === 0 ? tr("Add tags (comma separated)") : tr("Add tag")}
             className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
           />
         )}

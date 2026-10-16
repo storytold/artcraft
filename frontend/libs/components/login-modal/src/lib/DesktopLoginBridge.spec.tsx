@@ -1,3 +1,4 @@
+import { setLocale } from "@storyteller/i18n";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
@@ -33,8 +34,9 @@ beforeEach(() => {
     throw new Error(`Unexpected native command: ${command}`);
   });
 });
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  await setLocale("en");
   expect(forbiddenFetch).not.toHaveBeenCalled();
   expect(localStorage.getItem("artcraft_signed_session")).toBeNull();
   vi.unstubAllGlobals();
@@ -42,6 +44,21 @@ afterEach(() => {
 });
 
 describe("desktop native login bridge integration", () => {
+  it("switches an active challenge without recreating or cancelling it", async () => {
+    render(<DesktopLoginBridge onSuccess={vi.fn()} />);
+    await start("Scan to Login");
+    await act(() => setLocale("zh-CN"));
+    expect(screen.getByText("等待你在网页上确认…")).toBeTruthy();
+    expect(screen.getByText("WDJB-MJHT")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Login QR" }).getAttribute("data-value")).toBe(APPROVAL_URL);
+    expect(calls("storyteller_create_login_challenge_command")).toBe(1);
+    expect(calls("storyteller_cancel_login_challenge_command")).toBe(0);
+    await tick(5000);
+    expect(calls("storyteller_poll_login_challenge_command")).toBe(1);
+    await act(() => setLocale("en"));
+    expect(screen.getByText("Waiting for your confirmation on the website…")).toBeTruthy();
+    expect(calls("storyteller_cancel_login_challenge_command")).toBe(0);
+  });
   it("creates through IPC and opens the native browser with the matching QR/code", async () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Login with Website");

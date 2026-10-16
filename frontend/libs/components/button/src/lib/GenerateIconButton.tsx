@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { ArrowUpIcon, CoinsIcon, LoaderCircleIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { ButtonHTMLAttributes } from "react";
@@ -24,13 +25,14 @@ export const GenerateIconButton = ({
   disabled,
   ...rest
 }: GenerateIconButtonProps) => {
+  const { t } = useTranslation();
   const isDisabled = disabled || loading;
 
   return (
     <div className={twMerge("flex shrink-0 items-center gap-2.5", className)}>
       {credits != null && (
         <Tooltip
-          content={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
+          content={t("creditCost", { count: credits })}
           position="top"
           className="z-50"
         >
@@ -48,6 +50,7 @@ export const GenerateIconButton = ({
 
       <button
         type="button"
+        aria-label={loading ? t("Generating...") : t("Generate")}
         className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-sm transition-all duration-150 hover:bg-primary-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
         disabled={isDisabled}
         {...rest}

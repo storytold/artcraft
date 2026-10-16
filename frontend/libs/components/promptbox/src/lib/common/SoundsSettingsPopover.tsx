@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { DrumIcon } from "lucide-react";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
@@ -47,12 +48,13 @@ export function SoundsSettingsPopover({
   musicalKey = "auto",
   onMusicalKeyChange,
 }: SoundsSettingsPopoverProps) {
+  const { t } = useTranslation();
   const keyLabel =
     MUSICAL_KEYS.find((entry) => entry.value === musicalKey)?.shortLabel ??
     "Auto";
   const triggerLabel = [
-    showBpm ? (bpm === null ? "Auto BPM" : `${bpm} BPM`) : null,
-    showMusicalKey ? keyLabel : null,
+    showBpm ? (bpm === null ? t("Auto BPM") : `${bpm} BPM`) : null,
+    showMusicalKey ? t(keyLabel) : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -60,18 +62,18 @@ export function SoundsSettingsPopover({
   return (
     <PopoverMenu
       mode="default"
-      panelTitle="Beat & Key"
+      panelTitle={t("Beat & Key")}
       triggerIcon={<DrumIcon  className="h-3.5 w-3.5" />}
-      triggerLabel={triggerLabel || "Beat"}
+      triggerLabel={triggerLabel || t("Beat")}
     >
       <div className="w-60 space-y-3.5 pb-0.5">
         {showBpm && (
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-base-fg/60">BPM</span>
+              <span className="text-xs font-medium text-base-fg/60">{t("BPM")}</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-medium tabular-nums text-base-fg">
-                  {bpm === null ? "Auto" : bpm}
+                  {bpm === null ? t("Auto") : bpm}
                 </span>
                 {bpm !== null && (
                   <button
@@ -79,7 +81,7 @@ export function SoundsSettingsPopover({
                     onClick={() => onBpmChange?.(null)}
                     className="rounded-[3px] bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
                   >
-                    Auto
+                    {t("Auto")}
                   </button>
                 )}
               </div>
@@ -98,14 +100,14 @@ export function SoundsSettingsPopover({
         {showMusicalKey && (
           <div>
             <div className="mb-1.5 text-xs font-medium text-base-fg/60">
-              Musical key
+              {t("Musical key")}
             </div>
             <div className="grid grid-cols-4 gap-1">
               {MUSICAL_KEYS.map((entry) => (
                 <button
                   key={entry.value}
                   type="button"
-                  title={entry.label}
+                  title={t(entry.label)}
                   onClick={() => onMusicalKeyChange?.(entry.value)}
                   className={`rounded-[3px] border px-1.5 py-1 text-xs font-medium transition-colors ${
                     entry.value === musicalKey
@@ -113,7 +115,7 @@ export function SoundsSettingsPopover({
                       : "border-transparent bg-white/5 text-base-fg/60 hover:bg-white/10 hover:text-base-fg"
                   } ${entry.value === "auto" ? "col-span-4" : ""}`}
                 >
-                  {entry.shortLabel}
+                  {t(entry.shortLabel)}
                 </button>
               ))}
             </div>

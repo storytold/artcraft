@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType, UploaderState } from "@storyteller/common";
@@ -75,6 +76,7 @@ export const PromptBoxImage = ({
   credits,
   modelSelector,
 }: PromptBoxImageProps) => {
+  const { t } = useTranslation();
   useSignals();
   const selectedModel = useMemo(
     () => imageModelForProvider(catalogModel, selectedProvider),
@@ -486,7 +488,7 @@ export const PromptBoxImage = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                placeholder="Describe what you want in the image..."
+                placeholder={t("Describe what you want in the image...")}
                 className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
@@ -516,7 +518,7 @@ export const PromptBoxImage = ({
               {selectedModel?.canChangeAspectRatio &&
                 !selectedModel?.supportsNewAspectRatio() && (
                   <Tooltip
-                    content="Aspect Ratio (Legacy)"
+                    content={t("Aspect Ratio (Legacy)")}
                     position="top"
                     className="z-50"
                     closeOnClick={true}
@@ -525,7 +527,7 @@ export const PromptBoxImage = ({
                       items={aspectRatioList}
                       onSelect={handleAspectRatioSelect}
                       mode="toggle"
-                      panelTitle="Aspect Ratio (Legacy)"
+                      panelTitle={t("Aspect Ratio (Legacy)")}
                       showIconsInList
                       triggerIcon={getCurrentLegacyAspectRatioIcon()}
                     />
@@ -541,7 +543,7 @@ export const PromptBoxImage = ({
               {selectedModel?.canChangeResolution &&
                 !selectedModel?.supportsNewResolution() && (
                   <Tooltip
-                    content="Resolution"
+                    content={t("Resolution")}
                     position="top"
                     className="z-50"
                     closeOnClick={true}
@@ -550,7 +552,7 @@ export const PromptBoxImage = ({
                       items={resolutionList}
                       onSelect={handleResolutionSelect}
                       mode="toggle"
-                      panelTitle="Resolution"
+                      panelTitle={t("Resolution")}
                       showIconsInList
                       triggerIcon={
                         <MaximizeIcon  className="h-4 w-4" />
@@ -589,7 +591,7 @@ export const PromptBoxImage = ({
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
             <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
+              content={isExpanded ? t("Collapse") : t("Expand")}
               position="top"
               className="-mb-2"
             >
@@ -625,7 +627,7 @@ export const PromptBoxImage = ({
         }
       >
         <textarea
-          placeholder="Describe what you want in the image..."
+          placeholder={t("Describe what you want in the image...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

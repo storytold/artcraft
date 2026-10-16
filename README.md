@@ -1,6 +1,21 @@
 <h1 align="center">ArtCraft</h1>
 <p align="center"><strong>The IDE for artists.</strong></p>
 
+## 简体中文界面 / Simplified Chinese UI
+
+本分支提供 ArtCraft 的增量简体中文界面支持，包含 **824 条中英对照词条**。默认语言仍为英文，可在 **Settings → General → Language → 简体中文** 中切换；设置立即生效并在本地保存。
+
+已覆盖首页与导航、主要图像／视频／音频创作控件、设置与快捷键、登录、素材库与任务队列、素材预览、订阅与积分弹窗、服务商连接，以及视频帧提取工具。编辑器内部和部分专用工具仍在逐步汉化，缺失翻译会回退到英文。
+
+- **使用与参与翻译：** [汉化说明、覆盖范围与测试方法](./docs/localization.md)。
+- **下载汉化预览版：** [Windows x64 安装包与校验文件（v0.42.0-zh-CN.1）](https://github.com/huchenlix/artcraft/releases/tag/v0.42.0-zh-CN.1)。这是非官方、未签名的预览版；安装后请按上方步骤切换为简体中文。其他平台可按[源码构建说明](./_docs/dev_setup.md)构建本分支。下方原项目下载链接不保证包含此分支的汉化改动。
+- **数据保持不变：** 切换语言不会翻译或改写用户提示词、标签、文件名、模型标识及付款参数。
+- **联网说明：** 语言包随程序打包，切换语言无需联网；AI 生成、账号和服务商功能仍遵循原有联网要求。
+
+This branch adds an incremental Simplified Chinese (`zh-CN`) desktop interface while keeping English as the default. Choose **Settings → General → Language → 简体中文**. See the [localization guide](./docs/localization.md) for coverage, contribution instructions, and validation commands.
+
+---
+
 <!-- Main video: https://www.youtube.com/watch?v=kzvQMdg66Go
      GitHub media issue: https://github.com/storytold/artcraft/issues/1951 -->
 

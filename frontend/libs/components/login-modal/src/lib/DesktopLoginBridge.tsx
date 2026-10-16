@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { invoke } from "@tauri-apps/api/core";
@@ -8,6 +9,7 @@ import { createDesktopLoginChallenge, pollDesktopLoginChallenge, cancelDesktopLo
 const OpenUrl = (url: string) => invoke("plugin:opener|open_url", { url });
 
 export function DesktopLoginBridge({ onSuccess, onStart, onActiveChange }: { onSuccess: (user: UserInfo) => void; onStart?: () => void; onActiveChange?: (active: boolean) => void }) {
+  const { t } = useTranslation();
   const [challenge, setChallenge] = useState<DesktopLoginChallenge | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -112,23 +114,23 @@ export function DesktopLoginBridge({ onSuccess, onStart, onActiveChange }: { onS
   };
 
   const remaining = challenge ? Math.max(0, Math.ceil((Date.parse(challenge.expires_at) - now) / 1000)) : 0;
-  return <section aria-label="Website login" className="mb-6 border border-white/15 bg-white/[0.03] p-4 text-center">
+  return <section aria-label={t("Website login")} className="mb-6 border border-white/15 bg-white/[0.03] p-4 text-center">
     {isActive && <div className="mb-4 text-left">
       <button type="button" className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 transition-colors hover:text-white" onClick={back}>
-        <ArrowLeftIcon size={16} aria-hidden="true" /> Back
+        <ArrowLeftIcon size={16} aria-hidden="true" />  {t("Back")}
       </button>
     </div>}
     {challenge ? <>
-      <p className="mb-3 text-sm text-white/70">Scan with your phone or approve in your browser.</p>
-      <QRCodeSVG value={challenge.verification_url} size={192} marginSize={4} title="Scan to approve desktop login" className="mx-auto" />
+      <p className="mb-3 text-sm text-white/70">{t("Scan with your phone or approve in your browser.")}</p>
+      <QRCodeSVG value={challenge.verification_url} size={192} marginSize={4} title={t("Scan to approve desktop login")} className="mx-auto" />
       <p className="my-3 font-mono text-2xl tracking-[0.2em]">{challenge.confirmation_code.slice(0, 4)}-{challenge.confirmation_code.slice(4)}</p>
-      <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/50">Verify this code on the website. Expires in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}</p>
-      <button type="button" className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10" onClick={() => OpenUrl(challenge.verification_url).catch(() => setMessage("Unable to open the browser. Scan the QR code instead."))}>Open website</button>
-    </> : busy ? <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/60" role="status">Preparing login…</p> : <div className="flex flex-col gap-2">
-      <button type="button" className="h-10 rounded-[3px] bg-white px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/90" onClick={() => start(true)}>Login with Website</button>
-      <button type="button" className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10" onClick={() => start(false)}>Scan to Login</button>
-      <p className="text-xs text-white/50">Use Google or any account already signed in on the website.</p>
+      <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/50">{t("Verify this code on the website. Expires in {{time}}", { time: `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}` })}</p>
+      <button type="button" className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10" onClick={() => OpenUrl(challenge.verification_url).catch(() => setMessage("Unable to open the browser. Scan the QR code instead."))}>{t("Open website")}</button>
+    </> : busy ? <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/60" role="status">{t("Preparing login…")}</p> : <div className="flex flex-col gap-2">
+      <button type="button" className="h-10 rounded-[3px] bg-white px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/90" onClick={() => start(true)}>{t("Login with Website")}</button>
+      <button type="button" className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10" onClick={() => start(false)}>{t("Scan to Login")}</button>
+      <p className="text-xs text-white/50">{t("Use Google or any account already signed in on the website.")}</p>
     </div>}
-    {message && <p className="mt-3 text-sm text-white/70" role="status">{message}</p>}
+    {message && <p className="mt-3 text-sm text-white/70" role="status">{t(message)}</p>}
   </section>;
 }
