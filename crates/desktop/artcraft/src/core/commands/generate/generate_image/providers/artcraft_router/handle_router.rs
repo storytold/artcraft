@@ -10,6 +10,7 @@ use crate::core::providers::credentials::payload::provider_credential_payload::P
 use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::state::openrouter_jobs::OpenRouterJobs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 /// Dispatch an image generation request to a third-party provider via the router.
@@ -22,6 +23,7 @@ pub async fn handle_router(
   app_env_configs: &AppEnvConfigs,
   credential_cache: &ProviderCredentialLoadingCache,
   storyteller_creds_manager: &StorytellerCredentialManager,
+  openrouter_jobs: &OpenRouterJobs,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let credential_key = map_provider_to_credential_key(provider)?;
 
@@ -35,7 +37,7 @@ pub async fn handle_router(
 
   match payload {
     ProviderCredentialPayload::ApiKey(api_key_data) => {
-      handle_api_key_provider(request, provider, api_key_data.as_str(), app_env_configs, storyteller_creds_manager).await
+      handle_api_key_provider(request, provider, api_key_data.as_str(), app_env_configs, storyteller_creds_manager, openrouter_jobs).await
     }
     ProviderCredentialPayload::WebLogin(web_login_data) => {
       handle_web_login_provider(request, provider, &web_login_data).await
@@ -50,6 +52,7 @@ fn map_provider_to_credential_key(
 ) -> Result<ProviderCredentialKey, GenerateError> {
   match provider {
     GenerationProvider::Fal => Ok(ProviderCredentialKey::FalApiKey),
+    GenerationProvider::OpenRouter => Ok(ProviderCredentialKey::OpenRouterApiKey),
     _ => Err(GenerateError::NotYetImplemented(
       format!("Provider {:?} does not have a mapped credential key yet", provider),
     )),
@@ -59,6 +62,7 @@ fn map_provider_to_credential_key(
 fn map_provider_to_missing_credentials_error(provider: GenerationProvider) -> GenerateError {
   match provider {
     GenerationProvider::Fal => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey),
+    GenerationProvider::OpenRouter => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsOpenRouterApiKey),
     GenerationProvider::Grok => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials),
     GenerationProvider::Midjourney => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials),
     GenerationProvider::Sora => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsSoraCredentials),

@@ -103,6 +103,7 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
     RouterProvider::GmiCloud => GenerationProvider::Artcraft,
     RouterProvider::GrokApi => GenerationProvider::Artcraft,
     RouterProvider::WorldLabs => GenerationProvider::Artcraft,
+    RouterProvider::OpenRouter => GenerationProvider::Artcraft,
   }
 }
 

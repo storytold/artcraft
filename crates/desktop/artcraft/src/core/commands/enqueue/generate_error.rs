@@ -8,6 +8,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use errors::AnyhowError;
 use grok_consumer_client::error::grok_error::GrokError;
 use midjourney_client::error::midjourney_error::MidjourneyError;
+use openrouter_client::error::openrouter_error::OpenRouterError;
 use openai_sora_client::error::sora_error::SoraError;
 use artcraft_client::error::storyteller_error::StorytellerError;
 use artcraft_router::errors::download_error::DownloadError;
@@ -78,6 +79,7 @@ pub enum BadInputReason {
 pub enum MissingCredentialsReason {
   NeedsGrokCredentials,
   NeedsFalApiKey,
+  NeedsOpenRouterApiKey,
   NeedsMidjourneyCredentials,
   NeedsMidjourneyUserId,
   NeedsMidjourneyUserInfo,
@@ -97,6 +99,7 @@ pub enum BillingProvider {
   Fal,
   Kinovi,
   Midjourney,
+  OpenRouter,
   Sora,
 }
 
@@ -109,6 +112,7 @@ pub enum ProviderFailureReason {
   MidjourneyError(MidjourneyError),
   /// NB: The midjourney client doesn't categorize all errors, so we have to do so on our end.
   MidjourneyJobEnqueueFailed,
+  OpenRouterError(OpenRouterError),
   SoraError(SoraError),
   StorytellerError(StorytellerError),
   WorldLabsError(WorldLabsError),
@@ -240,6 +244,7 @@ impl From<ArtcraftRouterError> for GenerateError {
           ProviderError::GmiCloud(_) => BillingProvider::Artcraft,
           ProviderError::Grok(_) => BillingProvider::Artcraft,
           ProviderError::WorldLabs(_) => BillingProvider::Artcraft,
+          ProviderError::OpenRouter(_) => BillingProvider::OpenRouter,
         };
         Self::BillingIssue(BillingIssueReason { provider })
       },
@@ -247,6 +252,7 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::Provider(ProviderError::MidjourneySubscriptionRequired(message) | ProviderError::MidjourneySubmitRejected(message)) => Self::BadInput(BadInputReason::WrongImageArguments(message)),
       ArtcraftRouterError::Provider(ProviderError::Storyteller(e)) => Self::ProviderFailure(ProviderFailureReason::StorytellerError(e)),
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
+      ArtcraftRouterError::Provider(ProviderError::OpenRouter(e)) => Self::ProviderFailure(ProviderFailureReason::OpenRouterError(e)),
       ArtcraftRouterError::Provider(ProviderError::GmiCloud(_)) => Self::ArtcraftRouterNotYetSupportedProvider("gmicloud"),
       ArtcraftRouterError::Provider(ProviderError::Grok(_)) => Self::ArtcraftRouterNotYetSupportedProvider("grok_api"),
       ArtcraftRouterError::Provider(ProviderError::KinoviWeb(_)) => Self::ArtcraftRouterNotYetSupportedProvider("kinovi_web"),
