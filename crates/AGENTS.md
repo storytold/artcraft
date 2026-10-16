@@ -49,7 +49,8 @@ helpers go in the parent `mod tests` so sub-modules can `use super::*`.
 ## Key Crates
 
 - `artcraft` (desktop) — Tauri desktop app
-- `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, KinoviWeb, Grok, GMICloud, WorldLabs)
+- `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, KinoviWeb, Grok, GMICloud, WorldLabs, OpenRouter)
+- `openrouter_client` — HTTP client for OpenRouter's Image API (the user's own key)
 - `artcraft_api_defs` — shared HTTP API type definitions
 - `kinovi_web_client` — HTTP client for the Kinovi/KinoviWeb video generation service
 - `enums` — database-backed enums stored as VARCHAR fields

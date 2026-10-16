@@ -1,3 +1,4 @@
+use crate::generate::generate_image::providers::openrouter::request::OpenRouterImageRequestState;
 use crate::generate::generate_image::providers::midjourney::request::MidjourneyRequestState;
 use crate::generate::generate_image::providers::midjourney::cost::MidjourneyCostState;
 use crate::api::router_provider::RouterProvider;
@@ -143,6 +144,9 @@ pub enum ImageGenerationRequest {
   KinoviMidjourney7Niji(KinoviMidjourney7NijiRequestState),
   KinoviMidjourney8(KinoviMidjourney8RequestState),
   KinoviSeedream5p0Pro(KinoviSeedream5p0ProRequestState),
+
+  // OpenRouter (every model)
+  OpenRouter(OpenRouterImageRequestState),
 }
 
 impl ImageGenerationRequest {
@@ -194,6 +198,7 @@ impl ImageGenerationRequest {
       Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
       Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
       Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
+      Self::OpenRouter(_) => RouterProvider::OpenRouter,
     }
   }
 
@@ -291,6 +296,7 @@ impl ImageGenerationRequest {
       Self::KinoviMidjourney7Niji(request) => Ok(KinoviMidjourney7NijiCostState::from_request(request).estimate_cost()),
       Self::KinoviMidjourney8(request) => Ok(KinoviMidjourney8CostState::from_request(request).estimate_cost()),
       Self::KinoviSeedream5p0Pro(request) => Ok(KinoviSeedream5p0ProCostState::from_request(request).estimate_cost()),
+      Self::OpenRouter(request) => Ok(request.estimate_cost()),
     }
   }
 
@@ -482,6 +488,12 @@ impl ImageGenerationRequest {
         let seedance_client = client.get_kinovi_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
+      }
+
+      // ── OpenRouter ──
+      Self::OpenRouter(request) => {
+        let openrouter_client = client.get_openrouter_client_ref()?;
+        request.send(openrouter_client).await
       }
     }
   }
