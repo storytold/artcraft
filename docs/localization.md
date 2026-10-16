@@ -132,3 +132,34 @@ For manual desktop verification, rebuild the app with the updated frontend,
 open Settings > General, switch languages, visit home and image/video/audio
 creation pages, then restart to check persistence. Confirm prompts and model
 selections stay unchanged while switching languages.
+
+### Windows release packaging
+
+Keep `build.frontendDist` relative to the Tauri project directory, for example
+`../../../frontend/apps/artcraft/dist`. Do not replace it with a Windows drive
+path such as `D:/.../dist`: Tauri can deserialize that value as a URL instead
+of an asset directory, so the executable opens a directory listing and does
+not embed the frontend.
+
+After packaging, launch the actual release executable and verify that the home
+page renders, Settings can switch to Simplified Chinese, and the language
+persists after restart. A responsive process or a successful installer build
+alone does not establish that the desktop UI works.
+The fork's Windows packaging override is `script/artcraft/tauri.zh-cn.conf.json`.
+It uses `.local-build/frontend-release-fixed` as an isolated frontend output
+instead of embedding accumulated assets from earlier development builds.
+From the repository root, with the documented frontend/Rust prerequisites and
+Tauri CLI installed, build with PowerShell:
+
+```powershell
+$env:VITE_ENVIRONMENT_TYPE = 'production'
+$env:SQLX_OFFLINE = 'true'
+$env:CARGO_BUILD_JOBS = '1'
+$releaseFrontend = Join-Path (Get-Location).Path '.local-build/frontend-release-fixed'
+npm run build --workspace artcraft --prefix frontend -- --outDir $releaseFrontend --emptyOutDir
+# Continue only if the frontend build succeeded.
+tauri build --ci --bundles nsis --config script/artcraft/tauri.zh-cn.conf.json -- --locked
+```
+
+Wait for bundling to finish before launching the release executable; Windows
+can otherwise keep the executable locked while the bundler is working.
