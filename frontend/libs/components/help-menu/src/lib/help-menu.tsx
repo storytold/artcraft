@@ -277,8 +277,15 @@ export function HelpMenuButton({
 
   useEffect(() => {
     if (!open || view !== "video" || !selected) return;
+    // WHY: loading the YouTube API can take a while. If the user goes Back and
+    // picks another tutorial meanwhile, the earlier run would resume after
+    // its cleanup and build a second player in the new container (wrong video,
+    // leaked progress timer). Each run bails out once its cleanup has fired.
+    let cancelled = false;
     const run = async () => {
       await loadYouTubeIframeAPI();
+      // The effect was cleaned up while the API loaded (Back, or a different pick): do not build a player.
+      if (cancelled) return;
       const w = window as any;
       const videoId = extractYouTubeId(selected.videoUrl);
       if (!videoId) return;
@@ -315,6 +322,7 @@ export function HelpMenuButton({
     run();
 
     return () => {
+      cancelled = true;
       if (progressTimerRef.current) {
         window.clearInterval(progressTimerRef.current);
         progressTimerRef.current = null;

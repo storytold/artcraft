@@ -1,13 +1,17 @@
+// UploadImageMediaModal: modal window that walks an image through upload states (form -> uploading -> success/error).
+// At the time of writing no other file in app/src imports it. The state machine is the UploaderState from ~/models;
+// the form is UploadImageMedia, and success/error screens come from @storyteller/ui-upload-modal.
+
 import { useEffect, useState } from "react";
 
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
-import { UploadAssetError } from "../UploadModal/UploadAssetError";
-import { UploadSuccess } from "../UploadModal/UploadSuccess";
+import { UploadAssetError, UploadSuccess } from "@storyteller/ui-upload-modal";
 import { FilterEngineCategories, UploaderStates } from "~/enums";
 import { initialUploaderState, UploaderState } from "~/models";
 import { UploadImageMedia } from "./UploadImageMedia";
 
+// isOpen/onClose: visibility; onSuccess: called with optional result data when the user acknowledges success; title/fileTypes: passed to the form.
 interface Props {
   onClose: () => void;
   onSuccess: (data?: string) => void;
@@ -19,6 +23,9 @@ interface Props {
   };
 }
 
+/**
+ * Modal shell. Picks which screen to show from uploaderState.status.
+ */
 export function UploadImageMediaModal({
   isOpen,
   onClose,
@@ -26,6 +33,7 @@ export function UploadImageMediaModal({
   title,
   fileTypes,
 }: Props) {
+  // Current step of the upload (ready, uploading..., success, or an error kind).
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
 
@@ -37,12 +45,14 @@ export function UploadImageMediaModal({
     setUploaderState(initialUploaderState);
   };
 
+  // Every time the modal is (re)opened, go back to the empty "ready" form.
   useEffect(() => {
     if (isOpen) {
       resetModalState();
     }
   }, [isOpen]);
 
+  // Maps each upload status to the screen for it. Called as a plain function below (see the note in the JSX).
   const UploaderModalContent = () => {
     switch (uploaderState.status) {
       case UploaderStates.ready:

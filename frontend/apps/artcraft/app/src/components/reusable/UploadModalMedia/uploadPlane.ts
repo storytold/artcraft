@@ -1,9 +1,20 @@
+// uploadPlane: the upload pipelines for "plane" assets (a flat image or mp4 placed in a 3D scene).
+// Used by UploadFilesMedia.tsx (uploadPlane) and pages/PageScene/useTauriPageSceneAdapter.tsx (uploadPlaneFromMediaToken).
+// Talks to the web backend through MediaUploadApi and MediaFilesApi from ~/Classes/ApiManager and reports
+// every step through a progressCallback so the UI can show the matching screen.
+
 import { v4 as uuidv4 } from "uuid";
 import { UploaderStates, FilterEngineCategories } from "~/enums";
 import { MediaUploadApi, MediaFilesApi } from "~/Classes/ApiManager";
 import { getFileName } from "~/utilities";
 import { UploaderState } from "~/models";
 
+/**
+ * Upload a file as a plane asset in four steps: upload the file, build a thumbnail (a snapshot for mp4,
+ * the image itself otherwise), upload the thumbnail, set it as the cover image.
+ * progressCallback gets uploadingAsset -> uploadingCover -> settingCover -> success, or an *Error status with a message.
+ * Returns nothing; results are delivered only through the callback.
+ */
 export const uploadPlane = async ({
   title,
   assetFile,
@@ -90,6 +101,10 @@ export const uploadPlane = async ({
   progressCallback({ status: UploaderStates.success });
 };
 
+/**
+ * Grab one frame of a video as a 512x512 PNG blob by playing it muted into a canvas.
+ * Returns undefined if no frame could be made. errorCallback receives a cover-create error.
+ */
 const takeVideoSnapshot = async (
   videoFile: File,
   errorCallback: (newState: UploaderState) => void,
@@ -123,6 +138,11 @@ const takeVideoSnapshot = async (
   return blob;
 };
 
+/**
+ * Finish a "plane" upload for a file that is ALREADY on the server (identified by mediaToken): look it up,
+ * rename it to title if the title differs, then report success. progressCallback gets the same statuses as uploadPlane
+ * (the thumbnail/cover steps are skipped because the media already has one).
+ */
 export const uploadPlaneFromMediaToken = async ({
   title,
   mediaToken,

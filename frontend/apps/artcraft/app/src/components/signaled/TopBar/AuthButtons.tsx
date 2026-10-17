@@ -1,13 +1,21 @@
+// AuthButtons: the "Login / Sign Up" button for the top bar. It draws nothing once the user is logged in.
+// Reads the login state from the authentication signal in ~/signals. At the time of writing TopBar.tsx does not use it
+// (and the ProfileDropdown import is commented out).
+
 import { useSignals } from "@preact/signals-react/runtime";
 import { AUTH_STATUS } from "~/enums";
 import { authentication } from "~/signals";
 // import ProfileDropdown from "./ProfileDropdown";
 
+/**
+ * loginSignUpPressed: called when the button is clicked (the parent opens the login flow). Returns null when logged in.
+ */
 export const AuthButtons = ({
   loginSignUpPressed,
 }: {
   loginSignUpPressed: () => void;
 }) => {
+  // Subscribes this component to the signals it reads so it re-renders when the login status changes.
   useSignals();
 
   const { status } = authentication;

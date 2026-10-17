@@ -40,6 +40,10 @@ export function useSessionMediaByClass(options: {
   const [hasMore, setHasMore] = useState(true);
   const cursorRef = useRef<string | undefined>(undefined);
   const isLoadingRef = useRef(false);
+  // Bumped whenever the feed is reset or a new request starts. A response
+  // whose id is no longer current (class switched, refresh pressed, logged
+  // out) is dropped so it can't overwrite the newer feed.
+  const requestIdRef = useRef(0);
 
   const api = useMemo(() => new MediaFilesApi(), []);
 
@@ -62,6 +66,7 @@ export function useSessionMediaByClass(options: {
       if (!enabled) return;
       if (isLoadingRef.current) return;
       isLoadingRef.current = true;
+      const requestId = ++requestIdRef.current;
       setIsLoading(true);
 
       try {
@@ -76,6 +81,9 @@ export function useSessionMediaByClass(options: {
                 cursor,
                 page_size: PAGE_SIZE,
               });
+
+        // Superseded while in flight: the newer request owns all state now.
+        if (requestId !== requestIdRef.current) return;
 
         if (response.success && response.data) {
           const newItems = response.data.map(mapApiItem);
@@ -95,6 +103,7 @@ export function useSessionMediaByClass(options: {
         }
       } catch {
         // ignore
+        if (requestId !== requestIdRef.current) return;
       }
 
       setIsLoading(false);
@@ -107,10 +116,12 @@ export function useSessionMediaByClass(options: {
   // Initial load + class / login change. When logged out, clear the loading
   // flag so the shell renders the empty state instead of a spinner.
   useEffect(() => {
+    requestIdRef.current++; // drop any response still in flight
     setItems([]);
     cursorRef.current = undefined;
     isLoadingRef.current = false;
     if (!enabled) {
+      setIsLoading(false);
       setHasMore(false);
       setIsInitialLoading(false);
       return;
@@ -128,6 +139,7 @@ export function useSessionMediaByClass(options: {
   }, [hasMore, loadItems]);
 
   const refresh = useCallback(() => {
+    requestIdRef.current++; // drop any response still in flight
     setItems([]);
     cursorRef.current = undefined;
     setHasMore(true);

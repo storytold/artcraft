@@ -103,7 +103,10 @@ async fn handle_fal(
     },
     Err(err) => {
       warn!("Could not use FAL: {:?}", err);
-      return Err(GenerateError::NotYetImplemented("Error Message: TODO".to_string()));
+      // FIX: previously the builder's error was dropped and replaced with the literal
+      // NotYetImplemented("Error Message: TODO"), so the frontend never saw the real cause
+      // (e.g. bad input / unsupported options). Convert it like every other build2() caller does.
+      return Err(err.into());
     }
   };
 

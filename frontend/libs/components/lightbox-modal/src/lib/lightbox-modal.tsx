@@ -179,7 +179,14 @@ export function LightboxModal({
           audioPlayerRef.current = null;
         };
         audioPlayerRef.current = audio;
-        audio.play();
+        // A rejected play() (bad URL, autoplay policy) must not leave the
+        // button stuck on "pause" or surface as an unhandled rejection.
+        audio.play().catch(() => {
+          if (audioPlayerRef.current === audio) {
+            audioPlayerRef.current = null;
+            setPlayingAudioToken(null);
+          }
+        });
         setPlayingAudioToken(token);
       }
     },
@@ -204,8 +211,20 @@ export function LightboxModal({
         window.clearTimeout(shareCopiedTimeoutRef.current);
         shareCopiedTimeoutRef.current = null;
       }
+    } else {
+      // Closing the lightbox must silence a reference-audio clip that is
+      // still playing; otherwise it keeps going with no UI to stop it.
+      stopAudio();
     }
   }, [isOpen]);
+
+  // Same for unmount while a clip is playing.
+  useEffect(() => {
+    return () => {
+      audioPlayerRef.current?.pause();
+      audioPlayerRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     return () => {

@@ -16,7 +16,9 @@ function shouldAddToast(toasts: Toast[], newToast: Toast): boolean {
   //do not pop the same toast if the same toast was popped in the last 2secs
   let noLastToast = true;
   for (let i = toasts.length - 1; i >= 0; i--) {
-    if (newToast.timestamp <= toasts[i].timestamp + TWO_SECONDS) {
+    // toasts are in time order, so once one is older than the window
+    // every earlier one is too
+    if (newToast.timestamp > toasts[i].timestamp + TWO_SECONDS) {
       break;
     }
     if (

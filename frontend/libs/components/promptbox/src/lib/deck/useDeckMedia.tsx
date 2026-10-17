@@ -179,6 +179,35 @@ export function useDeckMedia<
     referenceAudiosRef.current = referenceAudios;
   }, [referenceAudios]);
 
+  // WHY: each committed upload owns a full-res object URL (`fullUrl`) that was
+  // never revoked, leaking the whole original file per upload. Track them by
+  // ref id; once a ref has been seen in the caller's store and later
+  // disappears (removed/replaced), revoke its URL. `seen` guards against
+  // revoking in the render before the store has committed the new ref.
+  const fullUrlsRef = useRef(
+    new Map<string, { url: string; seen: boolean }>(),
+  );
+  useEffect(() => {
+    const present = new Set<string>(referenceImages.map((img) => img.id));
+    if (endFrameImage) present.add(endFrameImage.id);
+    for (const [id, entry] of fullUrlsRef.current) {
+      if (present.has(id)) {
+        entry.seen = true;
+      } else if (entry.seen) {
+        revokeIfBlobUrl(entry.url);
+        fullUrlsRef.current.delete(id);
+      }
+    }
+  }, [referenceImages, endFrameImage]);
+  // Unmount: nothing can show these previews any more.
+  useEffect(() => {
+    const tracked = fullUrlsRef.current;
+    return () => {
+      for (const { url } of tracked.values()) revokeIfBlobUrl(url);
+      tracked.clear();
+    };
+  }, []);
+
   // Committed refs live in the caller's store, whose update can render one
   // pass before this hook's entry-removal state lands — briefly showing the
   // committed card AND its spinner. Commits reuse their entry's id, so
@@ -299,19 +328,29 @@ export function useDeckMedia<
         }
       };
 
+      // Set once the entry has either committed or failed, so a late
+      // rejection from the upload can't revoke a preview that is now the
+      // committed thumbnail.
+      let settled = false;
+
       const fail = () => {
+        settled = true;
         revokeIfBlobUrl(previewUrl);
         removeEntry();
       };
 
       const commit = (mediaToken: string) => {
+        settled = true;
         // The downscaled preview lives on as the committed thumbnail; the
         // original file backs the full-res tap-preview via `fullUrl`. The
         // ref keeps the entry's id so the deck card swaps in place.
+        const fullUrl = URL.createObjectURL(file);
+        // Registered so the effect above can revoke it on removal/unmount.
+        fullUrlsRef.current.set(entryId, { url: fullUrl, seen: false });
         const referenceImage = asImage({
           id: entryId,
           url: previewUrl,
-          fullUrl: URL.createObjectURL(file),
+          fullUrl,
           file,
           mediaToken,
         });
@@ -324,20 +363,26 @@ export function useDeckMedia<
       };
 
       if (uploadImage) {
-        await uploadImage({
-          title: randomTitle("reference-image"),
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              commit(newState.data);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              fail();
-            }
-          },
-        });
+        try {
+          await uploadImage({
+            title: randomTitle("reference-image"),
+            assetFile: file,
+            progressCallback: (newState) => {
+              if (newState.status === UploaderStates.success && newState.data) {
+                commit(newState.data);
+              } else if (
+                newState.status === UploaderStates.assetError ||
+                newState.status === UploaderStates.imageCreateError
+              ) {
+                fail();
+              }
+            },
+          });
+        } catch {
+          // An upload that throws (network drop) used to leave the spinner
+          // card on screen forever and surface as an unhandled rejection.
+          if (!settled) fail();
+        }
       } else {
         commit("");
       }
@@ -397,22 +442,34 @@ export function useDeckMedia<
       };
 
       if (uploadVideo) {
-        await uploadVideo({
-          title: randomTitle("reference-video"),
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              commit(newState.data);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              URL.revokeObjectURL(entry.previewUrl);
-              setUploadingVideo(null);
-              toast.error("Failed to upload video. Please upload an MP4 file.");
-            }
-          },
-        });
+        let settled = false;
+        const failVideo = () => {
+          settled = true;
+          URL.revokeObjectURL(entry.previewUrl);
+          setUploadingVideo(null);
+          toast.error("Failed to upload video. Please upload an MP4 file.");
+        };
+        try {
+          await uploadVideo({
+            title: randomTitle("reference-video"),
+            assetFile: file,
+            progressCallback: (newState) => {
+              if (newState.status === UploaderStates.success && newState.data) {
+                settled = true;
+                commit(newState.data);
+              } else if (
+                newState.status === UploaderStates.assetError ||
+                newState.status === UploaderStates.imageCreateError
+              ) {
+                failVideo();
+              }
+            },
+          });
+        } catch {
+          // A thrown upload must not leave the spinner up or abort the rest
+          // of the batch with an unhandled rejection.
+          if (!settled) failVideo();
+        }
       } else {
         commit("");
       }
@@ -470,21 +527,32 @@ export function useDeckMedia<
       };
 
       if (uploadAudio) {
-        await uploadAudio({
-          title: randomTitle("reference-audio"),
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              commit(newState.data);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              URL.revokeObjectURL(entry.previewUrl);
-              setUploadingAudio(null);
-            }
-          },
-        });
+        let settled = false;
+        const failAudio = () => {
+          settled = true;
+          URL.revokeObjectURL(entry.previewUrl);
+          setUploadingAudio(null);
+        };
+        try {
+          await uploadAudio({
+            title: randomTitle("reference-audio"),
+            assetFile: file,
+            progressCallback: (newState) => {
+              if (newState.status === UploaderStates.success && newState.data) {
+                settled = true;
+                commit(newState.data);
+              } else if (
+                newState.status === UploaderStates.assetError ||
+                newState.status === UploaderStates.imageCreateError
+              ) {
+                failAudio();
+              }
+            },
+          });
+        } catch {
+          // Same as video: clear the spinner instead of sticking forever.
+          if (!settled) failAudio();
+        }
       } else {
         commit("");
       }

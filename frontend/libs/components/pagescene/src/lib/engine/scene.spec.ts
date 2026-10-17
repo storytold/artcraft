@@ -79,7 +79,10 @@ describe("Scene disposal", () => {
   describe("disposeContents", () => {
     it("empties the scene and frees every child", () => {
       const scene = makeScene();
-      const geometries = [new THREE.BoxGeometry(), new THREE.SphereGeometry()];
+      const geometries: THREE.BufferGeometry[] = [
+        new THREE.BoxGeometry(),
+        new THREE.SphereGeometry(),
+      ];
       const disposed = new Set<THREE.BufferGeometry>();
       for (const geometry of geometries) {
         geometry.addEventListener("dispose", () => disposed.add(geometry));

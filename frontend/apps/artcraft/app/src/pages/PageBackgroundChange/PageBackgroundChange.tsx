@@ -24,10 +24,8 @@ export const PageBackgroundChange = () => {
   const loadFromShowcase = useVFXStore((s) => s.loadFromShowcase);
   const selectedShowcaseId = useVFXStore((s) => s.selectedShowcaseId);
   const source = useVFXStore((s) => s.source);
-  const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
   const prompt = useVFXStore((s) => s.prompt);
-  const resolution = useVFXStore((s) => s.resolution);
 
   const promptBoxRef = useRef<HTMLDivElement>(null);
   const [promptBoxHeight, setPromptBoxHeight] = useState(96);

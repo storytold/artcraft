@@ -68,6 +68,10 @@ export function useGalleryData(options: {
   const [pageIndex, setPageIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const isLoadingRef = useRef(false);
+  // Bumped whenever the feed is reset or a new request starts. A response
+  // whose id is no longer current (filters changed, refresh pressed, logged
+  // out) is dropped so it can't overwrite the newer feed.
+  const requestIdRef = useRef(0);
 
   const api = useMemo(() => new GalleryModalApi(), []);
 
@@ -108,6 +112,7 @@ export function useGalleryData(options: {
       if (!username) return;
       if (isLoadingRef.current) return;
       isLoadingRef.current = true;
+      const requestId = ++requestIdRef.current;
       setIsLoading(true);
 
       try {
@@ -118,6 +123,9 @@ export function useGalleryData(options: {
           page_index: reset ? 0 : pageIndex,
           page_size: PAGE_SIZE,
         });
+
+        // Superseded while in flight: the newer request owns all state now.
+        if (requestId !== requestIdRef.current) return;
 
         if (response.success && response.data) {
           const modelIdSet =
@@ -155,6 +163,7 @@ export function useGalleryData(options: {
         }
       } catch {
         // ignore
+        if (requestId !== requestIdRef.current) return;
       }
 
       setIsLoading(false);
@@ -175,10 +184,12 @@ export function useGalleryData(options: {
   // Initial load + filter change. When logged out (no username), clear the
   // loading flag so the shell renders the empty state instead of a spinner.
   useEffect(() => {
+    requestIdRef.current++; // drop any response still in flight
     setItems([]);
     setPageIndex(0);
     isLoadingRef.current = false;
     if (!username) {
+      setIsLoading(false);
       setHasMore(false);
       setIsInitialLoading(false);
       return;
@@ -196,6 +207,7 @@ export function useGalleryData(options: {
   }, [hasMore, loadItems]);
 
   const refresh = useCallback(() => {
+    requestIdRef.current++; // drop any response still in flight
     setItems([]);
     setPageIndex(0);
     setHasMore(true);

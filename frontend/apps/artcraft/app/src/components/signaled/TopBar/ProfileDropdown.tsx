@@ -1,3 +1,7 @@
+// ProfileDropdown: avatar button that opens a small menu with "My Profile" (opens the website profile page in a browser)
+// and "Logout". Reads the logged-in user from the authentication signal in ~/signals and calls logout() from there.
+// At the time of writing no other file imports it (AuthButtons.tsx has the import commented out).
+
 import { Fragment } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { ChevronDownIcon, LogOutIcon, UserIcon } from "lucide-react";
@@ -7,7 +11,11 @@ import { Gravatar } from "@storyteller/ui-gravatar";
 import { twMerge } from "tailwind-merge";
 import { authentication, logout } from "~/signals";
 
+/**
+ * Draws nothing when nobody is logged in. Uses Headless UI Menu so keyboard and click-away handling come for free.
+ */
 export default function ProfileDropdown() {
+  // Subscribes to the signals read below so the menu updates when the user logs in or out.
   useSignals();
   const { userInfo } = authentication;
 
@@ -21,6 +29,7 @@ export default function ProfileDropdown() {
   const backgroundColorIndex =
     userInfo.value.core_info.default_avatar.color_index;
 
+  // Menu entries after "My Profile"; each has a label, an icon and a click handler.
   const options = [
     {
       label: "Logout",

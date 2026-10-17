@@ -208,7 +208,8 @@ export const Angles = () => {
               | undefined;
             cdnUrl =
               links?.cdn_url ||
-              (mediaFile.data as any).public_bucket_url ||
+              (mediaFile.data as unknown as { public_bucket_url?: string })
+                .public_bucket_url ||
               objectUrl;
             thumbnailUrlTemplate =
               links?.thumbnail_template || links?.maybe_thumbnail_template;
@@ -286,7 +287,7 @@ export const Angles = () => {
 
     window.__storeTaskEnqueueMeta?.({
       prompt: "",
-      modelType: (selectedModel as any)?.tauriId || "flux_2_lora_angles",
+      modelType: selectedModel?.tauriId || "flux_2_lora_angles",
       timestamp: Date.now(),
     });
 

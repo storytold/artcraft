@@ -13,6 +13,6 @@ export enum SoraSessionState {
 
 export const CheckSoraSession = async (): Promise<CheckSoraSessionResult> => {
   const result = await invoke("check_sora_session_command");
-  console.log(">>> sora result", result);
+  // The result carries the account email, so it must not be logged to the console.
   return result as CheckSoraSessionResult;
 };

@@ -2,8 +2,7 @@ import { ComponentType, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { authentication, persistLogin } from "~/signals";
-import { AUTH_STATUS } from "~/enums";
+import { persistLogin } from "~/signals";
 import { TWO_SECONDS } from "~/constants";
 
 export const withProtectionRoute = <P extends object>(
@@ -40,7 +39,8 @@ export const withProtectionRoute = <P extends object>(
     // return <RedirectToLogin />;
   };
 
-const RedirectToLogin = () => {
+// Exported so it stays available for the auth gate that is currently commented out above.
+export const RedirectToLogin = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const timeoutTimer = useRef<NodeJS.Timeout | undefined>(undefined);

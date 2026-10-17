@@ -1,7 +1,11 @@
+//! Errors that can happen on any fal call, whatever the model: a response we could not
+//! parse, or a bad HTTP reply we have no specific category for.
+
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use reqwest::StatusCode;
 
+/// A generic problem with a fal API response. Wrapped by `FalErrorPlus::ApiGeneric`.
 #[derive(Debug)]
 pub enum FalGenericApiError {
   /// serde_json::Error, likely from JSON deserialization schema mismatch.

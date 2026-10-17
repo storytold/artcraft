@@ -1,3 +1,10 @@
+// GlobalFileDropHandler: lets the user drop a file anywhere on the app window to start an upload.
+// Mounted once, near the root, in app/src/index.tsx so it is active on every page.
+// Depending on the file type (.glb 3D model, .png/.jpg/.jpeg image, .spz splat) it opens the matching
+// upload modal from @storyteller/ui-upload-modal with the dropped files pre-filled.
+// Inside the Tauri desktop shell the drop comes from the native window (file paths), in a plain browser
+// (dev mode) it comes from normal HTML5 drag events (File objects).
+
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { BoxIcon, ImagesIcon, Maximize2Icon } from "lucide-react";
@@ -7,10 +14,14 @@ import {
   UploadModalSplat,
 } from "@storyteller/ui-upload-modal";
 import { isPromptBoxDropZoneActive } from "@storyteller/ui-promptbox";
-import { FilterEngineCategories } from "../../enums";
 
+// Which upload modal to show: a 3D model, an image, a Gaussian splat, or none (null = closed).
 type ModalType = "3d" | "image" | "splat" | null;
 
+/**
+ * Picks the upload modal for a file by its extension (case-insensitive).
+ * Returns null when the extension is not supported, so the caller can ignore the file.
+ */
 function getModalTypeForFileName(name: string): ModalType {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   if (ext === "glb") return "3d";
@@ -19,6 +30,10 @@ function getModalTypeForFileName(name: string): ModalType {
   return null;
 }
 
+/**
+ * True when some Radix dialog (modal) is already on screen.
+ * Radix marks every dialog body with a data-radix-dialog-content attribute, so we look for that in the DOM.
+ */
 function isAnyModalOpen(): boolean {
   return !!document.querySelector("[data-radix-dialog-content]");
 }
@@ -32,29 +47,47 @@ function isGlobalDropSuppressed(): boolean {
   return isAnyModalOpen() || isPromptBoxDropZoneActive();
 }
 
+// True when running inside the Tauri desktop shell (Tauri injects window.__TAURI__); false in a normal browser.
 const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
 
+/**
+ * Invisible app-wide drop target plus the three upload modals it can open.
+ * Renders a "Drop to Upload" overlay while a file is dragged over the window, and the upload modals
+ * (always mounted, shown through isOpen). Takes no props.
+ */
 export function GlobalFileDropHandler() {
+  // Counts nested dragenter/dragleave events in the browser path. A ref (not state) because it is only
+  // bookkeeping read inside event handlers and must not trigger re-renders; the overlay hides at 0.
   const dragCounter = useRef(0);
+  // True while a file is being dragged over the window (controls the overlay).
   const [isDragging, setIsDragging] = useState(false);
+  // Which upload modal is open right now (null = none).
   const [modalType, setModalType] = useState<ModalType>(null);
+  // The dropped files handed to the open modal as initialFiles.
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
+  // Close whichever modal is open and forget the dropped files.
   const closeModal = () => {
     setModalType(null);
     setPendingFiles([]);
   };
 
+  // Runs once on mount: registers the drag/drop listeners and removes them on unmount.
+  // Two paths: native Tauri drag-drop events (desktop app) or HTML5 window events (browser dev mode).
   useEffect(() => {
     if (isTauri) {
       const unlisteners: Array<() => void> = [];
 
+      // Tauri window APIs are imported lazily so the browser build never loads them. setup is async because
+      // subscribing to the native event returns a promise; the unlisten function is stored for cleanup.
       const setup = async () => {
         try {
           const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
           const { convertFileSrc } = await import("@tauri-apps/api/core");
           const appWindow = getCurrentWebviewWindow();
 
+          // Native drag-drop events: enter / over / drop (leave and cancel fall through to the final else).
+          // Native events carry file PATHS, not File objects, so dropped files are read back below.
           const unlisten = await appWindow.onDragDropEvent(async (event) => {
             const payload = event.payload;
 
@@ -93,6 +126,8 @@ export function GlobalFileDropHandler() {
               }
 
               try {
+                // Turn each dropped path into a File: convertFileSrc makes a URL the webview may fetch,
+                // then the bytes are read into a Blob and wrapped as a File named after the original.
                 const files = await Promise.all(
                   matchingPaths.map(async (path) => {
                     const fileName = path.split(/[/\\]/).pop() ?? "file";
@@ -103,6 +138,7 @@ export function GlobalFileDropHandler() {
                     return new File([blob], fileName);
                   })
                 );
+                // Bring the app window to the front so the modal is visible after dragging from another app.
                 await appWindow.setFocus();
                 setModalType(modalKind);
                 setPendingFiles(files);
@@ -125,6 +161,7 @@ export function GlobalFileDropHandler() {
 
     } else {
       // HTML5 path (browser dev mode)
+      // dragenter/dragleave fire for every child element the pointer crosses, hence the counter.
       const handleDragEnter = (e: DragEvent) => {
         e.preventDefault();
         if (!e.dataTransfer?.types.includes("Files")) return;
@@ -137,6 +174,7 @@ export function GlobalFileDropHandler() {
         dragCounter.current--;
         if (dragCounter.current <= 0) { dragCounter.current = 0; setIsDragging(false); }
       };
+      // preventDefault on dragover is required by the browser, otherwise the drop event never fires.
       const handleDragOver = (e: DragEvent) => {
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
@@ -188,6 +226,7 @@ export function GlobalFileDropHandler() {
     }
   }, []);
 
+  // Overlay shown while dragging (and no modal open), then the three upload modals; only one is open at a time.
   return (
     <>
       {isDragging && modalType === null && (
@@ -203,7 +242,7 @@ export function GlobalFileDropHandler() {
         isOpen={modalType === "3d"}
         initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
-        onSuccess={(_category: FilterEngineCategories) => closeModal()}
+        onSuccess={() => closeModal()}
         title="Upload a 3D Model"
         titleIcon={BoxIcon}
       />

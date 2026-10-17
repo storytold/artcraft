@@ -68,7 +68,15 @@ export const CameraSettingsModal = ({
       });
     };
     document.addEventListener("pointerup", handlePointerUp);
-    return () => document.removeEventListener("pointerup", handlePointerUp);
+    // BUG FIX: a touch/pen drag the browser takes over ends with pointercancel,
+    // never pointerup. Without this the modal stayed at opacity-10 (practically
+    // invisible, backdrop transparent) and the editor's focal-length-dragging
+    // flag stayed true until some later pointerup happened to arrive.
+    document.addEventListener("pointercancel", handlePointerUp);
+    return () => {
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerUp);
+    };
   }, [selectedCamera?.focalLength, setFocalLengthDragging]);
 
   const handlePointerDown = () => {

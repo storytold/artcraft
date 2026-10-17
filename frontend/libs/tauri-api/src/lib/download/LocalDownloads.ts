@@ -61,7 +61,7 @@ export const downloadUrlToPath = async (url: string, path: string) => {
 };
 
 export const downloadFileFromUrl = async (url: string, _mediaClass?: string, model?: string) => {
-  console.log("GOT THE URL", url);
+  // Debug log of the (possibly signed) download URL removed: it ran on every download.
   try {
     const chosen = await promptDownloadLocationIfNeeded(url, model);
     if (chosen === null) {

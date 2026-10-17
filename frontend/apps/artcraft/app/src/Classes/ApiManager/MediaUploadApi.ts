@@ -3,9 +3,11 @@ import { ApiManager, ApiResponse } from "./ApiManager";
 import { FilterEngineCategories, Visibility } from "~/enums";
 
 export class MediaUploadApi extends ApiManager {
-  private sessionToken: string = undefined;
+  private sessionToken: string | undefined = undefined;
 
-  private async getSessionTokenForUploadStudioShot() {
+  private async getSessionTokenForUploadStudioShot(): Promise<
+    ApiResponse<string>
+  > {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/session_token`;
     return await this.get<{
       maybe_signed_session: string;

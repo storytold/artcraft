@@ -40,6 +40,7 @@ export function CreditsModal({
   onPurchase,
 }: CreditsModalProps) {
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   const handlePurchase = async (pack: CreditPack) => {
     if (onPurchase) {
@@ -48,12 +49,18 @@ export function CreditsModal({
     }
 
     setPurchasingId(pack.id);
+    setPurchaseError(null);
     try {
       await invoke("storyteller_open_credits_purchase_command", {
         request: {
           credits_pack: pack.id,
         },
       });
+    } catch (error) {
+      // WHY: try/finally alone re-threw into an unhandled promise rejection,
+      // so a failed checkout launch looked like a button that did nothing.
+      setPurchaseError("Could not open checkout. Please try again.");
+      console.error("Failed to open credits purchase", error);
     } finally {
       setPurchasingId(null);
     }
@@ -145,6 +152,12 @@ export function CreditsModal({
               );
             })}
           </div>
+
+          {purchaseError && (
+            <p role="alert" className="mt-4 text-center text-xs text-red-400">
+              {purchaseError}
+            </p>
+          )}
 
           <p className="mt-6 text-center text-xs text-white/35">
             Secure checkout via Stripe.

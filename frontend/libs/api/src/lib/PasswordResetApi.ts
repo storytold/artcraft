@@ -69,7 +69,9 @@ export class PasswordResetApi extends ApiManager {
         body: JSON.stringify(body),
       });
 
-      const data = await response.json();
+      // A proxy 502/504 returns an HTML body; json() would throw a cryptic
+      // "Unexpected token <" and hide the generic failure message below.
+      const data = await response.json().catch(() => ({}) as any);
 
       if (!response.ok) {
         return {

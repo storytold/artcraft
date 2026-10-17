@@ -154,7 +154,7 @@ fn notify_video_generation(
   let event = VideoGenerationCompleteEvent {
     generated_video: Some(GeneratedVideo {
       media_token: completion.primary_media_file_token.clone(),
-      cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
+      cdn_url: cdn_url_or_placeholder(completion),
       maybe_thumbnail_template: completion.maybe_thumbnail_url_template.clone(),
     }),
     maybe_frontend_subscriber_id: task.frontend_subscriber_id.clone(),
@@ -173,7 +173,7 @@ fn notify_object_generation(
   let event = ObjectGenerationCompleteEvent {
     generated_object: Some(GeneratedObject {
       media_token: completion.primary_media_file_token.clone(),
-      cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
+      cdn_url: cdn_url_or_placeholder(completion),
       maybe_thumbnail_template: completion.maybe_thumbnail_url_template.clone(),
     }),
     maybe_frontend_subscriber_id: task.frontend_subscriber_id.clone(),
@@ -192,7 +192,7 @@ fn notify_gaussian_generation(
   let event = GaussianGenerationCompleteEvent {
     generated_gaussian: Some(GeneratedGaussian {
       media_token: completion.primary_media_file_token.clone(),
-      cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
+      cdn_url: cdn_url_or_placeholder(completion),
       maybe_thumbnail_template: completion.maybe_thumbnail_url_template.clone(),
     }),
     maybe_frontend_subscriber_id: task.frontend_subscriber_id.clone(),
@@ -210,7 +210,7 @@ fn notify_background_removal(
 ) -> Result<(), Box<dyn std::error::Error>> {
   let event = CanvasBackgroundRemovalCompleteEvent {
     media_token: completion.primary_media_file_token.clone(),
-    image_cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
+    image_cdn_url: cdn_url_or_placeholder(completion),
     maybe_frontend_subscriber_id: task.frontend_subscriber_id.clone(),
     maybe_frontend_subscriber_payload: task.frontend_subscriber_payload.clone(),
   };
@@ -220,6 +220,19 @@ fn notify_background_removal(
 }
 
 // ── Helpers ──
+
+/// The CDN URL for the completed media, or a placeholder if the provider did not return one.
+/// The placeholder keeps the event well-formed for the frontend; the warning makes the gap visible in logs.
+fn cdn_url_or_placeholder(completion: &CompletionData) -> Url {
+  match &completion.maybe_cdn_url {
+    Some(url) => url.clone(),
+    None => {
+      warn!("[ThirdPartyEvents] Completion for media token {:?} had no CDN URL; sending placeholder", completion.primary_media_file_token);
+      // Constant, valid URL: parsing cannot fail.
+      Url::parse("https://cdn.artcraft.ai/placeholder").expect("placeholder URL is valid")
+    }
+  }
+}
 
 /// Collect generated images. If there's a batch token, fetch all files in the batch.
 /// Otherwise, return a single-element list with the primary file.
@@ -252,7 +265,7 @@ async fn collect_generated_images(
   // Fallback: single image from primary token.
   vec![GeneratedImage {
     media_token: completion.primary_media_file_token.clone(),
-    cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
+    cdn_url: cdn_url_or_placeholder(completion),
     maybe_thumbnail_template: completion.maybe_thumbnail_url_template.clone(),
   }]
 }

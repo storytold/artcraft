@@ -1,3 +1,8 @@
+// UploadEntryCard: a dashed "drop a file here or click Upload" card used as the starting screen of several tools.
+// Used by pages RemoveBackground, ImageWatermarkRemover, VideoWatermarkRemover, VideoFrameExtractor,
+// Angles and PageDraw/BaseImageSelector. It only reports the chosen files through onFilesSelected;
+// the page decides what to do with them. No stores or API calls.
+
 import { useCallback, useRef, useState } from "react";
 import { UploadIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -5,6 +10,9 @@ import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
 
+// icon/title/description: header of the card. accentBackgroundClass/accentBorderClass: Tailwind classes for the icon tile.
+// accept/multiple: passed to the hidden file input. primary*: the main Upload button; secondary*/tertiary*: optional extra buttons
+// (only shown when both a label and a click handler are given). disabled greys the card out and blocks input.
 interface UploadEntryCardProps {
   icon: LucideIcon;
   title: string;
@@ -25,6 +33,9 @@ interface UploadEntryCardProps {
   disabled?: boolean;
 }
 
+/**
+ * Renders the card. Files arrive either from the hidden file input (button click) or from a drag-and-drop onto the card.
+ */
 export const UploadEntryCard = ({
   icon,
   title,
@@ -44,15 +55,19 @@ export const UploadEntryCard = ({
   onTertiaryClick,
   disabled,
 }: UploadEntryCardProps) => {
+  // Ref to the hidden <input type="file"> so the Upload button can open the native file picker with .click().
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // True while a file is dragged over the card (highlights the border).
   const [isDragActive, setIsDragActive] = useState(false);
 
+  // Clear the input so choosing the same file twice in a row still fires onChange.
   const resetInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
+  // Common exit for both pick and drop: ignore empty selections, tell the parent, then reset the input.
   const handleFiles = useCallback(
     (files?: FileList | null) => {
       if (!files || files.length === 0) return;
@@ -85,6 +100,7 @@ export const UploadEntryCard = ({
     setIsDragActive(true);
   };
 
+  // dragleave also fires when the pointer moves onto a child element; ignore those so the highlight does not flicker.
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -178,4 +194,5 @@ export const UploadEntryCard = ({
   );
 };
 
+// Also available as the default export.
 export default UploadEntryCard;

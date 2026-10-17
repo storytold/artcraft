@@ -18,7 +18,8 @@ export class ApiManager {
 
   constructor() {
     const environmentType = GetBuildEnvironment().getBuildEnvironmentType();
-    const configs = new Configs(environmentType);
+    // Constructed for its side effects only; the instance itself is unused.
+    new Configs(environmentType);
 
     // TODO(bt,2025-07-06): Not sure that any of this is used anymore.
     // If so, try to use Configs, StorytellerApiHostStore, or another configuration source.
@@ -170,10 +171,6 @@ export class ApiManager {
     console.log(`HELLO${formData}`);
     return this.fetchMultipartFormData<T>(endpoint, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      credentials: "include",
       body: formData,
     });
   }

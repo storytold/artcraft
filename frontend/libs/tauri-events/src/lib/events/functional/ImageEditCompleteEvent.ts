@@ -1,6 +1,7 @@
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { BasicEventWrapper } from '../../common/BasicEventWrapper';
 import { useEffect } from 'react';
+import { useLatestRef } from '../../common/useLatestRef';
 
 const EVENT_NAME : string = 'image_edit_complete_event';
 
@@ -17,13 +18,14 @@ export interface EditedImage {
 }
 
 export const useImageEditCompleteEvent = (asyncCallback: (event: ImageEditCompleteEvent) => Promise<void>) => {
+  const callbackRef = useLatestRef(asyncCallback);
   useEffect(() => {
     let isUnmounted = false;
     let unlisten: Promise<UnlistenFn>;
 
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<ImageEditCompleteEvent>>(EVENT_NAME, async (wrappedEvent) => {
-        await asyncCallback(wrappedEvent.payload.data);
+        await callbackRef.current(wrappedEvent.payload.data);
       });
 
       if (isUnmounted) {

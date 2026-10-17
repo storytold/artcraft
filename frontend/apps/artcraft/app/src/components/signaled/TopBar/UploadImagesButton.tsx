@@ -1,3 +1,6 @@
+// UploadImagesButton: small upload icon in the top bar that opens the image upload modal.
+// Rendered by TopBar.tsx. The modal itself (UploadModalImage) comes from @storyteller/ui-upload-modal.
+
 import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -5,11 +8,16 @@ import { ImagesIcon, UploadIcon } from "lucide-react";
 import { UploadModalImage } from "@storyteller/ui-upload-modal";
 import { twMerge } from "tailwind-merge";
 
+// className: extra Tailwind classes merged onto the button.
 interface Props {
   className?: string;
 }
 
+/**
+ * Icon button with a tooltip plus the (initially closed) upload modal.
+ */
 export const UploadImagesButton = ({ className }: Props) => {
+  // Whether the upload modal is showing.
   const [isOpen, setIsOpen] = useState(false);
 
   return (

@@ -193,11 +193,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     // Left button only — right/middle click must not trigger the click→lightbox
     // (right-click opens the context menu via onContextMenu instead).
     if (event.button !== 0) return;
+    // BUG FIX: reset BEFORE the early returns below. It used to be reset only
+    // for mouse/pen presses, so on a touch laptop a mouse drag left this true
+    // and the next finger tap on the same tile was swallowed by handleButtonClick.
+    dragStarted.current = false;
     // No drag tracking on touch: a finger drag should scroll the page, and a
     // tap still clicks via the button's onClick.
     if (event.pointerType === "touch") return;
     if (isAudio) return;
-    dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
       const dy = moveEvent.pageY - event.pageY;
@@ -219,8 +222,13 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       // (multiple firing paths used to double-toggle bulk selection).
       window.removeEventListener("pointermove", moveListener);
       window.removeEventListener("pointerup", upListener);
+      window.removeEventListener("pointercancel", upListener);
     };
     window.addEventListener("pointerup", upListener);
+    // BUG FIX: a cancelled press (pointercancel, no pointerup) used to leave the
+    // pointermove listener armed, so later mouse moves with NO button held
+    // started a phantom gallery drag from this tile.
+    window.addEventListener("pointercancel", upListener);
   };
 
   // Single click path for the whole tile surface: open the lightbox, or toggle

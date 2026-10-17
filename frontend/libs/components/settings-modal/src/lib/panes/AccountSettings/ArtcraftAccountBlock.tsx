@@ -56,8 +56,14 @@ export const ArtcraftAccountBlock = ({
 
       triggerRecheck(); // Trigger modal to recheck session and potentially open
 
-      await invoke("storyteller_purge_credentials_command");
-
+      // WHY: the purge command rejects when the Rust side cannot delete the
+      // stored credentials; uncaught, that surfaces as an unhandled promise
+      // rejection from this click handler.
+      try {
+        await invoke("storyteller_purge_credentials_command");
+      } catch (e) {
+        console.error("Error purging Artcraft credentials", e);
+      }
     } else {
       triggerRecheck(); // Open login modal instead of redirecting
     }

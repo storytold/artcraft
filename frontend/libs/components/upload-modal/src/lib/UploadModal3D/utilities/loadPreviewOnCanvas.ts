@@ -226,6 +226,10 @@ export const loadPreviewOnCanvas = ({
         }
       })
       .catch((loaderError) => {
+        // BUG FIX: every other loader error path ignores a superseded preview;
+        // this one did not, so a read failing after the user had moved on to
+        // another file painted "SPLAT Loader Error" over the new preview.
+        if (cancelled) return;
         statusCallback({
           type: "SPLAT Loader Error",
           message: String(loaderError),
@@ -420,6 +424,10 @@ const pmdLoader = ({
     },
     undefined,
     (loaderError) => {
+      // BUG FIX: the font fetch (remote, so slow/offline failures are common)
+      // can fail long after this preview was superseded; without this guard
+      // the stale "PMD Loader Error" replaced the next model's good preview.
+      if (isCancelled?.()) return;
       statusCallback({
         type: "PMD Loader Error",
         message: String(loaderError),

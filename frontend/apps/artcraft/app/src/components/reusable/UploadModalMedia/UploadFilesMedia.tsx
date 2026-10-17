@@ -1,3 +1,6 @@
+// UploadFilesMedia: the "ready" form inside UploadModalMedia. The user types a title, picks one image or mp4
+// file, sees a preview, and presses Upload, which calls uploadPlane() (same folder) to send it to the backend.
+
 import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
@@ -5,6 +8,7 @@ import { FileUploader } from "@storyteller/ui-file-uploader";
 import { uploadPlane } from "./uploadPlane";
 import { UploaderState } from "~/models";
 
+// fileTypes: allowed extensions for the picker; onClose: Cancel button; onUploadProgress: receives each upload status change so the parent modal can switch views.
 interface Props {
   title: string;
   fileTypes: string[];
@@ -12,12 +16,15 @@ interface Props {
   onUploadProgress: (newState: UploaderState) => void;
 }
 
+/**
+ * Upload form. Validates title + file, then starts the upload without awaiting it (progress comes back through onUploadProgress).
+ */
 export const UploadFilesMedia = ({
   fileTypes,
   onClose,
-  title,
   onUploadProgress,
 }: Props) => {
+  // Title text plus an optional validation error message.
   const [uploadTitle, setUploadTitle] = useState<{
     value: string;
     error?: string;
@@ -25,12 +32,14 @@ export const UploadFilesMedia = ({
     value: "",
   });
 
+  // The chosen file, its local preview URL (src) and an optional validation error.
   const [assetFile, setAssetFile] = useState<{
     value: File | null;
     error?: string;
     src?: string;
   }>({ value: null });
 
+  // Show an inline error if the title or file is missing, otherwise hand both to uploadPlane.
   const handleSubmit = () => {
     if (!uploadTitle.value) {
       setUploadTitle((curr) => ({
@@ -66,10 +75,11 @@ export const UploadFilesMedia = ({
           className={uploadTitle.error ? "mb-3" : ""}
         />
         <FileUploader
-          title={title}
           fileTypes={fileTypes}
-          file={assetFile.value}
-          setFile={(file: File | null) => {
+          files={assetFile.value ? [assetFile.value] : []}
+          handleChange={(files: File[]) => {
+            // The shared uploader reports an array; this modal only keeps one file.
+            const file = files[0] ?? null;
             if (file !== null) {
               setAssetFile({
                 value: file,

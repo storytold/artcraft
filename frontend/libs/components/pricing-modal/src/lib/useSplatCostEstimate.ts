@@ -30,6 +30,10 @@ export function useSplatCostEstimate(
     const commonModel = selectedModel.tauriId as CommonSplatModel;
     if (!commonModel) {
       setEstimatedCreditsForPage(activePage, null);
+      // WHY: the previous run's cleanup set cancelled, so its finally() will
+      // never clear the spinner; without this it stays stuck when the user
+      // switches from a priced model to one without a tauriId mid-request.
+      setIsLoading(false);
       return;
     }
 

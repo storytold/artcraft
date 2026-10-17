@@ -5,7 +5,7 @@ use crate::requests::image_websocket::grok_websocket::GrokWebsocket;
 use crate::requests::image_websocket::grok_wrapped_websocket::GrokWrappedWebsocket;
 use crate::requests::image_websocket::messages::message_image_data::MessageImageData;
 use crate::utils::scrub_blobs_for_debug_logging::scrub_blobs_for_debug_logging;
-use log::info;
+use log::{debug, info};
 use std::time::{Duration, Instant};
 use wreq::ws::message::Message;
 
@@ -76,7 +76,8 @@ pub async fn listen_for_websocket_images(args: ListenForWebsocketImagesArgs<'_>)
       Err(_err) => {
 
         let message = scrub_blobs_for_debug_logging(&message);
-        println!("Unknown message: {}", message);
+        // println! is forbidden outside tests (AGENTS.md); use log macros.
+        debug!("Unknown message: {}", message);
 
         // NB: Might not have been a parse error, since we're parsing irrelevant message payloads too.
         // This is slightly dangerous to do this way as we might mask true parsing errors with image payloads.

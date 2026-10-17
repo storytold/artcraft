@@ -97,27 +97,35 @@ export const useBoardItemEntry = (
   const handlePicked = useCallback(async (items: MoodboardPickedItem[]) => {
     const store = useBoardLibraryStore.getState();
     const boardId = store.ensureActiveBoard();
-    for (const it of items) {
-      if (!it.url) continue;
-      if (it.kind === "video") {
-        const dims = await measureVideo(it.url);
-        store.addVideoItem(boardId, {
-          src: it.url,
-          mediaId: it.mediaToken,
-          naturalW: dims.w,
-          naturalH: dims.h,
-        });
-      } else {
-        const dims = await measureImage(it.url);
-        store.addImageItem(boardId, {
-          src: it.url,
-          mediaId: it.mediaToken,
-          naturalW: dims.w,
-          naturalH: dims.h,
-        });
+    // WHY: if measuring a picked item throws, the picker used to stay open
+    // forever (setPickerOpen only ran on success). finally always closes it;
+    // items measured before the failure are kept.
+    try {
+      for (const it of items) {
+        if (!it.url) continue;
+        if (it.kind === "video") {
+          const dims = await measureVideo(it.url);
+          store.addVideoItem(boardId, {
+            src: it.url,
+            mediaId: it.mediaToken,
+            naturalW: dims.w,
+            naturalH: dims.h,
+          });
+        } else {
+          const dims = await measureImage(it.url);
+          store.addImageItem(boardId, {
+            src: it.url,
+            mediaId: it.mediaToken,
+            naturalW: dims.w,
+            naturalH: dims.h,
+          });
+        }
       }
+    } catch (err) {
+      console.error("[Moodboard] adding picked media failed", err);
+    } finally {
+      setPickerOpen(false);
     }
-    setPickerOpen(false);
   }, []);
 
   // ----- clipboard paste (images + URLs) -----
@@ -125,7 +133,11 @@ export const useBoardItemEntry = (
     if (!enabled) return undefined;
     const onPaste = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && /input|textarea/i.test(target.tagName)) return;
+      // WHY: pasting into any text-entry field must stay a normal text paste.
+      // input/textarea were already skipped, but contenteditable hosts (rich
+      // text editors, note overlays) were hijacked. jsdom lacks
+      // isContentEditable, so also check the attribute via closest().
+      if (target && isTextEntryTarget(target)) return;
       const data = e.clipboardData;
       if (!data) return;
 
@@ -177,6 +189,13 @@ export const useBoardItemEntry = (
 };
 
 // ---------- helpers ----------
+
+export const isTextEntryTarget = (target: HTMLElement): boolean => {
+  if (/^(input|textarea)$/i.test(target.tagName)) return true;
+  if (target.isContentEditable) return true;
+  const host = target.closest?.("[contenteditable]");
+  return !!host && host.getAttribute("contenteditable") !== "false";
+};
 
 const isUrl = (text: string): boolean => {
   if (!/^https?:\/\//i.test(text)) return false;

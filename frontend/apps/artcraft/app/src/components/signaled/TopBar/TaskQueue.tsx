@@ -1,7 +1,11 @@
-import { findDesktopModel } from "@storyteller/tauri-api";
+import { findDesktopModel ,
+  GetTaskQueue,
+  MarkTaskAsDismissed,
+  TasksNukeAll,
+} from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon, type LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import {
@@ -11,11 +15,6 @@ import {
 } from "@storyteller/ui-gallery-modal";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  GetTaskQueue,
-  MarkTaskAsDismissed,
-  TasksNukeAll,
-} from "@storyteller/tauri-api";
 import type { TaskQueueItem } from "@storyteller/tauri-api";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import {
@@ -530,7 +529,7 @@ export const TaskQueue = () => {
     title: string;
     message: React.ReactNode;
     primaryActionText: string;
-    primaryActionIcon: any;
+    primaryActionIcon: LucideIcon;
     primaryActionBtnClassName: string;
     onConfirm: () => Promise<void>;
   }>({
