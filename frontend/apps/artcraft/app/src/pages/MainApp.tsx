@@ -56,6 +56,7 @@ import { useTabStore } from "./Stores/TabState";
 import { useTextToImageStore } from "./PageImage/TextToImageStore";
 
 import { AppsIndexPage } from "./PageApps/AppsIndexPage";
+import { KidsCalculator } from "./PageKidsCalculator/KidsCalculator";
 import PageDraw from "./PageDraw/PageDraw";
 import {
   topNavMediaId,
@@ -350,6 +351,8 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
           <PageMoodboard />
         </div>
       );
+    case "KIDS_CALCULATOR":
+      return <KidsCalculator />;
     default:
       return null;
   }

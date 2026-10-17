@@ -1,4 +1,19 @@
-import { BoxIcon, CrosshairIcon, DropletIcon, FilmIcon, GlobeIcon, GroupIcon, ImageIcon, ImagesIcon, MusicIcon, PenToolIcon, PencilIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
+import {
+  BoxIcon,
+  CalculatorIcon,
+  CrosshairIcon,
+  DropletIcon,
+  FilmIcon,
+  GlobeIcon,
+  GroupIcon,
+  ImageIcon,
+  ImagesIcon,
+  MusicIcon,
+  PenToolIcon,
+  PencilIcon,
+  SparklesIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -24,7 +39,8 @@ export type AppId =
   | "STORYBOARD"
   | "BACKGROUND_CHANGE"
   | "VIDEO_EDITOR"
-  | "MOODBOARD";
+  | "MOODBOARD"
+  | "KIDS_CALCULATOR";
 
 export interface AppDescriptor {
   id: AppId;
@@ -67,6 +83,12 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
     description: "Precision control. Great for AI film.",
     large: true,
   },
+  {
+    id: "KIDS_CALCULATOR",
+    label: "Kids Calculator",
+    icon: CalculatorIcon,
+    description: "A colorful calculator made for little learners.",
+  },
 ];
 
 export interface FullAppItem {
@@ -74,7 +96,7 @@ export interface FullAppItem {
   label: string;
   description: string;
   icon: LucideIcon;
-  category: "generate" | "edit";
+  category: "generate" | "edit" | "learn";
   badge?: "NEW" | "BEST" | "SOON" | "BETA";
   action?: AppId;
   /** Legacy single-tone icon-square background (e.g. "bg-blue-600/40"). Still
@@ -200,6 +222,12 @@ const APP_CARD_PALETTES: Record<string, AppCardPalette> = {
     iconColor: "text-red-300",
     hoverStyle: "hover:border-red-400/60 hover:bg-red-500/10",
   },
+  "kids-calculator": {
+    accent: "from-amber-500/20 to-amber-500/0",
+    iconBg: "bg-amber-500/20 border-amber-400/40",
+    iconColor: "text-amber-300",
+    hoverStyle: "hover:border-amber-400/60 hover:bg-amber-500/10",
+  },
 };
 
 const FALLBACK_APP_CARD_PALETTE: AppCardPalette = {
@@ -213,6 +241,15 @@ export const getAppCardPalette = (id: string): AppCardPalette =>
   APP_CARD_PALETTES[id] ?? FALLBACK_APP_CARD_PALETTE;
 
 export const ALL_APPS: FullAppItem[] = [
+  {
+    id: "kids-calculator",
+    label: "Kids Calculator",
+    description: "Practice arithmetic with big, friendly buttons.",
+    icon: CalculatorIcon,
+    category: "learn",
+    action: "KIDS_CALCULATOR",
+    color: "bg-amber-500/40",
+  },
   {
     id: "text-to-image",
     label: "Create Image",
@@ -409,6 +446,14 @@ export const useEditApps = (): FullAppItem[] => {
   );
 };
 
+export const useLearnApps = (): FullAppItem[] => {
+  const visible = useVisibleApps();
+  return useMemo(
+    () => visible.filter((app) => app.category === "learn"),
+    [visible],
+  );
+};
+
 export const getBadgeStyles = (badge?: string) => {
   switch (badge) {
     case "NEW":
@@ -444,6 +489,7 @@ export const goToApp = (action?: string) => {
       "BACKGROUND_CHANGE",
       "VIDEO_EDITOR",
       "MOODBOARD",
+      "KIDS_CALCULATOR",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {

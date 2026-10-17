@@ -382,6 +382,8 @@ export const TopBar = ({ pageName }: Props) => {
         return ["Studio", "Edit Video"];
       case "MOODBOARD":
         return ["Studio", "Moodboard"];
+      case "KIDS_CALCULATOR":
+        return ["Play & Learn", "Kids Calculator"];
       case "APPS":
         return ["Home"];
       default:

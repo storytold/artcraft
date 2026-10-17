@@ -4,6 +4,7 @@ import { twMerge } from "tailwind-merge";
 import {
   useGenerateApps,
   useEditApps,
+  useLearnApps,
   getAppCardPalette,
   getBadgeStyles,
   goToApp,
@@ -13,9 +14,11 @@ import {
 export const AppsIndexPage = () => {
   const generateApps = useGenerateApps();
   const editApps = useEditApps();
+  const learnApps = useLearnApps();
   const categories = [
     { title: "Create", apps: generateApps },
     { title: "Edit", apps: editApps },
+    { title: "Play & Learn", apps: learnApps },
   ];
 
   return (
