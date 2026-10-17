@@ -1,0 +1,349 @@
+.kids-calc-page {
+  position: fixed;
+  inset: 56px 0 0;
+  overflow-y: auto;
+  color: #273052;
+  background:
+    radial-gradient(ellipse at 6% 18%, #ffd68c80 0, transparent 26%),
+    radial-gradient(ellipse at 91% 14%, #c7b8ff88 0, transparent 28%),
+    radial-gradient(ellipse at 82% 90%, #9ce9db80 0, transparent 30%),
+    #f7f5ff;
+  font-family: "Nunito", "Trebuchet MS", system-ui, sans-serif;
+}
+
+.kids-calc-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(calc(100% - 32px), 510px);
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+  padding: 34px 0 22px;
+}
+
+.kids-calc-heading {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.kids-calc-heading-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  place-items: center;
+  transform: rotate(-8deg);
+  border: 3px solid #fff;
+  border-radius: 20px;
+  background: #ffb84d;
+  box-shadow: 0 5px 0 #df9430, 0 8px 18px #7c5b2b24;
+  color: #fff;
+  font-size: 37px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.kids-calc-heading-icon span {
+  transform: rotate(8deg);
+}
+
+.kids-calc-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  color: #8272d8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.kids-calc-heading h1 {
+  margin: 0;
+  color: #293256;
+  font-size: clamp(21px, 5vw, 28px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.kids-calc-subtitle {
+  margin: 5px 0 0;
+  color: #747b99;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.kids-calc-sticker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  transform: rotate(7deg);
+  border-radius: 12px;
+  background: #dff7ed;
+  padding: 9px 10px;
+  color: #38a17e;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.kids-calc-card {
+  width: 100%;
+  border: 4px solid #fff;
+  border-radius: 28px;
+  background: #fff;
+  padding: clamp(16px, 4vw, 24px);
+  box-shadow:
+    0 15px 0 #e9e5f8,
+    0 20px 40px #43377920;
+}
+
+.kids-calc-display {
+  display: flex;
+  min-width: 0;
+  min-height: 126px;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid #edeaff;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 90% 20%, #fff 0, transparent 20%),
+    linear-gradient(135deg, #f3f0ff, #edfbf8);
+  padding: 14px 18px 8px;
+}
+
+.kids-calc-expression {
+  min-height: 18px;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: #9394b4;
+  font-size: 13px;
+  font-weight: 750;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kids-calc-number {
+  max-width: 100%;
+  overflow: hidden;
+  color: #33365e;
+  font-size: clamp(38px, 12vw, 58px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kids-calc-message {
+  min-height: 18px;
+  margin: 1px 0 0;
+  color: #de5571;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.kids-calc-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.kids-calc-key {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 18px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease,
+    box-shadow 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.kids-calc-key:hover {
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+}
+
+.kids-calc-key:active {
+  transform: translateY(3px);
+  box-shadow: none !important;
+}
+
+.kids-calc-key:focus-visible {
+  outline: 3px solid #6252c6;
+  outline-offset: 3px;
+}
+
+.kids-calc-key.digit {
+  background: #f4f3fb;
+  box-shadow: 0 4px 0 #e5e2f1;
+  color: #34385e;
+}
+
+.kids-calc-key.utility {
+  background: #e9e6fb;
+  box-shadow: 0 4px 0 #d4cff1;
+  color: #7063bb;
+  font-size: 20px;
+}
+
+.kids-calc-key.utility:first-child {
+  font-size: 13px;
+}
+
+.kids-calc-key.operator {
+  background: #ffe7bc;
+  box-shadow: 0 4px 0 #f5cf8e;
+  color: #bd7b1d;
+}
+
+.kids-calc-key.equals {
+  background: #78d9bd;
+  box-shadow: 0 4px 0 #51b99a;
+  color: #fff;
+  font-size: 30px;
+}
+
+.kids-calc-key.wide {
+  grid-column: span 2;
+}
+
+.kids-calc-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 17px 0 0;
+  color: #a193df;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.kids-calc-keyboard-hint {
+  margin: 23px 0 0;
+  color: #767d9a;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.kids-calc-keyboard-hint kbd {
+  display: inline-block;
+  border: 1px solid #e1def0;
+  border-radius: 5px;
+  background: #fff;
+  padding: 1px 5px;
+  color: #625a9e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.kids-calc-confetti {
+  position: fixed;
+  inset: 56px 0 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kids-calc-confetti span {
+  position: absolute;
+  color: #ffbb58;
+  font-size: 22px;
+  opacity: 0.6;
+}
+
+.kids-calc-confetti span:nth-child(1) {
+  top: 16%;
+  left: 9%;
+}
+
+.kids-calc-confetti span:nth-child(2) {
+  top: 55%;
+  left: 5%;
+  color: #62cbb0;
+  font-size: 15px;
+}
+
+.kids-calc-confetti span:nth-child(3) {
+  top: 68%;
+  right: 8%;
+  color: #a594ed;
+}
+
+.kids-calc-confetti span:nth-child(4) {
+  top: 25%;
+  right: 7%;
+  color: #f093a7;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .kids-calc-content {
+    width: min(calc(100% - 22px), 420px);
+    padding-top: 22px;
+  }
+
+  .kids-calc-heading {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .kids-calc-heading-icon {
+    width: 49px;
+    height: 49px;
+    flex-basis: 49px;
+    border-radius: 17px;
+    font-size: 32px;
+  }
+
+  .kids-calc-sticker {
+    display: none;
+  }
+
+  .kids-calc-card {
+    border-radius: 24px;
+    padding: 14px;
+  }
+
+  .kids-calc-keypad {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .kids-calc-key {
+    min-height: clamp(48px, 13vw, 58px);
+    border-radius: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kids-calc-key {
+    transition: none;
+  }
+}
