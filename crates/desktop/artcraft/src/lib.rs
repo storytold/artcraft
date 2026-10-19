@@ -56,6 +56,9 @@ use crate::services::midjourney::commands::midjourney_clear_credentials_command:
 use crate::services::midjourney::commands::midjourney_get_credential_info_command::midjourney_get_credential_info_command;
 use crate::services::midjourney::commands::midjourney_open_login_command::midjourney_open_login_command;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
+use crate::services::pen::commands::disable_pen_capture_command::disable_pen_capture_command;
+use crate::services::pen::commands::enable_pen_capture_command::enable_pen_capture_command;
+use crate::services::pen::pen_capture_state::PenCaptureState;
 use crate::services::sora::commands::check_sora_session_command::check_sora_session_command;
 use crate::services::sora::commands::open_sora_login_command::open_sora_login_command;
 use crate::services::sora::commands::sora_get_credential_info_command::sora_get_credential_info_command;
@@ -94,8 +97,26 @@ use tauri_plugin_http;
 use tauri_plugin_log::Target;
 use tauri_plugin_log::TargetKind;
 
+/// Forces GTK to run on the X11 backend (X11/XWayland) on Linux. The native
+/// pen reader captures tablet hardware through XInput2 on the same X server;
+/// pure-Wayland windows receive no tablet data at all, so without this the
+/// pen bridge would never match the app's windows. Skipped when GDK_BACKEND
+/// is already set by the user or when there is no X display to fall back to.
+#[cfg(target_os = "linux")]
+fn force_gdk_x11_backend() {
+  if std::env::var_os("GDK_BACKEND").is_none()
+    && std::env::var_os("DISPLAY").is_some_and(|value| !value.is_empty())
+  {
+    println!("Forcing GDK_BACKEND=x11 for native pen input support");
+    std::env::set_var("GDK_BACKEND", "x11");
+  }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  #[cfg(target_os = "linux")]
+  force_gdk_x11_backend();
+
   // NB: Tauri wants to install the logger itself, so we can't rely on the logger crate
   // until the tauri runtime begins.
   println!("Loading config...");
@@ -220,15 +241,18 @@ pub fn run() {
     .manage(storyteller_creds_manager_3)
     .manage(worldlabs_bearer_bridge)
     .manage(provider_credential_cache)
-    .manage(worldlabs_creds_manager);
+    .manage(worldlabs_creds_manager)
+    .manage(std::sync::Arc::new(PenCaptureState::default()));
 
   // TODO: Break this out into another module, because RustRover/IntelliJ lags with these macros.
   //  My first attempt at naively doing this didn't work because the macros can't find their codegen'd targets.
   let builder = builder.invoke_handler(tauri::generate_handler![
     check_sora_session_command,
+    disable_pen_capture_command,
     download_directory_reveal_command,
     download_media_file_command,
     download_url_command,
+    enable_pen_capture_command,
     get_download_path_command,
     enqueue_image_bg_removal_command,
     enqueue_image_to_3d_object_command,
