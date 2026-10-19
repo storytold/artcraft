@@ -65,6 +65,7 @@ impl AppDataRoot {
     
     let assets_dir = AppAssetsDir::get_or_create_in_root_dir(&dir)?;
     let credentials_dir = AppCredentialsDir::get_or_create_in_root_dir(&dir)?;
+    credentials_dir.restrict_permissions()?;
     let downloads_dir = AppDownloadsDir::get_or_create_in_root_dir(&dir)?;
     let settings_dir = AppSettingsDir::get_or_create_in_root_dir(&dir)?;
     let state_dir = AppStateDir::get_or_create_in_root_dir(&dir)?;
