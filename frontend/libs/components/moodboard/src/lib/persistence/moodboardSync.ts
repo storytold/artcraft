@@ -3,10 +3,7 @@ import { create } from "zustand";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
 import type { Board } from "../boards/boardTypes";
 import { useMoodboardStore } from "../canvas/MoodboardStore";
-import type {
-  MoodboardAdapter,
-  MoodboardPersistenceAdapter,
-} from "../adapter";
+import type { MoodboardAdapter, MoodboardPersistenceAdapter } from "../adapter";
 import {
   applyResolvedMediaUrls,
   collectUnresolvedMediaTokens,
@@ -211,14 +208,7 @@ export async function deleteBoardEverywhere(boardId: string): Promise<void> {
   if (!token) return;
 
   addTombstone(token);
-  if (persistenceRef?.deleteBoard) {
-    try {
-      const deleted = await persistenceRef.deleteBoard(token);
-      if (deleted) removeTombstone(token);
-    } catch (error) {
-      console.error("[Moodboard] remote board delete failed:", error);
-    }
-  }
+  await deleteRemoteBoard(persistenceRef, token);
 }
 
 // ---------- dirty tracking + scheduling ----------
@@ -387,6 +377,17 @@ async function saveBoard(
       console.error("[Moodboard] board save failed:", result.errorMessage);
       return false;
     }
+    // Deletion may have happened before a newly created board received its
+    // token. Compensate for the completed write instead of leaving an orphan
+    // that the next hydration would restore. Updates can race deletion too.
+    if (!useBoardLibraryStore.getState().boards[boardId]) {
+      const token = result.token ?? board.remoteToken;
+      if (token) {
+        addTombstone(token);
+        await deleteRemoteBoard(persistence, token);
+      }
+      return true;
+    }
     withDirtySuppressed(() => {
       const store = useBoardLibraryStore.getState();
       if (result.token && !board.remoteToken) {
@@ -436,8 +437,11 @@ async function hydrateRemoteBoards(
     if (syncUserId !== userId) return;
 
     if (listed.success && listed.boards) {
-      await retryTombstonedDeletes(persistence);
+      // A successful retry removes its tombstone, but the listing above was
+      // fetched before that deletion and can still contain the deleted row.
       const tombstones = readTombstones();
+      await retryTombstonedDeletes(persistence);
+      readTombstones().forEach((token) => tombstones.add(token));
       const rows = listed.boards.filter((row) => !tombstones.has(row.token));
 
       // Each board hydrates independently — one bad row/fetch must not
@@ -593,6 +597,19 @@ function removeTombstone(token: string): void {
   const tokens = readTombstones();
   if (!tokens.delete(token)) return;
   writeTombstones(tokens);
+}
+
+async function deleteRemoteBoard(
+  persistence: MoodboardPersistenceAdapter | null,
+  token: string,
+): Promise<void> {
+  if (!persistence?.deleteBoard) return;
+  try {
+    const deleted = await persistence.deleteBoard(token);
+    if (deleted) removeTombstone(token);
+  } catch (error) {
+    console.error("[Moodboard] remote board delete failed:", error);
+  }
 }
 
 async function retryTombstonedDeletes(
