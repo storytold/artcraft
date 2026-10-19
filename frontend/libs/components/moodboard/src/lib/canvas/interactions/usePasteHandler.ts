@@ -34,8 +34,13 @@ export const usePasteHandler = (
       e.preventDefault();
 
       const stage = stageRef.current;
+      // Image nodes use canvas coordinates, so undo the stage's pan and
+      // zoom before passing the visible center to the image helper.
       const center = stage
-        ? { x: stage.width() / 2, y: stage.height() / 2 }
+        ? {
+            x: (stage.width() / 2 - stage.x()) / stage.scaleX(),
+            y: (stage.height() / 2 - stage.y()) / stage.scaleY(),
+          }
         : { x: 400, y: 400 };
 
       for (const file of fileItems) {
