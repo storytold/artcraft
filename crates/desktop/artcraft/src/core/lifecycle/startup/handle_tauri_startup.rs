@@ -16,6 +16,10 @@ use crate::services::grok::threads::grok_image_websocket_thread::grok_image_webs
 use crate::services::grok::threads::grok_video_task_polling::grok_video_task_polling_thread::grok_video_task_polling_thread;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
 use crate::services::midjourney::threads::midjourney_long_polling_thread::midjourney_long_polling_thread;
+#[cfg(target_os = "linux")]
+use crate::services::pen::pen_capture_state::PenCaptureState;
+#[cfg(target_os = "linux")]
+use crate::services::pen::spawn_pen_input_thread::spawn_pen_input_thread;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
@@ -51,6 +55,16 @@ pub async fn handle_tauri_startup(
 
   let task_database =
       bootstrap_task_database(&app, &root).await?;
+
+  #[cfg(target_os = "linux")]
+  {
+    use std::sync::Arc;
+
+    spawn_pen_input_thread(
+      &app,
+      app.state::<Arc<PenCaptureState>>().inner().clone(),
+    )?;
+  }
 
   load_provider_priority_state(
     &app,
