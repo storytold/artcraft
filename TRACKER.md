@@ -477,3 +477,10 @@ Verification at the time of writing (2026-10-17):
    B-174 / N-112). promptbox vitest 13 files / 78 tests and `tsc -b tsconfig.lib.json` 0. Next: the remaining promptbox
    files, smallest first (`common/`, `deck/DeckCard.tsx`, `MentionChipMenu.tsx`, then the large prompt boxes), each
    with a bug-hunt read.
+
+   Twentieth slice (Build 2, 2026-10-19): promptbox `common/` `AspectRatioPicker.tsx`, `GenerationCountPicker.tsx`,
+   `QualityPicker.tsx`, `VideoGenerationCountPicker.tsx` and `StylePromptRow.tsx` annotated, comments only, each file
+   code identical once comments and blank lines are stripped. No new bug; counts unchanged (Fixed 173, strict 158,
+   Noted 102; next free IDs B-174 / N-112). promptbox vitest 13 files / 78 tests and `tsc -b tsconfig.lib.json` 0.
+   Next: the rest of promptbox `common/` (`AspectRatioIcon.tsx`, `ResolutionPicker.tsx`, `AudioTuningPopover.tsx`,
+   `SoundsSettingsPopover.tsx`, `AudioReferenceRow.tsx`), then `deck/`.

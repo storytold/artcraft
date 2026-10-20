@@ -2,6 +2,7 @@ import { ChangeEvent } from "react";
 import { TagsIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
+// The text, a callback for changes, and optional placeholder and extra CSS classes.
 export interface StylePromptRowProps {
   value: string;
   onChange: (value: string) => void;
@@ -11,16 +12,19 @@ export interface StylePromptRowProps {
 
 // Always-visible secondary prompt row for the style/genre direction
 // (Suno's "tags"), rendered directly beneath the main prompt textarea.
+// A single-line text box for the music style, shown under the main prompt box.
 export function StylePromptRow({
   value,
   onChange,
   placeholder = "Style: e.g. dreamy synth-pop, female vocals",
   className = "",
 }: StylePromptRowProps) {
+  // Pass the typed text up to the parent.
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value);
   };
 
+  // A row with a tag icon, the text box and, once there is text, a small clear (X) button.
   return (
     <div
       className={twMerge(
@@ -38,6 +42,7 @@ export function StylePromptRow({
         placeholder={placeholder}
         className="min-w-0 flex-1 bg-transparent text-sm text-base-fg placeholder:text-base-fg/35 focus:outline-none"
       />
+      {/* Show the clear button only when there is something to clear. */}
       {value.length > 0 && (
         <button
           type="button"
