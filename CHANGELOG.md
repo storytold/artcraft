@@ -471,6 +471,14 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   items). New `lightbox-modal.copyPrompt.spec.tsx` (2 tests): 1 failed on the unfixed code, 1 control passed;
   lightbox-modal now 27/27 in 7 files, `tsc -b` and the spec typecheck 0. Counts: Fixed 173, strict 158, Noted 102;
   next free IDs B-174 / N-112.
+- Image prompt box: a resolution picked on one model stayed selected, and was sent, after switching to a model that
+  does not offer it (B-174). The chosen resolution lives in one shared store; the aspect-ratio picker already resets
+  a ratio the new model lacks, but the resolution picker did not. 3K picked on GPT Image 2.5 and then a switch to
+  Nano Banana 2 or Pro (1K, 2K, 4K only) left 3K in place: the menu showed no selected row and the generate request
+  carried a resolution the model does not list. `ResolutionPicker` now resets to the model's default, the same way
+  `AspectRatioPicker` does. New `common/ResolutionPicker.spec.tsx` (3 tests): 1 failed on the unfixed code, 2
+  controls passed; promptbox now 81/81 in 14 files, `tsc -b` and the spec typecheck 0. Not checked: how the backend
+  answers a resolution the model lacks. Counts: Fixed 174, strict 159, Noted 102; next free IDs B-175 / N-112.
 - Tests only (not counted as a bug): `shipped-gradients.spec.ts` in video-editor runs the 33 background swatches the
   colour picker ships (pattern-craft and syntax-ui lists) through the export's CSS parser and canvas painter with a
   strict recording canvas; 100 new tests, all green on the current code.

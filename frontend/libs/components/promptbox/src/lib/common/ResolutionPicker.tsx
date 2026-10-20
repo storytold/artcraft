@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { SquareIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon, HighDefinitionIcon, StandardDefinitionIcon } from "@storyteller/icons";
@@ -30,6 +31,17 @@ export const ResolutionPicker = ({
 }: ResolutionPickerProps) => {
   const useResolution =
     currentResolution ?? model.defaultResolution ?? undefined;
+
+  // If the stored resolution isn't offered by the current model (e.g. 3K picked on GPT Image 2.5, then the
+  // user switches to Nano Banana, which has no 3K), reset to the model's default. Otherwise the stale value is
+  // still sent with the request and the menu shows no selected row. Mirrors AspectRatioPicker.
+  useEffect(() => {
+    if (currentResolution === undefined) return;
+    if (model.resolutions?.includes(currentResolution)) return;
+    const def = model.defaultResolution;
+    if (!def) return;
+    handleCommonResolutionSelect(def);
+  }, [model, currentResolution, handleCommonResolutionSelect]);
 
   console.log("resolution - currentResolution:", currentResolution);
   console.log("resolution - useResolution:", useResolution);
