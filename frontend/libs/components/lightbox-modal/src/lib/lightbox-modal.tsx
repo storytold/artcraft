@@ -1161,8 +1161,10 @@ export function LightboxModal({
             </div>
 
             {/* buttons with spacing */}
+            {/* Action buttons: shown only when the file has a usable URL; each one also needs its handler from the caller. */}
             {actionUrl && (
               <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+                {/* Recreate: reopen the prompt that made this file (images and videos with a saved prompt only; full width). */}
                 {onRecreateClicked &&
                   hasPromptToken &&
                   promptData &&
@@ -1185,6 +1187,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Edit Image: send this image to the editor (images only). */}
                 {onEditClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1202,6 +1205,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Make Video: send this image to image-to-video (images only). */}
                 {onTurnIntoVideoClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1222,6 +1226,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Remove BG: start background removal, then close the viewer and the gallery (images only). */}
                 {onRemoveBackgroundClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1244,6 +1249,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Make 3D: start image-to-3D-object, then close the viewer and the gallery (images only). */}
                 {onMake3DObjectClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1266,6 +1272,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Make 3D World: start image-to-3D-world, then close the viewer and the gallery (images only). */}
                 {onMake3DWorldClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1288,6 +1295,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Download: images share a row with another button; other kinds take the full row. */}
                 {onDownloadClicked && actionUrl && (
                   <Button
                     className={
@@ -1307,6 +1315,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
+                {/* Add to Scene: place this file in the scene editor, then close the viewer and the gallery. */}
                 {onAddToSceneClicked && actionUrl && (
                   <Button
                     className="w-full py-1.5 text-[13px]"
@@ -1323,6 +1332,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
+                {/* Share: copy the public link for this file; the label flips to "Link Copied!" for 1.5 s, or an error toast shows if the copy fails. */}
                 {selectedMediaToken && (
                   <Button
                     className="w-full py-1.5 text-[13px]"
@@ -1355,6 +1365,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
+                {/* Delete: ask the caller to delete the file shown (the caller decides what happens next). */}
                 {selectedMediaToken && onDeleteClicked && (
                   <Button
                     icon={Trash2Icon}
@@ -1375,6 +1386,7 @@ export function LightboxModal({
         </div>
       </Modal>
 
+      {/* Second small window that shows a reference image full size; closing it clears refPreviewUrl. */}
       {refPreviewUrl && (
         <Modal
           isOpen={true}
@@ -1404,6 +1416,7 @@ export function LightboxModal({
   );
 }
 
+// InfoSection: the "Information" block (model, provider, shape, length, audio, size, created date). Every field is optional and the whole block hides when none are known.
 interface InfoSectionProps {
   modelType: string | null;
   generationProvider: string | null;
@@ -1427,6 +1440,7 @@ function InfoSection({
   mediaHeight,
   createdAt,
 }: InfoSectionProps) {
+  // True when at least one field has something to show; width and height count only as a pair.
   const hasAnyInfo =
     !!modelType ||
     !!generationProvider ||
@@ -1437,6 +1451,7 @@ function InfoSection({
     (!!mediaWidth && !!mediaHeight) ||
     !!createdAt;
 
+  // Nothing to show, so render nothing at all (no empty heading).
   if (!hasAnyInfo) return null;
 
   return (
@@ -1501,6 +1516,7 @@ function InfoSection({
   );
 }
 
+// InfoRow: one label on the left and its value on the right, with a divider line under every row but the last.
 function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 px-3 py-2.5 border-b border-white/10 last:border-0">
