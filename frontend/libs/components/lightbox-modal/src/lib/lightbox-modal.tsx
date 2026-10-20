@@ -285,6 +285,7 @@ export function LightboxModal({
   // Fetch prompt when mediaId changes — debounced to avoid API spam during
   // rapid next/prev navigation, with cancellation for stale responses.
   useEffect(() => {
+    // No file selected: clear everything that came from the server and stop.
     if (!mediaId) {
       setPromptData(null);
       setHasPromptToken(false);
@@ -294,23 +295,29 @@ export function LightboxModal({
     }
 
     // Immediately show skeletons & clear stale data
+    // A new file: show loading skeletons and drop the previous file's prompt and creator right away.
     setPromptLoading(true);
     setPromptData(null);
     setCreator(null);
 
+    // Set by the cleanup below when mediaId changes again, so a slow answer for an old file is ignored.
     let cancelled = false;
 
+    // Wait 180 ms before asking the server, so holding an arrow key does not fire a request per file.
     const timer = setTimeout(async () => {
       try {
+        // Step 1: fetch the media file record (gives the creator and the prompt token).
         const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
           mediaFileToken: mediaId,
         });
         if (cancelled) return;
 
+        // Remember who created the file (shown in the info section and used by the Tags box).
         if (mediaResponse.success && mediaResponse.data) {
           setCreator(mediaResponse.data.maybe_creator_user || null);
         }
 
+        // Step 2: if the file has a prompt, fetch the prompt record with its token.
         if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
           setHasPromptToken(true);
           const promptResponse = await promptsApi.GetPromptsByToken({
@@ -327,11 +334,13 @@ export function LightboxModal({
           setHasPromptToken(false);
           setPromptData(null);
         }
+      // Any failure leaves the prompt panel empty rather than showing stale data.
       } catch (error) {
         if (cancelled) return;
         console.error("Error fetching prompt:", error);
         setHasPromptToken(false);
         setPromptData(null);
+      // Stop the skeletons, unless a newer request has taken over.
       } finally {
         if (!cancelled) setPromptLoading(false);
       }
@@ -382,6 +391,7 @@ export function LightboxModal({
         if (cancelled) return;
 
         if (response.success && response.data?.length) {
+          // Keep only the files that have both a download url and a token.
           const items = response.data
             .map((file: any) => ({
               url: file.media_links?.cdn_url,
@@ -396,6 +406,7 @@ export function LightboxModal({
             const primaryToken = mediaId;
             const primaryUrl = imageUrl;
 
+            // Put the file the lightbox was opened on first, matching by token and then by url.
             const sortedItems = [...items].sort((a, b) => {
               if (primaryToken === a.token) return -1;
               if (primaryToken === b.token) return 1;
@@ -404,6 +415,7 @@ export function LightboxModal({
               return 0;
             });
 
+            // Store urls and tokens in the same order so index i of one matches index i of the other.
             setBatchImages(sortedItems.map((item) => item.url));
             setBatchTokens(sortedItems.map((item) => item.token));
           } else {
@@ -427,6 +439,7 @@ export function LightboxModal({
     };
   }, [batchImageToken, mediaId, imageUrl, mediaFilesApi]);
 
+  // Which image urls the carousel shows: the fetched batch, else the urls the caller passed, else the single imageUrl.
   const effectiveImageUrls = useMemo(() => {
     if (batchImages && batchImages.length > 0) {
       return batchImages;
@@ -437,17 +450,21 @@ export function LightboxModal({
     return imageUrl ? [imageUrl] : [];
   }, [batchImages, imageUrls, imageUrl]);
 
+  // Index of the image the carousel is showing; Share, Delete and Edit act on this one.
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Main carousel options; loop is off so the first and last images are real boundaries (arrow keys then move to the previous / next file).
   const carouselOptions: EmblaOptionsType = useMemo(
     () => ({ loop: false }),
     [],
   );
+  // Two carousels: the main one shows the image, the thumbnail strip below it selects an image.
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel(carouselOptions);
   const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
     containScroll: "keepSnaps",
     dragFree: true,
   });
 
+  // Clicking a thumbnail scrolls the main carousel to that image.
   const onThumbClick = useCallback(
     (index: number) => {
       if (!emblaMainApi || !emblaThumbsApi) return;
@@ -456,6 +473,7 @@ export function LightboxModal({
     [emblaMainApi, emblaThumbsApi],
   );
 
+  // Delete button: ask for confirmation, then call the Rust delete command (see the failure handling inside).
   const onDeleteClicked = useCallback(
     (mediaToken: string) => {
       showActionReminder({
@@ -495,6 +513,7 @@ export function LightboxModal({
     [onClose],
   );
 
+  // When the main carousel settles on a slide, remember its index and keep the thumbnail strip in step.
   const onSelect = useCallback(() => {
     if (!emblaMainApi || !emblaThumbsApi) return;
     const index = emblaMainApi.selectedScrollSnap();
@@ -515,16 +534,19 @@ export function LightboxModal({
   }, [effectiveImageUrls, emblaMainApi, emblaThumbsApi]);
 
   useEffect(() => {
+    // When the file changes, jump (no animation) to the slide the caller asked for, or the first one.
     const idx = initialIndex ?? 0;
     setSelectedIndex(idx);
     emblaMainApi?.scrollTo(idx, true);
     emblaThumbsApi?.scrollTo(idx, true);
   }, [batchImageToken, imageUrl, emblaMainApi, emblaThumbsApi]);
 
+  // The url of the shown image, and the url that action buttons use (caller's action url, else the shown image, else the download url).
   const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
   const actionUrl =
     actionUrls?.[selectedIndex] ?? selectedImageUrl ?? downloadUrl ?? undefined;
 
+  // Media token of the shown image: from the fetched batch, else the caller's list, else the main mediaId.
   const selectedMediaToken = useMemo(() => {
     const tokenFromBatch = batchTokens?.[selectedIndex];
     const tokenFromProps = mediaTokens?.[selectedIndex];
@@ -532,6 +554,7 @@ export function LightboxModal({
   }, [batchTokens, mediaTokens, selectedIndex, mediaId]);
 
   useEffect(() => {
+    // Preload the shown image so the loading spinner can be hidden when it is ready (or has failed, so the spinner never sticks).
     if (!selectedImageUrl) {
       setMediaLoaded(false);
       setMediaWidth(null);
@@ -561,6 +584,7 @@ export function LightboxModal({
     };
   }, [selectedImageUrl]);
 
+  // Media class to use: the caller's, or "image" when a batch of images was fetched.
   const derivedMediaClass = useMemo(
     () =>
       mediaClass ??

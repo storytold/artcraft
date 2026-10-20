@@ -622,6 +622,12 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   (checked with a script that diffs what is left; the real file was first confirmed byte-identical to that copy).
   No bug found while annotating, so counts are unchanged (Fixed 173, strict 158, Noted 102). Re-verified after the
   edit: `tsc -b tsconfig.lib.json` 0, lightbox-modal vitest 7 files / 27 tests passed.
+- Annotation stage 2, fourteenth slice (2026-10-19): comments on the next part of `lightbox-modal.tsx` (the prompt
+  fetch, the batch-image fetch, the carousel and delete handlers, the shown-image state and the preload effect, down to
+  the keyboard handler). Comments only: code identical to the pre-edit copy once whole-line comments and blank lines
+  are stripped. A read of this stretch found no new bug (the delete failure handling is B-160, the carousel listener
+  cannot pile up). Counts unchanged (Fixed 173, strict 158, Noted 102). `tsc -b tsconfig.lib.json` 0, lightbox-modal
+  vitest 7 files / 27 tests passed.
 
 ### Noted, not changed
 - N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.
