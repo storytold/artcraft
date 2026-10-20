@@ -649,6 +649,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   only: code identical to the pre-edit copy once whole-line comments and blank lines are stripped. A read found no
   new bug. Counts unchanged (Fixed 173, strict 158, Noted 102). `tsc -b tsconfig.lib.json` 0, lightbox-modal vitest
   7 files / 27 tests passed.
+- Annotation stage 2, nineteenth slice (2026-10-19): first file of the promptbox library, `promptStore.ts` (the 2D, 3D,
+  image, video, audio and edit prompt stores, the Enter-to-generate preference and the characters store). Comments only:
+  code identical to the pre-edit copy once whole-line comments and blank lines are stripped. A read found no bug (plain
+  setters; the history helper de-duplicates and caps correctly). Counts unchanged (Fixed 173, strict 158, Noted 102).
+  `tsc -b tsconfig.lib.json` 0, promptbox vitest 13 files / 78 tests passed.
 
 ### Noted, not changed
 - N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.

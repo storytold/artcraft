@@ -471,3 +471,9 @@ Verification at the time of writing (2026-10-17):
    finishes that file. Comments only, code identical once comments and blank lines are stripped. No new bug; counts
    unchanged (Fixed 173, strict 158, Noted 102; next free IDs B-174 / N-112). lightbox-modal vitest 7 files / 27 tests
    and `tsc -b tsconfig.lib.json` 0. Next: the next Build 2 library (promptbox), with a bug-hunt pass first.
+
+   Nineteenth slice (Build 2, 2026-10-19): promptbox `promptStore.ts` annotated, comments only, code identical once
+   comments and blank lines are stripped. No new bug; counts unchanged (Fixed 173, strict 158, Noted 102; next free IDs
+   B-174 / N-112). promptbox vitest 13 files / 78 tests and `tsc -b tsconfig.lib.json` 0. Next: the remaining promptbox
+   files, smallest first (`common/`, `deck/DeckCard.tsx`, `MentionChipMenu.tsx`, then the large prompt boxes), each
+   with a bug-hunt read.
