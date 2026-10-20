@@ -5,6 +5,7 @@ import { SliderV2 } from "@storyteller/ui-sliderv2";
 // Output-shaping controls for models that support them (Seed Audio):
 // sample rate, playback speed, volume, and pitch. Ranges mirror the
 // backend's validate_audio_request limits.
+// Allowed ranges for each control; they mirror what the server accepts.
 export const AUDIO_SPEED_MIN = 0.5;
 export const AUDIO_SPEED_MAX = 2.0;
 export const AUDIO_VOLUME_MIN = 0.5;
@@ -12,6 +13,7 @@ export const AUDIO_VOLUME_MAX = 2.0;
 export const AUDIO_PITCH_MIN = -12;
 export const AUDIO_PITCH_MAX = 12;
 
+// Which controls to show, and for each one its current value and a callback for changes. All are optional.
 export interface AudioTuningPopoverProps {
   // Sample rate section renders only when options are provided.
   sampleRateOptions?: number[] | null;
@@ -28,6 +30,7 @@ export interface AudioTuningPopoverProps {
   onPitchChange?: (value: number) => void;
 }
 
+// The "Tuning" menu for audio models that let the user shape the output: sample rate, speed, volume and pitch.
 export function AudioTuningPopover({
   sampleRateOptions,
   sampleRateHz,
@@ -42,9 +45,11 @@ export function AudioTuningPopover({
   pitch = 0,
   onPitchChange,
 }: AudioTuningPopoverProps) {
+  // Show the sample-rate buttons only when the model lists options and the parent can receive the choice.
   const showSampleRate =
     !!sampleRateOptions?.length && onSampleRateChange !== undefined;
 
+  // A popover menu with a sliders icon; inside it, one block per control that is switched on.
   return (
     <PopoverMenu
       mode="default"
@@ -53,6 +58,7 @@ export function AudioTuningPopover({
       triggerLabel="Tuning"
     >
       <div className="w-60 space-y-3.5 pb-0.5">
+        {/* Sample rate: one button per allowed rate, with the current one highlighted. */}
         {showSampleRate && (
           <div>
             <div className="mb-1.5 text-xs font-medium text-base-fg/60">
@@ -77,6 +83,7 @@ export function AudioTuningPopover({
           </div>
         )}
 
+        {/* Speed slider, shown as a multiplier such as 1.25×. */}
         {showSpeed && (
           <TuningSliderRow
             label="Speed"
@@ -89,6 +96,7 @@ export function AudioTuningPopover({
           />
         )}
 
+        {/* Volume slider, shown as a multiplier such as 1.50×. */}
         {showVolume && (
           <TuningSliderRow
             label="Volume"
@@ -101,6 +109,7 @@ export function AudioTuningPopover({
           />
         )}
 
+        {/* Pitch slider in semitones (st); a plus sign is added for positive values. */}
         {showPitch && (
           <TuningSliderRow
             label="Pitch"
@@ -117,6 +126,7 @@ export function AudioTuningPopover({
   );
 }
 
+// Settings for one labelled slider row.
 interface TuningSliderRowProps {
   label: string;
   valueLabel: string;
@@ -127,6 +137,7 @@ interface TuningSliderRowProps {
   onChange: (value: number) => void;
 }
 
+// One row: the label and current value on top, a slider underneath.
 function TuningSliderRow({
   label,
   valueLabel,
@@ -156,6 +167,7 @@ function TuningSliderRow({
   );
 }
 
+// Formats a rate in Hz as kilohertz: 44100 becomes "44.1 kHz" and 48000 becomes "48 kHz".
 export function formatSampleRateHz(hz: number): string {
   const kilohertz = hz / 1000;
   const label = Number.isInteger(kilohertz)

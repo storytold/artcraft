@@ -485,3 +485,8 @@ Verification at the time of writing (2026-10-17):
    Noted 102; next free IDs B-174 / N-112). promptbox vitest 13 files / 78 tests and `tsc -b tsconfig.lib.json` 0.
    Next: the rest of promptbox `common/` (`AspectRatioIcon.tsx`, `ResolutionPicker.tsx`, `AudioTuningPopover.tsx`,
    `SoundsSettingsPopover.tsx`, `AudioReferenceRow.tsx`), then `deck/`.
+   Twenty-first slice (Build 2, 2026-10-19): promptbox `common/` `AspectRatioIcon.tsx`, `ResolutionPicker.tsx`,
+   `AudioTuningPopover.tsx` and `SoundsSettingsPopover.tsx` annotated, comments only, each file code identical once
+   comments and blank lines are stripped (the B-174 effect and the debug `console.log` lines untouched). No new bug;
+   counts unchanged (Fixed 174, strict 159, Noted 102; next free IDs B-175 / N-112). promptbox vitest 14 files / 81 tests
+   and `tsc -b tsconfig.lib.json` 0. Next: `AudioReferenceRow.tsx`, then `deck/`.

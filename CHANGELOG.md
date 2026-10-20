@@ -668,6 +668,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   found no countable bug (the generation-count clamp could in theory cut a predefined count above the model's maximum,
   but no shipped model lists one). Counts unchanged (Fixed 173, strict 158, Noted 102). `tsc -b tsconfig.lib.json` 0,
   promptbox vitest 13 files / 78 tests passed.
+- Annotation stage 2, twenty-first slice (2026-10-19): four promptbox `common/` components, `AspectRatioIcon.tsx`,
+  `ResolutionPicker.tsx` (the B-174 effect and the two debug `console.log` lines kept as they are), `AudioTuningPopover.tsx`
+  and `SoundsSettingsPopover.tsx`. Comments only: each file is code-identical to its pre-edit copy once whole-line
+  comments and blank lines are stripped. A read found no countable bug. Counts unchanged (Fixed 174, strict 159, Noted
+  102). `tsc -b tsconfig.lib.json` 0, promptbox vitest 14 files / 81 tests passed.
 
 ### Noted, not changed
 - N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.
