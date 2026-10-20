@@ -454,3 +454,9 @@ Verification at the time of writing (2026-10-17):
    counts unchanged (Fixed 173, strict 158, Noted 102; next free IDs B-174 / N-112). lightbox-modal vitest 7 files /
    27 tests and `tsc -b tsconfig.lib.json` 0. Next: the reference-media rows, info section, action buttons and the
    `InfoSection` / `InfoRow` helpers (about line 1000 to 1470), in slices.
+
+   Sixteenth slice (Build 2, 2026-10-19): `lightbox-modal.tsx` Reference Media tiles, the no-prompt info block, the
+   `TagsSection` mount and `additionalInfo` annotated, comments only, code identical once comments and blank lines are
+   stripped. No new bug; counts unchanged (Fixed 173, strict 158, Noted 102; next free IDs B-174 / N-112).
+   lightbox-modal vitest 7 files / 27 tests and `tsc -b tsconfig.lib.json` 0. Next: the action buttons (Recreate, Edit,
+   Turn into video, Share, Delete) and the `InfoSection` / `InfoRow` helpers (about line 1160 to 1480), in slices.

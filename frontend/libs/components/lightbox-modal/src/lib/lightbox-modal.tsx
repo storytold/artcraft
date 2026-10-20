@@ -1022,8 +1022,10 @@ export function LightboxModal({
                             <ImageIcon />
                             <span>Reference Media</span>
                           </div>
+                          {/* Reference thumbnails, five per row; audio and video references get their own kind of tile. */}
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
+                              // Work out what kind of reference this is, its small and full-size image, and whether its clip is the one playing.
                               const isAudio = contextImage.semantic === "audioref";
                               const isVideoRef = contextImage.semantic === "vid_ref";
                               const { thumbnail, fullSize } =
@@ -1041,6 +1043,7 @@ export function LightboxModal({
                                   delay={150}
                                   zIndex={50}
                                   className="p-1"
+                                  // Hover menu for a tile: "Preview image" (still images only) and "View as media" (when the caller can open another file).
                                   content={
                                     <div className="flex flex-col gap-1.5 min-w-[100px]">
                                       {!isAudio && !isVideoRef && (
@@ -1078,6 +1081,7 @@ export function LightboxModal({
                                 >
                                   <div
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
+                                    // Clicking the tile itself: audio plays or pauses its clip, a still image opens the big preview, a video reference does nothing.
                                     onClick={() => {
                                       if (isAudio) {
                                         handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url);
@@ -1086,6 +1090,7 @@ export function LightboxModal({
                                       }
                                     }}
                                   >
+                                    {/* Audio tile shows a play / pause icon; every other tile shows its thumbnail (video references also get a small video icon on top). */}
                                     {isAudio ? (
                                       <div className="h-full w-full flex items-center justify-center bg-white/5">
                                         <DynamicIcon
@@ -1133,6 +1138,7 @@ export function LightboxModal({
                 </>
               )}
 
+              {/* Files with no prompt still get the info block, with only the size and date filled in. */}
               {!hasPromptToken && !promptLoading && (
                 <InfoSection
                   modelType={null}
@@ -1147,8 +1153,10 @@ export function LightboxModal({
                 />
               )}
 
+              {/* Tags for this file; editing is allowed for the file's creator. */}
               <TagsSection mediaToken={mediaId} creator={creator} />
 
+              {/* Extra content supplied by the caller, shown after the tags. */}
               {additionalInfo}
             </div>
 
