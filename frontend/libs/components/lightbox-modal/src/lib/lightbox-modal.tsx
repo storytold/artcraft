@@ -643,6 +643,7 @@ export function LightboxModal({
 
   return (
     <>
+      {/* The dialog shell: draggable and resizable, with no dimming backdrop, and it lets the page behind stay clickable. */}
       <Modal
         isOpen={isOpen}
         onClose={onClose}
@@ -661,9 +662,11 @@ export function LightboxModal({
         </Modal.DragHandle>
 
         {/* content grid */}
+        {/* Two columns: the media on the left (takes the free width), the details panel on the right (fixed 280 px). */}
         <div className="flex h-full gap-4">
           {/* image panel - flexible width */}
           <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black">
+            {/* Left column: show whichever viewer matches the media class: a message, the 3D viewer, a video, an audio player, or the image carousel. */}
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center bg-black">
                 <span className="text-base-fg/60">Image not available</span>
@@ -797,6 +800,7 @@ export function LightboxModal({
               </div>
             )}
 
+            {/* Loading overlay: covers the image / video until it has loaded or failed (3D and audio show their own loading). */}
             {!mediaLoaded &&
               selectedImageUrl &&
               mediaClass !== "dimensional" &&
@@ -809,6 +813,7 @@ export function LightboxModal({
               )}
 
             {/* Gallery navigation arrows – only visible on hover */}
+            {/* Previous / Next file buttons; each shows only when the caller supplied the handler, and they appear on hover. */}
             {onNavigatePrev && (
               <button
                 onClick={(e) => {
@@ -838,6 +843,7 @@ export function LightboxModal({
           {/* info + actions - fixed width */}
           <div className="flex h-full w-[280px] shrink-0 flex-col">
             <div className="flex-1 overflow-y-auto space-y-5 text-base-fg min-h-0 pb-2">
+              {/* Author header: the creator's avatar and name once loaded, a pulsing skeleton while loading, nothing otherwise. */}
               {creator ? (
                 <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-20 border-b border-white/10">
                   {creator.core_info ? (
@@ -874,6 +880,7 @@ export function LightboxModal({
                   </div>
                 </div>
               ) : null}
+              {/* Prompt section, shown for files made from a prompt (or while we are still finding out). */}
               {(hasPromptToken || promptLoading) && (
                 <>
                   {/* Prompt */}
@@ -883,6 +890,7 @@ export function LightboxModal({
                         <PencilIcon />
                         <span>Prompt</span>
                       </div>
+                      {/* Copy button: copies the prompt text to the clipboard and flashes "Copied!" (see the failure handling in the click handler). */}
                       {!promptLoading && prompt && (
                         <button
                           className="flex items-center gap-1.5 text-xs text-base-fg/60 hover:text-base-fg transition-colors"
@@ -923,6 +931,7 @@ export function LightboxModal({
                     <div
                       className="text-sm text-base-fg/90 break-words px-4 py-3 bg-black/20 leading-relaxed border border-white/10"
                     >
+                      {/* Prompt text: skeleton while loading, else the text clamped to four lines (or fully shown when expanded), else "No prompt". */}
                       {promptLoading ? (
                         <div className="animate-pulse space-y-2">
                           <div className="h-3 w-full bg-white/10" />
