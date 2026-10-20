@@ -12,9 +12,18 @@ pub async fn setup_main_window(
           .title("ArtCraft")
           .resizable(true)
           .fullscreen(false)
-          .background_color(Color(0, 0, 0, 0))
           .enable_clipboard_access()
           .inner_size(2400.0, 1300.0);
+
+  // Tauri passes this color to WebKitGTK as the webview background. An alpha
+  // of zero creates a transparent webview surface, which WebKitGTK can fail
+  // to composite on Wayland (leaving only video layers visible). The app
+  // draws its own background, so use an opaque color matching --st-bg.
+  #[cfg(target_os = "linux")]
+  let win_builder = win_builder.background_color(Color(18, 19, 22, 255));
+
+  #[cfg(not(target_os = "linux"))]
+  let win_builder = win_builder.background_color(Color(0, 0, 0, 0));
 
   #[cfg(target_os = "macos")]
   let win_builder = win_builder
