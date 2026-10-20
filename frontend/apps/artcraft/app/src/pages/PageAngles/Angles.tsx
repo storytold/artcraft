@@ -283,7 +283,12 @@ export const Angles = () => {
     if (!state.sourceMediaToken) return;
 
     const subscriberId = uuidv4();
-    state.startGeneration(subscriberId);
+    // The model is stored with the pending job so a failure event (which names the model, not the job)
+    // can find and clear this job's placeholder.
+    state.startGeneration(
+      subscriberId,
+      selectedModel?.tauriId || "flux_2_lora_angles",
+    );
 
     window.__storeTaskEnqueueMeta?.({
       prompt: "",

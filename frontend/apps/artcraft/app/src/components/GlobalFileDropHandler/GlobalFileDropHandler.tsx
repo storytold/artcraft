@@ -77,6 +77,11 @@ export function GlobalFileDropHandler() {
   useEffect(() => {
     if (isTauri) {
       const unlisteners: Array<() => void> = [];
+      // FIX: setup() is async, so cleanup can run BEFORE the native subscription is handed back (React
+      // StrictMode does exactly that in dev: mount, cleanup, mount). The cleanup then had nothing to
+      // unlisten and the first subscription leaked, so every drop was handled twice. This flag lets setup
+      // notice it was cancelled and drop its own subscription.
+      let cancelled = false;
 
       // Tauri window APIs are imported lazily so the browser build never loads them. setup is async because
       // subscribing to the native event returns a promise; the unlisten function is stored for cleanup.
@@ -84,6 +89,7 @@ export function GlobalFileDropHandler() {
         try {
           const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
           const { convertFileSrc } = await import("@tauri-apps/api/core");
+          if (cancelled) return;
           const appWindow = getCurrentWebviewWindow();
 
           // Native drag-drop events: enter / over / drop (leave and cancel fall through to the final else).
@@ -150,6 +156,11 @@ export function GlobalFileDropHandler() {
             }
           });
 
+          // FIX: cleanup already ran while we were awaiting, so nobody will ever call this later; do it now.
+          if (cancelled) {
+            unlisten();
+            return;
+          }
           unlisteners.push(unlisten);
         } catch (err) {
           console.error("[DragDrop] setup failed:", err);
@@ -157,7 +168,10 @@ export function GlobalFileDropHandler() {
       };
 
       setup();
-      return () => { unlisteners.forEach((fn) => fn()); };
+      return () => {
+        cancelled = true;
+        unlisteners.forEach((fn) => fn());
+      };
 
     } else {
       // HTML5 path (browser dev mode)

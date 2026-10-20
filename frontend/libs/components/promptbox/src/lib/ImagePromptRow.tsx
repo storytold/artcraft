@@ -102,7 +102,16 @@ const AudioRefTile = ({
         el.volume = 0.2;
         audioRef.current = el;
         el.onended = () => setIsPlaying(false);
-        el.play();
+        // FIX: play() rejects when the webview can't decode the clip (or blocks
+        // it). Nothing handled that, so the tile sat on the stop icon forever
+        // because `ended` never fires. The `=== el` check ignores a late
+        // rejection from a clip that was already stopped, replaced or unmounted.
+        Promise.resolve(el.play()).catch(() => {
+          if (audioRef.current === el) {
+            audioRef.current = null;
+            setIsPlaying(false);
+          }
+        });
         setIsPlaying(true);
       }
     },
@@ -151,6 +160,27 @@ const AudioRefTile = ({
         <XIcon  className="h-2.5 w-2.5" />
       </button>
     </div>
+  );
+};
+
+// Blurred placeholder for a video that is still uploading. FIX: the object URL
+// used to be created inline in the row's JSX, so every re-render of the row
+// minted a new one that was never revoked (and the <video> reloaded each
+// time). It is now made once per file and released when the tile goes away.
+const UploadingVideoPreview = ({ file }: { file: File }) => {
+  const [src, setSrc] = useState<string>();
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  return (
+    <video
+      src={src}
+      muted
+      preload="metadata"
+      className="h-full w-full object-cover blur-sm"
+    />
   );
 };
 
@@ -1204,12 +1234,7 @@ export const ImagePromptRow = ({
                   {uploadingVideo && (
                     <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30">
                       <div className="absolute inset-0">
-                        <video
-                          src={URL.createObjectURL(uploadingVideo.file)}
-                          muted
-                          preload="metadata"
-                          className="h-full w-full object-cover blur-sm"
-                        />
+                        <UploadingVideoPreview file={uploadingVideo.file} />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <LoaderCircleIcon

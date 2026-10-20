@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -68,7 +69,10 @@ export const AudioReferenceRow = forwardRef<
 ) {
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  // How many audio drops/picks are queued or running. The "Uploading…" state is derived from this (not from one
+  // on/off flag), so the first track finishing does not switch it off while a second one is still on its way.
+  const [pendingAudioBatches, setPendingAudioBatches] = useState(0);
+  const isUploadingAudio = pendingAudioBatches > 0;
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Latest-value refs so async upload callbacks append to fresh state.
@@ -77,15 +81,36 @@ export const AudioReferenceRow = forwardRef<
   const referenceImagesRef = useRef(referenceImages);
   referenceImagesRef.current = referenceImages;
 
-  const processAudioFiles = async (files: File[]) => {
-    if (files.length === 0) return;
+  // The props a queued audio batch reads when its turn comes (not the ones from the render that queued it), so a
+  // batch that waited behind another one still checks the current limits and commits through the current callback.
+  const latestAudioPropsRef = useRef({
+    onReferenceAudiosChange,
+    maxAudioCount,
+    maxAudioRefDuration,
+    uploadAudio,
+  });
+  latestAudioPropsRef.current = {
+    onReferenceAudiosChange,
+    maxAudioCount,
+    maxAudioRefDuration,
+    uploadAudio,
+  };
 
-    const audioFiles = files.filter(isAudioFile);
-    if (audioFiles.length < files.length) {
-      toast.error(AUDIO_FILE_TYPE_ERROR);
-    }
+  // Tail of the chain of audio batches. The prompt box starts a batch for every drop and does not wait for it, so two
+  // drops can arrive while the first is still uploading. Each batch measures itself against the row, so batches that
+  // ran side by side would each see the row as it was before the other one landed and could together go over the
+  // track limit or the duration cap. Chaining them makes each batch see what the earlier ones added.
+  const audioQueueRef = useRef<Promise<void>>(Promise.resolve());
 
-    const availableSlots = Math.max(0, maxAudioCount - referenceAudios.length);
+  // One batch of audio files, run when its turn comes. Slots and the running duration total come from the ref, which
+  // every commit below updates straight away, so they include tracks the earlier batches just added.
+  const runAudioBatch = async (audioFiles: File[]) => {
+    const { maxAudioCount, maxAudioRefDuration, uploadAudio } =
+      latestAudioPropsRef.current;
+    const availableSlots = Math.max(
+      0,
+      maxAudioCount - referenceAudiosRef.current.length,
+    );
     const filesToProcess = audioFiles.slice(0, availableSlots);
 
     for (const file of filesToProcess) {
@@ -102,7 +127,6 @@ export const AudioReferenceRow = forwardRef<
       }
 
       if (uploadAudio) {
-        setIsUploadingAudio(true);
         await uploadAudio({
           title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
@@ -115,22 +139,46 @@ export const AudioReferenceRow = forwardRef<
                 mediaToken: newState.data,
                 duration,
               };
-              setIsUploadingAudio(false);
-              onReferenceAudiosChange([
-                ...referenceAudiosRef.current,
-                refAudio,
-              ]);
+              // Record the new list in the ref right away (React only re-renders later), so the next batch in the
+              // queue sees this track, then hand it to the parent.
+              const next = [...referenceAudiosRef.current, refAudio];
+              referenceAudiosRef.current = next;
+              latestAudioPropsRef.current.onReferenceAudiosChange(next);
             } else if (
               newState.status === UploaderStates.assetError ||
               newState.status === UploaderStates.imageCreateError
             ) {
-              setIsUploadingAudio(false);
               toast.error("Audio upload failed. Please try again.");
             }
           },
         });
       }
     }
+  };
+
+  const processAudioFiles = (files: File[]): Promise<void> => {
+    if (files.length === 0) return Promise.resolve();
+
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR);
+    }
+    // Nothing usable in the drop, or no room left in the row: do nothing, as before.
+    if (
+      audioFiles.length === 0 ||
+      referenceAudiosRef.current.length >= maxAudioCount
+    ) {
+      return Promise.resolve();
+    }
+
+    // Queue behind any earlier batch; the "Uploading…" count covers the wait as well as the upload.
+    setPendingAudioBatches((n) => n + 1);
+    const turn = audioQueueRef.current
+      .then(() => runAudioBatch(audioFiles))
+      .finally(() => setPendingAudioBatches((n) => n - 1));
+    // A batch that throws must not break the chain for the drops behind it.
+    audioQueueRef.current = turn.catch(() => undefined);
+    return turn;
   };
 
   const handleAudioFileUpload = async (
@@ -335,6 +383,16 @@ function AudioRefTile({
     void element.play().catch(() => setIsPlaying(false));
     setIsPlaying(true);
   }, [audio.url, isPlaying]);
+
+  // FIX: stop a clip that is still sounding when the tile goes away (the X
+  // button, the row unmounting). Without this the audio kept playing with no
+  // play/stop control left on screen. The other two audio tiles already do this.
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="group flex h-9 items-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-2.5">

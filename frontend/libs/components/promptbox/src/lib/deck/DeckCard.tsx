@@ -68,7 +68,16 @@ export const DeckCard = ({
       el.volume = 0.2;
       audioRef.current = el;
       el.onended = () => setIsPlaying(false);
-      el.play();
+      // FIX: play() rejects when the webview can't decode the clip (or blocks
+      // it); `ended` never fires then, so the card stayed on the stop icon.
+      // The `=== el` check ignores a late rejection from a clip that was
+      // already stopped, replaced or unmounted.
+      Promise.resolve(el.play()).catch(() => {
+        if (audioRef.current === el) {
+          audioRef.current = null;
+          setIsPlaying(false);
+        }
+      });
       setIsPlaying(true);
     }
   }, [isPlaying, item.url, stopAudio]);

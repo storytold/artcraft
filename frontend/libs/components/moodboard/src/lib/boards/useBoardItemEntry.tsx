@@ -63,13 +63,34 @@ export const useBoardItemEntry = (
       });
       if (!adapter.uploadImage) return;
       adapter.uploadImage(file).then(
-        (token) => {
+        async (token) => {
           if (!token) return;
           const current = useBoardLibraryStore.getState();
           // The item may have been deleted while the upload was in flight.
           if (!current.boards[boardId]?.items[itemId]) return;
           const patch: Partial<BoardImageItem> = { mediaId: token };
           current.updateItem(boardId, itemId, patch);
+
+          // WHY: the tile still shows the page-bound blob URL, and the saved library drops every blob-backed tile (an object URL cannot
+          // outlive the page), so without a lasting address an uploaded image was gone after the next restart even though the upload
+          // worked. Hosts that can turn the token into a lasting address (adapter.resolveMediaUrl) get the tile switched over to it.
+          if (!adapter.resolveMediaUrl) return;
+          let durableUrl: string | null = null;
+          try {
+            durableUrl = await adapter.resolveMediaUrl(token);
+          } catch (err) {
+            // A failed lookup leaves the tile as it was (blob + token), exactly like a host without the lookup.
+            console.error("[Moodboard] resolving the uploaded image failed", err);
+          }
+          if (!durableUrl) return;
+          // The tile may also have been deleted while the lookup was running; re-read the store so a stale handle is never used.
+          const latest = useBoardLibraryStore.getState();
+          if (!latest.boards[boardId]?.items[itemId]) return;
+          latest.updateItem(boardId, itemId, { src: durableUrl });
+          // The blob URL is deliberately NOT released here: "Send to generation" copies the tile's src into the prompt store, so a tile
+          // sent in the moment between the token arriving and this swap leaves the prompt holding the blob, and revoking it would break
+          // that reference thumbnail. The cost is that a swapped tile's blob lives until the page closes, which is how long it lived
+          // for every tile that was never deleted before this change.
         },
         (err) => {
           console.error("[Moodboard] upload failed", err);

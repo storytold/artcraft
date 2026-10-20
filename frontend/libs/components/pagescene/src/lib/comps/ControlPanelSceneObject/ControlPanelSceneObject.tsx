@@ -275,10 +275,16 @@ export const ControlPanelSceneObject = () => {
   };
 
   const handleUniformScaleChange = (scale: number) => {
+    // A box can hold unfinished text ("", "-", "."); parseFloat of that is NaN, which used to be written back into the
+    // box. Count such a box as 0 so the drag starts from there.
+    const numberOrZero = (text: string) => {
+      const parsed = parseFloat(text);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
     const updatedScaleValues: Record<string, string> = {};
-    updatedScaleValues.x = (parseFloat(localScale.x) + scale).toString();
-    updatedScaleValues.y = (parseFloat(localScale.y) + scale).toString();
-    updatedScaleValues.z = (parseFloat(localScale.z) + scale).toString();
+    updatedScaleValues.x = (numberOrZero(localScale.x) + scale).toString();
+    updatedScaleValues.y = (numberOrZero(localScale.y) + scale).toString();
+    updatedScaleValues.z = (numberOrZero(localScale.z) + scale).toString();
 
     handleScaleChange(updatedScaleValues);
   };

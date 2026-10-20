@@ -44,10 +44,17 @@ const resolveSessionUsername = (): Promise<string | null> => {
     usernameInFlight = new UsersApi()
       .GetSession()
       .then((res) => {
+        // WHY: the API client never throws, it answers `success: false` for any failed request (offline, server error, a
+        // reply that is not JSON), so the `.catch` below was never reached for those. The failed answer used to be stored as
+        // "nobody is logged in" for the rest of the app run: the owner was never recognised again and could not edit tags on
+        // their own files until the app was restarted. A failed lookup is now not remembered, so the next lightbox visit asks
+        // again; only a real answer ("logged in as X" or "nobody is logged in") is kept.
+        if (!res.success) {
+          usernameInFlight = null;
+          return null;
+        }
         cachedUsername =
-          res.success && res.data?.loggedIn && res.data.user
-            ? res.data.user.username
-            : null;
+          res.data?.loggedIn && res.data.user ? res.data.user.username : null;
         return cachedUsername;
       })
       .catch(() => {
@@ -114,9 +121,13 @@ export function TagsSection({
     let cancelled = false;
     tagsApi.ListMediaFileTags({ mediaFileToken: mediaToken }).then((res) => {
       if (cancelled) return;
-      const fetched = res.success && res.data ? res.data : [];
-      setTags(fetched);
-      lastAckedRef.current = fetched;
+      // WHY: a failed lookup (the API client answers `success: false`, it does not throw) says nothing about the
+      // file's tags. Treating it as "no tags" showed the owner an empty box, and the next edit saved a snapshot of
+      // just the new tag, which replaced the tags the file really has. Leave `tags` null (section hidden, not
+      // editable) until a lookup succeeds; moving to another file or reopening the lightbox asks again.
+      if (!res.success || !res.data) return;
+      setTags(res.data);
+      lastAckedRef.current = res.data;
     });
     return () => {
       cancelled = true;
@@ -131,20 +142,30 @@ export function TagsSection({
     if (suggestions !== undefined || !isOwner || ownTagsLoadedRef.current) {
       return;
     }
-    ownTagsLoadedRef.current = true;
     let cancelled = false;
+    // WHY: the "loaded" flag used to be set here, before the request even left. The lightbox clears `creator` on every
+    // next/prev (so `isOwner` flips off and on), which runs this effect's cleanup and drops the answer that was still
+    // on its way; a failed request also ended the run. Either way the flag stayed set, so the next owner file never
+    // asked again and autocomplete stayed empty until the lightbox was closed. Now the flag is set only after a run
+    // that was not cancelled and did not fail, so an interrupted or failed run is tried again the next time an owner
+    // file is shown (a finished run still is not repeated).
+    let failed = false;
     (async () => {
       const all: TagDetails[] = [];
       let cursor: string | undefined = undefined;
       for (let page = 0; page < 50; page++) {
         const res = await tagsApi.ListTags({ cursor });
-        if (!res.success || !res.data) break;
+        if (!res.success || !res.data) {
+          failed = true;
+          break;
+        }
         all.push(...res.data);
         const next = res.pagination?.maybe_cursor;
         if (!next) break;
         cursor = next ?? undefined;
       }
       if (cancelled) return;
+      if (!failed) ownTagsLoadedRef.current = true;
       setOwnTags(
         all
           .sort(

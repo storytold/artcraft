@@ -203,7 +203,8 @@ const drawRadialGradient = ({
     height,
     orientation: gradient.orientation,
   });
-  const gradientLength = Math.max(rx, ry);
+  // The gradient ray runs along the horizontal radius, which is what pixel stops are measured on.
+  const gradientLength = rx;
   const colorStops = normalizeColorStops({
     colorStops: gradient.colorStops,
     gradientLength,
@@ -536,7 +537,14 @@ const resolveRadialExtents = ({
     .sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy));
   const chosen =
     extent === "closest-corner" ? sorted[0] : sorted[sorted.length - 1];
-  return { rx: Math.abs(chosen.dx), ry: Math.abs(chosen.dy) };
+  // CSS keeps the aspect ratio of the matching side ellipse and grows it until it touches the
+  // corner. The corner offsets are that side ellipse's radii, so the ellipse is sqrt(2) bigger.
+  // CSS keeps the aspect ratio of the matching side ellipse and grows it until it touches the
+  // corner. The corner offsets are that side ellipse's radii, so the ellipse is sqrt(2) bigger.
+  return {
+    rx: Math.abs(chosen.dx) * Math.SQRT2,
+    ry: Math.abs(chosen.dy) * Math.SQRT2,
+  };
 };
 
 const resolvePositionValue = ({

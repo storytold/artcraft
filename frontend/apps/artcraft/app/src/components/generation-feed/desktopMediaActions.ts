@@ -54,8 +54,12 @@ export const SHARE_URL_BASE = "https://getartcraft.com/media/";
 
 /** Download a media file, prompting for a location when configured to. */
 // url: file to save; mediaClass: "image"/"video"/... used only for the success message; model: used in the saved file name.
-// Errors are only logged: the Rust side shows its own failure toast.
+// A failure on the default route is only logged here: the Rust download command flashes its own failure toast (MainApp.tsx shows it).
+// Every other failure (working out the save location, or the plugin download to a path the user picked) never reaches
+// that Rust command, so this function shows the toast for those itself; otherwise the user would see nothing at all.
 export async function downloadMediaFileToDisk(url: string, mediaClass?: string, model?: string) {
+  // Flips to true just before the Rust download command runs; from then on Rust reports a failure, so no second toast here.
+  let rustReportsFailure = false;
   try {
     // Ask the Rust side where to save. null = user cancelled; a string = a path they chose; anything else = use the default folder.
     const chosenPath = await promptDownloadLocationIfNeeded(url, model);
@@ -66,6 +70,7 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string, 
     if (typeof chosenPath === "string") {
       await downloadUrlToPath(url, chosenPath);
     } else {
+      rustReportsFailure = true;
       await DownloadUrl(url, { model });
     }
     if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
@@ -75,8 +80,10 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string, 
     }
   } catch (error) {
     console.error(">>> Failed to download file:", error);
-    // NB: Rust/Tauri should now flash a toast instead.
-    //toast.error("Failed to download file");
+    // NB: on the default route Rust/Tauri already flashed a toast; every other route has to say so itself.
+    if (!rustReportsFailure) {
+      toast.error("Failed to download file");
+    }
   }
 }
 

@@ -83,3 +83,42 @@ it("does not leak an unhandled rejection when purging credentials fails", async 
   // The user-visible logout still completed and the button is usable again.
   expect(screen.getByRole("button", { name: "Log In" })).toBeTruthy();
 });
+
+it("recovers when the logout request itself fails: no stuck spinner, no unhandled rejection, still logged in", async () => {
+  const user = userEvent.setup();
+  const unhandled = vi.fn();
+  process.on("unhandledRejection", unhandled);
+  const onLogout = vi.fn();
+  // Arrange: the Logout call rejects (e.g. the network is down).
+  mocks.logout.mockRejectedValue(new Error("network down"));
+  render(<ArtcraftAccountBlock globalAccountLogoutCallback={onLogout} />);
+
+  await user.click(await screen.findByRole("button", { name: "Log Out" }));
+  await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
+  // Give a would-be unhandled rejection a macrotask to be reported.
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  process.off("unhandledRejection", unhandled);
+
+  expect(unhandled).not.toHaveBeenCalled();
+  // The spinner cleared: the button is back, enabled, and still says "Log Out"
+  // because nothing was actually logged out.
+  const button = (await screen.findByRole("button", {
+    name: "Log Out",
+  })) as HTMLButtonElement;
+  expect(button.disabled).toBe(false);
+  expect(screen.getByText("Rene")).toBeTruthy();
+  // A failed logout must not tell the app we logged out, recheck, or purge.
+  expect(onLogout).not.toHaveBeenCalled();
+  expect(mocks.triggerRecheck).not.toHaveBeenCalled();
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
+
+it("does not write the session response (user profile) to the console", async () => {
+  const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  render(<ArtcraftAccountBlock globalAccountLogoutCallback={vi.fn()} />);
+
+  // Wait for the session to load so the effect has definitely run.
+  await screen.findByText("Rene");
+
+  expect(logSpy).not.toHaveBeenCalled();
+});

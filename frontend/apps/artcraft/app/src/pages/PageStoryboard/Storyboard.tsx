@@ -605,14 +605,21 @@ const Timeline = ({
         onUpdateDuration(resizeRef.current.id, newDuration);
       };
 
+      // FIX: this used to end on pointerup only. A touch or pen gesture the browser
+      // takes over (it starts to pan the timeline) ends with pointercancel and no
+      // pointerup, so the move listener stayed on window and every later mouse move
+      // kept resizing the shot. A cancel now ends the resize exactly like a release
+      // (the duration reached so far is kept).
       const onUp = () => {
         resizeRef.current = null;
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
       };
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
     },
     [onUpdateDuration],
   );
@@ -679,10 +686,24 @@ const Timeline = ({
         setDragState(null);
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
+      };
+
+      // FIX: a cancelled gesture (see the resize handler above) used to leave this
+      // drag alive: the insertion caret stayed on screen, the shot stayed faded, and
+      // the NEXT pointerup anywhere (a plain click) was taken for the release and
+      // reordered the shots. A cancel drops the drag without reordering anything.
+      const onCancel = () => {
+        activeDragRef.current = null;
+        setDragState(null);
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
       };
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onCancel);
     },
     [computeInsertionFromPointerX, onReorder],
   );

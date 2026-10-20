@@ -94,6 +94,53 @@ describe("loadScene", () => {
   });
 });
 
+// The header and the Save button take the open scene's title/token from `signalScene`. If the scene file then fails
+// to arrive, the editor still holds the previous scene (or an empty one), so signalling early made Save write that
+// content over the scene the user tried to open.
+describe("loadScene when the scene file fails after its details were found", () => {
+  // Details lookup answers normally; the file download answers `fileResponse` or throws.
+  const stubFileStep = (fileResponse: () => unknown) => {
+    globalThis.fetch = vi.fn(async (url: string) =>
+      String(url).includes("/v1/media_files/file/")
+        ? respond(meta({ user_token: "U1" }))
+        : fileResponse(),
+    ) as never;
+  };
+
+  it("does not point the editor at the scene when the file download is refused", async () => {
+    stubFileStep(() => ({ ok: false, status: 500, text: async () => "" }));
+    await expect(loadScene()("tok")).rejects.toThrow();
+    expect(m.signalScene).not.toHaveBeenCalled();
+  });
+
+  it("does not point the editor at the scene when the file download throws (offline)", async () => {
+    stubFileStep(() => {
+      throw new TypeError("Failed to fetch");
+    });
+    await expect(loadScene()("tok")).rejects.toThrow();
+    expect(m.signalScene).not.toHaveBeenCalled();
+  });
+
+  it("does not point the editor at the scene when the file is not valid JSON", async () => {
+    stubFileStep(() => ({ ok: true, status: 200, text: async () => "<html>" }));
+    await expect(loadScene()("tok")).rejects.toThrow();
+    expect(m.signalScene).not.toHaveBeenCalled();
+  });
+
+  // Controls: these pass on the old code and must keep passing.
+  it("control: a refused details lookup rejects and records nothing", async () => {
+    globalThis.fetch = vi.fn(async () => respond({}, false, 404)) as never;
+    await expect(loadScene()("tok")).rejects.toThrow("Failed to load scene");
+    expect(m.signalScene).not.toHaveBeenCalled();
+  });
+
+  it("control: a file that loads is recorded exactly once, after it was read", async () => {
+    stubFileStep(() => ({ ok: true, status: 200, text: async () => '{"a":1}' }));
+    await expect(loadScene()("tok")).resolves.toEqual({ a: 1 });
+    expect(m.signalScene).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("saveScene", () => {
   const adapter = () => renderHook(() => useTauriPageSceneAdapter()).result.current;
   const args = (over: Record<string, unknown> = {}) =>

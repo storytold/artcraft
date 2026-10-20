@@ -1187,6 +1187,40 @@ function splitScalarChannelAtTime({
     };
   }
 
+  // No segment contains the cut, so it lies after the last key or before the first one. The side
+  // that gets no keys from the partition would lose the animation entirely and fall back to the
+  // property's static value, which jumps away from what the element was showing at the cut. Give
+  // that side one key carrying the value the channel has at the cut (the held first or last key's
+  // value) so it keeps showing exactly that. The other side already has its keys and holds them.
+  // This runs only when boundaries are wanted: the early return above handles the other case.
+  if (leftKeys.length === 0 || rightKeys.length === 0) {
+    const boundaryValue = getChannelValueAtTime({
+      channel: normalizedChannel,
+      time: splitTime,
+      fallbackValue: normalizedChannel.keys[0].value,
+    });
+    if (leftKeys.length === 0) {
+      leftKeys = [
+        createScalarKey({
+          id: leftBoundaryId,
+          time: splitTime,
+          value: boundaryValue,
+          interpolation: "linear",
+        }),
+      ];
+    }
+    if (rightKeys.length === 0) {
+      rightKeys = [
+        createScalarKey({
+          id: rightBoundaryId,
+          time: ZERO_MEDIA_TIME,
+          value: boundaryValue,
+          interpolation: "linear",
+        }),
+      ];
+    }
+  }
+
   return {
     leftChannel: leftKeys.length
       ? normalizeChannel({

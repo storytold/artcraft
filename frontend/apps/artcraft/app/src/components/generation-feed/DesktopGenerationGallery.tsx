@@ -45,6 +45,10 @@ export interface DesktopGenerationGalleryProps {
   isLoading?: boolean;
   isInitialLoading: boolean;
   onLoadMore: () => void;
+  /** True when the latest history request failed; the views then show a "Try again" notice instead of a spinner. */
+  loadFailed?: boolean;
+  /** Runs when the user presses "Try again" (pages pass the gallery hook's loadMore). */
+  onRetry?: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
   /** Id of the item most recently viewed in the lightbox; that tile gets a
    *  persistent "Last viewed" badge. */

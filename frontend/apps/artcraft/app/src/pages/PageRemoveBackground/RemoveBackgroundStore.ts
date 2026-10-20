@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { listen } from "@tauri-apps/api/event";
 
 export interface ProcessedImage {
   id: string;
@@ -29,6 +30,7 @@ interface RemoveBackgroundState {
   setPendingJobId: (id: string | null) => void;
   setImageDimensions: (dimensions: ImageDimensions | null) => void;
   setPendingExternalUrl: (url: string | null) => void;
+  failProcessing: () => void;
   clearAll: () => void;
 }
 
@@ -78,6 +80,14 @@ export const useRemoveBackgroundStore = create<RemoveBackgroundState>(
       set({ pendingExternalUrl: url });
     },
 
+    // The backend reports a failed job as "a remove_background job failed" with no job id. If this page is
+    // waiting on a result, the spinner overlay must end. `pendingJobId` is kept on purpose: the event cannot
+    // say whose job failed (the Draw page and the lightbox also start remove_background jobs), so if this
+    // page's own job is still running its result must still be accepted when it arrives.
+    failProcessing: () => {
+      set((state) => (state.isProcessing ? { isProcessing: false } : state));
+    },
+
     clearAll: () => {
       set({
         images: [],
@@ -91,3 +101,11 @@ export const useRemoveBackgroundStore = create<RemoveBackgroundState>(
     },
   }),
 );
+
+// A job can also fail after it was accepted (server error, input rejected). The backend then sends
+// "generation-failed-event" with the action "remove_background" and no job id; without this listener the
+// "Removing Background..." overlay stayed up, with Download and Compare disabled, until another image was sent.
+listen<{ data?: { action?: string } }>("generation-failed-event", (event) => {
+  if (event.payload?.data?.action !== "remove_background") return;
+  useRemoveBackgroundStore.getState().failProcessing();
+});

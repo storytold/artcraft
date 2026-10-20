@@ -668,7 +668,15 @@ class Scene {
         }
         await this.placeholder_manager.remove(key);
       }
-    }).catch((error: Error) => {
+    }).catch(async (error: Error) => {
+      // FIX: this catch only re-threw, so when the MMD download/parse failed
+      // the "Loading: <name>" text placeholder was never removed and stayed
+      // in the scene forever. The GLB and splat loaders already remove their
+      // placeholder here; do the same, then re-throw so callers still see the
+      // failure.
+      if (this.placeholder_manager !== undefined) {
+        await this.placeholder_manager.remove(key);
+      }
       throw error;
     });
     mmd.traverse((c: THREE.Object3D) => {

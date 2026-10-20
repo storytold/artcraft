@@ -128,16 +128,8 @@ const loadSceneState = async (
   if (response.status > 200) throw new Error("Failed to load scene");
 
   const json = await response.json();
-  if (json?.media_file) {
-    if (json.media_file.maybe_title === null) {
-      console.warn(`Scene /w Token: ${scene_media_file_token} has no title`);
-    }
-    signalScene({
-      title: json.media_file.maybe_title || "Untitled Scene",
-      token: scene_media_file_token || undefined,
-      ownerToken: json.media_file.maybe_creator_user?.user_token,
-      isModified: false,
-    });
+  if (json?.media_file?.maybe_title === null) {
+    console.warn(`Scene /w Token: ${scene_media_file_token} has no title`);
   }
   const bucket_path = json["media_file"]["public_bucket_path"];
   const media_url = `${GetCdnOrigin()}${bucket_path}`;
@@ -148,7 +140,21 @@ const loadSceneState = async (
   // Parse directly rather than inside a FileReader callback: a JSON.parse
   // throw inside onloadend was never caught, so a corrupt scene file left this
   // promise pending forever (the loader hung instead of reporting an error).
-  return JSON.parse(await file_response.text());
+  const sceneJson = JSON.parse(await file_response.text());
+
+  // WHY: signal the title/token only now that the scene file is in hand. The header and the Save button take the
+  // open scene's token from this signal, so announcing it before the download meant a failed download (offline,
+  // CDN error, corrupt file) left the editor holding the previous scene (or an empty one) under the NEW scene's
+  // token, and the next Save wrote that content over the scene the user had tried to open.
+  if (json?.media_file) {
+    signalScene({
+      title: json.media_file.maybe_title || "Untitled Scene",
+      token: scene_media_file_token || undefined,
+      ownerToken: json.media_file.maybe_creator_user?.user_token,
+      isModified: false,
+    });
+  }
+  return sceneJson;
 };
 
 // — Hook ──────────────────────────────────────────────────────────────

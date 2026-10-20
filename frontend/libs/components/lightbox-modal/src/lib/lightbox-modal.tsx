@@ -424,10 +424,22 @@ export function LightboxModal({
         secondaryActionText: "Cancel",
         primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
         onPrimaryAction: async () => {
+          // True only if the Rust delete command came back without an error; decides whether the viewer closes below.
+          let deleted = false;
           try {
+            // Calls the Rust delete command; it rejects (offline, signed out, server error) and sends no "File deleted." event.
             await MediaFileDelete(mediaToken);
+            deleted = true;
+          } catch (error) {
+            // Nothing else reports this failure, so say so here (the gallery, bulk delete and characters deletes all do).
+            console.error("Failed to delete media:", error);
+            toast.error("Failed to delete media");
           } finally {
+            // Close the confirmation either way so it can't be left on screen.
             isActionReminderOpen.value = false;
+          }
+          // Close the viewer only when the media is really gone; after a failure it stays open so the item can be retried.
+          if (deleted) {
             onClose();
           }
         },

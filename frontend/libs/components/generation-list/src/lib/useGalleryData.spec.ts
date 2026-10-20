@@ -106,4 +106,62 @@ describe("useGalleryData", () => {
     });
     expect(result.current.items.map((i) => i.id)).toEqual(["fresh"]);
   });
+
+  // ---- failed loads (B-157): a failed request must be reported, not left looking like "still loading" ----
+
+  it("reports loadFailed when the request rejects, keeps hasMore so a retry can ask again, and clears it after a good retry", async () => {
+    // First request fails, the retry works.
+    m.list.mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(resp("g1"));
+    const { result } = renderHook(() =>
+      useGalleryData({ username: "ann", filterMediaClasses: IMAGE }),
+    );
+    await waitFor(() => expect(result.current.loadFailed).toBe(true));
+    // The full-page spinner is over, nothing was loaded, and more can still be asked for.
+    expect(result.current.isInitialLoading).toBe(false);
+    expect(result.current.items).toEqual([]);
+    expect(result.current.hasMore).toBe(true);
+    // The retry is the same call the scroll sentinel makes.
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(["g1"]));
+    expect(result.current.loadFailed).toBe(false);
+  });
+
+  it("reports loadFailed when the API answers success:false instead of throwing", async () => {
+    m.list.mockResolvedValue({ success: false, errorMessage: "network down" });
+    const { result } = renderHook(() =>
+      useGalleryData({ username: "ann", filterMediaClasses: IMAGE }),
+    );
+    await waitFor(() => expect(result.current.loadFailed).toBe(true));
+    expect(result.current.items).toEqual([]);
+  });
+
+  it("does not report a failure for an empty but successful history", async () => {
+    m.list.mockResolvedValue({
+      success: true,
+      data: [],
+      pagination: { current: 0, total_page_count: 1 },
+    });
+    const { result } = renderHook(() =>
+      useGalleryData({ username: "ann", filterMediaClasses: IMAGE }),
+    );
+    await waitFor(() => expect(result.current.isInitialLoading).toBe(false));
+    expect(result.current.loadFailed).toBe(false);
+    expect(result.current.hasMore).toBe(false);
+  });
+
+  it("ignores a failure from a request that refresh() already superseded", async () => {
+    const first = deferred<ReturnType<typeof resp>>();
+    m.list.mockReturnValueOnce(first.promise).mockResolvedValueOnce(resp("fresh"));
+    const { result } = renderHook(() =>
+      useGalleryData({ username: "ann", filterMediaClasses: IMAGE }),
+    );
+    act(() => result.current.refresh());
+    await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(["fresh"]));
+    // The old request now fails; the newer, good feed must not be marked as failed.
+    await act(async () => {
+      first.resolve({ success: false } as never);
+    });
+    expect(result.current.loadFailed).toBe(false);
+    expect(result.current.items.map((i) => i.id)).toEqual(["fresh"]);
+  });
 });
