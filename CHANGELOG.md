@@ -443,6 +443,20 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   5 files. Not checked: the pattern in the running app (the spec drives the real component with stand-ins for the API
   classes and a held promise), and the real duration and size of the tag list (read from code: up to 50 sequential
   pages).
+- Lightbox: one failed "who is logged in" request made the tag box read-only for the rest of the app run (B-171,
+  counted as borderline). When the host gives `TagsSection` no username, which is how the lightbox mounts it, the
+  section asks the session endpoint who is signed in and remembers the answer in a module-level variable so that
+  reopening the lightbox does not ask again. The API client never throws: a failed request (offline, server error, a
+  reply that is not JSON) comes back as `success: false`. The section stored that failed answer as "nobody is logged
+  in", so the owner was never recognised again: their own files showed read-only tags (or no Tags box at all when a
+  file had no tags yet) until the app was restarted, and nothing on screen said why. A failed lookup is now not
+  remembered, so the next lightbox visit asks again; only a real answer ("logged in as X" or "nobody is logged in")
+  is kept. The visit during which the lookup failed stays read-only (the lookup runs once per mount). Needs a failed
+  first request, hence borderline. No new plugin, capability, Rust command or copy. New
+  `TagsSection.sessionLookup.spec.tsx` (4 tests, a fresh copy of the section's module for each): on the old code 1
+  failed (the second visit found no Tags input) and 3 controls passed. Lightbox-modal package 24/24 in 6 files. Not
+  checked: a real failed request in the running app (the spec stands in for the API classes and answers
+  `success: false` the way the real client does), and how often the first lookup fails in practice.
 - Tests only (not counted as a bug): `shipped-gradients.spec.ts` in video-editor runs the 33 background swatches the
   colour picker ships (pattern-craft and syntax-ui lists) through the export's CSS parser and canvas painter with a
   strict recording canvas; 100 new tests, all green on the current code.
@@ -580,8 +594,16 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   and the quote's generation-mode derivation could not be compared with the real Generate call because the frontend
   builds no generation mode there (no second copy to drift from). Re-verified after the edit: pricing-modal vitest
   6 files / 22 tests and `tsc -b tsconfig.lib.json` in that package passed.
+- Annotation stage 2, twelfth slice (2026-10-19): line-by-line comments on the three `lightbox-modal` tags files:
+  `src/lib/tags/TagChipInput.tsx` (203 code lines), `src/lib/tags/TagsSection.tsx` (241) and `src/index.ts` (3).
+  Comments only: with whole-line comments and blank lines stripped, each file is identical to its copy from before the
+  edit. The comments point at the behaviour recorded elsewhere: the Escape key in the tag box (N-109), the remembered
+  "who is logged in" answer and the failed-lookup handling (B-171, N-110). No bug found while annotating, so counts are
+  unchanged (Fixed 171, strict 157, Noted 101). Batch gate on the final tree (2026-10-19): `tsc -b`, eslint, the 15 library
+  spec typechecks and `vite build` all exit 0; 61-package run 0 failed, 1497 tests passed across 241 test files.
 
 ### Noted, not changed
+- N-110 in `BUGS.md` (not counted, no code changed, read only): the lightbox's remembered "who is logged in" answer (the module-level variable behind B-171) is never cleared. Logging out clears the gallery cache, credits and subscription state but cannot reach it, and an in-app sign-up (unlike signing in, which reloads the page) does not reset it either. So after a logout followed by creating a second account in the same app run, or after opening the lightbox signed out and then signing up, the new account's own files could show read-only tags until a restart. Whether a signed-out user reaches the lightbox, and whether anyone signs up after a logout in the same run, were not checked, so it stays a note. Options in the row: (a) stop remembering the answer and ask once per lightbox open (like the gallery dialog does); (b) export a clear function and call it from the logout and sign-up code; (c) leave as is.
 - N-109 in `BUGS.md` (not counted, no code changed, read only): pressing Escape in the lightbox's Tags box does two things at once. In `TagChipInput` the Escape key blurs the box, and blur saves whatever is half-typed as a tag; the `Modal`'s own window-level Escape listener (it does not look at the event target) then closes the lightbox, so the text is saved as a tag and the lightbox goes away, where the user may have meant "forget what I typed". A product call; options in the row (Escape clears the draft first; the same plus stop the event so the lightbox stays open; leave as is).
 - N-108 in `BUGS.md` (not counted, no code changed, read only): the Pricing dialog's launches (choose a plan, manage plan, "Update payment method") show nothing when they fail, the defect B-87 fixed in the Buy-credits dialog. `PricingTable` catches the plan and portal rejections but only logs them, and the "Update payment method" button has no catch at all (an unhandled rejection), so a failed launch looks like a button that did nothing. Counted once with B-87, and the fix needs wording and a place to show it (the dialog has no error line), so it is a copy decision; options in the row (reuse the B-87 wording, a toast, or leave as is).
 - N-107 in `BUGS.md` (not counted, no code changed, read only, dormant code): `loadPreviewOnCanvas.ts` still has loader branches for `.pmd`, `.vmd` and `.png/.jpg/.jpeg/.gif`, but its only two callers are the 3D picker (accepts `glb`/`fbx` only) and the Splat picker (`spz` only), so those branches cannot be reached from the shipped app. If they were switched back on: the image-plane loader reports "OK" before its texture has loaded (the shape B-165 fixed for splats), and the PMD loader fetches a font from `threejs.org` at preview time (the Tauri CSP was not checked for that host). Also live but cosmetic: a splat whose name before the first "." ends in "ceramic" is shown upside down in the preview. Options in the row (delete the dormant branches, keep and fix them later, or leave as is; keep or remove the "ceramic" rotation).
