@@ -464,6 +464,13 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   expanded-prompt state also survived the move. A new effect keyed on the media id now stops the clip and resets
   both. New test in `lightbox-modal.audio.spec.tsx`: 1 failed on the unfixed code, lightbox-modal now 25/25 in 6
   files, `tsc -b tsconfig.lib.json` 0. Counts: Fixed 172, strict 158, Noted 101; next free IDs B-173 / N-111.
+- Lightbox: the prompt Copy button said "Prompt copied" even when the clipboard refused the write (B-173, counted as
+  borderline). The handler started the write without waiting for it and ignored any failure, so the success toast and
+  the "Copied!" label always appeared; the Share button already waited and showed "Unable to copy link". Copy now
+  waits and shows the new error toast "Unable to copy prompt" on failure (copy approval due with the other copy
+  items). New `lightbox-modal.copyPrompt.spec.tsx` (2 tests): 1 failed on the unfixed code, 1 control passed;
+  lightbox-modal now 27/27 in 7 files, `tsc -b` and the spec typecheck 0. Counts: Fixed 173, strict 158, Noted 102;
+  next free IDs B-174 / N-112.
 - Tests only (not counted as a bug): `shipped-gradients.spec.ts` in video-editor runs the 33 background swatches the
   colour picker ships (pattern-craft and syntax-ui lists) through the export's CSS parser and canvas painter with a
   strict recording canvas; 100 new tests, all green on the current code.
@@ -610,6 +617,7 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   spec typechecks and `vite build` all exit 0; 61-package run 0 failed, 1497 tests passed across 241 test files.
 
 ### Noted, not changed
+- N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.
 - N-110 in `BUGS.md` (not counted, no code changed, read only): the lightbox's remembered "who is logged in" answer (the module-level variable behind B-171) is never cleared. Logging out clears the gallery cache, credits and subscription state but cannot reach it, and an in-app sign-up (unlike signing in, which reloads the page) does not reset it either. So after a logout followed by creating a second account in the same app run, or after opening the lightbox signed out and then signing up, the new account's own files could show read-only tags until a restart. Whether a signed-out user reaches the lightbox, and whether anyone signs up after a logout in the same run, were not checked, so it stays a note. Options in the row: (a) stop remembering the answer and ask once per lightbox open (like the gallery dialog does); (b) export a clear function and call it from the logout and sign-up code; (c) leave as is.
 - N-109 in `BUGS.md` (not counted, no code changed, read only): pressing Escape in the lightbox's Tags box does two things at once. In `TagChipInput` the Escape key blurs the box, and blur saves whatever is half-typed as a tag; the `Modal`'s own window-level Escape listener (it does not look at the event target) then closes the lightbox, so the text is saved as a tag and the lightbox goes away, where the user may have meant "forget what I typed". A product call; options in the row (Escape clears the draft first; the same plus stop the event so the lightbox stays open; leave as is).
 - N-108 in `BUGS.md` (not counted, no code changed, read only): the Pricing dialog's launches (choose a plan, manage plan, "Update payment method") show nothing when they fail, the defect B-87 fixed in the Buy-credits dialog. `PricingTable` catches the plan and portal rejections but only logs them, and the "Update payment method" button has no catch at all (an unhandled rejection), so a failed launch looks like a button that did nothing. Counted once with B-87, and the fix needs wording and a place to show it (the dialog has no error line), so it is a copy decision; options in the row (reuse the B-87 wording, a toast, or leave as is).

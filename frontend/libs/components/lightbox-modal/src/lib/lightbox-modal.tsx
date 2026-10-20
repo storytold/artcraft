@@ -825,12 +825,16 @@ export function LightboxModal({
                       {!promptLoading && prompt && (
                         <button
                           className="flex items-center gap-1.5 text-xs text-base-fg/60 hover:text-base-fg transition-colors"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             if (!prompt) return;
-                            navigator.clipboard
-                              .writeText(prompt)
-                              .catch(() => {});
+                            // Only report success when the clipboard write worked, as the Share button does.
+                            try {
+                              await navigator.clipboard.writeText(prompt);
+                            } catch {
+                              toast.error("Unable to copy prompt");
+                              return;
+                            }
                             toast.success("Prompt copied");
                             setPromptCopied(true);
                             if (promptCopiedTimeoutRef.current) {
