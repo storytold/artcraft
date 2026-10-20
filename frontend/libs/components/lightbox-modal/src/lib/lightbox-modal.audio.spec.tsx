@@ -135,6 +135,23 @@ describe("LightboxModal reference audio", () => {
     expect(audios[0].pause).toHaveBeenCalled();
   });
 
+  it("pauses a playing reference clip when the lightbox moves to another media", async () => {
+    const view = await startAudio();
+    // Arrow keys / next-prev buttons change mediaId while the lightbox stays open; the audio rows
+    // disappear with the old prompt data, so nothing on screen could stop the clip any more.
+    view.rerender(
+      <LightboxModal
+        isOpen={true}
+        onClose={() => undefined}
+        onCloseGallery={() => undefined}
+        mediaId="m2"
+        imageUrl="https://cdn/img2.png"
+        mediaClass="image"
+      />,
+    );
+    expect(audios[0].pause).toHaveBeenCalled();
+  });
+
   it("resets the play state when play() is rejected", async () => {
     getPrompt.mockResolvedValue({
       success: true,

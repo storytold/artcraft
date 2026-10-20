@@ -218,6 +218,16 @@ export function LightboxModal({
     }
   }, [isOpen]);
 
+  // Moving to another media (arrow keys, prev/next buttons, "View as media") keeps the lightbox open,
+  // so the isOpen effect above never runs. The reference-audio rows disappear with the old prompt data,
+  // so a clip that is still playing would have no pause button left; the reference preview and the
+  // expanded prompt belong to the old media too. Reset all three whenever mediaId changes.
+  useEffect(() => {
+    stopAudio();
+    setRefPreviewUrl(null);
+    setIsPromptExpanded(false);
+  }, [mediaId]);
+
   // Same for unmount while a clip is playing.
   useEffect(() => {
     return () => {

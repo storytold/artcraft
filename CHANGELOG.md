@@ -457,6 +457,13 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   failed (the second visit found no Tags input) and 3 controls passed. Lightbox-modal package 24/24 in 6 files. Not
   checked: a real failed request in the running app (the spec stands in for the API classes and answers
   `success: false` the way the real client does), and how often the first lookup fails in practice.
+- Lightbox: a reference-audio clip kept playing with no way to stop it after moving to another file (B-172). The
+  lightbox shows a clip's pause button only inside the current file's prompt data, and it stopped audio only when it
+  closed or unmounted. Pressing an arrow key, Previous/Next, or "View as media" keeps it open, so the prompt data was
+  cleared (rows and pause button gone) while the clip went on to its end. The reference-image preview and the
+  expanded-prompt state also survived the move. A new effect keyed on the media id now stops the clip and resets
+  both. New test in `lightbox-modal.audio.spec.tsx`: 1 failed on the unfixed code, lightbox-modal now 25/25 in 6
+  files, `tsc -b tsconfig.lib.json` 0. Counts: Fixed 172, strict 158, Noted 101; next free IDs B-173 / N-111.
 - Tests only (not counted as a bug): `shipped-gradients.spec.ts` in video-editor runs the 33 background swatches the
   colour picker ships (pattern-craft and syntax-ui lists) through the export's CSS parser and canvas painter with a
   strict recording canvas; 100 new tests, all green on the current code.
