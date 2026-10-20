@@ -596,12 +596,16 @@ export function LightboxModal({
   //   Left / Right  →  carousel slide; at boundary, moves to prev/next bundle
   //   Up / Down     →  previous / next bundle
   useEffect(() => {
+    // Only listen while the viewer is open.
     if (!isOpen) return;
+    // Runs on every key press anywhere in the window.
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Leave the keys alone while the user is typing in a field (for example a tag box).
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       if (e.key === "ArrowLeft") {
+        // Left arrow: stop the browser's default action, then move one slide back, or one file back when already on the first slide.
         e.preventDefault();
         if (
           emblaMainApi &&
@@ -613,6 +617,7 @@ export function LightboxModal({
           onNavigatePrev?.();
         }
       } else if (e.key === "ArrowRight") {
+        // Right arrow: the mirror image, one slide forward or one file forward from the last slide.
         e.preventDefault();
         if (
           emblaMainApi &&
@@ -624,13 +629,16 @@ export function LightboxModal({
           onNavigateNext?.();
         }
       } else if (e.key === "ArrowUp") {
+        // Up arrow: always go to the previous file.
         e.preventDefault();
         onNavigatePrev?.();
       } else if (e.key === "ArrowDown") {
+        // Down arrow: always go to the next file.
         e.preventDefault();
         onNavigateNext?.();
       }
     };
+    // Listen on the whole window and remove the listener when the viewer closes or the inputs change.
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [

@@ -644,6 +644,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   blank lines are stripped. A read of this stretch found no new bug (the Share timer is cleared on close and unmount).
   Counts unchanged (Fixed 173, strict 158, Noted 102). `tsc -b tsconfig.lib.json` 0, lightbox-modal vitest 7 files / 27
   tests passed.
+- Annotation stage 2, eighteenth slice (2026-10-19): comments inside the keyboard-navigation handler of
+  `lightbox-modal.tsx` (arrow keys, the typing guard, the listener setup). This finishes `lightbox-modal.tsx`. Comments
+  only: code identical to the pre-edit copy once whole-line comments and blank lines are stripped. A read found no
+  new bug. Counts unchanged (Fixed 173, strict 158, Noted 102). `tsc -b tsconfig.lib.json` 0, lightbox-modal vitest
+  7 files / 27 tests passed.
 
 ### Noted, not changed
 - N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.
