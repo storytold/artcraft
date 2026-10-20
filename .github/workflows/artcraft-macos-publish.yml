@@ -85,6 +85,7 @@ jobs:
 
           # Create certificate file
           echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          trap 'rm -f certificate.p12' EXIT
 
           # Debug: Check if certificate file exists and has content
           echo "Certificate file info:"
@@ -143,8 +144,6 @@ jobs:
           # Additional debug: Check if this is a valid Developer ID cert
           echo "Checking for Developer ID certificates:"
           security find-certificate -a build.keychain | grep -A 5 -B 5 "Developer ID" || echo "No Developer ID certificates found"
-
-          rm -f certificate.p12
 
       - name: verify certificate
         if: matrix.platform == 'macos-latest-xlarge'
