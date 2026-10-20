@@ -437,3 +437,9 @@ Verification at the time of writing (2026-10-17):
    Noted 101; next free IDs B-172 / N-111). Build 2 tree: gate (`tsc -b`, eslint, 15 spec typechecks, `vite build`) all
    exit 0; 61-package run 0 failed, 1497 tests passed across 241 test files. Next: annotate `lightbox-modal.tsx`
    (1425 lines, several slices), then the other Build 2 libraries, `crates/desktop/artcraft`, `frontend/libs`, the app.
+
+   Thirteenth slice (Build 2, 2026-10-19): first part of `lightbox-modal.tsx` (imports, props, state, audio helpers,
+   reset and cleanup effects) annotated, comments only, code identical to the pre-edit copy once comments and blank
+   lines are stripped. No new bug; counts unchanged (Fixed 173, strict 158, Noted 102; next free IDs B-174 / N-112).
+   lightbox-modal vitest 7 files / 27 tests and `tsc -b tsconfig.lib.json` 0. Next: the prompt-fetch effect onward
+   in `lightbox-modal.tsx` (about line 250 to 1425), in slices.

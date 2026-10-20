@@ -615,6 +615,13 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   "who is logged in" answer and the failed-lookup handling (B-171, N-110). No bug found while annotating, so counts are
   unchanged (Fixed 171, strict 157, Noted 101). Batch gate on the final tree (2026-10-19): `tsc -b`, eslint, the 15 library
   spec typechecks and `vite build` all exit 0; 61-package run 0 failed, 1497 tests passed across 241 test files.
+- Annotation stage 2, thirteenth slice (2026-10-19): comments on the first part of
+  `libs/components/lightbox-modal/src/lib/lightbox-modal.tsx` (imports, props, state, the audio helpers and the reset
+  and cleanup effects, lines 1-246 of the commented file; the rest of the 1425 lines follows in later slices). Comments
+  only: with whole-line comments and blank lines stripped the file is identical to its copy from before the edit
+  (checked with a script that diffs what is left; the real file was first confirmed byte-identical to that copy).
+  No bug found while annotating, so counts are unchanged (Fixed 173, strict 158, Noted 102). Re-verified after the
+  edit: `tsc -b tsconfig.lib.json` 0, lightbox-modal vitest 7 files / 27 tests passed.
 
 ### Noted, not changed
 - N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.

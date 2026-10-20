@@ -1,13 +1,24 @@
+// The lightbox: the full-screen viewer the app opens when a user clicks a generated file in the gallery or a task list.
+// It shows the file (image, video, audio or 3D), its prompt, creator and info, tags, and the action buttons (download, edit, delete...).
+// Imports: the dialog shell (Modal) and small UI pieces come from sibling libraries in this repo.
 import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
+// dayjs formats the created-at date shown in the info section.
 import dayjs from "dayjs";
+// Icons from lucide-react, used in the buttons and info rows below.
 import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+// DynamicIcon renders an icon component passed in as a prop (used for the Copy / Copied! swap).
 import { DynamicIcon } from "@storyteller/icons";
+// MediaFileDelete is the Rust (Tauri) command that deletes a file on the server.
 import { MediaFileDelete } from "@storyteller/tauri-api";
+// A spinner shown while the media loads.
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
+// The 3D viewer used when the file is a 3D model.
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
+// The waveform player used when the file is audio.
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
+// React hooks: state, effects, memoised values, stable callbacks and refs.
 import {
   useEffect,
   useState,
@@ -16,24 +27,34 @@ import {
   useCallback,
   useRef,
 } from "react";
+// Sends an analytics event (for example when a file is deleted).
 import { gtagEvent } from "@storyteller/google-analytics";
+// The API classes that fetch the media file record and its prompt.
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
+// Types only: the prompt record and the creator's user info.
 import type { Prompts, UserInfo } from "@storyteller/api";
+// Draws the creator's avatar.
 import { Gravatar } from "@storyteller/ui-gravatar";
+// Shows small pop-up messages (success / error).
 import { toast } from "@storyteller/ui-toaster";
+// Merges CSS class names, dropping conflicting Tailwind classes.
 import { twMerge } from "tailwind-merge";
+// The confirmation dialog helper (used by Delete) and its open/closed flag.
 import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
+// Lookups that turn a model id / provider into a display name and icon for the info section.
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
 } from "@storyteller/model-list";
+// Embla is the carousel library used when a batch of images is shown.
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
+// Types only: Embla's option object.
 import {
   addCorsParam,
   getContextImageThumbnail,
@@ -43,8 +64,10 @@ import {
   formatDuration,
   formatResolution,
 } from "@storyteller/common";
+// The Tags box in the details panel (see tags/TagsSection.tsx).
 import { TagsSection } from "./tags/TagsSection";
 
+// Props of the lightbox. Callers (the gallery, the task queue) pass the file to show and the handlers for each button; any handler left out hides its button.
 interface LightboxModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,6 +118,7 @@ interface LightboxModalProps {
   initialIndex?: number;
 }
 
+// The lightbox component. It stays mounted while closed (callers flip isOpen), so state here must be reset by effects, not by unmounting.
 export function LightboxModal({
   isOpen,
   onClose,
@@ -130,9 +154,11 @@ export function LightboxModal({
   // it won't be able to load in cors mode and will show blank in the canvas and 3D engine. This is a really
   // stupid hack around this behavior.
 
+  // State for the reference-image preview, the media-loading flag and the prompt record fetched from the API.
   const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
   const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
   const [promptData, setPromptData] = useState<Prompts | null>(null);
+  // Values read out of the prompt record; each is null until the record has loaded.
   const prompt = promptData?.maybe_positive_prompt ?? null;
   const generationProvider = promptData?.maybe_generation_provider ?? null;
   const modelType = promptData?.maybe_model_type ?? null;
@@ -141,23 +167,30 @@ export function LightboxModal({
   const resolution = promptData?.maybe_resolution ?? null;
   const durationSeconds = promptData?.maybe_duration_seconds ?? null;
   const generateAudio = promptData?.maybe_generate_audio ?? null;
+  // Natural size of the shown media, used for the info section.
   const [mediaWidth, setMediaWidth] = useState<number | null>(null);
   const [mediaHeight, setMediaHeight] = useState<number | null>(null);
+  // Prompt loading flags and the expand / clamp state of the prompt text ("See all" / "Hide").
   const [promptLoading, setPromptLoading] = useState<boolean>(false);
   const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState<boolean>(false);
   const promptRef = useRef<HTMLDivElement>(null);
   const [isPromptClamped, setIsPromptClamped] = useState<boolean>(false);
+  // Copy-button feedback: promptCopied turns the label to "Copied!" for 1.5 s; the ref holds the timer so a second click can restart it.
   const [promptCopied, setPromptCopied] = useState<boolean>(false);
   const promptCopiedTimeoutRef = useRef<number | null>(null);
+  // The other images of the same batch (urls and media tokens), shown in the carousel, and the file's creator.
   const [batchImages, setBatchImages] = useState<string[] | null>(null);
   const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
   const [creator, setCreator] = useState<UserInfo | null>(null);
+  // Share-link feedback state and its timer, same pattern as the Copy button.
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
+  // Which reference-audio clip is playing (by media token) and the browser Audio object playing it.
   const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
+  // Stops any playing reference clip and clears the playing flag.
   const stopAudio = useCallback(() => {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
@@ -166,6 +199,7 @@ export function LightboxModal({
     setPlayingAudioToken(null);
   }, []);
 
+  // Plays or pauses a reference-audio clip: clicking the playing clip stops it, clicking another stops the old one and starts the new one.
   const handleAudioToggle = useCallback(
     (token: string, url: string) => {
       if (playingAudioToken === token) {
@@ -194,9 +228,11 @@ export function LightboxModal({
   );
 
   // Stable API instances
+  // Stable API instances
   const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
   const promptsApi = useMemo(() => new PromptsApi(), []);
 
+  // Reset the per-open UI state each time the lightbox opens; stop audio when it closes.
   useEffect(() => {
     if (isOpen) {
       setRefPreviewUrl(null);
@@ -236,6 +272,7 @@ export function LightboxModal({
     };
   }, []);
 
+  // Clear the Share-copied timer if the lightbox unmounts.
   useEffect(() => {
     return () => {
       if (shareCopiedTimeoutRef.current) {
