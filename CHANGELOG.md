@@ -1189,3 +1189,6 @@ summarized here.
 - Snapshot download URL, `video-editor/src/lib/utils/browser.ts` (B-197, borderline): `downloadBlob` (and `downloadBuffer`) revoked the blob URL in the
   same tick as the click, which can cancel the download in WebKit. They now revoke after 60 s like the default export sink. New
   `utils/browser-download.spec.ts`; suite 51 files / 372 tests pass. Counts: Fixed 197, strict 176, Noted 117; next free IDs B-198 / N-127.
+- Easing solver, `pagescene/src/lib/engine/timeline/interpolation.ts` (B-198, borderline): `cubicBezierYForX` pinned t to 0 or 1 when both handles
+  were dragged to the same x edge. It now falls back to bisection when Newton does not converge. New `engine/timeline/interpolation.spec.ts`;
+  pagescene suite 16 files / 81 tests pass. Counts: Fixed 198, strict 176, Noted 117; next free IDs B-199 / N-127.
