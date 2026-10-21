@@ -162,3 +162,39 @@ describe("clampAnimationsToDuration held values", () => {
     expect(opacityAt(clamped, 6)).toBeCloseTo(0.8, 5);
   });
 });
+
+describe("splitAnimationsAtTime inside a bezier segment", () => {
+  // Two keys joined by a bezier segment: 0 -> 1 over four seconds.
+  function bezierOpacity(): ElementAnimations {
+    return opacityAnimation(
+      { ...key("a", 0, 0), segmentToNext: "bezier" },
+      key("b", 4, 1),
+    );
+  }
+
+  it("leaves exactly one key per id on each half", () => {
+    const { leftAnimations, rightAnimations } = splitAnimationsAtTime({
+      animations: bezierOpacity(),
+      splitTime: sec(2),
+    });
+    for (const half of [leftAnimations, rightAnimations]) {
+      const channel = half?.opacity as { keys: ScalarAnimationKey[] };
+      const ids = channel.keys.map((k) => k.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+
+  it("keeps the curve the user saw on both halves", () => {
+    const original = bezierOpacity();
+    const { leftAnimations, rightAnimations } = splitAnimationsAtTime({
+      animations: original,
+      splitTime: sec(2),
+    });
+    for (const t of [0.5, 1, 1.5]) {
+      expect(opacityAt(leftAnimations, t)).toBeCloseTo(opacityAt(original, t), 3);
+    }
+    for (const t of [0.5, 1, 1.5]) {
+      expect(opacityAt(rightAnimations, t)).toBeCloseTo(opacityAt(original, 2 + t), 3);
+    }
+  });
+});

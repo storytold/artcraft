@@ -1101,7 +1101,9 @@ function splitScalarChannelAtTime({
       const r1 = lerpPoint({ left: q1, right: q2, progress });
       const splitPoint = lerpPoint({ left: r0, right: r1, progress });
       leftKeys = [
-        ...normalizedChannel.keys.filter((key) => key.time < splitTime),
+        // Keys strictly before leftKey: leftKey itself is re-added below with its new handle,
+        // so keeping it here would leave two keys with the same id and time on the left half.
+        ...normalizedChannel.keys.filter((key) => key.time < leftKey.time),
         {
           ...leftKey,
           rightHandle: {

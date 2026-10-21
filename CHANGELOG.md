@@ -529,6 +529,9 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   the earlier scene's tracks into the newly opened scene. Both switch paths now clear the undo/redo history when the
   active scene changes. Second test in `switch-scene.spec.ts`. Counts: Fixed 187, strict 168, Noted 114; next free IDs
   B-188 / N-124.
+- Bezier split, `video-editor/src/lib/animation/keyframes.ts` (B-188, borderline): splitting inside a bezier segment left a
+  duplicate copy of the segment's left key (same id and time) on the left half. The kept keys are now strictly before it.
+  New bezier block in `keyframes.spec.ts`. Counts: Fixed 188, strict 168, Noted 114; next free IDs B-189 / N-124.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
