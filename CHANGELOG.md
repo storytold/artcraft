@@ -484,6 +484,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   element as its colour and the field never fell back to the paste/extract path. The pattern now allows only those
   four lengths. New `utils/color.spec.ts` (3 tests): 1 failed on the unfixed code, 2 controls passed; `tsc -p
   tsconfig.lib.json --noEmit` 0. Counts: Fixed 175, strict 160, Noted 102; next free IDs B-176 / N-112.
+- Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
+  (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
+  hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
+  strict 160, Noted 106; next free IDs B-176 / N-116.
 - Tests only (not counted as a bug): `shipped-gradients.spec.ts` in video-editor runs the 33 background swatches the
   colour picker ships (pattern-craft and syntax-ui lists) through the export's CSS parser and canvas painter with a
   strict recording canvas; 100 new tests, all green on the current code.
