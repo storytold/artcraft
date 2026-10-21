@@ -1179,3 +1179,7 @@ summarized here.
   playback start still awaiting the audio context or clip lookup, so it later built a schedule interval (and after dispose re-created the
   closed AudioContext). `stopPlayback` now bumps the session id. New `core/managers/audio-manager-dispose.spec.ts`. Counts: Fixed 195,
   strict 175, Noted 115; next free IDs B-196 / N-125.
+- Export audio context, `video-editor/src/lib/media/audio.ts` (B-196): `createTimelineAudioBuffer` opened its own `AudioContext` for every
+  export with audio and never closed it. It now closes a context it created, and leaves a caller's alone. New
+  `media/audio-export-context.spec.ts`. The unreachable twin in `decodeAudioToFloat32` is noted as N-125. Counts: Fixed 196, strict 176,
+  Noted 116; next free IDs B-197 / N-126.

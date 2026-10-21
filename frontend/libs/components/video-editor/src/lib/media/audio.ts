@@ -411,8 +411,40 @@ export async function createTimelineAudioBuffer({
   sampleRate?: number;
   audioContext?: AudioContext;
 }): Promise<AudioBuffer | null> {
+  // FIX: when the caller passes no context this function makes its own, and
+  // it was never closed. Every export with audio (and every audio-only
+  // extract) left one open AudioContext behind, and webviews cap how many may
+  // exist at once, so a session of exports eventually could not make more.
+  // Close only a context created here; a caller-supplied one stays open. The
+  // returned AudioBuffer does not depend on the context staying open.
+  const ownsContext = !audioContext;
   const context = audioContext ?? createAudioContext({ sampleRate });
+  try {
+    return await buildTimelineAudioBuffer({
+      tracks,
+      mediaAssets,
+      duration,
+      sampleRate,
+      context,
+    });
+  } finally {
+    if (ownsContext) void context.close();
+  }
+}
 
+async function buildTimelineAudioBuffer({
+  tracks,
+  mediaAssets,
+  duration,
+  sampleRate,
+  context,
+}: {
+  tracks: SceneTracks;
+  mediaAssets: MediaAsset[];
+  duration: number;
+  sampleRate: number;
+  context: AudioContext;
+}): Promise<AudioBuffer | null> {
   const audioElements = await collectAudioElements({
     tracks,
     mediaAssets,
