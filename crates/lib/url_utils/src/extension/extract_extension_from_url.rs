@@ -61,10 +61,11 @@ pub fn extract_extension_from_url_str(url: &str, accept: &ExtractExtensions) -> 
 
 /// Extracts a file extension from a parsed `Url`, filtered by `accept`.
 pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Option<Extension> {
-  let path = url.path();
-  let raw_ext = std::path::Path::new(path)
+  let filename = url.path_segments()?.next_back()?;
+  let raw_ext = std::path::Path::new(filename)
     .extension()
-    .and_then(|ext| ext.to_str())?;
+    .and_then(|ext| ext.to_str())
+    .filter(|ext| !ext.is_empty())?;
 
   let lower = raw_ext.to_lowercase();
   let candidate = Extension::new(&lower);
@@ -103,6 +104,47 @@ fn slice_contains(extensions: &[Extension], candidate: &Extension) -> bool {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  mod final_path_segment {
+    use super::*;
+
+    #[test]
+    fn directory_url_has_no_file_extension() {
+      for accept in [ExtractExtensions::All, ExtractExtensions::KnownImage] {
+        let ext = extract_extension_from_url_str("https://example.com/assets.png/", &accept);
+        assert_eq!(ext.map(|ext| ext.without_period().to_string()), None);
+      }
+    }
+
+    #[test]
+    fn empty_extension_is_not_a_filename_suffix() {
+      let ext = extract_extension_from_url_str(
+        "https://example.com/image.", &ExtractExtensions::All,
+      );
+      assert_eq!(ext.map(|ext| ext.without_period().to_string()), None);
+    }
+
+    #[test]
+    fn opaque_url_is_not_a_file_path() {
+      let ext = extract_extension_from_url_str(
+        "data:application/example.png", &ExtractExtensions::All,
+      );
+      assert_eq!(ext.map(|ext| ext.without_period().to_string()), None);
+    }
+
+    #[test]
+    fn parent_directory_extension_does_not_replace_the_file_extension() {
+      let ext = extract_extension_from_url_str(
+        "https://example.com/assets.png/reference.MP4?sig=value#preview",
+        &ExtractExtensions::KnownVideo,
+      );
+      assert_eq!(ext.unwrap().without_period(), "mp4");
+      let ext = extract_extension_from_url_str(
+        "https://example.com/assets.png/reference", &ExtractExtensions::All,
+      );
+      assert_eq!(ext.map(|ext| ext.without_period().to_string()), None);
+    }
+  }
 
   #[test]
   fn all_extracts_any_extension() {
