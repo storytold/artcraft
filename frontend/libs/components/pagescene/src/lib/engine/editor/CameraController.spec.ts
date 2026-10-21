@@ -46,3 +46,17 @@ describe("CameraController free-cam keyboard look", () => {
     expect(at144).toBeCloseTo(at60, 3);
   });
 });
+
+describe("CameraController free-cam movement after a stalled frame", () => {
+  it("does not fling the camera when a held key meets one huge frame delta", () => {
+    // A backgrounded tab pauses requestAnimationFrame; the first frame back
+    // reports the whole pause (here 10 s) as its delta.
+    const { controller, state } = build();
+    state.moveKeys.forward = 1;
+    const start = controller.camera!.position.clone();
+    controller.tickPerFrame(10);
+    // With a 0.1 s clamp the camera moves well under a unit; unclamped it
+    // lunges tens of units.
+    expect(controller.camera!.position.distanceTo(start)).toBeLessThan(5);
+  });
+});
