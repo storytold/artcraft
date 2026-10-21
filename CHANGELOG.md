@@ -492,6 +492,12 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   `addSoundToTimeline` used a fresh context only to decode, so repeated adds hit the browser's open-context cap. The
   decode now closes it in a `finally`. New `sounds-store.spec.ts` (2 failed on the old code). Counts: Fixed 177,
   strict 160, Noted 108; next free IDs B-178 / N-118.
+- Video editor box masks (rectangle, ellipse, diamond, heart, star, cinematic bars), `masks/builtin/box-like.ts`
+  `computeBoxMaskParamUpdate` (B-178, B-179, B-180): the rotation handle turned the mask by the drag direction instead
+  of the pointer's sweep around the centre; edge and corner drags ignored the mask's rotation; and the corner handle
+  lagged the pointer by half because the "half" sizes were full sizes. New `builtin/box-like.spec.ts` (4 tests, 3
+  failed on the old code, 1 control passed). Notes N-119 and N-120 added (nothing counted). Counts: Fixed 180, strict
+  163, Noted 111; next free IDs B-181 / N-121.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
