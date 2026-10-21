@@ -11,6 +11,8 @@ vi.mock("../proxy/storyteller_proxy_scene", () => ({
     saveToScene() {
       return {};
     }
+    // Loading is not under test here; the scene graph restore is a no-op.
+    async loadFromSceneJson() {}
   },
 }));
 
@@ -83,3 +85,33 @@ describe("SaveManager.saveScene loader", () => {
     expect(loaderVisibility(events)).toEqual([true, false]);
   });
 });
+
+describe("SaveManager.loadCache prompt restore", () => {
+  it("restores an empty saved prompt instead of keeping the previous one", async () => {
+    // A user cleared the prompt box and saved. The saved JSON carries "".
+    const { manager, deps } = makeManagerWithDeps();
+
+    await manager.loadCache(JSON.stringify({ scene: {}, version: 1, positivePrompt: "" }));
+
+    // The editor's prompt must become "" again. (Old code skipped falsy
+    // values, so the default/previous prompt silently came back.)
+    expect(deps.setPositivePrompt).toHaveBeenCalledWith("");
+  });
+
+  it("leaves the prompt alone when the saved scene has no prompt field", async () => {
+    // Legacy scenes never stored a prompt: keep whatever the editor has.
+    const { manager, deps } = makeManagerWithDeps();
+
+    await manager.loadCache(JSON.stringify({ scene: {}, version: 1 }));
+
+    expect(deps.setPositivePrompt).not.toHaveBeenCalled();
+  });
+});
+
+// Same stub deps as makeManager, but also hands the deps back so a test can
+// inspect the setters it calls.
+function makeManagerWithDeps() {
+  const made = makeManager(async () => "m_token");
+  const deps = (made.manager as unknown as { deps: SaveManagerDeps }).deps;
+  return { manager: made.manager, deps };
+}

@@ -329,7 +329,11 @@ export class SaveManager {
       );
     }
 
-    if (scene_json.positivePrompt) {
+    // FIX: this used to be a truthiness check, so a prompt the user had
+    // cleared and saved ("") was skipped and the default (or previous
+    // scene's) prompt came back on reload / Reset. Only a missing field
+    // (legacy scenes) should leave the editor's prompt alone.
+    if (typeof scene_json.positivePrompt === "string") {
       this.deps.setPositivePrompt(scene_json.positivePrompt);
     }
     if (scene_json.cameraAspectRatio) {
