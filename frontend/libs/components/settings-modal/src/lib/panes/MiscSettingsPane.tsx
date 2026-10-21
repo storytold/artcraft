@@ -1,4 +1,4 @@
-import { isLocale, setLocale, useTranslation } from "@storyteller/i18n";
+import { isLocale, LANGUAGES, setLocale, useTranslation } from "@storyteller/i18n";
 import { Label } from "@storyteller/ui-label";
 import { Switch } from "@storyteller/ui-switch";
 import { useEnterToGenerateStore } from "@storyteller/ui-promptbox";
@@ -34,8 +34,11 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
           }}
           className="h-10 w-full max-w-xs rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 text-base-fg"
         >
-          <option value="en" lang="en">English</option>
-          <option value="zh-CN" lang="zh-CN">简体中文</option>
+          {LANGUAGES.map((language) => (
+            <option key={language.code} value={language.code} lang={language.code}>
+              {language.name}
+            </option>
+          ))}
         </select>
       </div>
       <div className="flex flex-col gap-2 pt-3">

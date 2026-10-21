@@ -30,7 +30,7 @@ export default {
           "Roboto",
           "Helvetica Neue",
           "Arial",
-          "sans-serif",
+          "var(--craft-fonts, sans-serif)",
         ],
         sans: [
           "system-ui",
@@ -40,7 +40,7 @@ export default {
           "Roboto",
           "Helvetica Neue",
           "Arial",
-          "sans-serif",
+          "var(--craft-fonts, sans-serif)",
         ],
       },
       keyframes: {

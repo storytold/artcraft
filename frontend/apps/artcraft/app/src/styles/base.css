@@ -61,7 +61,7 @@ h6 {
     Roboto,
     "Helvetica Neue",
     Arial,
-    sans-serif;
+    var(--craft-fonts, sans-serif);
   letter-spacing: -0.03em;
 }
 
@@ -83,7 +83,7 @@ body {
     Roboto,
     "Helvetica Neue",
     Arial,
-    sans-serif;
+    var(--craft-fonts, sans-serif);
   color: var(--st-fg);
   background-color: var(--st-bg);
   color-scheme: var(--st-color-scheme, dark);

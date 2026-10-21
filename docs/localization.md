@@ -59,16 +59,61 @@ fully translated yet.
 - Preserve `{{variable}}` interpolation names, `<craft>` rich-text tags, and
   literal filename tokens such as `{model}`. Never concatenate translated
   sentence fragments; interpolate the complete sentence instead.
-- Plural messages use i18next suffixes, for example `creditCost_one` and
-  `creditCost_other`, called with `t("creditCost", { count })`.
+- Plural messages use `tn(t, count, one, other)` with the English forms, for
+  example `tn(t, credits, "{{n}} credit cost", "{{n}} credits cost")`. Their
+  resource keys are `<one>|<other>` plus an i18next plural suffix, such as
+  `"{{n}} credit cost|{{n}} credits cost_other"`.
 - Import `useTranslation` from `@storyteller/i18n` in each rendering component.
   Translate static descriptors at render time so already-mounted controls update.
   Include `t` in memo dependencies when a memo produces translated text.
 - Use `Trans` with the bound `t` for rich text, rather than rendering HTML from
   translation strings. Keep user input and protocol values out of translation.
-- For another locale, add resources and update `SUPPORTED_LOCALES`, `isLocale`,
-  initialization resources, and the language selector in `MiscSettingsPane.tsx`.
-  Missing translations fall back to English.
+- Other languages come from craft-i18n catalogs (below). Missing translations
+  fall back to English.
+
+## craft-i18n catalogs and craft-fonts
+
+The interface can also be built with the shared Crafting Apps catalogs from
+[craft-i18n](https://github.com/benandez/craft-i18n) and the fallback fonts
+from [craft-fonts](https://github.com/storytold/craft-fonts). Both are optional build inputs, set as environment variables
+for `vite build` or `vite dev`:
+
+| Variable               | Value                                 | Without it                           |
+|------------------------|---------------------------------------|--------------------------------------|
+| `CRAFT_I18N_DIR`       | a craft-i18n checkout                 | English and the bundled `zh-CN` only |
+| `CRAFT_FONTS_DIR`      | a craft-fonts checkout                | system fonts only                    |
+| `CRAFT_I18N_REQUIRED`  | `1` makes a missing checkout an error | a missing checkout is a warning      |
+| `CRAFT_FONTS_REQUIRED` | `1` makes a missing checkout an error | a missing checkout is a warning      |
+
+From the repository root, with both checkouts beside it:
+
+```sh
+git clone https://github.com/benandez/craft-i18n ../craft-i18n
+git clone https://github.com/storytold/craft-fonts ../craft-fonts
+cd frontend
+CRAFT_I18N_DIR=$PWD/../../craft-i18n CRAFT_FONTS_DIR=$PWD/../../craft-fonts \
+  npm run build --workspace artcraft
+```
+
+- **Catalogs.** Every locale with an `artcraft.tsv` is offered in the language
+  picker, named by its `common.tsv`. A locale's `common.tsv` and `artcraft.tsv`
+  are one chunk, loaded when the language is chosen. A craft-i18n
+  `zh-hans` catalog fills the gaps in the bundled `zh-CN` instead of being
+  offered beside it. Lookups go region, then language (`pt-br`, then `pt`),
+  then English. The plugin is `craftI18n` in `frontend/libs/i18n/build/vite-plugins.ts`;
+  the format is craft-i18n's `docs/catalog-format.md`.
+- **Keys.** Catalogs are keyed by the same English as `t()`, with `{name}`
+  where the code writes `{{name}}`. A catalog context (`menu`) is
+  `t(text, { context: "menu" })`, and an `@plural` row is a `tn()` call.
+- **Fonts.** The craft-fonts Noto faces (Arabic, Thai, CJK) are copied to
+  `craft-fonts/` in the build output with their licences. Each gets an
+  `@font-face` rule with its script's `unicode-range`, so the browser downloads
+  a face only when the page shows a character in that range and no earlier
+  font in the stack has it. The app's font stacks end in
+  `var(--craft-fonts, sans-serif)`; the plugin sets `--craft-fonts`.
+- **Direction.** Every language change sets `lang` and `dir` on the document
+  root (`setDocumentLanguage` in `@storyteller/common`). The interface's
+  start/end classes follow `dir`.
 
 简体中文约定：使用“设置、生成、提示词、积分”等一致术语；保留品牌和模型名称。
 优先使用简洁、自然的中文，并在真实页面检查按钮宽度与换行。

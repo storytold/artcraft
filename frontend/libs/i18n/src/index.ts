@@ -1,14 +1,41 @@
-import { createInstance } from "i18next";
+import { createInstance, type TFunction } from "i18next";
 import { initReactI18next, useTranslation as useReactTranslation } from "react-i18next";
+import { setDocumentLanguage } from "@storyteller/common";
+import { canonicalCode, craftCatalogBackend, fallbackChain } from "./craft-backend";
+import { CRAFT_CATALOGS } from "./embedded";
 import en from "./locales/en.json";
 import zhCN from "./locales/zh-CN.json";
 
 export const LOCALE_STORAGE_KEY = "artcraft-locale";
-export const SUPPORTED_LOCALES = ["en", "zh-CN"] as const;
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
+
+/** A language the interface offers: its code and its name in itself, for the picker. */
+export interface Language {
+  code: string;
+  name: string;
+}
+
+// craft-i18n catalogs that fill in for a bundled language instead of being offered beside it.
+const BACKING_CATALOGS: Record<string, string> = { "zh-CN": "zh-hans" };
+
+const BUNDLED: readonly Language[] = [
+  { code: "en", name: "English" },
+  { code: "zh-CN", name: "简体中文" },
+];
+
+/** English first, then the bundled languages, then the embedded craft-i18n locales by code. */
+export const LANGUAGES: readonly Language[] = [
+  ...BUNDLED,
+  ...CRAFT_CATALOGS.filter((catalog) => !Object.values(BACKING_CATALOGS).includes(catalog.code))
+    .map((catalog) => ({ code: canonicalCode(catalog.code), name: catalog.name }))
+    .filter((language) => !BUNDLED.some((bundled) => bundled.code === language.code))
+    .sort((a, b) => a.code.localeCompare(b.code)),
+];
+
+export const SUPPORTED_LOCALES: readonly string[] = LANGUAGES.map((language) => language.code);
+export type Locale = string;
 
 export function isLocale(value: unknown): value is Locale {
-  return value === "en" || value === "zh-CN";
+  return typeof value === "string" && SUPPORTED_LOCALES.includes(value);
 }
 
 export function readLocale(): Locale {
@@ -22,25 +49,39 @@ export function readLocale(): Locale {
 }
 
 export const i18n = createInstance();
-void i18n.use(initReactI18next).init({
-  resources: { en: { translation: en }, "zh-CN": { translation: zhCN } },
-  lng: readLocale(),
-  fallbackLng: "en",
-  supportedLngs: [...SUPPORTED_LOCALES],
-  load: "currentOnly",
-  // English source messages are the keys, including punctuation and periods.
-  keySeparator: false,
-  nsSeparator: false,
-  initAsync: false,
-  interpolation: { escapeValue: false },
-  react: { useSuspense: false },
-});
+void i18n
+  .use(craftCatalogBackend(CRAFT_CATALOGS))
+  .use(initReactI18next)
+  .init({
+    resources: { en: { translation: en }, "zh-CN": { translation: zhCN } },
+    // The bundled languages come from `resources`, the others from the craft-i18n backend.
+    partialBundledLanguages: true,
+    lng: readLocale(),
+    fallbackLng: (code) => fallbackChain(code, CRAFT_CATALOGS, BACKING_CATALOGS),
+    // i18next loads only supported languages, fallback-only catalogs included.
+    supportedLngs: [...new Set([...SUPPORTED_LOCALES, ...CRAFT_CATALOGS.map((c) => canonicalCode(c.code))])],
+    load: "currentOnly",
+    // English source messages are the keys, including punctuation and periods.
+    keySeparator: false,
+    nsSeparator: false,
+    initAsync: false,
+    interpolation: { escapeValue: false },
+    react: { useSuspense: false },
+  });
 
 i18n.on("languageChanged", updateDocumentLanguage);
 updateDocumentLanguage(i18n.language);
 
 export function useTranslation() {
   return useReactTranslation(undefined, { i18n });
+}
+
+/**
+ * A count's wording, `{{n}}` filled in. `one` and `other` are the English forms; together
+ * (`one|other`) they are the key of craft-i18n's `@plural` row, and they are the fallback.
+ */
+export function tn(t: TFunction, n: number, one: string, other: string, values: Record<string, unknown> = {}): string {
+  return t(`${one}|${other}`, { ...values, count: n, n, defaultValue: n === 1 ? one : other }) as string;
 }
 
 export async function setLocale(locale: Locale): Promise<void> {
@@ -55,7 +96,7 @@ export async function setLocale(locale: Locale): Promise<void> {
 
 function updateDocumentLanguage(language: string) {
   if (typeof document !== "undefined") {
-    document.documentElement.lang = isLocale(language) ? language : "en";
+    setDocumentLanguage(isLocale(language) ? language : "en");
   }
 }
 

@@ -7,11 +7,13 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "esModuleInterop": true,
-    "declarationMap": false
+    "declarationMap": false,
+    "types": ["node", "vite/client"]
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/**/*.json"
+    "src/**/*.json",
+    "build/**/*.ts"
   ]
 }

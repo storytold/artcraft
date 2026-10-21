@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     name: "@storyteller/i18n",
     environment: "jsdom",
-    include: ["src/**/*.spec.{ts,tsx}"],
+    include: ["src/**/*.spec.{ts,tsx}", "build/**/*.spec.ts"],
   },
   root: __dirname,
 });
