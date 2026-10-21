@@ -673,6 +673,12 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   and `SoundsSettingsPopover.tsx`. Comments only: each file is code-identical to its pre-edit copy once whole-line
   comments and blank lines are stripped. A read found no countable bug. Counts unchanged (Fixed 174, strict 159, Noted
   102). `tsc -b tsconfig.lib.json` 0, promptbox vitest 14 files / 81 tests passed.
+- Annotation stage 2, twenty-second slice (2026-10-21): promptbox `common/AudioReferenceRow.tsx` and three `deck/`
+  files, `deckTypes.ts`, `KeyframeCards.tsx` and `DeckCard.tsx`. Comments only: each file is code-identical to its
+  pre-edit copy once whole-line comments and blank lines are stripped. A read found no countable bug (the image
+  upload's "Uploading" state is only reset by the progress callback, but the shipped upload helpers catch their own
+  errors and report them through that callback, so it cannot stick in the app). Counts unchanged (Fixed 174, strict 159,
+  Noted 102). `tsc -b tsconfig.lib.json` 0, `tsc -p tsconfig.spec.json --noEmit` 0, promptbox vitest 14 files / 81 tests passed on rerun; one earlier run showed 1 failure that did not repeat, and this slice changes comments only.
 
 ### Noted, not changed
 - N-111 in `BUGS.md` (not counted, no code changed): in a multi-image batch the lightbox Tags box follows the primary file (`mediaId`) while Share, Delete and Edit act on the image shown (`selectedMediaToken`). May be intended (prompt, creator and info are per-bundle too). Options in the row: (a) pass `selectedMediaToken` to the Tags box; (b) label it as the batch's tags; (c) leave as is.

@@ -490,3 +490,8 @@ Verification at the time of writing (2026-10-17):
    comments and blank lines are stripped (the B-174 effect and the debug `console.log` lines untouched). No new bug;
    counts unchanged (Fixed 174, strict 159, Noted 102; next free IDs B-175 / N-112). promptbox vitest 14 files / 81 tests
    and `tsc -b tsconfig.lib.json` 0. Next: `AudioReferenceRow.tsx`, then `deck/`.
+   Twenty-second slice (Build 2, 2026-10-21): promptbox `common/AudioReferenceRow.tsx` and `deck/` `deckTypes.ts`,
+   `KeyframeCards.tsx` and `DeckCard.tsx` annotated, comments only, each file code identical once comments and blank
+   lines are stripped. No new bug; counts unchanged (Fixed 174, strict 159, Noted 102; next free IDs B-175 / N-112).
+   promptbox vitest 14 files / 81 tests passed on rerun; one earlier run showed 1 failure that did not repeat, and this slice changes comments only and `tsc -b tsconfig.lib.json` 0. Next: `deck/` `ReferenceDeck.tsx`,
+   `useDeckMedia.tsx` and `usePromptBoxDrop.tsx`, then `MentionChipMenu.tsx`, `MentionTextarea.tsx`.

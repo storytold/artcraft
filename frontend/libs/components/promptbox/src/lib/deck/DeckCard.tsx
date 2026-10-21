@@ -24,6 +24,7 @@ export const DECK_KEYFRAMES = `
 
 export const DeckStyles = () => <style>{DECK_KEYFRAMES}</style>;
 
+// Settings for one card: the item to show, remove and click callbacks, and display switches.
 interface DeckCardProps {
   item: DeckItem;
   onRemove?: () => void;
@@ -49,9 +50,11 @@ export const DeckCard = ({
   className,
   style,
 }: DeckCardProps) => {
+  // The sound playing from an audio card, if any.
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Pauses and forgets the sound and puts the card back on the Play icon.
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -60,10 +63,13 @@ export const DeckCard = ({
     setIsPlaying(false);
   }, []);
 
+  // Audio cards: a click starts the clip (at 20% volume) or stops it.
   const handleToggleAudio = useCallback(() => {
     if (isPlaying) {
+      // Already playing: stop it.
       stopAudio();
     } else if (item.url) {
+      // Not playing and there is a clip to play: start it.
       const el = new Audio(item.url);
       el.volume = 0.2;
       audioRef.current = el;
@@ -82,8 +88,10 @@ export const DeckCard = ({
     }
   }, [isPlaying, item.url, stopAudio]);
 
+  // Stops any sound when the card leaves the screen.
   useEffect(() => stopAudio, [stopAudio]);
 
+  // Does nothing while uploading; audio cards play or stop; image and video cards open the preview; mesh cards do nothing.
   const handleClick = () => {
     if (item.uploading) return;
     if (item.kind === "audio") {
@@ -108,6 +116,7 @@ export const DeckCard = ({
       style={style}
       onClick={handleClick}
     >
+      {/* Image thumbnail, blurred while uploading. */}
       {item.kind === "image" && item.url && (
         <img
           src={item.url}
@@ -119,6 +128,7 @@ export const DeckCard = ({
           )}
         />
       )}
+      {/* Video thumbnail: the muted video's first frame, blurred while uploading. */}
       {item.kind === "video" && item.url && (
         <video
           src={item.url}
@@ -130,6 +140,7 @@ export const DeckCard = ({
           )}
         />
       )}
+      {/* Mesh files have no picture, so a box icon stands in. */}
       {item.kind === "mesh" && (
         <div className="flex h-full w-full items-center justify-center">
           <BoxIcon
@@ -137,6 +148,7 @@ export const DeckCard = ({
             className="h-5 w-5 text-base-fg/60 transition-colors group-hover:text-base-fg" />
         </div>
       )}
+      {/* Audio cards show a Play icon that turns into a red Stop icon while the clip plays. */}
       {item.kind === "audio" && (
         <div className="flex h-full w-full items-center justify-center">
           <DynamicIcon
@@ -151,23 +163,27 @@ export const DeckCard = ({
         </div>
       )}
 
+      {/* Small video badge in the top-left corner. */}
       {item.kind === "video" && (
         <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
           <VideoIcon  className="h-2.5 w-2.5" />
         </div>
       )}
+      {/* Small music-note badge in the top-left corner. */}
       {item.kind === "audio" && (
         <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
           <MusicIcon  className="h-2.5 w-2.5" />
         </div>
       )}
 
+      {/* Length badge along the bottom, for example 8s. */}
       {item.duration != null && (
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white">
           {item.duration}s
         </div>
       )}
 
+      {/* Spinner over the card while its upload is running. */}
       {item.uploading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
           <LoaderCircleIcon
@@ -176,6 +192,7 @@ export const DeckCard = ({
         </div>
       )}
 
+      {/* Remove button, visible on hover. It keeps stray clicks from reaching the card and stops any sound before removing. */}
       {onRemove && !item.uploading && !hideHoverChrome && (
         <button
           onClick={(e) => {
@@ -206,6 +223,7 @@ export const DeckAddMenu = ({
   actions: DeckAddAction[];
   groupHints?: Record<string, string>;
 }) => {
+  // Neighbouring actions that share a group name are collected into one section.
   const groups: { name?: string; actions: DeckAddAction[] }[] = [];
   for (const action of actions) {
     const last = groups[groups.length - 1];
@@ -215,11 +233,13 @@ export const DeckAddMenu = ({
       groups.push({ name: action.group, actions: [action] });
     }
   }
+  // Section headers appear only if some action has a group and there are several groups or limit hints.
   const showHeaders =
     groups.some((g) => g.name) && (groups.length > 1 || !!groupHints);
 
   return (
     <div className="flex w-48 flex-col">
+      {/* One block per group, separated by a thin line. */}
       {groups.map((group, groupIndex) => (
         <div
           key={group.name ?? groupIndex}
@@ -227,6 +247,7 @@ export const DeckAddMenu = ({
             groupIndex > 0 ? "mt-1 border-t border-white/10 pt-1" : undefined
           }
         >
+          {/* Group header with the name and, when given, its limits hint. */}
           {showHeaders && group.name && (
             <div className="flex items-center justify-between gap-3 px-2.5 pb-0.5 pt-1">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/40">
@@ -239,6 +260,7 @@ export const DeckAddMenu = ({
               )}
             </div>
           )}
+          {/* One button per action, with its own icon, else an upload icon for keys starting with "upload", else a pictures icon. */}
           {group.actions.map((action) => (
             <button
               key={action.key}
@@ -264,6 +286,7 @@ export const DeckAddMenu = ({
   );
 };
 
+// The item to enlarge (null keeps the modal closed) and a close callback.
 interface DeckPreviewModalProps {
   item: DeckItem | null;
   onClose: () => void;
@@ -277,6 +300,7 @@ export const DeckPreviewModal = ({ item, onClose }: DeckPreviewModalProps) => (
     backdropClassName="!bg-black/80"
     className="h-fit w-fit max-w-none border-0 bg-transparent p-0 shadow-none"
   >
+    {/* Videos play with controls; everything else shows as an image, using the full-size URL when there is one. */}
     {item &&
       (item.kind === "video" ? (
         <video

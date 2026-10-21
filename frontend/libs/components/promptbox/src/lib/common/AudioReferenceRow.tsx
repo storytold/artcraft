@@ -21,10 +21,13 @@ import {
 /** Lets the prompt box push dropped/pasted files through the same upload
  *  path the row's own file inputs use. */
 export interface AudioReferenceRowHandle {
+  // Adds dropped or pasted audio files, with the same checks and upload as the Add audio button.
   addAudioFiles: (files: File[]) => Promise<void>;
+  // Uploads one image file as the row's image reference.
   addImageFile: (file: File) => Promise<void>;
 }
 
+// What the parent hands the row: the current audio and image lists with their change callbacks, the limits, and the upload functions.
 export interface AudioReferenceRowProps {
   referenceAudios: RefAudio[];
   onReferenceAudiosChange: (audios: RefAudio[]) => void;
@@ -67,12 +70,14 @@ export const AudioReferenceRow = forwardRef<
   },
   ref,
 ) {
+  // Handles to the two hidden file inputs, so the visible buttons can open the file picker.
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   // How many audio drops/picks are queued or running. The "Uploading…" state is derived from this (not from one
   // on/off flag), so the first track finishing does not switch it off while a second one is still on its way.
   const [pendingAudioBatches, setPendingAudioBatches] = useState(0);
   const isUploadingAudio = pendingAudioBatches > 0;
+  // True while the image is uploading; it disables the Add image button.
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Latest-value refs so async upload callbacks append to fresh state.
@@ -107,19 +112,25 @@ export const AudioReferenceRow = forwardRef<
   const runAudioBatch = async (audioFiles: File[]) => {
     const { maxAudioCount, maxAudioRefDuration, uploadAudio } =
       latestAudioPropsRef.current;
+    // How many more tracks fit under the maximum count.
     const availableSlots = Math.max(
       0,
       maxAudioCount - referenceAudiosRef.current.length,
     );
+    // Only that many of the dropped files are used; the rest are ignored.
     const filesToProcess = audioFiles.slice(0, availableSlots);
 
+    // Handle the files one at a time, so each one sees the tracks added by the one before it.
     for (const file of filesToProcess) {
+      // Read the length of the clip in whole seconds (0 if it cannot be read).
       const duration = await getAudioFileDuration(file);
+      // Seconds already used by the tracks in the row.
       const currentTotal = referenceAudiosRef.current.reduce(
         (sum, audio) => sum + audio.duration,
         0,
       );
       if (currentTotal + duration > maxAudioRefDuration) {
+        // Adding this clip would pass the duration cap: show an error and skip the remaining files.
         toast.error(
           `Total audio duration cannot exceed ${maxAudioRefDuration}s`,
         );
@@ -127,11 +138,14 @@ export const AudioReferenceRow = forwardRef<
       }
 
       if (uploadAudio) {
+        // Upload the file and wait for it to finish. If the parent gave no upload function, nothing is uploaded and no track is added.
         await uploadAudio({
           title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
+          // Called as the upload changes state.
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
+              // Success: build the track entry from a local preview URL and the server's media token.
               const refAudio: RefAudio = {
                 id: Math.random().toString(36).substring(7),
                 url: URL.createObjectURL(file),
@@ -148,6 +162,7 @@ export const AudioReferenceRow = forwardRef<
               newState.status === UploaderStates.assetError ||
               newState.status === UploaderStates.imageCreateError
             ) {
+              // Failure: tell the user the upload failed.
               toast.error("Audio upload failed. Please try again.");
             }
           },
@@ -156,11 +171,14 @@ export const AudioReferenceRow = forwardRef<
     }
   };
 
+  // Entry point for every audio drop, paste or pick: drops non-audio files, checks there is room, then queues the batch.
   const processAudioFiles = (files: File[]): Promise<void> => {
     if (files.length === 0) return Promise.resolve();
 
+    // Keep only real audio files.
     const audioFiles = files.filter(isAudioFile);
     if (audioFiles.length < files.length) {
+      // At least one file was not audio: show the type error (the audio files still continue).
       toast.error(AUDIO_FILE_TYPE_ERROR);
     }
     // Nothing usable in the drop, or no room left in the row: do nothing, as before.
@@ -181,6 +199,7 @@ export const AudioReferenceRow = forwardRef<
     return turn;
   };
 
+  // Runs when files are chosen in the hidden audio input; clears the input afterwards so the same file can be chosen again.
   const handleAudioFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -188,15 +207,20 @@ export const AudioReferenceRow = forwardRef<
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
+  // Uploads one image and, on success, hands it to the parent as the row's image.
   const processImageFile = async (file: File) => {
+    // Without an upload function there is nothing to do.
     if (!uploadImage) return;
 
+    // Show the uploading state until the callback reports success or failure.
     setIsUploadingImage(true);
     await uploadImage({
       title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
       assetFile: file,
+      // Called as the upload changes state.
       progressCallback: (newState) => {
         if (newState.status === UploaderStates.success && newState.data) {
+          // Success: build the image entry and hand it to the parent as the only image.
           const refImage: RefImage = {
             id: Math.random().toString(36).substring(7),
             url: URL.createObjectURL(file),
@@ -209,6 +233,7 @@ export const AudioReferenceRow = forwardRef<
           newState.status === UploaderStates.assetError ||
           newState.status === UploaderStates.imageCreateError
         ) {
+          // Failure: stop the uploading state and tell the user.
           setIsUploadingImage(false);
           toast.error("Image upload failed. Please try again.");
         }
@@ -216,6 +241,7 @@ export const AudioReferenceRow = forwardRef<
     });
   };
 
+  // Runs when a file is chosen in the hidden image input: uses the first file only, then clears the input.
   const handleImageFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -224,6 +250,7 @@ export const AudioReferenceRow = forwardRef<
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
+  // Exposes addAudioFiles and addImageFile to the parent through the ref.
   useImperativeHandle(
     ref,
     () => ({
@@ -234,13 +261,16 @@ export const AudioReferenceRow = forwardRef<
     // (slot counts, current refs) rather than mount-time values.
   );
 
+  // Removes one track by its id and clears the audio input.
   const removeAudio = (id: string) => {
     onReferenceAudiosChange(referenceAudios.filter((a) => a.id !== id));
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
+  // Draw the row: two hidden file inputs, then one line holding the audio label, the track tiles, the add buttons and the optional image section.
   return (
     <div className={`flex flex-col gap-2 pb-2.5 ${className}`}>
+      {/* Hidden file input for audio; the Add audio button clicks it. Several files can be chosen only when more than one track is allowed. */}
       <input
         ref={audioInputRef}
         type="file"
@@ -250,6 +280,7 @@ export const AudioReferenceRow = forwardRef<
         onChange={handleAudioFileUpload}
       />
       {imageSupported && (
+        // Hidden file input for the image reference, drawn only for models that accept one.
         <input
           ref={imageInputRef}
           type="file"
@@ -259,7 +290,9 @@ export const AudioReferenceRow = forwardRef<
         />
       )}
 
+      {/* The visible line: label, track tiles, add buttons and the image section. */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* Label showing how many tracks are used out of the maximum. */}
         <div className="flex items-center gap-2 text-base-fg opacity-90">
           <MusicIcon  className="h-3.5 w-3.5" />
           <span className="text-sm font-medium">
@@ -267,6 +300,7 @@ export const AudioReferenceRow = forwardRef<
             <span className="font-semibold text-base-fg/60">
               ({referenceAudios.length}/{maxAudioCount})
             </span>
+            {/* A red "required" note while a track is mandatory and none has been added. */}
             {audioRequired && referenceAudios.length === 0 && (
               <span className="ml-1.5 text-xs font-medium text-red-500">
                 required
@@ -275,6 +309,7 @@ export const AudioReferenceRow = forwardRef<
           </span>
         </div>
 
+        {/* One tile per added track, with play and remove buttons. */}
         {referenceAudios.map((audio, index) => (
           <AudioRefTile
             key={audio.id}
@@ -284,6 +319,7 @@ export const AudioReferenceRow = forwardRef<
           />
         ))}
 
+        {/* While there is room for another track: the Add audio button and, if the parent gave a library picker, a From library button. */}
         {referenceAudios.length < maxAudioCount && (
           <>
             <button
@@ -295,6 +331,7 @@ export const AudioReferenceRow = forwardRef<
               <PlusIcon  className="h-3 w-3" />
               {isUploadingAudio ? "Uploading…" : "Add audio"}
             </button>
+            {/* Library picker button, only when the parent provided one. */}
             {onPickAudioFromLibrary && (
               <button
                 type="button"
@@ -309,12 +346,14 @@ export const AudioReferenceRow = forwardRef<
           </>
         )}
 
+        {/* Image reference section, only for models that accept an image. */}
         {imageSupported && (
           <>
             <div className="ms-2 flex items-center gap-2 text-base-fg opacity-90">
               <ImageIcon  className="h-3.5 w-3.5" />
               <span className="text-sm font-medium">Image</span>
             </div>
+            {/* The chosen image as a thumbnail; hovering shows an X that removes it. */}
             {referenceImages.map((image) => (
               <div
                 key={image.id}
@@ -337,6 +376,7 @@ export const AudioReferenceRow = forwardRef<
                 </button>
               </div>
             ))}
+            {/* Add image button, shown only while no image is chosen. */}
             {referenceImages.length === 0 && (
               <button
                 type="button"
@@ -355,6 +395,7 @@ export const AudioReferenceRow = forwardRef<
   );
 });
 
+// One small tile for an added track: a play/stop button, its number and length, and a remove button.
 function AudioRefTile({
   audio,
   index,
@@ -364,22 +405,28 @@ function AudioRefTile({
   index: number;
   onRemove: (id: string) => void;
 }) {
+  // The sound currently playing from this tile, if any.
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Starts the clip, or stops it if it is already playing.
   const togglePlay = useCallback(() => {
     if (isPlaying) {
+      // Stop: pause the sound, forget it and show the Play icon.
       audioRef.current?.pause();
       audioRef.current = null;
       setIsPlaying(false);
       return;
     }
+    // Start: create a player for the track's local preview URL.
     const element = new Audio(audio.url);
+    // When the clip reaches its end, go back to the Play icon.
     element.onended = () => {
       audioRef.current = null;
       setIsPlaying(false);
     };
     audioRef.current = element;
+    // Start playback; if the browser refuses, go back to the Play icon.
     void element.play().catch(() => setIsPlaying(false));
     setIsPlaying(true);
   }, [audio.url, isPlaying]);
@@ -394,6 +441,7 @@ function AudioRefTile({
     };
   }, []);
 
+  // Draw the tile: a play/stop button, a label such as "Audio 1 · 12s", and a remove button.
   return (
     <div className="group flex h-9 items-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-2.5">
       <button
@@ -422,18 +470,22 @@ function AudioRefTile({
   );
 }
 
+// Reads how long an audio file is by loading only its metadata into a hidden audio element. Gives whole seconds, or 0 if the file cannot be read.
 function getAudioFileDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
+    // Metadata arrived: free the temporary URL and report the length rounded to whole seconds.
     audio.onloadedmetadata = () => {
       URL.revokeObjectURL(audio.src);
       resolve(Math.round(audio.duration));
     };
+    // The file could not be read: free the URL and report 0.
     audio.onerror = () => {
       URL.revokeObjectURL(audio.src);
       resolve(0);
     };
+    // Pointing the element at the file is what starts the metadata load.
     audio.src = URL.createObjectURL(file);
   });
 }
