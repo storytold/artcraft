@@ -221,6 +221,12 @@ export class AudioManager {
   }
 
   private stopPlayback(): void {
+    // FIX: a stop (pause, scrub, dispose) never invalidated a start that was
+    // still awaiting the audio context or the clip lookup, so that start could
+    // finish afterwards, build a new schedule interval and, after dispose,
+    // even re-create the closed AudioContext. Bumping the id makes every
+    // in-flight start / clip scheduler see it was superseded and bail out.
+    this.playbackSessionId++;
     if (this.scheduleTimer && typeof window !== "undefined") {
       window.clearInterval(this.scheduleTimer);
     }

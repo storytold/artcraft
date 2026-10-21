@@ -1175,3 +1175,7 @@ summarized here.
   committed value still pushed an undo step that did nothing. `commitPreview` now discards an unchanged preview without recording
   history. New `core/managers/preview-noop-commit.spec.ts`; suite 47 files / 367 tests pass. Counts: Fixed 194, strict 174, Noted 115;
   next free IDs B-195 / N-125.
+- Playback start cancelled by stop, `video-editor/src/lib/core/managers/audio-manager.ts` (B-195): a pause, scrub or dispose did not cancel a
+  playback start still awaiting the audio context or clip lookup, so it later built a schedule interval (and after dispose re-created the
+  closed AudioContext). `stopPlayback` now bumps the session id. New `core/managers/audio-manager-dispose.spec.ts`. Counts: Fixed 195,
+  strict 175, Noted 115; next free IDs B-196 / N-125.
