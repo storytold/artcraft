@@ -31,6 +31,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       # Tauri needs WebKitGTK 4.1 and GTK 3. wreq (BoringSSL) needs cmake, perl, nasm and clang.
+      # bindgen (via boring-sys2/wreq) needs libclang-dev: clang alone doesn't ship the
+      # libclang.so that clang-sys loads.
       # NB: Don't carry over the Windows `-C target-feature=+crt-static` RUSTFLAGS; it breaks
       # linking against glibc and GTK.
       - name: install Tauri and wreq dependencies
@@ -43,6 +45,7 @@ jobs:
             file \
             jq \
             libayatana-appindicator3-dev \
+            libclang-dev \
             libgtk-3-dev \
             librsvg2-dev \
             libssl-dev \

@@ -25,9 +25,12 @@ done
 
 if [ "${install_deps}" = 1 ]; then
   # Tauri needs WebKitGTK 4.1 and GTK 3; wreq (BoringSSL) needs cmake, perl, nasm and clang.
+  # bindgen (via boring-sys2/wreq) needs libclang-dev: clang alone doesn't ship the
+  # libclang.so that clang-sys loads.
   sudo apt-get update
   sudo apt-get install -y build-essential clang cmake file libayatana-appindicator3-dev \
-    libgtk-3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev nasm patchelf perl
+    libclang-dev libgtk-3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev nasm \
+    patchelf perl
 fi
 
 if ! cargo tauri --version >/dev/null 2>&1; then
