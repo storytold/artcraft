@@ -1152,3 +1152,7 @@ See `TRACKER.md` ("Open").
 
 Older history was removed by the 2026-09-11 repo reset. Only the 25 most recent upstream commits were
 summarized here.
+- Add-effect redo, `video-editor/src/lib/commands/timeline/element/effects/add-effect.ts` (B-189): redoing "add effect" created
+  a new effect id, so later toggles and parameter edits (recorded against the old id) were lost after undo/redo. The command
+  now builds the effect once and reuses it. New `effect-redo.spec.ts`; full suite 42 files / 361 tests pass. Counts:
+  Fixed 189, strict 169, Noted 114; next free IDs B-190 / N-124.

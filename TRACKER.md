@@ -507,3 +507,4 @@ Verification at the time of writing (2026-10-17):
    lines are stripped. No new bug; counts unchanged (Fixed 174, strict 159, Noted 102; next free IDs B-175 / N-112).
    promptbox vitest 14 files / 81 tests passed on rerun; one earlier run showed 1 failure that did not repeat, and this slice changes comments only and `tsc -b tsconfig.lib.json` 0. Next: `deck/` `ReferenceDeck.tsx`,
    `useDeckMedia.tsx` and `usePromptBoxDrop.tsx`, then `MentionChipMenu.tsx`, `MentionTextarea.tsx`.
+| Build 2 | Frontend (bug) | `libs/components/video-editor/src/lib/commands/timeline/element/effects/add-effect.ts`, `effects/effect-redo.spec.ts` | B-189: redoing add-effect created a new effect id so later toggles/param edits were lost. Counts now: Fixed 189, strict 169, Noted 114; next free IDs B-190 / N-124 |
