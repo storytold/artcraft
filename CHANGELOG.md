@@ -512,6 +512,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   marked failed. The cut now steps back to a character boundary (`trim_failure_message`). 3 new in-file tests, the
   multi-byte one panicked on the old code. N-122 added (test-only `truncate` calls). Counts: Fixed 183, strict 165,
   Noted 113; next free IDs B-184 / N-123.
+- Timeline track delete, `video-editor/src/lib/commands/timeline/track/remove-track.ts` (B-184, borderline): deleting a
+  track left its clips and keyframes selected, so the selection pointed at elements that no longer existed. The command
+  now returns a selection patch keeping only items on other tracks; undo restores the old selection. New
+  `remove-track.spec.ts` (2 tests). N-123 added (one unknown enum value fails the whole task-list query). Counts: Fixed 184,
+  strict 165, Noted 114; next free IDs B-185 / N-124.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
