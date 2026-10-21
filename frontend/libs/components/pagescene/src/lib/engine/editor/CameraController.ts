@@ -307,6 +307,9 @@ export class CameraController {
         this.camera,
         this.freeCamState,
         5 * deltaSeconds,
+        // FIX: scale keyboard look by elapsed time (60 Hz-frame units, with
+        // the delta clamped so a hitch can't cause a huge snap turn).
+        Math.min(deltaSeconds, 0.1) * 60,
       );
       // Mirror the active camera's transform back into the store so
       // PromptBox3D and the camera-list UI stay in sync.

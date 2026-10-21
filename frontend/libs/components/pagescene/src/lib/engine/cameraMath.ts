@@ -172,11 +172,19 @@ export const freeCamFrameTick = (
   camera: PerspectiveCamera,
   state: FreeCamControlState,
   delta: number,
+  // FIX: keyboard look used to be applied once per frame with no time scaling,
+  // so it turned 2.4x faster on a 144 Hz display than on a 60 Hz one. Callers
+  // pass (elapsed seconds * 60) so rollSpeed keeps meaning "per 60 Hz frame";
+  // the default of 1 keeps the old per-call behaviour for existing callers.
+  rotationScale = 1,
 ): boolean => {
   if (!state.enabled) return false;
 
   const moveVec = moveVectorFromKeys(state.moveKeys);
-  const rotVec = rotationVectorFromKeys(state.rotateKeys, state.rollSpeed);
+  const rotVec = rotationVectorFromKeys(
+    state.rotateKeys,
+    state.rollSpeed,
+  ).multiplyScalar(rotationScale);
 
   const stationary = moveVec.lengthSq() === 0;
   const noRotation = rotVec.lengthSq() === 0;
