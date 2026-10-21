@@ -1160,3 +1160,7 @@ summarized here.
   id, so later edits of it were lost. The id is now kept per split element. New `split-redo.spec.ts`; suite 43 files / 362 tests
   pass. Same pattern in duplicate/paste recorded as N-124 (needs a pinned track id in placement). Counts: Fixed 190, strict 170,
   Noted 115; next free IDs B-191 / N-125.
+- Mask point redo, `video-editor/src/lib/commands/timeline/element/masks/insert-custom-mask-point.ts` (B-191): redoing an inserted
+  mask point gave it a new id, so a later delete of it was lost. The id is now fixed at construction. New
+  `masks/insert-point-redo.spec.ts`; suite 44 files / 363 tests pass. Counts: Fixed 191, strict 171, Noted 115; next free IDs
+  B-192 / N-125.
