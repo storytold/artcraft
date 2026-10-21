@@ -557,6 +557,12 @@ export class TimelineController {
     this.recordEdit("Cancel Timeline Edits", () => {
       this.timeline = cloneTimeline(this.saved!);
     });
+    // FIX: clamp the playhead into the restored timeline, as restoreSnapshot
+    // and loadTimeline do. If the session lengthened the timeline and the
+    // playhead sat past the saved length, Cancel left it beyond the end.
+    if (this.timeline) {
+      this.playhead = Math.min(this.playhead, this.timeline.duration);
+    }
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();

@@ -38,4 +38,19 @@ describe("TimelineController keyframe edits", () => {
     // keep showing the pose of the key that no longer exists.
     expect(obj.position.x).toBe(0);
   });
+
+  it("keeps the playhead inside the restored timeline when Cancel shortens it", () => {
+    const { controller } = build();
+    const savedDuration = controller.getTimeline()!.duration;
+
+    // Grow the timeline past the saved length and park the playhead out there.
+    controller.setDuration(savedDuration + 20);
+    controller.seekTo(savedDuration + 15);
+    expect(controller.getPlayhead()).toBe(savedDuration + 15);
+
+    controller.cancel();
+
+    expect(controller.getTimeline()!.duration).toBe(savedDuration);
+    expect(controller.getPlayhead()).toBeLessThanOrEqual(savedDuration);
+  });
 });

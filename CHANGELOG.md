@@ -1195,3 +1195,6 @@ summarized here.
 - Keyframe delete, `pagescene/src/lib/engine/editor/TimelineController.ts` (B-199, borderline): `deleteKeyframe` did not re-evaluate at the playhead, so the
   object kept the deleted key's pose until the next scrub. It now calls `evaluate()`. New `engine/editor/TimelineController.spec.ts`; pagescene suite
   17 files / 82 tests pass. Counts: Fixed 199, strict 176, Noted 117; next free IDs B-200 / N-127.
+- Cancel, `pagescene/src/lib/engine/editor/TimelineController.ts` (B-200, borderline): `cancel` restored the saved timeline without clamping the playhead, so it could
+  stay past the end after a lengthen-then-cancel. It now clamps like `restoreSnapshot`. New case in `TimelineController.spec.ts`; pagescene suite 17 files / 83 tests pass.
+  Counts: Fixed 200, strict 176, Noted 117; next free IDs B-201 / N-127.
