@@ -12,6 +12,8 @@ import type { TProject } from "../../project/types";
 import type { MediaAsset } from "../../media/types";
 import { ZERO_MEDIA_TIME } from "../../wasm";
 import { CreateSceneCommand } from "./create-scene";
+import { ToggleTrackMuteCommand } from "../timeline/track/toggle-track-mute";
+import { buildEmptyTrack } from "../../timeline/placement";
 
 // Undo of the two media-bin commands. Both used to restore a SNAPSHOT of the
 // whole bin taken when the command ran, so undoing one command also threw away
@@ -114,5 +116,29 @@ describe("switching scenes", () => {
     // The clip lives in the first scene, so it cannot stay selected here.
     expect(editor.scenes.getActiveScene().id).toBe(command.getSceneId());
     expect(editor.selection.getSelectedElements()).toEqual([]);
+  });
+  it("does not write the first scene's tracks into the second scene on undo", async () => {
+    const editor = EditorCore.getInstance();
+    const tracks = editor.scenes.getActiveScene().tracks;
+    editor.timeline.updateTracks({
+      ...tracks,
+      audio: [
+        {
+          ...buildEmptyTrack({ id: "t1", type: "audio" }),
+          elements: [
+            { id: "e1", startTime: 0, duration: 1000, trimStart: 0, trimEnd: 0 },
+          ],
+        } as never,
+      ],
+    });
+    const create = new CreateSceneCommand({ name: "Second" });
+    editor.command.execute({ command: create });
+    editor.command.execute({ command: new ToggleTrackMuteCommand("t1") });
+
+    await editor.scenes.switchToScene({ sceneId: create.getSceneId() });
+    editor.command.undo();
+
+    // The second scene never had an audio track.
+    expect(editor.scenes.getActiveScene().tracks.audio).toEqual([]);
   });
 });

@@ -525,6 +525,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   scene left the old scene's clips selected. Both paths now clear the selection when the active scene changes. New
   `switch-scene.spec.ts`; full video-editor suite 41 files / 356 tests pass. Counts: Fixed 186, strict 167, Noted 114;
   next free IDs B-187 / N-124.
+- Scene switching undo, `video-editor/src/lib/core/managers/scenes-manager.ts` (B-187): undoing after a scene switch wrote
+  the earlier scene's tracks into the newly opened scene. Both switch paths now clear the undo/redo history when the
+  active scene changes. Second test in `switch-scene.spec.ts`. Counts: Fixed 187, strict 168, Noted 114; next free IDs
+  B-188 / N-124.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
