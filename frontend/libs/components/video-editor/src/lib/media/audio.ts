@@ -762,10 +762,14 @@ async function fetchLibraryAudioClip({
       id: element.id,
       sourceKey: element.id,
       file,
-      startTime: element.startTime,
-      duration: element.duration,
-      trimStart: element.trimStart,
-      trimEnd: element.trimEnd,
+      // FIX: these were passed through in raw ticks, but AudioClipSource times
+      // are seconds (collectMediaAudioClip and fetchLibraryAudioSource both
+      // convert), so the playback scheduler saw a library clip starting
+      // thousands of seconds in and never played it.
+      startTime: element.startTime / TICKS_PER_SECOND,
+      duration: element.duration / TICKS_PER_SECOND,
+      trimStart: element.trimStart / TICKS_PER_SECOND,
+      trimEnd: element.trimEnd / TICKS_PER_SECOND,
       volume,
       muted,
       retime: element.retime,

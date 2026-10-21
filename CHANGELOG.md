@@ -1183,3 +1183,6 @@ summarized here.
   export with audio and never closed it. It now closes a context it created, and leaves a caller's alone. New
   `media/audio-export-context.spec.ts`. The unreachable twin in `decodeAudioToFloat32` is noted as N-125. Counts: Fixed 196, strict 176,
   Noted 116; next free IDs B-197 / N-126.
+- Library audio clip units, `video-editor/src/lib/media/audio.ts` (N-126, not counted): `fetchLibraryAudioClip` returned times in ticks where the
+  playback scheduler expects seconds. Fixed, but only a host sounds adapter can create library audio and the shipped app has none, so it is
+  a Noted row. New `media/library-audio-clip-units.spec.ts`. Counts: Fixed 196, strict 176, Noted 117; next free IDs B-197 / N-127.
