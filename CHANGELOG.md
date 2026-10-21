@@ -498,6 +498,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   lagged the pointer by half because the "half" sizes were full sizes. New `builtin/box-like.spec.ts` (4 tests, 3
   failed on the old code, 1 control passed). Notes N-119 and N-120 added (nothing counted). Counts: Fixed 180, strict
   163, Noted 111; next free IDs B-181 / N-121.
+- Video editor timeline keyframe drag, `timeline/controllers/keyframe-drag-controller.ts` (B-181): dragging a group of
+  selected keyframes past either end of the clip clamped each one separately, so they ended up stacked on one time. The
+  drag distance is now limited for the whole group. New `keyframe-drag-controller.spec.ts` (4 tests, 2 failed on the old
+  code, 2 controls passed). N-119 corrected (its scale field is a percentage). Counts: Fixed 181, strict 164, Noted 111;
+  next free IDs B-182 / N-121.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
