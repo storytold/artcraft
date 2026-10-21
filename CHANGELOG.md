@@ -479,6 +479,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   `AspectRatioPicker` does. New `common/ResolutionPicker.spec.tsx` (3 tests): 1 failed on the unfixed code, 2
   controls passed; promptbox now 81/81 in 14 files, `tsc -b` and the spec typecheck 0. Not checked: how the backend
   answers a resolution the model lacks. Counts: Fixed 174, strict 159, Noted 102; next free IDs B-175 / N-112.
+- Video editor colour picker: a 5 or 7 digit hex code typed in the hex box was accepted as a colour (B-175).
+  `parseColorInput` allowed any 3 to 8 hex digits, but only 3, 4, 6 and 8 are colours, so `12345` was committed to the
+  element as its colour and the field never fell back to the paste/extract path. The pattern now allows only those
+  four lengths. New `utils/color.spec.ts` (3 tests): 1 failed on the unfixed code, 2 controls passed; `tsc -p
+  tsconfig.lib.json --noEmit` 0. Counts: Fixed 175, strict 160, Noted 102; next free IDs B-176 / N-112.
 - Tests only (not counted as a bug): `shipped-gradients.spec.ts` in video-editor runs the 33 background swatches the
   colour picker ships (pattern-craft and syntax-ui lists) through the export's CSS parser and canvas painter with a
   strict recording canvas; 100 new tests, all green on the current code.
