@@ -488,6 +488,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   The persisted shortcut map is saved on every store update with `isCustomized: false`, and `merge` loaded it back over
   the current defaults. It now keeps the saved map only when the user customized it. New `keybindings-store.spec.ts`
   (1 failed on the old code, 1 control passed). Counts: Fixed 176, strict 160, Noted 108; next free IDs B-177 / N-118.
+- Video editor sounds panel: each sound added opened an `AudioContext` that was never closed (B-177).
+  `addSoundToTimeline` used a fresh context only to decode, so repeated adds hit the browser's open-context cap. The
+  decode now closes it in a `finally`. New `sounds-store.spec.ts` (2 failed on the old code). Counts: Fixed 177,
+  strict 160, Noted 108; next free IDs B-178 / N-118.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
