@@ -503,6 +503,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   drag distance is now limited for the whole group. New `keyframe-drag-controller.spec.ts` (4 tests, 2 failed on the old
   code, 2 controls passed). N-119 corrected (its scale field is a percentage). Counts: Fixed 181, strict 164, Noted 111;
   next free IDs B-182 / N-121.
+- Scene object panel number input, `ControlPanelSceneObject/utils/sanitize.ts` (B-182, borderline): `.5` and `-.5` were read
+  as NaN, so retyping an unchanged value looked like an edit and opened an empty transform session. An empty integer part
+  now counts as 0. New `sanitize.spec.ts` (4 tests, 3 failed on the old code, 1 control passed). N-121 added (unreachable
+  file-drop upload count). Counts: Fixed 182, strict 164, Noted 112; next free IDs B-183 / N-122.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
