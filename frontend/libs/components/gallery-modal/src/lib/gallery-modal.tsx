@@ -1,4 +1,4 @@
-import { useTranslation } from "@storyteller/i18n";
+import { tn, useTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { LightboxModal } from "@storyteller/ui-lightbox-modal";
 import { Button } from "@storyteller/ui-button";
@@ -444,7 +444,7 @@ function TagCloudView({
             key={tag.tag_token}
             type="button"
             onClick={() => onOpen(tag.tag_token)}
-            title={tr("libraryFiles", { count: tag.use_count })}
+            title={tn(tr, tag.use_count, "{{n}} file", "{{n}} files")}
             style={{ fontSize: `${Math.round(15 + weight * 33)}px` }}
             className={twMerge(
               "max-w-full truncate leading-none transition-all duration-200 hover:scale-110 hover:text-violet-400",
@@ -1652,10 +1652,10 @@ export const GalleryModal = React.memo(
       const count = bulkSelectedIds.size;
       showActionReminder({
         reminderType: "default",
-        title: tr("libraryDeleteTitle", { count }),
+        title: tn(tr, count, "Delete {{n}} item?", "Delete {{n}} items?"),
         message: (
           <p className="text-sm text-white/70">
-            {tr("libraryDeleteBody", { count })}
+            {tn(tr, count, "This will permanently remove {{n}} item from your library. This action cannot be undone.", "This will permanently remove {{n}} items from your library. This action cannot be undone.")}
           </p>
         ),
         primaryActionText: tr("Delete"),
@@ -2175,7 +2175,7 @@ export const GalleryModal = React.memo(
             const name =
               folders.find((f) => f.id === folderId)?.name ?? tr("folder");
             toast.success(
-              tr("libraryAdded", { count: itemIds.length, folder: name }),
+              tn(tr, itemIds.length, "Added {{n}} item to {{folder}}", "Added {{n}} items to {{folder}}", { folder: name }),
             );
           } else {
             toast.error(res.errorMessage || tr("Failed to add to folder."));
@@ -2238,7 +2238,7 @@ export const GalleryModal = React.memo(
           if (res.success) {
             const name = folders.find((f) => f.id === target)?.name ?? tr("folder");
             toast.success(
-              tr("libraryMoved", { count: itemIds.length, folder: name }),
+              tn(tr, itemIds.length, "Moved {{n}} item to {{folder}}", "Moved {{n}} items to {{folder}}", { folder: name }),
             );
           } else {
             toast.error(res.errorMessage || tr("Failed to move items."));
@@ -2654,7 +2654,7 @@ export const GalleryModal = React.memo(
                         {activeTag.tag_value}
                       </h2>
                       <span className="text-base-fg/40 text-sm">
-                        {tr("libraryFiles", { count: activeTag.use_count })}
+                        {tn(tr, activeTag.use_count, "{{n}} file", "{{n}} files")}
                       </span>
                       <button
                         type="button"
@@ -3559,7 +3559,7 @@ export const GalleryModal = React.memo(
                     </div>
                   )}
                   <span className="ms-2.5 text-sm font-medium text-base-fg/80">
-                    {tr("librarySelected", { count: bulkSelectedIds.size })}
+                    {tn(tr, bulkSelectedIds.size, "{{n}} selected", "{{n}} selected")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

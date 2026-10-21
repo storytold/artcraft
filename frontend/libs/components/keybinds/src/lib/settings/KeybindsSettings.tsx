@@ -1,4 +1,4 @@
-import { Trans, useTranslation } from "@storyteller/i18n";
+import { tn, Trans, useTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useKeybindsStore } from "../keybinds-store";
@@ -206,7 +206,7 @@ export function KeybindsSettings({
       <div className="-my-2 flex items-center justify-between px-1 text-xs tracking-wide text-base-fg/40">
         <span className="tabular-nums">
           {searchActive
-            ? t("shortcutMatches", { count: totalMatches })
+            ? tn(t, totalMatches, "{{n}} match", "{{n}} matches")
             : overriddenCount > 0
               ? t("{{count}} customized", { count: overriddenCount })
               : t("Default bindings")}

@@ -1,4 +1,4 @@
-import { useTranslation } from "@storyteller/i18n";
+import { tn, useTranslation } from "@storyteller/i18n";
 import React, { useState } from "react";
 import { EllipsisIcon, FolderIcon, StarIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -155,7 +155,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
               hasArt ? "text-white/70" : "text-base-fg/40",
             )}
           >
-            {tr("libraryFolders", { count: childCount })}
+            {tn(tr, childCount, "{{n}} folder", "{{n}} folders")}
           </span>
         )}
       </div>

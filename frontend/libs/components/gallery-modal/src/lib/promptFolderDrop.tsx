@@ -1,4 +1,4 @@
-import { i18n } from "@storyteller/i18n";
+import { i18n, tn } from "@storyteller/i18n";
 import {
   showActionReminder,
   isActionReminderOpen,
@@ -25,7 +25,7 @@ export function promptFolderDrop({
   const tr = i18n.t.bind(i18n);
   showActionReminder({
     reminderType: "default",
-    title: tr("libraryMoveOrCopy", { count }),
+    title: tn(tr, count, "Move or copy {{n}} item?", "Move or copy {{n}} items?"),
     message: (
       <p className="text-sm text-white/70">
         {targetFolderName

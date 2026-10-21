@@ -1,4 +1,4 @@
-import { useTranslation } from "@storyteller/i18n";
+import { tn, useTranslation } from "@storyteller/i18n";
 import { ArrowUpIcon, CoinsIcon, LoaderCircleIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { ButtonHTMLAttributes } from "react";
@@ -32,7 +32,7 @@ export const GenerateIconButton = ({
     <div className={twMerge("flex shrink-0 items-center gap-2.5", className)}>
       {credits != null && (
         <Tooltip
-          content={t("creditCost", { count: credits })}
+          content={tn(t, credits, "{{n}} credit cost", "{{n}} credits cost")}
           position="top"
           className="z-50"
         >

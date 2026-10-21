@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import en from "./locales/en.json";
 import zhCN from "./locales/zh-CN.json";
-import { i18n, isLocale, LOCALE_STORAGE_KEY, readLocale, setLocale, Trans, useTranslation } from "./index";
+import { i18n, isLocale, LOCALE_STORAGE_KEY, readLocale, setLocale, tn, Trans, useTranslation } from "./index";
 
 const tokens = (message: string) => [...message.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map((match) => match[1]).sort();
 
@@ -34,12 +34,13 @@ describe("language resources", () => {
     }
   });
   it("handles punctuation and credit plurals", async () => {
-    expect(i18n.t("creditCost", { count: 1 })).toBe("1 credit cost");
-    expect(i18n.t("creditCost", { count: 2 })).toBe("2 credits cost");
+    const creditCost = (n: number) => tn(i18n.t, n, "{{n}} credit cost", "{{n}} credits cost");
+    expect(creditCost(1)).toBe("1 credit cost");
+    expect(creditCost(2)).toBe("2 credits cost");
     await setLocale("zh-CN");
     expect(i18n.t("Choose your preferred look. Applies instantly.")).toBe("选择喜欢的外观，立即生效。");
-    expect(i18n.t("creditCost", { count: 0 })).toBe("消耗 0 积分");
-    expect(i18n.t("creditCost", { count: 2 })).toBe("消耗 2 积分");
+    expect(creditCost(0)).toBe("消耗 0 积分");
+    expect(creditCost(2)).toBe("消耗 2 积分");
   });
 });
 

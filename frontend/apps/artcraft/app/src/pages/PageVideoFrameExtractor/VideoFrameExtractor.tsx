@@ -1,4 +1,4 @@
-import { useTranslation } from "@storyteller/i18n";
+import { tn, useTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect } from "react";
 import { CheckIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SaveIcon, SkipBackIcon, SkipForwardIcon, SparklesIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -769,7 +769,7 @@ export const VideoFrameExtractor = () => {
                           {tr("Extracted Frames")}
                         </h3>
                         <div className="border border-white/20 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase leading-none tracking-[0.12em] text-base-fg/70">
-                          {tr("extractedFrames", { count: extractedFrames.length })}
+                          {tn(tr, extractedFrames.length, "{{n}} Frame", "{{n}} Frames")}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">

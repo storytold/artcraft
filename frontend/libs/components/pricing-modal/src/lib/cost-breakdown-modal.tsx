@@ -1,4 +1,4 @@
-import { useTranslation } from "@storyteller/i18n";
+import { tn, useTranslation } from "@storyteller/i18n";
 import { useMeshCostEstimate } from "./useMeshCostEstimate";
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
@@ -404,7 +404,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                     </>
                   ) : totalCredits != null ? (
                     <>
-                      {tr("billingCredits", { count: totalCredits })}
+                      {tn(tr, totalCredits, "{{n}} Credit", "{{n}} Credits")}
                     </>
                   ) : (
                     <span className="text-base-fg/50">—</span>
