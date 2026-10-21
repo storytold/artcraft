@@ -30,6 +30,19 @@ export class RemoveTrackCommand extends Command {
         selectedKeyframes: editor.selection
           .getSelectedKeyframes()
           .filter((ref) => ref.trackId !== this.trackId),
+        // A mask-point selection on the deleted track would otherwise keep
+        // winning the "active selection" priority, and the keyframe anchor
+        // would point at a keyframe that no longer exists.
+        selectedMaskPoints:
+          editor.selection.getSelectedMaskPointSelection()?.trackId ===
+          this.trackId
+            ? null
+            : editor.selection.getSelectedMaskPointSelection(),
+        keyframeSelectionAnchor:
+          editor.selection.getKeyframeSelectionAnchor()?.trackId ===
+          this.trackId
+            ? null
+            : editor.selection.getKeyframeSelectionAnchor(),
       },
     };
   }

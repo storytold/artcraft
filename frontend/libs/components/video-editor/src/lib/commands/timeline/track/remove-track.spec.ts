@@ -124,6 +124,25 @@ describe("RemoveTrackCommand selection", () => {
     ]);
   });
 
+  it("clears a mask-point selection that lived on the deleted track", () => {
+    const editor = EditorCore.getInstance();
+    editor.selection.setSelectedMaskPoints({
+      selection: {
+        trackId: "t1",
+        elementId: "e1",
+        maskId: "m1",
+        pointIds: ["p1"],
+      },
+    });
+
+    editor.command.execute({ command: new RemoveTrackCommand("t1") });
+
+    // Mask points outrank every other selection kind, so a leftover one would
+    // keep the editor in "mask-points" mode for a clip that is gone.
+    expect(editor.selection.getSelectedMaskPointSelection()).toBeNull();
+    expect(editor.selection.getActiveSelectionKind()).toBeNull();
+  });
+
   it("brings the selection back when the delete is undone", () => {
     const editor = EditorCore.getInstance();
     editor.selection.setSelectedElements({
