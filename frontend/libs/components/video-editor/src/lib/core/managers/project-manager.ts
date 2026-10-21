@@ -132,6 +132,26 @@ export class ProjectManager {
   // down here — otherwise they leak into the newly opened project and
   // its next autosave persists the contamination.
   async openProject({ id }: { id: string }): Promise<TProject | null> {
+    // FIX: closeProject() below stops the autosave and drops its pending
+    // debounce timer, so edits made in the last ~800 ms to the project being
+    // left were never written when a host route opened another project
+    // directly (no header exit flow, so no prepareExit()). Save them first.
+    // The ticket taken here invalidates any older open; if a newer open or a
+    // close lands while the save runs, this call stands down instead of
+    // resurrecting a project after the editor was closed.
+    if (this.active && this.editor.save.getIsDirty()) {
+      const preSaveRequestId = ++this.openRequestId;
+      try {
+        await this.editor.save.flush();
+      } catch (error) {
+        // A failed save must not trap the user on the old project; the
+        // header's exit flow also carries on after a failed flush.
+        console.error("Failed to save the project being left:", error);
+      }
+      if (preSaveRequestId !== this.openRequestId) {
+        return null;
+      }
+    }
     this.closeProject();
     // FIX: take a ticket for THIS open. If the user opens another project (or
     // closes this one) while our storage read / media download is still in

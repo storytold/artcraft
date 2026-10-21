@@ -58,7 +58,14 @@ function buildEnvelope(id: string, media: unknown[] = []) {
 // each project id returns (usually a deferred promise).
 function buildManager(loadProject: (id: string) => Promise<unknown>) {
   const editor = {
-    save: { stop: vi.fn(), start: vi.fn() },
+    // flush/getIsDirty let openProject save the project it is leaving; a clean
+    // editor by default so the older tests are unaffected.
+    save: {
+      stop: vi.fn(),
+      start: vi.fn(),
+      flush: vi.fn(async () => {}),
+      getIsDirty: vi.fn(() => false),
+    },
     command: { clear: vi.fn() },
     selection: { clearSelection: vi.fn() },
     scenes: { clearScenes: vi.fn(), initializeScenes: vi.fn() },
@@ -176,6 +183,51 @@ describe("ProjectManager.openProject races", () => {
     expect(editor.scenes.initializeScenes).not.toHaveBeenCalled();
     expect(editor.save.start).not.toHaveBeenCalled();
     expect(manager.getIsLoading()).toBe(false);
+  });
+
+  it("saves the project being left before opening another one", async () => {
+    const { manager, editor } = buildManager((id) =>
+      Promise.resolve(buildEnvelope(id)),
+    );
+    await manager.openProject({ id: "A" });
+
+    // The user just edited A: the debounced autosave has not run yet.
+    editor.save.getIsDirty.mockReturnValue(true);
+    const order: string[] = [];
+    editor.save.flush.mockImplementation(async () => {
+      order.push("flush");
+    });
+    editor.scenes.clearScenes.mockImplementation(() => {
+      order.push("clear");
+    });
+
+    // A host route opens B directly (no header exit flow).
+    await manager.openProject({ id: "B" });
+
+    // A's pending edits must be written BEFORE its state is torn down.
+    // (Old code went straight to closeProject(), whose save.stop() dropped
+    // the pending autosave, so edits from the last ~800 ms were lost.)
+    expect(order).toEqual(["flush", "clear"]);
+    expect(manager.getActive()?.metadata.id).toBe("B");
+  });
+
+  it("does not open the project when the editor was closed during the pre-open save", async () => {
+    const { manager, editor } = buildManager((id) =>
+      Promise.resolve(buildEnvelope(id)),
+    );
+    await manager.openProject({ id: "A" });
+    editor.save.getIsDirty.mockReturnValue(true);
+    const flushGate = deferred<void>();
+    editor.save.flush.mockImplementation(() => flushGate.promise);
+
+    // B starts opening and waits on A's save; meanwhile the user exits.
+    const openB = manager.openProject({ id: "B" });
+    manager.closeProject();
+    flushGate.resolve();
+
+    // The late open must not resurrect a project after the close.
+    expect(await openB).toBeNull();
+    expect(manager.getActive()).toBeNull();
   });
 
   it("a normal single open still activates the project and finishes loading", async () => {
