@@ -1156,3 +1156,7 @@ summarized here.
   a new effect id, so later toggles and parameter edits (recorded against the old id) were lost after undo/redo. The command
   now builds the effect once and reuses it. New `effect-redo.spec.ts`; full suite 42 files / 361 tests pass. Counts:
   Fixed 189, strict 169, Noted 114; next free IDs B-190 / N-124.
+- Split redo, `video-editor/src/lib/commands/timeline/element/split-elements.ts` (B-190): redoing a split gave the right half a new
+  id, so later edits of it were lost. The id is now kept per split element. New `split-redo.spec.ts`; suite 43 files / 362 tests
+  pass. Same pattern in duplicate/paste recorded as N-124 (needs a pinned track id in placement). Counts: Fixed 190, strict 170,
+  Noted 115; next free IDs B-191 / N-125.

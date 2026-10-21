@@ -19,6 +19,9 @@ import {
 export class SplitElementsCommand extends Command {
   private savedState: SceneTracks | null = null;
   private rightSideElements: { trackId: string; elementId: string }[] = [];
+  // Right-half id per split element, made on the first execute and reused by
+  // redo so later commands in the history still find the right half.
+  private readonly rightHalfIds = new Map<string, string>();
   private readonly elements: { trackId: string; elementId: string }[];
   private readonly splitTime: MediaTime;
   private readonly retainSide: "both" | "left" | "right";
@@ -140,7 +143,7 @@ export class SplitElementsCommand extends Command {
             },
           ];
         } else if (this.retainSide === "right") {
-          const newId = generateUUID();
+          const newId = this.getRightHalfId(track.id, element.id);
           this.rightSideElements.push({
             trackId: track.id,
             elementId: newId,
@@ -158,7 +161,7 @@ export class SplitElementsCommand extends Command {
             },
           ];
         } else {
-          const secondElementId = generateUUID();
+          const secondElementId = this.getRightHalfId(track.id, element.id);
           this.rightSideElements.push({
             trackId: track.id,
             elementId: secondElementId,
@@ -203,6 +206,16 @@ export class SplitElementsCommand extends Command {
       return createElementSelectionResult(this.rightSideElements);
     }
     return undefined;
+  }
+
+  private getRightHalfId(trackId: string, elementId: string): string {
+    const key = `${trackId}:${elementId}`;
+    let id = this.rightHalfIds.get(key);
+    if (!id) {
+      id = generateUUID();
+      this.rightHalfIds.set(key, id);
+    }
+    return id;
   }
 
   undo(): void {
