@@ -521,6 +521,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   clip added to an empty project left the canvas resized (and fps raised) because undo restored only the tracks. The
   command now remembers the earlier settings and restores them. New `insert-element.spec.ts`. Counts: Fixed 185,
   strict 166, Noted 114; next free IDs B-186 / N-124.
+- Scene switching, `video-editor/src/lib/core/managers/scenes-manager.ts` (B-186): switching scenes or deleting the open
+  scene left the old scene's clips selected. Both paths now clear the selection when the active scene changes. New
+  `switch-scene.spec.ts`; full video-editor suite 41 files / 356 tests pass. Counts: Fixed 186, strict 167, Noted 114;
+  next free IDs B-187 / N-124.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,

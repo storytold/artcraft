@@ -104,6 +104,11 @@ export class ScenesManager {
       this.editor.project.setActiveProject({ project: updatedProject });
     }
 
+    // FIX: the selection holds track and clip ids from the scene we are
+    // leaving; none of them exist in the target scene, so drop it.
+    if (this.active?.id !== targetScene.id) {
+      this.editor.selection.clearSelection();
+    }
     this.active = targetScene;
     this.notify();
   }
@@ -237,11 +242,17 @@ export class ScenesManager {
     scenes: TScene[];
     activeSceneId?: string;
   }): void {
+    const previousActiveSceneId = this.active?.id ?? null;
     this.list = scenes;
     const nextActiveSceneId = activeSceneId ?? this.active?.id ?? null;
     this.active = nextActiveSceneId
       ? (scenes.find((scene) => scene.id === nextActiveSceneId) ?? null)
       : null;
+    // FIX: deleting the open scene (or undoing that) moves to a different
+    // scene, so the old scene's selected clips no longer exist.
+    if ((this.active?.id ?? null) !== previousActiveSceneId) {
+      this.editor.selection.clearSelection();
+    }
     this.notify();
 
     const activeProject = this.editor.project.getActive();
