@@ -507,6 +507,11 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   as NaN, so retyping an unchanged value looked like an edit and opened an empty transform session. An empty integer part
   now counts as 0. New `sanitize.spec.ts` (4 tests, 3 failed on the old code, 1 control passed). N-121 added (unreachable
   file-drop upload count). Counts: Fixed 182, strict 164, Noted 112; next free IDs B-183 / N-122.
+- Failed-job database write, `sqlite_tasks/src/queries/update_task_status_with_rich_failure.rs` (B-183): a failure message
+  over 255 bytes whose byte 255 landed inside a multi-byte character made the byte slice panic, before the task was
+  marked failed. The cut now steps back to a character boundary (`trim_failure_message`). 3 new in-file tests, the
+  multi-byte one panicked on the old code. N-122 added (test-only `truncate` calls). Counts: Fixed 183, strict 165,
+  Noted 113; next free IDs B-184 / N-123.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
