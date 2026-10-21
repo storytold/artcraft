@@ -60,6 +60,7 @@ function buildManager(loadProject: (id: string) => Promise<unknown>) {
   const editor = {
     save: { stop: vi.fn(), start: vi.fn() },
     command: { clear: vi.fn() },
+    selection: { clearSelection: vi.fn() },
     scenes: { clearScenes: vi.fn(), initializeScenes: vi.fn() },
     media: { clearAllAssets: vi.fn(), loadProjectMedia: vi.fn() },
     adapters: {

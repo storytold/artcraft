@@ -263,6 +263,11 @@ export class ProjectManager {
     this.isLoading = false;
     this.editor.save.stop();
     this.editor.command.clear();
+    // FIX: the selection holds track and clip ids of the project being left.
+    // Nothing cleared it, so it leaked into the next project opened (the
+    // editor singleton outlives the project), leaving a phantom selection
+    // that matches no clip. switchToScene already does this per scene.
+    this.editor.selection.clearSelection();
     this.editor.scenes.clearScenes();
     this.editor.media.clearAllAssets();
     this.exportState = { ...INITIAL_EXPORT_STATE };

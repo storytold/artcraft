@@ -1198,3 +1198,5 @@ summarized here.
 - Cancel, `pagescene/src/lib/engine/editor/TimelineController.ts` (B-200, borderline): `cancel` restored the saved timeline without clamping the playhead, so it could
   stay past the end after a lengthen-then-cancel. It now clamps like `restoreSnapshot`. New case in `TimelineController.spec.ts`; pagescene suite 17 files / 83 tests pass.
   Counts: Fixed 200, strict 176, Noted 117; next free IDs B-201 / N-127.
+- Close project, `video-editor/src/lib/core/managers/project-manager.ts` (B-201, borderline): `closeProject` did not clear the selection, so the previous project's track and clip ids
+  leaked into the next project opened. Now cleared. New `close-project-selection.spec.ts` failed before, passes after; `project-manager.spec.ts` stub gained `selection`. Counts: Fixed 201, strict 176, Noted 117; next free IDs B-202 / N-127.
