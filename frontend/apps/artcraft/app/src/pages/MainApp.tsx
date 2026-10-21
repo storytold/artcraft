@@ -13,7 +13,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 
-import { TopBar } from "~/components";
+import { TopBar, WindowControls } from "~/components";
 import { ErrorDialog } from "~/components";
 import { LoginModal, useLoginModalStore } from "@storyteller/ui-login-modal";
 import { toast, Toaster } from "@storyteller/ui-toaster";
@@ -179,6 +179,7 @@ export const MainApp = ({ sceneToken }: Props) => {
       <LoginModal
         videoSrc2D="/resources/videos/artcraft-canvas-demo.mp4"
         videoSrc3D="/resources/videos/artcraft-3d-demo.mp4"
+        windowControls={<WindowControls />}
         onOpenChange={(isOpen: boolean) => {
           if (isOpen) {
             disableHotkeyInput(DomLevels.DIALOGUE);
