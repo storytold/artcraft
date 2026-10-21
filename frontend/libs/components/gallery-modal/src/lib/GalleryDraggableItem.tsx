@@ -272,7 +272,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                 <MusicIcon className="text-lg text-white/70" />
               </div>
             </div>
-            <p className="line-clamp-2 shrink-0 px-2.5 pb-2.5 text-left text-xs leading-snug text-white/75">
+            <p
+              dir="auto"
+              className="line-clamp-2 shrink-0 px-2.5 pb-2.5 text-start text-xs leading-snug text-white/75"
+            >
               {audioPromptText || item.label}
             </p>
           </div>
@@ -310,12 +313,12 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           </>
         )}
         {selected && (
-          <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-[3px] bg-primary">
+          <div className="absolute start-2 top-2 flex h-6 w-6 items-center justify-center rounded-[3px] bg-primary">
             <CheckIcon className="text-sm" />
           </div>
         )}
         {disabled && (
-          <div className="absolute left-2 top-2 bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+          <div className="absolute start-2 top-2 bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
             {tr("Added")}
           </div>
         )}
@@ -340,7 +343,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           // Tile chrome stays under sticky page headers (e.g. the library
           // filter bar at z-10): z-[2]/z-[1] keep the in-tile ordering
           // (menu/checkbox above badges) without escaping the page layers.
-          className="absolute right-2 top-2 z-[2] opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
+          className="absolute end-2 top-2 z-[2] opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -410,7 +413,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {mode !== "select" && onBulkSelectToggle && (
         <div
           className={twMerge(
-            "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded-[3px] border-2 cursor-pointer transition-all duration-100",
+            "absolute start-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded-[3px] border-2 cursor-pointer transition-all duration-100",
             bulkSelected
               ? "bg-primary border-primary"
               : "border-white/60 bg-black/40 hover:border-white",
@@ -429,7 +432,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
-        <div className="pointer-events-none absolute left-2 bottom-2 z-[1] bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div className="pointer-events-none absolute start-2 bottom-2 z-[1] bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           {item.mediaClass === "dimensional" ||
           item.mediaClass === "mesh" ||
           item.mediaClass === "splat"
@@ -439,7 +442,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
       {/* Upload badge — bottom-right (always visible, even in select mode) */}
       {item.isUpload && (
-        <div className="pointer-events-none absolute right-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center bg-black/50 backdrop-blur-lg text-white">
+        <div className="pointer-events-none absolute end-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center bg-black/50 backdrop-blur-lg text-white">
           <UploadIcon className="text-[10px]" />
         </div>
       )}

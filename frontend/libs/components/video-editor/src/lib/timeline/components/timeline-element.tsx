@@ -1042,7 +1042,7 @@ function AudioElementContent({
   return (
     <div className="group/audio relative size-full">
       <div className="flex size-full items-center pl-2">
-        <span className="text-foreground/80 truncate text-xs">
+        <span dir="auto" className="text-foreground/80 truncate text-xs">
           {element.name}
         </span>
       </div>
@@ -1098,7 +1098,7 @@ function TiledMediaContent({
 
   if (!imageUrl) {
     return (
-      <span className="text-foreground/80 truncate text-xs">
+      <span dir="auto" className="text-foreground/80 truncate text-xs">
         {element.name}
       </span>
     );
@@ -1155,7 +1155,7 @@ function MediaElementHeader({
     >
       {leading && <div className="pl-1">{leading}</div>}
       {name && (
-        <span className="truncate px-1.5 text-[0.6rem] leading-tight text-white/75">
+        <span dir="auto" className="truncate px-1.5 text-[0.6rem] leading-tight text-white/75">
           {name}
         </span>
       )}

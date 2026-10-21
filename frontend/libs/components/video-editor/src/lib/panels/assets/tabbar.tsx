@@ -97,7 +97,7 @@ function FadeOverlay({
   return (
     <div
       className={cn(
-        "pointer-events-none absolute right-0 left-0 h-6",
+        "pointer-events-none absolute end-0 start-0 h-6",
         direction === "top" && show
           ? "from-background top-0 bg-linear-to-b to-transparent"
           : "from-background bottom-0 bg-linear-to-t to-transparent",

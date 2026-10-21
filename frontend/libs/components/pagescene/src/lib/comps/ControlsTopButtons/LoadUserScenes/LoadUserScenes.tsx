@@ -136,7 +136,7 @@ export const LoadUserScenes = ({ onSceneSelect }: LoadSceneProps) => {
         )}
 
         <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-10 bg-gradient-to-t from-ui-panel to-transparent transition-opacity duration-200"
+          className="pointer-events-none absolute bottom-0 start-0 end-0 z-10 h-10 bg-gradient-to-t from-ui-panel to-transparent transition-opacity duration-200"
           style={{ opacity: bottomGradientOpacity }}
         />
       </div>

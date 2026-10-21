@@ -308,7 +308,7 @@ export const HistoryStack = ({
                       />
                     )}
                     <div
-                      className="absolute -right-0 -top-0 flex h-5 w-5 items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
+                      className="absolute -end-0 -top-0 flex h-5 w-5 items-center justify-center rounded-es-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
                       onClick={(e) => {
                         e.stopPropagation();
                         showActionReminder({

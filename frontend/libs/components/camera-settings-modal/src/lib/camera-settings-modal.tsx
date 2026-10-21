@@ -115,7 +115,7 @@ export const CameraSettingsModal = ({
       showClose={false}
     >
       <div className="grid h-full grid-cols-12 gap-3">
-        <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-white/15">
+        <div className="relative col-span-4 p-3 pt-2 after:absolute after:end-0 after:top-0 after:h-full after:w-px after:bg-white/15">
           <div className="flex items-center justify-between gap-2.5 py-0.5">
             <h2 className="hud-label text-base-fg/60">Camera</h2>
             <Tooltip content="Add camera" position="top" delay={200}>
@@ -132,7 +132,7 @@ export const CameraSettingsModal = ({
             {cameras.map((camera) => (
               <button
                 key={camera.id}
-                className={`h-9 w-full rounded-[3px] border-l-2 p-2 text-left transition-colors duration-100 ${
+                className={`h-9 w-full rounded-[3px] border-s-2 p-2 text-start transition-colors duration-100 ${
                   camera.id === selectedCameraId
                     ? "border-white bg-white/10"
                     : "border-transparent hover:bg-white/5"

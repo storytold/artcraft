@@ -20,7 +20,7 @@ export const AssetMenu = () => {
 
   return (
     <>
-      <div className="glass absolute left-2 top-1/2 flex -translate-y-1/2 flex-col gap-1 rounded-lg p-1">
+      <div className="glass absolute start-2 top-1/2 flex -translate-y-1/2 flex-col gap-1 rounded-lg p-1">
         <Tooltip content="Add 3D object to scene" position="right" delay={100}>
           <Button
             icon={BoxIcon}

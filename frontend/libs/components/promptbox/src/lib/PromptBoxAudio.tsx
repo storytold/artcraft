@@ -569,10 +569,11 @@ export const PromptBoxAudio = ({
           <div className="flex gap-3">
             <div className="promptbox-resize-wrap relative flex-1">
               <textarea
+                dir="auto"
                 ref={textareaRef}
                 rows={1}
                 placeholder={t("Describe the music or sound you want...")}
-                className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
+                className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pe-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -670,6 +671,7 @@ export const PromptBoxAudio = ({
         }
       >
         <textarea
+          dir="auto"
           placeholder={t("Describe the music or sound you want...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}

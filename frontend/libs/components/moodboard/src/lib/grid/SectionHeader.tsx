@@ -81,6 +81,7 @@ export const SectionHeader = ({
         />
       ) : (
         <button
+          dir="auto"
           type="button"
           onClick={startEdit}
           disabled={!editable}

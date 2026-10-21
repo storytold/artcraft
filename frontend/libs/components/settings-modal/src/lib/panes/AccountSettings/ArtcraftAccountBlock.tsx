@@ -71,7 +71,7 @@ export const ArtcraftAccountBlock = ({
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
           {t("ArtCraft account")}
         </p>
-        <p className="truncate text-sm font-medium text-base-fg/80">
+        <p dir="auto" className="truncate text-sm font-medium text-base-fg/80">
           {artcraftSession?.display_name || t("Not logged in")}
         </p>
       </div>

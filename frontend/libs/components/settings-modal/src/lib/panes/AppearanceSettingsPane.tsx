@@ -92,7 +92,7 @@ export const AppearanceSettingsPane = () => {
             <button
               key={t.id}
               className={twMerge(
-                "group flex items-center gap-3 border p-2 text-left transition-colors duration-100",
+                "group flex items-center gap-3 border p-2 text-start transition-colors duration-100",
                 isSelected
                   ? "border-base-fg/70 bg-base-fg/10"
                   : "border-ui-panel-border bg-base-fg/[0.03] hover:border-base-fg/30 hover:bg-base-fg/[0.06]",
@@ -105,7 +105,7 @@ export const AppearanceSettingsPane = () => {
                 {t.label}
               </span>
               {isSelected && (
-                <CheckIcon aria-hidden className="mr-1 h-3.5 w-3.5" />
+                <CheckIcon aria-hidden className="me-1 h-3.5 w-3.5" />
               )}
             </button>
           );

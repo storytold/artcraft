@@ -34,7 +34,7 @@ export function EntranceDebugPanel() {
   const splatSec = (ENTRANCE_BASE_DURATIONS.splat * scale).toFixed(2);
 
   return (
-    <div className="pointer-events-auto absolute right-2 top-16 z-50 w-56 rounded-lg border border-white/10 bg-black/70 p-3 text-xs text-white/80 backdrop-blur-md">
+    <div className="pointer-events-auto absolute end-2 top-16 z-50 w-56 rounded-lg border border-white/10 bg-black/70 p-3 text-xs text-white/80 backdrop-blur-md">
       <div className="mb-2 flex items-center justify-between font-medium text-white/90">
         <span>Entrance speed</span>
         <span className="tabular-nums">{scale.toFixed(2)}×</span>
