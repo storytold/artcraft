@@ -517,6 +517,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   now returns a selection patch keeping only items on other tracks; undo restores the old selection. New
   `remove-track.spec.ts` (3 tests; also clears a mask-point selection and the keyframe anchor on the deleted track). N-123 added (one unknown enum value fails the whole task-list query). Counts: Fixed 184,
   strict 165, Noted 114; next free IDs B-185 / N-124.
+- Timeline first insert, `video-editor/src/lib/commands/timeline/element/insert-element.ts` (B-185): undoing the first
+  clip added to an empty project left the canvas resized (and fps raised) because undo restored only the tracks. The
+  command now remembers the earlier settings and restores them. New `insert-element.spec.ts`. Counts: Fixed 185,
+  strict 166, Noted 114; next free IDs B-186 / N-124.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
