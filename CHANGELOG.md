@@ -1168,3 +1168,6 @@ summarized here.
   keyframes new ids, so a later retime of them was lost. Ids are now fixed at construction. New
   `clipboard/paste-keyframes-redo.spec.ts`; suite 45 files / 364 tests pass. Counts: Fixed 192, strict 172, Noted 115; next free IDs
   B-193 / N-125.
+- Create scene redo, `video-editor/src/lib/commands/scene/create-scene.ts` (B-193): redoing a scene creation made a new scene id, so a
+  later rename was lost. The scene is now built once. New `scene/create-scene-redo.spec.ts`; full suite passes. Counts: Fixed 193,
+  strict 173, Noted 115; next free IDs B-194 / N-125.
