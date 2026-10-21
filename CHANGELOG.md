@@ -484,6 +484,10 @@ verified by a spec or a check. Bug IDs refer to `BUGS.md`.
   element as its colour and the field never fell back to the paste/extract path. The pattern now allows only those
   four lengths. New `utils/color.spec.ts` (3 tests): 1 failed on the unfixed code, 2 controls passed; `tsc -p
   tsconfig.lib.json --noEmit` 0. Counts: Fixed 175, strict 160, Noted 102; next free IDs B-176 / N-112.
+- Video editor shortcuts: defaults added in a later release never reached users who had not customized (B-176).
+  The persisted shortcut map is saved on every store update with `isCustomized: false`, and `merge` loaded it back over
+  the current defaults. It now keeps the saved map only when the user customized it. New `keybindings-store.spec.ts`
+  (1 failed on the old code, 1 control passed). Counts: Fixed 176, strict 160, Noted 108; next free IDs B-177 / N-118.
 - Notes only (BUGS.md N-112..N-115, nothing fixed, nothing counted): the gradient parser rejects several valid CSS forms
   (not reachable from shipped swatches), the desktop drop handler reads files before checking the box accepts them, one
   hook inside a render-prop in `popover.tsx`, and a few weak bounds notes in the transform handles. Counts: Fixed 175,
