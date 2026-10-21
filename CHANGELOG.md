@@ -1164,3 +1164,7 @@ summarized here.
   mask point gave it a new id, so a later delete of it was lost. The id is now fixed at construction. New
   `masks/insert-point-redo.spec.ts`; suite 44 files / 363 tests pass. Counts: Fixed 191, strict 171, Noted 115; next free IDs
   B-192 / N-125.
+- Paste keyframes redo, `video-editor/src/lib/commands/timeline/clipboard/paste-keyframes.ts` (B-192): redoing a keyframe paste gave the
+  keyframes new ids, so a later retime of them was lost. Ids are now fixed at construction. New
+  `clipboard/paste-keyframes-redo.spec.ts`; suite 45 files / 364 tests pass. Counts: Fixed 192, strict 172, Noted 115; next free IDs
+  B-193 / N-125.
