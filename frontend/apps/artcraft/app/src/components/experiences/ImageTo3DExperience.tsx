@@ -527,7 +527,7 @@ export const ImageTo3DExperience = ({
       delay={100}
       zIndex={50}
       content={
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="flex flex-col gap-1.5 text-start">
           <Button
             variant="primary"
             icon={UploadIcon}
@@ -621,7 +621,7 @@ export const ImageTo3DExperience = ({
           {!isUploading && (
             <button
               type="button"
-              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-all hover:bg-black group-hover:opacity-100"
+              className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-all hover:bg-black group-hover:opacity-100"
               onClick={(event) => {
                 event.stopPropagation();
                 setUploadedPreview(null);
@@ -644,10 +644,11 @@ export const ImageTo3DExperience = ({
   const renderTextMode = () => (
     <div>
       <textarea
+        dir="auto"
         ref={textareaRef}
         id={promptInputId}
         rows={1}
-        className="text-md max-h-[5.5em] w-full resize-none overflow-y-auto rounded-[3px] bg-transparent pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+        className="text-md max-h-[5.5em] w-full resize-none overflow-y-auto rounded-[3px] bg-transparent pe-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
         value={prompt}
         placeholder="Describe any object you want to generate from scratch..."
         onChange={(event) => setPrompt(event.target.value)}
@@ -669,7 +670,7 @@ export const ImageTo3DExperience = ({
               delay={100}
               zIndex={50}
               content={
-                <div className="flex flex-col gap-1.5 text-left">
+                <div className="flex flex-col gap-1.5 text-start">
                   <Button
                     variant="primary"
                     icon={UploadIcon}
@@ -740,6 +741,7 @@ export const ImageTo3DExperience = ({
             </Tooltip>
           </div>
           <textarea
+            dir="auto"
             ref={worldTextareaRef}
             rows={2}
             className="w-full resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
@@ -780,7 +782,7 @@ export const ImageTo3DExperience = ({
         {!img.isUploading && (
           <button
             type="button"
-            className="absolute right-[2px] top-[2px] flex h-4 w-4 cursor-pointer items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-colors hover:bg-red/70 group-hover:opacity-100"
+            className="absolute end-[2px] top-[2px] flex h-4 w-4 cursor-pointer items-center justify-center rounded-[3px] bg-black/60 text-white opacity-0 transition-colors hover:bg-red/70 group-hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               removeWorldImage(img.id);
@@ -799,7 +801,7 @@ export const ImageTo3DExperience = ({
         delay={100}
         zIndex={50}
         content={
-          <div className="flex flex-col gap-1.5 text-left">
+          <div className="flex flex-col gap-1.5 text-start">
             <Button
               variant="primary"
               icon={UploadIcon}
@@ -865,6 +867,7 @@ export const ImageTo3DExperience = ({
               {addButton}
             </div>
             <textarea
+              dir="auto"
               ref={worldTextareaRef}
               rows={1}
               className="flex-1 resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
@@ -887,6 +890,7 @@ export const ImageTo3DExperience = ({
         </div>
         {imageCountRow}
         <textarea
+          dir="auto"
           ref={worldTextareaRef}
           rows={2}
           className="w-full resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
@@ -930,7 +934,7 @@ export const ImageTo3DExperience = ({
 
       <div className="relative z-10 h-full w-full p-8">
         {!hasResults && (
-          <div className="pointer-events-none absolute left-0 top-[calc(50%-280px)] flex w-full justify-center">
+          <div className="pointer-events-none absolute start-0 top-[calc(50%-280px)] flex w-full justify-center">
             <CreateEmptyState
               title={title}
               subtitle={subtitle}
@@ -958,7 +962,7 @@ export const ImageTo3DExperience = ({
                 className="h-full"
               />
               {activeResult?.modelUrl && activeResult?.mediaToken && (
-                <div className="absolute right-4 top-4 z-10 flex gap-2">
+                <div className="absolute end-4 top-4 z-10 flex gap-2">
                   <Button
                     variant="primary"
                     className="min-w-[120px]"
@@ -1031,7 +1035,7 @@ export const ImageTo3DExperience = ({
                         key={result.id}
                         onClick={() => setSelectedResultId(result.id)}
                         className={twMerge(
-                          "group flex w-full items-center gap-3 rounded-none border p-2 text-left transition-all hover:bg-white/5",
+                          "group flex w-full items-center gap-3 rounded-none border p-2 text-start transition-all hover:bg-white/5",
                           isSelected
                             ? "border-white bg-white/10"
                             : "border-white/10 bg-transparent hover:border-white/30",
@@ -1152,7 +1156,7 @@ export const ImageTo3DExperience = ({
           </div>
         </animated.div>
 
-        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+        <div className="absolute bottom-4 end-4 z-20 flex items-center gap-2">
           <CostCalculatorButton
             modelPage={
               variant === "world" ? WORLD_MODEL_PAGE : OBJECT_MODEL_PAGE
@@ -1207,7 +1211,7 @@ export const ImageTo3DExperience = ({
         >
           <button
             type="button"
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-[3px] border border-white/15 bg-black/60 text-white transition-colors hover:border-white/30 hover:bg-black"
+            className="absolute end-4 top-4 flex h-8 w-8 items-center justify-center rounded-[3px] border border-white/15 bg-black/60 text-white transition-colors hover:border-white/30 hover:bg-black"
             onClick={() => setPreviewImage(null)}
           >
             <XIcon  className="h-4 w-4" />

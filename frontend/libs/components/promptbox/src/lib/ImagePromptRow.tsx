@@ -134,7 +134,7 @@ const AudioRefTile = ({
           )}
         />
       </button>
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white pointer-events-none">
+      <div className="absolute bottom-0 start-0 end-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white pointer-events-none">
         #{index + 1} · {audio.duration}s
       </div>
       <button
@@ -146,7 +146,7 @@ const AudioRefTile = ({
           }
           onRemove(audio.id);
         }}
-        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+        className="opacity-0 group-hover:opacity-100 absolute end-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
       >
         <XIcon  className="h-2.5 w-2.5" />
       </button>
@@ -287,7 +287,7 @@ export const ImagePromptRow = ({
           className="h-full w-full object-cover"
         />
         {isReferenceMode && (
-          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
+          <div className="absolute bottom-0 start-0 end-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
             {index + 1}
           </div>
         )}
@@ -302,7 +302,7 @@ export const ImagePromptRow = ({
           onPointerDown={(e) => {
             e.stopPropagation();
           }}
-          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+          className="opacity-0 group-hover:opacity-100 absolute end-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
         >
           <XIcon  className="h-2.5 w-2.5" />
         </button>
@@ -865,7 +865,7 @@ export const ImagePromptRow = ({
       )}
       <div
         className={twMerge(
-          "absolute left-0 glass w-full rounded-t-[3px] flex",
+          "absolute start-0 glass w-full rounded-t-[3px] flex",
           showVideoReferenceSection ? "-top-[144px]" : "-top-[72px]",
           className,
         )}
@@ -945,7 +945,7 @@ export const ImagePromptRow = ({
                           className="h-full w-full object-cover"
                         />
                         {isReferenceMode && (
-                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
+                          <div className="absolute bottom-0 start-0 end-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
                             {index + 1}
                           </div>
                         )}
@@ -954,7 +954,7 @@ export const ImagePromptRow = ({
                             e.stopPropagation();
                             handleRemoveReference(image.id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                          className="opacity-0 group-hover:opacity-100 absolute end-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                         >
                           <XIcon
                             
@@ -1077,7 +1077,7 @@ export const ImagePromptRow = ({
                           e.stopPropagation();
                           setEndFrameImage?.(undefined);
                         }}
-                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 absolute end-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
                         <XIcon
                           
@@ -1185,7 +1185,7 @@ export const ImagePromptRow = ({
                         preload="metadata"
                         className="h-full w-full object-cover"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white">
+                      <div className="absolute bottom-0 start-0 end-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white">
                         {video.duration}s
                       </div>
                       <button
@@ -1193,7 +1193,7 @@ export const ImagePromptRow = ({
                           e.stopPropagation();
                           handleRemoveVideo(video.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 absolute end-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
                         <XIcon
                           

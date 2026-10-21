@@ -270,6 +270,7 @@ export const PromptBoxVFX = ({
               </button>
             </div>
             <textarea
+              dir="auto"
               ref={promptTextareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -400,7 +401,7 @@ export const PromptBoxVFX = ({
             </button>
           </Tooltip>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
             <PromptClearAllButton
               onClick={handleClearAll}
               disabled={!hasClearableContent}
@@ -551,7 +552,7 @@ const UploadTile = ({
               <button
                 type="button"
                 onClick={onClear}
-                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
+                className="absolute end-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
               >
                 <XIcon  className="h-2.5 w-2.5" />
               </button>

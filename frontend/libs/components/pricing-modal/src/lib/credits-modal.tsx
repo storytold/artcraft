@@ -91,14 +91,14 @@ export function CreditsModal({
                   onClick={() => handlePurchase(pack)}
                   disabled={purchasingId !== null}
                   className={twMerge(
-                    "group relative flex flex-col gap-6 border p-6 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                    "group relative flex flex-col gap-6 border p-6 text-start transition-all disabled:cursor-not-allowed disabled:opacity-60",
                     isPopular
                       ? "border-white/60 bg-white/[0.06] hover:border-white"
                       : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]",
                   )}
                 >
                   {pack.badge && (
-                    <span className="absolute -top-2.5 right-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-black">
+                    <span className="absolute -top-2.5 end-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-black">
                       {pack.badge}
                     </span>
                   )}

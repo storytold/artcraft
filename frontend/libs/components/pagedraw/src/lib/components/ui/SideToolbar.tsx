@@ -173,7 +173,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     extra?: React.ReactNode,
   ) => (
     <div className={`glass relative w-fit rounded-2xl p-4 shadow-lg`}>
-      <button className="bg-ui-controls/60 text-base-fg hover:bg-ui-controls/80 absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full">
+      <button className="bg-ui-controls/60 text-base-fg hover:bg-ui-controls/80 absolute start-4 top-4 flex h-8 w-8 items-center justify-center rounded-full">
         <PipetteIcon size="0.875em" />
       </button>
 
@@ -234,7 +234,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       id: "select",
       label: "Select & Move",
       icon: (
-        <MousePointerIcon  className="pl-0.5 text-lg" />
+        <MousePointerIcon  className="ps-0.5 text-lg" />
       ),
       onClick: () => {
         onSelect();
@@ -381,7 +381,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
 
   return (
     <aside
-      className={`glass ml-4 flex flex-col items-center gap-3 rounded-xl p-1.5 shadow-lg ${className}`}
+      className={`glass ms-4 flex flex-col items-center gap-3 rounded-xl p-1.5 shadow-lg ${className}`}
     >
       {/* Shape Color Picker - appears above toolbar when shape is selected */}
       {selectedColorableNodes.length > 0 && (
@@ -400,7 +400,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             {open === "shape-color" && (
               <div
                 onMouseLeave={() => setOpen(null)}
-                className="absolute left-14 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-ui-panel transition-all duration-200 ease-in-out"
+                className="absolute start-14 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-ui-panel transition-all duration-200 ease-in-out"
               >
                 {ShapePopout}
               </div>
@@ -426,7 +426,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         const toolActionId = TOOL_ACTION_IDS[id];
         const toolBinding = toolActionId ? forAction(toolActionId)[0] : undefined;
         const keyBadge = toolBinding ? (
-          <span className="pointer-events-none absolute bottom-0 right-0 min-w-[13px] rounded-[4px] bg-black/60 px-0.5 text-center text-[9px] font-medium leading-[13px] text-white/80">
+          <span className="pointer-events-none absolute bottom-0 end-0 min-w-[13px] rounded-[4px] bg-black/60 px-0.5 text-center text-[9px] font-medium leading-[13px] text-white/80">
             {formatBinding(toolBinding)}
           </span>
         ) : null;
@@ -589,7 +589,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                 onMouseLeave={() => {
                   setOpen(null);
                 }}
-                className="absolute left-14 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-ui-panel transition-all duration-200 ease-in-out"
+                className="absolute start-14 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-ui-panel transition-all duration-200 ease-in-out"
               >
                 {popout}
               </div>

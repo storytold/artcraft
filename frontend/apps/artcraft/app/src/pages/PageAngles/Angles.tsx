@@ -569,7 +569,7 @@ export const Angles = () => {
             </div>
 
             {/* ── History stack (right side, like PageEdit) ── */}
-            <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2">
+            <div className="absolute end-4 top-1/2 z-10 -translate-y-1/2">
               <HistoryStack
                 onClear={handleHistoryClear}
                 imageBundles={allBundles}
@@ -645,7 +645,7 @@ export const Angles = () => {
                         suffix="°"
                       />
                     </div>
-                    <span className="w-10 shrink-0 text-left font-mono text-xs tabular-nums text-base-fg/70">
+                    <span className="w-10 shrink-0 text-start font-mono text-xs tabular-nums text-base-fg/70">
                       {rotationToDisplay(angleConfig.rotation)}°
                     </span>
                   </div>
@@ -664,7 +664,7 @@ export const Angles = () => {
                         suffix="°"
                       />
                     </div>
-                    <span className="w-9 shrink-0 text-left font-mono text-xs tabular-nums text-base-fg/70">
+                    <span className="w-9 shrink-0 text-start font-mono text-xs tabular-nums text-base-fg/70">
                       {angleConfig.tilt}°
                     </span>
                   </div>
@@ -682,7 +682,7 @@ export const Angles = () => {
                         onChange={handleZoomSlider}
                       />
                     </div>
-                    <span className="w-9 shrink-0 text-left font-mono text-xs tabular-nums text-base-fg/70">
+                    <span className="w-9 shrink-0 text-start font-mono text-xs tabular-nums text-base-fg/70">
                       {angleConfig.zoom}
                     </span>
                   </div>
@@ -710,8 +710,8 @@ export const Angles = () => {
                           className={twMerge(
                             "size-3.5 rounded-full bg-white transition",
                             generateFromBestAngles
-                              ? "translate-x-[18px]"
-                              : "translate-x-1",
+                              ? "translate-x-[18px] rtl:-translate-x-[18px]"
+                              : "translate-x-1 rtl:-translate-x-1",
                           )}
                         />
                       </Switch>
@@ -737,7 +737,7 @@ export const Angles = () => {
             </div>
 
             {/* ── Cost calculator + Help (bottom-right) ── */}
-            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+            <div className="absolute bottom-4 end-4 z-20 flex items-center gap-2">
               <CostCalculatorButton modelPage={ANGLES_MODEL_PAGE} />
               <HelpMenuButton />
             </div>

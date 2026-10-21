@@ -21,7 +21,7 @@ export const RenderOverlay = () => {
   return (
     <>
       <LoadingDots
-        className="absolute left-0 top-0 z-[60]"
+        className="absolute start-0 top-0 z-[60]"
         isShowing={progress !== null}
         type="bricks"
         message={message}

@@ -11,7 +11,7 @@ export const EditorLoadingBar = () => {
     <LoadingBar
       id="editor-loading-bar"
       show={editorLoader.isShowing}
-      wrapperClassName="absolute top-0 left-0 z-[80]"
+      wrapperClassName="absolute top-0 start-0 z-[80]"
       innerWrapperClassName="max-w-screen-sm"
       hasSpinner
       progressData={{

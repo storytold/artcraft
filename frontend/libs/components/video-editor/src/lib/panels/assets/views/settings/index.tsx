@@ -234,7 +234,7 @@ export function SettingsView() {
           <Section showTopBorder={false}>
             <SectionHeader>
               <SectionTitle className="flex-1">Name</SectionTitle>
-              <span className="text-sm truncate">
+              <span dir="auto" className="text-sm truncate">
                 {activeProject.metadata.name}
               </span>
             </SectionHeader>

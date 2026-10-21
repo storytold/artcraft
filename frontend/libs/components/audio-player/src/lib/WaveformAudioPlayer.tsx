@@ -263,7 +263,7 @@ export function WaveformAudioPlayer({
       >
         <DynamicIcon
           icon={isPlaying ? PauseIcon : PlayIcon}
-          className={`${compact ? "h-3 w-3" : "h-3.5 w-3.5"} ${isPlaying ? "" : "ml-0.5"}`}
+          className={`${compact ? "h-3 w-3" : "h-3.5 w-3.5"} ${isPlaying ? "" : "ms-0.5"}`}
         />
       </button>
 
@@ -315,7 +315,7 @@ export function WaveformAudioPlayer({
           />
         </button>
         {showVolume && (
-          <div className="absolute bottom-full right-0 z-20 mb-2 w-28 rounded-lg border border-white/10 bg-neutral-900/95 px-3 py-2.5 shadow-xl backdrop-blur">
+          <div className="absolute bottom-full end-0 z-20 mb-2 w-28 rounded-lg border border-white/10 bg-neutral-900/95 px-3 py-2.5 shadow-xl backdrop-blur">
             <SliderV2
               min={0}
               max={100}

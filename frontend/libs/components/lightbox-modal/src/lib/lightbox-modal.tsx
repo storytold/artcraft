@@ -555,7 +555,7 @@ export function LightboxModal({
       >
         {/* Invisible drag handle strip at the very top for moving */}
         <Modal.DragHandle>
-          <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move" />
+          <div className="absolute start-0 top-0 z-20 h-12 w-full cursor-move" />
         </Modal.DragHandle>
 
         {/* content grid */}
@@ -737,7 +737,7 @@ export function LightboxModal({
           <div className="flex h-full w-[280px] shrink-0 flex-col">
             <div className="flex-1 overflow-y-auto space-y-5 text-base-fg min-h-0 pb-2">
               {creator ? (
-                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-20 border-b border-white/10">
+                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pe-20 border-b border-white/10">
                   {creator.core_info ? (
                     <Gravatar
                       size={36}
@@ -755,7 +755,7 @@ export function LightboxModal({
                     </div>
                   )}
                   <div className="flex flex-col gap-1 min-w-0">
-                    <span className="text-base-fg text-sm font-semibold leading-none truncate">
+                    <span dir="auto" className="text-base-fg text-sm font-semibold leading-none truncate">
                       {creator.display_name}
                     </span>
                     <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
@@ -764,7 +764,7 @@ export function LightboxModal({
                   </div>
                 </div>
               ) : promptLoading ? (
-                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-20 border-b border-white/10 animate-pulse">
+                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pe-20 border-b border-white/10 animate-pulse">
                   <div className="h-9 w-9 shrink-0 bg-white/10" />
                   <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                     <div className="h-3.5 w-24 bg-white/10" />
@@ -826,6 +826,7 @@ export function LightboxModal({
                       ) : (
                         <div
                           ref={promptRef}
+                          dir="auto"
                           className={twMerge(
                             !isPromptExpanded && "line-clamp-4",
                           )}
@@ -930,7 +931,7 @@ export function LightboxModal({
                                     <div className="flex flex-col gap-1.5 min-w-[100px]">
                                       {!isAudio && !isVideoRef && (
                                         <button
-                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
+                                          className="text-xs text-start text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setRefPreviewUrl(fullSize);
@@ -938,13 +939,13 @@ export function LightboxModal({
                                         >
                                           <SearchIcon
                                             
-                                            className="mr-1.5" />
+                                            className="me-1.5" />
                                           Preview image
                                         </button>
                                       )}
                                       {onNavigateToMedia && (
                                         <button
-                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
+                                          className="text-xs text-start text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onNavigateToMedia(
@@ -954,7 +955,7 @@ export function LightboxModal({
                                         >
                                           <LogOutIcon
                                             
-                                            className="mr-1.5" />
+                                            className="me-1.5" />
                                           View as media
                                         </button>
                                       )}
@@ -1266,7 +1267,7 @@ export function LightboxModal({
           expandable={false}
         >
           <Modal.DragHandle>
-            <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move" />
+            <div className="absolute start-0 top-0 z-20 h-12 w-full cursor-move" />
           </Modal.DragHandle>
           <div className="relative flex items-center justify-center overflow-hidden bg-black">
             <img
@@ -1333,7 +1334,7 @@ function InfoSection({
                   alt="Model creator logo"
                   className="h-4 w-4 invert"
                 />
-                <span>{getModelDisplayName(modelType)}</span>
+                <span dir="auto">{getModelDisplayName(modelType)}</span>
               </>
             }
           />
@@ -1384,7 +1385,7 @@ function InfoRow({ label, value }: { label: string; value: ReactNode }) {
       <span className="shrink-0 pt-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
         {label}
       </span>
-      <span className="min-w-0 text-right text-sm text-base-fg font-medium flex items-center justify-end gap-2">
+      <span className="min-w-0 text-end text-sm text-base-fg font-medium flex items-center justify-end gap-2">
         {value}
       </span>
     </div>

@@ -55,7 +55,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }
       {showControls && (
         <>
           <button 
-            className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-0.5 text-white hover:bg-opacity-70 transition-colors"
+            className="absolute top-1 end-1 bg-black bg-opacity-50 rounded-full p-0.5 text-white hover:bg-opacity-70 transition-colors"
             onClick={() => onRemove(image.id)}
           >
             <X size={16} />
@@ -67,10 +67,10 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }
             onMouseDown={handleMouseDown}
           >
             <div 
-              className="absolute left-0 right-0 h-0.5 bg-white" 
+              className="absolute start-0 end-0 h-0.5 bg-white" 
               style={{ bottom: `${image.weight * 100}%` }}
             />
-            <div className="absolute bottom-1 right-1 text-xs font-medium text-white">
+            <div className="absolute bottom-1 end-1 text-xs font-medium text-white">
               {image.weight.toFixed(1)}
             </div>
           </div>

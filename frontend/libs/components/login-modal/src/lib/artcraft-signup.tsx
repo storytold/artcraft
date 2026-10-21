@@ -132,12 +132,12 @@ export const ArtCraftSignUp = ({
             placeholder="Min. 8 characters"
             required
             autoComplete="off"
-            inputClassName={`${FIELD_INPUT} pr-12`}
+            inputClassName={`${FIELD_INPUT} pe-12`}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+            className="absolute end-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
             tabIndex={-1}
           >
             <DynamicIcon icon={showPassword ? EyeOffIcon : EyeIcon} />
@@ -155,12 +155,12 @@ export const ArtCraftSignUp = ({
               placeholder="Re-enter password"
               required
               autoComplete="off"
-              inputClassName={`${FIELD_INPUT} pr-12`}
+              inputClassName={`${FIELD_INPUT} pe-12`}
             />
             <button
               type="button"
               onClick={() => setShowConfirm((v) => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+              className="absolute end-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
               tabIndex={-1}
             >
               <DynamicIcon icon={showConfirm ? EyeOffIcon : EyeIcon} />

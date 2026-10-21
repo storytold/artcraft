@@ -143,18 +143,18 @@ export const DeckCard = ({
       )}
 
       {item.kind === "video" && (
-        <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
+        <div className="pointer-events-none absolute start-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
           <VideoIcon  className="h-2.5 w-2.5" />
         </div>
       )}
       {item.kind === "audio" && (
-        <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
+        <div className="pointer-events-none absolute start-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
           <MusicIcon  className="h-2.5 w-2.5" />
         </div>
       )}
 
       {item.duration != null && (
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white">
+        <div className="pointer-events-none absolute bottom-0 start-0 end-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white">
           {item.duration}s
         </div>
       )}
@@ -176,7 +176,7 @@ export const DeckCard = ({
           }}
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
+          className="absolute end-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
         >
           <XIcon  className="h-2.5 w-2.5" />
         </button>
@@ -235,7 +235,7 @@ export const DeckAddMenu = ({
               key={action.key}
               type="button"
               onClick={action.onSelect}
-              className="flex w-full items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-left text-[13px] font-medium text-base-fg transition-colors hover:bg-white/10"
+              className="flex w-full items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-start text-[13px] font-medium text-base-fg transition-colors hover:bg-white/10"
             >
               <DynamicIcon
                 icon={

@@ -357,7 +357,7 @@ function PresetDropdown({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={twMerge(
-          "flex w-full items-center gap-3 rounded-none bg-white/[0.04] p-1.5 text-left ring-1 ring-white/15 transition-all hover:bg-white/[0.06] active:scale-[0.995]",
+          "flex w-full items-center gap-3 rounded-none bg-white/[0.04] p-1.5 text-start ring-1 ring-white/15 transition-all hover:bg-white/[0.06] active:scale-[0.995]",
           EASE,
           open && "ring-primary/40",
         )}
@@ -370,7 +370,7 @@ function PresetDropdown({
         </div>
         <ChevronIcon
           className={twMerge(
-            "mr-3 h-4 w-4 shrink-0 text-base-fg/40 transition-transform duration-300",
+            "me-3 h-4 w-4 shrink-0 text-base-fg/40 transition-transform duration-300",
             EASE,
             open ? "-rotate-90" : "rotate-90",
           )}
@@ -381,7 +381,7 @@ function PresetDropdown({
         role="listbox"
         aria-label="Preset"
         className={twMerge(
-          "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-none bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
+          "absolute start-0 end-0 top-full z-20 mt-2 origin-top rounded-none bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
           EASE,
           open
             ? "scale-100 opacity-100"
@@ -402,7 +402,7 @@ function PresetDropdown({
                 setOpen(false);
               }}
               className={twMerge(
-                "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors",
+                "flex w-full items-start gap-3 px-3 py-2.5 text-start transition-colors",
                 EASE,
                 selected ? "bg-primary/[0.08]" : "hover:bg-white/[0.04]",
               )}
@@ -494,7 +494,7 @@ function NameSearchField({
         "focus-within:bg-ui-modal/80 focus-within:ring-primary/50",
       )}
     >
-      <SearchIcon className="ml-3 h-4 w-4 shrink-0 text-base-fg/35 transition-colors group-focus-within:text-primary" />
+      <SearchIcon className="ms-3 h-4 w-4 shrink-0 text-base-fg/35 transition-colors group-focus-within:text-primary" />
       <input
         type="search"
         value={value}
@@ -508,7 +508,7 @@ function NameSearchField({
           onClick={() => onChange("")}
           aria-label="Clear search"
           className={twMerge(
-            "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
+            "me-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
           )}
         >
@@ -541,7 +541,7 @@ function KeySearchField({
       <button
         type="button"
         onClick={onArm}
-        className="flex h-10 grow items-center gap-2 px-3 text-left"
+        className="flex h-10 grow items-center gap-2 px-3 text-start"
       >
         <KeyIcon
           className={twMerge(
@@ -570,7 +570,7 @@ function KeySearchField({
           onClick={onClear}
           aria-label="Clear key filter"
           className={twMerge(
-            "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
+            "me-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
           )}
         >
@@ -610,14 +610,14 @@ function CollapsibleSurface({
         {/* The toggle and the (destructive) section reset are sibling buttons —
             a nested button is invalid HTML and a mis-click on "reset" must
             never also collapse the section. */}
-        <div className="flex w-full items-center gap-3 pr-4">
+        <div className="flex w-full items-center gap-3 pe-4">
           <button
             type="button"
             onClick={locked ? undefined : onToggle}
             aria-expanded={open}
             disabled={locked}
             className={twMerge(
-              "flex min-w-0 grow items-center gap-3 py-3 pl-4 text-left transition-colors",
+              "flex min-w-0 grow items-center gap-3 py-3 ps-4 text-start transition-colors",
               EASE,
               locked ? "cursor-default" : "hover:bg-white/[0.03]",
             )}
@@ -796,7 +796,7 @@ function TimedFill({
     <span
       aria-hidden="true"
       className={twMerge(
-        "pointer-events-none absolute inset-0 origin-left",
+        "pointer-events-none absolute inset-0 origin-left rtl:origin-right",
         className,
       )}
       style={{

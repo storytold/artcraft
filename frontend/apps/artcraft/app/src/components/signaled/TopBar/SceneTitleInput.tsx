@@ -89,7 +89,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
     <div
       className={twMerge(
         "flex w-full items-center justify-center gap-1.5",
-        isSaving && "ml-3",
+        isSaving && "ms-3",
       )}
       data-tauri-drag-region
     >
@@ -112,11 +112,16 @@ export const SceneTitleInput = ({ pageName }: Props) => {
               onClick={handleShowInput}
               data-tauri-drag-region="false"
             >
-              <span className="truncate">{scene.value.title || ""}</span>
-              <PencilIcon className="ml-2 shrink-0 text-sm opacity-50" />
+              <span dir="auto" className="truncate">
+                {scene.value.title || ""}
+              </span>
+              <PencilIcon className="ms-2 shrink-0 text-sm opacity-50" />
             </button>
           ) : (
-            <div className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
+            <div
+              dir="auto"
+              className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80"
+            >
               {scene.value.title || ""}
             </div>
           )}
@@ -133,6 +138,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
               isSaving && "outline-white/30",
             )}
             isError={!isValid}
+            dir="auto"
             value={scene.value.title || ""}
             onChange={handleChangeSceneTitle}
             onBlur={validateSceneTitle}
