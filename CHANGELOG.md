@@ -1171,3 +1171,7 @@ summarized here.
 - Create scene redo, `video-editor/src/lib/commands/scene/create-scene.ts` (B-193): redoing a scene creation made a new scene id, so a
   later rename was lost. The scene is now built once. New `scene/create-scene-redo.spec.ts`; full suite passes. Counts: Fixed 193,
   strict 173, Noted 115; next free IDs B-194 / N-125.
+- Preview commit with no change, `video-editor/src/lib/core/managers/timeline-manager.ts` (B-194): a drag or field edit that ended on its
+  committed value still pushed an undo step that did nothing. `commitPreview` now discards an unchanged preview without recording
+  history. New `core/managers/preview-noop-commit.spec.ts`; suite 47 files / 367 tests pass. Counts: Fixed 194, strict 174, Noted 115;
+  next free IDs B-195 / N-125.
