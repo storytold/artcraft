@@ -1192,3 +1192,6 @@ summarized here.
 - Easing solver, `pagescene/src/lib/engine/timeline/interpolation.ts` (B-198, borderline): `cubicBezierYForX` pinned t to 0 or 1 when both handles
   were dragged to the same x edge. It now falls back to bisection when Newton does not converge. New `engine/timeline/interpolation.spec.ts`;
   pagescene suite 16 files / 81 tests pass. Counts: Fixed 198, strict 176, Noted 117; next free IDs B-199 / N-127.
+- Keyframe delete, `pagescene/src/lib/engine/editor/TimelineController.ts` (B-199, borderline): `deleteKeyframe` did not re-evaluate at the playhead, so the
+  object kept the deleted key's pose until the next scrub. It now calls `evaluate()`. New `engine/editor/TimelineController.spec.ts`; pagescene suite
+  17 files / 82 tests pass. Counts: Fixed 199, strict 176, Noted 117; next free IDs B-200 / N-127.

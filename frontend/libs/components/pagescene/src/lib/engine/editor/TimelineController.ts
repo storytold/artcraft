@@ -305,6 +305,11 @@ export class TimelineController {
     this.timeline.tracks = this.timeline.tracks.filter(
       (t) => t.keyframes.length > 0,
     );
+    // FIX: re-evaluate at the playhead like moveKeyframe/setEasing do. Without
+    // this the object kept the pose of the deleted key until the next scrub,
+    // so the viewport disagreed with the timeline (and then jumped on undo,
+    // which does evaluate).
+    this.evaluate();
     this.emitChanged();
   }
 
