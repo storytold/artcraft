@@ -83,7 +83,6 @@ sudo apt install ./target/release/bundle/deb/ArtCraft_*_amd64.deb
 ```
 
 The `.deb` installs `/usr/bin/artcraft`, a desktop entry and hicolor icons (32 to 512 px).
-CI builds the same packages with `.github/workflows/artcraft-linux-publish.yml`.
 
 **Windows Development**
 
