@@ -1,9 +1,8 @@
 use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
-use crate::queries::task::{RawTask, Task};
+use crate::queries::task::{warn_unreadable_task, RawTask, Task};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_status::TaskStatus;
-use log::warn;
 use sqlx::{QueryBuilder, Sqlite};
 use std::collections::HashSet;
 
@@ -70,7 +69,7 @@ pub async fn list_tasks_by_provider_and_status(
     // Log the row and carry on with the rest.
     match raw.into_task() {
       Ok(task) => tasks.push(task),
-      Err(err) => warn!("Skipping task {} that could not be read: {}", task_id, err),
+      Err(err) => warn_unreadable_task(&task_id, &err),
     }
   }
 

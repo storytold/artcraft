@@ -1253,3 +1253,4 @@ summarized here.
 - Cloudflare error classifier tests (test flood).
 - Task queue (B-227): the copy-prompt button only says Copied! when the clipboard write succeeded.
 - Flux Pro (Inpainting) (B-228, upstream issue #2279): the model is sent to its own inpainting endpoint instead of to the omni endpoint as Flux Pro 1.1, which answered 500.
+- Task database (B-225 follow-up): an unreadable task row is reported once instead of on every polling pass.

@@ -1,4 +1,8 @@
 use crate::error::SqliteTasksError;
+use log::warn;
+use once_cell::sync::Lazy;
+use std::collections::HashSet;
+use std::sync::Mutex;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
@@ -37,6 +41,25 @@ pub (crate) struct RawTask {
   pub (crate) frontend_caller: Option<String>,
   pub (crate) frontend_subscriber_id: Option<String>,
   pub (crate) frontend_subscriber_payload: Option<String>,
+}
+
+// Ids of unreadable tasks already reported. The pollers list their tasks every couple of seconds, so reporting an
+// unreadable row on every pass would fill the log with the same line.
+static REPORTED_UNREADABLE_TASKS: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| Mutex::new(HashSet::new()));
+
+/// Logs that a task row was skipped because it could not be read, once per task id for the life of the app.
+pub (crate) fn warn_unreadable_task(task_id: &str, err: &SqliteTasksError) {
+  if first_report_of(task_id) {
+    warn!("Skipping task {} that could not be read (reported once): {}", task_id, err);
+  }
+}
+
+/// True the first time it is called for a task id.
+fn first_report_of(task_id: &str) -> bool {
+  match REPORTED_UNREADABLE_TASKS.lock() {
+    Ok(mut reported) => reported.insert(task_id.to_string()),
+    Err(_) => true, // A poisoned lock only costs a repeated log line.
+  }
 }
 
 impl RawTask {
@@ -83,6 +106,14 @@ mod tests {
   #[test]
   fn an_unknown_status_is_an_error() {
     assert!(raw("from_a_newer_version", "image_generation").into_task().is_err());
+  }
+
+  #[test]
+  fn an_unreadable_task_is_reported_once() {
+    assert!(first_report_of("task_reported_once_test"));
+    assert!(!first_report_of("task_reported_once_test"));
+    assert!(!first_report_of("task_reported_once_test"));
+    assert!(first_report_of("a_different_task_reported_once_test"));
   }
 
   fn raw(task_status: &str, task_type: &str) -> RawTask {
