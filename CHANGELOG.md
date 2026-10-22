@@ -1249,3 +1249,4 @@ summarized here.
 - Task database (B-224): a task row with a value this build cannot parse is logged and skipped instead of making the whole task list fail for the pollers and the task queue.
 - Task database (B-225): the third-party and Storyteller polling threads no longer stall on one unreadable task row; all list queries share one row conversion.
 - Sora session renewal (B-226): the JWT is now renewed when it is within 12 hours of expiring, as intended, instead of only after it has expired.
+- Rust library tests (test flood): cookie store, clone slot and clone cell.
