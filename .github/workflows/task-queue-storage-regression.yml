@@ -9,6 +9,7 @@ on:
       - "frontend/package.json"
       - "frontend/package-lock.json"
       - "frontend/apps/artcraft/vitest.config.ts"
+      - "frontend/apps/artcraft/vite.config.ts"
       - ".github/workflows/task-queue-storage-regression.yml"
   push:
     branches:
