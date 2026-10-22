@@ -1246,3 +1246,4 @@ summarized here.
 - Model picker tests (test flood): family grouping, curated order with Other last, numeric newest-first sorting, selected-family highlight.
 - OmniGen model hooks tests (test flood): all five hooks checked for caching, disabled-model filtering, shared requests, error notification and retry.
 - Keybinds (B-223): a saved preset that no longer exists, or a damaged saved override, falls back to the defaults instead of breaking every shortcut.
+- Task database (B-224): a task row with a value this build cannot parse is logged and skipped instead of making the whole task list fail for the pollers and the task queue.
