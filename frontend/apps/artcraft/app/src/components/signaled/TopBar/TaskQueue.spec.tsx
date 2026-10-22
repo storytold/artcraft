@@ -171,6 +171,7 @@ it("mounts when reading the optional timestamp throws", () => {
     return originalGetItem.call(this, key);
   });
 
+  expect(readLastReadAt()).toBe(0);
   expect(() =>
     render(
       <StrictMode>
