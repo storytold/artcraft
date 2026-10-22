@@ -207,7 +207,7 @@ it("keeps the task queue usable when persisting the opened timestamp throws", ()
   expect(screen.getByText("No tasks yet")).toBeTruthy();
 });
 
-it.each(["", "not-a-timestamp", "123bad", "123\\n", "-1", "9007199254740992"])(
+it.each(["", "not-a-timestamp", "123bad", "123\n", "-1", "9007199254740992"])(
   "defaults malformed stored timestamp %j to zero",
   (storedValue) => {
     localStorage.setItem(LAST_READ_AT_KEY, storedValue);
