@@ -42,8 +42,7 @@ import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
-
-const LAST_READ_AT_KEY = "taskQueueLastReadAt";
+import { readLastReadAt, writeLastReadAt } from "./taskQueueStorage";
 
 type InProgressTask = {
   id: string;
@@ -1296,23 +1295,5 @@ export const TaskQueue = () => {
     </>
   );
 };
-
-// This optional timestamp must not let a storage error prevent TaskQueue from mounting.
-function readLastReadAt(): number {
-  try {
-    const parsed = parseInt(localStorage.getItem(LAST_READ_AT_KEY) ?? "", 10);
-    return Number.isFinite(parsed) ? parsed : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function writeLastReadAt(timestamp: number) {
-  try {
-    localStorage.setItem(LAST_READ_AT_KEY, String(timestamp));
-  } catch {
-    // Best-effort persistence; the in-memory state still updates.
-  }
-}
 
 export default TaskQueue;
