@@ -8076,6 +8076,7 @@ dependencies = [
  "sqlx",
  "tempfile",
  "tokens",
+ "tokio",
 ]
 
 [[package]]
