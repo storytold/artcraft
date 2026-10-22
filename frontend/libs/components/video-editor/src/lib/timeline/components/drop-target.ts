@@ -66,11 +66,18 @@ function getTrackAtY({
       };
     }
 
-    if (i < tracks.length - 1 && verticalDragDirection) {
+    if (i < tracks.length - 1) {
       const gapTop = trackBottom;
       const gapBottom = gapTop + TIMELINE_TRACK_GAP_PX;
       if (mouseY >= gapTop && mouseY < gapBottom) {
-        const isDraggingUp = verticalDragDirection === "up";
+        // FIX: the gap used to be handled only when a drag direction was
+        // known. The assets-panel dragover and external file drop pass none,
+        // so a pointer in the gap fell through to "below all tracks" and
+        // created a brand-new track at the very bottom. With no direction,
+        // snap to whichever neighbouring track the pointer is closer to.
+        const isDraggingUp = verticalDragDirection
+          ? verticalDragDirection === "up"
+          : mouseY - gapTop < TIMELINE_TRACK_GAP_PX / 2;
         return {
           trackIndex: isDraggingUp ? i : i + 1,
           relativeY: isDraggingUp ? trackHeight - 1 : 0,
