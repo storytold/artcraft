@@ -1236,3 +1236,4 @@ summarized here.
 - Generation error messages (B-219, borderline): image and video generation failures show a readable sentence (for example "You need to log in to Grok.") instead of the Rust Debug text or the generic server-error line; the Debug text stays in the log.
 - Omni generation errors (B-220): server, timeout and network failures when generating through ArtCraft show a plain sentence, and a non-JSON error body is never shown; the detail goes to the log.
 - Download toast (N-134, not counted): "File already downloaded" shows the plain path instead of a quoted Debug string.
+- Sora failures (N-135, not counted): the failed event carries the task's real action (video for Sora 2 drafts, not always image) and the failure reason is stored on the task, so the task queue can show it.
