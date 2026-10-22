@@ -33,6 +33,7 @@ import {
   getMetaForTask,
   cleanupOldEntries,
 } from "../signaled/TopBar/taskEnqueueMeta";
+import { FAILURE_REASON_LABEL } from "./failureReasonLabels";
 
 // Desktop twin of the webapp's useGenerationJobs: feeds the shared
 // GenerationListView from the Tauri task queue instead of JobsApi. Polls every
@@ -58,18 +59,6 @@ const FAILED_STATUSES = new Set([
   "cancelled_by_us",
 ]);
 
-// Backend failure codes mapped to messages a user can read.
-const FAILURE_REASON_LABEL: Record<string, string> = {
-  rule_bans_user_image: "Image violates content policy",
-  rule_bans_user_image_with_faces: "Images with faces are not allowed",
-  rule_bans_user_text_prompt: "Text prompt violates content policy",
-  rule_bans_user_content: "Content violates content policy",
-  rule_bans_generated_video: "Generated video flagged by content policy",
-  rule_bans_generated_audio: "Generated audio flagged by content policy",
-  rule_bans_generated_content: "Generated content flagged by content policy",
-  generation_failed: "Generation failed",
-  unknown: "An unknown error occurred",
-};
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
