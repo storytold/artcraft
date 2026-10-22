@@ -185,7 +185,9 @@ async fn poll_grok_tasks(
       None => continue,
     };
 
-    upload_grok_video(
+    // FIX: one task that fails to download or upload used to abort the whole batch with `?`, so every other
+    // finished video waited behind it. Log the failure and carry on with the next task.
+    if let Err(err) = upload_grok_video(
       &app_handle,
       &app_env_configs,
       app_data_root,
@@ -195,7 +197,10 @@ async fn poll_grok_tasks(
       grok_post_id,
       &local_task,
       grok_video_data
-    ).await?;
+    ).await {
+      error!("Failed to upload Grok video for post {}: {:?}", grok_post_id, err);
+      continue;
+    }
 
     tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
   }
