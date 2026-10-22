@@ -15,8 +15,8 @@ pub fn aspect_ratio_to_artcraft_flux_pro_1p1_ultra(aspect_ratio: CommonAspectRat
     CommonAspectRatio::TallNineByTwentyOne => GenerateFluxPro11UltraTextToImageAspectRatio::PortraitNineByTwentyOne,
 
     // Non-matching aspect ratios, use closest neighbor
-    CommonAspectRatio::WideFiveByFour => GenerateFluxPro11UltraTextToImageAspectRatio::PortraitThreeByFour,
-    CommonAspectRatio::TallFourByFive => GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeFourByThree,
+    CommonAspectRatio::WideFiveByFour => GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeFourByThree,
+    CommonAspectRatio::TallFourByFive => GenerateFluxPro11UltraTextToImageAspectRatio::PortraitThreeByFour,
 
     // Best match
     CommonAspectRatio::SquareHd => GenerateFluxPro11UltraTextToImageAspectRatio::Square,
@@ -29,5 +29,24 @@ pub fn aspect_ratio_to_artcraft_flux_pro_1p1_ultra(aspect_ratio: CommonAspectRat
     // Semantic values
     CommonAspectRatio::Wide => GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeSixteenByNine,
     CommonAspectRatio::Tall => GenerateFluxPro11UltraTextToImageAspectRatio::PortraitNineBySixteen,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn convert(ratio: CommonAspectRatio) -> String {
+    serde_json::to_value(aspect_ratio_to_artcraft_flux_pro_1p1_ultra(ratio)).unwrap().as_str().unwrap().to_string()
+  }
+
+  #[test]
+  fn tall_four_by_five_stays_portrait() {
+    assert_eq!(convert(CommonAspectRatio::TallFourByFive), "portrait_three_by_four");
+  }
+
+  #[test]
+  fn wide_five_by_four_stays_landscape() {
+    assert_eq!(convert(CommonAspectRatio::WideFiveByFour), "landscape_four_by_three");
   }
 }

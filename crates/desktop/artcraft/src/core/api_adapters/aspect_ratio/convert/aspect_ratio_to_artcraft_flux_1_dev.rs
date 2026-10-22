@@ -12,10 +12,10 @@ pub fn aspect_ratio_to_artcraft_flux_1_dev(aspect_ratio: CommonAspectRatio) -> G
     CommonAspectRatio::TallNineBySixteen => GenerateFlux1DevTextToImageAspectRatio::PortraitNineBySixteen,
 
     // Non-matching aspect ratios, use closest neighbor
-    CommonAspectRatio::TallFourByFive => GenerateFlux1DevTextToImageAspectRatio::LandscapeFourByThree,
+    CommonAspectRatio::TallFourByFive => GenerateFlux1DevTextToImageAspectRatio::PortraitThreeByFour,
     CommonAspectRatio::TallNineByTwentyOne => GenerateFlux1DevTextToImageAspectRatio::PortraitNineBySixteen,
     CommonAspectRatio::TallTwoByThree => GenerateFlux1DevTextToImageAspectRatio::PortraitThreeByFour,
-    CommonAspectRatio::WideFiveByFour => GenerateFlux1DevTextToImageAspectRatio::PortraitThreeByFour,
+    CommonAspectRatio::WideFiveByFour => GenerateFlux1DevTextToImageAspectRatio::LandscapeFourByThree,
     CommonAspectRatio::WideThreeByTwo => GenerateFlux1DevTextToImageAspectRatio::LandscapeFourByThree,
     CommonAspectRatio::WideTwentyOneByNine => GenerateFlux1DevTextToImageAspectRatio::LandscapeSixteenByNine,
 
@@ -27,5 +27,24 @@ pub fn aspect_ratio_to_artcraft_flux_1_dev(aspect_ratio: CommonAspectRatio) -> G
     // Semantic values
     CommonAspectRatio::Wide => GenerateFlux1DevTextToImageAspectRatio::LandscapeSixteenByNine,
     CommonAspectRatio::Tall => GenerateFlux1DevTextToImageAspectRatio::PortraitNineBySixteen,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn convert(ratio: CommonAspectRatio) -> String {
+    serde_json::to_value(aspect_ratio_to_artcraft_flux_1_dev(ratio)).unwrap().as_str().unwrap().to_string()
+  }
+
+  #[test]
+  fn tall_four_by_five_stays_portrait() {
+    assert_eq!(convert(CommonAspectRatio::TallFourByFive), "portrait_three_by_four");
+  }
+
+  #[test]
+  fn wide_five_by_four_stays_landscape() {
+    assert_eq!(convert(CommonAspectRatio::WideFiveByFour), "landscape_four_by_three");
   }
 }
