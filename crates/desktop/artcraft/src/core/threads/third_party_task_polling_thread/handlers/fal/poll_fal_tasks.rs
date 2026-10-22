@@ -178,10 +178,12 @@ fn load_fal_api_key(credential_cache: &ProviderCredentialLoadingCache) -> Option
 /// Network errors, 5xx, 401/402/403 (key or billing) and "still in progress" stay retryable.
 fn permanent_response_failure_reason(err: &FalErrorPlus) -> Option<String> {
   match err {
-    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, body })
+    // The reason is shown to the user in a toast and stored on the task, so it must not carry fal's raw JSON body;
+    // the caller already logs the full error.
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, .. })
       if matches!(status_code.as_u16(), 400 | 404 | 410 | 422) =>
     {
-      Some(format!("fal job failed ({}): {}", status_code.as_u16(), body))
+      Some(format!("The provider reported that the generation failed (error {})", status_code.as_u16()))
     }
     _ => None,
   }
@@ -220,6 +222,17 @@ mod tests {
       let err = bad_response(code);
       assert!(permanent_response_failure_reason(&err).is_some(), "{} should be permanent", code);
     }
+  }
+
+  #[test]
+  fn the_reason_shown_to_the_user_does_not_contain_the_raw_response_body() {
+    let err = FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code: StatusCode::UNPROCESSABLE_ENTITY,
+      body: r#"{"detail":[{"loc":["body","prompt"],"msg":"flagged"}]}"#.to_string(),
+    });
+    let reason = permanent_response_failure_reason(&err).unwrap();
+    assert!(!reason.contains("detail"), "reason leaked the body: {}", reason);
+    assert!(reason.contains("422"));
   }
 
   #[test]

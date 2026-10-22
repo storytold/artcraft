@@ -1232,3 +1232,4 @@ summarized here.
 - Failure reasons (N-132, not counted): Fal and Grok image failures are stored on the task (`on_failure_type`, `on_failure_message`) as well as sent as an event, so the task queue still shows why after the event is gone.
 - Failure labels (B-218, borderline): the task queue and the generation feed share one failure-reason table, and it now covers the no-foreground-subject and unsupported-format failures, so those failed cards show a readable reason.
 - Enum sync (N-133, not counted): the frontend `TaskModelType` now lists every model the Rust enum has, and `api-enums/.../rust-enum-sync.spec.ts` fails when the frontend copies of `TaskModelType`, `TaskStatus`, `TaskType` or `TaskMediaFileClass` drift from the Rust source.
+- Fal failure message (B-213 follow-up): the reason shown in the failure toast and stored on the task is now a plain sentence instead of Fal's raw JSON response body, which stays in the log.
