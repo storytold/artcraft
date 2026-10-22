@@ -5,8 +5,8 @@ import { findDesktopModel ,
 } from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon, type LucideIcon } from "lucide-react";
-import { DynamicIcon } from "@storyteller/icons";
+import { BombIcon, BrushIcon, CircleAlertIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon, type LucideIcon } from "lucide-react";
+import { CopyPromptButton } from "./CopyPromptButton";
 import { Modal } from "@storyteller/ui-modal";
 import {
   galleryModalLightboxMediaId,
@@ -144,36 +144,6 @@ const PromptLine = ({
           {prompt}
         </div>
       </div>
-    </Tooltip>
-  );
-};
-
-const CopyPromptButton = ({ prompt }: { prompt: string }) => {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Tooltip
-      content={copied ? "Copied!" : "Copy prompt"}
-      position="bottom"
-      strategy="fixed"
-      className="text-xs"
-      zIndex={50}
-      delay={300}
-    >
-      <button
-        className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
-        aria-label="Copy prompt"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.clipboard.writeText(prompt);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 3000);
-        }}
-      >
-        <DynamicIcon
-          icon={copied ? CheckIcon : CopyIcon}
-          className={copied ? "text-green-400" : ""}
-        />
-      </button>
     </Tooltip>
   );
 };

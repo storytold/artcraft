@@ -1251,3 +1251,4 @@ summarized here.
 - Sora session renewal (B-226): the JWT is now renewed when it is within 12 hours of expiring, as intended, instead of only after it has expired.
 - Rust library tests (test flood): cookie store, clone slot and clone cell.
 - Cloudflare error classifier tests (test flood).
+- Task queue (B-227): the copy-prompt button only says Copied! when the clipboard write succeeded.
