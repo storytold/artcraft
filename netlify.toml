@@ -1,5 +1,0 @@
-# The legacy storyteller-docs build script and docs now live in
-# storytold/artcraft-services. Skip only while that script is absent.
-# Remove this guard after the Netlify site is repointed to that repository.
-[build]
-  ignore = "test ! -f script/netlify_build_docs.sh"
