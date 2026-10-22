@@ -1240,3 +1240,4 @@ summarized here.
 - Grok video polling (B-221): a finished video that repeatedly fails to download or upload is marked failed after 5 attempts and the user is told, instead of staying pending forever.
 - Grok video polling (B-222): a task whose video never shows up on Grok is marked failed after 30 minutes instead of staying pending forever.
 - Sora success loop (N-131, not counted): one generation that fails to download or upload is logged and the rest of the batch continues.
+- Gradient parser tests (test flood, N-136 not counted): 28 tests cover linear/radial gradients, every colour form, calc(), and the malformed-input errors.
