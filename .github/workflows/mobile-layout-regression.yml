@@ -1,0 +1,52 @@
+name: Mobile layout regression
+
+on:
+  pull_request:
+    paths:
+      - "frontend/apps/artcraft/app/src/pages/PageApps/AppsIndexPage.tsx"
+      - "frontend/apps/artcraft/app/src/pages/MainApp.tsx"
+      - "frontend/apps/artcraft/app/src/components/signaled/TopBar/TopBar.tsx"
+      - "frontend/apps/artcraft/app/src/styles/**"
+      - "frontend/apps/artcraft/app/index.html"
+      - "frontend/apps/artcraft/playwright.mobile.config.ts"
+      - "frontend/apps/artcraft/e2e/mobile-layout.spec.ts"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - ".github/workflows/mobile-layout-regression.yml"
+  push:
+    branches:
+      - fix/2466-mobile-layout
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-layout:
+    name: Mobile layout smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend workspace dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run mobile layout smoke test
+        working-directory: frontend/apps/artcraft
+        env:
+          CI: "true"
+        run: npx playwright test e2e/mobile-layout.spec.ts --config=playwright.mobile.config.ts
