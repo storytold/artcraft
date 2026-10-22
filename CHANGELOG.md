@@ -1245,3 +1245,4 @@ summarized here.
 - Markdown renderer (N-137, not counted): image sizes written in px (`300px`, `40%x20px`) now render correctly; 37 tests added for the renderer and front-matter helpers.
 - Model picker tests (test flood): family grouping, curated order with Other last, numeric newest-first sorting, selected-family highlight.
 - OmniGen model hooks tests (test flood): all five hooks checked for caching, disabled-model filtering, shared requests, error notification and retry.
+- Keybinds (B-223): a saved preset that no longer exists, or a damaged saved override, falls back to the defaults instead of breaking every shortcut.
