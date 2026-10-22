@@ -93,4 +93,54 @@ mod tests {
     assert!(trimmed.len() <= MAX_FAILURE_MESSAGE_BYTES);
     assert!(message.starts_with(trimmed));
   }
+
+  // NB: A plain #[test] with a hand-built runtime, because this crate forbids `unused_mut`, which the
+  // #[tokio::test] expansion trips over.
+  #[test]
+  fn failure_type_and_message_are_stored_and_the_task_is_stamped_complete() {
+    use crate::connection::TaskDbConnection;
+    use crate::queries::create_task::{create_task, CreateTaskArgs};
+    use enums::common::generation_provider::GenerationProvider;
+    use enums::tauri::tasks::task_type::TaskType;
+
+    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    runtime.block_on(async {
+      let dir = tempfile::tempdir().unwrap();
+      let db = TaskDbConnection::connect_and_migrate(dir.path().join("tasks.sqlite")).await.unwrap();
+      let task_id = create_task(CreateTaskArgs {
+        db: &db,
+        status: TaskStatus::Pending,
+        task_type: TaskType::ImageGeneration,
+        model_type: None,
+        provider: GenerationProvider::Fal,
+        provider_job_id: Some("job-1"),
+        queue_status_url: None,
+        queue_response_url: None,
+        prompt_token: None,
+        frontend_caller: None,
+        frontend_subscriber_id: None,
+        frontend_subscriber_payload: None,
+      }).await.unwrap();
+
+      update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
+        db: &db,
+        task_id: &task_id,
+        status: TaskStatus::CompleteFailure,
+        maybe_failure_type: Some(TaskFailureType::GenerationFailed),
+        maybe_failure_message: Some("fal job failed (422)"),
+      }).await.unwrap();
+
+      let row = sqlx::query_as::<_, (String, Option<String>, Option<String>, Option<i64>)>(
+        "SELECT task_status, on_failure_type, on_failure_message, completed_at FROM tasks WHERE id = ?",
+      )
+          .bind(task_id.as_str())
+          .fetch_one(db.get_pool())
+          .await
+          .unwrap();
+      assert_eq!(row.0, "complete_failure");
+      assert_eq!(row.1.as_deref(), Some(TaskFailureType::GenerationFailed.to_str()));
+      assert_eq!(row.2.as_deref(), Some("fal job failed (422)"));
+      assert!(row.3.is_some());
+    });
+  }
 }

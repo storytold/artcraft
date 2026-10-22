@@ -33,7 +33,8 @@ use sqlite_tasks::queries::get_task_by_provider_and_provider_job_id::{get_task_b
 use sqlite_tasks::queries::list_tasks_by_provider_and_status::{list_tasks_by_provider_and_status, ListTasksByProviderAndStatusArgs};
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs};
-use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
+use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
 use sqlite_tasks::queries::update_successful_task_status_with_metadata_by_provider::{update_successful_task_status_with_metadata_by_provider, UpdateSuccessfulTaskByProviderArgs};
 use std::time::Duration;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -211,10 +212,12 @@ async fn fail_grok_image_task(
     }
   };
 
-  if let Err(err) = update_task_status(UpdateTaskArgs {
+  if let Err(err) = update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
     status: TaskStatus::CompleteFailure,
+    maybe_failure_type: Some(TaskFailureType::GenerationFailed),
+    maybe_failure_message: Some(reason),
   }).await {
     error!("Failed to mark Grok task {} as failed: {:?}", provider_job_id, err);
   }
