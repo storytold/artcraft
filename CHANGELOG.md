@@ -1244,3 +1244,4 @@ summarized here.
 - Keybinds tests (test flood): registry and preset tables agree, availability gates for record mode and encoding, shared-key exclusivity, and matcher helpers.
 - Markdown renderer (N-137, not counted): image sizes written in px (`300px`, `40%x20px`) now render correctly; 37 tests added for the renderer and front-matter helpers.
 - Model picker tests (test flood): family grouping, curated order with Other last, numeric newest-first sorting, selected-family highlight.
+- OmniGen model hooks tests (test flood): all five hooks checked for caching, disabled-model filtering, shared requests, error notification and retry.
