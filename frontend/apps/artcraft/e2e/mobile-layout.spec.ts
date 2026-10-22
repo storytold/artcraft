@@ -43,6 +43,7 @@ test("home page fits common mobile viewport widths without horizontal overflow",
 
     console.log("mobile layout metrics:", JSON.stringify(metrics));
     expect(metrics.documentScrollWidth, JSON.stringify(metrics, null, 2)).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+    expect(metrics.overflow, JSON.stringify(metrics, null, 2)).toEqual([]);
     expect(metrics.main, "main content should render").not.toBeNull();
     expect(metrics.main!.width, JSON.stringify(metrics, null, 2)).toBeGreaterThanOrEqual(metrics.viewportWidth - 2);
   }
