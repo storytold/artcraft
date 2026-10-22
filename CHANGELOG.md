@@ -1209,3 +1209,5 @@ summarized here.
   error aborts the whole `poll_grok_tasks` pass and starves the rest. Deprecated path, noted only. Counts now: Fixed 205, strict 178, Noted 118; next free IDs B-206 / N-128.
 
 - Media import, `video-editor/src/lib/media/processing.ts` (B-206): `getMediaDuration` returned `Infinity`/`NaN` for browser-recorded audio, and `mediaTimeFromSeconds` then threw when the clip was added to the timeline. It now seeks to the end to recover the real length (3 s cap) and otherwise resolves `undefined`. New `processing-duration.spec.ts`; 3 of 4 cases failed before. Counts: Fixed 206, strict 179, Noted 118; next free IDs B-207 / N-128.
+
+- Media import, `video-editor/src/lib/media/processing.ts` (B-207): the detected video frame rate was rounded to a whole number, so 29.97 / 23.976 / 59.94 fps imports became 30 / 24 / 60 and the NTSC snapping in `floatToFrameRate` never ran. It now rounds to 3 decimals. New `processing-fps.spec.ts`; 2 of 4 cases failed before. Counts: Fixed 207, strict 180, Noted 118; next free IDs B-208 / N-128.

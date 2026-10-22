@@ -140,8 +140,14 @@ export async function processMediaAssets({
           duration = videoData.duration;
           width = videoData.width;
           height = videoData.height;
+          // FIX: round to 3 decimals, not to a whole number. Math.round turned
+          // NTSC 29.97 / 23.976 / 59.94 into 30 / 24 / 60, so floatToFrameRate
+          // (which snaps those floats to 30000/1001 etc.) never saw them and
+          // the project ran at the integer rate, drifting ~3.6 s per hour
+          // against the source footage. 3 decimals still strips packet-rate
+          // noise (29.9712 -> 29.971) while staying inside the snap tolerance.
           fps = Number.isFinite(videoData.fps)
-            ? Math.round(videoData.fps)
+            ? Math.round(videoData.fps * 1000) / 1000
             : undefined;
           hasAudio = videoData.hasAudio;
           thumbnailUrl = videoData.thumbnailUrl ?? undefined;
