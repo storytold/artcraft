@@ -1,5 +1,5 @@
 import { Button } from "@storyteller/ui-button";
-import { Transition, TransitionChild } from "@headlessui/react";
+import { Dialog, Transition, TransitionChild } from "@headlessui/react";
 import { useState, useEffect, useRef } from "react";
 import { ArrowRightIcon } from "lucide-react";
 import { DiscordIcon } from "@storyteller/icons";
@@ -208,7 +208,8 @@ export function LoginModal({
 
   return (
     <Transition appear show={isOpen} afterLeave={() => setLoggedInUsername(null)}>
-      <div className="fixed inset-0 z-[100]">
+      {/* Dialog traps focus inside the modal; login is required, so it never closes itself. */}
+      <Dialog onClose={() => {}} className="fixed inset-0 z-[100]">
         <TransitionChild
           enter="ease-out duration-300"
           enterFrom="opacity-0"
@@ -310,7 +311,7 @@ export function LoginModal({
             </div>
           </TransitionChild>
         </div>
-      </div>
+      </Dialog>
     </Transition>
   );
 }
