@@ -684,11 +684,18 @@ export function retimeKeyframe({
       return channel;
     }
 
-    const nextKeys = [...channel.keys];
-    nextKeys[keyframeByIdIndex] = {
-      ...nextKeys[keyframeByIdIndex],
-      time,
-    };
+    // FIX: dropping a key onto another key's time used to leave BOTH at that time (duplicate keys that
+    // resolve and drag unpredictably). The moved key now replaces the one underneath, matching what
+    // inserting a key at an occupied time already does.
+    const movedKey = { ...channel.keys[keyframeByIdIndex], time };
+    const nextKeys = [
+      ...channel.keys.filter(
+        (keyframe) =>
+          keyframe.id !== keyframeId &&
+          !isNearlySameTime({ leftTime: keyframe.time, rightTime: time }),
+      ),
+      movedKey,
+    ];
 
     return normalizeScalarChannel({
       channel: {
@@ -705,11 +712,16 @@ export function retimeKeyframe({
     return channel;
   }
 
-  const nextKeys = [...channel.keys];
-  nextKeys[keyframeByIdIndex] = {
-    ...nextKeys[keyframeByIdIndex],
-    time,
-  };
+  // FIX: same replace-the-key-underneath rule as the scalar branch above.
+  const movedKeyframe = { ...channel.keys[keyframeByIdIndex], time };
+  const nextKeys = [
+    ...channel.keys.filter(
+      (keyframe) =>
+        keyframe.id !== keyframeId &&
+        !isNearlySameTime({ leftTime: keyframe.time, rightTime: time }),
+    ),
+    movedKeyframe,
+  ];
 
   return normalizeDiscreteChannel({
     channel: {

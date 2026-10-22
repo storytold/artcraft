@@ -184,7 +184,8 @@ export class ApiManager {
   ): Record<string, string> {
     return Object.entries(params).reduce(
       (allParams, [key, value]) => {
-        if (!value) {
+        // FIX: skip only absent values (undefined / null). `!value` also dropped false, 0 and "", so a flag switched off, a zero or an emptied text field was silently left out of the request.
+        if (value === undefined || value === null) {
           return allParams;
         }
         const snakeKey = this.camelToSnakeCase(key);
@@ -201,7 +202,8 @@ export class ApiManager {
     params: NonNullableObject<T>,
   ): B {
     return Object.entries(params).reduce((allParams, [key, value]) => {
-      if (!value) {
+      // FIX: same as parseQueryValues: only undefined / null mean "not provided"; false, 0 and "" are real values to send.
+      if (value === undefined || value === null) {
         return allParams;
       }
       const snakeKey = this.camelToSnakeCase(key);

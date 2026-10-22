@@ -72,12 +72,6 @@ const CreateAudio = lazy(() => import("./PageAudio/CreateAudio"));
 const VideoFrameExtractor = lazy(() =>
   import("./PageVideoFrameExtractor").then((m) => ({ default: m.VideoFrameExtractor })),
 );
-const VideoWatermarkRemover = lazy(() =>
-  import("./PageVideoWatermarkRemover").then((m) => ({ default: m.VideoWatermarkRemover })),
-);
-const ImageWatermarkRemover = lazy(() =>
-  import("./PageImageWatermarkRemover").then((m) => ({ default: m.ImageWatermarkRemover })),
-);
 const ImageTo3DObject = lazy(() =>
   import("./PageImageTo3DObject").then((m) => ({ default: m.ImageTo3DObject })),
 );
@@ -299,18 +293,6 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
       return (
         <div>
           <VideoFrameExtractor />
-        </div>
-      );
-    case "VIDEO_WATERMARK_REMOVAL":
-      return (
-        <div>
-          <VideoWatermarkRemover />
-        </div>
-      );
-    case "IMAGE_WATERMARK_REMOVAL":
-      return (
-        <div>
-          <ImageWatermarkRemover />
         </div>
       );
     case "IMAGE_TO_3D_OBJECT":

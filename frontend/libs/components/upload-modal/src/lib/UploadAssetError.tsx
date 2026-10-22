@@ -3,7 +3,7 @@ import { FilterEngineCategories } from "@storyteller/api";
 // The shared button component (primary / secondary variants).
 import { Button } from "@storyteller/ui-button";
 // Props for the error screen the upload dialogs show when an upload step fails. Shown by this library's
-// Image, 3D and Splat dialogs and by the app's UploadModalMedia and UploadImageMediaModal.
+// Image, 3D and Splat dialogs.
 interface Props {
   // Called by "Cancel"; every dialog passes its own `onClose`.
   onCancel: () => void;

@@ -362,10 +362,6 @@ export const TopBar = ({ pageName }: Props) => {
         return ["Studio", "Edit Image"];
       case "VIDEO_FRAME_EXTRACTOR":
         return ["Studio", "Frame Extractor"];
-      case "VIDEO_WATERMARK_REMOVAL":
-        return ["Studio", "Video Watermark Remover"];
-      case "IMAGE_WATERMARK_REMOVAL":
-        return ["Studio", "Image Watermark Remover"];
       case "IMAGE_TO_3D_OBJECT":
         return ["Create", "3D Object"];
       case "IMAGE_TO_3D_WORLD":

@@ -262,13 +262,15 @@ export function applyRecreateFromPromptData(data: {
         modelStore.setSelectedModel(ModelPage.ImageToVideo, videoModel);
       }
 
-      if (promptData.maybe_positive_prompt) {
-        videoStore.setPrompt(promptData.maybe_positive_prompt);
-      }
-      if (imgRefs.length > 0) videoStore.setReferenceImages(imgRefs);
-      if (endFrameImage) videoStore.setEndFrameImage(endFrameImage);
-      if (vidRefs.length > 0) videoStore.setReferenceVideos(vidRefs);
-      if (audioRefs.length > 0) videoStore.setReferenceAudios(audioRefs);
+      // FIX: Recreate means "run the original request again", so every slot is SET from the saved record,
+      // and a slot the original did not use is CLEARED. Skipping the empty ones used to leave the previous
+      // session's prompt, reference images, end frame, reference videos and audio in the box, which then got
+      // silently sent along with the "recreated" request.
+      videoStore.setPrompt(promptData.maybe_positive_prompt ?? "");
+      videoStore.setReferenceImages(imgRefs);
+      videoStore.setEndFrameImage(endFrameImage);
+      videoStore.setReferenceVideos(vidRefs);
+      videoStore.setReferenceAudios(audioRefs);
       if (promptData.maybe_generate_audio !== null) {
         videoStore.setGenerateWithSound(promptData.maybe_generate_audio);
       }
@@ -299,10 +301,9 @@ export function applyRecreateFromPromptData(data: {
       // Default to image
       const imageStore = usePromptImageStore.getState();
 
-      if (promptData.maybe_positive_prompt) {
-        imageStore.setPrompt(promptData.maybe_positive_prompt);
-      }
-      if (imgRefs.length > 0) imageStore.setReferenceImages(imgRefs);
+      // FIX: same set-or-clear rule as the video branch above.
+      imageStore.setPrompt(promptData.maybe_positive_prompt ?? "");
+      imageStore.setReferenceImages(imgRefs);
       if (promptData.maybe_aspect_ratio) {
         imageStore.setCommonAspectRatio(
           promptData.maybe_aspect_ratio as CommonAspectRatio,

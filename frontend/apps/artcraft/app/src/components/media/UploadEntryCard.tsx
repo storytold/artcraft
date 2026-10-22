@@ -1,5 +1,5 @@
 // UploadEntryCard: a dashed "drop a file here or click Upload" card used as the starting screen of several tools.
-// Used by pages RemoveBackground, ImageWatermarkRemover, VideoWatermarkRemover, VideoFrameExtractor,
+// Used by pages RemoveBackground, VideoFrameExtractor,
 // Angles and PageDraw/BaseImageSelector. It only reports the chosen files through onFilesSelected;
 // the page decides what to do with them. No stores or API calls.
 

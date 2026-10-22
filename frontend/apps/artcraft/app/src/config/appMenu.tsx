@@ -15,8 +15,6 @@ export type AppId =
   | "2D"
   | "3D"
   | "VIDEO_FRAME_EXTRACTOR"
-  | "VIDEO_WATERMARK_REMOVAL"
-  | "IMAGE_WATERMARK_REMOVAL"
   | "IMAGE_TO_3D_OBJECT"
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
@@ -434,8 +432,6 @@ export const goToApp = (action?: string) => {
       "2D",
       "3D",
       "VIDEO_FRAME_EXTRACTOR",
-      "VIDEO_WATERMARK_REMOVAL",
-      "IMAGE_WATERMARK_REMOVAL",
       "IMAGE_TO_3D_OBJECT",
       "IMAGE_TO_3D_WORLD",
       "REMOVE_BACKGROUND",

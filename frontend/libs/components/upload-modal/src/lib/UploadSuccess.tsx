@@ -4,7 +4,7 @@ import {
 } from "@storyteller/ui-button"
 
 // Props for the success screen the upload dialogs show when an upload finishes. Shown by this library's
-// Image, 3D and Splat dialogs and by the app's UploadModalMedia and UploadImageMediaModal.
+// Image, 3D and Splat dialogs.
 interface Props {
   // What was added; inserted into the message. The dialogs pass "Image", "Splat", "3D model" or "Animation",
   // and UploadModalMedia passes its own `title`.
