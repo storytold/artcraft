@@ -85,3 +85,45 @@ impl <T: Clone> CloneSlot<T> {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn an_empty_slot_has_nothing() {
+    let slot = CloneSlot::<String>::empty();
+    assert!(slot.is_none().unwrap());
+    assert!(!slot.is_some().unwrap());
+    assert_eq!(slot.get_clone().unwrap(), None);
+    assert!(slot.get_clone_required().is_err());
+  }
+
+  #[test]
+  fn a_set_value_can_be_read_back() {
+    let slot = CloneSlot::empty();
+    slot.set_clone(&"hello".to_string()).unwrap();
+    assert!(slot.is_some().unwrap());
+    assert_eq!(slot.get_clone().unwrap(), Some("hello".to_string()));
+    assert_eq!(slot.get_clone_required().unwrap(), "hello");
+  }
+
+  #[test]
+  fn clear_and_take_empty_the_slot() {
+    let slot = CloneSlot::with_clone(&1);
+    assert_eq!(slot.take().unwrap(), Some(1));
+    assert!(slot.is_none().unwrap());
+    slot.set_clone(&2).unwrap();
+    slot.clear().unwrap();
+    assert!(slot.is_none().unwrap());
+    assert_eq!(slot.take().unwrap(), None);
+  }
+
+  #[test]
+  fn clones_share_the_same_value() {
+    let slot = CloneSlot::empty();
+    let other = slot.clone();
+    slot.set_clone(&5).unwrap();
+    assert_eq!(other.get_clone().unwrap(), Some(5));
+  }
+}

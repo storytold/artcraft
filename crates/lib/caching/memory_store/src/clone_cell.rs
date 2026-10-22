@@ -52,3 +52,31 @@ impl <T: Clone> CloneCell<T> {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn holds_the_value_it_was_made_with() {
+    assert_eq!(CloneCell::with_clone(&"a".to_string()).get_clone().unwrap(), "a");
+    assert_eq!(CloneCell::with_owned("b".to_string()).get_clone().unwrap(), "b");
+  }
+
+  #[test]
+  fn set_replaces_the_value() {
+    let cell = CloneCell::with_owned(1);
+    cell.set_clone(&2).unwrap();
+    assert_eq!(cell.get_clone().unwrap(), 2);
+    cell.set_owned(3).unwrap();
+    assert_eq!(cell.get_clone().unwrap(), 3);
+  }
+
+  #[test]
+  fn clones_share_the_same_value() {
+    let cell = CloneCell::with_owned(1);
+    let other = cell.clone();
+    cell.set_owned(9).unwrap();
+    assert_eq!(other.get_clone().unwrap(), 9);
+  }
+}
