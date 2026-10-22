@@ -1,6 +1,7 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
+use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -17,7 +18,9 @@ use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_
 use cookie_store::cookie_store::CookieStore;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use grok_consumer_client::credentials::grok_full_credentials::GrokFullCredentials;
 use grok_consumer_client::error::grok_error::GrokError;
@@ -36,6 +39,7 @@ use sqlite_tasks::queries::list_tasks_by_provider_and_status::{list_tasks_by_pro
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs};
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
+use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
@@ -51,6 +55,9 @@ use artcraft_client::error::storyteller_error::StorytellerError;
 use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use url::Url;
+
+/// How many times a finished Grok video may fail to download/upload before the task is failed.
+const MAX_UPLOAD_ATTEMPTS: u32 = 5;
 
 pub async fn grok_video_task_polling_thread(
   app_handle: AppHandle,
@@ -85,6 +92,9 @@ async fn polling_loop(
   grok_creds: &GrokCredentialManager,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> AnyhowResult<()> {
+  // FIX: remembers failed uploads across polling cycles so a permanently broken video can be given up on.
+  let mut upload_failures = UploadFailureCounts::default();
+
   loop {
     if !grok_creds.do_task_polling()? {
       tokio::time::sleep(std::time::Duration::from_millis(10_000)).await;
@@ -124,6 +134,7 @@ async fn polling_loop(
       &grok_full_creds,
       &storyteller_creds,
       local_tasks,
+      &mut upload_failures,
     ).await?;
 
     tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
@@ -138,6 +149,7 @@ async fn poll_grok_tasks(
   grok_full_creds: &GrokFullCredentials,
   storyteller_creds: &StorytellerCredentialSet,
   local_tasks: TaskList,
+  upload_failures: &mut UploadFailureCounts,
 ) -> AnyhowResult<()> {
   let local_tasks = local_tasks.tasks;
 
@@ -199,8 +211,15 @@ async fn poll_grok_tasks(
       grok_video_data
     ).await {
       error!("Failed to upload Grok video for post {}: {:?}", grok_post_id, err);
+      // FIX: such a task used to be retried every cycle forever and stayed pending in the queue. After
+      // MAX_UPLOAD_ATTEMPTS failures, fail it so the user sees the problem and the queue can drain.
+      if upload_failures.record_failure(&local_task.id.to_string()) {
+        fail_grok_video_task(app_handle, task_database, local_task, "Grok video could not be downloaded").await;
+        upload_failures.clear(&local_task.id.to_string());
+      }
       continue;
     }
+    upload_failures.clear(&local_task.id.to_string());
 
     tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
   }
@@ -373,4 +392,79 @@ async fn upload_grok_video(
   //}
 
   Ok(())
+}
+
+/// Counts upload failures per local task id across polling cycles.
+#[derive(Default)]
+struct UploadFailureCounts(HashMap<String, u32>);
+
+impl UploadFailureCounts {
+  /// Records one failure. Returns true once the task has failed `MAX_UPLOAD_ATTEMPTS` times.
+  fn record_failure(&mut self, task_id: &str) -> bool {
+    let count = self.0.entry(task_id.to_string()).or_insert(0);
+    *count += 1;
+    *count >= MAX_UPLOAD_ATTEMPTS
+  }
+
+  fn clear(&mut self, task_id: &str) {
+    self.0.remove(task_id);
+  }
+}
+
+/// Marks the local task failed and tells the frontend. Best effort: it only logs if the update fails.
+async fn fail_grok_video_task(
+  app_handle: &AppHandle,
+  task_database: &TaskDatabase,
+  task: &Task,
+  reason: &str,
+) {
+  if let Err(err) = update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
+    db: task_database.get_connection(),
+    task_id: &task.id,
+    status: TaskStatus::CompleteFailure,
+    maybe_failure_type: Some(TaskFailureType::GenerationFailed),
+    maybe_failure_message: Some(reason),
+  }).await {
+    error!("Failed to mark Grok video task {} as failed: {:?}", task.id, err);
+  }
+
+  GenerationFailedEvent {
+    action: GenerationAction::GenerateVideo,
+    service: GenerationServiceProvider::Grok,
+    model: None,
+    reason: Some(reason.to_string()),
+  }.send_infallible(app_handle);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn a_task_is_given_up_on_after_the_maximum_number_of_failures() {
+    let mut counts = UploadFailureCounts::default();
+    for _ in 1..MAX_UPLOAD_ATTEMPTS {
+      assert!(!counts.record_failure("task_1"));
+    }
+    assert!(counts.record_failure("task_1"));
+  }
+
+  #[test]
+  fn failures_are_counted_per_task() {
+    let mut counts = UploadFailureCounts::default();
+    for _ in 1..MAX_UPLOAD_ATTEMPTS {
+      counts.record_failure("task_1");
+    }
+    assert!(!counts.record_failure("task_2"));
+  }
+
+  #[test]
+  fn clearing_resets_the_count() {
+    let mut counts = UploadFailureCounts::default();
+    for _ in 1..MAX_UPLOAD_ATTEMPTS {
+      counts.record_failure("task_1");
+    }
+    counts.clear("task_1");
+    assert!(!counts.record_failure("task_1"));
+  }
 }

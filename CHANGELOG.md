@@ -1237,3 +1237,4 @@ summarized here.
 - Omni generation errors (B-220): server, timeout and network failures when generating through ArtCraft show a plain sentence, and a non-JSON error body is never shown; the detail goes to the log.
 - Download toast (N-134, not counted): "File already downloaded" shows the plain path instead of a quoted Debug string.
 - Sora failures (N-135, not counted): the failed event carries the task's real action (video for Sora 2 drafts, not always image) and the failure reason is stored on the task, so the task queue can show it.
+- Grok video polling (B-221): a finished video that repeatedly fails to download or upload is marked failed after 5 attempts and the user is told, instead of staying pending forever.
