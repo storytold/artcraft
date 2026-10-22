@@ -1243,3 +1243,4 @@ summarized here.
 - Gradient parser tests (test flood, N-136 not counted): 28 tests cover linear/radial gradients, every colour form, calc(), and the malformed-input errors.
 - Keybinds tests (test flood): registry and preset tables agree, availability gates for record mode and encoding, shared-key exclusivity, and matcher helpers.
 - Markdown renderer (N-137, not counted): image sizes written in px (`300px`, `40%x20px`) now render correctly; 37 tests added for the renderer and front-matter helpers.
+- Model picker tests (test flood): family grouping, curated order with Other last, numeric newest-first sorting, selected-family highlight.
