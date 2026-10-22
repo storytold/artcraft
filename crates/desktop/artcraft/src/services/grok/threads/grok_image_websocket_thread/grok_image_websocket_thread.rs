@@ -2,6 +2,7 @@ use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::text_to_image_generation_complete_event::{GeneratedImage, TextToImageGenerationCompleteEvent};
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
+use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -17,6 +18,7 @@ use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use grok_consumer_client::recipes::prompt_websocket_image_with_retry::{prompt_websocket_image_with_retry, PromptWebsocketImageWithRetryArgs};
 use grok_consumer_client::requests::image_websocket::create_listen_websocket::{create_listen_websocket, CreateListenWebsocketArgs};
@@ -31,6 +33,7 @@ use sqlite_tasks::queries::get_task_by_provider_and_provider_job_id::{get_task_b
 use sqlite_tasks::queries::list_tasks_by_provider_and_status::{list_tasks_by_provider_and_status, ListTasksByProviderAndStatusArgs};
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs};
+use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use sqlite_tasks::queries::update_successful_task_status_with_metadata_by_provider::{update_successful_task_status_with_metadata_by_provider, UpdateSuccessfulTaskByProviderArgs};
 use std::time::Duration;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -126,22 +129,44 @@ async fn inner_loop(
 
       info!("Prompt received over in-memory queue. Prompting Grok websocket: {}", prompt_item.prompt);
 
-      let result = prompt_websocket_image_with_retry(PromptWebsocketImageWithRetryArgs {
+      // FIX: the prompt is already off the in-memory queue here, so a websocket error used to drop it and leave
+      // its task pending forever. Fail the task first, then still return the error so the socket is rebuilt.
+      let result = match prompt_websocket_image_with_retry(PromptWebsocketImageWithRetryArgs {
         websocket: &mut websocket,
         prompt: &prompt_item.prompt,
         aspect_ratio: prompt_item.aspect_ratio,
         cookies: &cookies,
-      }).await?;
+      }).await {
+        Ok(result) => result,
+        Err(err) => {
+          fail_grok_image_task(app_handle, task_database, &prompt_item.task_id, "Grok image request failed").await;
+          return Err(err.into());
+        }
+      };
 
       if let Some(new_websocket) = result.maybe_new_websocket {
         info!("Replacing websocket with new one...");
         websocket = new_websocket;
       }
 
-      let images = listen_for_websocket_images(ListenForWebsocketImagesArgs {
+      let images = match listen_for_websocket_images(ListenForWebsocketImagesArgs {
         websocket: &mut websocket,
         timeout: Duration::from_millis(30_000),
-      }).await?;
+      }).await {
+        Ok(images) => images,
+        Err(err) => {
+          fail_grok_image_task(app_handle, task_database, &prompt_item.task_id, "Grok image connection failed").await;
+          return Err(err.into());
+        }
+      };
+
+      // FIX: a timeout with no images used to carry on: the task was marked successful with no media and the
+      // thread then errored on "No media files found". Report it as a failure instead.
+      if has_no_images(&images) {
+        warn!("Grok returned no images for task {}", &prompt_item.task_id);
+        fail_grok_image_task(app_handle, task_database, &prompt_item.task_id, "Grok returned no images").await;
+        continue;
+      }
 
       upload_images_to_storyteller(
         &app_handle,
@@ -155,6 +180,51 @@ async fn inner_loop(
     }
 
   }
+}
+
+fn has_no_images(images: &ImageResults) -> bool {
+  images.images.is_empty()
+}
+
+/// Marks the local task failed and tells the frontend. Best effort: it only logs if the lookup or update fails.
+async fn fail_grok_image_task(
+  app_handle: &AppHandle,
+  task_database: &TaskDatabase,
+  provider_job_id: &str,
+  reason: &str,
+) {
+  let task = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs {
+    db: task_database.get_connection(),
+    provider: GenerationProvider::Grok,
+    provider_job_id,
+  }).await;
+
+  let task = match task {
+    Ok(Some(task)) => task,
+    Ok(None) => {
+      warn!("Couldn't find local sqlite task by id to fail it: {}", provider_job_id);
+      return;
+    }
+    Err(err) => {
+      error!("Error looking up Grok task {} to fail it: {:?}", provider_job_id, err);
+      return;
+    }
+  };
+
+  if let Err(err) = update_task_status(UpdateTaskArgs {
+    db: task_database.get_connection(),
+    task_id: &task.id,
+    status: TaskStatus::CompleteFailure,
+  }).await {
+    error!("Failed to mark Grok task {} as failed: {:?}", provider_job_id, err);
+  }
+
+  GenerationFailedEvent {
+    action: GenerationAction::GenerateImage,
+    service: GenerationServiceProvider::Grok,
+    model: None,
+    reason: Some(reason.to_string()),
+  }.send_infallible(app_handle);
 }
 
 async fn upload_images_to_storyteller(
@@ -351,4 +421,14 @@ async fn send_frontend_ui_update(
   event.send_infallible(app);
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn no_images_is_detected() {
+    assert!(has_no_images(&ImageResults { images: vec![] }));
+  }
 }

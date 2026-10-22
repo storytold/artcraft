@@ -1222,3 +1222,4 @@ summarized here.
 - Fal task polling (B-213, borderline): `poll_fal_tasks` marks a task failed when the result fetch returns a permanent 400/404/410/422, instead of skipping it forever; network errors, 5xx, key/billing errors and "still in progress" still retry.
 - Mask outlines on flipped elements (B-214, borderline): `getBoxMaskRectOverlay` and `getBoxMaskShapeOverlay` return positive sizes, so a box mask's outline stays visible and draggable when its element is flipped.
 - Preview snapping (B-215, borderline): `snapPosition` takes the absolute element width and height, so a flipped and rotated element snaps to the canvas edges by its real footprint while dragging.
+- Grok image generation (B-216, borderline): the Grok websocket thread fails the task (and tells the UI) when the websocket errors or no images come back, instead of dropping the prompt or reporting success with no media.
