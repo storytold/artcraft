@@ -281,7 +281,9 @@ const resolveLinearAngle = ({
 };
 
 const angleFromDirectional = ({ value }: { value: string }): number => {
-  const normalized = value.toLowerCase().replace("to", "").trim();
+  // FIX: only strip a leading "to " word. The parser hands over the value without the "to", so the old
+  // replace("to", "") ate the "to" inside "top" and "bottom" ("to top" became "p" and painted downwards).
+  const normalized = value.toLowerCase().replace(/^to\s+/, "").trim();
   const parts = normalized.split(/\s+/).filter(Boolean);
   let dx = 0;
   let dy = 0;

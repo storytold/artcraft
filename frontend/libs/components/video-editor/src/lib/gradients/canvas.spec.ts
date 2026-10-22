@@ -95,6 +95,24 @@ describe("drawCssBackground linear gradients", () => {
     const gradients = paint("linear-gradient(to right, #aaaaaa, #bbbbbb), linear-gradient(to bottom, #cccccc, #dddddd)");
     expect(gradients.map((gradient) => gradient.stops[0][1])).toEqual(["#cccccc", "#aaaaaa"]);
   });
+
+  it("runs `to top` from the bottom edge to the top edge", () => {
+    const [gradient] = paint("linear-gradient(to top, #111111, #222222)");
+    const [x0, y0, x1, y1] = gradient.args;
+    expect(x0).toBeCloseTo(960, 5);
+    expect(y0).toBeCloseTo(1080, 5);
+    expect(x1).toBeCloseTo(960, 5);
+    expect(y1).toBeCloseTo(0, 5);
+  });
+
+  it("runs `to bottom right` along the 135deg diagonal", () => {
+    const [gradient] = paint("linear-gradient(to bottom right, #111111, #222222)");
+    const [x0, y0, x1, y1] = gradient.args;
+    expect(x0).toBeCloseTo(210, 5);
+    expect(y0).toBeCloseTo(-210, 5);
+    expect(x1).toBeCloseTo(1710, 5);
+    expect(y1).toBeCloseTo(1290, 5);
+  });
 });
 
 describe("drawCssBackground radial gradients", () => {
