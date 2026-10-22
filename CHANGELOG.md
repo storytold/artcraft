@@ -1248,3 +1248,4 @@ summarized here.
 - Keybinds (B-223): a saved preset that no longer exists, or a damaged saved override, falls back to the defaults instead of breaking every shortcut.
 - Task database (B-224): a task row with a value this build cannot parse is logged and skipped instead of making the whole task list fail for the pollers and the task queue.
 - Task database (B-225): the third-party and Storyteller polling threads no longer stall on one unreadable task row; all list queries share one row conversion.
+- Sora session renewal (B-226): the JWT is now renewed when it is within 12 hours of expiring, as intended, instead of only after it has expired.
