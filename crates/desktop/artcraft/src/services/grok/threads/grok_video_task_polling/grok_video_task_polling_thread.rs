@@ -44,7 +44,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::{upload_image_media_file_from_file, UploadImageFromFileArgs};
@@ -58,6 +58,9 @@ use url::Url;
 
 /// How many times a finished Grok video may fail to download/upload before the task is failed.
 const MAX_UPLOAD_ATTEMPTS: u32 = 5;
+
+/// How long a task may wait for its Grok post to appear before it is failed.
+const MAX_WAIT_FOR_POST: Duration = Duration::from_secs(30 * 60);
 
 pub async fn grok_video_task_polling_thread(
   app_handle: AppHandle,
@@ -94,6 +97,7 @@ async fn polling_loop(
 ) -> AnyhowResult<()> {
   // FIX: remembers failed uploads across polling cycles so a permanently broken video can be given up on.
   let mut upload_failures = UploadFailureCounts::default();
+  let mut missing_posts = MissingPostTracker::default();
 
   loop {
     if !grok_creds.do_task_polling()? {
@@ -135,6 +139,7 @@ async fn polling_loop(
       &storyteller_creds,
       local_tasks,
       &mut upload_failures,
+      &mut missing_posts,
     ).await?;
 
     tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
@@ -150,6 +155,7 @@ async fn poll_grok_tasks(
   storyteller_creds: &StorytellerCredentialSet,
   local_tasks: TaskList,
   upload_failures: &mut UploadFailureCounts,
+  missing_posts: &mut MissingPostTracker,
 ) -> AnyhowResult<()> {
   let local_tasks = local_tasks.tasks;
 
@@ -194,8 +200,18 @@ async fn poll_grok_tasks(
     // TODO: Copy prompt from this.
     let grok_video_data = match grok_video_posts_by_id.get(grok_post_id) {
       Some(video_data) => video_data,
-      None => continue,
+      None => {
+        // FIX: a task whose Grok post never shows up (Grok-side failure, or the post fell off the first page of
+        // results) used to stay pending forever. Fail it once it has waited MAX_WAIT_FOR_POST.
+        let task_id = local_task.id.to_string();
+        if missing_posts.is_overdue(&task_id, Instant::now()) {
+          fail_grok_video_task(app_handle, task_database, local_task, "Grok did not return the video").await;
+          missing_posts.clear(&task_id);
+        }
+        continue;
+      }
     };
+    missing_posts.clear(&local_task.id.to_string());
 
     // FIX: one task that fails to download or upload used to abort the whole batch with `?`, so every other
     // finished video waited behind it. Log the failure and carry on with the next task.
@@ -411,6 +427,22 @@ impl UploadFailureCounts {
   }
 }
 
+/// Remembers when each task was first seen without a Grok post.
+#[derive(Default)]
+struct MissingPostTracker(HashMap<String, Instant>);
+
+impl MissingPostTracker {
+  /// Notes that the task has no post right now. Returns true once it has been missing for `MAX_WAIT_FOR_POST`.
+  fn is_overdue(&mut self, task_id: &str, now: Instant) -> bool {
+    let first_missing = *self.0.entry(task_id.to_string()).or_insert(now);
+    now.duration_since(first_missing) >= MAX_WAIT_FOR_POST
+  }
+
+  fn clear(&mut self, task_id: &str) {
+    self.0.remove(task_id);
+  }
+}
+
 /// Marks the local task failed and tells the frontend. Best effort: it only logs if the update fails.
 async fn fail_grok_video_task(
   app_handle: &AppHandle,
@@ -466,5 +498,29 @@ mod tests {
     }
     counts.clear("task_1");
     assert!(!counts.record_failure("task_1"));
+  }
+
+  #[test]
+  fn a_task_is_not_overdue_the_first_time_its_post_is_missing() {
+    let mut tracker = MissingPostTracker::default();
+    assert!(!tracker.is_overdue("task_1", Instant::now()));
+  }
+
+  #[test]
+  fn a_task_becomes_overdue_after_waiting_too_long() {
+    let mut tracker = MissingPostTracker::default();
+    let start = Instant::now();
+    tracker.is_overdue("task_1", start);
+    assert!(!tracker.is_overdue("task_1", start + MAX_WAIT_FOR_POST - Duration::from_secs(1)));
+    assert!(tracker.is_overdue("task_1", start + MAX_WAIT_FOR_POST));
+  }
+
+  #[test]
+  fn clearing_restarts_the_wait() {
+    let mut tracker = MissingPostTracker::default();
+    let start = Instant::now();
+    tracker.is_overdue("task_1", start);
+    tracker.clear("task_1");
+    assert!(!tracker.is_overdue("task_1", start + MAX_WAIT_FOR_POST));
   }
 }
