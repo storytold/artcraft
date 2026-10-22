@@ -1234,3 +1234,4 @@ summarized here.
 - Enum sync (N-133, not counted): the frontend `TaskModelType` now lists every model the Rust enum has, and `api-enums/.../rust-enum-sync.spec.ts` fails when the frontend copies of `TaskModelType`, `TaskStatus`, `TaskType` or `TaskMediaFileClass` drift from the Rust source.
 - Fal failure message (B-213 follow-up): the reason shown in the failure toast and stored on the task is now a plain sentence instead of Fal's raw JSON response body, which stays in the log.
 - Generation error messages (B-219, borderline): image and video generation failures show a readable sentence (for example "You need to log in to Grok.") instead of the Rust Debug text or the generic server-error line; the Debug text stays in the log.
+- Omni generation errors (B-220): server, timeout and network failures when generating through ArtCraft show a plain sentence, and a non-JSON error body is never shown; the detail goes to the log.
