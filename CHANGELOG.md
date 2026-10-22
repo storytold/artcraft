@@ -1239,3 +1239,4 @@ summarized here.
 - Sora failures (N-135, not counted): the failed event carries the task's real action (video for Sora 2 drafts, not always image) and the failure reason is stored on the task, so the task queue can show it.
 - Grok video polling (B-221): a finished video that repeatedly fails to download or upload is marked failed after 5 attempts and the user is told, instead of staying pending forever.
 - Grok video polling (B-222): a task whose video never shows up on Grok is marked failed after 30 minutes instead of staying pending forever.
+- Sora success loop (N-131, not counted): one generation that fails to download or upload is logged and the rest of the batch continues.

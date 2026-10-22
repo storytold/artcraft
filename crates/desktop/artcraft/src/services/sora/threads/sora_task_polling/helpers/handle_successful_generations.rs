@@ -72,6 +72,9 @@ pub async fn handle_classic_successful_generations(
       continue; // Task is irrelevant - previously completed, generated elsewhere, etc.
     }
 
+    // FIX: one generation that failed to parse, download or upload used to `?`-abort the whole batch, so every
+    // other finished generation waited behind it. Run each in its own block, log the error and carry on.
+    let result: AnyhowResult<()> = async {
     info!("Task succeeded: {:?}", task_id);
 
     let local_task = &sqlite_tasks_by_sora_task_id[task_id.as_str()];
@@ -187,6 +190,12 @@ pub async fn handle_classic_successful_generations(
 
         event.send_infallible(&app_handle);
       }
+    }
+    Ok(())
+    }.await;
+
+    if let Err(err) = result {
+      error!("Failed to handle successful Sora generation {:?}: {:?}", task_id, err);
     }
   }
 
