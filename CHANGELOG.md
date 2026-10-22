@@ -1233,3 +1233,4 @@ summarized here.
 - Failure labels (B-218, borderline): the task queue and the generation feed share one failure-reason table, and it now covers the no-foreground-subject and unsupported-format failures, so those failed cards show a readable reason.
 - Enum sync (N-133, not counted): the frontend `TaskModelType` now lists every model the Rust enum has, and `api-enums/.../rust-enum-sync.spec.ts` fails when the frontend copies of `TaskModelType`, `TaskStatus`, `TaskType` or `TaskMediaFileClass` drift from the Rust source.
 - Fal failure message (B-213 follow-up): the reason shown in the failure toast and stored on the task is now a plain sentence instead of Fal's raw JSON response body, which stays in the log.
+- Generation error messages (B-219, borderline): image and video generation failures show a readable sentence (for example "You need to log in to Grok.") instead of the Rust Debug text or the generic server-error line; the Debug text stays in the log.
