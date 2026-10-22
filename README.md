@@ -1,8 +1,4 @@
 <h1 align="center">ArtCraft</h1>
-
-<p align="center">
-  <a href="https://sonarcloud.io/project/overview?id=storytold_artcraft"><img alt="Scanned by SonarCloud" src="https://img.shields.io/badge/Scanned_by-SonarCloud-4b9fd5?style=flat-square&logo=sonarqubecloud&logoColor=white"></a>
-</p>
 <p align="center"><strong>The IDE for artists.</strong></p>
 
 <!-- Main video: https://www.youtube.com/watch?v=kzvQMdg66Go
