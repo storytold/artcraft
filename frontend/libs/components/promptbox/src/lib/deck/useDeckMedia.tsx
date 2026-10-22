@@ -380,7 +380,13 @@ export function useDeckMedia<
         if (uploadTarget === "end") {
           setEndFrameImage?.(referenceImage);
         } else {
-          setReferenceImages([...referenceImagesRef.current, referenceImage]);
+          // FIX: write the ref now, not only in the effect after the next
+          // render. Two uploads that finish in the same tick both read the
+          // ref, so the second used to overwrite the first and one reference
+          // image silently vanished.
+          const nextImages = [...referenceImagesRef.current, referenceImage];
+          referenceImagesRef.current = nextImages;
+          setReferenceImages(nextImages);
         }
       };
 
