@@ -7,7 +7,7 @@ export const LAST_READ_AT_KEY = "taskQueueLastReadAt";
 export function readLastReadAt(): number {
   try {
     const stored = localStorage.getItem(LAST_READ_AT_KEY);
-    if (stored === null || !/^\d+$/.test(stored)) {
+    if (stored === null || stored.trim() !== stored || !/^\d+$/.test(stored)) {
       return 0;
     }
 
