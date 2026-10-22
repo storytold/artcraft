@@ -1225,3 +1225,4 @@ summarized here.
 - Grok image generation (B-216, borderline): the Grok websocket thread fails the task (and tells the UI) when the websocket errors or no images come back, instead of dropping the prompt or reporting success with no media.
 - Grok video polling cleanup (N-130, not counted): a failed upload for one task is logged and skipped, so the other finished videos in the same cycle still upload.
 - Tests (no behaviour change): new specs for the freeform mask path maths (`masks/freeform/path.spec.ts`, 18 tests) and the timeline placement resolver (`timeline/placement/resolve.spec.ts`, 16 tests). Both pass on the existing code.
+- Tests (no behaviour change): new spec for preview hit testing and viewport coordinates (`preview/hit-test.spec.ts`, 8 tests: rotated and flipped hits, topmost order, preferred selection, canvas/overlay round trip). Passes on the existing code.
