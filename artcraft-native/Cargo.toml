@@ -35,6 +35,8 @@ open = "5"
 reqwest = { workspace = true, features = ["multipart"] }
 resvg = "0.45"
 rfd = "0.16"
+sha2.workspace = true
+tract-onnx = "0.23"
 rodio = { version = "0.20", default-features = false, features = ["symphonia-all"] }
 serde.workspace = true
 serde_json.workspace = true
