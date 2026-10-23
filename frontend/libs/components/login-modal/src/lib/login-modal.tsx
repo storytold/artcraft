@@ -280,7 +280,10 @@ export function LoginModal({
                           {!isChallengeActive && <ArtCraftSignUp
                             onSubmit={handleAuthSubmit}
                             isSignUp={isSignUp}
-                            onToggleMode={() => setIsSignUp((prev) => !prev)}
+                            onToggleMode={() => {
+                              setErrorMessage("");
+                              setIsSignUp((prev) => !prev);
+                            }}
                             errorMessage={errorMessage}
                             isLoading={isLoading}
                           />}
