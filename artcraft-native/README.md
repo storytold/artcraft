@@ -120,3 +120,11 @@ mentions, clear-all), the Characters dialog and the audio toolbar (toggles, Beat
 licences sit next to the files. The wordmark, app icon and creator logos are the Tauri app's own
 (`frontend/apps/artcraft/app/public/resources`, `crates/desktop/artcraft/icons`); see `NOTICE`
 for their terms.
+
+CJK text (Japanese, Chinese, Korean) uses the fonts already installed on the machine: no CJK font
+is bundled. At startup the app appends the system's Japanese, Chinese and Korean faces after every
+bundled family, Japanese first, so Japanese prompts, character names and descriptions render
+instead of missing-glyph boxes (2026-10-22, `src/system_fonts.rs`). The lookup reads the platform's
+standard font paths — Hiragino and AquaKana on macOS, Yu Gothic / Meiryo / MS Gothic on Windows,
+Noto Sans CJK or `fc-match` on Linux and BSD — and a machine without those fonts keeps the Latin
+faces and draws boxes for CJK, as before. `ARTCRAFT_NO_SYSTEM_FONTS=1` skips the lookup.

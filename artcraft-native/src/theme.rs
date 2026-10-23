@@ -173,8 +173,18 @@ pub fn apply(ctx: &egui::Context) {
 /// A font registered under `name`: its file, its variation coordinates and its family.
 type Face<'a> = (&'a str, &'static [u8], &'a [([u8; 4], f32)], FontFamily);
 
-/// Registers the three variable fonts, each at the weights (and width) the webapp uses.
+/// Registers the three variable fonts, each at the weights (and width) the webapp uses, then the
+/// system's CJK faces after them ([`crate::system_fonts`]): no CJK font is bundled, but Japanese,
+/// Chinese and Korean prompt text, character names and descriptions still draw where the machine
+/// has such a font.
 fn install_fonts(ctx: &egui::Context) {
+  ctx.set_fonts(font_definitions());
+}
+
+/// The font definitions [`install_fonts`] hands to egui: the bundled variable faces, egui's own
+/// fallbacks behind them, and the system CJK faces appended after every family (Japanese first,
+/// Chinese second, Korean last). Split out so tests can inspect the stack.
+pub(crate) fn font_definitions() -> FontDefinitions {
   const INTER: &[u8] = include_bytes!("../assets/fonts/Inter-Variable.ttf");
   const ARCHIVO: &[u8] = include_bytes!("../assets/fonts/Archivo-Variable.ttf");
   const GEIST_MONO: &[u8] = include_bytes!("../assets/fonts/GeistMono-Variable.ttf");
@@ -189,5 +199,13 @@ fn install_fonts(ctx: &egui::Context) {
     stack.extend(fallback.iter().cloned());
     fonts.families.insert(family, stack);
   }
-  ctx.set_fonts(fonts);
+  // The system's CJK faces go last in every family, so Latin and symbols keep the bundled faces
+  // and CJK text reaches a face that can draw it.
+  for (name, font) in crate::system_fonts::cjk_faces() {
+    fonts.font_data.insert(name.to_owned(), Arc::new(font));
+    for stack in fonts.families.values_mut() {
+      stack.push(name.to_owned());
+    }
+  }
+  fonts
 }
