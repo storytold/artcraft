@@ -8,7 +8,6 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
   match model {
     TauriImageModel::Flux1Dev => Some(CommonImageModel::Flux1Dev),
     TauriImageModel::Flux1Schnell => Some(CommonImageModel::Flux1Schnell),
-    TauriImageModel::FluxPro1 => Some(CommonImageModel::FluxPro11), // TODO: Might be a slight mismatch
     TauriImageModel::FluxPro11 => Some(CommonImageModel::FluxPro11),
     TauriImageModel::FluxPro11Ultra => Some(CommonImageModel::FluxPro11Ultra),
     TauriImageModel::GptImage1 => Some(CommonImageModel::GptImage1),
@@ -34,5 +33,20 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::Midjourney => None, // NB: Generic Midjourney is served by the native Midjourney provider.
     TauriImageModel::FluxProKontextMax => None,
     TauriImageModel::FluxDevJuggernaut => None,
+    TauriImageModel::FluxPro1 => None, // NB: Inpainting. Flux Pro 1.1 is text-to-image and would drop the mask.
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn inpainting_models_have_no_omni_model() {
+    // The omni endpoint has no inpainting model (nor a mask field); a text-to-image stand-in runs
+    // (and bills) a different generation that ignores the mask.
+    assert_eq!(tauri_image_model_to_enums_model(TauriImageModel::FluxPro1), None);
+    assert_eq!(tauri_image_model_to_enums_model(TauriImageModel::FluxDevJuggernaut), None);
+    assert_eq!(tauri_image_model_to_enums_model(TauriImageModel::FluxPro11), Some(CommonImageModel::FluxPro11));
   }
 }
