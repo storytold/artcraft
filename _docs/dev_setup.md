@@ -70,6 +70,21 @@ the launcher, wait for the desktop window, make a Rust source edit, and check fo
 a rebuild/restart in the same terminal. Frontend edits should update the webview
 without restarting the Rust process.
 
+**Linux Installers (Ubuntu)**
+
+Build the `.deb` and AppImage on Ubuntu 22.04 or newer. `--install-deps` installs the
+WebKitGTK, GTK and wreq build dependencies with apt:
+
+```bash
+./script/artcraft/ubuntu_build_installers.sh --install-deps
+
+# Install it; ArtCraft then appears in the app launcher
+sudo apt install ./target/release/bundle/deb/ArtCraft_*_amd64.deb
+```
+
+The `.deb` installs `/usr/bin/artcraft`, a desktop entry and hicolor icons (32 to 512 px).
+CI builds the same packages with `.github/workflows/artcraft-linux-publish.yml`.
+
 **Windows Development**
 
 ```powershell
