@@ -61,12 +61,12 @@ describe("native login modal integration", () => {
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: label })); });
     expect(screen.getByRole("img", { name: "Login QR" })).toBeTruthy();
     expect(screen.queryByPlaceholderText("you@example.com or username")).toBeNull();
-    expect(screen.queryByPlaceholderText("Min. 8 characters")).toBeNull();
+    expect(screen.queryByPlaceholderText("Min. 6 characters")).toBeNull();
     expect(screen.queryByRole("button", { name: "Sign up" })).toBeNull();
 
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Back" })); });
     expect(screen.getByPlaceholderText("you@example.com or username")).toBeTruthy();
-    expect(screen.getByPlaceholderText("Min. 8 characters")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Min. 6 characters")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Login with Website" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Scan to Login" })).toBeTruthy();
     expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
@@ -82,10 +82,10 @@ describe("native login modal integration", () => {
     native.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Login with Website" })); });
     expect(screen.getByText("Preparing login…")).toBeTruthy();
-    expect(screen.queryByPlaceholderText("Min. 8 characters")).toBeNull();
+    expect(screen.queryByPlaceholderText("Min. 6 characters")).toBeNull();
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Back" })); });
     await act(async () => { resolve({ challenge_id: "late_handle" }); });
-    expect(screen.getByPlaceholderText("Min. 8 characters")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Min. 6 characters")).toBeTruthy();
     expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
     expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", { challengeId: "late_handle" });
     expect(native.mock.calls.filter(([command]) => command === "plugin:opener|open_url")).toHaveLength(0);
@@ -124,7 +124,7 @@ describe("native login modal integration", () => {
     } else {
       fireEvent.change(screen.getByPlaceholderText("you@example.com or username"), { target: { value: "native_user" } });
     }
-    fireEvent.change(screen.getByPlaceholderText("Min. 8 characters"), { target: { value: "password123" } });
+    fireEvent.change(screen.getByPlaceholderText("Min. 6 characters"), { target: { value: "password123" } });
     const submit = screen.getAllByRole("button", { name: signup ? "Sign up" : "Log in" }).find((button) => button.getAttribute("type") === "submit")!;
     await act(async () => { fireEvent.click(submit); });
     expect(success).toHaveBeenCalledExactlyOnceWith(USER);
@@ -180,3 +180,47 @@ describe("native login modal integration", () => {
     expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
   });
 });
+
+describe("signup form validation", () => {
+  it.each([
+    ["Usernames must be at least 3 characters.", "ab", "password123", "password123"],
+    ["Usernames can be at most 16 characters.", "a".repeat(17), "password123", "password123"],
+    ["Usernames can only contain letters, numbers, underscores (_), and hyphens (-).", "bad name", "password123", "password123"],
+    ["Passwords must be at least 6 characters.", "native_user", "12345", "12345"],
+    ["Passwords do not match.", "native_user", "password123", "password124"],
+  ])("shows %j without contacting the server", async (message, username, password, confirmation) => {
+    await act(async () => { render(<LoginModal />); });
+    await submitSignup(username, "user@example.com", password, confirmation);
+    expect(screen.getByText(message)).toBeTruthy();
+    expect(native).not.toHaveBeenCalledWith("storyteller_password_signup_command", expect.anything());
+  });
+
+  it("trims the username and email before signing up", async () => {
+    await act(async () => { render(<LoginModal />); });
+    await submitSignup("  native_user ", " user@example.com ", "password123", "password123");
+    expect(native).toHaveBeenCalledWith("storyteller_password_signup_command", {
+      request: { username: "native_user", email_address: "user@example.com", password: "password123", password_confirmation: "password123", signup_source: "artcraft" },
+    });
+  });
+
+  it("clears the previous error when the form is submitted again", async () => {
+    native.mockImplementation(async (command: string) => {
+      if (command === "storyteller_password_signup_command") return new Promise(() => {});
+      return null;
+    });
+    await act(async () => { render(<LoginModal />); });
+    await submitSignup("native_user", "user@example.com", "password123", "password124");
+    expect(screen.getByText("Passwords do not match.")).toBeTruthy();
+    await submitSignup("native_user", "user@example.com", "password123", "password123");
+    expect(screen.queryByText("Passwords do not match.")).toBeNull();
+  });
+});
+
+async function submitSignup(username: string, email: string, password: string, confirmation: string) {
+  fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: username } });
+  fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: email } });
+  fireEvent.change(screen.getByPlaceholderText("Min. 6 characters"), { target: { value: password } });
+  fireEvent.change(screen.getByPlaceholderText("Re-enter password"), { target: { value: confirmation } });
+  const submit = screen.getAllByRole("button", { name: "Sign up" }).find((button) => button.getAttribute("type") === "submit")!;
+  await act(async () => { fireEvent.click(submit); });
+}
