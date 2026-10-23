@@ -35,6 +35,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
 import { type BaseSelectorImage } from "./types";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
+import { editAspectRatioFields } from "./utilities/editAspectRatio";
 import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
@@ -405,6 +406,11 @@ const PageDraw = ({
     undo,
     redo,
   } = useSceneStore(useShallow(selector));
+
+  const sourceAspectRatioType = useSceneStore((state) => state.aspectRatioType);
+  useEffect(() => {
+    usePrompt2DStore.setState({ sourceImageDimensions: getAspectRatioDimensions() });
+  }, [baseImageBitmap, baseImageInfo, sourceAspectRatioType, getAspectRatioDimensions]);
 
   const promptStoreProvider = usePrompt2DStore;
   const generationCount = promptStoreProvider((state) => state.generationCount);
@@ -869,6 +875,12 @@ const PageDraw = ({
           timestamp: Date.now(),
         });
 
+        const aspectRatioFields = editAspectRatioFields(
+          options?.aspectRatio,
+          selectedImageModel,
+          getAspectRatioDimensions(),
+        );
+
         let result;
 
         if (selectedImageModel?.editingIsInpainting) {
@@ -878,6 +890,7 @@ const PageDraw = ({
             model: selectedImageModel,
             imageMediaToken: editedImageToken,
             maskImageRawBytes: arrayBuffer,
+            ...aspectRatioFields,
             prompt: prompt,
             imageCount: generationCount,
             frontendCaller: "image_editor",
@@ -914,7 +927,7 @@ const PageDraw = ({
             imageCount: generationCount,
             frontendCaller: "image_editor",
             frontendSubscriberId: subscriberId,
-            aspectRatio: options?.aspectRatio,
+            ...aspectRatioFields,
             imageResolution: options?.resolution,
             provider: options?.selectedProvider,
           });
@@ -948,7 +961,7 @@ const PageDraw = ({
             imageCount: generationCount,
             frontendCaller: "image_editor",
             frontendSubscriberId: subscriberId,
-            aspectRatio: options?.aspectRatio,
+            ...aspectRatioFields,
             imageResolution: options?.resolution,
             disableSystemPrompt: !useSystemPrompt,
             provider: options?.selectedProvider,
@@ -966,6 +979,7 @@ const PageDraw = ({
       generationCount,
       getCompositeFile,
       getMaskArrayBuffer,
+      getAspectRatioDimensions,
       selectedImageModel,
       adapter,
       baseImageBitmap,
