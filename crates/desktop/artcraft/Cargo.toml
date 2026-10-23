@@ -30,6 +30,9 @@ cookie_store_wrapper = { workspace = true, features = ["wreq"] }
 artcraft_api_defs.workspace = true
 artcraft_client.workspace = true
 artcraft_router.workspace = true
+# The CraftHub v3 client path (spec §18.4 row 12): optional until the `crafthub` feature
+# pulls it in — default off, so nothing here changes a default build.
+artcraft-hub = { workspace = true, optional = true }
 build_metadata.workspace = true
 cookie_store.workspace = true
 enums.workspace = true
@@ -88,6 +91,12 @@ tauri-plugin-opener = "2"
 # # https://v2.tauri.app/learn/window-customization/
 # [target."cfg(target_os = \"macos\")".dependencies]
 # cocoa = "0.26"
+
+[features]
+# The CraftHub v3 client path (spec §18.4 row 12): default off, flipped only after the
+# simulation suite runs green in CI for a full week. When on, the hub.* Tauri commands
+# register and the web UI reaches them through the tauri-api wrappers.
+crafthub = ["dep:artcraft-hub"]
 
 [dev-dependencies]
 serial_test = "3.2.0"
