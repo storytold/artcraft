@@ -56,7 +56,8 @@ pub async fn download_url_with_filename(url: &Url, directory: &Path, filename: &
 /// Saves to exactly `directory/filename`, replacing what's there: the user picked this name (and
 /// confirmed any overwrite) in a save dialog. Only checks the name is a single file name.
 pub async fn save_url_as(url: &Url, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
-  check_url_file_name_for_downloadability(filename)?;
+  check_single_file_name(filename)?;
+  refuse_executable_filename(filename)?;
   let temporary = fetch_to_temporary(url, directory).await?;
   let path = directory.join(filename);
   temporary.persist(&path).map_err(|err| err.error)?;
@@ -145,6 +146,27 @@ fn check_url_file_name_for_downloadability(filename: &str) -> Result<(), Artcraf
     return Err(ArtcraftError::BadDownloadFilename { path: filename.into() }.into());
   }
 
+  Ok(())
+}
+
+
+fn refuse_executable_filename(filename: &str) -> Result<(), ArtcraftError> {
+  let filename = filename.to_ascii_lowercase();
+  let filename = filename.as_str();
+  if filename.ends_with(".apk")
+      || filename.ends_with(".app")
+      || filename.ends_with(".bat")
+      || filename.ends_with(".cmd")
+      || filename.ends_with(".com")
+      || filename.ends_with(".ps1")
+      || filename.ends_with(".sh")
+      || filename.ends_with(".so")
+      || filename.ends_with("dll")
+      || filename.ends_with("exe")
+  {
+    error!("Cannot download filename that resembles executable: {:?}", filename);
+    return Err(ArtcraftError::BadDownloadFilename { path: filename.into() }.into());
+  }
   Ok(())
 }
 
