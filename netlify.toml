@@ -1,0 +1,5 @@
+# The storyteller-docs Netlify site still builds this repository, but its
+# build command and the docs now live in storytold/artcraft-services, so every
+# deploy preview here fails. Skip those builds until the site is disconnected.
+[build]
+  ignore = "exit 0"
