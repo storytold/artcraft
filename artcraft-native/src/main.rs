@@ -13,6 +13,9 @@ mod shell;
 mod theme;
 mod ui;
 
+#[cfg(test)]
+mod theme_render_tests;
+
 const APP_ID: &str = "ai.artcraft.native";
 
 fn main() -> eframe::Result {

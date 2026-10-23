@@ -117,7 +117,7 @@ pub fn reference_deck(ui: &mut Ui, id: Id, refs: &References, limits: &DeckLimit
       let badge_text = items.len().to_string();
       let badge = Rect::from_center_size(pos2(stack.right() + 2.0, stack.top() + 2.0), vec2(8.0 + 7.0 * badge_text.len() as f32, 18.0));
       painter.rect_filled(badge, CornerRadius::same(9), theme::ACCENT);
-      painter.text(badge.center(), Align2::CENTER_CENTER, badge_text, FontId::new(10.0, theme::semibold()), Color32::WHITE);
+      painter.text(badge.center(), Align2::CENTER_CENTER, badge_text, FontId::new(10.0, theme::semibold()), theme::ACCENT_ON);
     }
     if !open_kinds.is_empty() {
       let plus = Rect::from_min_size(pos2(stack.right() - 12.0, stack.bottom() - 20.0), vec2(24.0, 24.0));

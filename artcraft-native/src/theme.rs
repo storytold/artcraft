@@ -1,10 +1,11 @@
 //! Colours, type and shapes of the ArtCraft webapp's brutalist system
-//! (`artcraft-services/frontend/apps/artcraft-webapp`): near-black surfaces, white/15 hairlines,
+//! (`artcraft-services/frontend/apps/artcraft-webapp`): near-black surfaces, fine hairlines,
 //! Archivo display type, Inter body text, Geist Mono labels and 3 px corners on anything
 //! pressable. Large surfaces (panels, cards, media tiles) stay square.
 
 use std::sync::Arc;
 
+use craft_ui::theme::SuitePalette;
 use egui::epaint::text::VariationCoords;
 use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, FontTweak, Stroke, TextStyle, Visuals};
 
@@ -19,51 +20,55 @@ const fn alpha(rgb: u32, a: u8) -> Color32 {
 }
 
 /// `ui-background`: the page behind the feed.
-pub const BG: Color32 = hex(0x121316);
+pub const BG: Color32 = SuitePalette::ARTCRAFT_DARK.window;
 /// `ui-panel`: the top bar, modals and the lightbox.
-pub const PANEL: Color32 = hex(0x101014);
+pub const PANEL: Color32 = SuitePalette::ARTCRAFT_DARK.panel;
 /// `ui-controls`: the sidebar, the prompt box and toolbar buttons.
-pub const CONTROLS: Color32 = hex(0x1e1f22);
+pub const CONTROLS: Color32 = SuitePalette::ARTCRAFT_DARK.raised;
 /// The window chrome behind the content panel: the title bar and the sidebar.
-pub const CHROME: Color32 = hex(0x0a0a0c);
+pub const CHROME: Color32 = SuitePalette::ARTCRAFT_DARK.chrome;
 /// `ui-sunken`: wells and inputs.
-pub const SUNKEN: Color32 = hex(0x060607);
+pub const SUNKEN: Color32 = SuitePalette::ARTCRAFT_DARK.input;
 
 /// `base-fg`: body text.
-pub const INK: Color32 = hex(0xf2f1ee);
-pub const INK_STRONG: Color32 = Color32::WHITE;
-/// `base-fg/60`: secondary text and placeholders.
-pub const MUTED: Color32 = alpha(0xf2f1ee, 153);
+pub const INK: Color32 = SuitePalette::ARTCRAFT_DARK.text;
+pub const INK_STRONG: Color32 = SuitePalette::ARTCRAFT_DARK.text_strong;
+/// Secondary text and placeholders in the standard dark palette.
+pub const MUTED: Color32 = SuitePalette::ARTCRAFT_DARK.text_secondary;
 /// `base-fg/50`: idle toolbar icons.
 pub const DIM: Color32 = alpha(0xf2f1ee, 128);
-/// `base-fg/40`: counters and captions.
-pub const FAINT: Color32 = alpha(0xf2f1ee, 102);
+/// Disabled labels and captions.
+pub const FAINT: Color32 = SuitePalette::ARTCRAFT_DARK.text_disabled;
 /// The sidebar's link colour (`white/72`).
 pub const SIDEBAR_INK: Color32 = alpha(0xffffff, 184);
 
-/// `white/15`: every hairline.
-pub const LINE: Color32 = alpha(0xffffff, 38);
+/// Border used by the shared standard dark interface.
+pub const LINE: Color32 = SuitePalette::ARTCRAFT_DARK.border;
 /// `white/25`: dashed drop targets.
 pub const LINE_DASHED: Color32 = alpha(0xffffff, 64);
-/// `base-fg/40`: outlined buttons and corner marks.
-pub const LINE_STRONG: Color32 = alpha(0xf2f1ee, 102);
+/// Strong border on controls and focusable fields.
+pub const LINE_STRONG: Color32 = SuitePalette::ARTCRAFT_DARK.border_strong;
 /// `white/5`: quiet fills.
 pub const WASH: Color32 = alpha(0xffffff, 13);
-/// `white/8`: the selected sidebar row.
-pub const WASH_SELECTED: Color32 = alpha(0xffffff, 20);
-/// `white/10`: hovered menu rows.
-pub const WASH_HOVER: Color32 = alpha(0xffffff, 26);
+/// Selected sidebar row.
+pub const WASH_SELECTED: Color32 = SuitePalette::ARTCRAFT_DARK.selection;
+/// Hovered menu rows.
+pub const WASH_HOVER: Color32 = SuitePalette::ARTCRAFT_DARK.hover;
+/// Pressed controls and open menus.
+pub const WASH_PRESSED: Color32 = SuitePalette::ARTCRAFT_DARK.pressed;
 
 /// The brand blue (`primary`).
-pub const ACCENT: Color32 = hex(0x2d81ff);
+pub const ACCENT: Color32 = SuitePalette::ARTCRAFT_DARK.accent;
 /// `primary-400`: progress bars and selection rings.
-pub const ACCENT_400: Color32 = hex(0x59a7ff);
+pub const ACCENT_400: Color32 = SuitePalette::ARTCRAFT_DARK.accent_hover;
 /// `ui-accent-ink`: blue text and focus rings.
-pub const ACCENT_INK: Color32 = hex(0x74aaff);
+pub const ACCENT_INK: Color32 = SuitePalette::ARTCRAFT_DARK.focus;
+/// Text and symbols on a solid blue accent fill.
+pub const ACCENT_ON: Color32 = SuitePalette::ARTCRAFT_DARK.on_accent;
 
 /// The inverted primary button (white block, near-black text).
-pub const INVERT_BG: Color32 = Color32::WHITE;
-pub const INVERT_FG: Color32 = hex(0x0b0b0c);
+pub const INVERT_BG: Color32 = SuitePalette::ARTCRAFT_DARK.primary;
+pub const INVERT_FG: Color32 = SuitePalette::ARTCRAFT_DARK.on_primary;
 
 /// `red-400`: failure text.
 pub const BAD: Color32 = hex(0xf87171);
@@ -137,13 +142,13 @@ fn visuals() -> Visuals {
   v.popup_shadow = shadow();
   v.override_text_color = Some(INK);
   v.hyperlink_color = ACCENT_INK;
-  v.selection.bg_fill = ACCENT;
-  v.selection.stroke = Stroke::new(1.0, Color32::WHITE);
+  v.selection.bg_fill = WASH_SELECTED;
+  v.selection.stroke = Stroke::new(1.0, SuitePalette::ARTCRAFT_DARK.selection_text);
   v.text_cursor.stroke = Stroke::new(1.5, Color32::WHITE);
   v.warn_fg_color = BADGE_BETA;
   v.error_fg_color = BAD;
   v.striped = false;
-  for (w, fill, stroke, fg) in [(&mut v.widgets.noninteractive, CONTROLS, LINE, MUTED), (&mut v.widgets.inactive, CONTROLS, LINE, INK), (&mut v.widgets.hovered, WASH_HOVER, LINE_STRONG, INK_STRONG), (&mut v.widgets.active, WASH_HOVER, LINE_STRONG, INK_STRONG), (&mut v.widgets.open, WASH_HOVER, LINE_STRONG, INK_STRONG)] {
+  for (w, fill, stroke, fg) in [(&mut v.widgets.noninteractive, CONTROLS, LINE, MUTED), (&mut v.widgets.inactive, CONTROLS, LINE, INK), (&mut v.widgets.hovered, WASH_HOVER, LINE_STRONG, INK_STRONG), (&mut v.widgets.active, WASH_PRESSED, LINE_STRONG, INK_STRONG), (&mut v.widgets.open, WASH_PRESSED, LINE_STRONG, INK_STRONG)] {
     w.bg_fill = fill;
     w.weak_bg_fill = fill;
     w.bg_stroke = Stroke::new(1.0, stroke);
@@ -190,4 +195,56 @@ fn install_fonts(ctx: &egui::Context) {
     fonts.families.insert(family, stack);
   }
   ctx.set_fonts(fonts);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn shared_roles_preserve_inverted_controls_media_and_semantic_colors() {
+    let roles = SuitePalette::ARTCRAFT_DARK;
+    assert_eq!(BG, roles.window);
+    assert_eq!(PANEL, roles.panel);
+    assert_eq!(CONTROLS, roles.raised);
+    assert_eq!(CHROME, roles.chrome);
+    assert_eq!(SUNKEN, roles.input);
+    assert_eq!(INK, roles.text);
+    assert_eq!(INK_STRONG, roles.text_strong);
+    assert_eq!(MUTED, roles.text_secondary);
+    assert_eq!(FAINT, roles.text_disabled);
+    assert_eq!(LINE, roles.border);
+    assert_eq!(LINE_STRONG, roles.border_strong);
+    assert_eq!(WASH_SELECTED, roles.selection);
+    assert_eq!(WASH_HOVER, roles.hover);
+    assert_eq!(ACCENT, roles.accent);
+    assert_eq!(ACCENT_400, roles.accent_hover);
+    assert_eq!(ACCENT_INK, roles.focus);
+    assert_eq!(ACCENT_ON, roles.on_accent);
+    assert_eq!(INVERT_BG, roles.primary);
+    assert_eq!(INVERT_FG, roles.on_primary);
+    let v = visuals();
+    assert_eq!(v.widgets.hovered.bg_fill, roles.hover);
+    assert_eq!(v.widgets.active.bg_fill, roles.pressed);
+    assert_eq!(v.widgets.open.bg_fill, roles.pressed);
+    assert_eq!(v.selection.stroke.color, roles.selection_text);
+    assert_eq!((BAD, DANGER, BADGE_BETA), (hex(0xf87171), hex(0xd33242), hex(0xffc14d)));
+    assert_eq!(DIM, alpha(0xf2f1ee, 128));
+    assert_eq!(LINE_DASHED, alpha(0xffffff, 64));
+    assert_eq!(RADIUS, CornerRadius::same(3));
+    assert_eq!(v.text_edit_bg_color, Some(Color32::TRANSPARENT));
+    assert_eq!(v.text_cursor.stroke.color, Color32::WHITE);
+  }
+
+  #[test]
+  fn standard_dark_roles_keep_selected_rows_distinct_from_blue_actions() {
+    let v = visuals();
+    assert_eq!(BG, hex(0x121316));
+    assert_eq!(PANEL, hex(0x101014));
+    assert_eq!(ACCENT, hex(0x2d81ff));
+    assert_eq!(ACCENT_ON, hex(0x060607));
+    assert_eq!(v.selection.bg_fill, hex(0x203b65));
+    assert_eq!(v.selection.stroke.color, INK);
+    assert_eq!(v.widgets.inactive.bg_stroke.color, hex(0x36373a));
+  }
 }

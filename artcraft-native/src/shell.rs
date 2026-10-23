@@ -280,7 +280,7 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
   let avatar = Rect::from_center_size(pos2(rect.left() + 22.0, rect.center().y), vec2(28.0, 28.0));
   p.circle_filled(avatar.center(), 14.0, theme::ACCENT);
   let initial = name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default();
-  p.text(avatar.center(), Align2::CENTER_CENTER, initial, FontId::new(13.0, theme::semibold()), Color32::WHITE);
+  p.text(avatar.center(), Align2::CENTER_CENTER, initial, FontId::new(13.0, theme::semibold()), theme::ACCENT_ON);
   p.text(pos2(avatar.right() + 10.0, rect.center().y - 8.0), Align2::LEFT_CENTER, name, FontId::new(13.5, theme::medium()), theme::INK);
   let sub = credits.map_or_else(|| "Account".to_owned(), |c| format!("{} credits", group_thousands(c)));
   p.text(pos2(avatar.right() + 10.0, rect.center().y + 9.0), Align2::LEFT_CENTER, sub, FontId::new(11.5, egui::FontFamily::Proportional), theme::MUTED);
