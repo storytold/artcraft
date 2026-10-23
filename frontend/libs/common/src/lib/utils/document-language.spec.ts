@@ -21,6 +21,14 @@ describe("directionOfLanguage", () => {
       expect(directionOfLanguage("ks-Deva")).toBe("ltr");
       expect(directionOfLanguage("de")).toBe("ltr");
     });
+
+    it("ignores extension and private-use subtags", () => {
+      vi.stubGlobal("Intl", { ...Intl, Locale: class {} });
+      expect(directionOfLanguage("fa-u-nu-latn")).toBe("rtl");
+      expect(directionOfLanguage("ur-PK-u-nu-latn")).toBe("rtl");
+      expect(directionOfLanguage("uz-Arab-u-nu-latn")).toBe("rtl");
+      expect(directionOfLanguage("en-x-arab")).toBe("ltr");
+    });
   });
 });
 

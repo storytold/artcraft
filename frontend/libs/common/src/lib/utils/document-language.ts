@@ -26,8 +26,12 @@ export function directionOfLanguage(tag: string): TextDirection {
   } catch {
     return "ltr";
   }
-  const [language, ...subtags] = tag.toLowerCase().split(/[-_]/);
-  const script = subtags.find((subtag) => subtag.length === 4);
+  const [language, ...rest] = tag.toLowerCase().split(/[-_]/);
+  // Stop at the first singleton (`-u-` Unicode extensions, `-x-` private use):
+  // their keys and values, such as `nu-latn`, are not scripts.
+  const singleton = rest.findIndex((subtag) => subtag.length === 1);
+  const subtags = singleton < 0 ? rest : rest.slice(0, singleton);
+  const script = subtags.find((subtag) => /^[a-z]{4}$/.test(subtag));
   if (script) {
     return RTL_SCRIPTS.has(script) ? "rtl" : "ltr";
   }
