@@ -266,7 +266,9 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
     let key = format!("local://{}", item.id);
     match std::fs::read(path) {
       Ok(bytes) => {
-        env.cache.insert_bytes(&env.ctx, &key, Arc::from(bytes));
+        let bytes: Arc<[u8]> = Arc::from(bytes);
+        item.local_preview = Some(bytes.clone());
+        env.cache.insert_bytes(&env.ctx, &key, bytes);
         item.preview = Some(key);
       },
       Err(err) => {
@@ -283,7 +285,9 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
 pub fn upload_png(env: &mut Env<'_>, refs: &mut References, png: Vec<u8>, slot: ImageSlot) {
   let mut item = RefMedia::uploading(RefKind::Image, None);
   let key = format!("local://{}", item.id);
-  env.cache.insert_bytes(&env.ctx, &key, Arc::from(png.clone()));
+  let bytes: Arc<[u8]> = Arc::from(png.clone());
+  item.local_preview = Some(bytes.clone());
+  env.cache.insert_bytes(&env.ctx, &key, bytes);
   item.preview = Some(key);
   env.backend.upload_png(item.id, png);
   place(refs, item, slot);
