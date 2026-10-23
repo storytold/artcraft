@@ -6,7 +6,7 @@
 use std::collections::VecDeque;
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
-use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, channel, sync_channel};
+use std::sync::mpsc::{Receiver, Sender, SyncSender, TryRecvError, channel, sync_channel};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
@@ -22,6 +22,9 @@ const MAX_WIDTH: u32 = 1280;
 const AUDIO_RATE: u32 = 44_100;
 /// Decoded frames buffered ahead of the clock (back-pressure on `ffmpeg`).
 const FRAME_QUEUE: usize = 4;
+/// Four 8 KiB PCM chunks (about 186 ms), plus the currently playing chunk.
+const AUDIO_QUEUE: usize = 4;
+const PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 const CONTROLS_HEIGHT: f32 = 40.0;
 
 /// Whether `ffmpeg` and `ffprobe` are on the PATH (checked once).
@@ -40,7 +43,7 @@ struct VideoInfo {
 
 pub struct VideoPlayer {
   url: String,
-  probe: Option<Receiver<Result<VideoInfo, String>>>,
+  probe: Option<PendingProbe>,
   info: Option<VideoInfo>,
   stream: Option<Stream>,
   texture: Option<TextureHandle>,
@@ -58,12 +61,42 @@ struct Stream {
   frames: Receiver<(ColorImage, f64)>,
   next: Option<(ColorImage, f64)>,
   ended: bool,
+  received_frames: bool,
   children: Vec<Child>,
   sink: Option<Sink>,
 }
 
+struct PendingProbe {
+  result: Receiver<Result<VideoInfo, String>>,
+  cancel: Sender<()>,
+}
+
+impl PendingProbe {
+  fn new(url: &str) -> Self {
+    let (tx, result) = channel();
+    let (cancel, cancel_rx) = channel();
+    let url = url.to_owned();
+    std::thread::spawn(move || { let _ = tx.send(probe(&url, &cancel_rx)); });
+    Self { result, cancel }
+  }
+}
+
+impl Drop for PendingProbe {
+  fn drop(&mut self) { let _ = self.cancel.send(()); }
+}
+
+struct ProbeChild(Child);
+
+impl Drop for ProbeChild {
+  fn drop(&mut self) {
+    let _ = self.0.kill();
+    let _ = self.0.wait();
+  }
+}
+
 impl Drop for Stream {
   fn drop(&mut self) {
+    if let Some(sink) = self.sink.take() { sink.stop(); }
     for child in &mut self.children {
       let _ = child.kill();
       let _ = child.wait();
@@ -74,12 +107,7 @@ impl Drop for Stream {
 impl VideoPlayer {
   /// Starts probing `url`; playback begins as soon as its size is known.
   pub fn new(url: &str) -> Self {
-    let (tx, rx) = channel();
-    let probe_url = url.to_owned();
-    std::thread::spawn(move || {
-      let _ = tx.send(probe(&probe_url));
-    });
-    Self { url: url.to_owned(), probe: Some(rx), info: None, stream: None, texture: None, position: 0.0, muted: false, error: None, output: None }
+    Self { url: url.to_owned(), probe: Some(PendingProbe::new(url)), info: None, stream: None, texture: None, position: 0.0, muted: false, error: None, output: None }
   }
 
   pub fn url(&self) -> &str {
@@ -116,7 +144,7 @@ impl VideoPlayer {
       self.toggle_pause();
     }
     self.controls(ui, Rect::from_min_max(pos2(rect.left(), rect.bottom() - CONTROLS_HEIGHT), rect.max));
-    if self.stream.is_some() {
+    if self.stream.is_some() || self.probe.is_some() {
       ctx.request_repaint_after(Duration::from_millis(10));
     }
   }
@@ -168,7 +196,7 @@ impl VideoPlayer {
     let Some(rx) = &self.probe else {
       return;
     };
-    match rx.try_recv() {
+    match rx.result.try_recv() {
       Ok(Ok(info)) => {
         self.info = Some(info);
         self.probe = None;
@@ -178,7 +206,11 @@ impl VideoPlayer {
         self.error = Some(err);
         self.probe = None;
       },
-      Err(_) => {},
+      Err(TryRecvError::Disconnected) => {
+        self.error = Some("Video probe stopped unexpectedly".into());
+        self.probe = None;
+      },
+      Err(TryRecvError::Empty) => {},
     }
   }
 
@@ -192,7 +224,7 @@ impl VideoPlayer {
     loop {
       if stream.next.is_none() {
         match stream.frames.try_recv() {
-          Ok(frame) => stream.next = Some(frame),
+          Ok(frame) => { stream.received_frames = true; stream.next = Some(frame); },
           Err(TryRecvError::Disconnected) => {
             stream.ended = true;
             break;
@@ -213,7 +245,20 @@ impl VideoPlayer {
       }
     }
     if stream.ended && stream.next.is_none() {
-      self.play_from(0.0);
+      // A closed pipe also means decode failure. Only loop a clean decoder
+      // exit that produced frames; otherwise a bad URL respawns every UI frame.
+      match stream.children[0].try_wait() {
+        Ok(None) => {},
+        Ok(Some(status)) if status.success() && stream.received_frames => self.play_from(0.0),
+        Ok(Some(status)) => {
+          self.error = Some(format!("Video decoder stopped without completing playback ({status})"));
+          self.stream = None;
+        },
+        Err(err) => {
+          self.error = Some(format!("Video decoder: {err}"));
+          self.stream = None;
+        },
+      }
     }
   }
 
@@ -233,6 +278,7 @@ impl VideoPlayer {
     let Some(info) = self.info else {
       return;
     };
+    self.error = None;
     match self.spawn(info, start) {
       Ok(stream) => self.stream = Some(stream),
       Err(err) => self.error = Some(err),
@@ -248,20 +294,20 @@ impl VideoPlayer {
     std::thread::spawn(move || read_frames(stdout, w, h, start, fps, frame_tx));
     let mut children = vec![video];
     let sink = self.spawn_audio(start, &mut children);
-    Ok(Stream { start, started: Instant::now(), frames: frame_rx, next: None, ended: false, children, sink })
+    Ok(Stream { start, started: Instant::now(), frames: frame_rx, next: None, ended: false, received_frames: false, children, sink })
   }
 
   /// The soundtrack as PCM into rodio (silently skipped when the clip has none).
   fn spawn_audio(&mut self, start: f64, children: &mut Vec<Child>) -> Option<Sink> {
-    let mut audio = command("ffmpeg").args(["-nostdin", "-loglevel", "error", "-ss", &format!("{start:.3}"), "-i", &self.url, "-vn", "-ac", "2", "-ar", &AUDIO_RATE.to_string(), "-f", "s16le", "-"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
-    let mut stdout = audio.stdout.take()?;
-    children.push(audio);
     if self.output.is_none() {
       self.output = OutputStream::try_default().map_err(|e| warn!("No audio output: {e}")).ok();
     }
     let (_, handle) = self.output.as_ref()?;
     let sink = Sink::try_new(handle).ok()?;
-    let (tx, rx) = channel::<Vec<i16>>();
+    let mut audio = command("ffmpeg").args(["-nostdin", "-loglevel", "error", "-ss", &format!("{start:.3}"), "-i", &self.url, "-vn", "-ac", "2", "-ar", &AUDIO_RATE.to_string(), "-f", "s16le", "-"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
+    let mut stdout = audio.stdout.take()?;
+    children.push(audio);
+    let (tx, rx) = pcm_channel();
     std::thread::spawn(move || {
       let mut buf = vec![0u8; 8192];
       while let Ok(n) = stdout.read(&mut buf) {
@@ -287,6 +333,10 @@ fn read_frames(mut stdout: impl Read, w: u32, h: u32, start: f64, fps: f64, tx: 
     }
     n += 1;
   }
+}
+
+fn pcm_channel() -> (SyncSender<Vec<i16>>, Receiver<Vec<i16>>) {
+  sync_channel(AUDIO_QUEUE)
 }
 
 /// Live PCM from a channel; silence while it waits, the end when the sender's gone.
@@ -330,7 +380,7 @@ impl Source for PcmStream {
 
 /// Reads the clip's size, rate and length. A small probe keeps this ~2 s on CDN files instead of
 /// ~14 s (ffprobe otherwise scans much of the file over HTTP).
-fn probe(url: &str) -> Result<VideoInfo, String> {
+fn probe(url: &str, cancel: &Receiver<()>) -> Result<VideoInfo, String> {
   #[derive(serde::Deserialize, Default)]
   #[serde(default)]
   struct Probe {
@@ -349,14 +399,43 @@ fn probe(url: &str) -> Result<VideoInfo, String> {
   struct ProbeFormat {
     duration: String,
   }
-  let out = command("ffprobe").args(["-v", "error", "-probesize", "65536", "-analyzeduration", "0", "-select_streams", "v:0", "-show_entries", "stream=width,height,avg_frame_rate:format=duration", "-of", "json", url]).output().map_err(|e| format!("ffprobe: {e}"))?;
-  let probe: Probe = serde_json::from_slice(&out.stdout).map_err(|e| format!("ffprobe: {e}"))?;
+  let child = command("ffprobe").args(["-v", "error", "-probesize", "65536", "-analyzeduration", "0", "-select_streams", "v:0", "-show_entries", "stream=width,height,avg_frame_rate:format=duration", "-of", "json", url]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().map_err(|e| format!("ffprobe: {e}"))?;
+  let output = probe_output(child, cancel, PROBE_TIMEOUT)?;
+  let probe: Probe = serde_json::from_slice(&output).map_err(|e| format!("ffprobe: {e}"))?;
   let stream = probe.streams.first().ok_or("no video stream")?;
   let fps = match stream.avg_frame_rate.split_once('/') {
     Some((n, d)) => n.parse::<f64>().unwrap_or(24.0) / d.parse::<f64>().unwrap_or(1.0).max(1.0),
     None => stream.avg_frame_rate.parse().unwrap_or(24.0),
   };
   Ok(VideoInfo { width: stream.width.max(2), height: stream.height.max(2), fps: if fps.is_finite() && fps > 0.0 { fps } else { 24.0 }, duration: probe.format.duration.parse().unwrap_or(0.0) })
+}
+
+/// The selected stream's small JSON output fits in the pipe. Waiting with a
+/// cancellation channel lets closing the lightbox kill and reap a stuck probe.
+fn probe_output(child: Child, cancel: &Receiver<()>, timeout: Duration) -> Result<Vec<u8>, String> {
+  let mut child = ProbeChild(child);
+  let started = Instant::now();
+  loop {
+    match cancel.try_recv() {
+      Ok(()) | Err(TryRecvError::Disconnected) => return Err("Video probe cancelled".into()),
+      Err(TryRecvError::Empty) => {},
+    }
+    if started.elapsed() >= timeout { return Err("Video probe timed out".into()); }
+    match child.0.try_wait().map_err(|e| format!("ffprobe: {e}"))? {
+      Some(status) if status.success() => {
+        let mut output = Vec::new();
+        child.0.stdout.take().ok_or("ffprobe has no output")?.read_to_end(&mut output).map_err(|e| format!("ffprobe: {e}"))?;
+        return Ok(output);
+      },
+      Some(status) => return Err(format!("ffprobe failed ({status})")),
+      None => {},
+    }
+    // A drop/cancel wakes this wait immediately; the next iteration reaps.
+    match cancel.recv_timeout(Duration::from_millis(20)) {
+      Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => return Err("Video probe cancelled".into()),
+      Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {},
+    }
+  }
 }
 
 /// The decoded size: at most `MAX_WIDTH` wide, both sides even (as `scale` requires).
@@ -407,7 +486,8 @@ mod tests {
     let status = command("ffmpeg").args(["-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=duration=2:size=640x360:rate=24", "-f", "lavfi", "-i", "sine=duration=2", "-shortest", "-pix_fmt", "yuv420p"]).arg(&clip).status().unwrap();
     assert!(status.success());
     let url = clip.to_string_lossy().into_owned();
-    let info = probe(&url).unwrap();
+    let (_cancel_tx, cancel_rx) = channel();
+    let info = probe(&url, &cancel_rx).unwrap();
     assert_eq!((info.width, info.height), (640, 360));
     assert!((info.fps - 24.0).abs() < 0.01 && (info.duration - 2.0).abs() < 0.2);
 
@@ -418,5 +498,54 @@ mod tests {
     assert!((pts - 1.0).abs() < 1e-9, "frames are stamped from the start position");
     let count = 1 + stream.frames.iter().count();
     assert!((20..=28).contains(&count), "about a second of frames at 24 fps, got {count}");
+  }
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+  use super::*;
+
+  #[test]
+  fn pcm_queue_applies_backpressure_and_disconnects_when_playback_stops() {
+    let (tx, rx) = pcm_channel();
+    for _ in 0..AUDIO_QUEUE { tx.try_send(vec![7; 4096]).unwrap(); }
+    assert!(matches!(tx.try_send(vec![8]), Err(std::sync::mpsc::TrySendError::Full(_))));
+    let mut source = PcmStream { rx, buf: VecDeque::new() };
+    assert_eq!(source.next(), Some(7));
+    tx.try_send(vec![8]).unwrap();
+    drop(source);
+    assert!(matches!(tx.send(vec![9]), Err(_)));
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn cancelled_and_timed_out_probes_are_reaped() {
+    for cancelled in [true, false] {
+      let child = command("sleep").arg("60").stdout(Stdio::piped()).spawn().unwrap();
+      let pid = child.id();
+      let (tx, rx) = channel();
+      if cancelled { tx.send(()).unwrap(); }
+      let started = Instant::now();
+      let result = probe_output(child, &rx, Duration::from_millis(30));
+      assert!(result.unwrap_err().contains(if cancelled { "cancelled" } else { "timed out" }));
+      assert!(started.elapsed() < Duration::from_secs(2));
+      assert!(!command("kill").args(["-0", &pid.to_string()]).stderr(Stdio::null()).status().unwrap().success());
+    }
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn failed_or_empty_decoder_does_not_restart() {
+    for code in [0, 1] {
+      let mut child = command("sh").args(["-c", &format!("exit {code}")]).spawn().unwrap();
+      child.wait().unwrap();
+      let (tx, frames) = sync_channel(FRAME_QUEUE);
+      drop(tx);
+      let stream = Stream { start: 0.0, started: Instant::now(), frames, next: None, ended: false, received_frames: false, children: vec![child], sink: None };
+      let mut player = VideoPlayer { url: "invalid".into(), probe: None, info: Some(VideoInfo { width: 2, height: 2, fps: 24.0, duration: 1.0 }), stream: Some(stream), texture: None, position: 0.0, muted: true, error: None, output: None };
+      player.advance(&egui::Context::default());
+      assert!(player.stream.is_none());
+      assert!(player.error.is_some());
+    }
   }
 }
