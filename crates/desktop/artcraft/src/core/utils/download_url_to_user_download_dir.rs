@@ -56,7 +56,7 @@ pub async fn download_url_with_filename(url: &Url, directory: &Path, filename: &
 /// Saves to exactly `directory/filename`, replacing what's there: the user picked this name (and
 /// confirmed any overwrite) in a save dialog. Only checks the name is a single file name.
 pub async fn save_url_as(url: &Url, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
-  check_single_file_name(filename)?;
+  check_url_file_name_for_downloadability(filename)?;
   let temporary = fetch_to_temporary(url, directory).await?;
   let path = directory.join(filename);
   temporary.persist(&path).map_err(|err| err.error)?;
@@ -177,6 +177,14 @@ mod tests {
     assert_eq!(saved, target_dir.join("Ada's fox.png"));
     assert_eq!(std::fs::read(&saved).unwrap(), b"new", "the file the user confirmed is replaced");
     assert_eq!(std::fs::read_dir(&target_dir).unwrap().count(), 1, "no Ada's fox_1.png beside it");
+  }
+
+  #[tokio::test]
+  async fn chosen_names_must_not_look_like_executables() {
+    let dir = tempfile::tempdir().unwrap();
+    let url = asset_url(&local_image(dir.path(), b"new")).unwrap();
+    assert!(save_url_as(&url, dir.path(), "x.bat").await.is_err());
+    assert!(save_url_as(&url, dir.path(), "run.exe").await.is_err());
   }
 
   #[tokio::test]
