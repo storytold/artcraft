@@ -334,14 +334,7 @@ fn install_session_cookie(
 }
 
 async fn persist_session_cookie(jar: &Arc<CookieStoreMutex>) -> Result<(), DesktopLoginError> {
-  let saved = jar
-    .request_save()
-    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
-  tokio::task::spawn_blocking(move || saved.recv())
-    .await
-    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?
-    .map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))?;
-  Ok(())
+  jar.flush().await.map_err(|_| DesktopLoginError::local("Unable to persist login cookie"))
 }
 
 fn expired() -> DesktopLoginOutcome {
