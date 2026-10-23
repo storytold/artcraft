@@ -2,6 +2,7 @@
 //! [`Event`]s, which the UI drains once per frame; nothing here blocks the UI thread.
 
 pub mod audio;
+pub mod local_library;
 pub mod media_cache;
 pub mod providers;
 pub mod session;
@@ -38,6 +39,7 @@ use serde_json::{Map, Value};
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::feed::types::MediaKind;
+use local_library::{LocalImage, LocalLibrary, file_path, is_local_token};
 use crate::models::{self, ModelInfo};
 use providers::Provider;
 use providers::accounts::ProviderAccounts;
@@ -147,10 +149,15 @@ pub enum Event {
   CharacterChanged,
   /// Generating with `Provider` needs its account connected first.
   ProviderSetupNeeded(Provider),
-  /// A Midjourney or fal job's results are in the library, as `batch_token`.
+  /// A Midjourney, fal or OpenRouter job's results are in the library, as `batch_token`.
   ProviderJobFinished {
     job_id: String,
     batch_token: String,
+  },
+  /// A fal or OpenRouter job finished while signed out: its images are on this computer.
+  ProviderJobKeptLocally {
+    job_id: String,
+    images: Vec<LocalImage>,
   },
   ProviderJobFailed {
     job_id: String,
@@ -198,6 +205,7 @@ pub struct Backend {
   device_login_cancel: Arc<AtomicBool>,
   accounts: ProviderAccounts,
   jobs: JobStore,
+  local: LocalLibrary,
 }
 
 impl Backend {
@@ -208,10 +216,10 @@ impl Backend {
     let host = session::api_host(&root);
     let creds = session::load(&root);
     let http = reqwest::Client::builder().user_agent(USER_AGENT).gzip(true).timeout(Duration::from_secs(60)).build().unwrap_or_default();
-    let (accounts, jobs) = (ProviderAccounts::load(&root), JobStore::load(&root));
+    let (accounts, jobs, local) = (ProviderAccounts::load(&root), JobStore::load(&root), LocalLibrary::load(&root));
     let creds = Arc::new(RwLock::new(creds));
-    rt.spawn(Worker { host: host.clone(), creds: creds.clone(), http: http.clone(), accounts: accounts.clone(), jobs: jobs.clone(), tx: tx.clone(), ctx: ctx.clone() }.run());
-    Self { rt, ctx, tx, rx, host, root, creds, http, device_login_cancel: Arc::new(AtomicBool::new(false)), accounts, jobs }
+    rt.spawn(Worker { host: host.clone(), creds: creds.clone(), http: http.clone(), accounts: accounts.clone(), jobs: jobs.clone(), local: local.clone(), tx: tx.clone(), ctx: ctx.clone() }.run());
+    Self { rt, ctx, tx, rx, host, root, creds, http, device_login_cancel: Arc::new(AtomicBool::new(false)), accounts, jobs, local }
   }
 
   pub fn runtime(&self) -> tokio::runtime::Handle {
@@ -439,7 +447,8 @@ impl Backend {
 
   // --- Other providers ---------------------------------------------------------------------
 
-  /// Starts an image generation at Midjourney or fal; `image_urls` are the references' links.
+  /// Starts an image generation at Midjourney, fal or OpenRouter; `image_urls` are the
+  /// references' links.
   pub fn generate_with_provider(&self, provider: Provider, fields: Map<String, Value>, image_urls: Vec<String>, meta: EnqueueMeta) {
     let (api, accounts, jobs) = (self.api(), self.accounts.clone(), self.jobs.clone());
     self.spawn(move |tx| async move {
@@ -459,12 +468,12 @@ impl Backend {
     });
   }
 
-  /// What an image generation costs at `provider`: nothing extra for direct Midjourney (it uses
-  /// the user's subscription), fal's price from the server.
+  /// What an image generation costs at `provider`: no ArtCraft credits for direct Midjourney or
+  /// OpenRouter (they bill the user's own account), fal's price from the server.
   pub fn estimate_provider_cost(&self, provider: Provider, key: String, fields: Map<String, Value>) {
     match provider {
       Provider::Artcraft => self.estimate_cost(Modality::Image, key, fields),
-      Provider::Midjourney => {
+      Provider::Midjourney | Provider::OpenRouter => {
         let _ = self.tx.send(Event::Cost { key, credits: Some(0) });
       },
       Provider::Fal => {
@@ -487,9 +496,14 @@ impl Backend {
     &self.accounts
   }
 
-  /// Midjourney and fal jobs still running (they get pending cards at startup).
+  /// Midjourney, fal and OpenRouter jobs still running (they get pending cards at startup).
   pub fn provider_jobs(&self) -> Vec<ProviderJob> {
     self.jobs.all()
+  }
+
+  /// The images kept on this computer (made while signed out).
+  pub fn local_images(&self) -> Vec<LocalImage> {
+    self.local.all()
   }
 
   /// Keeps the Midjourney login captured by the sign-in window.
@@ -696,6 +710,13 @@ impl Backend {
   }
 
   pub fn delete_media(&self, token: String) {
+    if is_local_token(&token) {
+      self.local.delete(&token);
+      let _ = self.tx.send(Event::Deleted(token));
+      let _ = self.tx.send(Event::Toast { error: false, message: "File deleted.".to_owned() });
+      self.ctx.request_repaint();
+      return;
+    }
     let api = self.api();
     self.spawn(move |tx| async move {
       match delete_media_file(&api.host, api.creds.as_ref(), &MediaFileToken::new(token.clone())).await {
@@ -710,11 +731,14 @@ impl Backend {
     });
   }
 
-  /// Downloads `url` to `path`.
+  /// Downloads `url` to `path` (copies it, for a local image's `file://` URL).
   pub fn save_url(&self, url: String, path: PathBuf) {
     let http = self.http.clone();
     self.spawn(move |tx| async move {
       let result = async {
+        if let Some(source) = file_path(&url) {
+          return tokio::fs::copy(&source, &path).await.map(|_| ()).map_err(|e| e.to_string());
+        }
         let bytes = http.get(&url).send().await.and_then(|r| r.error_for_status()).map_err(|e| e.to_string())?.bytes().await.map_err(|e| e.to_string())?;
         tokio::fs::write(&path, &bytes).await.map_err(|e| e.to_string())
       }

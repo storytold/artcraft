@@ -6,6 +6,7 @@ use fal_client::error::fal_error_plus::FalErrorPlus;
 use gmicloud_client::error::gmicloud_error::GmiCloudError;
 use grok_api_client::error::grok_error::GrokError;
 use kinovi_web_client::error::kinovi_web_error::KinoviWebError;
+use openrouter_client::error::openrouter_error::OpenRouterError;
 use worldlabs_api_client::error::world_labs_error::WorldLabsError;
 
 #[derive(Debug)]
@@ -19,6 +20,7 @@ pub enum ProviderError {
   Grok(GrokError),
   KinoviWeb(KinoviWebError),
   WorldLabs(WorldLabsError),
+  OpenRouter(OpenRouterError),
 }
 
 impl Error for ProviderError {}
@@ -34,6 +36,7 @@ impl Display for ProviderError {
       Self::Grok(e) => write!(f, "Grok provider error: {}", e),
       Self::KinoviWeb(e) => write!(f, "KinoviWeb provider error: {}", e),
       Self::WorldLabs(e) => write!(f, "WorldLabs provider error: {}", e),
+      Self::OpenRouter(e) => write!(f, "{}", e.user_message()),
     }
   }
 }
@@ -71,5 +74,11 @@ impl From<KinoviWebError> for ProviderError {
 impl From<WorldLabsError> for ProviderError {
   fn from(error: WorldLabsError) -> Self {
     Self::WorldLabs(error)
+  }
+}
+
+impl From<OpenRouterError> for ProviderError {
+  fn from(error: OpenRouterError) -> Self {
+    Self::OpenRouter(error)
   }
 }

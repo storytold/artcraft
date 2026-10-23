@@ -83,9 +83,11 @@ import {
 } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import {
+  mergeLocalGalleryItems,
   useMediaPromptTokens,
   usePrompts,
 } from "@storyteller/ui-generation-list";
+import { isLocalGeneration } from "@storyteller/tauri-api";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -280,6 +282,9 @@ interface GalleryModalProps {
    *  (e.g. open the login modal on desktop, navigate to /login on web) instead
    *  of a Retry link. */
   onLoginClick?: () => void;
+  /** Images kept on this computer (made without an account), listed with the library's items,
+   *  or on their own when nobody is signed in. */
+  localItems?: GalleryItem[];
   onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
@@ -584,6 +589,7 @@ export const GalleryModal = React.memo(
     onUseSelected,
     useSelectedLoading,
     onLoginClick,
+    localItems,
     onDownloadClicked,
     onAddToSceneClicked,
     isOpen,
@@ -649,9 +655,19 @@ export const GalleryModal = React.memo(
         // ignore
       }
     }, [showUploads]);
-    const [allItems, setAllItems] = useState<GalleryItem[]>([]);
+    const [remoteItems, setRemoteItems] = useState<GalleryItem[]>([]);
     const [pageIndex, setPageIndex] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+    // The library's items plus the local images the active filter takes, newest first.
+    const allItems = useMemo(
+      () =>
+        mergeLocalGalleryItems(
+          remoteItems,
+          activeFilter === "all" || activeFilter === "image" ? localItems : undefined,
+          { remoteComplete: !hasMore },
+        ),
+      [remoteItems, localItems, activeFilter, hasMore],
+    );
 
     // Track whether this is the very first load (no cache, no items yet)
     const [initialLoading, setInitialLoading] = useState(false);
@@ -962,7 +978,7 @@ export const GalleryModal = React.memo(
           // session. setUsername will trigger the filter/username effect
           // below, which calls refreshGallery with the new identity.
           galleryCacheMap.clear();
-          setAllItems([]);
+          setRemoteItems([]);
           setPageIndex(0);
           setHasMore(true);
           setInitialLoading(true);
@@ -1093,9 +1109,9 @@ export const GalleryModal = React.memo(
               const newItems = response.data.map(mapApiItem);
 
               if (reset) {
-                setAllItems(newItems);
+                setRemoteItems(newItems);
               } else {
-                setAllItems((prev) => [...prev, ...newItems]);
+                setRemoteItems((prev) => [...prev, ...newItems]);
               }
 
               const nextCursor = response.pagination?.maybe_next ?? undefined;
@@ -1105,7 +1121,7 @@ export const GalleryModal = React.memo(
               setHasMore(more);
 
               const cacheKey = getCacheKey();
-              setAllItems((latest) => {
+              setRemoteItems((latest) => {
                 galleryCacheMap.set(cacheKey, {
                   items: latest,
                   pageIndex: 0,
@@ -1169,7 +1185,7 @@ export const GalleryModal = React.memo(
               // NB: we can't blindly drop items missing from `newItems` —
               // that would evict everything loaded by infinite scroll.
               // Deletions are handled live via `media_file_deleted_event`.
-              setAllItems((prev) => {
+              setRemoteItems((prev) => {
                 if (prev.length === 0) return newItems;
                 if (newItems.length === 0) return prev;
                 const existingIds = new Set(prev.map((it) => it.id));
@@ -1202,7 +1218,7 @@ export const GalleryModal = React.memo(
                 return [...brandNew, ...updated];
               });
             } else {
-              setAllItems((prev) => [...prev, ...newItems]);
+              setRemoteItems((prev) => [...prev, ...newItems]);
             }
 
             // Pagination logic
@@ -1213,7 +1229,7 @@ export const GalleryModal = React.memo(
 
             // Update cache
             const cacheKey = getCacheKey();
-            setAllItems((latest) => {
+            setRemoteItems((latest) => {
               galleryCacheMap.set(cacheKey, {
                 items: latest,
                 pageIndex: current + 1,
@@ -1249,7 +1265,7 @@ export const GalleryModal = React.memo(
 
       if (cached && cached.items.length > 0) {
         // Instantly show cached items — no loading indicator
-        setAllItems(cached.items);
+        setRemoteItems(cached.items);
         setPageIndex(cached.pageIndex);
         setHasMore(cached.hasMore);
         byClassCursorRef.current[activeFilterRef.current] = cached.cursor;
@@ -1258,7 +1274,7 @@ export const GalleryModal = React.memo(
         loadItems(true);
       } else {
         // No cache — show skeleton, then load
-        setAllItems([]);
+        setRemoteItems([]);
         setPageIndex(0);
         setHasMore(true);
         setInitialLoading(true);
@@ -1315,7 +1331,7 @@ export const GalleryModal = React.memo(
         },
         onMediaDeleted: (token) => {
           if (!token) return;
-          setAllItems((prev) => prev.filter((it) => it.id !== token));
+          setRemoteItems((prev) => prev.filter((it) => it.id !== token));
           setBulkSelectedIds((prev) => {
             if (!prev.has(token)) return prev;
             const next = new Set(prev);
@@ -1559,7 +1575,7 @@ export const GalleryModal = React.memo(
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
         if (mode === "select" && onSelectItem) {
-          if (disabledItemIds.includes(item.id)) return;
+          if (disabledItemIds.includes(item.id) || isLocalGeneration(item.id)) return;
           onSelectItem(item.id);
         } else if (bulkSelectionMode) {
           toggleBulkSelect(item.id);
@@ -1613,7 +1629,7 @@ export const GalleryModal = React.memo(
 
     const handleItemDeleted = useCallback((id: string) => {
       // Drop from local state (functional setter — must stay pure).
-      setAllItems((prev) => prev.filter((it) => it.id !== id));
+      setRemoteItems((prev) => prev.filter((it) => it.id !== id));
       setBulkSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -1659,7 +1675,7 @@ export const GalleryModal = React.memo(
             const ids = Array.from(bulkSelectedIds);
             await Promise.allSettled(ids.map((id) => onDeleteMedia(id)));
             const idSet = new Set(ids);
-            setAllItems((prev) => prev.filter((it) => !idSet.has(it.id)));
+            setRemoteItems((prev) => prev.filter((it) => !idSet.has(it.id)));
             for (const [key, entry] of galleryCacheMap.entries()) {
               galleryCacheMap.set(key, {
                 ...entry,
@@ -2147,7 +2163,9 @@ export const GalleryModal = React.memo(
 
     // Add media files to a folder. Optimistic cache + cover, then persist.
     const handleAddToFolder = useCallback(
-      async (itemIds: string[], folderId: string) => {
+      async (selectedIds: string[], folderId: string) => {
+        // Images kept on this computer can't go in library folders.
+        const itemIds = selectedIds.filter((id) => !isLocalGeneration(id));
         if (itemIds.length === 0) return;
         const addedItems = resolveItems(itemIds);
         setFolderMediaItems((prev) => {

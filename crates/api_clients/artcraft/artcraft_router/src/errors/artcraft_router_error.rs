@@ -4,6 +4,7 @@ use crate::errors::provider_error::ProviderError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
 use kinovi_web_client::error::kinovi_web_error::KinoviWebError;
 use kinovi_web_client::error::kinovi_web_specific_api_error::KinoviWebSpecificApiError;
+use openrouter_client::error::openrouter_error::OpenRouterError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use artcraft_client::error::api_error::ApiError;
@@ -68,6 +69,7 @@ impl From<ProviderError> for ArtcraftRouterError {
       ProviderError::Fal(FalErrorPlus::FalBillingError(_)) => true,
       ProviderError::KinoviWeb(KinoviWebError::ApiSpecific(KinoviWebSpecificApiError::BillingError { .. })) => true,
       ProviderError::Storyteller(StorytellerError::Api(ApiError::PaymentRequired(_))) => true,
+      ProviderError::OpenRouter(e) => e.is_billing_error(),
       _ => false,
     };
     if is_billing_error {
@@ -84,5 +86,11 @@ impl From<FalErrorPlus> for ArtcraftRouterError {
       FalErrorPlus::FalBillingError(e) => ArtcraftRouterError::ProviderBillingError(ProviderError::Fal(error)),
       _ => ArtcraftRouterError::Provider(ProviderError::Fal(error)),
     }
+  }
+}
+
+impl From<OpenRouterError> for ArtcraftRouterError {
+  fn from(error: OpenRouterError) -> Self {
+    ProviderError::OpenRouter(error).into()
   }
 }

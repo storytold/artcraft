@@ -5,6 +5,7 @@ pub mod artcraft_platform_info;
 pub mod artcraft_usage_tracker;
 pub mod data_dir;
 pub mod expanduser;
+pub mod openrouter_jobs;
 pub mod os_platform;
 pub mod provider_priority;
 pub mod task_database;

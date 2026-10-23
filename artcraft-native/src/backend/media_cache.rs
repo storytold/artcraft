@@ -11,11 +11,15 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
 use egui::{ColorImage, TextureHandle, TextureOptions};
 use image::AnimationDecoder;
 use log::warn;
 use tokio::runtime::Handle;
 use tokio::sync::Semaphore;
+
+use crate::backend::local_library::file_path;
 
 /// How many images may download at once.
 const MAX_CONCURRENT_DOWNLOADS: usize = 6;
@@ -180,15 +184,35 @@ impl MediaCache {
 }
 
 async fn download(http: &reqwest::Client, url: &str, animated: bool) -> Option<Decoded> {
-  let response = match http.get(url).send().await.and_then(|r| r.error_for_status()) {
-    Ok(response) => response,
-    Err(err) => {
-      warn!("Image download failed for {url}: {err}");
-      return None;
+  if let Some(bytes) = data_url_bytes(url) {
+    return tokio::task::spawn_blocking(move || decode(&bytes).map(Decoded::Still)).await.ok().flatten();
+  }
+  let bytes = match file_path(url) {
+    Some(path) => match tokio::fs::read(&path).await {
+      Ok(bytes) => bytes,
+      Err(err) => {
+        warn!("Couldn't read {}: {err}", path.display());
+        return None;
+      },
+    },
+    None => {
+      let response = match http.get(url).send().await.and_then(|r| r.error_for_status()) {
+        Ok(response) => response,
+        Err(err) => {
+          warn!("Image download failed for {url}: {err}");
+          return None;
+        },
+      };
+      response.bytes().await.ok()?.to_vec()
     },
   };
-  let bytes = response.bytes().await.ok()?;
   tokio::task::spawn_blocking(move || if animated { decode_frames(&bytes).map(Decoded::Frames).or_else(|| decode(&bytes).map(Decoded::Still)) } else { decode(&bytes).map(Decoded::Still) }).await.ok().flatten()
+}
+
+/// The bytes of a base64 `data:` URL (an inline reference image).
+fn data_url_bytes(url: &str) -> Option<Vec<u8>> {
+  let (_, encoded) = url.strip_prefix("data:")?.split_once(";base64,")?;
+  STANDARD.decode(encoded).ok()
 }
 
 fn decode(bytes: &[u8]) -> Option<ColorImage> {

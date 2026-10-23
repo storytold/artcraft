@@ -53,6 +53,12 @@ impl StorytellerCredentialManager {
     self.holder.get_credentials()
   }
 
+  /// The credentials only when someone is signed in. Every client also holds an anonymous visitor
+  /// cookie (`avt`), so having credentials at all doesn't mean there's an account.
+  pub fn get_signed_in_credentials(&self) -> AnyhowResult<Option<StorytellerCredentialSet>> {
+    Ok(self.get_credentials()?.filter(|creds| creds.session.is_some()))
+  }
+
   pub fn get_credentials_required(&self) -> AnyhowResult<StorytellerCredentialSet> {
     self.holder.get_credentials_required()
   }
@@ -126,4 +132,27 @@ fn persist_avt_to_disk(avt: &StorytellerAvtCookie, app_data_root: &AppDataRoot) 
   file.flush()?;
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn a_visitor_cookie_alone_is_not_signed_in() {
+    let directory = tempfile::tempdir().unwrap();
+    let manager = StorytellerCredentialManager::initialize_empty(&AppDataRoot::create_existing(directory.path()).unwrap());
+    manager.set_credentials(&StorytellerCredentialSet::initialize_with_just_avt(StorytellerAvtCookie::new("visitor".to_owned()))).unwrap();
+    assert!(manager.get_signed_in_credentials().unwrap().is_none());
+  }
+
+  #[test]
+  fn a_session_cookie_is_signed_in() {
+    let directory = tempfile::tempdir().unwrap();
+    let manager = StorytellerCredentialManager::initialize_empty(&AppDataRoot::create_existing(directory.path()).unwrap());
+    let avt = StorytellerAvtCookie::new("visitor".to_owned());
+    let session = StorytellerSessionCookie::new("session".to_owned());
+    manager.set_credentials(&StorytellerCredentialSet::initialize(Some(avt), Some(session))).unwrap();
+    assert!(manager.get_signed_in_credentials().unwrap().is_some());
+  }
 }

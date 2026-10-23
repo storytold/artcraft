@@ -26,6 +26,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import { generationCountForModel } from "./generationCountForModel";
 import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
@@ -286,11 +287,10 @@ export const PromptBoxImage = ({
   }, [imageMediaId, url]);
 
   useEffect(() => {
-    if (selectedModel?.isValidGenerationCount(generationCount)) {
-      return;
+    const nextCount = generationCountForModel(selectedModel, generationCount);
+    if (nextCount !== generationCount) {
+      setGenerationCount(nextCount);
     }
-    const defaultGenerations = selectedModel?.defaultGenerationCount || 4;
-    setGenerationCount(defaultGenerations);
   }, [selectedModel, generationCount]);
 
   useEffect(() => {

@@ -28,6 +28,7 @@ const CREATOR_ICON_FILES: Partial<Record<ModelCreator, string>> = {
   [ModelCreator.Hailuo]: "minimax.svg",
   [ModelCreator.WorldLabs]: "worldlabs.svg",
   [ModelCreator.Suno]: "suno.svg",
+  [ModelCreator.OpenRouter]: "openrouter.svg",
 };
 
 // Full-color brand icons (LobeHub icon set, under services/color/) shown in
