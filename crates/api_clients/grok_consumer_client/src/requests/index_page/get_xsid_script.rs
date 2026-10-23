@@ -27,7 +27,8 @@ pub async fn get_xsid_script(args: GetXsidScriptArgs<'_>) -> Result<XsidScript, 
       let on_demand = on_demand.unwrap_or_else(|| "".to_string());
       format!("https://abs.twimg.com/responsive-web/client-web/ondemand.s.{}a.js", on_demand)
     },
-    _ => format!("https://grok.com/_next/{}", args.xsid_script_id),
+    // 2026-03+: chunks are served from cdn.grok.com rather than grok.com.
+    _ => format!("https://cdn.grok.com/_next/{}", args.xsid_script_id),
   };
 
   let xsid_script_body = get_index_page_script_with_client(GetIndexPageScriptArgs {
