@@ -126,6 +126,8 @@ struct Clip {
   grab: Option<(f64, Receiver<Result<Vec<u8>, String>>)>,
   frame: Option<Frame>,
   error: Option<String>,
+  /// The moment whose decode failed; it isn't retried until the slider moves elsewhere.
+  failed_at: Option<f64>,
 }
 
 impl Clip {
@@ -135,7 +137,12 @@ impl Clip {
     std::thread::spawn(move || {
       let _ = tx.send(video::probe(&probe_path));
     });
-    Self { path, probe: Some(rx), info: None, position: 0.0, grab: None, frame: None, error: None }
+    Self { path, probe: Some(rx), info: None, position: 0.0, grab: None, frame: None, error: None, failed_at: None }
+  }
+
+  /// Whether the slider is on a moment that has no frame yet and no decode running or failed.
+  fn wants_frame(&self) -> bool {
+    self.info.is_some() && self.grab.is_none() && self.frame.as_ref().map(|f| f.time) != Some(self.position) && self.failed_at != Some(self.position)
   }
 
   fn poll(&mut self, ctx: &egui::Context) {
@@ -158,12 +165,16 @@ impl Clip {
             self.frame = Some(Frame { time, png, texture });
             self.error = None;
           },
-          Err(e) => self.error = Some(e),
+          Err(e) => {
+            self.error = Some(e);
+            self.failed_at = Some(time);
+          },
         }
       }
     }
     // Decode the moment the slider is on once the previous frame is back.
-    if self.info.is_some() && self.grab.is_none() && self.frame.as_ref().map(|f| f.time) != Some(self.position) && self.error.is_none() {
+    if self.wants_frame() {
+      self.error = None;
       let (tx, rx) = channel();
       let path = self.path.to_string_lossy().into_owned();
       let time = self.position;
@@ -215,6 +226,14 @@ mod tests {
   fn frame_names_carry_the_clip_name_and_moment() {
     assert_eq!(frame_file_name("/videos/holiday.mp4", 65.25), "holiday_1-05.250.png");
     assert_eq!(frame_file_name("", 0.0), "frame_0-00.000.png");
+  }
+
+  #[test]
+  fn a_failed_moment_is_retried_only_after_the_slider_moves() {
+    let mut clip = Clip { path: PathBuf::from("clip.mp4"), probe: None, info: Some(info()), position: 2.0, grab: None, frame: None, error: Some("no frame at this time".to_owned()), failed_at: Some(2.0) };
+    assert!(!clip.wants_frame());
+    clip.position = 3.0;
+    assert!(clip.wants_frame());
   }
 
   #[test]
