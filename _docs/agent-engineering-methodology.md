@@ -90,7 +90,9 @@ Documentation changes check links, preserved conventions and the final diff.
 ## Optional: review by trying to falsify a claim
 
 The workflows in this section and the next are opt-in; the root rules do not require
-them. Self-review is useful but shares the author's assumptions. For consequential changes,
+them.
+
+Self-review is useful but shares the author's assumptions. For consequential changes,
 seek a fresh context over a pinned diff and relevant contracts. Give it one concrete
 claim to falsify, not an incentive to manufacture a list of findings. A clean answer
 is legitimate when it states its scope and what it did not examine.
@@ -129,9 +131,10 @@ Pause dependent work for a real owner decision while completing independent auth
 
 ## Scope, dependencies and delivery
 
-User authorization defines scope. Paid provider calls, uploads, credential access, external messages, releases and
-destructive operations need their own authorization. Ordinary local tests use synthetic
-fixtures. Keep secrets and private customer material out of source, logs and PR evidence.
+User authorization defines scope. Paid provider calls, uploads, credential access,
+external messages, releases and destructive operations need their own authorization.
+Ordinary local tests use synthetic fixtures. Keep secrets and private customer
+material out of source, logs and PR evidence.
 
 Read a dependency's actual contract/source before wrapping it or claiming it cannot do
 something. If a workaround is needed, name the dependency behavior, cost and retirement
