@@ -6,6 +6,7 @@ import { GroupNode as GroupNodeData, MoodboardNode } from "../types";
 import { useMoodboardStore } from "../MoodboardStore";
 import { useNodeDrag } from "../interactions/useNodeDrag";
 import { ImageNode } from "./ImageNode";
+import { VideoNode } from "./VideoNode";
 import { TextNode } from "./TextNode";
 
 interface Props {
@@ -21,7 +22,7 @@ interface Props {
 // nodes never fire `onSelect`. Using a module-level constant keeps the
 // reference stable across renders, which lets the memoized child nodes
 // skip work when nothing else about them changed.
-const NO_OP_SELECT = () => {};
+const NO_OP_SELECT = () => undefined;
 
 const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
   const drag = useNodeDrag(node.id);
@@ -38,9 +39,8 @@ const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
     ),
   );
 
-  const handleSelect = (
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
+    onSelect(node.id, e);
 
   return (
     <Group
@@ -73,6 +73,17 @@ const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
         if (child.kind === "image") {
           return (
             <ImageNode
+              key={child.id}
+              node={child}
+              draggable={false}
+              selected={false}
+              onSelect={NO_OP_SELECT}
+            />
+          );
+        }
+        if (child.kind === "video") {
+          return (
+            <VideoNode
               key={child.id}
               node={child}
               draggable={false}
