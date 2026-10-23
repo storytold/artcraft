@@ -27,6 +27,9 @@ if [[ $# -ne 0 ]]; then
   exit 1
 fi
 
+source "${root_dir}/script/common/linux_preflight.sh"
+linux_preflight
+
 source "${root_dir}/script/common/frontend_preflight.sh"
 frontend_preflight "${frontend_path}"
 

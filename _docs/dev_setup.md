@@ -14,6 +14,13 @@ To set up the ArtCraft development environment,  install the following:
 
 **Mac and Linux Development** 
 
+Linux also needs the GTK/WebKit/D-Bus **development** packages (on Fedora:
+`glib2-devel`, `gtk3-devel`, `webkit2gtk4.1-devel`, and so on); the runtime
+libraries alone do not provide the `pkg-config` files used during the Rust
+build. The combined launcher checks for them and prints the right install
+command for Fedora, Debian/Ubuntu, or Arch. Tauri's general prerequisites list
+is at <https://v2.tauri.app/start/prerequisites/>.
+
 ```bash
 # Start the frontend and Rust/Tauri together in one terminal
 ./script/artcraft/unix_dev.sh

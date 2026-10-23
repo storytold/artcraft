@@ -147,7 +147,15 @@ setInterval(() => {}, 1000);
   const proc = spawn(launcher, [], {
     // Prove the launcher is independent of the invoking working directory.
     cwd: dir,
-    env: { ...process.env, ...env, PATH: `${dir}:${process.env.PATH}`, TEST_RECORD: recordFile },
+    env: {
+      ...process.env,
+      ...env,
+      // The launcher tests use a fake cargo and must work on machines without
+      // the Linux GTK/WebKit development packages installed.
+      ARTCRAFT_SKIP_SYSTEM_PREFLIGHT: "1",
+      PATH: `${dir}:${process.env.PATH}`,
+      TEST_RECORD: recordFile,
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";
