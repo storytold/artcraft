@@ -1,25 +1,24 @@
 # Evidence-oriented agent engineering for ArtCraft
 
-Status: proposed methodology and adoption choices. Operative instructions are in
-the root and contextual `AGENTS.md` files. This document explains their reasoning
-and supplies optional workflows; it does not activate agents, hooks, CI or merge rights.
+Operative instructions are in the root and contextual `AGENTS.md` files. This document
+explains their reasoning and describes optional workflows; it does not activate agents,
+hooks, CI or merge rights.
 
-## Why this proposal fits this repository
+## Why this fits this repository
 
-ArtCraft already places Rust, endpoint, Tauri-command, schema and 3D-editor rules
-near the code they govern. This proposal keeps that structure and its Claude symlink
-mirrors. It adds explicit ways to challenge an agent's diagnosis, confidence and
-scope before a plausible implementation becomes an accidental product contract.
+ArtCraft places Rust, endpoint, Tauri-command, schema and 3D-editor rules near the
+code they govern. This methodology keeps that structure. It adds explicit ways to
+challenge an agent's diagnosis, confidence and scope before a plausible implementation
+becomes an accidental product contract.
 
 The architecture has several different evidence boundaries: shared Rust API clients,
 the provider router, Tauri IPC and cookie handling, SQLite task persistence, React
 state, the Three.js editor and the separate egui app. A result in one does not establish
 the same result in another. Backend services are outside this repository.
 
-The proposal deliberately does not import a .NET architecture, a universal result type,
-numbered stage bureaucracy, protocol-ratification machinery or another project's
-delivery authorization. Existing Rust `anyhow` conventions, schema types, module layout,
-two-space style, API endpoint/command files and pagescene invariants remain in force.
+It does not introduce a universal result type, numbered stages or new approval
+machinery. Existing Rust `anyhow` conventions, schema types, module layout, two-space
+style, API endpoint/command files and pagescene invariants remain in force.
 
 ## Define the claim before its implementation
 
@@ -86,13 +85,12 @@ manifests and scripts rather than invent one universal monorepo command. Existin
 - Pure Rust app: `cargo test -p artcraft_native`, with unit and `egui_kittest` coverage.
 - Frontend: owning package/Nx targets, existing specs and relevant desktop-session checks.
 
-These are routing examples, not claims that every command was run for this proposal.
-Documentation changes check links, mirrors, preserved conventions and the final diff.
-No new CI job is introduced here; maintainers can choose an enforcement follow-up.
+Documentation changes check links, preserved conventions and the final diff.
 
-## Review by trying to falsify a claim
+## Optional: review by trying to falsify a claim
 
-Self-review is useful but shares the author's assumptions. For consequential changes,
+The workflows in this section and the next are opt-in; the root rules do not require
+them. Self-review is useful but shares the author's assumptions. For consequential changes,
 seek a fresh context over a pinned diff and relevant contracts. Give it one concrete
 claim to falsify, not an incentive to manufacture a list of findings. A clean answer
 is legitimate when it states its scope and what it did not examine.
@@ -114,7 +112,7 @@ or report the limit and outstanding work. A capped loop is not convergence. Repo
 scope, omissions, rounds and cumulative agents when used. This workflow is optional;
 it grants no permission to spawn agents or turn an agent report into maintainer approval.
 
-## Concurrent agents and shared work
+## Optional: concurrent agents and shared work
 
 Pin the revision a reviewer reads. Do not let another agent edit underneath that read:
 use separate worktrees/scratch for execution or serialize read and write phases.
@@ -131,8 +129,7 @@ Pause dependent work for a real owner decision while completing independent auth
 
 ## Scope, dependencies and delivery
 
-User authorization defines scope; repository visibility and a proposed workflow do not.
-Paid provider calls, uploads, credential access, external messages, releases and
+User authorization defines scope. Paid provider calls, uploads, credential access, external messages, releases and
 destructive operations need their own authorization. Ordinary local tests use synthetic
 fixtures. Keep secrets and private customer material out of source, logs and PR evidence.
 
@@ -141,19 +138,26 @@ something. If a workaround is needed, name the dependency behavior, cost and ret
 condition; add a probe when that behavior is load-bearing. Prefer removing the cause
 within scope, and separate adjacent architectural changes into their own reviewable work.
 
-Submit branches through PRs, describe the complete final change, evidence and limitations,
-and leave adoption/merge/release to maintainers. A green suite does not grant wider scope.
-Keep lasting rationale in the repository; a PR description alone may be lost at merge.
-No automated PR review coverage is assumed merely because agents evaluate proposals.
+When delivering through a PR, describe the complete final change, evidence and
+limitations. A green suite does not grant wider scope. Keep lasting rationale in the
+repository; a PR description alone may be lost at merge.
 
 ## Instruction discovery and maintenance
 
-The root is the universal entrypoint; nested instructions own context; the repository
-guide owns detailed layout/style; this methodology owns explanations and optional
-workflows. Read each affected path's ancestor instructions explicitly when working from
-the root: automatic discovery need not preload all descendants. Cross-boundary work
-loads both contexts. Maintain `CLAUDE.md` as symlinks to sibling `AGENTS.md` files,
-including missing mirrors for the existing endpoint/command contexts.
+The root `AGENTS.md` is the universal entrypoint and holds layout and style; nested
+instructions own their context; this methodology owns explanations and optional
+workflows. Tools differ in when they load nested files: Claude Code loads a
+subdirectory's `AGENTS.md` when it reads a file there, while Codex reads the files from
+the root down to its working directory at startup. So a session started at the root
+should read each affected directory's `AGENTS.md` explicitly before editing.
+
+Instruction files are named `AGENTS.md` only. Claude Code v2.1.277 and later reads them
+directly, but only when no `CLAUDE.md` or `CLAUDE.local.md` is on the path. A
+`CLAUDE.md` symlink is unnecessary, and harmful on Windows: Git for Windows checks
+symlinks out as one-line text files unless `core.symlinks` is enabled, and that one-line
+`CLAUDE.md` then hides the real instructions. Contributors who keep a personal
+`CLAUDE.local.md` can set Claude Code's "Project instructions" option to
+`claude-md-and-agents-md` to load both.
 
 Keep instructions concise and durable. State the failure prevented and the actual
 guard or manual check. Do not claim prose enforces permissions or reader/writer isolation.
@@ -161,33 +165,16 @@ Report concrete friction with an example rather than praise or copy another proj
 rule by default. Do not require a phrase or a paragraph to remain in an entrypoint just
 to satisfy a test; guard the behavior or owned contract instead.
 
-Codex discovery reference: [official AGENTS.md guide](https://developers.openai.com/codex/guides/agents-md).
+Codex discovery reference: [official AGENTS.md guide](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 Claude discovery/reference: [official memory and instruction guide](https://code.claude.com/docs/en/memory).
 Tool versions and configuration affect discovery; verify loaded files in the actual
-session. Symlink materialization on Windows must be checked rather than assumed.
+session (in Claude Code, `/memory` lists them).
 
-## Review scope and adoption choices
+## Status of each part
 
-This draft proposes the complete package so maintainers can assess its interactions.
-Adoption is a maintainer decision; the groups below can be retained or revised together
-with their dependent instruction references. Unmerged prose is not adopted policy.
-
-| Group                         | Included behavior                                               | Adoption scope                                  |
-|-------------------------------|-----------------------------------------------------------------|-------------------------------------------------|
-| Universal operative baseline  | Defect reproduction, evidence limits, scope and concurrent safety | Root instructions; review their product fit      |
-| Contextual operative guidance | Rust, frontend, egui and docs boundaries; missing Claude mirrors  | Existing conventions plus focused additions      |
-| Explanatory methodology       | Rationale and worked ArtCraft examples                           | Documentation; no separate automation activated  |
-| Optional deeper review        | Cold claim review, reasoning review and bounded recheck loop      | Opt-in workflow; no mandatory agent count/cadence |
-| Future mechanical enforcement | Mirror/link guard, CI integration, stronger review orchestration | Not implemented; separate maintainer decision    |
-
-Reviewers should challenge whether each instruction fits an actual ArtCraft boundary,
-whether it duplicates/conflicts with a nested rule, and whether the root still routes
-all prior style requirements. No application behavior, dependencies, release workflow,
-provider calls or account configuration change. Existing pagescene feature notes are
-left intact; reconciling their branch-era status with current code is separate work,
-not an implicit permission to implement or delete those features.
-
-Public fork PRs are present in the inspected repository, but no repository-level
-CONTRIBUTING or PR template was found in the snapshot. That observation does not
-promise acceptance. This is a draft invitation to evaluate methodology, not an
-assertion that the maintainers or their agents have endorsed it.
+| Part                   | Where                        | Status                                     |
+|------------------------|------------------------------|--------------------------------------------|
+| Operative rules        | Root and nested `AGENTS.md`  | Agents follow them                         |
+| Explanation            | This document                | Reference only                             |
+| Optional deeper review | This document                | Opt-in; no required agent count or cadence |
+| Mechanical enforcement | Not implemented              | Possible follow-up, such as a link check   |

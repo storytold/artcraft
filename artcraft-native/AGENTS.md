@@ -1,6 +1,6 @@
 # Pure Rust native app
 
-Read the root instructions, `_docs/agent-repository-guide.md` and this app's `README.md`.
+Read this app's `README.md` before changing its architecture or known limitations.
 This egui host is separate from Tauri; do not import webview/React architecture into
 ordinary UI code. The dedicated sign-in webview remains its own credential boundary.
 
