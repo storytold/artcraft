@@ -147,7 +147,7 @@ const BoardCardInner = ({
               container, where blur filters trigger GPU repaints on every
               scroll frame. A solid scrim keeps the icons legible instead. */}
           {item.rating > 0 && (
-            <div className="absolute bottom-2 left-2 flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-1">
+            <div className="absolute bottom-2 start-2 flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-1">
               {Array.from({ length: item.rating }).map((_, i) => (
                 <StarIcon
                   key={i}
@@ -160,7 +160,7 @@ const BoardCardInner = ({
           {/* Selection check — visible when selected or on hover. */}
           <div
             className={[
-              "absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full",
+              "absolute start-2 top-2 flex h-6 w-6 items-center justify-center rounded-full",
               "border transition-all duration-150",
               selected
                 ? "border-primary bg-primary text-white opacity-100"
@@ -172,7 +172,7 @@ const BoardCardInner = ({
 
           {/* Action rail — solid scrim pill (no blur in the scroll container),
               fades up on hover. */}
-          <div className="absolute right-2 top-2 flex translate-y-1 items-center gap-1 rounded-full border border-white/15 bg-black/65 p-0.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+          <div className="absolute end-2 top-2 flex translate-y-1 items-center gap-1 rounded-full border border-white/15 bg-black/65 p-0.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
             <RailButton
               label="Open"
               icon={Maximize2Icon}
@@ -255,7 +255,7 @@ const CardContent = ({
     case "color":
       return (
         <div className="h-full w-full" style={{ background: item.color }}>
-          <span className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur">
+          <span className="absolute bottom-2 start-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur">
             {item.color}
           </span>
         </div>
@@ -303,7 +303,7 @@ const CardContent = ({
               <Favicon url={item.url} className="h-4 w-4" />
             </span>
             <span className="flex min-w-0 flex-col">
-              <span className="truncate text-xs font-medium text-base-fg/90">
+              <span dir="auto" className="truncate text-xs font-medium text-base-fg/90">
                 {item.title || hostnameOf(item.url)}
               </span>
               <span className="truncate text-[10px] text-base-fg/45">
@@ -346,6 +346,7 @@ const NoteEditor = ({
       onDoubleClick={(e) => e.stopPropagation()}
     >
       <textarea
+        dir="auto"
         ref={ref}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}

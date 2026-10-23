@@ -58,7 +58,7 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
         </h1>
 
         {post.description && (
-          <p className="text-xl text-white/70 mb-8 leading-relaxed font-light border-l-4 border-primary pl-4">
+          <p className="text-xl text-white/70 mb-8 leading-relaxed font-light border-s-4 border-primary ps-4">
             {post.description}
           </p>
         )}

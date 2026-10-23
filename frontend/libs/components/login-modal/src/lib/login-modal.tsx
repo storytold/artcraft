@@ -15,10 +15,10 @@ const DEFAULT_SHOWCASE_VIDEO =
   "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
 const LOGIN_SUCCESS_DURATION_MS = 3000;
 const FRAME_CORNERS = [
-  "top-0 left-0",
-  "top-0 right-0",
-  "bottom-0 left-0",
-  "bottom-0 right-0",
+  "top-0 start-0",
+  "top-0 end-0",
+  "bottom-0 start-0",
+  "bottom-0 end-0",
 ];
 
 interface LoginModalProps {
@@ -245,7 +245,7 @@ export function LoginModal({
                     <div className="relative flex w-full flex-col lg:w-1/2">
                       <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
                         <div className="w-full">
-                          <div className="mb-8 text-left">
+                          <div className="mb-8 text-start">
                             <img
                               src="/resources/logo/artcraft-icon.png"
                               alt="ArtCraft"
@@ -294,7 +294,7 @@ export function LoginModal({
                     </div>
 
                     {/* ── Showcase pane (desktop only) ── */}
-                    <div className="relative hidden border-l border-white/15 lg:block lg:w-1/2">
+                    <div className="relative hidden border-s border-white/15 lg:block lg:w-1/2">
                       <LoginShowcase videoUrl={videoUrl} />
                     </div>
                   </>

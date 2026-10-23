@@ -117,7 +117,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
       {hasStar && (
         <StarIcon
           
-          className="absolute left-2 top-2 text-sm text-amber-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+          className="absolute start-2 top-2 text-sm text-amber-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       )}
 
       {/* Name + subfolder count */}
@@ -135,8 +135,9 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
               style={colorCode ? { color: colorCode } : undefined} />
           )}
           <span
+            dir="auto"
             className={twMerge(
-              "line-clamp-2 break-words text-left text-sm font-medium",
+              "line-clamp-2 break-words text-start text-sm font-medium",
               hasArt
                 ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
                 : "text-base-fg/90",
@@ -148,7 +149,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
         {childCount > 0 && (
           <span
             className={twMerge(
-              "text-left text-[10px]",
+              "text-start text-[10px]",
               hasArt ? "text-white/70" : "text-base-fg/40",
             )}
           >
@@ -168,7 +169,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
             e.stopPropagation();
             openMenuAt(e.currentTarget as HTMLElement);
           }}
-          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100 [@media(pointer:coarse)]:opacity-100"
+          className="absolute end-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100 [@media(pointer:coarse)]:opacity-100"
         >
           <EllipsisIcon  className="text-sm" />
         </span>

@@ -220,7 +220,7 @@ export const AudioReferenceRow = forwardRef<
               ({referenceAudios.length}/{maxAudioCount})
             </span>
             {audioRequired && referenceAudios.length === 0 && (
-              <span className="ml-1.5 text-xs font-medium text-red-500">
+              <span className="ms-1.5 text-xs font-medium text-red-500">
                 required
               </span>
             )}
@@ -346,7 +346,7 @@ function AudioRefTile({
       >
         <DynamicIcon
           icon={isPlaying ? SquareIcon : PlayIcon}
-          className={`h-2 w-2 ${isPlaying ? "" : "ml-px"}`}
+          className={`h-2 w-2 ${isPlaying ? "" : "ms-px"}`}
         />
       </button>
       <span className="text-xs font-medium text-base-fg/80">

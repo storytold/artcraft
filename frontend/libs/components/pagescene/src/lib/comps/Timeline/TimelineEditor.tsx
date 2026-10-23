@@ -350,12 +350,12 @@ export const TimelineEditor = () => {
         >
           <SkipForwardIcon  className="h-3.5 w-3.5" />
         </button>
-        <span className="ml-2 font-mono tabular-nums text-xs text-base-fg/60">
+        <span className="ms-2 font-mono tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
         </span>
-        {/* ml-auto lives on a wrapper: Tooltip's className styles the popup
+        {/* ms-auto lives on a wrapper: Tooltip's className styles the popup
             panel, and its trigger div is hard-coded to "relative". */}
-        <div className="ml-auto">
+        <div className="ms-auto">
           <Tooltip
             content={
               focusSelected

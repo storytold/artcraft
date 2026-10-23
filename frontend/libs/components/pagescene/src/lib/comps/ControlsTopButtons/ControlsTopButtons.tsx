@@ -240,7 +240,7 @@ export const ControlsTopButtons = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2 pl-3 pt-3">
+    <div className="flex flex-col gap-2 ps-3 pt-3">
       <div className="flex items-center gap-1.5">
         <ButtonDropdown
           label="File"

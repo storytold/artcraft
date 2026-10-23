@@ -213,7 +213,7 @@ export const UploadFilesImage = ({
                   }`}
                   onClick={() => setPreviewIndex(i)}
                 >
-                  <span className="truncate flex-1" title={entry.file.name}>
+                  <span dir="auto" className="truncate flex-1" title={entry.file.name}>
                     {entry.file.name.slice(0, entry.file.name.lastIndexOf("."))}
                   </span>
                   <span className="shrink-0">

@@ -137,7 +137,7 @@ export const PreviewEngineCamera = () => {
           <div className="flex h-full w-full items-center justify-center bg-ui-controls">
             <LoaderCircleIcon size="3em" className="animate-spin" />
           </div>
-          <div className="absolute left-0 top-0 h-full w-full overflow-hidden">
+          <div className="absolute start-0 top-0 h-full w-full overflow-hidden">
             <CameraViewCanvas className="!h-full !w-full" />
           </div>
         </div>

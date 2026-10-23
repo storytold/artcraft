@@ -65,7 +65,7 @@ interface MetadataEditorProps {
 }
 
 const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: MetadataEditorProps) => (
-  <aside className="flex w-[280px] shrink-0 flex-col border-r border-ui-panel-border bg-ui-panel">
+  <aside className="flex w-[280px] shrink-0 flex-col border-e border-ui-panel-border bg-ui-panel">
     <div className="flex-1 overflow-y-auto p-4">
       <div className="flex flex-col gap-3">
         <div className="hud-label text-base-fg/40">
@@ -86,6 +86,7 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         <div>
           <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
           <textarea
+            dir="auto"
             value={board.dialogue}
             onChange={(e) => onUpdate({ dialogue: e.target.value })}
             placeholder="Character dialogue..."
@@ -97,6 +98,7 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         <div>
           <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
           <textarea
+            dir="auto"
             value={board.action}
             onChange={(e) => onUpdate({ action: e.target.value })}
             placeholder="On-screen action..."
@@ -108,6 +110,7 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         <div>
           <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
           <textarea
+            dir="auto"
             value={board.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}
             placeholder="Director notes..."
@@ -401,7 +404,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
         <button
           onClick={onExit}
           title="Done sketching"
-          className="ml-auto flex h-8 items-center gap-1.5 rounded-[3px] bg-white px-3 text-xs font-medium text-black transition-colors hover:bg-white/85"
+          className="ms-auto flex h-8 items-center gap-1.5 rounded-[3px] bg-white px-3 text-xs font-medium text-black transition-colors hover:bg-white/85"
         >
           <CheckIcon  className="text-xs" />
           Done
@@ -481,7 +484,7 @@ const ThumbnailItem = ({
         <ImagesIcon  className="text-lg text-base-fg/20" />
       </div>
     )}
-    <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
+    <div className="absolute bottom-0 start-0 end-0 bg-black/60 px-1.5 py-0.5">
       <span className="font-mono text-[10px] tabular-nums text-white/85">{board.shotNumber}</span>
     </div>
   </div>
@@ -769,11 +772,16 @@ const Timeline = ({
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-1.5">
                   <span className="truncate text-[10px] font-semibold text-base-fg/80">
                     {board.shotNumber}
-                    {board.title ? ` · ${board.title}` : ""}
+                    {board.title && (
+                      <>
+                        {" · "}
+                        <bdi>{board.title}</bdi>
+                      </>
+                    )}
                   </span>
                   {board.dialogue && (
                     <span className="truncate text-[9px] italic text-base-fg/40">
-                      "{board.dialogue}"
+                      "<bdi>{board.dialogue}</bdi>"
                     </span>
                   )}
                   <span className="font-mono text-[9px] tabular-nums text-base-fg/30">{board.duration.toFixed(1)}s</span>
@@ -1203,7 +1211,7 @@ export const Storyboard = () => {
             onSketch={handleSketchOpen}
           />
         ) : (
-          <div className="w-[280px] shrink-0 border-r border-ui-panel-border bg-ui-panel" />
+          <div className="w-[280px] shrink-0 border-e border-ui-panel-border bg-ui-panel" />
         )}
         {isSketchMode && selectedBoard ? (
           <SketchCanvas

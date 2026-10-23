@@ -31,8 +31,8 @@ export function Switch({ enabled, setEnabled, id, label = "Enable notifications"
             className={clsx(
               "size-4 rounded-[2px] transition",
               checked
-                ? "translate-x-[22px] bg-black"
-                : "translate-x-1 bg-white/70",
+                ? "translate-x-[22px] bg-black rtl:-translate-x-[22px]"
+                : "translate-x-1 bg-white/70 rtl:-translate-x-1",
             )}
           />
         </button>

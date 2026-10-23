@@ -75,7 +75,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const hasIcons = showPasswordToggle || showClear;
     const iconCount = Number(showPasswordToggle) + Number(showClear);
     const paddingRight =
-      iconCount === 2 ? "pr-20" : iconCount === 1 ? "pr-10" : "";
+      iconCount === 2 ? "pe-20" : iconCount === 1 ? "pe-10" : "";
 
     return (
       <div
@@ -110,7 +110,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               e.preventDefault();
               onClear?.();
             }}
-            className="text-muted-foreground absolute top-0 right-0 h-full px-3 !opacity-100"
+            className="text-muted-foreground absolute top-0 end-0 h-full px-3 !opacity-100"
             aria-label="Clear input"
           >
             <X className="!size-[0.85]" />
@@ -123,7 +123,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onClick={() => onShowPasswordChange?.(!showPassword)}
             className={cn(
               "text-muted-foreground hover:text-foreground absolute top-0 h-full px-3",
-              showClear ? "right-10" : "right-0",
+              showClear ? "end-10" : "end-0",
             )}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >

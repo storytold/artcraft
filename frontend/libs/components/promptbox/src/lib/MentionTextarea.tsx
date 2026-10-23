@@ -1585,6 +1585,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         <div
           ref={editorRef}
+          dir="auto"
           contentEditable={!disabled}
           onInput={handleInput}
           onCompositionStart={handleCompositionStart}

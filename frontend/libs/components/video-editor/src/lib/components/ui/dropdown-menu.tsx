@@ -63,13 +63,13 @@ const DropdownMenuSubTrigger = React.forwardRef<
     className={cn(
       dropdownMenuItemVariants({ variant }),
       "data-[state=open]:bg-muted data-[state=open]:text-foreground",
-      inset && "pl-8",
+      inset && "ps-8",
       className,
     )}
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto" />
+    <ChevronRight className="ms-auto" />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 DropdownMenuSubTrigger.displayName =
@@ -162,7 +162,7 @@ const DropdownMenuItem = React.forwardRef<
         data-has-icon={icon ? "" : undefined}
         className={cn(
           dropdownMenuItemVariants({ variant }),
-          inset && "pl-8",
+          inset && "ps-8",
           className,
         )}
         {...props}
@@ -184,7 +184,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     ref={ref}
     className={cn(
       dropdownMenuItemVariants({ variant }),
-      "pr-8 pl-2",
+      "pe-8 ps-2",
       className,
     )}
     checked={checked}
@@ -194,7 +194,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     {...props}
   >
     {children}
-    <span className="absolute right-2 flex size-3.5 items-center justify-center">
+    <span className="absolute end-2 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
         <Check className="size-4" />
       </DropdownMenuPrimitive.ItemIndicator>
@@ -215,12 +215,12 @@ const DropdownMenuRadioItem = React.forwardRef<
     ref={ref}
     className={cn(
       dropdownMenuItemVariants({ variant }),
-      "pr-2 pl-8",
+      "pe-2 ps-8",
       className,
     )}
     {...props}
   >
-    <span className="absolute left-2 flex size-3.5 items-center justify-center">
+    <span className="absolute start-2 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
         <Circle className="size-2 fill-current" />
       </DropdownMenuPrimitive.ItemIndicator>
@@ -240,7 +240,7 @@ const DropdownMenuLabel = React.forwardRef<
     ref={ref}
     className={cn(
       "px-2 pb-1 pt-0.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground",
-      inset && "pl-8",
+      inset && "ps-8",
       className,
     )}
     {...props}
@@ -266,7 +266,7 @@ const DropdownMenuShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
-      className={cn("ml-auto text-xs tracking-widest opacity-60", className)}
+      className={cn("ms-auto text-xs tracking-widest opacity-60", className)}
       {...props}
     />
   );

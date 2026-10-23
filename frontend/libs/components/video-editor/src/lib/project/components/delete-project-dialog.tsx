@@ -39,7 +39,10 @@ export function DeleteProjectDialog({
             {singleName ? (
               <>
                 {"Delete '"}
-                <span className="inline-block max-w-[300px] truncate align-bottom">
+                <span
+                  dir="auto"
+                  className="inline-block max-w-[300px] truncate align-bottom"
+                >
                   {singleName}
                 </span>
                 {"'?"}
@@ -54,8 +57,14 @@ export function DeleteProjectDialog({
             <AlertTitle>Warning</AlertTitle>
             <AlertDescription>
               This will permanently delete{" "}
-              {singleName ? `"${singleName}"` : `${count} projects`} and all
-              associated files.
+              {singleName ? (
+                <>
+                  "<bdi>{singleName}</bdi>"
+                </>
+              ) : (
+                `${count} projects`
+              )}{" "}
+              and all associated files.
             </AlertDescription>
           </Alert>
           <div className="flex flex-col gap-3">
