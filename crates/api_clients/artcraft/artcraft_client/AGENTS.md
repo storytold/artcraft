@@ -22,6 +22,10 @@ Rust HTTP endpoint bindings used by the ArtCraft Tauri desktop app.
 
 ## Validation
 
+Pin method/path/header/cookie defects with a local HTTP fixture before fixing them.
+Do not substitute a live account call for an ordinary regression test. Shared wire
+changes also inspect `artcraft_api_defs` and both desktop consumers.
+
 Run `cargo check --offline -p artcraft_client` for client changes. For native login
 bindings, also run `SQLX_OFFLINE=true cargo test --offline -p artcraft --lib
 login_bridge_tests`; these tests use local HTTP fixtures and temporary cookie jars.

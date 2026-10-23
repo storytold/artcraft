@@ -1,5 +1,9 @@
 # Tauri Commands
 
+Reproduce IPC/authentication defects at the native command/client boundary before
+fixing them. Frontend mocks do not prove Rust cookie behavior or Tauri registration.
+Use local fixtures and temporary stores; report native startup separately.
+
 - Put each `#[tauri::command]` function in its own `.rs` file module named after
   that command, such as `storyteller_create_login_challenge_command.rs`. Do not
   collect multiple commands in a catch-all `*_commands.rs` file.

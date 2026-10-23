@@ -1,4 +1,4 @@
-# CLAUDE.md — pagescene (3D Scene Editor)
+# AGENTS.md — pagescene (3D Scene Editor)
 
 Guidance for working in the `pagescene` library — the 3D editor (a.k.a. "pagescene" / "Stage3D").
 

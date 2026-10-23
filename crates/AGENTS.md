@@ -42,6 +42,11 @@ helpers go in the parent `mod tests` so sub-modules can `use super::*`.
 
 ## Building
 
+Write defect reproducers before fixes and confirm the failure's cause. Use local
+fixtures and temporary stores; ignored live-provider tests remain explicitly invoked.
+When shared wire types or routing change, check affected consumers, not only the
+crate that defines them. Report compilation, fixture and live/native evidence separately.
+
 - Most crates: `cargo check -p {crate_name}` or `cargo test -p {crate_name}`
 - Crates using SQLx: `SQLX_OFFLINE=true cargo check -p {crate_name}`
 - The desktop SQLite query cache and migrations must remain in `.sqlx/` and `_database/sql/artcraft_migrations/`
