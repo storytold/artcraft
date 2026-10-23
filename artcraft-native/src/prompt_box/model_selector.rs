@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use egui::{Align2, Id, Order, Popup, Rect, Stroke, Ui, pos2, vec2};
+use egui::{Align2, Id, Order, Popup, PopupCloseBehavior, Rect, Stroke, Ui, pos2, vec2};
 
 use crate::backend::providers::Provider;
 use crate::models::{self, ModelInfo};
@@ -19,6 +19,9 @@ const FLYOUT_WIDTH: f32 = 300.0;
 const PROVIDER_FLYOUT_WIDTH: f32 = 220.0;
 /// Hovering a model this long opens its providers (`providerTooltipDelayMs`).
 const PROVIDER_DELAY_SECS: f64 = 0.3;
+/// How far past a flyout's edge the pointer still counts as being on it, so crossing the gap
+/// between a family's row and its flyout doesn't dismiss the flyout.
+const FLYOUT_BRIDGE: f32 = 14.0;
 
 /// What was picked: a model, and the provider when one was chosen with it.
 pub type Pick = (String, Option<Provider>);
@@ -41,13 +44,19 @@ pub fn model_selector(ui: &mut Ui, id: Id, models: &[ModelInfo], selected: Optio
   let rows = Rows { id, selected, show_badges, providers };
   let mut picked = None;
   let hovered_family_id = id.with("family");
-  pickers::popover(&resp, popup_id, |ui| {
+  // Flyouts are separate areas, so a click inside one would count as "outside" the popover and
+  // close it before the pick lands. The popover ignores clicks; outside clicks are handled below.
+  let flyouts_id = id.with("flyout-rects");
+  let panel = pickers::popover_with(&resp, popup_id, PopupCloseBehavior::IgnoreClicks, |ui| {
+    ui.data_mut(|d| d.insert_temp(flyouts_id, Vec::<Rect>::new()));
     ui.set_width(PANEL_WIDTH);
     widgets::menu_header(ui, "Select Model");
     let max_h = ui.ctx().content_rect().height() * 0.6;
     egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| match models::grouped(models) {
       Some(families) => {
-        let mut hovered: Option<String> = ui.data(|d| d.get_temp(hovered_family_id));
+        let mut hovered: Option<String> = ui.data(|d| d.get_temp(hovered_family_id)).flatten();
+        let pointer = ui.input(|i| i.pointer.hover_pos());
+        let in_flyout_zone = hovered.as_ref().and_then(|f| ui.data(|d| d.get_temp::<Rect>(flyout_rect_id(id, f)))).is_some_and(|r| pointer.is_some_and(|p| r.expand(FLYOUT_BRIDGE).contains(p)));
         for family in &families {
           let contains_selected = selected.is_some_and(|s| family.models.iter().any(|m| m.id == s.id));
           let first = family.models[0];
@@ -56,7 +65,7 @@ pub fn model_selector(ui: &mut Ui, id: Id, models: &[ModelInfo], selected: Optio
           let is_open = hovered.as_deref() == Some(family.name.as_str());
           if family.models.len() == 1 {
             let (row_hovered, pick) = rows.row(ui, first);
-            if row_hovered {
+            if row_hovered && !in_flyout_zone {
               hovered = None;
             }
             if pick.is_some() {
@@ -65,7 +74,7 @@ pub fn model_selector(ui: &mut Ui, id: Id, models: &[ModelInfo], selected: Optio
             continue;
           }
           let row = widgets::menu_row(ui, RowLead::Logo(&tex), &family.name, subtitle, false, true, is_open);
-          if row.hovered() || row.clicked() {
+          if row.hovered() || row.clicked() || pointer.is_some_and(|p| row.rect.contains(p)) {
             hovered = Some(family.name.clone());
           }
           if hovered.as_deref() == Some(family.name.as_str()) {
@@ -85,6 +94,14 @@ pub fn model_selector(ui: &mut Ui, id: Id, models: &[ModelInfo], selected: Optio
       },
     });
   });
+  if let Some(panel) = panel {
+    let click = ui.input(|i| i.pointer.any_click().then(|| i.pointer.interact_pos()).flatten());
+    let flyouts: Vec<Rect> = ui.data(|d| d.get_temp(flyouts_id)).unwrap_or_default();
+    let outside = |pos| !panel.contains(pos) && !resp.rect.contains(pos) && !flyouts.iter().any(|r| r.contains(pos));
+    if click.is_some_and(outside) {
+      Popup::close_id(ui.ctx(), popup_id);
+    }
+  }
   if picked.is_some() {
     Popup::close_id(ui.ctx(), popup_id);
     ui.data_mut(|d| {
@@ -107,7 +124,7 @@ impl Rows<'_> {
   /// A family's variants, to the right of its row.
   fn family_flyout(&self, ui: &Ui, row: Rect, family: &str, list: &[&ModelInfo]) -> Option<Pick> {
     let mut picked = None;
-    egui::Area::new(self.id.with(("flyout", family))).order(Order::Tooltip).pivot(Align2::LEFT_TOP).fixed_pos(pos2(row.right() + 10.0, row.top() - 32.0)).show(ui.ctx(), |ui| {
+    let area = egui::Area::new(self.id.with(("flyout", family))).order(Order::Tooltip).pivot(Align2::LEFT_TOP).fixed_pos(pos2(row.right() + 10.0, row.top() - 32.0)).show(ui.ctx(), |ui| {
       widgets::popover_frame().show(ui, |ui| {
         ui.set_width(FLYOUT_WIDTH);
         widgets::menu_header(ui, family);
@@ -118,6 +135,8 @@ impl Rows<'_> {
         }
       });
     });
+    remember_flyout(ui.ctx(), self.id, area.response.rect);
+    ui.ctx().data_mut(|d| d.insert_temp(flyout_rect_id(self.id, family), area.response.rect));
     picked
   }
 
@@ -157,12 +176,24 @@ impl Rows<'_> {
     }
     let mut picked = row.clicked().then(|| (m.id.clone(), None));
     if open {
-      if let Some(provider) = provider_flyout(ui, self.id.with(("providers", &m.id)), row.rect, allowed, current) {
+      let (provider, rect) = provider_flyout(ui, self.id.with(("providers", &m.id)), row.rect, allowed, current);
+      remember_flyout(ui.ctx(), self.id, rect);
+      if let Some(provider) = provider {
         picked = Some((m.id.clone(), Some(provider)));
       }
     }
     (row.hovered(), picked)
   }
+}
+
+/// Where a family's flyout was last drawn.
+fn flyout_rect_id(selector: Id, family: &str) -> Id {
+  selector.with(("flyout-rect", family))
+}
+
+/// Records a flyout's rect so clicks inside it don't close the selector.
+fn remember_flyout(ctx: &egui::Context, selector: Id, rect: Rect) {
+  ctx.data_mut(|d| d.get_temp_mut_or_default::<Vec<Rect>>(selector.with("flyout-rects")).push(rect));
 }
 
 /// The provider's logo on a chip at the row's right; on the brand blue for the selected model.
@@ -175,9 +206,9 @@ fn provider_chip(ui: &Ui, row: Rect, provider: Provider, selected: bool) {
 }
 
 /// "Select Provider" (`ProviderTooltipContent`), to the right of a model's row.
-fn provider_flyout(ui: &Ui, id: Id, row: Rect, allowed: &[Provider], current: Provider) -> Option<Provider> {
+fn provider_flyout(ui: &Ui, id: Id, row: Rect, allowed: &[Provider], current: Provider) -> (Option<Provider>, Rect) {
   let mut picked = None;
-  egui::Area::new(id).order(Order::Tooltip).pivot(Align2::LEFT_TOP).fixed_pos(pos2(row.right() + 10.0, row.top() - 32.0)).show(ui.ctx(), |ui| {
+  let area = egui::Area::new(id).order(Order::Tooltip).pivot(Align2::LEFT_TOP).fixed_pos(pos2(row.right() + 10.0, row.top() - 32.0)).show(ui.ctx(), |ui| {
     widgets::popover_frame().show(ui, |ui| {
       ui.set_width(PROVIDER_FLYOUT_WIDTH);
       widgets::menu_header(ui, "Select Provider");
@@ -194,7 +225,7 @@ fn provider_flyout(ui: &Ui, id: Id, row: Rect, allowed: &[Provider], current: Pr
       }
     });
   });
-  picked
+  (picked, area.response.rect)
 }
 
 /// The video picker's capability badges ("Audio Support", "Start/End", "Reference").
@@ -222,6 +253,7 @@ mod tests {
 
   struct State {
     models: Vec<ModelInfo>,
+    selected: usize,
     picks: HashMap<String, Provider>,
     picked: Vec<Pick>,
     fonts_ready: bool,
@@ -258,8 +290,13 @@ mod tests {
   }
 
   fn build() -> Harness<'static, State> {
-    let models = ["seedream_4", "nano_banana_pro"].iter().map(|id| ModelInfo { id: (*id).into(), name: models::display_name(id), creator: models::creator_for(id).into(), ..Default::default() }).collect();
-    let state = State { models, picks: HashMap::new(), picked: Vec::new(), fonts_ready: false };
+    build_with(&["seedream_4", "nano_banana_pro"])
+  }
+
+  fn build_with(ids: &[&str]) -> Harness<'static, State> {
+    let selected = 0;
+    let models: Vec<ModelInfo> = ids.iter().map(|id| ModelInfo { id: (*id).into(), name: models::display_name(id), creator: models::creator_for(id).into(), ..Default::default() }).collect();
+    let state = State { models, selected, picks: HashMap::new(), picked: Vec::new(), fonts_ready: false };
     let mut harness = Harness::builder().with_size(egui::vec2(1000.0, 700.0)).build_ui_state(
       |ui, s: &mut State| {
         if !s.fonts_ready {
@@ -268,7 +305,7 @@ mod tests {
           return;
         }
         ui.add_space(500.0);
-        if let Some(pick) = model_selector(ui, Id::new("test-model"), &s.models, s.models.first(), false, Some(&s.picks)) {
+        if let Some(pick) = model_selector(ui, Id::new("test-model"), &s.models, s.models.get(s.selected), false, Some(&s.picks)) {
           s.picked.push(pick);
         }
       },
