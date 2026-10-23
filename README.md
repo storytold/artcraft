@@ -136,6 +136,8 @@ Additional provider integrations are planned for Kling, Google, Runway, and Luma
 
 ## Documentation
 
+- [Agent instructions](./AGENTS.md) and [engineering methodology proposal](./_docs/agent-engineering-methodology.md)
+
 - [Development setup](./_docs/dev_setup.md)
 - [Developer documentation](./_docs)
 - [Desktop build and development scripts](./script/artcraft)
