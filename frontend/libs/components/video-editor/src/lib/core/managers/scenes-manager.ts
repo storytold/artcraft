@@ -249,6 +249,7 @@ export class ScenesManager {
       const updatedProject = {
         ...activeProject,
         scenes,
+        currentSceneId: this.active?.id ?? "",
         metadata: {
           ...activeProject.metadata,
           updatedAt: new Date(),
