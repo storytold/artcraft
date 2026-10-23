@@ -21,7 +21,7 @@ impl ApiKeyData {
   }
 
   pub fn save_to_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), ApiKeyDataError> {
-    std::fs::write(file_path, self.0.trim())
+    filesys::private_file::write_private_atomic(file_path.as_ref(), self.0.trim().as_bytes())
       .map_err(ApiKeyDataError::IoError)?;
     Ok(())
   }
