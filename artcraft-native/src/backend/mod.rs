@@ -2,6 +2,7 @@
 //! [`Event`]s, which the UI drains once per frame; nothing here blocks the UI thread.
 
 pub mod audio;
+pub mod background;
 pub mod media_cache;
 pub mod providers;
 pub mod session;

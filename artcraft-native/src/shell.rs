@@ -88,6 +88,7 @@ impl Page {
       "create-image" | "image" => Page::CreateImage,
       "create-video" | "video" => Page::CreateVideo,
       "create-audio" | "audio" => Page::CreateAudio,
+      "remove-background" | "bg-remove" => Page::RemoveBackground,
       "library" => Page::Library,
       _ => return None,
     })
@@ -95,7 +96,7 @@ impl Page {
 
   /// Pages the native app has; the rest open a "coming soon" page.
   pub fn is_ready(self) -> bool {
-    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Library)
+    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::RemoveBackground | Page::Library)
   }
 
   /// The same tool in the web app.
