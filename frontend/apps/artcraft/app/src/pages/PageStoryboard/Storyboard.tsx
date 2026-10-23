@@ -1,6 +1,17 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { CheckIcon, EraserIcon, FastForwardIcon, ImagesIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon, RewindIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
+import {
+  coalescedPointerEvents,
+  isPenEraserActive,
+  isPenPointer,
+  PEN_EVENT_CHANNEL,
+  type PenEventPayload,
+  pressureToWidthFactor,
+  smoothPressure,
+} from "@storyteller/common";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
 import { useStoryboardStore, type Board } from "./StoryboardStore";
@@ -11,6 +22,17 @@ const MIN_DURATION = 0.5;
 const CANVAS_W = 1280;
 const CANVAS_H = 720;
 const MAX_UNDO = 20;
+
+/**
+ * True for the Linux desktop build: WebKitGTK flattens pen hardware to mouse
+ * events (pointerType "mouse", pressure hardcoded to 0.5 — tauri-apps/tauri
+ * #10636), so pen input arrives through the Rust XInput2 bridge channel
+ * instead of DOM PointerEvents.
+ */
+const PEN_BRIDGE =
+  "__TAURI_INTERNALS__" in window &&
+  /Linux/.test(navigator.userAgent) &&
+  !/Android/.test(navigator.userAgent);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -201,6 +223,14 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const prevPosRef = useRef<{ x: number; y: number } | null>(null);
+  // Smoothed pressure for the current stroke (1 = no pressure data).
+  const lastPressureRef = useRef(1);
+  // Latest bridge-stroke API for the effect-attached listener below.
+  const penApiRef = useRef<{
+    begin: (pos: { x: number; y: number }, rawPressure: number, eraser: boolean) => void;
+    stroke: (pos: { x: number; y: number }, rawPressure: number, eraser: boolean) => void;
+    finish: () => void;
+  } | null>(null);
   const [tool, setTool] = useState<SketchTool>("pencil");
   const [color, setColor] = useState("#1a1a1a");
   const [brushSize, setBrushSize] = useState(4);
@@ -228,28 +258,51 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally runs once — we own the canvas state after mount
 
-  const getCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const getCoordsFromClient = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) / rect.width) * CANVAS_W,
-      y: ((e.clientY - rect.top) / rect.height) * CANVAS_H,
+      x: ((clientX - rect.left) / rect.width) * CANVAS_W,
+      y: ((clientY - rect.top) / rect.height) * CANVAS_H,
     };
   };
 
-  const applyCtxSettings = (ctx: CanvasRenderingContext2D) => {
+  const applyCtxSettings = (
+    ctx: CanvasRenderingContext2D,
+    opts: { eraser: boolean; pressure: number },
+  ) => {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.globalAlpha = 1;
-    if (tool === "eraser") {
+    const baseWidth = opts.eraser ? brushSize * 3 : brushSize;
+    if (opts.eraser) {
       ctx.globalCompositeOperation = "destination-out";
-      ctx.lineWidth = brushSize * 3;
     } else {
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = brushSize;
     }
+    // Pen pressure tapers the width; mouse input (pressure 1) is unaffected.
+    ctx.lineWidth = baseWidth * pressureToWidthFactor(opts.pressure);
+  };
+
+  const drawStrokeSegment = (
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    pressure: number,
+    eraser: boolean,
+  ) => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    applyCtxSettings(ctx, { eraser, pressure });
+    const mid = {
+      x: (from.x + to.x) / 2,
+      y: (from.y + to.y) / 2,
+    };
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(from.x, from.y, mid.x, mid.y);
+    ctx.stroke();
   };
 
   const snapshotForUndo = () => {
@@ -260,17 +313,25 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const native = e.nativeEvent;
+    const pen = isPenPointer(native);
+    // Pen barrel button pans/drag-reorders elsewhere; never a stroke.
+    if (pen && native.button === 2) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
 
     snapshotForUndo();
     isDrawingRef.current = true;
-    const pos = getCoords(e);
+    const pos = getCoordsFromClient(native.clientX, native.clientY);
     prevPosRef.current = pos;
 
+    const eraserActive = tool === "eraser" || isPenEraserActive(native);
+    const rawPressure = pen && native.pressure > 0 ? native.pressure : 1;
+    lastPressureRef.current = rawPressure;
+
     // Draw a dot at click point
-    applyCtxSettings(ctx);
+    applyCtxSettings(ctx, { eraser: eraserActive, pressure: rawPressure });
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, ctx.lineWidth / 2, 0, Math.PI * 2);
     ctx.fill();
@@ -278,32 +339,136 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawingRef.current || !prevPosRef.current) return;
+    const native = e.nativeEvent;
+    const pen = isPenPointer(native);
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
 
-    const pos = getCoords(e);
-    const mid = {
-      x: (prevPosRef.current.x + pos.x) / 2,
-      y: (prevPosRef.current.y + pos.y) / 2,
-    };
+    const eraserActive = tool === "eraser" || isPenEraserActive(native);
+    const samples = pen ? coalescedPointerEvents(native) : [native];
 
-    applyCtxSettings(ctx);
-    ctx.beginPath();
-    ctx.moveTo(prevPosRef.current.x, prevPosRef.current.y);
-    ctx.quadraticCurveTo(prevPosRef.current.x, prevPosRef.current.y, mid.x, mid.y);
-    ctx.stroke();
-
-    prevPosRef.current = pos;
+    let from = prevPosRef.current;
+    for (const sample of samples) {
+      const pos = getCoordsFromClient(sample.clientX, sample.clientY);
+      if (pen) {
+        // Pressure is smoothed so cheap digitizers do not flicker the width.
+        const raw = sample.pressure > 0 ? sample.pressure : 1;
+        const pressure = smoothPressure(lastPressureRef.current, raw);
+        lastPressureRef.current = pressure;
+        drawStrokeSegment(from, pos, pressure, eraserActive);
+      } else {
+        drawStrokeSegment(from, pos, 1, eraserActive);
+      }
+      from = pos;
+    }
+    prevPosRef.current = from;
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const finishStroke = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
     prevPosRef.current = null;
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Capture was already lost (e.g. pointercancel); nothing to do.
+      }
+    }
     const dataUrl = canvasRef.current?.toDataURL("image/png");
     if (dataUrl) onSave(dataUrl);
   };
+
+  const handlePointerUp = finishStroke;
+
+  // Linux pen bridge: native XInput2 pen samples relayed from the Rust side.
+  // DOM pen PointerEvents never occur on WebKitGTK, which is why the canvas
+  // draws from the channel payload instead (see PEN_BRIDGE above).
+  const beginBridgeStroke = (
+    pos: { x: number; y: number },
+    rawPressure: number,
+    eraser: boolean,
+  ) => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    snapshotForUndo();
+    isDrawingRef.current = true;
+    prevPosRef.current = pos;
+    lastPressureRef.current = rawPressure > 0 ? rawPressure : 1;
+    applyCtxSettings(ctx, { eraser, pressure: lastPressureRef.current });
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  const bridgeStroke = (
+    pos: { x: number; y: number },
+    rawPressure: number,
+    eraser: boolean,
+  ) => {
+    if (!isDrawingRef.current || !prevPosRef.current) return;
+    const raw = rawPressure > 0 ? rawPressure : 1;
+    const pressure = smoothPressure(lastPressureRef.current, raw);
+    lastPressureRef.current = pressure;
+    drawStrokeSegment(prevPosRef.current, pos, pressure, eraser);
+    prevPosRef.current = pos;
+  };
+
+  const finishBridgeStroke = () => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    prevPosRef.current = null;
+    const dataUrl = canvasRef.current?.toDataURL("image/png");
+    if (dataUrl) onSave(dataUrl);
+  };
+
+  penApiRef.current = {
+    begin: beginBridgeStroke,
+    stroke: bridgeStroke,
+    finish: finishBridgeStroke,
+  };
+
+  useEffect(() => {
+    if (!PEN_BRIDGE) return;
+    let disposed = false;
+    let maybeUnlisten: UnlistenFn | null = null;
+
+    const setup = async () => {
+      try {
+        maybeUnlisten = await listen<PenEventPayload>(PEN_EVENT_CHANNEL, (event) => {
+          if (disposed) return;
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const payload = event.payload;
+          const rect = canvas.getBoundingClientRect();
+          const pos = {
+            x: ((payload.x - rect.left) / rect.width) * CANVAS_W,
+            y: ((payload.y - rect.top) / rect.height) * CANVAS_H,
+          };
+          if (payload.kind === "down") {
+            if (payload.isBarrelPressed) return;
+            penApiRef.current?.begin(pos, payload.pressure, payload.isEraser);
+          } else if (payload.kind === "move") {
+            if (!payload.isDown) return;
+            penApiRef.current?.stroke(pos, payload.pressure, payload.isEraser);
+          } else {
+            penApiRef.current?.finish();
+          }
+        });
+        await invoke("enable_pen_capture_command");
+      } catch (err) {
+        console.warn("pen bridge unavailable:", err);
+      }
+    };
+    void setup();
+
+    return () => {
+      disposed = true;
+      maybeUnlisten?.();
+      void invoke("disable_pen_capture_command").catch(() => undefined);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleUndo = () => {
     if (undoStack.length === 0) return;
@@ -425,6 +590,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
         />
       </div>
     </div>

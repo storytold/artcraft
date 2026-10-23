@@ -17,8 +17,11 @@ import {
   Transformer,
 } from "react-konva";
 import Konva from "konva";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { LineNode, SceneState, useSceneStore } from "./stores/SceneState";
 import { Node } from "./Node";
+import { PressureStroke } from "./PressureStroke";
 import "./pagedraw.css";
 import SplitPane from "./components/ui/SplitPane";
 import { useRightPanelLayoutManagement } from "./hooks/useRightPanelLayoutManagement";
@@ -26,6 +29,14 @@ import { useStageCentering } from "./hooks/useCenteredStage";
 import { useGlobalMouseUp } from "./hooks/useGlobalMouseUp";
 import { loadImageFromUrl } from "./utilities/imageHelpers";
 import { checkerboard } from "@storyteller/common";
+import {
+  coalescedPointerEvents,
+  hasPressureData,
+  isPenEraserActive,
+  PEN_EVENT_CHANNEL,
+  PenEventPayload,
+  smoothPressure,
+} from "@storyteller/common";
 import { DragState } from "./types";
 
 export type MiraiProps = {
@@ -55,11 +66,31 @@ export type MiraiProps = {
   fillParentHeight?: boolean;
 };
 
+type ContainerPos = { x: number; y: number };
+
+/** Pen stroke operations the natively-attached listeners call into. */
+type PenStrokeApi = {
+  begin: (pos: ContainerPos, rawPressure: number, eraserTip: boolean) => void;
+  advance: (pos: ContainerPos, rawPressure: number) => void;
+  end: (cancel?: boolean) => void;
+  beginPan: (pos: ContainerPos) => void;
+  movePan: (pos: ContainerPos) => void;
+  endPan: () => void;
+  hover: (pos: ContainerPos) => void;
+  bridge: (payload: PenEventPayload) => void;
+};
+
 const InpaintingColor = "rgba(39, 187, 245, 0.54)";
 const MOUSE_POLL_THROTTLE_MS = 1000 / 60;
 export const INPAINT_LAYER_ID = "invis-mask-layer";
 export const BG_LAYER_ID = "bg-layer";
 export const DRAW_LAYER_ID = "draw-layer";
+
+/** Tauri in the webview (desktop app shell) plus a Linux webview backend. */
+const PEN_BRIDGE =
+  "__TAURI_INTERNALS__" in window && /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
+/** Window over which DOM mouse events are ignored because a pen did them. */
+const PEN_SUPPRESS_WINDOW_MS = 300;
 
 export const PaintSurface = ({
   drawNodes,
@@ -140,6 +171,53 @@ export const PaintSurface = ({
     null,
   );
   const currentLineKonvaRef = React.useRef<Konva.Line>(null);
+
+  // ---- Digital-art pen support ----
+  // Pressure samples parallel to currentLinePointsRef (one per point pair).
+  const currentLinePressuresRef = React.useRef<number[]>([]);
+  // Live smoothed pressure, so rapid samples do not flicker the stroke width.
+  const penSmoothedPressureRef = React.useRef(1);
+  // Live pressure-stroke preview node (rendered only while a pen stroke moves).
+  const currentPenStrokeNodeRef = React.useRef<Konva.Shape | null>(null);
+  // True while a pen stroke is being captured (bridge or DOM PointerEvent).
+  const penStrokeActiveRef = React.useRef(false);
+  // Pen barrel-button pan.
+  const penPanActiveRef = React.useRef(false);
+  const penPanStartRef = React.useRef<{
+    x: number;
+    y: number;
+    anchorX: number;
+    anchorY: number;
+  } | null>(null);
+  // Last time pen input was seen. On Linux WebKitGTK synthesizes mouse events
+  // for pen input (pointerType is flattened to "mouse", pressure hardcoded to
+  // 0.5), so the Konva mouse handlers must defer to the pen bridge while pen
+  // activity is recent.
+  const lastPenSeenAtRef = React.useRef(0);
+  // Latest drawing configuration for pen handlers, refreshed every render so
+  // the natively-attached listeners below never read stale props.
+  const penConfigRef = React.useRef({
+    activeTool,
+    brushColor,
+    brushSize,
+    eraserSize,
+    inpaintBrushSize,
+    inpaintOperation,
+    brushOpacity,
+  });
+  penConfigRef.current = {
+    activeTool,
+    brushColor,
+    brushSize,
+    eraserSize,
+    inpaintBrushSize,
+    inpaintOperation,
+    brushOpacity,
+  };
+  // Latest pen stroke API for the effect-attached listeners, refreshed every
+  // render for the same staleness reason.
+  const penApiRef = React.useRef<PenStrokeApi | null>(null);
+
   // TODO: Polish this by using canvas graphics instead of a bitmap
   // Or at least manually do the pattern fill to avoid image interpolation
   const [checkerImage, setCheckerImage] = useState<HTMLImageElement | null>(
@@ -261,10 +339,19 @@ export const PaintSurface = ({
     const pending = currentLinePendingRef.current;
     const points = currentLinePointsRef.current;
     if (pending && points.length >= 4) {
-      addLineNode({ ...pending, points }, true);
+      if (hasPressureData(points, currentLinePressuresRef.current)) {
+        addLineNode(
+          { ...pending, points, pressures: [...currentLinePressuresRef.current] },
+          true,
+        );
+      } else {
+        addLineNode({ ...pending, points }, true);
+      }
     }
     currentLinePendingRef.current = null;
     currentLinePointsRef.current = [];
+    currentLinePressuresRef.current = [];
+    penStrokeActiveRef.current = false;
   }, [addLineNode]);
 
   useGlobalMouseUp(
@@ -296,6 +383,352 @@ export const PaintSurface = ({
       point.y <= getAspectRatioDimensions().height
     );
   };
+
+  const isPenDrawingTool = (tool: string): boolean =>
+    tool === "draw" || tool === "eraser" || tool === "inpaint";
+
+  const isRecentPenActivity = (): boolean =>
+    performance.now() - lastPenSeenAtRef.current < PEN_SUPPRESS_WINDOW_MS;
+
+  /** Container-space position (same space `stage.getPointerPosition`). */
+  const containerPositionFromClient = (clientX: number, clientY: number): ContainerPos => {
+    const rect = stageRef.current!.container().getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const stagePointFromContainer = (pos: ContainerPos): { x: number; y: number } => {
+    const stage = stageRef.current!;
+    return {
+      x: (pos.x - stage.x()) / stage.scaleX(),
+      y: (pos.y - stage.y()) / stage.scaleY(),
+    };
+  };
+
+  /** Shared begin-line logic for mouse and pen strokes (`eraserTip` is a pen eraser). */
+  const beginLineStroke = (
+    tool: "draw" | "eraser" | "inpaint",
+    eraserTip: boolean,
+    stagePoint: { x: number; y: number },
+    pressure?: number,
+  ): boolean => {
+    const stage = stageRef.current;
+    if (!stage) return false;
+
+    const lineId = `line-${tool}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const opacity = tool === "draw" ? brushOpacity : 1;
+
+    const eraserInInpaint = eraserTip && tool === "inpaint";
+    const composite =
+      tool === "eraser"
+        ? "destination-out"
+        : eraserInInpaint || (tool === "inpaint" && inpaintOperation === "minus")
+          ? "destination-out"
+          : "source-over";
+
+    const strokeColor =
+      tool === "eraser"
+        ? "#FFFFFF"
+        : tool === "draw"
+          ? brushColor
+          : inpaintOperation === "minus" || eraserInInpaint
+            ? "#FFFFFF"
+            : InpaintingColor;
+
+    const strokeWidth =
+      (tool === "inpaint"
+        ? inpaintBrushSize
+        : tool === "eraser"
+          ? eraserSize
+          : brushSize) / stage.scaleX();
+
+    selectNode(null);
+    currentLinePointsRef.current = [stagePoint.x, stagePoint.y];
+    if (pressure !== undefined) {
+      penSmoothedPressureRef.current = pressure;
+      currentLinePressuresRef.current = [pressure];
+    } else {
+      penSmoothedPressureRef.current = 1;
+      currentLinePressuresRef.current = [];
+    }
+    currentLinePendingRef.current = {
+      id: lineId,
+      type: "line",
+      stroke: strokeColor,
+      strokeWidth,
+      draggable: true,
+      opacity: opacity,
+      locked: false,
+      globalCompositeOperation: composite,
+      x: 0,
+      y: 0,
+    };
+    setCurrentLineId(lineId);
+    setIsDrawing(true);
+    return true;
+  };
+
+  const beginPenPan = (pos: ContainerPos): void => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    penPanActiveRef.current = true;
+    penPanStartRef.current = {
+      x: pos.x,
+      y: pos.y,
+      anchorX: stage.x(),
+      anchorY: stage.y(),
+    };
+    stage.container().style.cursor = "grabbing";
+  };
+
+  const movePenPan = (pos: ContainerPos): void => {
+    const stage = stageRef.current;
+    const start = penPanStartRef.current;
+    if (!stage || !start) return;
+    stage.position({
+      x: start.anchorX + (pos.x - start.x),
+      y: start.anchorY + (pos.y - start.y),
+    });
+  };
+
+  const endPenPan = (): void => {
+    penPanActiveRef.current = false;
+    penPanStartRef.current = null;
+    const stage = stageRef.current;
+    if (stage && !isPenDrawingTool(penConfigRef.current.activeTool)) {
+      stage.container().style.cursor = "default";
+    } else if (stage) {
+      stage.container().style.cursor = "none";
+    }
+  };
+
+  /** Pen hover (no buttons): position the brush-site cursor circle. */
+  const updatePenHoverCursor = (pos: ContainerPos): void => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const stagePoint = stagePointFromContainer(pos);
+    const isWithinCanvas = isWithinLeftPanel(stagePoint);
+    const drawingTool = isPenDrawingTool(penConfigRef.current.activeTool);
+    if (!drawingTool && penConfigRef.current.activeTool !== "shape") {
+      return;
+    }
+    if (!isWithinCanvas) {
+      stage.container().style.cursor = "grab";
+      setCursorVisibleLocal(false);
+      return;
+    }
+    stage.container().style.cursor = "none";
+    cursorPositionRef.current = pos;
+    setCursorVisibleLocal((v) => (v ? v : true));
+    const cursorNode = cursorShapeRef.current;
+    const cursorLayer = cursorLayerRef.current;
+    if (cursorNode && cursorLayer) {
+      const scX = stage.scaleX();
+      const scY = stage.scaleY();
+      cursorLayer.x(-stage.x() / scX);
+      cursorLayer.y(-stage.y() / scY);
+      cursorLayer.scaleX(1 / scX);
+      cursorLayer.scaleY(1 / scY);
+      cursorNode.position(pos);
+      cursorLayer.batchDraw();
+    }
+  };
+
+  const beginPenStroke = (
+    pos: ContainerPos,
+    rawPressure: number,
+    eraserTip: boolean,
+  ): void => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const cfg = penConfigRef.current;
+    const stagePoint = stagePointFromContainer(pos);
+
+    if (!isPenDrawingTool(cfg.activeTool)) {
+      // Pen semantics for non-drawing tools: drag the canvas.
+      if (activeTool === "select") beginPenPan(pos);
+      return;
+    }
+    if (!isWithinLeftPanel(stagePoint)) {
+      beginPenPan(pos);
+      return;
+    }
+
+    if (beginLineStroke(cfg.activeTool as "draw" | "eraser" | "inpaint", eraserTip, stagePoint, Math.max(0.01, rawPressure || 1))) {
+      penStrokeActiveRef.current = true;
+    }
+  };
+
+  const advancePenStroke = (pos: ContainerPos, rawPressure: number): void => {
+    if (!penStrokeActiveRef.current) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const stagePoint = stagePointFromContainer(pos);
+    currentLinePointsRef.current.push(stagePoint.x, stagePoint.y);
+    const next = smoothPressure(penSmoothedPressureRef.current, rawPressure);
+    penSmoothedPressureRef.current = next;
+    currentLinePressuresRef.current.push(next);
+    currentPenStrokeNodeRef.current?.getLayer()?.batchDraw();
+  };
+
+  const endPenStroke = (cancel = false): void => {
+    penPanActiveRef.current = false;
+    penPanStartRef.current = null;
+    if (!penStrokeActiveRef.current) return;
+    penStrokeActiveRef.current = false;
+    if (cancel) {
+      currentLinePendingRef.current = null;
+      currentLinePointsRef.current = [];
+      currentLinePressuresRef.current = [];
+      setCurrentLineId(null);
+      setIsDrawing(false);
+      return;
+    }
+    saveState();
+    flushCurrentLineToStore();
+    setCurrentLineId(null);
+    setIsDrawing(false);
+  };
+
+  const handleBridgePenEvent = (payload: PenEventPayload): void => {
+    lastPenSeenAtRef.current = performance.now();
+    if (!stageRef.current) return;
+    const pos = containerPositionFromClient(payload.x, payload.y);
+
+    if (payload.kind === "down") {
+      if (payload.isBarrelPressed) {
+        beginPenPan(pos);
+        return;
+      }
+      beginPenStroke(pos, payload.pressure, payload.isEraser);
+      return;
+    }
+    if (payload.kind === "move") {
+      if (penPanActiveRef.current) {
+        movePenPan(pos);
+        return;
+      }
+      if (payload.isDown) {
+        if (penStrokeActiveRef.current) {
+          advancePenStroke(pos, payload.pressure);
+        }
+        return;
+      }
+      updatePenHoverCursor(pos);
+      return;
+    }
+    // Up
+    endPenPan();
+    endPenStroke(!payload.isDown);
+  };
+
+  penApiRef.current = {
+    begin: beginPenStroke,
+    advance: advancePenStroke,
+    end: endPenStroke,
+    beginPan: beginPenPan,
+    movePan: movePenPan,
+    endPan: endPenPan,
+    hover: updatePenHoverCursor,
+    bridge: handleBridgePenEvent,
+  };
+
+  // Native pen PointerEvents (Windows/macOS webviews; on Linux the pen is
+  // flattened to mouse events, so the bridge effect below owns pen input).
+  // Attached on the wrapper in the capture phase with `preventDefault`, which
+  // suppresses the synthetic mouse events the webview generates for pen input
+  // (otherwise Konva's mouse handlers would double-stroke).
+  React.useEffect(() => {
+    const wrapper = containerRef.current;
+    if (!wrapper) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== "pen") return;
+      if (PEN_BRIDGE) lastPenSeenAtRef.current = performance.now();
+      event.preventDefault();
+      const pos = containerPositionFromClient(event.clientX, event.clientY);
+      if (event.button !== 0) {
+        penApiRef.current?.beginPan(pos);
+        return;
+      }
+      penApiRef.current?.begin(pos, event.pressure || 1, isPenEraserActive(event));
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "pen") return;
+      const samples = coalescedPointerEvents(event);
+      for (const sample of samples) {
+        if (penStrokeActiveRef.current) {
+          const pos = containerPositionFromClient(sample.clientX, sample.clientY);
+          penApiRef.current?.advance(pos, sample.pressure || 1);
+        }
+      }
+      if (!penStrokeActiveRef.current && !penPanActiveRef.current) {
+        const pos = containerPositionFromClient(event.clientX, event.clientY);
+        if (PEN_BRIDGE) lastPenSeenAtRef.current = performance.now();
+        penApiRef.current?.hover(pos);
+      }
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (event.pointerType !== "pen") return;
+      if (event.button !== 0) {
+        penApiRef.current?.endPan();
+        return;
+      }
+      penApiRef.current?.end();
+    };
+
+    const handlePointerCancel = (event: PointerEvent) => {
+      if (event.pointerType !== "pen") return;
+      penApiRef.current?.end(true);
+    };
+
+    wrapper.addEventListener("pointerdown", handlePointerDown, true);
+    wrapper.addEventListener("pointermove", handlePointerMove, false);
+    wrapper.addEventListener("pointerup", handlePointerUp, true);
+    wrapper.addEventListener("pointercancel", handlePointerCancel, true);
+
+    return () => {
+      wrapper.removeEventListener("pointerdown", handlePointerDown, true);
+      wrapper.removeEventListener("pointermove", handlePointerMove, false);
+      wrapper.removeEventListener("pointerup", handlePointerUp, true);
+      wrapper.removeEventListener("pointercancel", handlePointerCancel, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Linux pen bridge: consume native XInput2 pen events relayed from the Rust
+  // side and enable/disable capture while this drawing surface is mounted.
+  React.useEffect(() => {
+    if (!PEN_BRIDGE) return;
+    let disposed = false;
+    let maybeUnlisten: UnlistenFn | null = null;
+
+    const setup = async () => {
+      try {
+        maybeUnlisten = await listen<PenEventPayload>(
+          PEN_EVENT_CHANNEL,
+          (event) => {
+            if (!disposed) penApiRef.current?.bridge(event.payload);
+          },
+        );
+        await invoke("enable_pen_capture_command");
+      } catch (err) {
+        // No Tauri bridge (plain web build) or no pen hardware: fall back to
+        // whatever the DOM provides (WebKitGTK gives mouse-only pen input).
+        console.warn("pen bridge unavailable:", err);
+      }
+    };
+    void setup();
+
+    return () => {
+      disposed = true;
+      maybeUnlisten?.();
+      void invoke("disable_pen_capture_command").catch(() => undefined);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const draggableIfToolsNotActive = (
     activeTool: string,
@@ -356,62 +789,13 @@ export const PaintSurface = ({
         activeTool === "inpaint") &&
       isWithinLeftPanel(stagePoint)
     ) {
-      const lineId = `line-${activeTool}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const opacity = activeTool === "draw" ? brushOpacity : 1;
-
-      const composite =
-        activeTool === "eraser"
-          ? "destination-out"
-          : activeTool === "inpaint" && inpaintOperation === "minus"
-            ? "destination-out"
-            : "source-over";
-
-      const strokeColor =
-        activeTool === "eraser"
-          ? "#FFFFFF"
-          : activeTool === "draw"
-            ? brushColor
-            : inpaintOperation === "minus"
-              ? "#FFFFFF"
-              : InpaintingColor;
-
-      const strokeWidth =
-        (activeTool === "inpaint"
-          ? inpaintBrushSize
-          : activeTool === "eraser"
-            ? eraserSize
-            : brushSize) / stage.scaleX();
-
-      const newLineNode: LineNode = {
-        id: lineId,
-        type: "line",
-        points: [stagePoint.x, stagePoint.y],
-        stroke: strokeColor,
-        strokeWidth,
-        draggable: true,
-        opacity: opacity,
-        locked: false,
-        globalCompositeOperation: composite,
-        x: 0,
-        y: 0,
-      };
-
-      selectNode(null);
-      currentLinePointsRef.current = [stagePoint.x, stagePoint.y];
-      currentLinePendingRef.current = {
-        id: lineId,
-        type: "line",
-        stroke: strokeColor,
-        strokeWidth: newLineNode.strokeWidth,
-        draggable: true,
-        opacity: opacity,
-        locked: false,
-        globalCompositeOperation: composite,
-        x: 0,
-        y: 0,
-      };
-      setCurrentLineId(lineId);
-      setIsDrawing(true);
+      // On Linux, pen input surfaces as synthetic mouse events (WebKitGTK
+      // flattens pointerType to "mouse"); the pen bridge below owns pen
+      // strokes, so mouse handlers must stay idle while pen activity is recent.
+      if (isRecentPenActivity() || penStrokeActiveRef.current) {
+        return;
+      }
+      beginLineStroke(activeTool as "draw" | "eraser" | "inpaint", false, stagePoint);
       return;
     }
 
@@ -580,6 +964,11 @@ export const PaintSurface = ({
           activeTool === "eraser" ||
           activeTool === "inpaint")
       ) {
+        // Pen-driven strokes update via the pen listeners; synthetic mouse
+        // samples during a pen stroke would desync pressure indexing.
+        if (penStrokeActiveRef.current || isRecentPenActivity()) {
+          return;
+        }
         const point = stage.getPointerPosition();
         if (!point) return;
 
@@ -751,6 +1140,9 @@ export const PaintSurface = ({
     setShapeStartPoint(null);
     setShapePreview(null);
     setIsMiddleMousePressed(false);
+    // A stray synthetic mouse-up from a pen stroke should not wedge the pen
+    // state machine.
+    penStrokeActiveRef.current = false;
   };
 
   const [lastPinchDistance, setLastPinchDistance] = useState<number | null>(
@@ -1228,51 +1620,85 @@ export const PaintSurface = ({
           );
         };
 
-        return (
-          <Line
-            key={lineNode.id}
-            id={lineNode.id}
-            points={lineNode.points}
-            stroke={lineNode.stroke}
-            opacity={lineNode.opacity ?? 1}
-            strokeWidth={
-              isSelected
-                ? (lineNode.strokeWidth || 0) + 2
-                : lineNode.strokeWidth
-            }
-            tension={0.5}
-            lineCap="round"
-            lineJoin="round"
-            onMouseDown={(e) => handleNodeMouseDown(e, lineNode.id)}
-            onTap={(e) =>
-              handleNodeMouseDown(
-                e as Konva.KonvaEventObject<MouseEvent>,
-                lineNode.id,
-              )
-            }
-            onMouseEnter={handleNodeMouseEnter}
-            onMouseLeave={handleNodeMouseLeave}
-            draggable={draggableIfToolsNotActive(
-              activeTool,
-              lineNode.draggable && lineNode.locked == false,
-            )}
-            onDragMove={(e) => handleLineDragMove(e, lineNode.id)}
-            onDragStart={(e) => handleLineDragStart(e, lineNode.id)}
-            onDragEnd={(e) => handleLineDragEnd(e, lineNode.id)}
-            x={lineNode.x || 0}
-            y={lineNode.y || 0}
-            scaleX={lineNode.scaleX || 1}
-            scaleY={lineNode.scaleY || 1}
-            rotation={lineNode.rotation || 0}
-            offsetX={lineNode.offsetX || 0}
-            offsetY={lineNode.offsetY || 0}
-            listening={listeningEnabled}
-            // @ts-expect-error: We don't have globalCompositeOperation in the type definition
-            globalCompositeOperation={
-              lineNode.globalCompositeOperation || "source-over"
-            }
-          />
-        );
+        const lineProps = {
+          key: lineNode.id,
+          id: lineNode.id,
+          points: lineNode.points,
+          stroke: lineNode.stroke,
+          opacity: lineNode.opacity ?? 1,
+          strokeWidth:
+            isSelected
+              ? (lineNode.strokeWidth || 0) + 2
+              : lineNode.strokeWidth,
+          lineCap: "round" as const,
+          lineJoin: "round" as const,
+          onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) =>
+            handleNodeMouseDown(e, lineNode.id),
+          onTap: (e: Konva.KonvaEventObject<MouseEvent>) =>
+            handleNodeMouseDown(e, lineNode.id),
+          onMouseEnter: handleNodeMouseEnter,
+          onMouseLeave: handleNodeMouseLeave,
+          draggable: draggableIfToolsNotActive(
+            activeTool,
+            lineNode.draggable && lineNode.locked == false,
+          ),
+          onDragMove: (e: Konva.KonvaEventObject<DragEvent>) =>
+            handleLineDragMove(e, lineNode.id),
+          onDragStart: (e: Konva.KonvaEventObject<DragEvent>) =>
+            handleLineDragStart(e, lineNode.id),
+          onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) =>
+            handleLineDragEnd(e, lineNode.id),
+          x: lineNode.x || 0,
+          y: lineNode.y || 0,
+          scaleX: lineNode.scaleX || 1,
+          scaleY: lineNode.scaleY || 1,
+          rotation: lineNode.rotation || 0,
+          offsetX: lineNode.offsetX || 0,
+          offsetY: lineNode.offsetY || 0,
+          listening: listeningEnabled,
+          globalCompositeOperation: (lineNode.globalCompositeOperation ||
+            "source-over") as "source-over" | "destination-out",
+        };
+
+        // Strokes recorded with pen pressure render as tapered pressure
+        // capsules; legacy strokes keep the tension-smoothed Line.
+        if (hasPressureData(lineNode.points, lineNode.pressures)) {
+          return (
+            <PressureStroke
+              key={lineNode.id}
+              id={lineNode.id}
+              points={lineNode.points}
+              pressures={lineNode.pressures}
+              baseWidth={lineNode.strokeWidth}
+              stroke={lineNode.stroke}
+              opacity={lineNode.opacity ?? 1}
+              listening={listeningEnabled}
+              globalCompositeOperation={
+                lineNode.globalCompositeOperation || "source-over"
+              }
+              onMouseDown={(e) => handleNodeMouseDown(e, lineNode.id)}
+              onTap={(e) => handleNodeMouseDown(e, lineNode.id)}
+              onMouseEnter={handleNodeMouseEnter}
+              onMouseLeave={handleNodeMouseLeave}
+              draggable={draggableIfToolsNotActive(
+                activeTool,
+                lineNode.draggable && lineNode.locked == false,
+              )}
+              onDragMove={(e) => handleLineDragMove(e, lineNode.id)}
+              onDragStart={(e) => handleLineDragStart(e, lineNode.id)}
+              onDragEnd={(e) => handleLineDragEnd(e, lineNode.id)}
+              x={lineNode.x || 0}
+              y={lineNode.y || 0}
+              scaleX={lineNode.scaleX || 1}
+              scaleY={lineNode.scaleY || 1}
+              rotation={lineNode.rotation || 0}
+              offsetX={lineNode.offsetX || 0}
+              offsetY={lineNode.offsetY || 0}
+            />
+          );
+        }
+
+        return <Line {...lineProps} tension={0.5} />;
       }
 
       if (node.type === "circle") {
@@ -1777,25 +2203,44 @@ export const PaintSurface = ({
               {currentLineId &&
                 !currentLineId.startsWith("line-inpaint") &&
                 currentLinePendingRef.current && (
-                  <Line
-                    ref={currentLineKonvaRef}
-                    key="current-drawing"
-                    id={currentLineId}
-                    points={currentLinePointsRef.current}
-                    stroke={currentLinePendingRef.current.stroke}
-                    opacity={currentLinePendingRef.current.opacity ?? 1}
-                    strokeWidth={currentLinePendingRef.current.strokeWidth}
-                    tension={0.5}
-                    lineCap="round"
-                    lineJoin="round"
-                    x={0}
-                    y={0}
-                    listening={false}
-                    globalCompositeOperation={
-                      (currentLinePendingRef.current.globalCompositeOperation ??
-                        "source-over") as "source-over" | "destination-out"
-                    }
-                  />
+                  currentLinePressuresRef.current.length > 0 ? (
+                    <PressureStroke
+                      ref={currentPenStrokeNodeRef}
+                      key="current-drawing"
+                      id={currentLineId}
+                      baseWidth={currentLinePendingRef.current.strokeWidth}
+                      stroke={currentLinePendingRef.current.stroke}
+                      opacity={currentLinePendingRef.current.opacity ?? 1}
+                      points={[]}
+                      listening={false}
+                      globalCompositeOperation={
+                        (currentLinePendingRef.current.globalCompositeOperation ??
+                          "source-over") as "source-over" | "destination-out"
+                      }
+                      pointsGetter={() => currentLinePointsRef.current}
+                      pressuresGetter={() => currentLinePressuresRef.current}
+                    />
+                  ) : (
+                    <Line
+                      ref={currentLineKonvaRef}
+                      key="current-drawing"
+                      id={currentLineId}
+                      points={currentLinePointsRef.current}
+                      stroke={currentLinePendingRef.current.stroke}
+                      opacity={currentLinePendingRef.current.opacity ?? 1}
+                      strokeWidth={currentLinePendingRef.current.strokeWidth}
+                      tension={0.5}
+                      lineCap="round"
+                      lineJoin="round"
+                      x={0}
+                      y={0}
+                      listening={false}
+                      globalCompositeOperation={
+                        (currentLinePendingRef.current.globalCompositeOperation ??
+                          "source-over") as "source-over" | "destination-out"
+                      }
+                    />
+                  )
                 )}
 
               {selectionRect && (
@@ -1844,25 +2289,44 @@ export const PaintSurface = ({
               {currentLineId &&
                 currentLineId.startsWith("line-inpaint") &&
                 currentLinePendingRef.current && (
-                  <Line
-                    ref={currentLineKonvaRef}
-                    key="current-drawing-inpaint"
-                    id={currentLineId}
-                    points={currentLinePointsRef.current}
-                    stroke={currentLinePendingRef.current.stroke}
-                    opacity={currentLinePendingRef.current.opacity ?? 1}
-                    strokeWidth={currentLinePendingRef.current.strokeWidth}
-                    tension={0.5}
-                    lineCap="round"
-                    lineJoin="round"
-                    x={0}
-                    y={0}
-                    listening={false}
-                    globalCompositeOperation={
-                      (currentLinePendingRef.current.globalCompositeOperation ??
-                        "source-over") as "source-over" | "destination-out"
-                    }
-                  />
+                  currentLinePressuresRef.current.length > 0 ? (
+                    <PressureStroke
+                      ref={currentPenStrokeNodeRef}
+                      key="current-drawing-inpaint"
+                      id={currentLineId}
+                      baseWidth={currentLinePendingRef.current.strokeWidth}
+                      stroke={currentLinePendingRef.current.stroke}
+                      opacity={currentLinePendingRef.current.opacity ?? 1}
+                      points={[]}
+                      listening={false}
+                      globalCompositeOperation={
+                        (currentLinePendingRef.current.globalCompositeOperation ??
+                          "source-over") as "source-over" | "destination-out"
+                      }
+                      pointsGetter={() => currentLinePointsRef.current}
+                      pressuresGetter={() => currentLinePressuresRef.current}
+                    />
+                  ) : (
+                    <Line
+                      ref={currentLineKonvaRef}
+                      key="current-drawing-inpaint"
+                      id={currentLineId}
+                      points={currentLinePointsRef.current}
+                      stroke={currentLinePendingRef.current.stroke}
+                      opacity={currentLinePendingRef.current.opacity ?? 1}
+                      strokeWidth={currentLinePendingRef.current.strokeWidth}
+                      tension={0.5}
+                      lineCap="round"
+                      lineJoin="round"
+                      x={0}
+                      y={0}
+                      listening={false}
+                      globalCompositeOperation={
+                        (currentLinePendingRef.current.globalCompositeOperation ??
+                          "source-over") as "source-over" | "destination-out"
+                      }
+                    />
+                  )
                 )}
             </Layer>
             <Layer

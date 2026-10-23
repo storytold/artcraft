@@ -29,6 +29,13 @@ export type LineNode = {
   offsetY?: number;
   locked?: boolean;
   globalCompositeOperation?: string;
+  /**
+   * Optional per-vertex pressure samples (0..1), sampled at every second
+   * coordinate pair of `points` (matching Konva `tension`-free point layout).
+   * Present only for pressure-recorded strokes; legacy strokes stay
+   * uniform-width.
+   */
+  pressures?: number[];
   zIndex?: number; // Used by PageEdit for z-ordering; ignored in PageDraw
 };
 
