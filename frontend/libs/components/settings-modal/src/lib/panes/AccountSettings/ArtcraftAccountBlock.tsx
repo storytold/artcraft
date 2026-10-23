@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useState, useEffect } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
@@ -16,6 +17,7 @@ export interface ArtcraftAccountBlockProps {
 export const ArtcraftAccountBlock = ({
   globalAccountLogoutCallback,
 }: ArtcraftAccountBlockProps) => {
+  const { t } = useTranslation();
   const { triggerRecheck } = useLoginModalStore();
   const [artcraftSession, setArtcraftSession] = useState<UserInfo | undefined>(
     undefined
@@ -67,10 +69,10 @@ export const ArtcraftAccountBlock = ({
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-          ArtCraft account
+          {t("ArtCraft account")}
         </p>
         <p className="truncate text-sm font-medium text-base-fg/80">
-          {artcraftSession?.display_name || "Not logged in"}
+          {artcraftSession?.display_name || t("Not logged in")}
         </p>
       </div>
       <Button
@@ -88,9 +90,9 @@ export const ArtcraftAccountBlock = ({
         {isCheckingArtcraftSession ? (
           <LoaderCircleIcon className="animate-spin text-sm" />
         ) : isLoggedIn ? (
-          "Log Out"
+          t("Log Out")
         ) : (
-          "Log In"
+          t("Log In")
         )}
       </Button>
     </div>

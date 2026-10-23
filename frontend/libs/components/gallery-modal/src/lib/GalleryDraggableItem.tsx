@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckIcon, EllipsisIcon, MusicIcon, UploadIcon } from "lucide-react";
@@ -85,6 +86,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   onCreateFolderFromMenu,
   onRemoveFromFolder,
 }) => {
+  const { t: tr } = useTranslation();
   const imgRef = useRef<HTMLImageElement>(null);
   const dragStarted = useRef(false);
   // Right-click context menu position (null = closed).
@@ -125,15 +127,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     if (!onDelete) return;
     showActionReminder({
       reminderType: "default",
-      title: "Delete this media?",
+      title: tr("Delete this media?"),
       message: (
         <p className="text-sm text-white/70">
-          This will permanently remove the media from your library. This action
-          cannot be undone.
+          {tr("This will permanently remove the media from your library. This action cannot be undone.")}
         </p>
       ),
-      primaryActionText: "Delete",
-      secondaryActionText: "Cancel",
+      primaryActionText: tr("Delete"),
+      secondaryActionText: tr("Cancel"),
       primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
       onPrimaryAction: async () => {
         try {
@@ -145,7 +146,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             (result as any).status !== "success"
           ) {
             const msg =
-              (result as any).error_message || "Failed to delete media.";
+              (result as any).error_message || tr("Failed to delete media.");
             console.error("Delete failed:", result);
             toast.error(msg);
             return;
@@ -154,7 +155,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         } catch (err) {
           console.error("Delete threw:", err);
           toast.error(
-            `Failed to delete media: ${err instanceof Error ? err.message : String(err)}`,
+            tr("Failed to delete media: {{error}}", { error: err instanceof Error ? err.message : String(err) }),
           );
         } finally {
           isActionReminderOpen.value = false;
@@ -277,7 +278,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           </div>
         ) : !item.thumbnail ? (
           <div className="flex h-full w-full items-center justify-center bg-black/30">
-            <span className="text-white/60">Image not available</span>
+            <span className="text-white/60">{tr("Image not available")}</span>
           </div>
         ) : (
           <>
@@ -315,7 +316,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         )}
         {disabled && (
           <div className="absolute left-2 top-2 bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
-            Added
+            {tr("Added")}
           </div>
         )}
       </div>
@@ -452,19 +453,11 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             <div className="flex flex-col items-center text-xs whitespace-nowrap">
               {!isAudio && (
                 <span>
-                  <span className="font-bold">Drag</span>
-                  <span className="opacity-50">
-                    {item.mediaClass === "dimensional" ||
-                    item.mediaClass === "mesh" ||
-                    item.mediaClass === "splat"
-                      ? " to add to scene"
-                      : " to add"}
-                  </span>
+                  {tr(item.mediaClass === "dimensional" || item.mediaClass === "mesh" || item.mediaClass === "splat" ? "Drag to add to scene" : "Drag to add")}
                 </span>
               )}
               <span>
-                <span className="font-bold">Click</span>
-                <span className="opacity-50"> to view</span>
+                {tr("Click to view")}
               </span>
             </div>
           }

@@ -24,6 +24,7 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@storyteller/i18n": ["libs/i18n/src/index.ts"],
       "~/*": [
         "apps/artcraft/app/src/*"
       ],

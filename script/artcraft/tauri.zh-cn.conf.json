@@ -1,0 +1,17 @@
+{
+  "productName": "ArtCraft zh-CN",
+  "identifier": "io.github.huchenlix.artcraft.zhcn",
+  "build": {
+    "frontendDist": "../../../.local-build/frontend-release-fixed",
+    "beforeBuildCommand": ""
+  },
+  "bundle": {
+    "targets": ["nsis"],
+    "windows": {
+      "nsis": {
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": true
+      }
+    }
+  }
+}

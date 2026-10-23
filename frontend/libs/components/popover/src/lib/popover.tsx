@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import {
   ReactNode,
   useRef,
@@ -159,6 +160,7 @@ function PortalTooltip({
 // toggles on click/tap (works on touch devices). Rendered into a portal so it
 // is never clipped by the popover panel's bounds.
 function InfoHint({ content }: { content: ReactNode }) {
+  const { t: tr } = useTranslation();
   const [open, setOpen] = useState(false);
   const pinnedRef = useRef(false); // opened via click/tap (sticky until dismissed)
   const [position, setPosition] = useState({ top: 0, left: 0, maxWidth: 320 });
@@ -218,7 +220,7 @@ function InfoHint({ content }: { content: ReactNode }) {
       <button
         ref={anchorRef}
         type="button"
-        aria-label="More info"
+        aria-label={tr("More info")}
         className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
         onClick={(e) => {
           // Don't let the click select the row.
