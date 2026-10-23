@@ -560,7 +560,7 @@ export function Viewer3D({
 
   return (
     <div
-      className={`relative h-full w-full overflow-hidden rounded-l-xl bg-[#282828] ${className}`}
+      className={`relative h-full w-full overflow-hidden rounded-s-xl bg-[#282828] ${className}`}
       onMouseDown={stopPropagation}
       onMouseMove={stopPropagation}
       onMouseUp={stopPropagation}
@@ -580,7 +580,7 @@ export function Viewer3D({
           the animation picker (models that ship clips). Models with
           neither get no extra chrome. */}
       {showViewer && (hasRig || animationNames.length > 0) && (
-        <div className="absolute right-2.5 top-2.5 z-20 flex items-start gap-2">
+        <div className="absolute end-2.5 top-2.5 z-20 flex items-start gap-2">
           {hasRig && (
             <button
               type="button"

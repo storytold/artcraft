@@ -68,7 +68,7 @@ const ContextMenuSubTrigger = React.forwardRef<
       className={cn(
         contextMenuItemVariants({ variant }),
         "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-        inset && "pl-8",
+        inset && "ps-8",
         className,
       )}
       {...props}
@@ -79,7 +79,7 @@ const ContextMenuSubTrigger = React.forwardRef<
       {children}
       <HugeiconsIcon
         icon={ArrowRightIcon}
-        className="ml-auto text-muted-foreground/80"
+        className="ms-auto text-muted-foreground/80"
       />
     </ContextMenuPrimitive.SubTrigger>
   ),
@@ -148,19 +148,19 @@ const ContextMenuItem = React.forwardRef<
         ref={ref}
         className={cn(
           contextMenuItemVariants({ variant }),
-          shouldInsetContent && "pl-8",
+          shouldInsetContent && "ps-8",
           className,
         )}
         {...props}
       >
         {icon && (
-          <span className="absolute left-3 flex size-3.5 items-center justify-center text-muted-foreground [&_svg]:size-3.5 [&_svg]:shrink-0">
+          <span className="absolute start-3 flex size-3.5 items-center justify-center text-muted-foreground [&_svg]:size-3.5 [&_svg]:shrink-0">
             {icon}
           </span>
         )}
         {children}
         {textRight && (
-          <span className="ml-auto text-[0.60rem] tracking-widest text-muted-foreground/80 mb-0.5">
+          <span className="ms-auto text-[0.60rem] tracking-widest text-muted-foreground/80 mb-0.5">
             {textRight}
           </span>
         )}
@@ -185,13 +185,13 @@ const ContextMenuCheckboxItem = React.forwardRef<
       ref={ref}
       className={cn(
         contextMenuItemVariants({ variant }),
-        "pr-2 pl-8",
+        "pe-2 ps-8",
         className,
       )}
       checked={checked}
       {...props}
     >
-      <span className="absolute left-3 flex size-3.5 items-center justify-center">
+      <span className="absolute start-3 flex size-3.5 items-center justify-center">
         <ContextMenuPrimitive.ItemIndicator>
           <HugeiconsIcon icon={Tick02Icon} className="size-4" />
         </ContextMenuPrimitive.ItemIndicator>
@@ -215,10 +215,10 @@ const ContextMenuRadioItem = React.forwardRef<
 >(({ className, children, variant = "default", icon, ...props }, ref) => (
   <ContextMenuPrimitive.RadioItem
     ref={ref}
-    className={cn(contextMenuItemVariants({ variant }), "pr-2 pl-8", className)}
+    className={cn(contextMenuItemVariants({ variant }), "pe-2 ps-8", className)}
     {...props}
   >
-    <span className="absolute left-2 flex size-3.5 items-center justify-center">
+    <span className="absolute start-2 flex size-3.5 items-center justify-center">
       <ContextMenuPrimitive.ItemIndicator>
         <HugeiconsIcon icon={CircleIcon} className="size-2 fill-current" />
       </ContextMenuPrimitive.ItemIndicator>
@@ -242,7 +242,7 @@ const ContextMenuLabel = React.forwardRef<
     ref={ref}
     className={cn(
       "flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-foreground",
-      inset && "pl-8",
+      inset && "ps-8",
       className,
     )}
     {...props}
@@ -274,7 +274,7 @@ const ContextMenuShortcut = ({
   return (
     <span
       className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground opacity-60",
+        "ms-auto text-xs tracking-widest text-muted-foreground opacity-60",
         className,
       )}
       {...props}

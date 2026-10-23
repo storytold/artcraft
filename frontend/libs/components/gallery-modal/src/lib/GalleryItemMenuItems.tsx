@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import React, { useState } from "react";
 import {
   ChevronRightIcon,
@@ -55,6 +56,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
   onDelete,
   close,
 }) => {
+  const { t: tr } = useTranslation();
   const [folderSubmenuOpen, setFolderSubmenuOpen] = useState(false);
 
   return (
@@ -72,12 +74,12 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           <EyeIcon className="text-base-fg w-4" />
           <span>
             {item.mediaClass === "video"
-              ? "View video"
+              ? tr("View video")
               : item.mediaClass === "dimensional" ||
                   item.mediaClass === "mesh" ||
                   item.mediaClass === "splat"
-                ? "View 3D"
-                : "View image"}
+                ? tr("View 3D")
+                : tr("View image")}
           </span>
         </button>
       )}
@@ -95,7 +97,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           }}
         >
           <PencilIcon className="text-base-fg w-4" />
-          <span>Edit image</span>
+          <span>{tr("Edit image")}</span>
         </button>
       )}
 
@@ -120,7 +122,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           >
             <div className="flex items-center gap-2">
               <FolderPlusIcon className="text-base-fg w-4" />
-              <span>Add to Folder</span>
+              <span>{tr("Add to Folder")}</span>
             </div>
             <ChevronRightIcon
               className={twMerge(
@@ -146,7 +148,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
                 />
               </div>
             ) : (
-              <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
+              <div className="absolute start-full top-0 -ms-1 ps-2 z-50">
                 <div className="max-h-64 overflow-y-auto w-max min-w-36 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
                   <FolderList
                     item={item}
@@ -175,7 +177,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           }}
         >
           <FolderMinusIcon className="text-base-fg w-4" />
-          <span>Remove from folder</span>
+          <span>{tr("Remove from folder")}</span>
         </button>
       )}
 
@@ -190,7 +192,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           }}
         >
           <Trash2Icon className="text-red w-4" />
-          <span className="text-red">Delete</span>
+          <span className="text-red">{tr("Delete")}</span>
         </button>
       )}
     </div>
@@ -210,7 +212,9 @@ const FolderList = ({
   onAddToFolder?: (itemIds: string[], folderId: string) => void;
   onCreateFolderFromMenu?: () => void;
   closeAll: () => void;
-}) => (
+}) => {
+  const { t: tr } = useTranslation();
+  return (
   <>
     {/* Same ordering as the sidebar / folder chips: starred first, then
         alphabetical. */}
@@ -245,7 +249,8 @@ const FolderList = ({
       }}
     >
       <PlusIcon className="text-xs w-4" />
-      <span>New Folder</span>
+      <span>{tr("New Folder")}</span>
     </button>
   </>
 );
+};

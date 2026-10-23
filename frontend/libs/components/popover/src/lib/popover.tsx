@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import {
   ReactNode,
   useRef,
@@ -159,6 +160,7 @@ function PortalTooltip({
 // toggles on click/tap (works on touch devices). Rendered into a portal so it
 // is never clipped by the popover panel's bounds.
 function InfoHint({ content }: { content: ReactNode }) {
+  const { t: tr } = useTranslation();
   const [open, setOpen] = useState(false);
   const pinnedRef = useRef(false); // opened via click/tap (sticky until dismissed)
   const [position, setPosition] = useState({ top: 0, left: 0, maxWidth: 320 });
@@ -218,8 +220,8 @@ function InfoHint({ content }: { content: ReactNode }) {
       <button
         ref={anchorRef}
         type="button"
-        aria-label="More info"
-        className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
+        aria-label={tr("More info")}
+        className="ms-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
         onClick={(e) => {
           // Don't let the click select the row.
           e.stopPropagation();
@@ -406,12 +408,12 @@ function RichListRow({
           )}
       </div>
       {item.trailing && (
-        <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>
+        <div className="ms-1 flex shrink-0 items-center">{item.trailing}</div>
       )}
       {rightNode ??
         (item.selected &&
           (item.selectedRight ?? (
-            <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center">
+            <span className="ms-1 flex h-5 w-5 shrink-0 items-center justify-center">
               <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
             </span>
           )))}
@@ -879,9 +881,9 @@ export const PopoverMenu = ({
   };
 
   const alignClasses = {
-    start: "left-0",
+    start: "start-0",
     center: "left-1/2 -translate-x-1/2",
-    end: "right-0",
+    end: "end-0",
   };
 
   // Hover timers and refs
@@ -1176,7 +1178,7 @@ export const PopoverMenu = ({
                                       item={item}
                                       active={openTooltipIdx === index}
                                       rightNode={
-                                        <ChevronRightIcon className="ml-1 shrink-0 text-xs text-base-fg/50" />
+                                        <ChevronRightIcon className="ms-1 shrink-0 text-xs text-base-fg/50" />
                                       }
                                     />
                                   </SubmenuFlyout>
@@ -1247,7 +1249,7 @@ export const PopoverMenu = ({
                     ) : mode === "hoverSelect" ? (
                       <div className="relative flex flex-col text-sm text-base-fg overflow-visible">
                         {maxListHeight && canScrollUp && (
-                          <div className="absolute top-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-b from-ui-controls via-ui-controls/80 to-transparent py-1.5 pointer-events-none">
+                          <div className="absolute top-0 start-0 end-0 z-20 flex justify-center bg-gradient-to-b from-ui-controls via-ui-controls/80 to-transparent py-1.5 pointer-events-none">
                             <ChevronUpIcon className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
@@ -1288,7 +1290,7 @@ export const PopoverMenu = ({
                                 className={twMerge(
                                   "group flex cursor-pointer items-start gap-2 rounded-[3px] px-2 py-2 transition-all",
                                   item.selected
-                                    ? "bg-white/10 border-l-2 border-white"
+                                    ? "bg-white/10 border-s-2 border-white"
                                     : "hover:bg-white/5",
                                   !item.selected && openTooltipIdx === index
                                     ? "bg-white/5"
@@ -1340,14 +1342,14 @@ export const PopoverMenu = ({
                                   </div>
 
                                   {item.trailing && (
-                                    <div className="ml-2 mr-1 flex items-center">
+                                    <div className="ms-2 me-1 flex items-center">
                                       {item.trailing}
                                     </div>
                                   )}
 
                                   {item.selected &&
                                     (item.selectedRight ?? (
-                                      <span className="text-white text-xl flex items-center justify-center mr-1">
+                                      <span className="text-white text-xl flex items-center justify-center me-1">
                                         <CheckIcon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                                       </span>
                                     ))}
@@ -1406,7 +1408,7 @@ export const PopoverMenu = ({
                           })}
                         </div>
                         {maxListHeight && canScrollDown && (
-                          <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-t from-ui-controls via-ui-controls/80 to-transparent py-1.5 pointer-events-none">
+                          <div className="absolute bottom-0 start-0 end-0 z-20 flex justify-center bg-gradient-to-t from-ui-controls via-ui-controls/80 to-transparent py-1.5 pointer-events-none">
                             <ChevronDownIcon className="text-base-fg/60 text-xs animate-bounce" />
                           </div>
                         )}
@@ -1495,20 +1497,20 @@ export const PopoverMenu = ({
                                   </div>
                                   {/* Optional trailing content on the right */}
                                   {item.trailing && (
-                                    <div className="ml-2 flex items-center">
+                                    <div className="ms-2 flex items-center">
                                       {item.trailing}
                                     </div>
                                   )}
                                   {/* Optional trailing content on the right */}
                                   {item.trailing && (
-                                    <div className="ml-2 flex items-center">
+                                    <div className="ms-2 flex items-center">
                                       {item.trailing}
                                     </div>
                                   )}
 
                                   {mode === "toggle" && (
                                     <span
-                                      className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center"
+                                      className="ms-2 flex h-5 w-5 shrink-0 items-center justify-center"
                                     >
                                       {item.selected && (
                                         <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
@@ -1558,14 +1560,14 @@ export const PopoverMenu = ({
                                 </div>
                                 {/* Optional trailing content on the right */}
                                 {item.trailing && (
-                                  <div className="ml-2 flex items-center">
+                                  <div className="ms-2 flex items-center">
                                     {item.trailing}
                                   </div>
                                 )}
 
                                 {mode === "toggle" && (
                                   <span
-                                    className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center"
+                                    className="ms-2 flex h-5 w-5 shrink-0 items-center justify-center"
                                   >
                                     {item.selected && (
                                       <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />

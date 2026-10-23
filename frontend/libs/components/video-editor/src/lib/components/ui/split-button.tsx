@@ -61,14 +61,14 @@ SplitButtonSide.displayName = "SplitButtonSide";
 
 const SplitButtonLeft = forwardRef<HTMLButtonElement, SplitButtonSideProps>(
   ({ ...props }, ref) => {
-    return <SplitButtonSide ref={ref} paddingClass="pl-3 pr-2" {...props} />;
+    return <SplitButtonSide ref={ref} paddingClass="ps-3 pe-2" {...props} />;
   },
 );
 SplitButtonLeft.displayName = "SplitButtonLeft";
 
 const SplitButtonRight = forwardRef<HTMLButtonElement, SplitButtonSideProps>(
   ({ ...props }, ref) => {
-    return <SplitButtonSide ref={ref} paddingClass="pl-2 pr-3" {...props} />;
+    return <SplitButtonSide ref={ref} paddingClass="ps-2 pe-3" {...props} />;
   },
 );
 SplitButtonRight.displayName = "SplitButtonRight";

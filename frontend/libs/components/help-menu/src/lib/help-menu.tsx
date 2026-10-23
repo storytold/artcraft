@@ -57,7 +57,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
 
   if (selectedPost) {
     return (
-      <div className="flex flex-col h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex flex-col h-[500px] overflow-y-auto pe-2 custom-scrollbar">
         <button
           onClick={() => setSelectedSlug(null)}
           className="self-start mb-4 text-sm flex items-center gap-2 text-white/60 hover:text-white transition-colors"
@@ -106,7 +106,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-2 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+    <div className="flex flex-col gap-4 mt-2 h-[500px] overflow-y-auto pe-2 custom-scrollbar">
       {items.map((item) => (
         <div
           key={item.slug}
@@ -122,7 +122,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
                 className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-white" />
             </h3>
             {item.date && (
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40 whitespace-nowrap ml-2">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40 whitespace-nowrap ms-2">
                 {item.date}
               </span>
             )}
@@ -372,7 +372,7 @@ export function HelpMenuButton({
                     key={item.id}
                     type="button"
                     onClick={() => viewTutorial(item)}
-                    className="group block overflow-hidden rounded-none border border-white/15 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/[0.07] text-left"
+                    className="group block overflow-hidden rounded-none border border-white/15 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/[0.07] text-start"
                   >
                     <div className="aspect-video w-full overflow-hidden">
                       <img

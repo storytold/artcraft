@@ -1,3 +1,4 @@
+import { isLocale, LANGUAGES, setLocale, useTranslation } from "@storyteller/i18n";
 import { Label } from "@storyteller/ui-label";
 import { Switch } from "@storyteller/ui-switch";
 import { useEnterToGenerateStore } from "@storyteller/ui-promptbox";
@@ -7,6 +8,7 @@ import { useKeybindsStore } from "@storyteller/keybinds";
 interface MiscSettingsPaneProps {}
 
 export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
+  const { t, i18n } = useTranslation();
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
 
@@ -19,23 +21,40 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
   return (
     <div className="space-y-4 text-base-fg">
       <div className="flex flex-col gap-2 pt-3">
+        <Label htmlFor="interface-language">{t("Language")}</Label>
+        <p id="interface-language-description" className="text-xs opacity-70">
+          {t("Choose the language used in the interface. Prompts and generated content are not translated.")}
+        </p>
+        <select
+          id="interface-language"
+          aria-describedby="interface-language-description"
+          value={i18n.resolvedLanguage ?? "en"}
+          onChange={(event) => {
+            if (isLocale(event.target.value)) void setLocale(event.target.value);
+          }}
+          className="h-10 w-full max-w-xs rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 text-base-fg"
+        >
+          {LANGUAGES.map((language) => (
+            <option key={language.code} value={language.code} lang={language.code}>
+              {language.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <Label htmlFor="enter-to-generate">Enter to generate</Label>
+          <Label htmlFor="enter-to-generate">{t("Enter to generate")}</Label>
           <p className="text-xs opacity-70">
-            When on, pressing Enter submits the prompt and Shift+Enter adds a
-            new line. When off (default), both Enter and Shift+Enter add a new
-            line - use only the button to submit.
+            {t("When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.")}
           </p>
         </div>
         <Switch enabled={enterToGenerate} setEnabled={setEnterToGenerate} />
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <Label htmlFor="group-models-by-family">Group models by family</Label>
+          <Label htmlFor="group-models-by-family">{t("Group models by family")}</Label>
           <p className="text-xs opacity-70">
-            When on (default), the model picker groups models into submenus by
-            family, like Seedance or Veo. When off, every model shows in one
-            flat list.
+            {t("When on (default), the model picker groups models into submenus by family, like Seedance or Veo. When off, every model shows in one flat list.")}
           </p>
         </div>
         <Switch
@@ -46,14 +65,10 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
           <Label htmlFor="cheatsheet-sticky">
-            Keep shortcut cheatsheet open
+            {t("Keep shortcut cheatsheet open")}
           </Label>
           <p className="text-xs opacity-70">
-            In the editors, holding Ctrl (⌘ on Mac) alone for a few seconds
-            shows a cheatsheet of the keyboard shortcuts. When on, it stays on
-            screen after you release the key until you press Esc or click
-            outside it. When off (default), it disappears as soon as you let
-            go.
+            {t("In the editors, holding Ctrl (⌘ on Mac) alone for a few seconds shows a cheatsheet of the keyboard shortcuts. When on, it stays on screen after you release the key until you press Esc or click outside it. When off (default), it disappears as soon as you let go.")}
           </p>
         </div>
         <Switch enabled={cheatsheetSticky} setEnabled={setCheatsheetSticky} />

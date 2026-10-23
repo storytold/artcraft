@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
@@ -39,6 +40,7 @@ export function CreditsModal({
   onClose,
   onPurchase,
 }: CreditsModalProps) {
+  const { t: tr, i18n } = useTranslation();
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const handlePurchase = async (pack: CreditPack) => {
@@ -74,10 +76,14 @@ export function CreditsModal({
       <div className="relative overflow-hidden">
         <div className="relative px-8 pt-10 pb-8 sm:px-10 sm:pt-11 sm:pb-9">
           <h2 className="font-display text-3xl font-semibold tracking-tight text-white sm:text-[34px] sm:leading-[1.1]">
-            Buy <span className="text-primary">credits</span>
+            <Trans
+              t={tr}
+              i18nKey="Buy <accent>credits</accent>"
+              components={{ accent: <span className="text-primary" /> }}
+            />
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-white/55">
-            One-time credit packs. No subscription required.
+            {tr("One-time credit packs. No subscription required.")}
           </p>
 
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -91,15 +97,15 @@ export function CreditsModal({
                   onClick={() => handlePurchase(pack)}
                   disabled={purchasingId !== null}
                   className={twMerge(
-                    "group relative flex flex-col gap-6 border p-6 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                    "group relative flex flex-col gap-6 border p-6 text-start transition-all disabled:cursor-not-allowed disabled:opacity-60",
                     isPopular
                       ? "border-white/60 bg-white/[0.06] hover:border-white"
                       : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]",
                   )}
                 >
                   {pack.badge && (
-                    <span className="absolute -top-2.5 right-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-black">
-                      {pack.badge}
+                    <span className="absolute -top-2.5 end-3 bg-white px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-black">
+                      {tr(pack.badge)}
                     </span>
                   )}
 
@@ -109,18 +115,22 @@ export function CreditsModal({
                     </span>
                     <div className="min-w-0">
                       <div className="text-4xl font-bold leading-none tracking-tight text-white">
-                        {pack.total.toLocaleString()}
+                        {pack.total.toLocaleString(i18n.language)}
                       </div>
                       <div className="mt-0 text-sm text-white/40">
                         {pack.bonus > 0 ? (
                           <>
-                            {pack.base.toLocaleString()} +{" "}
+                            {pack.base.toLocaleString(i18n.language)} +{" "}
                             <span className="font-semibold text-white">
-                              {pack.bonus.toLocaleString()} bonus
+                              {tr("{{formattedCount}} bonus", {
+                                formattedCount: pack.bonus.toLocaleString(
+                                  i18n.language,
+                                ),
+                              })}
                             </span>
                           </>
                         ) : (
-                          "credits"
+                          tr("credits")
                         )}
                       </div>
                     </div>
@@ -135,7 +145,7 @@ export function CreditsModal({
                         <LoaderCircleIcon className="animate-spin" />
                       ) : (
                         <>
-                          Buy
+                          {tr("Buy")}
                           <ArrowRightIcon className="text-xs transition-transform group-hover:translate-x-0.5" />
                         </>
                       )}
@@ -147,7 +157,7 @@ export function CreditsModal({
           </div>
 
           <p className="mt-6 text-center text-xs text-white/35">
-            Secure checkout via Stripe.
+            {tr("Secure checkout via Stripe.")}
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "@storyteller/i18n";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
 import { ChevronRightIcon, LoaderCircleIcon, PencilIcon } from "lucide-react";
@@ -13,6 +14,7 @@ interface Props {
 
 export const SceneTitleInput = ({ pageName }: Props) => {
   useSignals();
+  const { t } = useTranslation();
   const { userInfo } = authentication;
   const [showInput, setShowInput] = useState(false);
   const [previousTitle, setPreviousTitle] = useState(scene.value.title);
@@ -30,7 +32,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
   };
 
   const handleShowErrorDialog = (errorMessage: string) => {
-    usePageSceneStore.getState().setErrorDialog("Error", errorMessage);
+    usePageSceneStore.getState().setErrorDialog(t("Error"), errorMessage);
   };
 
   const handleChangeSceneTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +53,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
     });
     if (!response.success) {
       handleShowErrorDialog(
-        response.errorMessage || "Unknown Error in Renaming Scene",
+        response.errorMessage || t("Unknown Error in Renaming Scene"),
       );
       resetPreviousTitle();
     }
@@ -62,7 +64,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
     setShowInput(false);
     if (scene.value.title === "") {
       setIsValid(false);
-      handleShowErrorDialog("Scene name can not be empty.");
+      handleShowErrorDialog(t("Scene name can not be empty."));
       resetPreviousTitle();
       e.currentTarget.focus();
     } else if (scene.value.token) {
@@ -89,7 +91,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
     <div
       className={twMerge(
         "flex w-full items-center justify-center gap-1.5",
-        isSaving && "ml-3",
+        isSaving && "ms-3",
       )}
       data-tauri-drag-region
     >
@@ -112,11 +114,16 @@ export const SceneTitleInput = ({ pageName }: Props) => {
               onClick={handleShowInput}
               data-tauri-drag-region="false"
             >
-              <span className="truncate">{scene.value.title || ""}</span>
-              <PencilIcon className="ml-2 shrink-0 text-sm opacity-50" />
+              <span dir="auto" className="truncate">
+                {scene.value.title || ""}
+              </span>
+              <PencilIcon className="ms-2 shrink-0 text-sm opacity-50" />
             </button>
           ) : (
-            <div className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
+            <div
+              dir="auto"
+              className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80"
+            >
               {scene.value.title || ""}
             </div>
           )}
@@ -133,6 +140,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
               isSaving && "outline-white/30",
             )}
             isError={!isValid}
+            dir="auto"
             value={scene.value.title || ""}
             onChange={handleChangeSceneTitle}
             onBlur={validateSceneTitle}

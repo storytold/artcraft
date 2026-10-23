@@ -66,9 +66,9 @@ export const BoardGridToolbar = ({
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-3 pt-3">
       <ToolbarShell className="max-w-full">
-        <div className="flex min-w-0 flex-col pl-1 pr-2">
+        <div className="flex min-w-0 flex-col ps-1 pe-2">
           <BoardTitle name={boardName} onRename={onRenameBoard} />
-          <span className="pl-1.5 text-[11px] leading-tight text-base-fg/45">
+          <span className="ps-1.5 text-[11px] leading-tight text-base-fg/45">
             {itemCount} {itemCount === 1 ? "item" : "items"}
           </span>
         </div>
@@ -216,13 +216,14 @@ const BoardTitle = ({
 
   return (
     <button
+      dir="auto"
       type="button"
       title="Rename board"
       onClick={() => {
         setDraft(name);
         setEditing(true);
       }}
-      className="truncate rounded-md px-1.5 py-0.5 text-left text-sm font-semibold leading-tight text-base-fg transition-colors hover:bg-base-fg/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="truncate rounded-md px-1.5 py-0.5 text-start text-sm font-semibold leading-tight text-base-fg transition-colors hover:bg-base-fg/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       {name}
     </button>

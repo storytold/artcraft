@@ -224,10 +224,10 @@ export const AnimationsModal = () => {
         contentHidden={assetDraggingUnder && !reopenAfterDrag}
       >
         <Modal.DragHandle>
-          <div className="absolute left-0 top-0 z-[50] h-[46px] w-full cursor-move" />
+          <div className="absolute start-0 top-0 z-[50] h-[46px] w-full cursor-move" />
         </Modal.DragHandle>
         <div className="grid h-full grid-cols-12 gap-3">
-          <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
+          <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:end-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
             <div className="flex h-10 items-center justify-between gap-2.5">
               <h2 className="font-display text-lg tracking-tight text-white">
                 Animations
@@ -240,7 +240,7 @@ export const AnimationsModal = () => {
                   key={tab.id}
                   variant={activeTab === tab.id ? "primary" : "secondary"}
                   className={twMerge(
-                    "w-full justify-start rounded-[3px] border border-transparent bg-transparent px-3.5 py-2.5 text-left hover:bg-white/15",
+                    "w-full justify-start rounded-[3px] border border-transparent bg-transparent px-3.5 py-2.5 text-start hover:bg-white/15",
                     activeTab === tab.id &&
                       "border-white/15 bg-white/10 text-white hover:bg-white/10",
                   )}
@@ -248,7 +248,7 @@ export const AnimationsModal = () => {
                 >
                   <DynamicIcon
                     icon={tab.icon}
-                    className="mr-2 opacity-70"
+                    className="me-2 opacity-70"
                   />
                   {tab.label}
                 </Button>
@@ -281,18 +281,18 @@ export const AnimationsModal = () => {
                       ref={searchInputRef}
                       placeholder="Search animations"
                       className="relative z-[51] grow"
-                      inputClassName="bg-white/5 pr-10 placeholder-white/40"
+                      inputClassName="bg-white/5 pe-10 placeholder-white/40"
                       icon={SearchIcon}
                       value={searchTerm}
                       onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         setSearchTerm(e.target.value)
                       }
-                      iconClassName="pointer-events-none left-3 top-1/2 h-4 w-4 -translate-y-1/2 p-0 text-white/50"
+                      iconClassName="pointer-events-none start-3 top-1/2 h-4 w-4 -translate-y-1/2 p-0 text-white/50"
                     />
                     {searchTerm && (
                       <CloseButton
                         onClick={clearSearch}
-                        className="absolute right-2.5 top-1/2 z-[51] h-4 w-4 -translate-y-1/2 bg-white/10 text-[10px] hover:bg-white/20"
+                        className="absolute end-2.5 top-1/2 z-[51] h-4 w-4 -translate-y-1/2 bg-white/10 text-[10px] hover:bg-white/20"
                       />
                     )}
                   </div>

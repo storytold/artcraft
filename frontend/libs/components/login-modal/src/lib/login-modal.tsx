@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { Transition, TransitionChild } from "@headlessui/react";
 import { useState, useEffect, useRef } from "react";
@@ -15,10 +16,10 @@ const DEFAULT_SHOWCASE_VIDEO =
   "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
 const LOGIN_SUCCESS_DURATION_MS = 3000;
 const FRAME_CORNERS = [
-  "top-0 left-0",
-  "top-0 right-0",
-  "bottom-0 left-0",
-  "bottom-0 right-0",
+  "top-0 start-0",
+  "top-0 end-0",
+  "bottom-0 start-0",
+  "bottom-0 end-0",
 ];
 
 interface LoginModalProps {
@@ -41,6 +42,7 @@ export function LoginModal({
   isSignUp: initialIsSignUp = true,
   videoUrl = DEFAULT_SHOWCASE_VIDEO,
 }: LoginModalProps) {
+  const { t } = useTranslation();
   const { isOpen, recheckTrigger, closeModal } = useLoginModalStore();
   const [isLoading, setIsLoading] = useState(false);
   const [_isLoggedInArtCraft, setIsLoggedInArtCraft] = useState(false);
@@ -152,10 +154,10 @@ export function LoginModal({
       return (
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
           <h2 className="mb-3 font-display text-3xl leading-[1.05] tracking-tight text-white sm:text-4xl">
-            Thank you for signing in!
+            {t("Thank you for signing in!")}
           </h2>
           <p className="mb-8 text-sm leading-relaxed text-white/60">
-            You're all set to start creating amazing content.
+            {t("You're all set to start creating amazing content.")}
           </p>
           <Button
             variant="primary"
@@ -164,7 +166,7 @@ export function LoginModal({
             iconFlip={true}
             className="h-10 rounded-[3px] bg-white px-5 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-black shadow-none hover:bg-white/90"
           >
-            Get Started
+            {t("Get Started")}
           </Button>
         </div>
       );
@@ -174,11 +176,10 @@ export function LoginModal({
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
         <h2 className="mb-3 font-display text-3xl leading-[1.05] tracking-tight text-white sm:text-4xl">
-          Join our <span className="font-serif-italic">community.</span>
+          <Trans t={t} i18nKey="Join our <community>community.</community>" components={{ community: <span className="font-serif-italic" /> }} />
         </h2>
         <p className="mb-8 max-w-md text-sm leading-relaxed text-white/60">
-          Connect with other creators, share your work, and get the latest
-          updates in our Discord community.
+          {t("Connect with other creators, share your work, and get the latest updates in our Discord community.")}
         </p>
         <div className="flex gap-3">
           <Button
@@ -189,7 +190,7 @@ export function LoginModal({
               setShowSuccess(true);
             }}
           >
-            Skip for now
+            {t("Skip for now")}
           </Button>
           <Button
             variant="primary"
@@ -197,7 +198,7 @@ export function LoginModal({
             icon={DiscordIcon}
             className="h-10 rounded-[3px] bg-[#5865F2] px-4 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-none hover:bg-[#6a76ff]"
           >
-            Join Discord
+            {t("Join Discord")}
           </Button>
         </div>
       </div>
@@ -245,7 +246,7 @@ export function LoginModal({
                     <div className="relative flex w-full flex-col lg:w-1/2">
                       <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
                         <div className="w-full">
-                          <div className="mb-8 text-left">
+                          <div className="mb-8 text-start">
                             <img
                               src="/resources/logo/artcraft-icon.png"
                               alt="ArtCraft"
@@ -254,18 +255,17 @@ export function LoginModal({
                             />
                             <h1 className="mb-3 text-balance font-display text-3xl leading-[1.05] tracking-tight sm:text-4xl">
                               {isSignUp ? (
-                                "Create your account"
+                                t("Create your account")
                               ) : (
                                 <>
-                                  Welcome{" "}
-                                  <span className="font-serif-italic">back.</span>
+                                  <Trans t={t} i18nKey="Welcome <accent>back.</accent>" components={{ accent: <span className="font-serif-italic" /> }} />
                                 </>
                               )}
                             </h1>
                             <p className="text-sm leading-relaxed text-white/60">
                               {isSignUp
-                                ? "Sign up to start creating with ArtCraft"
-                                : "Log in to your creative workspace."}
+                                ? t("Sign up to start creating with ArtCraft")
+                                : t("Log in to your creative workspace.")}
                             </p>
                           </div>
 
@@ -273,7 +273,7 @@ export function LoginModal({
                           {!isSignUp && !isChallengeActive && (
                             <div className="mb-6 flex items-center gap-4 before:h-px before:flex-1 before:bg-white/15 after:h-px after:flex-1 after:bg-white/15">
                               <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
-                                or
+                                {t("or")}
                               </span>
                             </div>
                           )}
@@ -281,20 +281,19 @@ export function LoginModal({
                             onSubmit={handleAuthSubmit}
                             isSignUp={isSignUp}
                             onToggleMode={() => setIsSignUp((prev) => !prev)}
-                            errorMessage={errorMessage}
+                            errorMessage={t(errorMessage)}
                             isLoading={isLoading}
                           />}
                         </div>
                       </div>
 
                       <div className="px-6 pb-6 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-white/25 sm:px-10">
-                        &copy; {new Date().getFullYear()} ArtCraft. All rights
-                        reserved.
+                        &copy; {new Date().getFullYear()}  {t("ArtCraft. All rights reserved.")}
                       </div>
                     </div>
 
                     {/* ── Showcase pane (desktop only) ── */}
-                    <div className="relative hidden border-l border-white/15 lg:block lg:w-1/2">
+                    <div className="relative hidden border-s border-white/15 lg:block lg:w-1/2">
                       <LoginShowcase videoUrl={videoUrl} />
                     </div>
                   </>
@@ -318,6 +317,7 @@ export function LoginModal({
 // Right-pane video showcase — muted background video cropped to cover the pane,
 // with a legibility gradient + caption. Mirrors the webapp auth-showcase.
 function LoginShowcase({ videoUrl }: { videoUrl: string }) {
+  const { t } = useTranslation();
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#1e1f22]">
       <video
@@ -337,13 +337,13 @@ function LoginShowcase({ videoUrl }: { videoUrl: string }) {
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-8">
         <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
-          One of the cheapest
+          {t("One of the cheapest")}
         </p>
         <h2 className="text-2xl font-bold leading-tight">
-          Seedance 2.0 Video Generation
+          {t("Seedance 2.0 Video Generation")}
         </h2>
         <p className="mt-1 max-w-sm text-sm text-white/70">
-          Generate jaw-dropping AI videos with Seedance 2.0.
+          {t("Generate jaw-dropping AI videos with Seedance 2.0.")}
         </p>
       </div>
     </div>

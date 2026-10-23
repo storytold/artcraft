@@ -61,7 +61,7 @@ h6 {
     Roboto,
     "Helvetica Neue",
     Arial,
-    sans-serif;
+    var(--craft-fonts, sans-serif);
   letter-spacing: -0.03em;
 }
 
@@ -83,7 +83,7 @@ body {
     Roboto,
     "Helvetica Neue",
     Arial,
-    sans-serif;
+    var(--craft-fonts, sans-serif);
   color: var(--st-fg);
   background-color: var(--st-bg);
   color-scheme: var(--st-color-scheme, dark);
@@ -442,7 +442,7 @@ img {
   content: "";
   position: absolute;
   bottom: 16px;
-  right: 2px;
+  inset-inline-end: 2px;
   width: 10px;
   height: 10px;
   pointer-events: none;
@@ -461,6 +461,11 @@ img {
     rgba(255, 255, 255, 0.5) 75%,
     transparent 75%
   );
+}
+
+/* The textarea's resize corner moves to the bottom-left in RTL. */
+[dir="rtl"] .promptbox-resize-wrap::after {
+  transform: scaleX(-1);
 }
 
 .scrollbar-hidden {

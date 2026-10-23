@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import {
@@ -10,12 +11,13 @@ import {
 } from "~/config/appMenu";
 
 export const AppsQuickMenu = () => {
+  const { t } = useTranslation();
   const generateApps = useGenerateApps();
   const editApps = useEditApps();
   return (
     <div className="grid w-[680px] grid-cols-2 gap-3">
-      <AppsQuickMenuSection title="Create" apps={generateApps} />
-      <AppsQuickMenuSection title="Edit" apps={editApps} />
+      <AppsQuickMenuSection title={t("Create")} apps={generateApps} />
+      <AppsQuickMenuSection title={t("Edit")} apps={editApps} />
     </div>
   );
 };
@@ -26,7 +28,9 @@ const AppsQuickMenuSection = ({
 }: {
   title: string;
   apps: FullAppItem[];
-}) => (
+}) => {
+  const { t } = useTranslation();
+  return (
   <div>
     <h3 className="hud-label mb-2 px-2 text-base-fg/50">{title}</h3>
     <div className="space-y-0.5">
@@ -38,7 +42,7 @@ const AppsQuickMenuSection = ({
             onClick={() => goToApp(app.action)}
             disabled={!app.action}
             className={twMerge(
-              "group flex w-full items-center gap-3 rounded-[3px] px-2 py-2 text-left transition-colors",
+              "group flex w-full items-center gap-3 rounded-[3px] px-2 py-2 text-start transition-colors",
               app.action
                 ? "cursor-pointer hover:bg-white/[0.08]"
                 : "cursor-default opacity-60",
@@ -56,7 +60,7 @@ const AppsQuickMenuSection = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <div className="truncate text-[13px] font-medium">
-                  {app.label}
+                  {t(app.label)}
                 </div>
                 {app.badge && (
                   <span
@@ -65,12 +69,12 @@ const AppsQuickMenuSection = ({
                       getBadgeStyles(app.badge),
                     )}
                   >
-                    {app.badge}
+                    {t(app.badge)}
                   </span>
                 )}
               </div>
               <div className="truncate text-[11px] text-base-fg/60">
-                {app.description}
+                {t(app.description)}
               </div>
             </div>
           </button>
@@ -79,3 +83,4 @@ const AppsQuickMenuSection = ({
     </div>
   </div>
 );
+};

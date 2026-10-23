@@ -1,3 +1,4 @@
+import { tn, useTranslation } from "@storyteller/i18n";
 import { useMeshCostEstimate } from "./useMeshCostEstimate";
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
@@ -62,6 +63,7 @@ export interface CostBreakdownModalProps {
 }
 
 export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
+  const { t: tr } = useTranslation();
   const { isOpen, closeModal, estimatedCreditsByPage } =
     useCostBreakdownModalStore();
   const {
@@ -328,7 +330,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
         <div className="flex items-center gap-2 pb-3 border-b border-ui-panel-border select-none">
           <div className="hud-label flex items-center gap-2 text-base-fg">
             <CoinsIcon className="text-base-fg" />
-            Cost Breakdown
+            {tr("Cost Breakdown")}
           </div>
         </div>
       </DragHandle>
@@ -337,15 +339,16 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
         {/* Page indicator */}
         {pageName && (
           <div className="font-mono text-[10px] text-base-fg/55 uppercase tracking-[0.12em] text-start">
-            {pageName}
+            {tr(pageName)}
           </div>
         )}
 
         {/* Model row — always shown */}
         {selectedModel && (
           <div className="flex justify-between items-center">
-            <span className="text-base-fg/60">Model</span>
+            <span className="text-base-fg/60">{tr("Model")}</span>
             <span
+              dir="auto"
               className="text-base-fg font-medium truncate max-w-[140px]"
               title={selectedModel.selectorName}
             >
@@ -360,7 +363,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
             <div className="space-y-1.5">
               {storeData.resolution && (
                 <div className="flex justify-between items-center">
-                  <span className="text-base-fg/60">Resolution</span>
+                  <span className="text-base-fg/60">{tr("Resolution")}</span>
                   <span className="text-base-fg font-medium uppercase">
                     {storeData.resolution}
                   </span>
@@ -368,7 +371,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
               )}
               {storeData.generationCount > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-base-fg/60">{storeData.label}</span>
+                  <span className="text-base-fg/60">{tr(storeData.label)}</span>
                   <span className="text-base-fg font-medium">
                     {storeData.generationCount}
                   </span>
@@ -376,7 +379,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
               )}
               {selectedProvider && (
                 <div className="flex justify-between items-center">
-                  <span className="text-base-fg/60">Provider</span>
+                  <span className="text-base-fg/60">{tr("Provider")}</span>
                   <span className="text-base-fg font-medium">
                     {formatProvider(selectedProvider)}
                   </span>
@@ -389,19 +392,19 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
               {/* Credits row */}
               <div>
                 <div className="font-mono text-[10px] text-base-fg/50 uppercase tracking-[0.12em] mb-0.5">
-                  Credits
+                  {tr("Credits")}
                 </div>
                 <div className="font-display text-lg font-medium tracking-[-0.02em] text-base-fg flex items-center gap-1.5">
                   {isEstimateLoading && isLiveEstimatePage ? (
                     <>
                       <LoaderIcon className="animate-spin text-base" />
                       <span className="text-base-fg/50 text-sm">
-                        Calculating…
+                        {tr("Calculating…")}
                       </span>
                     </>
                   ) : totalCredits != null ? (
                     <>
-                      {totalCredits} {totalCredits === 1 ? "Credit" : "Credits"}
+                      {tn(tr, totalCredits, "{{n}} Credit", "{{n}} Credits")}
                     </>
                   ) : (
                     <span className="text-base-fg/50">—</span>
@@ -414,7 +417,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
               {/* Converted price row */}
               <div>
                 <div className="font-mono text-[10px] text-base-fg/50 uppercase tracking-[0.12em] mb-0.5">
-                  Estimated Price
+                  {tr("Estimated Price")}
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-display text-lg font-medium text-base-fg tracking-[-0.02em]">
@@ -432,7 +435,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
           </>
         ) : (
           <div className="bg-ui-sunken rounded-none p-2.5 border border-ui-panel-border text-center text-base-fg/60 text-[11px]">
-            Credit Costs not yet available for this model
+            {tr("Credit Costs not yet available for this model")}
           </div>
         )}
       </div>

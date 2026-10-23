@@ -2,10 +2,10 @@ import { type ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
 
 const CORNERS = [
-  "top-0 left-0",
-  "top-0 right-0",
-  "bottom-0 left-0",
-  "bottom-0 right-0",
+  "top-0 start-0",
+  "top-0 end-0",
+  "bottom-0 start-0",
+  "bottom-0 end-0",
 ];
 
 interface CreateEmptyStateProps {
@@ -27,7 +27,7 @@ export function CreateEmptyState({
   return (
     <section
       className={twMerge(
-        "create-empty-section relative w-full max-w-3xl px-6 text-left sm:px-10",
+        "create-empty-section relative w-full max-w-3xl px-6 text-start sm:px-10",
         compact ? "py-8" : "py-10 sm:py-14",
         className,
       )}

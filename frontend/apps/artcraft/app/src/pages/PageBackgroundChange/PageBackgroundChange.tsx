@@ -146,7 +146,7 @@ export const PageBackgroundChange = () => {
 
       <div
         aria-hidden
-        className="pointer-events-none fixed bottom-0 left-0 right-0 z-20 h-72 bg-gradient-to-t from-ui-background via-ui-background/85 to-transparent"
+        className="pointer-events-none fixed bottom-0 start-0 end-0 z-20 h-72 bg-gradient-to-t from-ui-background via-ui-background/85 to-transparent"
       />
 
       <div

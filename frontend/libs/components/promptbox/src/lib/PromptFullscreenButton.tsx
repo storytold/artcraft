@@ -19,7 +19,7 @@ export const PromptFullscreenButton = ({
   className,
 }: PromptFullscreenButtonProps) => {
   return (
-    <div className={`absolute right-0 top-0 z-10 ${className ?? ""}`}>
+    <div className={`absolute end-0 top-0 z-10 ${className ?? ""}`}>
       <Tooltip content="Focus mode" position="top" delay={200}>
         <button
           type="button"
