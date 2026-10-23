@@ -6,7 +6,7 @@ import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightI
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { Viewer3D } from "@storyteller/ui-viewer-3d";
+import { SendToStageButton, Viewer3D } from "@storyteller/ui-viewer-3d";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import {
   useEffect,
@@ -1184,20 +1184,16 @@ export function LightboxModal({
                   </Button>
                 )}
 
-                {onAddToSceneClicked && actionUrl && (
-                  <Button
-                    className="w-full py-1.5 text-[13px]"
-                    variant="secondary"
-                    onClick={async (e) => {
-                      e.stopPropagation();
+                {onAddToSceneClicked && actionUrl && selectedMediaToken &&
+                  ["dimensional", "mesh", "splat"].includes(mediaClass ?? "") && (
+                  <SendToStageButton
+                    onSend={() => onAddToSceneClicked(actionUrl, selectedMediaToken)}
+                    onSent={() => {
                       gtagEvent("add_to_scene_clicked");
-                      await onAddToSceneClicked(actionUrl, selectedMediaToken);
                       onClose();
                       onCloseGallery();
                     }}
-                  >
-                    Add to Scene
-                  </Button>
+                  />
                 )}
 
                 {selectedMediaToken && (
