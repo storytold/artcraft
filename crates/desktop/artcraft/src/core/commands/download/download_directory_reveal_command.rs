@@ -41,7 +41,7 @@ pub async fn download_directory_reveal_command(
   ).await;
 
   if let Err(err) = result {
-    format!("Error revealing download dir: {:?}", err);
+    error!("Error revealing download dir: {:?}", err);
     return Err("error revealing download dir".into())
   }
 
@@ -61,9 +61,9 @@ pub async fn handle_request(
       .preferred_download_directory
       .download_directory(app_data_root);
 
-  info!("Revealing item in directory: {:?}", download_directory);
+  info!("Opening download directory: {:?}", download_directory);
 
-  app.opener().reveal_item_in_dir(download_directory)
+  app.opener().open_path(download_directory.to_string_lossy().to_string(), None::<&str>)
       .map_err(|err| anyhow!("Failed to open directory: {:?}", err))?;
 
   Ok(())
