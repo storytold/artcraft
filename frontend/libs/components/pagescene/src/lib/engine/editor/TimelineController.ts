@@ -305,6 +305,11 @@ export class TimelineController {
     this.timeline.tracks = this.timeline.tracks.filter(
       (t) => t.keyframes.length > 0,
     );
+    // FIX: re-evaluate at the playhead like moveKeyframe/setEasing do. Without
+    // this the object kept the pose of the deleted key until the next scrub,
+    // so the viewport disagreed with the timeline (and then jumped on undo,
+    // which does evaluate).
+    this.evaluate();
     this.emitChanged();
   }
 
@@ -552,6 +557,12 @@ export class TimelineController {
     this.recordEdit("Cancel Timeline Edits", () => {
       this.timeline = cloneTimeline(this.saved!);
     });
+    // FIX: clamp the playhead into the restored timeline, as restoreSnapshot
+    // and loadTimeline do. If the session lengthened the timeline and the
+    // playhead sat past the saved length, Cancel left it beyond the end.
+    if (this.timeline) {
+      this.playhead = Math.min(this.playhead, this.timeline.duration);
+    }
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();

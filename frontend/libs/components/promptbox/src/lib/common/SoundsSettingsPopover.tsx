@@ -3,12 +3,15 @@ import { PopoverMenu } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 
 // UI-only bounds; the server accepts any u16 BPM.
+// Slider limits for tempo (beats per minute). They only shape the control; the server accepts any whole number up to 65535.
 export const AUDIO_BPM_MIN = 40;
 export const AUDIO_BPM_MAX = 240;
+// Where the slider handle sits while tempo is on Auto.
 const DEFAULT_BPM = 120;
 
 // Musical keys for audio generation (eg. Suno Sounds).
 // NB: There are intentionally no E keys, per product spec.
+// The keys the user can pick (the value sent, the long label, the short label on the button).
 export const MUSICAL_KEYS: Array<{
   value: string;
   label: string;
@@ -29,6 +32,7 @@ export const MUSICAL_KEYS: Array<{
   { value: "b_minor", label: "B Minor", shortLabel: "Bm" },
 ];
 
+// Which controls to show, and for each one its current value and a callback for changes. All are optional.
 export interface SoundsSettingsPopoverProps {
   showBpm?: boolean;
   // Null means "let the model decide" — the field is omitted from the request.
@@ -39,6 +43,7 @@ export interface SoundsSettingsPopoverProps {
   onMusicalKeyChange?: (key: string) => void;
 }
 
+// The "Beat & Key" menu for sound-effect and loop models: tempo and musical key.
 export function SoundsSettingsPopover({
   showBpm = false,
   bpm = null,
@@ -47,9 +52,11 @@ export function SoundsSettingsPopover({
   musicalKey = "auto",
   onMusicalKeyChange,
 }: SoundsSettingsPopoverProps) {
+  // Short name of the chosen key for the button label, falling back to Auto for an unknown value.
   const keyLabel =
     MUSICAL_KEYS.find((entry) => entry.value === musicalKey)?.shortLabel ??
     "Auto";
+  // Text on the menu button, for example "120 BPM · Am", built from the controls that are switched on.
   const triggerLabel = [
     showBpm ? (bpm === null ? "Auto BPM" : `${bpm} BPM`) : null,
     showMusicalKey ? keyLabel : null,
@@ -57,6 +64,7 @@ export function SoundsSettingsPopover({
     .filter(Boolean)
     .join(" · ");
 
+  // A popover menu with a drum icon; inside it, a tempo block and a key block, each shown only when switched on.
   return (
     <PopoverMenu
       mode="default"
@@ -65,6 +73,7 @@ export function SoundsSettingsPopover({
       triggerLabel={triggerLabel || "Beat"}
     >
       <div className="w-60 space-y-3.5 pb-0.5">
+        {/* Tempo: a slider plus a small Auto button that clears the value back to null. */}
         {showBpm && (
           <div>
             <div className="mb-1 flex items-center justify-between">
@@ -95,6 +104,7 @@ export function SoundsSettingsPopover({
           </div>
         )}
 
+        {/* Key: a grid of buttons with the current one highlighted; Auto spans the full first row. */}
         {showMusicalKey && (
           <div>
             <div className="mb-1.5 text-xs font-medium text-base-fg/60">

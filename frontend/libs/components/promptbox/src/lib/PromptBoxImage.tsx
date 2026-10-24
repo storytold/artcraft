@@ -36,6 +36,7 @@ import {
   type DroppedFiles,
 } from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
+import { isImeKeyDown } from "./common/imeKey";
 
 interface PromptBoxImageProps {
   useJobContext: () => JobContextType;
@@ -458,6 +459,8 @@ export const PromptBoxImage = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key !== "Enter") return;
+    // The Enter that confirms an IME word (Japanese/Chinese/Korean typing) is not a request to generate.
+    if (isImeKeyDown(e)) return;
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();

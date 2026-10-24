@@ -190,6 +190,12 @@ export const useKeybindingsStore = create<KeybindingsState>()(
         runMigrations({ state: persisted, fromVersion: version }),
       merge: (persisted, current) => {
         if (!isPersistedState(persisted)) return current;
+        // FIX: a saved map the user never edited is only a snapshot of the
+        // defaults from whichever release wrote it (every store update, such
+        // as opening an overlay, saves the whole map). Loading it back froze
+        // those defaults, so shortcuts added in later releases never showed
+        // up. Only a customized map overrides the current defaults.
+        if (!persisted.isCustomized) return current;
         const entries = Object.entries(persisted.keybindings);
         // Persistence boundary: keys are normalized by the migration chain.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion

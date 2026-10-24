@@ -23,6 +23,7 @@ export const useUserObjects = (props: useUserObjectsProps) => {
   const editor = useContext(EngineContext);
   const failedFetches = useRef<number>(0);
   const firstFetch = useRef<FetchStatus>(FetchStatus.READY);
+  const inFlightRef = useRef(false);
 
   const [
     {
@@ -39,20 +40,14 @@ export const useUserObjects = (props: useUserObjectsProps) => {
   const fetchUserObjects = useCallback(
     async (nextPageIndex?: number) => {
       if (!editor) return;
-      let breakFlag = false;
-      setUserFetch((curr) => {
-        if (curr.status === FetchStatus.IN_PROGRESS) {
-          breakFlag = true;
-          return curr;
-        }
-        return {
-          ...curr,
-          status: FetchStatus.IN_PROGRESS,
-        };
-      });
-      if (breakFlag) {
-        return;
-      }
+      // A ref (not a flag set inside a setState updater): React may run updater
+      // functions later, so a flag set there is not reliable right after the call.
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+      setUserFetch((curr) => ({
+        ...curr,
+        status: FetchStatus.IN_PROGRESS,
+      }));
 
       const {
         filterEngineCategories,
@@ -60,16 +55,25 @@ export const useUserObjects = (props: useUserObjectsProps) => {
         defaultErrorMessage,
         suppressErrorToast,
       } = props;
-      const result = await fetchUserMediaItems(
-        {
-          filterEngineCategories,
-          filterMediaType: filterMediaTypes,
-          defaultErrorMessage,
-          nextPageIndex,
-          suppressErrorToast,
-        },
-        editor.adapter,
-      );
+      let result: FetchMediaItemStates;
+      try {
+        result = await fetchUserMediaItems(
+          {
+            filterEngineCategories,
+            filterMediaType: filterMediaTypes,
+            defaultErrorMessage,
+            nextPageIndex,
+            suppressErrorToast,
+          },
+          editor.adapter,
+        );
+      } catch {
+        // A thrown request is treated like a failed one, so the status never
+        // stays stuck on IN_PROGRESS.
+        result = { status: FetchStatus.ERROR };
+      } finally {
+        inFlightRef.current = false;
+      }
 
       if (result.status === FetchStatus.ERROR) {
         failedFetches.current = failedFetches.current + 1;
@@ -82,6 +86,9 @@ export const useUserObjects = (props: useUserObjectsProps) => {
 
       setUserFetch((curr) => ({
         status: result.status,
+        // Keep the pagination info so callers can ask for the next page; on a
+        // failed fetch keep the last known one.
+        nextPage: result.nextPage ?? curr.nextPage,
         mediaItems: result.mediaItems
           ? curr.mediaItems && nextPageIndex
             ? [...curr.mediaItems, ...result.mediaItems]

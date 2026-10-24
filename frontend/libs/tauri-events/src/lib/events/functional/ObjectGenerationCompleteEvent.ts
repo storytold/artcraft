@@ -1,6 +1,7 @@
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { BasicEventWrapper } from "../../common/BasicEventWrapper";
 import { useEffect } from "react";
+import { useLatestRef } from "../../common/useLatestRef";
 
 const EVENT_NAME: string = "object_generation_complete_event";
 
@@ -19,6 +20,7 @@ export interface GeneratedObject {
 export const useObjectGenerationCompleteEvent = (
   asyncCallback: (event: ObjectGenerationCompleteEvent) => Promise<void>
 ) => {
+  const callbackRef = useLatestRef(asyncCallback);
   useEffect(() => {
     let isUnmounted = false;
     let unlisten: Promise<UnlistenFn>;
@@ -27,7 +29,7 @@ export const useObjectGenerationCompleteEvent = (
       unlisten = listen<BasicEventWrapper<ObjectGenerationCompleteEvent>>(
         EVENT_NAME,
         async (wrappedEvent) => {
-          await asyncCallback(wrappedEvent.payload.data);
+          await callbackRef.current(wrappedEvent.payload.data);
         }
       );
 

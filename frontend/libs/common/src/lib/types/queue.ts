@@ -76,7 +76,10 @@ class Queue {
     // It also doesn't make sense to fire an event on publish because the operations are then dispersed
     // leading to potential race conditions
     // FIXME: Add some sort of queue loop using internal event and add queue locks using promises to serialize queue publishes
-    if (this._subscribers[queueName]) {
+    // FIX: only drain when someone is actually subscribed. The map always exists, so
+    // the old check shifted (dropped) the message even with zero subscribers, which
+    // defeated the buffering that subscribe() replays.
+    if (this._subscribers[queueName] && this._subscribers[queueName].size > 0) {
       this._subscribers[queueName].forEach((subcribeHandler) =>
         subcribeHandler(this._queues[queueName][0]),
       );

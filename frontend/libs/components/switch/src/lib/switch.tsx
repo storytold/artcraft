@@ -14,7 +14,8 @@ interface SwitchProps {
 
 export function Switch({ enabled, setEnabled, id, label = "Enable notifications", disabled = false, className, offClassName }: SwitchProps) {
   return (
-    <HeadlessSwitch id={id} checked={enabled} onChange={setEnabled} disabled={disabled} as={Fragment}>
+    // Headless UI accepts `id` at runtime, but its `as={Fragment}` typings omit it, so it is spread untyped.
+    <HeadlessSwitch {...({ id } as object)} checked={enabled} onChange={setEnabled} disabled={disabled} as={Fragment}>
       {({ checked, disabled }) => (
         <button
           className={clsx(

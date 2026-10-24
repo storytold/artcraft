@@ -203,7 +203,8 @@ const drawRadialGradient = ({
     height,
     orientation: gradient.orientation,
   });
-  const gradientLength = Math.max(rx, ry);
+  // The gradient ray runs along the horizontal radius, which is what pixel stops are measured on.
+  const gradientLength = rx;
   const colorStops = normalizeColorStops({
     colorStops: gradient.colorStops,
     gradientLength,
@@ -280,7 +281,9 @@ const resolveLinearAngle = ({
 };
 
 const angleFromDirectional = ({ value }: { value: string }): number => {
-  const normalized = value.toLowerCase().replace("to", "").trim();
+  // FIX: only strip a leading "to " word. The parser hands over the value without the "to", so the old
+  // replace("to", "") ate the "to" inside "top" and "bottom" ("to top" became "p" and painted downwards).
+  const normalized = value.toLowerCase().replace(/^to\s+/, "").trim();
   const parts = normalized.split(/\s+/).filter(Boolean);
   let dx = 0;
   let dy = 0;
@@ -536,7 +539,14 @@ const resolveRadialExtents = ({
     .sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy));
   const chosen =
     extent === "closest-corner" ? sorted[0] : sorted[sorted.length - 1];
-  return { rx: Math.abs(chosen.dx), ry: Math.abs(chosen.dy) };
+  // CSS keeps the aspect ratio of the matching side ellipse and grows it until it touches the
+  // corner. The corner offsets are that side ellipse's radii, so the ellipse is sqrt(2) bigger.
+  // CSS keeps the aspect ratio of the matching side ellipse and grows it until it touches the
+  // corner. The corner offsets are that side ellipse's radii, so the ellipse is sqrt(2) bigger.
+  return {
+    rx: Math.abs(chosen.dx) * Math.SQRT2,
+    ry: Math.abs(chosen.dy) * Math.SQRT2,
+  };
 };
 
 const resolvePositionValue = ({

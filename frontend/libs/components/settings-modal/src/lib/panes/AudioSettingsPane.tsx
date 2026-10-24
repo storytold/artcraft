@@ -114,11 +114,12 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
           <Switch enabled={playSounds} setEnabled={setPlaySounds} />
         </div>
 
+        {/* Each picker has its own id so its label opens that picker (they used to share "success-sound", so three labels opened the Delete File picker). */}
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Delete File Sound</Label>
+          <Label htmlFor="delete-file-sound">Delete File Sound</Label>
           <div className="flex items-center gap-2">
             <Select
-              id="success-sound"
+              id="delete-file-sound"
               value={deleteFileSound}
               onChange={(val: SelectValue) => setDeleteFileSound(val as string)}
               options={SoundManager.OPTIONS}
@@ -134,10 +135,10 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Enqueue Success Sound</Label>
+          <Label htmlFor="enqueue-success-sound">Enqueue Success Sound</Label>
           <div className="flex items-center gap-2">
             <Select
-              id="success-sound"
+              id="enqueue-success-sound"
               value={enqueueSuccessSound}
               onChange={(val: SelectValue) => setEnqueueSuccessSound(val as string)}
               options={SoundManager.OPTIONS}
@@ -153,10 +154,10 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Enqueue Failure Sound</Label>
+          <Label htmlFor="enqueue-failure-sound">Enqueue Failure Sound</Label>
           <div className="flex items-center gap-2">
             <Select
-              id="success-sound"
+              id="enqueue-failure-sound"
               value={enqueueFailureSound}
               onChange={(val: SelectValue) => setEnqueueFailureSound(val as string)}
               options={SoundManager.OPTIONS}
@@ -172,10 +173,10 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Generation Success Sound</Label>
+          <Label htmlFor="generation-success-sound">Generation Success Sound</Label>
           <div className="flex items-center gap-2">
             <Select
-              id="success-sound"
+              id="generation-success-sound"
               value={generationSuccessSound}
               onChange={(val: SelectValue) => setSuccessSound(val as string)}
               options={SoundManager.OPTIONS}
@@ -191,10 +192,10 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="failure-sound">Generation Failure Sound</Label>
+          <Label htmlFor="generation-failure-sound">Generation Failure Sound</Label>
           <div className="flex items-center gap-2">
             <Select
-              id="failure-sound"
+              id="generation-failure-sound"
               value={generationFailureSound}
               onChange={(val: SelectValue) => setFailureSound(val as string)}
               options={SoundManager.OPTIONS}

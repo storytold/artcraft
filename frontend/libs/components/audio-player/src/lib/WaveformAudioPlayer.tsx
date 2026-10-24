@@ -68,11 +68,27 @@ export function WaveformAudioPlayer({
 
   const waveHeight = compact ? 32 : 44;
 
+  // Latest values the audio effect needs WITHOUT re-creating the element when
+  // they change (volume slider moves, parent re-renders with new durationMillis).
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const durationMillisRef = useRef(durationMillis);
+  durationMillisRef.current = durationMillis;
+
   // ── Audio element (owns playback in both wave and fallback modes) ──────
   useEffect(() => {
     const audio = new Audio();
     audio.preload = "metadata";
     audio.src = src;
+    // BUG FIX: a new src means a brand-new <audio>, but the UI state described
+    // the OLD track. The old element's "pause" event is dropped (its listener is
+    // removed in cleanup before the async event fires), so a track that was
+    // playing left the button on "Pause" with the old time/duration, and the
+    // fresh element ignored the slider (volume 1.0 while the slider said e.g. 30).
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(durationMillisRef.current ? durationMillisRef.current / 1000 : 0);
+    audio.volume = volumeRef.current / 100;
     audioRef.current = audio;
 
     const onPlay = () => {
@@ -118,6 +134,13 @@ export function WaveformAudioPlayer({
     if (!root) return;
 
     let cancelled = false;
+
+    // BUG FIX: waveState outlived the wavesurfer instance. One failed decode
+    // (CORS, bad file) left "failed" set, which unmounts the wave container, so
+    // every later src (recycled row, lightbox next/prev) could never build its
+    // waveform and stayed on the plain progress bar. Start each src/height
+    // cycle from "pending".
+    setWaveState("pending");
 
     const initWaveSurfer = () => {
       const container = waveContainerRef.current;

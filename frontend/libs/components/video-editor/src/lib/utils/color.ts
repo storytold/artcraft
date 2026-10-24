@@ -142,7 +142,10 @@ export function parseColorInput({
   switch (format) {
     case "hex": {
       const cleaned = input.replace("#", "");
-      const isValidHex = /^[0-9a-fA-F]{3,8}$/.test(cleaned);
+      // FIX: only the CSS hex lengths 3, 4, 6 and 8 are colours. The old
+      // {3,8} also let 5 and 7 digits through, which were committed as a
+      // broken fill colour instead of being rejected.
+      const isValidHex = /^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(cleaned);
       return isValidHex ? cleaned : null;
     }
     case "rgb": {

@@ -103,8 +103,11 @@ export const InputVector = ({
         z: oldZ.current,
       } as Record<string, string>;
 
+      // The box can hold unfinished text while the user types ("", "-", "."); parseFloat of those is NaN, which used to be
+      // written straight back into the box. Start such a field's scrub from 0 instead.
+      const current = parseFloat(newVector[ref.current?.name ?? ""]);
       const newValue =
-        parseFloat(newVector[ref.current?.name ?? ""]) + direction * increment;
+        (Number.isFinite(current) ? current : 0) + direction * increment;
 
       newVector[ref.current?.name ?? ""] = (
         Math.round(newValue * 1000) / 1000

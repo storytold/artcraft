@@ -61,7 +61,11 @@ impl <'a> GrokDownloadVideo<'a> {
           .map_err(|err| GrokClientError::CannotOpenLocalFileForWriting(err))?
     }
 
-    file.flush().await.unwrap();
+    // FIX: flush performs the final buffered write, which fails on a full disk or revoked
+    // permissions; `.unwrap()` would panic the download task instead of returning an error.
+    file.flush()
+        .await
+        .map_err(|err| GrokClientError::CannotWriteLocalFile(err))?;
 
     Ok(())
   }

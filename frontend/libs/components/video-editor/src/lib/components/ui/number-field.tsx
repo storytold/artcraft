@@ -192,15 +192,22 @@ function NumberField({
       onScrub(newValue);
     };
 
+    // FIX: this used to listen for pointerup only. A touch or pen gesture the
+    // browser takes over (it starts to pan the panel) ends with pointercancel and
+    // no pointerup, so the pointermove listener stayed on the document and every
+    // later mouse move kept changing the value, and onScrubEnd never ran. Treat
+    // a cancel exactly like a release.
     const handlePointerUp = () => {
       document.removeEventListener("pointermove", handlePointerMove);
       document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerUp);
       document.exitPointerLock();
       onScrubEnd?.();
     };
 
     document.addEventListener("pointermove", handlePointerMove);
     document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointercancel", handlePointerUp);
   };
 
   const canScrub = Boolean(icon && onScrub);

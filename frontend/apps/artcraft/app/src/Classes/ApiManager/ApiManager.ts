@@ -18,7 +18,8 @@ export class ApiManager {
 
   constructor() {
     const environmentType = GetBuildEnvironment().getBuildEnvironmentType();
-    const configs = new Configs(environmentType);
+    // Constructed for its side effects only; the instance itself is unused.
+    new Configs(environmentType);
 
     // TODO(bt,2025-07-06): Not sure that any of this is used anymore.
     // If so, try to use Configs, StorytellerApiHostStore, or another configuration source.
@@ -170,10 +171,6 @@ export class ApiManager {
     console.log(`HELLO${formData}`);
     return this.fetchMultipartFormData<T>(endpoint, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      credentials: "include",
       body: formData,
     });
   }
@@ -187,7 +184,8 @@ export class ApiManager {
   ): Record<string, string> {
     return Object.entries(params).reduce(
       (allParams, [key, value]) => {
-        if (!value) {
+        // FIX: skip only absent values (undefined / null). `!value` also dropped false, 0 and "", so a flag switched off, a zero or an emptied text field was silently left out of the request.
+        if (value === undefined || value === null) {
           return allParams;
         }
         const snakeKey = this.camelToSnakeCase(key);
@@ -204,7 +202,8 @@ export class ApiManager {
     params: NonNullableObject<T>,
   ): B {
     return Object.entries(params).reduce((allParams, [key, value]) => {
-      if (!value) {
+      // FIX: same as parseQueryValues: only undefined / null mean "not provided"; false, 0 and "" are real values to send.
+      if (value === undefined || value === null) {
         return allParams;
       }
       const snakeKey = this.camelToSnakeCase(key);

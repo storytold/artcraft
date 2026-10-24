@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useEditor } from "../../editor/use-editor";
 import {
@@ -222,6 +222,23 @@ export function AudioVolumeLine({
 
     finishDrag({ shouldCommit: hasChangedRef.current });
   }, [finishDrag]);
+
+  // FIX: if this component unmounts mid-drag (clip deleted, timeline closed)
+  // no pointerup/pointercancel/lostpointercapture ever reaches React, so the
+  // volume preview stayed in the shared editor and the next commitPreview()
+  // from another tool would save it. Only discard when a drag is really in
+  // flight, so StrictMode's mount/cleanup/mount stays a no-op.
+  useEffect(
+    () => () => {
+      if (activePointerIdRef.current === null) {
+        return;
+      }
+
+      activePointerIdRef.current = null;
+      editor.timeline.discardPreview();
+    },
+    [editor],
+  );
 
   if (hasAnimatedEnvelope) {
     return null;

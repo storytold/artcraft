@@ -1,4 +1,13 @@
+//! The raw, as-received shape of the JSON body that fal POSTs to a webhook URL when a queued job
+//! finishes (successfully or not). The URL is the one given at submission time through
+//! `FalRequest::queue_webhook`.
+//!
+//! "Raw" means nothing here has been interpreted yet. `parse_raw_webhook_payload` produces this
+//! struct and `hydrate_webhook_contents` then turns it into a success, error or payload-error case.
+
+// `Deserialize` lets serde build these types from the webhook JSON.
 use serde::Deserialize;
+// `Value` holds JSON whose shape differs per fal model, so it stays untyped here.
 use serde_json::Value;
 
 /// The value FAL sends to webhook endpoints.
@@ -31,6 +40,10 @@ pub struct RawWebhookPayload {
   pub payload_error: Option<String>,
 }
 
+/// The top-level `status` field of the webhook: did fal run the job successfully or not.
+///
+/// fal sends the text as uppercase `"OK"` or `"ERROR"`; the `alias` attributes below let serde
+/// accept those spellings for the Rust variant names.
 #[derive(Deserialize, Debug, Clone, Copy)]
 pub enum RawWebhookStatus {
   /// Success case

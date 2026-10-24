@@ -22,14 +22,16 @@ function pasteKeyframesIntoElement({
   element,
   time,
   clipboardItems,
+  keyframeIds,
 }: {
   element: TimelineElement;
   time: MediaTime;
   clipboardItems: KeyframeClipboardItem[];
+  keyframeIds: string[];
 }): TimelineElement {
   let nextElement = element;
 
-  for (const item of clipboardItems) {
+  for (const [itemIndex, item] of clipboardItems.entries()) {
     const target = resolveAnimationTarget({
       element: nextElement,
       path: item.propertyPath,
@@ -51,7 +53,7 @@ function pasteKeyframesIntoElement({
       time: keyframeTime,
       value: item.value,
       interpolation: item.interpolation,
-      keyframeId: generateUUID(),
+      keyframeId: keyframeIds[itemIndex],
       channelLayout: target.channelLayout,
       coerceValue: target.coerceValue,
     });
@@ -90,6 +92,9 @@ export class PasteKeyframesCommand extends Command {
   private readonly elementId: string;
   private readonly time: MediaTime;
   private readonly clipboardItems: KeyframeClipboardItem[];
+  // One id per pasted item, fixed at construction so redo recreates the same
+  // keyframes that later commands (retime, remove) were recorded against.
+  private readonly keyframeIds: string[];
 
   constructor({
     trackId,
@@ -107,6 +112,7 @@ export class PasteKeyframesCommand extends Command {
     this.elementId = elementId;
     this.time = time;
     this.clipboardItems = clipboardItems;
+    this.keyframeIds = clipboardItems.map(() => generateUUID());
   }
 
   execute(): CommandResult | undefined {
@@ -126,6 +132,7 @@ export class PasteKeyframesCommand extends Command {
           element,
           time: this.time,
           clipboardItems: this.clipboardItems,
+          keyframeIds: this.keyframeIds,
         }),
     });
 

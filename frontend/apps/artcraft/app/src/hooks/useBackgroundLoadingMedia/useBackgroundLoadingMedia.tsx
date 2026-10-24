@@ -1,8 +1,10 @@
 import { useRef } from "react";
+import { untracked } from "@preact/signals-core";
 import { useSignalEffect, useSignals } from "@preact/signals-react/runtime";
 import { PollUserGeneratedMovies, PollUserAudioItems } from "./utilities";
 
 import {
+  authentication,
   completedAudioJobs,
   completedWorkflowJobs,
   userMovies,
@@ -24,7 +26,15 @@ export const useBackgroundLoadingMedia = () => {
     //CASE 1: first load
     // if myMovies undefined, poll for the first time
     if (!userMovies.value) {
-      PollUserGeneratedMovies();
+      // WHY untracked: the poller reads and writes isRetreivingUserMovies, and an
+      // effect subscribes to every signal read synchronously inside it. The flag
+      // going back to false (in the poller's `finally`, before userMovies is set)
+      // re-ran this effect, so first load sent a duplicate request, and a FAILED
+      // request retried forever (request storm + error toasts). Login state is
+      // read explicitly instead: the poller is a no-op while logged out, so a
+      // later login must still re-trigger the first load.
+      void authentication.userInfo.value;
+      untracked(() => PollUserGeneratedMovies());
       return;
     }
 

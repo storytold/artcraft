@@ -76,9 +76,6 @@ export function buildResizeMembers({
   tracks: SceneTracks;
   selectedElements: ElementRef[];
 }): GroupResizeMember[] {
-  const selectedElementIds = new Set(
-    selectedElements.map((el) => el.elementId),
-  );
   const trackMap = new Map(
     [...tracks.overlay, tracks.main, ...tracks.audio].map((track) => [
       track.id,
@@ -91,9 +88,9 @@ export function buildResizeMembers({
     const element = track?.elements.find((el) => el.id === elementId);
     if (!track || !element) return [];
 
-    const otherElements = track.elements.filter(
-      (el) => !selectedElementIds.has(el.id),
-    );
+    // A group resize moves one edge (all left or all right) of every selected clip,
+    // so the facing edge of a selected neighbour stays put and bounds this clip too.
+    const otherElements = track.elements.filter((el) => el.id !== elementId);
     const leftNeighborBound = otherElements
       .filter(
         (el) =>
@@ -190,6 +187,15 @@ export class ResizeController {
   }
 
   destroy(): void {
+    // FIX: unmounting mid-resize used to only drop the listeners. The
+    // resize preview stayed in the shared editor (previewOverlay) and the
+    // parent-owned snap line stayed on screen, and the next commitPreview()
+    // from any other tool (transform handles, masks, properties panel) would
+    // bake the stale resize into an undo snapshot. cancel() already does the
+    // right cleanup (discard preview, back to idle, clear snap line), so
+    // reuse it, but only when a resize is really in flight so a StrictMode
+    // mount/cleanup/mount does not discard another tool's preview.
+    if (this.session.kind === "active") this.cancel();
     this.deactivate();
     this.subscribers.clear();
   }

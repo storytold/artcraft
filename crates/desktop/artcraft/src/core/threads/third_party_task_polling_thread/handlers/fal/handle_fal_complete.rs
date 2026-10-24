@@ -2,6 +2,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::threads::third_party_task_polling_thread::events::notify_frontend_of_completion::{
   notify_frontend_of_completion, CompletionData,
 };
+use crate::core::threads::third_party_task_polling_thread::handlers::fal::handle_fal_failure::handle_fal_failure;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
@@ -87,6 +88,15 @@ async fn handle_fal_complete_inner(
   if urls.is_empty() {
     warn!("[FalComplete] Task {} completed but no downloadable media found in response", task.id.as_str());
     //warn!("[FalComplete] Raw body: {}", &job_response.raw_body[..job_response.raw_body.len().min(500)]);
+    // FIX: returning Ok here left the task in its pending state, so the poller re-fetched the
+    // same empty result forever and the frontend spinner never resolved. A completed job with
+    // nothing downloadable is terminal: mark it failed and notify the frontend.
+    handle_fal_failure(
+      app_handle,
+      task_database,
+      task,
+      "Job completed but returned no downloadable media",
+    ).await;
     return Ok(());
   }
 
@@ -244,7 +254,9 @@ async fn download_file(
   app_data_root: &AppDataRoot,
   index: usize,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-  let response = reqwest::get(url).await?;
+  // FIX: without `error_for_status`, an expired/forbidden result URL (403/404 with an XML or
+  // JSON error body) was saved to disk and uploaded to the backend as if it were the image/video.
+  let response = reqwest::get(url).await?.error_for_status()?;
   let bytes = response.bytes().await?;
 
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)

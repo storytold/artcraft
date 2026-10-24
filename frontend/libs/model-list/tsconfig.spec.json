@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "rootDir": "..",
     "outDir": "./out-tsc/vitest",
     "types": [
       "vitest/globals",
@@ -14,6 +15,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
+    "../shared-vite-config.ts",
     "vite.config.ts",
     "vite.config.mts",
     "vitest.config.ts",

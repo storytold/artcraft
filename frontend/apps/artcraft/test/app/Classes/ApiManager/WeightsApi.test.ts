@@ -311,7 +311,7 @@ describe("UserBookmarksApi", () => {
       {
         name: "UpdateWeightCoverImageByToken",
         function: api.UpdateWeightCoverImageByToken.bind(api),
-        endpoint: "http://localhost:3000/v1/weights/wt1/cover_image",
+        endpoint: "http://localhost:3000/v1/weights/weight/wt1/cover_image",
         method: "POST",
         paramsIn: {
           weightToken: "wt1",

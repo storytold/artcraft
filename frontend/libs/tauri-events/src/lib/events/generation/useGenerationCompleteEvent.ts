@@ -18,7 +18,6 @@ export const useGenerationCompleteEvent = () => {
 
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<GenerationCompleteEvent>>('generation-complete-event', async (event) => {
-        console.log("Generation complete event received:", event);
         await SoundManager.playGenerationSuccess();
         const message = makeMessage(event.payload.data);
         toast.success(message);

@@ -1,6 +1,5 @@
 import { authentication } from "~/signals";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
-import { JobsApi } from "~/Classes/ApiManager/JobsApi";
 import { UserInfo } from "~/models";
 import { EngineApi } from "~/Classes/ApiManager/EngineApi";
 

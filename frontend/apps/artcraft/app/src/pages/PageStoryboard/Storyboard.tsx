@@ -73,8 +73,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Title</label>
+          <label htmlFor={`${board.id}-title`} className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Title</label>
           <input
+            id={`${board.id}-title`}
             type="text"
             value={board.title}
             onChange={(e) => onUpdate({ title: e.target.value })}
@@ -84,8 +85,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
+          <label htmlFor={`${board.id}-dialogue`} className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
           <textarea
+            id={`${board.id}-dialogue`}
             value={board.dialogue}
             onChange={(e) => onUpdate({ dialogue: e.target.value })}
             placeholder="Character dialogue..."
@@ -95,8 +97,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
+          <label htmlFor={`${board.id}-action`} className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
           <textarea
+            id={`${board.id}-action`}
             value={board.action}
             onChange={(e) => onUpdate({ action: e.target.value })}
             placeholder="On-screen action..."
@@ -106,8 +109,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
+          <label htmlFor={`${board.id}-notes`} className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
           <textarea
+            id={`${board.id}-notes`}
             value={board.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}
             placeholder="Director notes..."
@@ -117,8 +121,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Duration (seconds)</label>
+          <label htmlFor={`${board.id}-duration`} className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Duration (seconds)</label>
           <input
+            id={`${board.id}-duration`}
             type="number"
             min={0}
             step={0.5}
@@ -359,6 +364,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           />
           <input
             type="color"
+            aria-label="Stroke color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -599,14 +605,21 @@ const Timeline = ({
         onUpdateDuration(resizeRef.current.id, newDuration);
       };
 
+      // FIX: this used to end on pointerup only. A touch or pen gesture the browser
+      // takes over (it starts to pan the timeline) ends with pointercancel and no
+      // pointerup, so the move listener stayed on window and every later mouse move
+      // kept resizing the shot. A cancel now ends the resize exactly like a release
+      // (the duration reached so far is kept).
       const onUp = () => {
         resizeRef.current = null;
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
       };
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
     },
     [onUpdateDuration],
   );
@@ -673,10 +686,24 @@ const Timeline = ({
         setDragState(null);
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
+      };
+
+      // FIX: a cancelled gesture (see the resize handler above) used to leave this
+      // drag alive: the insertion caret stayed on screen, the shot stayed faded, and
+      // the NEXT pointerup anywhere (a plain click) was taken for the release and
+      // reordered the shots. A cancel drops the drag without reordering anything.
+      const onCancel = () => {
+        activeDragRef.current = null;
+        setDragState(null);
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
       };
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onCancel);
     },
     [computeInsertionFromPointerX, onReorder],
   );
@@ -773,7 +800,7 @@ const Timeline = ({
                   </span>
                   {board.dialogue && (
                     <span className="truncate text-[9px] italic text-base-fg/40">
-                      "{board.dialogue}"
+                      &quot;{board.dialogue}&quot;
                     </span>
                   )}
                   <span className="font-mono text-[9px] tabular-nums text-base-fg/30">{board.duration.toFixed(1)}s</span>

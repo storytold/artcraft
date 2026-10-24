@@ -72,7 +72,10 @@ export function PreviewPanel({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const { toggleFullscreen } = useFullscreen({ containerRef });
+  // isSupported is false where the webview cannot do element full screen (the desktop app's macOS webview);
+  // the panel then passes NO handler below and the Full screen button / menu item are not drawn.
+  const { toggleFullscreen, isSupported: isFullscreenSupported } =
+    useFullscreen({ containerRef });
   const handleContainerRef = useCallback((node: HTMLDivElement | null) => {
     containerRef.current = node;
     setContainer(node);
@@ -85,7 +88,7 @@ export function PreviewPanel({
     >
       <PreviewCanvas
         container={container}
-        onToggleFullscreen={toggleFullscreen}
+        onToggleFullscreen={isFullscreenSupported ? toggleFullscreen : undefined}
         overlayControls={overlayControls}
         overlayInstances={overlayInstances}
         onOverlayVisibilityChange={onOverlayVisibilityChange}
@@ -132,7 +135,8 @@ function PreviewCanvas({
   onOverlayVisibilityChange,
 }: {
   container: HTMLElement | null;
-  onToggleFullscreen: () => void;
+  // Undefined when the webview cannot do full screen; the toolbar and menu then leave their controls out.
+  onToggleFullscreen: (() => void) | undefined;
   overlayControls: PreviewOverlayControl[];
   overlayInstances: PreviewOverlayInstance[];
   onOverlayVisibilityChange: (params: {

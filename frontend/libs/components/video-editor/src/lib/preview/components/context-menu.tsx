@@ -17,7 +17,8 @@ export function PreviewContextMenu({
   overlayControls,
   onOverlayVisibilityChange,
 }: {
-  onToggleFullscreen: () => void;
+  // Undefined where the webview cannot do full screen; the "Full screen" item is then not drawn.
+  onToggleFullscreen: (() => void) | undefined;
   container: HTMLElement | null;
   overlayControls: PreviewOverlayControl[];
   onOverlayVisibilityChange: (params: {
@@ -57,9 +58,11 @@ export function PreviewContextMenu({
         Fit to screen
       </ContextMenuItem>
       <ContextMenuSeparator />
-      <ContextMenuItem onClick={onToggleFullscreen} inset>
-        Full screen
-      </ContextMenuItem>
+      {onToggleFullscreen && (
+        <ContextMenuItem onClick={onToggleFullscreen} inset>
+          Full screen
+        </ContextMenuItem>
+      )}
       <ContextMenuItem onClick={handleSaveSnapshot} inset>
         Save snapshot
       </ContextMenuItem>

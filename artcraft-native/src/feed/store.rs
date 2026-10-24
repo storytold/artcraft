@@ -12,6 +12,8 @@ use crate::models::{self, Catalog};
 
 /// Failures older than this are history, not news.
 const FAILURE_WINDOW_SECS: i64 = 24 * 60 * 60;
+/// How long to wait before asking for the first library page again after it failed.
+const LIBRARY_RETRY_SECS: i64 = 30;
 /// Thumbnails are requested at this width (`getMediaThumbnail(@512)`).
 pub const THUMBNAIL_WIDTH: u32 = 512;
 /// Animated previews are requested smaller: every frame becomes a texture.
@@ -41,6 +43,8 @@ pub struct FeedStore {
   pub last_viewed: Option<String>,
   next_page: u32,
   library_started: bool,
+  /// Unix seconds before which a failed first library page is not asked for again.
+  retry_library_at: i64,
   /// Jobs seen finished (so only new ones announce themselves).
   seen_complete: HashSet<String>,
   /// Jobs seen running in this session (so their outcome gets a toast).
@@ -179,7 +183,7 @@ impl FeedStore {
 
   /// The next library page to fetch, if one is due.
   pub fn next_library_page(&mut self) -> Option<u32> {
-    if self.loading || (self.library_started && !self.has_more) {
+    if self.loading || (self.library_started && !self.has_more) || chrono::Utc::now().timestamp() < self.retry_library_at {
       return None;
     }
     self.loading = true;
@@ -201,6 +205,14 @@ impl FeedStore {
 
   pub fn library_failed(&mut self) {
     self.loading = false;
+    // Every failed page waits before the next request: the grid asks for more on every frame it is near the
+    // bottom, so without a pause a page that keeps failing (offline) is requested, and reported, in a loop.
+    self.retry_library_at = chrono::Utc::now().timestamp() + LIBRARY_RETRY_SECS;
+    // Nothing else asks again after a failed first page: `has_more` is only set by a page that arrived, and
+    // the callers only start the library while it is not started. Un-start it so the page asks again.
+    if self.next_page == 0 {
+      self.library_started = false;
+    }
   }
 
   /// Starts the library over (after signing in or out).
@@ -375,6 +387,30 @@ mod tests {
     assert_eq!(store.failed[0].message.as_deref(), Some("Midjourney didn't finish this job"), "the failure stays until dismissed");
     store.dismiss("local_b");
     assert!(store.failed.is_empty());
+  }
+
+  #[test]
+  fn a_failed_first_library_page_is_asked_for_again_after_a_pause() {
+    let mut store = FeedStore::default();
+    assert_eq!(store.next_library_page(), Some(0));
+    store.library_failed();
+    assert!(!store.library_started(), "the page asks again; nothing else would");
+    assert_eq!(store.next_library_page(), None, "but not on the very next frame");
+    store.retry_library_at = 0;
+    assert_eq!(store.next_library_page(), Some(0), "the pause is over, same page again");
+  }
+
+  #[test]
+  fn a_failed_later_library_page_keeps_its_place_and_waits_before_asking_again() {
+    let mut store = FeedStore::default();
+    store.next_library_page();
+    store.apply_library_page(MediaKind::Image, 0, &[], 3);
+    assert_eq!(store.next_library_page(), Some(1));
+    store.library_failed();
+    assert!(store.library_started());
+    assert_eq!(store.next_library_page(), None, "the grid asks on every frame near the bottom; a failing page must not be hammered");
+    store.retry_library_at = 0;
+    assert_eq!(store.next_library_page(), Some(1), "after the pause it is page 1 again");
   }
 
   #[test]

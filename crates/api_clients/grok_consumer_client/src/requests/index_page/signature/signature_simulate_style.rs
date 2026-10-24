@@ -92,7 +92,12 @@ pub fn signature_simulate_style(values: &[u32], c: u32) -> Result<SimulatedStyle
   debug!("[simulate_style] t = {:?}", t);
 
   // cp = [Signature._h(v, -1 if (i % 2) else 0, 1, False) for i, v in enumerate(values[7:])]
-  let subvalues = &values[7..];
+  // FIX: `&values[7..]` panics when a scraped svg stroke has fewer than 7 numbers
+  // (Grok changed its page markup); surface BadSignatureInputs instead of crashing.
+  let subvalues = values.get(7..).ok_or_else(|| {
+    error!("Values array is too short for control points ({}).", values.len());
+    GrokClientError::BadSignatureInputs
+  })?;
   let mut cp = Vec::with_capacity(subvalues.len());
   for (i, v) in subvalues.iter().enumerate() {
     let param = if i % 2 != 0 { - 1.0 } else { 0.0 };
@@ -284,6 +289,13 @@ mod tests {
 
       assert_eq!(&output.color, expected_color);
       assert_eq!(&output.transform, expected_transform);
+    }
+
+    /// Fewer than 7 values must be an error, not a slicing panic.
+    #[test]
+    fn short_values_is_error_not_panic() {
+      assert!(signature_simulate_style(&[1, 2, 3], 900).is_err());
+      assert!(signature_simulate_style(&[], 900).is_err());
     }
   }
 

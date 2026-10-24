@@ -1,3 +1,11 @@
+//! Download the finished result of a fal job (the generated image URLs, video URL, 3D model...).
+//!
+//! The desktop app's fal polling thread (`poll_fal_tasks.rs` under
+//! `crates/desktop/artcraft/.../third_party_task_polling_thread/handlers/fal/`) calls
+//! `poll_job_response` after `poll_job_status` reports `Completed`. Calling it earlier is
+//! harmless: it returns an `IncompleteJob` error that the caller can treat as "try again later".
+//! Talks to: GET https://queue.fal.run/<model>/requests/<id>
+
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::api_generic_error::FalGenericApiError;
 use crate::error::api_specific_error::FalSpecificApiError;
@@ -11,14 +19,18 @@ use log::info;
 use serde_json::Value;
 use url::Url;
 
+/// The only host we are willing to call. The API key goes in a request header, so refusing
+/// every other host stops a bad URL from leaking the key to a stranger's server.
 const EXPECTED_HOST: &str = "queue.fal.run";
 
+/// Inputs for `poll_job_response`.
 pub struct PollJobResponseArgs<'a> {
   /// This is the "response" URL (not the "status" URL).
   /// This fetches the actual results of a completed job.
   /// If the job is not complete, this call will fail in error.
   pub response_url: &'a str,
 
+  /// The fal API key used to authorize the request.
   pub api_key: &'a FalApiKey,
 }
 
@@ -42,6 +54,10 @@ pub struct PollJobResponse {
 ///
 /// Returns `FalErrorPlus::ApiSpecific(IncompleteJob)` if the job is still
 /// in progress (FAL returns HTTP 400 with `"detail": "Request is still in progress"`).
+///
+/// Other errors (all as `FalErrorPlus`): `UrlParseError` for an unparseable URL;
+/// `ClientError(InvalidUrl)` for the wrong host; `ReqwestError` on a network failure;
+/// `ApiGeneric` for any other non-2xx reply or a body that is not valid JSON.
 pub async fn poll_job_response(args: PollJobResponseArgs<'_>) -> Result<PollJobResponse, FalErrorPlus> {
   let parsed = Url::parse(args.response_url)?;
 
@@ -79,6 +95,8 @@ pub async fn poll_job_response(args: PollJobResponseArgs<'_>) -> Result<PollJobR
       },
     ))?;
 
+  // The output shape differs per model, so we keep the whole JSON (`payload`) and additionally
+  // pull out the common fields (images, video, GLB model, thumbnail) when present.
   let extracted_contents = extract_contents_from_response(&payload);
 
   Ok(PollJobResponse {

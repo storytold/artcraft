@@ -13,6 +13,8 @@ use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::
 use artcraft_client::utils::api_host::ApiHost;
 use enums::common::generation_provider::GenerationProvider;
 use fal_client::creds::fal_api_key::FalApiKey;
+use fal_client::error::api_generic_error::FalGenericApiError;
+use fal_client::error::fal_error_plus::FalErrorPlus;
 use fal_client::polling::poll_job_response::poll_job_response::{PollJobResponseArgs, poll_job_response};
 use fal_client::polling::poll_job_response::success_case_extractors::PollResponseExtractedContents;
 use fal_client::polling::poll_job_status::poll_job_status::{FalJobStatus, PollJobStatusArgs, poll_job_status};
@@ -127,6 +129,11 @@ impl Worker {
     };
     let status = match timeout(REQUEST_TIMEOUT, poll_job_status(PollJobStatusArgs { status_url: &status_url, api_key: key })).await {
       Ok(Ok(status)) => status,
+      // An expired or rejected request (404, 410, ...) never answers again.
+      Ok(Err(err)) if permanent_response_failure_reason(&err).is_some() => {
+        warn!("FAL job {} can no longer be checked: {err}", job.provider_job_id);
+        return self.fail(&job, &permanent_response_failure_reason(&err).unwrap_or_default());
+      },
       other => return warn!("Polling FAL job {} failed: {other:?}", job.provider_job_id),
     };
     if status.status != FalJobStatus::Completed {
@@ -137,6 +144,12 @@ impl Worker {
     };
     let response = match timeout(REQUEST_TIMEOUT, poll_job_response(PollJobResponseArgs { response_url: &response_url, api_key: key })).await {
       Ok(Ok(response)) => response,
+      // A job that failed on fal's side reports COMPLETED and then answers this fetch with a permanent 4xx; retrying
+      // every tick would leave its card spinning for good.
+      Ok(Err(err)) if permanent_response_failure_reason(&err).is_some() => {
+        warn!("FAL job {} failed on fal's side: {err}", job.provider_job_id);
+        return self.fail(&job, &permanent_response_failure_reason(&err).unwrap_or_default());
+      },
       other => return warn!("Fetching FAL results for {} failed (will retry): {other:?}", job.provider_job_id),
     };
     let urls = image_urls(response.extracted_contents.as_ref());
@@ -295,6 +308,16 @@ async fn open_socket(session: &MidjourneySession) -> anyhow::Result<Socket> {
   Ok(Socket { credential_id: session.credential_id.clone(), socket, events, subscribed: HashSet::new() })
 }
 
+/// A reason to give up on a fal job when its result fetch can never succeed on a retry. Network errors, 5xx,
+/// 401/402/403 (key or billing) and "still in progress" stay retryable. The reason is shown to the user, so it
+/// leaves out fal's raw response body.
+fn permanent_response_failure_reason(err: &FalErrorPlus) -> Option<String> {
+  match err {
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, .. }) if matches!(status_code.as_u16(), 400 | 404 | 410 | 422) => Some(format!("FAL reported that the generation failed (error {})", status_code.as_u16())),
+    _ => None,
+  }
+}
+
 /// A fal job's image links: the batch, else the single image.
 fn image_urls(extracted: Option<&PollResponseExtractedContents>) -> Vec<String> {
   let Some(extracted) = extracted else {
@@ -316,6 +339,7 @@ fn image_extension(url: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use reqwest::StatusCode;
 
   #[test]
   fn results_keep_their_file_type() {
@@ -325,11 +349,31 @@ mod tests {
   }
 
   #[test]
+  fn a_permanent_4xx_from_fal_gives_up_on_the_job() {
+    for code in [StatusCode::BAD_REQUEST, StatusCode::NOT_FOUND, StatusCode::GONE, StatusCode::UNPROCESSABLE_ENTITY] {
+      assert!(permanent_response_failure_reason(&bad_response(code)).is_some(), "{code} can never succeed on a retry");
+    }
+    let reason = permanent_response_failure_reason(&bad_response(StatusCode::UNPROCESSABLE_ENTITY)).unwrap();
+    assert!(reason.contains("422") && !reason.contains("detail"), "the reason names the status and leaves out fal's body: {reason}");
+  }
+
+  #[test]
+  fn transient_and_account_errors_from_fal_keep_retrying() {
+    for code in [StatusCode::INTERNAL_SERVER_ERROR, StatusCode::BAD_GATEWAY, StatusCode::TOO_MANY_REQUESTS, StatusCode::UNAUTHORIZED, StatusCode::PAYMENT_REQUIRED, StatusCode::FORBIDDEN] {
+      assert!(permanent_response_failure_reason(&bad_response(code)).is_none(), "{code} should retry");
+    }
+  }
+
+  #[test]
   fn fal_results_prefer_the_batch() {
     let contents = fal_client::polling::poll_job_response::success_case_extractors::extract_contents_from_response(&serde_json::json!({ "images": [{ "url": "https://fal/1.png" }, { "url": "https://fal/2.png" }] }));
     assert_eq!(image_urls(contents.as_ref()), ["https://fal/1.png", "https://fal/2.png"]);
     let single = fal_client::polling::poll_job_response::success_case_extractors::extract_contents_from_response(&serde_json::json!({ "image": { "url": "https://fal/one.png" } }));
     assert_eq!(image_urls(single.as_ref()), ["https://fal/one.png"]);
     assert!(image_urls(None).is_empty());
+  }
+
+  fn bad_response(status_code: StatusCode) -> FalErrorPlus {
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, body: "detail".to_string() })
   }
 }

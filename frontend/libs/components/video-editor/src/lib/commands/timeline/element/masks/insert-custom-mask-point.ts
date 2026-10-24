@@ -6,23 +6,27 @@ import type { FreeformPathMask } from "../../../../masks/types";
 import { isMaskableElement } from "../../../../timeline/element-utils";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
 import type { MaskableElement, SceneTracks } from "../../../../timeline/types";
+import { generateUUID } from "../../../../utils/id";
 
 function insertPointIntoFreeformPathMask({
   mask,
   segmentIndex,
   canvasPoint,
   bounds,
+  pointId,
 }: {
   mask: FreeformPathMask;
   segmentIndex: number;
   canvasPoint: { x: number; y: number };
   bounds: ElementBounds;
+  pointId: string;
 }): { mask: FreeformPathMask; insertedPointId: string | null } {
   const result = insertPointOnFreeformSegment({
     params: mask.params,
     segmentIndex,
     canvasPoint,
     bounds,
+    pointId,
   });
   if (!result) {
     return {
@@ -46,12 +50,14 @@ function insertPointIntoElementMask({
   segmentIndex,
   canvasPoint,
   bounds,
+  pointId,
 }: {
   element: MaskableElement;
   maskId: string;
   segmentIndex: number;
   canvasPoint: { x: number; y: number };
   bounds: ElementBounds;
+  pointId: string;
 }): {
   element: MaskableElement;
   didInsertPoint: boolean;
@@ -71,6 +77,7 @@ function insertPointIntoElementMask({
       segmentIndex,
       canvasPoint,
       bounds,
+      pointId,
     });
     if (result.insertedPointId) {
       insertedPointId = result.insertedPointId;
@@ -94,6 +101,9 @@ export class InsertFreeformPathMaskPointCommand extends Command {
   private readonly segmentIndex: number;
   private readonly canvasPoint: { x: number; y: number };
   private readonly bounds: ElementBounds;
+  // Fixed at construction so redo re-creates the point under the same id that
+  // later commands (delete, move) were recorded against.
+  private readonly pointId = generateUUID();
 
   constructor({
     trackId,
@@ -138,6 +148,7 @@ export class InsertFreeformPathMaskPointCommand extends Command {
           segmentIndex: this.segmentIndex,
           canvasPoint: this.canvasPoint,
           bounds: this.bounds,
+          pointId: this.pointId,
         });
         didInsertPoint ||= result.didInsertPoint;
         insertedPointId ??= result.insertedPointId;

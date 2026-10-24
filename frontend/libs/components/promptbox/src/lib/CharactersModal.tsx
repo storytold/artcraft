@@ -40,7 +40,21 @@ interface PendingCharacter {
   name: string;
   previewUrl?: string;
   createdAt: number;
+  // Tokens of the characters the account already had when this one was created. Characters can share a name, so a
+  // server character with the pending name only counts as the new one if its token is not in this list.
+  knownTokens: string[];
 }
+
+// True once the server's list holds the character a pending card stands for: one with the pending name whose token
+// was not there when the card was made. Matching by name alone would finish a second "Alex" the moment an older
+// "Alex" is listed.
+const isPendingResolved = (
+  pending: PendingCharacter,
+  serverCharacters: ReadonlyArray<{ token: string; name: string }>,
+): boolean =>
+  serverCharacters.some(
+    (c) => c.name === pending.name && !pending.knownTokens.includes(c.token),
+  );
 
 const POLL_INTERVAL_MS = 5000;
 const PENDING_STALE_MS = 3 * 60 * 1000;
@@ -79,8 +93,13 @@ export const CharactersModal = ({
   };
 
   const handleCreated = (pending: { name: string; previewUrl?: string }) => {
+    // Remember which characters already exist (the list view keeps the store in step with the server) so a same-named
+    // older character is not mistaken for this new one.
+    const knownTokens = useCharactersStore
+      .getState()
+      .characters.map((c) => c.character_token);
     setPendingCharacters((prev) => [
-      { ...pending, createdAt: Date.now() },
+      { ...pending, createdAt: Date.now(), knownTokens },
       ...prev,
     ]);
     setView("list");
@@ -105,11 +124,11 @@ export const CharactersModal = ({
         const res = await api.ListAllCharacters();
         if (!res.success || !res.data) return;
 
-        const serverNames = new Set(res.data.map((c) => c.name));
+        const serverList = res.data;
         let resolved = false;
         setPendingCharacters((prev) =>
           prev.filter((p) => {
-            if (serverNames.has(p.name)) {
+            if (isPendingResolved(p, serverList)) {
               resolved = true;
               return false;
             }
@@ -264,9 +283,8 @@ const CharacterListView = ({
   // Drop pendings already represented in the fetched list (no duplicate cards)
   useEffect(() => {
     if (pendingCharacters.length === 0) return;
-    const names = new Set(characters.map((c) => c.name));
     for (const pending of pendingCharacters) {
-      if (names.has(pending.name)) onPendingResolved(pending.name);
+      if (isPendingResolved(pending, characters)) onPendingResolved(pending.name);
     }
   }, [characters, pendingCharacters, onPendingResolved]);
 
@@ -365,7 +383,7 @@ const CharacterListView = ({
           {/* Pending (creating) characters */}
           {pendingCharacters.map((pending) => (
             <div
-              key={`pending-${pending.name}`}
+              key={`pending-${pending.createdAt}-${pending.name}`}
               className="relative flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05]"
             >
               <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">

@@ -1,16 +1,26 @@
+// One tutorial video as listed in the Help window.
 export type TutorialItem = {
+  // Short unique name, also the key under which the watch position is saved.
   id: string;
+  // Title shown under the thumbnail and above the video.
   title: string;
+  // Address of the thumbnail picture. The built-in ones start with "/resources/..." and are files shipped inside the app.
   thumbnailUrl: string;
+  // The YouTube address of the video (help-menu.tsx pulls the video id out of it).
   videoUrl: string;
+  // Optional group name (see TutorialCategory).
   category?: string;
 };
 
+// The groups a tutorial can belong to. The text is the label a person would read.
 export enum TutorialCategory {
+  // Tutorials about the 3D stage.
   Editor3D = "3D Stage",
+  // Tutorials about the 2D image editor.
   Canvas2D = "Image Editor",
 }
 
+// The three tutorials that ship with the app. A caller can replace this list through HelpMenuButton's `items` prop.
 export const defaultTutorials: TutorialItem[] = [
   {
     id: "turn-images-into-objects",

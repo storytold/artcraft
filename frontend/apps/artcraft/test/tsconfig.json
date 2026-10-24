@@ -1,0 +1,19 @@
+{
+  // Gives editors the settings vitest already uses for these specs: the `~` alias
+  // (app/src) and the vitest globals (describe, it, expect, vi, jest alias).
+  "extends": "../tsconfig.json",
+  "include": ["./**/*.ts", "./**/*.tsx", "../env.d.ts"],
+  "compilerOptions": {
+    "composite": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    // Library sources are imported through path aliases; they are checked by their own
+    // projects, so don't report their style diagnostics here.
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["vitest/globals", "jest"]
+  },
+  "references": []
+}

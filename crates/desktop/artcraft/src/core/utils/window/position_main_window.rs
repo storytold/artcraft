@@ -1,6 +1,7 @@
 use crate::core::state::window::main_window_position::MainWindowPosition;
 use crate::core::windows::main_window::constants::MAIN_WINDOW_NAME;
 use errors::AnyhowResult;
+use log::info;
 use tauri::{AppHandle, Manager, PhysicalPosition};
 
 /// Try to position the main window at startup.
@@ -35,9 +36,9 @@ pub fn position_main_window(
     // will place the **top left corner of the app** in roughly the center of the monitor.
     let monitor_size = monitor.size();
 
-    println!("Current monitor - size: {:?}", monitor_size);
-    println!("Current monitor - scale factor: {:?}", monitor.scale_factor());
-    println!("Current monitor - position: {:?}", monitor.position());
+    info!("Current monitor - size: {:?}", monitor_size);
+    info!("Current monitor - scale factor: {:?}", monitor.scale_factor());
+    info!("Current monitor - position: {:?}", monitor.position());
 
     let width_padding = monitor_size.width.div_ceil(6);
     let height_padding = monitor_size.height.div_ceil(6);

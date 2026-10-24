@@ -15,10 +15,19 @@ export const logout = async (
   failureCallback?: (errorMessage: string) => void,
 ) => {
   const usersApi = new UsersApi();
-  const logoutResponse = await usersApi.Logout();
-  if (!logoutResponse.success && failureCallback) {
-    failureCallback(
-      logoutResponse.errorMessage || "Unknown Error during Destroy Session",
+  try {
+    const logoutResponse = await usersApi.Logout();
+    if (!logoutResponse.success && failureCallback) {
+      failureCallback(
+        logoutResponse.errorMessage || "Unknown Error during Destroy Session",
+      );
+    }
+  } catch (error) {
+    // A thrown request must not skip the local state clearing below.
+    failureCallback?.(
+      error instanceof Error && error.message
+        ? error.message
+        : "Unknown Error during Destroy Session",
     );
   }
   // if success, nothing
@@ -38,7 +47,14 @@ export const login = async ({
   updateAuthStatus(AUTH_STATUS.LOGGING);
 
   const usersApi = new UsersApi();
-  const loginResponse = await usersApi.Login({ usernameOrEmail, password });
+  let loginResponse;
+  try {
+    loginResponse = await usersApi.Login({ usernameOrEmail, password });
+  } catch {
+    // A thrown request would leave the status stuck on LOGGING.
+    setLogoutStates();
+    return;
+  }
   if (!loginResponse.success || !loginResponse.data) {
     setLogoutStates();
     return;
@@ -67,17 +83,23 @@ export const signUp = async ({
 }) => {
   updateAuthStatus(AUTH_STATUS.LOGGING);
 
-  console.log(">>> Signup with source: ", signupSource);
-
   const usersApi = new UsersApi();
-  const response = await usersApi.Signup({
-    email,
-    password,
-    passwordConfirmation,
-    username,
-    signupSource,
-  });
-  console.log(response);
+  let response;
+  try {
+    response = await usersApi.Signup({
+      email,
+      password,
+      passwordConfirmation,
+      username,
+      signupSource,
+    });
+  } catch (error) {
+    // A thrown request would leave the status stuck on LOGGING.
+    setLogoutStates();
+    return error instanceof Error && error.message
+      ? error.message
+      : "Unknown error";
+  }
   if (!response.success || !response.data) {
     setLogoutStates();
     return response.errorMessage ?? "Unknown error";
@@ -104,7 +126,16 @@ export const forceGetUserInfoAndSubcriptions = async () => {
 };
 
 async function getUserInfoAndSubcriptions() {
-  console.log('getUserInfoAndSubcriptions()')
+  try {
+    await fetchUserInfoAndSubscriptions();
+  } catch {
+    // Callers fire this without awaiting; a thrown API error would leave the
+    // status stuck on GET_USER_INFO (spinner forever) and reject unhandled.
+    setLogoutStates();
+  }
+}
+
+async function fetchUserInfoAndSubscriptions() {
   updateAuthStatus(AUTH_STATUS.GET_USER_INFO);
   const usersApi = new UsersApi();
   const sessionResponse = await usersApi.GetSession();
@@ -123,7 +154,7 @@ async function getUserInfoAndSubcriptions() {
   }
   
   const userToken = sessionResponse.data.user.user_token;
-  if (!!userToken) {
+  if (userToken) {
     gtagLogin(userToken);
   }
 

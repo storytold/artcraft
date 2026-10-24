@@ -1,13 +1,24 @@
+// The lightbox: the full-screen viewer the app opens when a user clicks a generated file in the gallery or a task list.
+// It shows the file (image, video, audio or 3D), its prompt, creator and info, tags, and the action buttons (download, edit, delete...).
+// Imports: the dialog shell (Modal) and small UI pieces come from sibling libraries in this repo.
 import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
+// dayjs formats the created-at date shown in the info section.
 import dayjs from "dayjs";
+// Icons from lucide-react, used in the buttons and info rows below.
 import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+// DynamicIcon renders an icon component passed in as a prop (used for the Copy / Copied! swap).
 import { DynamicIcon } from "@storyteller/icons";
+// MediaFileDelete is the Rust (Tauri) command that deletes a file on the server.
 import { MediaFileDelete } from "@storyteller/tauri-api";
+// A spinner shown while the media loads.
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
+// The 3D viewer used when the file is a 3D model.
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
+// The waveform player used when the file is audio.
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
+// React hooks: state, effects, memoised values, stable callbacks and refs.
 import {
   useEffect,
   useState,
@@ -16,24 +27,34 @@ import {
   useCallback,
   useRef,
 } from "react";
+// Sends an analytics event (for example when a file is deleted).
 import { gtagEvent } from "@storyteller/google-analytics";
+// The API classes that fetch the media file record and its prompt.
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
+// Types only: the prompt record and the creator's user info.
 import type { Prompts, UserInfo } from "@storyteller/api";
+// Draws the creator's avatar.
 import { Gravatar } from "@storyteller/ui-gravatar";
+// Shows small pop-up messages (success / error).
 import { toast } from "@storyteller/ui-toaster";
+// Merges CSS class names, dropping conflicting Tailwind classes.
 import { twMerge } from "tailwind-merge";
+// The confirmation dialog helper (used by Delete) and its open/closed flag.
 import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
+// Lookups that turn a model id / provider into a display name and icon for the info section.
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
 } from "@storyteller/model-list";
+// Embla is the carousel library used when a batch of images is shown.
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
+// Types only: Embla's option object.
 import {
   addCorsParam,
   getContextImageThumbnail,
@@ -43,8 +64,10 @@ import {
   formatDuration,
   formatResolution,
 } from "@storyteller/common";
+// The Tags box in the details panel (see tags/TagsSection.tsx).
 import { TagsSection } from "./tags/TagsSection";
 
+// Props of the lightbox. Callers (the gallery, the task queue) pass the file to show and the handlers for each button; any handler left out hides its button.
 interface LightboxModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,6 +118,7 @@ interface LightboxModalProps {
   initialIndex?: number;
 }
 
+// The lightbox component. It stays mounted while closed (callers flip isOpen), so state here must be reset by effects, not by unmounting.
 export function LightboxModal({
   isOpen,
   onClose,
@@ -130,9 +154,11 @@ export function LightboxModal({
   // it won't be able to load in cors mode and will show blank in the canvas and 3D engine. This is a really
   // stupid hack around this behavior.
 
+  // State for the reference-image preview, the media-loading flag and the prompt record fetched from the API.
   const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
   const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
   const [promptData, setPromptData] = useState<Prompts | null>(null);
+  // Values read out of the prompt record; each is null until the record has loaded.
   const prompt = promptData?.maybe_positive_prompt ?? null;
   const generationProvider = promptData?.maybe_generation_provider ?? null;
   const modelType = promptData?.maybe_model_type ?? null;
@@ -141,23 +167,30 @@ export function LightboxModal({
   const resolution = promptData?.maybe_resolution ?? null;
   const durationSeconds = promptData?.maybe_duration_seconds ?? null;
   const generateAudio = promptData?.maybe_generate_audio ?? null;
+  // Natural size of the shown media, used for the info section.
   const [mediaWidth, setMediaWidth] = useState<number | null>(null);
   const [mediaHeight, setMediaHeight] = useState<number | null>(null);
+  // Prompt loading flags and the expand / clamp state of the prompt text ("See all" / "Hide").
   const [promptLoading, setPromptLoading] = useState<boolean>(false);
   const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState<boolean>(false);
   const promptRef = useRef<HTMLDivElement>(null);
   const [isPromptClamped, setIsPromptClamped] = useState<boolean>(false);
+  // Copy-button feedback: promptCopied turns the label to "Copied!" for 1.5 s; the ref holds the timer so a second click can restart it.
   const [promptCopied, setPromptCopied] = useState<boolean>(false);
   const promptCopiedTimeoutRef = useRef<number | null>(null);
+  // The other images of the same batch (urls and media tokens), shown in the carousel, and the file's creator.
   const [batchImages, setBatchImages] = useState<string[] | null>(null);
   const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
   const [creator, setCreator] = useState<UserInfo | null>(null);
+  // Share-link feedback state and its timer, same pattern as the Copy button.
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
+  // Which reference-audio clip is playing (by media token) and the browser Audio object playing it.
   const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
+  // Stops any playing reference clip and clears the playing flag.
   const stopAudio = useCallback(() => {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
@@ -166,6 +199,7 @@ export function LightboxModal({
     setPlayingAudioToken(null);
   }, []);
 
+  // Plays or pauses a reference-audio clip: clicking the playing clip stops it, clicking another stops the old one and starts the new one.
   const handleAudioToggle = useCallback(
     (token: string, url: string) => {
       if (playingAudioToken === token) {
@@ -179,7 +213,14 @@ export function LightboxModal({
           audioPlayerRef.current = null;
         };
         audioPlayerRef.current = audio;
-        audio.play();
+        // A rejected play() (bad URL, autoplay policy) must not leave the
+        // button stuck on "pause" or surface as an unhandled rejection.
+        audio.play().catch(() => {
+          if (audioPlayerRef.current === audio) {
+            audioPlayerRef.current = null;
+            setPlayingAudioToken(null);
+          }
+        });
         setPlayingAudioToken(token);
       }
     },
@@ -187,9 +228,11 @@ export function LightboxModal({
   );
 
   // Stable API instances
+  // Stable API instances
   const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
   const promptsApi = useMemo(() => new PromptsApi(), []);
 
+  // Reset the per-open UI state each time the lightbox opens; stop audio when it closes.
   useEffect(() => {
     if (isOpen) {
       setRefPreviewUrl(null);
@@ -204,9 +247,32 @@ export function LightboxModal({
         window.clearTimeout(shareCopiedTimeoutRef.current);
         shareCopiedTimeoutRef.current = null;
       }
+    } else {
+      // Closing the lightbox must silence a reference-audio clip that is
+      // still playing; otherwise it keeps going with no UI to stop it.
+      stopAudio();
     }
   }, [isOpen]);
 
+  // Moving to another media (arrow keys, prev/next buttons, "View as media") keeps the lightbox open,
+  // so the isOpen effect above never runs. The reference-audio rows disappear with the old prompt data,
+  // so a clip that is still playing would have no pause button left; the reference preview and the
+  // expanded prompt belong to the old media too. Reset all three whenever mediaId changes.
+  useEffect(() => {
+    stopAudio();
+    setRefPreviewUrl(null);
+    setIsPromptExpanded(false);
+  }, [mediaId]);
+
+  // Same for unmount while a clip is playing.
+  useEffect(() => {
+    return () => {
+      audioPlayerRef.current?.pause();
+      audioPlayerRef.current = null;
+    };
+  }, []);
+
+  // Clear the Share-copied timer if the lightbox unmounts.
   useEffect(() => {
     return () => {
       if (shareCopiedTimeoutRef.current) {
@@ -219,6 +285,7 @@ export function LightboxModal({
   // Fetch prompt when mediaId changes — debounced to avoid API spam during
   // rapid next/prev navigation, with cancellation for stale responses.
   useEffect(() => {
+    // No file selected: clear everything that came from the server and stop.
     if (!mediaId) {
       setPromptData(null);
       setHasPromptToken(false);
@@ -228,23 +295,29 @@ export function LightboxModal({
     }
 
     // Immediately show skeletons & clear stale data
+    // A new file: show loading skeletons and drop the previous file's prompt and creator right away.
     setPromptLoading(true);
     setPromptData(null);
     setCreator(null);
 
+    // Set by the cleanup below when mediaId changes again, so a slow answer for an old file is ignored.
     let cancelled = false;
 
+    // Wait 180 ms before asking the server, so holding an arrow key does not fire a request per file.
     const timer = setTimeout(async () => {
       try {
+        // Step 1: fetch the media file record (gives the creator and the prompt token).
         const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
           mediaFileToken: mediaId,
         });
         if (cancelled) return;
 
+        // Remember who created the file (shown in the info section and used by the Tags box).
         if (mediaResponse.success && mediaResponse.data) {
           setCreator(mediaResponse.data.maybe_creator_user || null);
         }
 
+        // Step 2: if the file has a prompt, fetch the prompt record with its token.
         if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
           setHasPromptToken(true);
           const promptResponse = await promptsApi.GetPromptsByToken({
@@ -261,11 +334,13 @@ export function LightboxModal({
           setHasPromptToken(false);
           setPromptData(null);
         }
+      // Any failure leaves the prompt panel empty rather than showing stale data.
       } catch (error) {
         if (cancelled) return;
         console.error("Error fetching prompt:", error);
         setHasPromptToken(false);
         setPromptData(null);
+      // Stop the skeletons, unless a newer request has taken over.
       } finally {
         if (!cancelled) setPromptLoading(false);
       }
@@ -316,6 +391,7 @@ export function LightboxModal({
         if (cancelled) return;
 
         if (response.success && response.data?.length) {
+          // Keep only the files that have both a download url and a token.
           const items = response.data
             .map((file: any) => ({
               url: file.media_links?.cdn_url,
@@ -330,6 +406,7 @@ export function LightboxModal({
             const primaryToken = mediaId;
             const primaryUrl = imageUrl;
 
+            // Put the file the lightbox was opened on first, matching by token and then by url.
             const sortedItems = [...items].sort((a, b) => {
               if (primaryToken === a.token) return -1;
               if (primaryToken === b.token) return 1;
@@ -338,6 +415,7 @@ export function LightboxModal({
               return 0;
             });
 
+            // Store urls and tokens in the same order so index i of one matches index i of the other.
             setBatchImages(sortedItems.map((item) => item.url));
             setBatchTokens(sortedItems.map((item) => item.token));
           } else {
@@ -361,6 +439,7 @@ export function LightboxModal({
     };
   }, [batchImageToken, mediaId, imageUrl, mediaFilesApi]);
 
+  // Which image urls the carousel shows: the fetched batch, else the urls the caller passed, else the single imageUrl.
   const effectiveImageUrls = useMemo(() => {
     if (batchImages && batchImages.length > 0) {
       return batchImages;
@@ -371,17 +450,21 @@ export function LightboxModal({
     return imageUrl ? [imageUrl] : [];
   }, [batchImages, imageUrls, imageUrl]);
 
+  // Index of the image the carousel is showing; Share, Delete and Edit act on this one.
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Main carousel options; loop is off so the first and last images are real boundaries (arrow keys then move to the previous / next file).
   const carouselOptions: EmblaOptionsType = useMemo(
     () => ({ loop: false }),
     [],
   );
+  // Two carousels: the main one shows the image, the thumbnail strip below it selects an image.
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel(carouselOptions);
   const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
     containScroll: "keepSnaps",
     dragFree: true,
   });
 
+  // Clicking a thumbnail scrolls the main carousel to that image.
   const onThumbClick = useCallback(
     (index: number) => {
       if (!emblaMainApi || !emblaThumbsApi) return;
@@ -390,6 +473,7 @@ export function LightboxModal({
     [emblaMainApi, emblaThumbsApi],
   );
 
+  // Delete button: ask for confirmation, then call the Rust delete command (see the failure handling inside).
   const onDeleteClicked = useCallback(
     (mediaToken: string) => {
       showActionReminder({
@@ -405,10 +489,22 @@ export function LightboxModal({
         secondaryActionText: "Cancel",
         primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
         onPrimaryAction: async () => {
+          // True only if the Rust delete command came back without an error; decides whether the viewer closes below.
+          let deleted = false;
           try {
+            // Calls the Rust delete command; it rejects (offline, signed out, server error) and sends no "File deleted." event.
             await MediaFileDelete(mediaToken);
+            deleted = true;
+          } catch (error) {
+            // Nothing else reports this failure, so say so here (the gallery, bulk delete and characters deletes all do).
+            console.error("Failed to delete media:", error);
+            toast.error("Failed to delete media");
           } finally {
+            // Close the confirmation either way so it can't be left on screen.
             isActionReminderOpen.value = false;
+          }
+          // Close the viewer only when the media is really gone; after a failure it stays open so the item can be retried.
+          if (deleted) {
             onClose();
           }
         },
@@ -417,6 +513,7 @@ export function LightboxModal({
     [onClose],
   );
 
+  // When the main carousel settles on a slide, remember its index and keep the thumbnail strip in step.
   const onSelect = useCallback(() => {
     if (!emblaMainApi || !emblaThumbsApi) return;
     const index = emblaMainApi.selectedScrollSnap();
@@ -437,16 +534,19 @@ export function LightboxModal({
   }, [effectiveImageUrls, emblaMainApi, emblaThumbsApi]);
 
   useEffect(() => {
+    // When the file changes, jump (no animation) to the slide the caller asked for, or the first one.
     const idx = initialIndex ?? 0;
     setSelectedIndex(idx);
     emblaMainApi?.scrollTo(idx, true);
     emblaThumbsApi?.scrollTo(idx, true);
   }, [batchImageToken, imageUrl, emblaMainApi, emblaThumbsApi]);
 
+  // The url of the shown image, and the url that action buttons use (caller's action url, else the shown image, else the download url).
   const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
   const actionUrl =
     actionUrls?.[selectedIndex] ?? selectedImageUrl ?? downloadUrl ?? undefined;
 
+  // Media token of the shown image: from the fetched batch, else the caller's list, else the main mediaId.
   const selectedMediaToken = useMemo(() => {
     const tokenFromBatch = batchTokens?.[selectedIndex];
     const tokenFromProps = mediaTokens?.[selectedIndex];
@@ -454,6 +554,7 @@ export function LightboxModal({
   }, [batchTokens, mediaTokens, selectedIndex, mediaId]);
 
   useEffect(() => {
+    // Preload the shown image so the loading spinner can be hidden when it is ready (or has failed, so the spinner never sticks).
     if (!selectedImageUrl) {
       setMediaLoaded(false);
       setMediaWidth(null);
@@ -483,6 +584,7 @@ export function LightboxModal({
     };
   }, [selectedImageUrl]);
 
+  // Media class to use: the caller's, or "image" when a batch of images was fetched.
   const derivedMediaClass = useMemo(
     () =>
       mediaClass ??
@@ -494,12 +596,16 @@ export function LightboxModal({
   //   Left / Right  →  carousel slide; at boundary, moves to prev/next bundle
   //   Up / Down     →  previous / next bundle
   useEffect(() => {
+    // Only listen while the viewer is open.
     if (!isOpen) return;
+    // Runs on every key press anywhere in the window.
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Leave the keys alone while the user is typing in a field (for example a tag box).
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       if (e.key === "ArrowLeft") {
+        // Left arrow: stop the browser's default action, then move one slide back, or one file back when already on the first slide.
         e.preventDefault();
         if (
           emblaMainApi &&
@@ -511,6 +617,7 @@ export function LightboxModal({
           onNavigatePrev?.();
         }
       } else if (e.key === "ArrowRight") {
+        // Right arrow: the mirror image, one slide forward or one file forward from the last slide.
         e.preventDefault();
         if (
           emblaMainApi &&
@@ -522,13 +629,16 @@ export function LightboxModal({
           onNavigateNext?.();
         }
       } else if (e.key === "ArrowUp") {
+        // Up arrow: always go to the previous file.
         e.preventDefault();
         onNavigatePrev?.();
       } else if (e.key === "ArrowDown") {
+        // Down arrow: always go to the next file.
         e.preventDefault();
         onNavigateNext?.();
       }
     };
+    // Listen on the whole window and remove the listener when the viewer closes or the inputs change.
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
@@ -541,6 +651,7 @@ export function LightboxModal({
 
   return (
     <>
+      {/* The dialog shell: draggable and resizable, with no dimming backdrop, and it lets the page behind stay clickable. */}
       <Modal
         isOpen={isOpen}
         onClose={onClose}
@@ -559,9 +670,11 @@ export function LightboxModal({
         </Modal.DragHandle>
 
         {/* content grid */}
+        {/* Two columns: the media on the left (takes the free width), the details panel on the right (fixed 280 px). */}
         <div className="flex h-full gap-4">
           {/* image panel - flexible width */}
           <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black">
+            {/* Left column: show whichever viewer matches the media class: a message, the 3D viewer, a video, an audio player, or the image carousel. */}
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center bg-black">
                 <span className="text-base-fg/60">Image not available</span>
@@ -695,6 +808,7 @@ export function LightboxModal({
               </div>
             )}
 
+            {/* Loading overlay: covers the image / video until it has loaded or failed (3D and audio show their own loading). */}
             {!mediaLoaded &&
               selectedImageUrl &&
               mediaClass !== "dimensional" &&
@@ -707,6 +821,7 @@ export function LightboxModal({
               )}
 
             {/* Gallery navigation arrows – only visible on hover */}
+            {/* Previous / Next file buttons; each shows only when the caller supplied the handler, and they appear on hover. */}
             {onNavigatePrev && (
               <button
                 onClick={(e) => {
@@ -736,6 +851,7 @@ export function LightboxModal({
           {/* info + actions - fixed width */}
           <div className="flex h-full w-[280px] shrink-0 flex-col">
             <div className="flex-1 overflow-y-auto space-y-5 text-base-fg min-h-0 pb-2">
+              {/* Author header: the creator's avatar and name once loaded, a pulsing skeleton while loading, nothing otherwise. */}
               {creator ? (
                 <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-20 border-b border-white/10">
                   {creator.core_info ? (
@@ -772,6 +888,7 @@ export function LightboxModal({
                   </div>
                 </div>
               ) : null}
+              {/* Prompt section, shown for files made from a prompt (or while we are still finding out). */}
               {(hasPromptToken || promptLoading) && (
                 <>
                   {/* Prompt */}
@@ -781,15 +898,20 @@ export function LightboxModal({
                         <PencilIcon />
                         <span>Prompt</span>
                       </div>
+                      {/* Copy button: copies the prompt text to the clipboard and flashes "Copied!" (see the failure handling in the click handler). */}
                       {!promptLoading && prompt && (
                         <button
                           className="flex items-center gap-1.5 text-xs text-base-fg/60 hover:text-base-fg transition-colors"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             if (!prompt) return;
-                            navigator.clipboard
-                              .writeText(prompt)
-                              .catch(() => {});
+                            // Only report success when the clipboard write worked, as the Share button does.
+                            try {
+                              await navigator.clipboard.writeText(prompt);
+                            } catch {
+                              toast.error("Unable to copy prompt");
+                              return;
+                            }
                             toast.success("Prompt copied");
                             setPromptCopied(true);
                             if (promptCopiedTimeoutRef.current) {
@@ -817,6 +939,7 @@ export function LightboxModal({
                     <div
                       className="text-sm text-base-fg/90 break-words px-4 py-3 bg-black/20 leading-relaxed border border-white/10"
                     >
+                      {/* Prompt text: skeleton while loading, else the text clamped to four lines (or fully shown when expanded), else "No prompt". */}
                       {promptLoading ? (
                         <div className="animate-pulse space-y-2">
                           <div className="h-3 w-full bg-white/10" />
@@ -907,8 +1030,10 @@ export function LightboxModal({
                             <ImageIcon />
                             <span>Reference Media</span>
                           </div>
+                          {/* Reference thumbnails, five per row; audio and video references get their own kind of tile. */}
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
+                              // Work out what kind of reference this is, its small and full-size image, and whether its clip is the one playing.
                               const isAudio = contextImage.semantic === "audioref";
                               const isVideoRef = contextImage.semantic === "vid_ref";
                               const { thumbnail, fullSize } =
@@ -926,6 +1051,7 @@ export function LightboxModal({
                                   delay={150}
                                   zIndex={50}
                                   className="p-1"
+                                  // Hover menu for a tile: "Preview image" (still images only) and "View as media" (when the caller can open another file).
                                   content={
                                     <div className="flex flex-col gap-1.5 min-w-[100px]">
                                       {!isAudio && !isVideoRef && (
@@ -963,6 +1089,7 @@ export function LightboxModal({
                                 >
                                   <div
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
+                                    // Clicking the tile itself: audio plays or pauses its clip, a still image opens the big preview, a video reference does nothing.
                                     onClick={() => {
                                       if (isAudio) {
                                         handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url);
@@ -971,6 +1098,7 @@ export function LightboxModal({
                                       }
                                     }}
                                   >
+                                    {/* Audio tile shows a play / pause icon; every other tile shows its thumbnail (video references also get a small video icon on top). */}
                                     {isAudio ? (
                                       <div className="h-full w-full flex items-center justify-center bg-white/5">
                                         <DynamicIcon
@@ -1018,6 +1146,7 @@ export function LightboxModal({
                 </>
               )}
 
+              {/* Files with no prompt still get the info block, with only the size and date filled in. */}
               {!hasPromptToken && !promptLoading && (
                 <InfoSection
                   modelType={null}
@@ -1032,14 +1161,18 @@ export function LightboxModal({
                 />
               )}
 
+              {/* Tags for this file; editing is allowed for the file's creator. */}
               <TagsSection mediaToken={mediaId} creator={creator} />
 
+              {/* Extra content supplied by the caller, shown after the tags. */}
               {additionalInfo}
             </div>
 
             {/* buttons with spacing */}
+            {/* Action buttons: shown only when the file has a usable URL; each one also needs its handler from the caller. */}
             {actionUrl && (
               <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+                {/* Recreate: reopen the prompt that made this file (images and videos with a saved prompt only; full width). */}
                 {onRecreateClicked &&
                   hasPromptToken &&
                   promptData &&
@@ -1062,6 +1195,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Edit Image: send this image to the editor (images only). */}
                 {onEditClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1079,6 +1213,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Make Video: send this image to image-to-video (images only). */}
                 {onTurnIntoVideoClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1099,6 +1234,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Remove BG: start background removal, then close the viewer and the gallery (images only). */}
                 {onRemoveBackgroundClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1121,6 +1257,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Make 3D: start image-to-3D-object, then close the viewer and the gallery (images only). */}
                 {onMake3DObjectClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1143,6 +1280,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Make 3D World: start image-to-3D-world, then close the viewer and the gallery (images only). */}
                 {onMake3DWorldClicked &&
                   actionUrl &&
                   derivedMediaClass === "image" && (
@@ -1165,6 +1303,7 @@ export function LightboxModal({
                     </Button>
                   )}
 
+                {/* Download: images share a row with another button; other kinds take the full row. */}
                 {onDownloadClicked && actionUrl && (
                   <Button
                     className={
@@ -1184,6 +1323,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
+                {/* Add to Scene: place this file in the scene editor, then close the viewer and the gallery. */}
                 {onAddToSceneClicked && actionUrl && (
                   <Button
                     className="w-full py-1.5 text-[13px]"
@@ -1200,6 +1340,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
+                {/* Share: copy the public link for this file; the label flips to "Link Copied!" for 1.5 s, or an error toast shows if the copy fails. */}
                 {selectedMediaToken && (
                   <Button
                     className="w-full py-1.5 text-[13px]"
@@ -1232,6 +1373,7 @@ export function LightboxModal({
                   </Button>
                 )}
 
+                {/* Delete: ask the caller to delete the file shown (the caller decides what happens next). */}
                 {selectedMediaToken && onDeleteClicked && (
                   <Button
                     icon={Trash2Icon}
@@ -1252,6 +1394,7 @@ export function LightboxModal({
         </div>
       </Modal>
 
+      {/* Second small window that shows a reference image full size; closing it clears refPreviewUrl. */}
       {refPreviewUrl && (
         <Modal
           isOpen={true}
@@ -1281,6 +1424,7 @@ export function LightboxModal({
   );
 }
 
+// InfoSection: the "Information" block (model, provider, shape, length, audio, size, created date). Every field is optional and the whole block hides when none are known.
 interface InfoSectionProps {
   modelType: string | null;
   generationProvider: string | null;
@@ -1304,6 +1448,7 @@ function InfoSection({
   mediaHeight,
   createdAt,
 }: InfoSectionProps) {
+  // True when at least one field has something to show; width and height count only as a pair.
   const hasAnyInfo =
     !!modelType ||
     !!generationProvider ||
@@ -1314,6 +1459,7 @@ function InfoSection({
     (!!mediaWidth && !!mediaHeight) ||
     !!createdAt;
 
+  // Nothing to show, so render nothing at all (no empty heading).
   if (!hasAnyInfo) return null;
 
   return (
@@ -1378,6 +1524,7 @@ function InfoSection({
   );
 }
 
+// InfoRow: one label on the left and its value on the right, with a divider line under every row but the last.
 function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 px-3 py-2.5 border-b border-white/10 last:border-0">

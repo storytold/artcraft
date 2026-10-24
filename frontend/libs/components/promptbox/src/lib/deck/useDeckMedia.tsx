@@ -179,6 +179,57 @@ export function useDeckMedia<
     referenceAudiosRef.current = referenceAudios;
   }, [referenceAudios]);
 
+  // Tail of the chain of audio batches, for the same reason as the video one
+  // below: the deck has a single spinner slot (`uploadingAudio`), and the
+  // track-count and duration limits are only right once the earlier batch has
+  // committed or failed. `processAudioFiles` appends to it.
+  const audioQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  // Same idea for videos. A video upload can take a long time, and the person
+  // can drop another file, remove a card, or pick from the library meanwhile.
+  // Every video commit and limit check reads this ref (kept in step with the
+  // caller's store by the effect below) instead of the array that was in scope
+  // when the batch started, which would overwrite whatever changed since.
+  const referenceVideosRef = useRef(referenceVideos);
+  useEffect(() => {
+    referenceVideosRef.current = referenceVideos;
+  }, [referenceVideos]);
+
+  // Tail of the chain of video batches. `processVideoFiles` appends to it so
+  // two drops/pastes never upload side by side: the deck has one spinner slot
+  // (`uploadingVideo`), and the slot and duration limits are only correct once
+  // the earlier batch has committed or failed.
+  const videoQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  // WHY: each committed upload owns a full-res object URL (`fullUrl`) that was
+  // never revoked, leaking the whole original file per upload. Track them by
+  // ref id; once a ref has been seen in the caller's store and later
+  // disappears (removed/replaced), revoke its URL. `seen` guards against
+  // revoking in the render before the store has committed the new ref.
+  const fullUrlsRef = useRef(
+    new Map<string, { url: string; seen: boolean }>(),
+  );
+  useEffect(() => {
+    const present = new Set<string>(referenceImages.map((img) => img.id));
+    if (endFrameImage) present.add(endFrameImage.id);
+    for (const [id, entry] of fullUrlsRef.current) {
+      if (present.has(id)) {
+        entry.seen = true;
+      } else if (entry.seen) {
+        revokeIfBlobUrl(entry.url);
+        fullUrlsRef.current.delete(id);
+      }
+    }
+  }, [referenceImages, endFrameImage]);
+  // Unmount: nothing can show these previews any more.
+  useEffect(() => {
+    const tracked = fullUrlsRef.current;
+    return () => {
+      for (const { url } of tracked.values()) revokeIfBlobUrl(url);
+      tracked.clear();
+    };
+  }, []);
+
   // Committed refs live in the caller's store, whose update can render one
   // pass before this hook's entry-removal state lands — briefly showing the
   // committed card AND its spinner. Commits reuse their entry's id, so
@@ -299,19 +350,29 @@ export function useDeckMedia<
         }
       };
 
+      // Set once the entry has either committed or failed, so a late
+      // rejection from the upload can't revoke a preview that is now the
+      // committed thumbnail.
+      let settled = false;
+
       const fail = () => {
+        settled = true;
         revokeIfBlobUrl(previewUrl);
         removeEntry();
       };
 
       const commit = (mediaToken: string) => {
+        settled = true;
         // The downscaled preview lives on as the committed thumbnail; the
         // original file backs the full-res tap-preview via `fullUrl`. The
         // ref keeps the entry's id so the deck card swaps in place.
+        const fullUrl = URL.createObjectURL(file);
+        // Registered so the effect above can revoke it on removal/unmount.
+        fullUrlsRef.current.set(entryId, { url: fullUrl, seen: false });
         const referenceImage = asImage({
           id: entryId,
           url: previewUrl,
-          fullUrl: URL.createObjectURL(file),
+          fullUrl,
           file,
           mediaToken,
         });
@@ -319,25 +380,37 @@ export function useDeckMedia<
         if (uploadTarget === "end") {
           setEndFrameImage?.(referenceImage);
         } else {
-          setReferenceImages([...referenceImagesRef.current, referenceImage]);
+          // FIX: write the ref now, not only in the effect after the next
+          // render. Two uploads that finish in the same tick both read the
+          // ref, so the second used to overwrite the first and one reference
+          // image silently vanished.
+          const nextImages = [...referenceImagesRef.current, referenceImage];
+          referenceImagesRef.current = nextImages;
+          setReferenceImages(nextImages);
         }
       };
 
       if (uploadImage) {
-        await uploadImage({
-          title: randomTitle("reference-image"),
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              commit(newState.data);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              fail();
-            }
-          },
-        });
+        try {
+          await uploadImage({
+            title: randomTitle("reference-image"),
+            assetFile: file,
+            progressCallback: (newState) => {
+              if (newState.status === UploaderStates.success && newState.data) {
+                commit(newState.data);
+              } else if (
+                newState.status === UploaderStates.assetError ||
+                newState.status === UploaderStates.imageCreateError
+              ) {
+                fail();
+              }
+            },
+          });
+        } catch {
+          // An upload that throws (network drop) used to leave the spinner
+          // card on screen forever and surface as an unhandled rejection.
+          if (!settled) fail();
+        }
       } else {
         commit("");
       }
@@ -351,11 +424,15 @@ export function useDeckMedia<
     processImageFiles(files, imageTargetRef.current);
   };
 
-  const processVideoFiles = async (files: File[]) => {
-    // Snapshot the committed state at call time so removes that happened
-    // before this call are respected (don't re-read a stale ref).
-    const baseVideos = [...referenceVideos];
-    const availableSlots = Math.max(0, maxVideos - baseVideos.length);
+  // Uploads one batch of video files (one drop, paste or picker choice). Only
+  // ever called through `processVideoFiles`, which makes batches take turns.
+  const runVideoBatch = async (files: File[]) => {
+    // Read the deck as it is NOW, at this batch's turn: earlier batches may
+    // have committed, and cards may have been removed since the call.
+    const availableSlots = Math.max(
+      0,
+      maxVideos - referenceVideosRef.current.length,
+    );
     if (availableSlots <= 0) {
       toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
         id: "video-ref-limit",
@@ -364,11 +441,15 @@ export function useDeckMedia<
     }
 
     const filesToProcess = files.slice(0, availableSlots);
-    let committed = baseVideos;
 
     for (const file of filesToProcess) {
       const duration = await getVideoDuration(file);
-      const currentTotal = committed.reduce((sum, v) => sum + v.duration, 0);
+      // Read the deck again after the wait: the measurement is async, and the
+      // library picker can add cards in the meantime.
+      const currentTotal = referenceVideosRef.current.reduce(
+        (sum, v) => sum + v.duration,
+        0,
+      );
 
       if (currentTotal + duration > maxVideoTotalSec) {
         toast.error(`Total video duration cannot exceed ${maxVideoTotalSec}s`, {
@@ -392,31 +473,69 @@ export function useDeckMedia<
           duration,
         });
         setUploadingVideo(null);
-        committed = [...committed, refVideo];
-        setReferenceVideos?.(committed);
+        // Append to the freshest deck, not the one this batch started from,
+        // so a video removed or added while this one uploaded is respected.
+        const next = [...referenceVideosRef.current, refVideo];
+        // Update the ref right away: the caller's re-render (and the effect
+        // that syncs the ref) only lands after this function returns.
+        referenceVideosRef.current = next;
+        setReferenceVideos?.(next);
       };
 
       if (uploadVideo) {
-        await uploadVideo({
-          title: randomTitle("reference-video"),
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              commit(newState.data);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              URL.revokeObjectURL(entry.previewUrl);
-              setUploadingVideo(null);
-              toast.error("Failed to upload video. Please upload an MP4 file.");
-            }
-          },
-        });
+        let settled = false;
+        const failVideo = () => {
+          settled = true;
+          URL.revokeObjectURL(entry.previewUrl);
+          setUploadingVideo(null);
+          toast.error("Failed to upload video. Please upload an MP4 file.");
+        };
+        try {
+          await uploadVideo({
+            title: randomTitle("reference-video"),
+            assetFile: file,
+            progressCallback: (newState) => {
+              if (newState.status === UploaderStates.success && newState.data) {
+                settled = true;
+                commit(newState.data);
+              } else if (
+                newState.status === UploaderStates.assetError ||
+                newState.status === UploaderStates.imageCreateError
+              ) {
+                failVideo();
+              }
+            },
+          });
+        } catch {
+          // A thrown upload must not leave the spinner up or abort the rest
+          // of the batch with an unhandled rejection.
+          if (!settled) failVideo();
+        }
       } else {
         commit("");
       }
     }
+  };
+
+  // Entry point for every video file source (picker, drop, paste). Callers
+  // fire it without waiting (`void processVideoFiles(...)`), so a second call
+  // can arrive while the first batch is still uploading; the batches are
+  // chained so they run one after another.
+  const processVideoFiles = (files: File[]): Promise<void> => {
+    // A deck that is already full says so immediately, not after the queue
+    // drains. The ref counts cards that were just added or removed.
+    if (referenceVideosRef.current.length >= maxVideos) {
+      toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
+        id: "video-ref-limit",
+      });
+      return Promise.resolve();
+    }
+    // Start this batch once the previous one has finished.
+    const turn = videoQueueRef.current.then(() => runVideoBatch(files));
+    // Keep the chain going even if this batch throws, so one failure cannot
+    // block every later drop. The caller still gets `turn` and sees the error.
+    videoQueueRef.current = turn.catch(() => undefined);
+    return turn;
   };
 
   const handleVideoFileUpload = async (
@@ -428,14 +547,16 @@ export function useDeckMedia<
     await processVideoFiles(files);
   };
 
-  const processAudioFiles = async (files: File[]) => {
-    const audioFiles = files.filter(isAudioFile);
-    if (audioFiles.length < files.length) {
-      toast.error(AUDIO_FILE_TYPE_ERROR, { id: "audio-ref-type" });
-    }
-    if (audioFiles.length === 0) return;
-
-    const availableSlots = Math.max(0, maxAudios - referenceAudios.length);
+  // One batch of audio files (already filtered to real audio). Runs on its
+  // turn in the queue, so the deck it reads is the one the earlier batches
+  // left behind.
+  const runAudioBatch = async (audioFiles: File[]) => {
+    // Count the deck as it is now (the ref follows the caller's store and is
+    // also updated by every commit below), not as it was at the last render.
+    const availableSlots = Math.max(
+      0,
+      maxAudios - referenceAudiosRef.current.length,
+    );
     if (availableSlots <= 0) {
       return;
     }
@@ -466,29 +587,69 @@ export function useDeckMedia<
           duration,
         });
         setUploadingAudio(null);
-        setReferenceAudios?.([...referenceAudiosRef.current, refAudio]);
+        // Update the ref right away as well: the caller's re-render (and the
+        // effect that syncs the ref) comes later, and the next file of this
+        // batch reads the ref first.
+        const next = [...referenceAudiosRef.current, refAudio];
+        referenceAudiosRef.current = next;
+        setReferenceAudios?.(next);
       };
 
       if (uploadAudio) {
-        await uploadAudio({
-          title: randomTitle("reference-audio"),
-          assetFile: file,
-          progressCallback: (newState) => {
-            if (newState.status === UploaderStates.success && newState.data) {
-              commit(newState.data);
-            } else if (
-              newState.status === UploaderStates.assetError ||
-              newState.status === UploaderStates.imageCreateError
-            ) {
-              URL.revokeObjectURL(entry.previewUrl);
-              setUploadingAudio(null);
-            }
-          },
-        });
+        let settled = false;
+        const failAudio = () => {
+          settled = true;
+          URL.revokeObjectURL(entry.previewUrl);
+          setUploadingAudio(null);
+        };
+        try {
+          await uploadAudio({
+            title: randomTitle("reference-audio"),
+            assetFile: file,
+            progressCallback: (newState) => {
+              if (newState.status === UploaderStates.success && newState.data) {
+                settled = true;
+                commit(newState.data);
+              } else if (
+                newState.status === UploaderStates.assetError ||
+                newState.status === UploaderStates.imageCreateError
+              ) {
+                failAudio();
+              }
+            },
+          });
+        } catch {
+          // Same as video: clear the spinner instead of sticking forever.
+          if (!settled) failAudio();
+        }
       } else {
         commit("");
       }
     }
+  };
+
+  // Entry point for every audio file source (picker, drop, paste). Callers
+  // fire it without waiting (`void processAudioFiles(...)`), so a second call
+  // can arrive while the first batch is still uploading; the batches are
+  // chained so they run one after another.
+  const processAudioFiles = (files: File[]): Promise<void> => {
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR, { id: "audio-ref-type" });
+    }
+    if (audioFiles.length === 0) return Promise.resolve();
+
+    // A deck that is already full does nothing, right away. The ref counts
+    // cards that were just added or removed.
+    if (referenceAudiosRef.current.length >= maxAudios) {
+      return Promise.resolve();
+    }
+    // Start this batch once the previous one has finished.
+    const turn = audioQueueRef.current.then(() => runAudioBatch(audioFiles));
+    // Keep the chain going even if this batch throws, so one failure cannot
+    // block every later drop. The caller still gets `turn` and sees the error.
+    audioQueueRef.current = turn.catch(() => undefined);
+    return turn;
   };
 
   const handleAudioFileUpload = async (
@@ -552,10 +713,12 @@ export function useDeckMedia<
 
   const handleGalleryImages = async (selectedItems: GalleryItem[]) => {
     if (galleryTarget === "video") {
-      // Snapshot committed state at call time to avoid re-reading a stale
-      // ref after removes.
-      const baseVideos = [...referenceVideos];
-      const availableSlots = Math.max(0, maxVideos - baseVideos.length);
+      // Quick check up front, so a full deck answers (and the modal closes)
+      // without waiting for the length probes below.
+      const availableSlots = Math.max(
+        0,
+        maxVideos - referenceVideosRef.current.length,
+      );
       if (availableSlots <= 0) {
         toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
           id: "video-ref-limit",
@@ -577,10 +740,24 @@ export function useDeckMedia<
           itemsToProcess.map((item) => getVideoDurationFromSrc(item.fullImage)),
         );
 
+        // The probes above are async: an upload may have landed (or a card
+        // been removed) since the click. Count the deck as it is now, so the
+        // limits hold and the videos added below go on top of it.
+        const latestVideos = referenceVideosRef.current;
+        const freeSlots = Math.max(0, maxVideos - latestVideos.length);
         const newVideos: TVideo[] = [];
-        let currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
+        let currentTotal = latestVideos.reduce((sum, v) => sum + v.duration, 0);
         let exceeded = false;
-        for (let i = 0; i < itemsToProcess.length; i++) {
+        if (freeSlots < itemsToProcess.length) {
+          toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
+            id: "video-ref-limit",
+          });
+        }
+        for (
+          let i = 0;
+          i < itemsToProcess.length && newVideos.length < freeSlots;
+          i++
+        ) {
           const item = itemsToProcess[i]!;
           const duration = durations[i]!;
           if (currentTotal + duration > maxVideoTotalSec) {
@@ -605,7 +782,12 @@ export function useDeckMedia<
           );
         }
         if (newVideos.length > 0) {
-          setReferenceVideos?.([...baseVideos, ...newVideos]);
+          // Nothing awaits between the read of `latestVideos` and here, so it
+          // is still the current deck. Update the ref right away too: the
+          // caller's re-render (and the effect that syncs it) comes later.
+          const next = [...latestVideos, ...newVideos];
+          referenceVideosRef.current = next;
+          setReferenceVideos?.(next);
         }
       } finally {
         setIsProcessingGallery(false);
@@ -614,8 +796,11 @@ export function useDeckMedia<
       return;
     }
     if (galleryTarget === "audio") {
-      const baseAudios = [...referenceAudios];
-      const availableSlots = Math.max(0, maxAudios - baseAudios.length);
+      // Quick check up front, same as the video path above.
+      const availableSlots = Math.max(
+        0,
+        maxAudios - referenceAudiosRef.current.length,
+      );
       if (availableSlots <= 0) {
         toast.error(`Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`, {
           id: "audio-ref-limit",
@@ -641,10 +826,25 @@ export function useDeckMedia<
           ),
         );
 
+        // The probes above are async: an upload may have landed (or a card
+        // been removed) since the click. Count the deck as it is now, so the
+        // limits hold and the tracks added below go on top of it.
+        const latestAudios = referenceAudiosRef.current;
+        const freeSlots = Math.max(0, maxAudios - latestAudios.length);
         const newAudios: TAudio[] = [];
-        let currentTotal = baseAudios.reduce((sum, a) => sum + a.duration, 0);
+        let currentTotal = latestAudios.reduce((sum, a) => sum + a.duration, 0);
         let exceeded = false;
-        for (let i = 0; i < itemsToProcess.length; i++) {
+        if (freeSlots < itemsToProcess.length) {
+          toast.error(
+            `Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`,
+            { id: "audio-ref-limit" },
+          );
+        }
+        for (
+          let i = 0;
+          i < itemsToProcess.length && newAudios.length < freeSlots;
+          i++
+        ) {
           const item = itemsToProcess[i]!;
           const duration = durations[i]!;
           if (currentTotal + duration > maxAudioTotalSec) {
@@ -669,7 +869,11 @@ export function useDeckMedia<
           );
         }
         if (newAudios.length > 0) {
-          setReferenceAudios?.([...baseAudios, ...newAudios]);
+          // Nothing awaits between the read of `latestAudios` and here. Update
+          // the ref right away too, as the video path does.
+          const next = [...latestAudios, ...newAudios];
+          referenceAudiosRef.current = next;
+          setReferenceAudios?.(next);
         }
       } finally {
         setIsProcessingGallery(false);

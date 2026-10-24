@@ -609,35 +609,32 @@ impl Backend {
     });
   }
 
-  /// Loads every page of the user's characters.
+  /// Loads every page of the user's characters. A failed load sends no list at all, so the list the
+  /// app already has (and the `@Name` mentions that depend on it) is kept.
   pub fn load_characters(&self) {
     let api = self.api();
     if api.creds.is_none() {
       return;
     }
     self.spawn(move |tx| async move {
-      let mut all = Vec::new();
-      let mut cursor: Option<i64> = None;
-      loop {
+      let result = collect_characters(|cursor| {
         let path = match cursor {
           Some(c) => format!("/v1/characters/session?cursor={c}"),
           None => "/v1/characters/session".to_owned(),
         };
-        match api.request_json::<CharactersPage>(reqwest::Method::GET, &path, None).await {
-          Ok(page) => {
-            all.extend(page.characters);
-            match page.next_cursor {
-              Some(next) if Some(next) != cursor => cursor = Some(next),
-              _ => break,
-            }
-          },
-          Err(err) => {
-            warn!("Loading characters failed: {err}");
-            break;
-          },
-        }
+        let api = &api;
+        async move { api.request_json::<CharactersPage>(reqwest::Method::GET, &path, None).await }
+      })
+      .await;
+      match result {
+        Ok(all) => {
+          let _ = tx.send(Event::Characters(all));
+        },
+        Err(err) => {
+          warn!("Loading characters failed: {err}");
+          let _ = tx.send(Event::Toast { error: true, message: format!("Couldn't load your characters: {err}") });
+        },
       }
-      let _ = tx.send(Event::Characters(all));
     });
   }
 
@@ -866,9 +863,28 @@ impl Api {
   }
 }
 
+/// Reads character pages, following the cursor, until the last one. Any failed page fails the whole load:
+/// a partial list is not a list.
+async fn collect_characters<F, Fut>(mut fetch_page: F) -> Result<Vec<wire::Character>, String>
+where
+  F: FnMut(Option<i64>) -> Fut,
+  Fut: Future<Output = Result<CharactersPage, String>>,
+{
+  let mut all = Vec::new();
+  let mut cursor: Option<i64> = None;
+  loop {
+    let page = fetch_page(cursor).await?;
+    all.extend(page.characters);
+    match page.next_cursor {
+      Some(next) if Some(next) != cursor => cursor = Some(next),
+      _ => return Ok(all),
+    }
+  }
+}
+
 fn store_session(root: &Path, creds: &Arc<RwLock<Option<Credentials>>>, session: String) {
   let visitor = creds.read().ok().and_then(|c| c.as_ref().and_then(|c| c.visitor.clone()));
-  let new = Credentials { session, visitor };
+  let new = Credentials { session, visitor, signed_out: false };
   session::save(root, &new);
   if let Ok(mut c) = creds.write() {
     *c = Some(new);
@@ -976,6 +992,31 @@ mod tests {
     assert_eq!(body_message(r#"{"message":"Origin is not allowed"}"#).as_deref(), Some("Origin is not allowed"));
     assert_eq!(body_message("<html>502</html>"), None);
     assert_eq!(api_error_message(&ApiError::PaymentRequired("{}".into())), "You don't have enough credits for this.");
+  }
+
+  #[test]
+  fn a_failed_character_page_fails_the_whole_load() {
+    let rt = tokio::runtime::Builder::new_current_thread().build().expect("runtime");
+    let page = |names: &[&str], next: Option<i64>| CharactersPage { success: true, characters: names.iter().map(|n| wire::Character { token: format!("t_{n}"), name: (*n).into(), ..Default::default() }).collect(), next_cursor: next };
+    // Page 1 loads, page 2 fails: the app must not be handed page 1 as if it were everything.
+    let broken = rt.block_on(collect_characters(|cursor| {
+      let result = match cursor {
+        None => Ok(page(&["Ann"], Some(7))),
+        Some(_) => Err("HTTP 502".to_owned()),
+      };
+      async move { result }
+    }));
+    assert_eq!(broken.err().as_deref(), Some("HTTP 502"));
+    // All pages loaded: every character, in order, and a repeated cursor ends the loop.
+    let whole = rt.block_on(collect_characters(|cursor| {
+      let result = match cursor {
+        None => Ok(page(&["Ann"], Some(7))),
+        Some(7) => Ok(page(&["Bob"], Some(7))),
+        Some(_) => Err("unexpected".to_owned()),
+      };
+      async move { result }
+    }));
+    assert_eq!(whole.unwrap().iter().map(|c| c.name.as_str()).collect::<Vec<_>>(), ["Ann", "Bob"]);
   }
 
   #[test]

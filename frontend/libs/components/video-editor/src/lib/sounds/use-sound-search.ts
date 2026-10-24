@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSoundsStore } from "./sounds-store";
 import { EditorCore } from "../core";
 
@@ -31,9 +31,16 @@ export function useSoundSearch({
     resetPagination,
   } = useSoundsStore();
 
+  // The search the user is looking at right now. A "load more" that finishes
+  // after the query or filter changed belongs to the old search and is dropped.
+  const searchKey = `${query}|${commercialOnly}`;
+  const latestSearchKeyRef = useRef(searchKey);
+  latestSearchKeyRef.current = searchKey;
+
   const loadMore = async () => {
     if (isLoadingMore || !hasNextPage) return;
 
+    const requestKey = searchKey;
     try {
       setLoadingMore({ loading: true });
       const nextPage = currentPage + 1;
@@ -43,6 +50,8 @@ export function useSoundSearch({
         page: nextPage,
         commercialOnly,
       });
+
+      if (requestKey !== latestSearchKeyRef.current) return;
 
       if (query.trim()) {
         appendSearchResults({ results: data.results });

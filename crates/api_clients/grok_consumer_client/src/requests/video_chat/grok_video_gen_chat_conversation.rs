@@ -161,7 +161,8 @@ impl <'a> GrokVideoGenChatConversationBuilder<'a> {
     }
 
     // TODO: Just for now...
-    println!("Video Body: {:?}", response_body);
+    // println! is forbidden outside tests (AGENTS.md); use log macros.
+    debug!("Video Body: {:?}", response_body);
 
     let file_id = parse_video_id(&response_body);
 
@@ -230,8 +231,10 @@ impl <'a> GrokVideoGenChatConversationBuilder<'a> {
 
     let media_url = match self.media_type {
       VideoMediaPostType::UserUploadedImage => user_and_file_id_to_image_url(self.user_id, self.file_id),
-      VideoMediaPostType::GrokGeneratedImage => unimplemented!("implement for generated images"),
-      VideoMediaPostType::Video => unimplemented!("implement for videos"),
+      // Not implemented yet: return an error instead of panicking the caller.
+      VideoMediaPostType::GrokGeneratedImage | VideoMediaPostType::Video => {
+        return Err(GrokClientError::UnsupportedMediaPostType);
+      }
     };
 
     let mode_string = self.mode

@@ -54,11 +54,16 @@ export const isJobStatusError = (curr: JobStatus) => {
   return false;
 };
 
+// A name with no "." (lastIndexOf === -1) has no extension: the whole name is
+// the file name. Before this guard substring(0, -1) returned "" and
+// substring(-1) returned the whole name as the "extension".
 export const getFileName = (file: File) => {
-  return file.name.substring(0, file.name.lastIndexOf("."));
+  const dot = file.name.lastIndexOf(".");
+  return dot === -1 ? file.name : file.name.substring(0, dot);
 };
 export const getFileExtension = (file: File) => {
-  return file.name.substring(file.name.lastIndexOf("."));
+  const dot = file.name.lastIndexOf(".");
+  return dot === -1 ? "" : file.name.substring(dot);
 };
 
 export const getFileTypesFromEnum = (enumOfTypes: object) => {

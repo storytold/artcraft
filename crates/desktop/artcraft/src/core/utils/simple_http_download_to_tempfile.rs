@@ -16,7 +16,8 @@ pub async fn simple_http_download_to_tempfile(url: &Url, temp_file: &mut NamedTe
       .header("User-Agent", USER_AGENT)
       .header("Accept", "*/*")
       .send()
-      .await?;
+      .await?
+      .error_for_status()?; // WHY: don't write an HTTP error body to the temp file as media.
 
   let bytes = response.bytes().await?;
 
