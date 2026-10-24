@@ -1,4 +1,4 @@
-import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
+import { MediaFilesApi } from "@storyteller/api";
 import { authentication } from "~/signals";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { UserInfo } from "~/models";
@@ -164,12 +164,11 @@ describe("MediaFilesApi", () => {
         mediaTokens: ["t1", "t2", "t3"],
       });
       expect(mediaFilesApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/media_files/batch",
+        // The backend wants a repeated query param, not one comma-joined value.
+        "http://localhost:3000/v1/media_files/batch?tokens=t1&tokens=t2&tokens=t3",
         {
           method: "GET",
-          query: {
-            tokens: "t1,t2,t3",
-          },
+          query: undefined,
         },
       );
       expect(response).toEqual({
@@ -188,12 +187,11 @@ describe("MediaFilesApi", () => {
         mediaTokens: ["t1", "t2", "t3"],
       });
       expect(mediaFilesApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/media_files/batch",
+        // The backend wants a repeated query param, not one comma-joined value.
+        "http://localhost:3000/v1/media_files/batch?tokens=t1&tokens=t2&tokens=t3",
         {
           method: "GET",
-          query: {
-            tokens: "t1,t2,t3",
-          },
+          query: undefined,
         },
       );
       expect(response).toEqual({
@@ -415,12 +413,16 @@ describe("MediaFilesApi", () => {
         results: [mediaFile],
         success: true,
       });
-      const response = await mediaFilesApi.ListUserMediaFiles({});
+      const response = await mediaFilesApi.ListUserMediaFiles({
+        username: "un1",
+      });
       expect(mediaFilesApi.fetch).toHaveBeenCalledWith(
         "http://localhost:3000/v1/media_files/list/user/un1",
         {
           method: "GET",
           query: {
+            username: "un1",
+            include_user_uploads: undefined,
             filter_engine_categories: undefined,
             filter_media_classes: undefined,
             filter_media_type: undefined,
@@ -448,6 +450,7 @@ describe("MediaFilesApi", () => {
         success: true,
       });
       const response = await mediaFilesApi.ListUserMediaFiles({
+        username: "un1",
         page_size: 22,
         filter_engine_categories: [
           FilterEngineCategories.ANIMATION,
@@ -459,6 +462,8 @@ describe("MediaFilesApi", () => {
         {
           method: "GET",
           query: {
+            username: "un1",
+            include_user_uploads: undefined,
             filter_engine_categories: "animation,character",
             filter_media_classes: undefined,
             filter_media_type: undefined,
@@ -487,6 +492,7 @@ describe("MediaFilesApi", () => {
         success: true,
       });
       const response = await mediaFilesApi.ListUserMediaFiles({
+        username: "un1",
         sort_ascending: true,
         page_index: 8,
         filter_media_classes: [FilterMediaClasses.AUDIO],
@@ -497,6 +503,8 @@ describe("MediaFilesApi", () => {
         {
           method: "GET",
           query: {
+            username: "un1",
+            include_user_uploads: undefined,
             filter_engine_categories: undefined,
             filter_media_classes: "audio",
             filter_media_type: "glb,gltf",
@@ -521,6 +529,7 @@ describe("MediaFilesApi", () => {
         .spyOn(mediaFilesApi, "fetch")
         .mockRejectedValue(new Error("server error"));
       const response = await mediaFilesApi.ListUserMediaFiles({
+        username: "un1",
         sort_ascending: true,
         page_index: 8,
         filter_media_classes: [FilterMediaClasses.AUDIO],
@@ -531,6 +540,8 @@ describe("MediaFilesApi", () => {
         {
           method: "GET",
           query: {
+            username: "un1",
+            include_user_uploads: undefined,
             filter_engine_categories: undefined,
             filter_media_classes: "audio",
             filter_media_type: "glb,gltf",
@@ -711,7 +722,7 @@ describe("MediaFilesApi", () => {
         name: "new name",
       });
       expect(mediaFilesApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/media_file/rename/mt1",
+        "http://localhost:3000/v1/media_files/rename/mt1",
         {
           method: "POST",
           body: { name: "new name" },
@@ -734,7 +745,7 @@ describe("MediaFilesApi", () => {
         name: "new name",
       });
       expect(mediaFilesApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/media_file/rename/mt1",
+        "http://localhost:3000/v1/media_files/rename/mt1",
         {
           method: "POST",
           body: { name: "new name" },
@@ -757,7 +768,7 @@ describe("MediaFilesApi", () => {
         name: "new name",
       });
       expect(mediaFilesApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/media_file/rename/mt1",
+        "http://localhost:3000/v1/media_files/rename/mt1",
         {
           method: "POST",
           body: { name: "new name" },

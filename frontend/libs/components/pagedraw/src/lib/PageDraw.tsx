@@ -39,6 +39,8 @@ import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
+// Picks the sentence for the "could not start the generation" toast out of whatever the enqueue rejected with.
+import { enqueueFailureMessage } from "./utilities/enqueueFailureMessage";
 import {
   render3DModelToDataUrl,
   DEFAULT_MODEL3D_PARAMS,
@@ -52,6 +54,17 @@ import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
+
+// Toast sentences for the three ways pressing Generate can fail before a job exists. Without them the person saw nothing:
+// the button just became clickable again.
+// The canvas could not be baked into a PNG (worker error, or the paint surface is not ready).
+const CANVAS_BAKE_FAILED_MESSAGE =
+  "Couldn't capture your canvas. Please try again.";
+// The baked PNG could not be uploaded as the scene snapshot (offline, signed out, server error).
+const SNAPSHOT_UPLOAD_FAILED_MESSAGE =
+  "Couldn't upload your canvas. Please try again.";
+// The enqueue call itself rejected and gave no usable message of its own.
+const GENERATE_FAILED_MESSAGE = "Failed to generate image";
 
 // Order the shape hotkey cycles through (matches the submenu's visual order).
 const SHAPE_CYCLE = ["rectangle", "circle", "triangle"] as const;
@@ -890,6 +903,8 @@ const PageDraw = ({
 
           if (!compositeFile) {
             console.error("Failed to create composite canvas");
+            // Tell the person: before this the button silently re-enabled and nothing was generated.
+            toast.error(CANVAS_BAKE_FAILED_MESSAGE);
             return;
           }
 
@@ -900,6 +915,8 @@ const PageDraw = ({
 
           if (!snapshotResult.success || !snapshotResult.data) {
             console.error("Failed to upload scene snapshot");
+            // Same silence as above for a refused snapshot upload (offline, signed out, server error).
+            toast.error(SNAPSHOT_UPLOAD_FAILED_MESSAGE);
             return;
           }
 
@@ -924,6 +941,8 @@ const PageDraw = ({
 
           if (!compositeFile) {
             console.error("Failed to create composite canvas");
+            // Tell the person: before this the button silently re-enabled and nothing was generated.
+            toast.error(CANVAS_BAKE_FAILED_MESSAGE);
             return;
           }
 
@@ -934,6 +953,8 @@ const PageDraw = ({
 
           if (!snapshotResult.success || !snapshotResult.data) {
             console.error("Failed to upload scene snapshot");
+            // Same silence as above for a refused snapshot upload (offline, signed out, server error).
+            toast.error(SNAPSHOT_UPLOAD_FAILED_MESSAGE);
             return;
           }
 
@@ -957,6 +978,12 @@ const PageDraw = ({
         if (result?.status === "success") {
           addPendingGeneration(subscriberId, generationCount);
         }
+      } catch (error) {
+        // The enqueue (or the snapshot upload / mask read before it) rejected: signed out, no provider, bad input,
+        // server error, offline. Without this catch the rejection escaped as an unhandled promise rejection and the
+        // person saw nothing. Log for developers, then show the person the reason (or a plain fallback).
+        console.error("Draw page: generation failed to start:", error);
+        toast.error(enqueueFailureMessage(error, GENERATE_FAILED_MESSAGE));
       } finally {
         generateInFlightRef.current = false;
         setIsGenerating(false);

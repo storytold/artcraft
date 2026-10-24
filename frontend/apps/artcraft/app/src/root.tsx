@@ -1,4 +1,4 @@
-import { LinksFunction } from "@remix-run/deno";
+import type { LinksFunction } from "@remix-run/node";
 import { posthog } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import {

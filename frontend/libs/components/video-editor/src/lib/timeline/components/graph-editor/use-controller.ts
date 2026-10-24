@@ -56,6 +56,13 @@ export function useGraphEditorController() {
     hasPreviewRef.current = false;
   }, [editor]);
 
+  // FIX: the preview lives in the shared editor, not in this hook, so
+  // unmounting mid-drag left it applied and a later commitPreview() from
+  // another tool would save the half-dragged curve. discardPreview() is
+  // already guarded by hasPreviewRef, so this is a no-op when nothing is
+  // live (including React StrictMode's mount/cleanup/mount).
+  useEffect(() => discardPreview, [discardPreview]);
+
   useEffect(() => {
     if (hasPreviewRef.current && previousStateKeyRef.current !== stateKey) {
       discardPreview();

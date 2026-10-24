@@ -83,11 +83,14 @@ export const markdownToHtml = (
   // Parse size string like "300" or "400x300"
   const parseSize = (sizeStr: string): { width?: string; height?: string } => {
     if (!sizeStr) return {};
-    const parts = sizeStr.toLowerCase().split("x");
-    if (parts.length === 2) {
-      return { width: parts[0], height: parts[1] };
+    const size = sizeStr.trim().toLowerCase();
+    // FIX: this used to split on every "x", but "px" contains one: "40%x20px" lost its height and "300px" became
+    // a width of "300p" (rendered as "300ppx"). Only an "x" between two sizes separates width from height.
+    const sized = size.match(/^(\d*\.?\d+(?:px|%)?)x(\d*\.?\d+(?:px|%)?)$/);
+    if (sized) {
+      return { width: sized[1], height: sized[2] };
     }
-    return { width: parts[0] };
+    return { width: size };
   };
 
   // Render an image with optional size

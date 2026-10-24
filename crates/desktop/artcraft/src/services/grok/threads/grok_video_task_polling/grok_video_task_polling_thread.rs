@@ -1,6 +1,7 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
+use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::utils::auto_download::{auto_download_task, clear_auto_download_checkpoint};
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -17,7 +18,9 @@ use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_
 use cookie_store::cookie_store::CookieStore;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use grok_consumer_client::credentials::grok_full_credentials::GrokFullCredentials;
 use grok_consumer_client::error::grok_error::GrokError;
@@ -36,11 +39,12 @@ use sqlite_tasks::queries::list_tasks_by_provider_and_status::{list_tasks_by_pro
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs};
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
+use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::{upload_image_media_file_from_file, UploadImageFromFileArgs};
@@ -51,6 +55,12 @@ use artcraft_client::error::storyteller_error::StorytellerError;
 use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use url::Url;
+
+/// How many times a finished Grok video may fail to download/upload before the task is failed.
+const MAX_UPLOAD_ATTEMPTS: u32 = 5;
+
+/// How long a task may wait for its Grok post to appear before it is failed.
+const MAX_WAIT_FOR_POST: Duration = Duration::from_secs(30 * 60);
 
 pub async fn grok_video_task_polling_thread(
   app_handle: AppHandle,
@@ -85,6 +95,10 @@ async fn polling_loop(
   grok_creds: &GrokCredentialManager,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> AnyhowResult<()> {
+  // FIX: remembers failed uploads across polling cycles so a permanently broken video can be given up on.
+  let mut upload_failures = UploadFailureCounts::default();
+  let mut missing_posts = MissingPostTracker::default();
+
   loop {
     if !grok_creds.do_task_polling()? {
       tokio::time::sleep(std::time::Duration::from_millis(10_000)).await;
@@ -124,6 +138,8 @@ async fn polling_loop(
       &grok_full_creds,
       &storyteller_creds,
       local_tasks,
+      &mut upload_failures,
+      &mut missing_posts,
     ).await?;
 
     tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
@@ -138,6 +154,8 @@ async fn poll_grok_tasks(
   grok_full_creds: &GrokFullCredentials,
   storyteller_creds: &StorytellerCredentialSet,
   local_tasks: TaskList,
+  upload_failures: &mut UploadFailureCounts,
+  missing_posts: &mut MissingPostTracker,
 ) -> AnyhowResult<()> {
   let local_tasks = local_tasks.tasks;
 
@@ -182,10 +200,22 @@ async fn poll_grok_tasks(
     // TODO: Copy prompt from this.
     let grok_video_data = match grok_video_posts_by_id.get(grok_post_id) {
       Some(video_data) => video_data,
-      None => continue,
+      None => {
+        // FIX: a task whose Grok post never shows up (Grok-side failure, or the post fell off the first page of
+        // results) used to stay pending forever. Fail it once it has waited MAX_WAIT_FOR_POST.
+        let task_id = local_task.id.to_string();
+        if missing_posts.is_overdue(&task_id, Instant::now()) {
+          fail_grok_video_task(app_handle, task_database, local_task, "Grok did not return the video").await;
+          missing_posts.clear(&task_id);
+        }
+        continue;
+      }
     };
+    missing_posts.clear(&local_task.id.to_string());
 
-    upload_grok_video(
+    // FIX: one task that fails to download or upload used to abort the whole batch with `?`, so every other
+    // finished video waited behind it. Log the failure and carry on with the next task.
+    if let Err(err) = upload_grok_video(
       &app_handle,
       &app_env_configs,
       app_data_root,
@@ -195,7 +225,17 @@ async fn poll_grok_tasks(
       grok_post_id,
       &local_task,
       grok_video_data
-    ).await?;
+    ).await {
+      error!("Failed to upload Grok video for post {}: {:?}", grok_post_id, err);
+      // FIX: such a task used to be retried every cycle forever and stayed pending in the queue. After
+      // MAX_UPLOAD_ATTEMPTS failures, fail it so the user sees the problem and the queue can drain.
+      if upload_failures.record_failure(&local_task.id.to_string()) {
+        fail_grok_video_task(app_handle, task_database, local_task, "Grok video could not be downloaded").await;
+        upload_failures.clear(&local_task.id.to_string());
+      }
+      continue;
+    }
+    upload_failures.clear(&local_task.id.to_string());
 
     tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
   }
@@ -368,4 +408,119 @@ async fn upload_grok_video(
   //}
 
   Ok(())
+}
+
+/// Counts upload failures per local task id across polling cycles.
+#[derive(Default)]
+struct UploadFailureCounts(HashMap<String, u32>);
+
+impl UploadFailureCounts {
+  /// Records one failure. Returns true once the task has failed `MAX_UPLOAD_ATTEMPTS` times.
+  fn record_failure(&mut self, task_id: &str) -> bool {
+    let count = self.0.entry(task_id.to_string()).or_insert(0);
+    *count += 1;
+    *count >= MAX_UPLOAD_ATTEMPTS
+  }
+
+  fn clear(&mut self, task_id: &str) {
+    self.0.remove(task_id);
+  }
+}
+
+/// Remembers when each task was first seen without a Grok post.
+#[derive(Default)]
+struct MissingPostTracker(HashMap<String, Instant>);
+
+impl MissingPostTracker {
+  /// Notes that the task has no post right now. Returns true once it has been missing for `MAX_WAIT_FOR_POST`.
+  fn is_overdue(&mut self, task_id: &str, now: Instant) -> bool {
+    let first_missing = *self.0.entry(task_id.to_string()).or_insert(now);
+    now.duration_since(first_missing) >= MAX_WAIT_FOR_POST
+  }
+
+  fn clear(&mut self, task_id: &str) {
+    self.0.remove(task_id);
+  }
+}
+
+/// Marks the local task failed and tells the frontend. Best effort: it only logs if the update fails.
+async fn fail_grok_video_task(
+  app_handle: &AppHandle,
+  task_database: &TaskDatabase,
+  task: &Task,
+  reason: &str,
+) {
+  if let Err(err) = update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
+    db: task_database.get_connection(),
+    task_id: &task.id,
+    status: TaskStatus::CompleteFailure,
+    maybe_failure_type: Some(TaskFailureType::GenerationFailed),
+    maybe_failure_message: Some(reason),
+  }).await {
+    error!("Failed to mark Grok video task {} as failed: {:?}", task.id, err);
+  }
+
+  GenerationFailedEvent {
+    action: GenerationAction::GenerateVideo,
+    service: GenerationServiceProvider::Grok,
+    model: None,
+    reason: Some(reason.to_string()),
+  }.send_infallible(app_handle);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn a_task_is_given_up_on_after_the_maximum_number_of_failures() {
+    let mut counts = UploadFailureCounts::default();
+    for _ in 1..MAX_UPLOAD_ATTEMPTS {
+      assert!(!counts.record_failure("task_1"));
+    }
+    assert!(counts.record_failure("task_1"));
+  }
+
+  #[test]
+  fn failures_are_counted_per_task() {
+    let mut counts = UploadFailureCounts::default();
+    for _ in 1..MAX_UPLOAD_ATTEMPTS {
+      counts.record_failure("task_1");
+    }
+    assert!(!counts.record_failure("task_2"));
+  }
+
+  #[test]
+  fn clearing_resets_the_count() {
+    let mut counts = UploadFailureCounts::default();
+    for _ in 1..MAX_UPLOAD_ATTEMPTS {
+      counts.record_failure("task_1");
+    }
+    counts.clear("task_1");
+    assert!(!counts.record_failure("task_1"));
+  }
+
+  #[test]
+  fn a_task_is_not_overdue_the_first_time_its_post_is_missing() {
+    let mut tracker = MissingPostTracker::default();
+    assert!(!tracker.is_overdue("task_1", Instant::now()));
+  }
+
+  #[test]
+  fn a_task_becomes_overdue_after_waiting_too_long() {
+    let mut tracker = MissingPostTracker::default();
+    let start = Instant::now();
+    tracker.is_overdue("task_1", start);
+    assert!(!tracker.is_overdue("task_1", start + MAX_WAIT_FOR_POST - Duration::from_secs(1)));
+    assert!(tracker.is_overdue("task_1", start + MAX_WAIT_FOR_POST));
+  }
+
+  #[test]
+  fn clearing_restarts_the_wait() {
+    let mut tracker = MissingPostTracker::default();
+    let start = Instant::now();
+    tracker.is_overdue("task_1", start);
+    tracker.clear("task_1");
+    assert!(!tracker.is_overdue("task_1", start + MAX_WAIT_FOR_POST));
+  }
 }

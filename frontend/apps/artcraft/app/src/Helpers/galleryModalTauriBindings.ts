@@ -10,7 +10,12 @@ export const galleryModalSubscribeToMediaEvents = (handlers: {
   const unlistenGen = listen("generation-complete-event", () => {
     handlers.onGenerationComplete();
   });
-  const unlistenDel = listen<any>("media_file_deleted_event", (event) => {
+  // The payload arrives either wrapped in `data` or bare, depending on the emitter.
+  type MediaDeletedPayload = {
+    data?: { media_file_token?: string };
+    media_file_token?: string;
+  };
+  const unlistenDel = listen<MediaDeletedPayload>("media_file_deleted_event", (event) => {
     const token: string | undefined =
       event?.payload?.data?.media_file_token ??
       event?.payload?.media_file_token;

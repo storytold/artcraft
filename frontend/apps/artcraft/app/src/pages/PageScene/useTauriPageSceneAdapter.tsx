@@ -128,16 +128,8 @@ const loadSceneState = async (
   if (response.status > 200) throw new Error("Failed to load scene");
 
   const json = await response.json();
-  if (json?.media_file) {
-    if (json.media_file.maybe_title === null) {
-      console.warn(`Scene /w Token: ${scene_media_file_token} has no title`);
-    }
-    signalScene({
-      title: json.media_file.maybe_title || "Untitled Scene",
-      token: scene_media_file_token || undefined,
-      ownerToken: json.media_file.maybe_creator_user.user_token,
-      isModified: false,
-    });
+  if (json?.media_file?.maybe_title === null) {
+    console.warn(`Scene /w Token: ${scene_media_file_token} has no title`);
   }
   const bucket_path = json["media_file"]["public_bucket_path"];
   const media_url = `${GetCdnOrigin()}${bucket_path}`;
@@ -145,13 +137,24 @@ const loadSceneState = async (
   const file_response = await fetch(media_url);
   if (!file_response.ok) throw new Error("Failed to download file");
 
-  const blob = await file_response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(JSON.parse(reader.result as string));
-    reader.onerror = reject;
-    reader.readAsText(blob);
-  });
+  // Parse directly rather than inside a FileReader callback: a JSON.parse
+  // throw inside onloadend was never caught, so a corrupt scene file left this
+  // promise pending forever (the loader hung instead of reporting an error).
+  const sceneJson = JSON.parse(await file_response.text());
+
+  // WHY: signal the title/token only now that the scene file is in hand. The header and the Save button take the
+  // open scene's token from this signal, so announcing it before the download meant a failed download (offline,
+  // CDN error, corrupt file) left the editor holding the previous scene (or an empty one) under the NEW scene's
+  // token, and the next Save wrote that content over the scene the user had tried to open.
+  if (json?.media_file) {
+    signalScene({
+      title: json.media_file.maybe_title || "Untitled Scene",
+      token: scene_media_file_token || undefined,
+      ownerToken: json.media_file.maybe_creator_user?.user_token,
+      isModified: false,
+    });
+  }
+  return sceneJson;
 };
 
 // — Hook ──────────────────────────────────────────────────────────────
@@ -202,21 +205,34 @@ export const useTauriPageSceneAdapter = (
 
         if (uploadSceneResponse["success"] === false) return "";
 
+        // WHY: an update response may omit media_file_token; the scene being
+        // updated is then identified by the token we were given. Without this
+        // the cover call hit cover_image/undefined and saveScene returned
+        // undefined for a scene that did save.
+        const savedSceneToken: string =
+          uploadSceneResponse["media_file_token"] ?? sceneToken;
+
         if (sceneThumbnail) {
-          const image_resp = await uploadSceneCoverImage(
-            sceneThumbnail,
-            "render.png",
-          );
-          if (image_resp["success"] === false) return "";
-          if (image_resp["media_file_token"]) {
-            await setSceneCoverImage(
-              uploadSceneResponse["media_file_token"],
-              image_resp["media_file_token"],
+          // WHY: the scene is already saved at this point, so a cover-image
+          // failure (upload throws on !ok) must not make saveScene report the
+          // whole save as failed. Swallow it and still return the token.
+          try {
+            const image_resp = await uploadSceneCoverImage(
+              sceneThumbnail,
+              "render.png",
             );
+            if (image_resp["success"] !== false && image_resp["media_file_token"]) {
+              await setSceneCoverImage(
+                savedSceneToken,
+                image_resp["media_file_token"],
+              );
+            }
+          } catch (error) {
+            console.warn("Scene saved, but setting its cover image failed", error);
           }
         }
 
-        return uploadSceneResponse["media_file_token"];
+        return savedSceneToken;
       },
 
       loadScene: loadSceneState,
@@ -299,7 +315,13 @@ export const useTauriPageSceneAdapter = (
         const response = await mediaFilesApi.GetMediaFileByToken({
           mediaFileToken: token,
         });
-        return response.data!.media_links.cdn_url;
+        // WHY: a failed lookup has no data; the old non-null assertion threw
+        // an opaque TypeError. Name the token so the failure is diagnosable.
+        const cdnUrl = response.data?.media_links?.cdn_url;
+        if (!cdnUrl) {
+          throw new Error(`Failed to look up media file for token: ${token}`);
+        }
+        return cdnUrl;
       },
 
       // Batch URL resolution via GET /v1/media_files/batch — backs the

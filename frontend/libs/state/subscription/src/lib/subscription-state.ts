@@ -39,6 +39,11 @@ export type SubscriptionActions = {
   reset: () => void
 };
 
+// Monotonic request id. A slow older response (or one that was in flight when
+// reset() ran on logout) must not overwrite newer state or resurrect the
+// previous user's subscription.
+let fetchToken = 0;
+
 export const useSubscriptionState = create<SubscriptionState & SubscriptionActions>((set, get) => ({
   subscriptionInfo: undefined,
 
@@ -54,19 +59,25 @@ export const useSubscriptionState = create<SubscriptionState & SubscriptionActio
         && info?.subscriptionEndAt === undefined;
   },
 
-  reset: () => set({ subscriptionInfo: undefined }),
+  reset: () => {
+    // Invalidate any in-flight fetch so it can't repopulate after logout.
+    fetchToken += 1;
+    set({ subscriptionInfo: undefined });
+  },
 
   // Call to fetch credits from the server
   fetchFromServer: async () => {
+    const myToken = ++fetchToken;
     let data;
     try {
-      data = await ArtcraftGetSubscription(); 
+      data = await ArtcraftGetSubscription();
     } catch (error) {
       console.error("Error fetching subscription", error);
       return;
     }
+    if (myToken !== fetchToken) return;
     console.log("Fetched subscription from server: ", data);
-    if (!!data.payload) {
+    if (!!data?.payload) {
       let activeSubscription = undefined;
       if (!!data.payload.active_subscription) {
         activeSubscription = {

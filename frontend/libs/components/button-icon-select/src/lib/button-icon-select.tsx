@@ -28,9 +28,13 @@ export function ButtonIconSelect({
     selectedOption || options[0].value
   );
 
+  // BUG FIX: this used to depend on `options` and always reset. Callers that
+  // pass an inline options array (new identity every render) and no
+  // `selectedOption` had the user's click undone by the re-render that
+  // onOptionChange triggers. Only sync when the parent controls the value.
   useEffect(() => {
-    setInternalSelectedOption(selectedOption || options[0].value);
-  }, [selectedOption, options]);
+    if (selectedOption) setInternalSelectedOption(selectedOption);
+  }, [selectedOption]);
 
   const handleOptionChange = (value: string) => {
     setInternalSelectedOption(value);

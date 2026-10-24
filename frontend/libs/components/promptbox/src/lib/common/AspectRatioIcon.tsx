@@ -10,6 +10,7 @@ import { SizeIconOption } from "@storyteller/model-list";
  *   - `commonAspectRatio` — CommonAspectRatio enum (image models)
  *   - `sizeIcon` — SizeIconOption enum (video models)
  */
+// A tiny outline rectangle drawn in the same proportions as the ratio it stands for (a wide ratio gives a wide box).
 export const AspectRatioIcon = ({
   ratio,
   commonAspectRatio,
@@ -21,22 +22,30 @@ export const AspectRatioIcon = ({
   sizeIcon?: SizeIconOption;
   size?: number;
 }) => {
+  // rw and rh are the width and height proportions to draw, taken from whichever input was supplied.
   let rw: number;
   let rh: number;
 
   if (ratio) {
+    // Input 1: a raw [width, height] pair.
     [rw, rh] = ratio;
   } else if (commonAspectRatio !== undefined) {
+    // Input 2: an image-model ratio, looked up in commonAspectRatioToProportions below.
     [rw, rh] = commonAspectRatioToProportions(commonAspectRatio);
   } else if (sizeIcon !== undefined) {
+    // Input 3: a video-model size icon, looked up in sizeIconToProportions below.
     [rw, rh] = sizeIconToProportions(sizeIcon);
   } else {
+    // Nothing supplied: draw a default wide box.
     [rw, rh] = [16, 10];
   }
 
+  // Shrink or grow the proportions so the longer side fills the icon, leaving 1 px of margin each side.
   const scale = (size - 2) / Math.max(rw, rh);
+  // Final width and height in pixels, rounded so the lines stay sharp.
   const w = Math.round(rw * scale);
   const h = Math.round(rh * scale);
+  // Offsets that centre the box inside the icon square.
   const x = (size - w) / 2;
   const y = (size - h) / 2;
 
@@ -85,6 +94,7 @@ export const AutoIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+// Maps each image-model ratio to a [width, height] pair. Anything unknown falls back to a square.
 function commonAspectRatioToProportions(
   ratio: CommonAspectRatio,
 ): [number, number] {
@@ -134,6 +144,7 @@ function commonAspectRatioToProportions(
   }
 }
 
+// Maps each video-model size icon to a [width, height] pair. Anything unknown falls back to the wide default.
 function sizeIconToProportions(icon: SizeIconOption): [number, number] {
   switch (icon) {
     case SizeIconOption.Landscape16x9:

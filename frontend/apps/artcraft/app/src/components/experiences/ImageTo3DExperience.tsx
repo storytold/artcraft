@@ -412,8 +412,8 @@ export const ImageTo3DExperience = ({
             .map((img) => img.preview)
             .filter(Boolean) as string[],
           modelType:
-            (selectedWorldModel as any)?.tauriId ||
-            (SPLAT_MODELS[0] as any)?.tauriId ||
+            selectedWorldModel?.tauriId ||
+            SPLAT_MODELS[0]?.tauriId ||
             String(selectedWorldModel ?? SPLAT_MODELS[0]),
           timestamp: Date.now(),
         });
@@ -1212,6 +1212,8 @@ export const ImageTo3DExperience = ({
           >
             <XIcon  className="h-4 w-4" />
           </button>
+          {/* The click only stops the overlay's close-on-click from firing when the image itself is clicked. */}
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <img
             src={previewImage}
             alt="Preview"

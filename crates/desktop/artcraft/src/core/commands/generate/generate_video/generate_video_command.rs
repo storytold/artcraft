@@ -90,7 +90,8 @@ async fn generate_video_native(
 
       let mut status = CommandErrorStatus::ServerError;
       let mut error_type = TauriGenerateVideoErrorType::ServerError;
-      let mut error_message = "A server error occurred. Please try again. If it continues, please tell our staff about the problem.";
+      // FIX: the other credential, bad-input and billing errors used to get the generic "server error" text.
+      let mut error_message = err.user_message();
 
       match err {
         GenerateError::BadInput(BadInputReason::NoModelSpecified) => {

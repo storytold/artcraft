@@ -1,27 +1,36 @@
+// Zustand's create() builds a small shared store: any component can read it, and only the ones that read a changed field re-render.
 import { create } from "zustand";
+// The newer shared aspect-ratio, resolution and quality types from the model list (the image store uses them).
 import { CommonAspectRatio } from "@storyteller/model-list";
 import { CommonResolution } from "@storyteller/model-list";
 import { CommonQuality } from "@storyteller/model-list";
 
+// A reference image the user attached to a prompt (shown as a thumbnail, sent to the model as context).
 export interface RefImage {
+  // Unique id for this attachment; used as the React key and when removing it.
   id: string;
   /** Display thumbnail (downscaled object URL for uploads, CDN URL for
    *  library picks). Never sent to the backend — that's `mediaToken`. */
   url: string;
   /** Full-resolution URL for preview modals; falls back to `url`. */
   fullUrl?: string;
+  // The original file the user picked or dropped.
   file: File;
+  // The backend's id for the uploaded copy. This is what gets sent when generating.
   mediaToken: string;
 }
 
+// A reference video the user attached (video prompt box only).
 export interface RefVideo {
   id: string;
   url: string;
   file: File;
   mediaToken: string;
+  // How long the clip is, in seconds.
   duration: number; // seconds
 }
 
+// A reference audio clip the user attached (video and audio prompt boxes).
 export interface RefAudio {
   id: string;
   url: string;
@@ -31,9 +40,12 @@ export interface RefAudio {
 }
 
 // ----- 2D Prompt Box Store -----
+// The older three-way shape choice: wide (landscape), tall (portrait) or square.
 type AspectRatio = "wide" | "tall" | "square";
+// The older output-size presets.
 type Resolution = "1k" | "2k" | "4k";
 
+// Everything the 2D prompt box remembers: its values first, then one setter per value.
 export interface Prompt2DStore {
   prompt: string;
   aspectRatio: AspectRatio;
@@ -49,6 +61,7 @@ export interface Prompt2DStore {
   setGenerationCount: (count: number) => void;
 }
 
+// The store hook. Components read with usePrompt2DStore(selector) and write by calling the setters; the object below holds the starting values.
 export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
   prompt: "",
   aspectRatio: "wide",
@@ -56,6 +69,7 @@ export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
   useSystemPrompt: true,
   referenceImages: [],
   generationCount: 1,
+  // Each setter changes just one field: set() merges it into the state and notifies the components that read it.
   setPrompt: (prompt) => set({ prompt }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setResolution: (resolution) => set({ resolution }),
@@ -64,12 +78,14 @@ export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
   setGenerationCount: (generationCount) => set({ generationCount }),
 }));
 
+// The older name for the 2D store, kept as an alias so existing imports keep working.
 export { usePrompt2DStore as usePromptStore };
 
 // ----- 3D Prompt Box Store -----
 // Newest first; capped so the history popover stays tidy.
 const MAX_PROMPT_HISTORY = 20;
 
+// State for the 3D prompt box, plus a short history of earlier prompts.
 interface Prompt3DStore {
   prompt: string;
   resolution: Resolution;
@@ -83,6 +99,7 @@ interface Prompt3DStore {
   pushPromptHistory: (prompt: string) => void;
 }
 
+// The 3D store hook and its starting values.
 export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
   prompt: "",
   resolution: "1k",
@@ -93,9 +110,12 @@ export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
   setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
+  // Adds a prompt to the history, newest first, without duplicates and capped at MAX_PROMPT_HISTORY.
   pushPromptHistory: (prompt) =>
     set((state) => {
+      // Ignore leading and trailing spaces so "fox" and "fox " count as the same prompt.
       const trimmed = prompt.trim();
+      // A blank prompt is not worth remembering; returning the same state means nothing changes.
       if (!trimmed) return state;
       // De-dupe: drop any existing copy, then unshift so it's newest-first.
       const next = [
@@ -107,6 +127,7 @@ export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
 }));
 
 // ----- Image Prompt Box Store -----
+// State for the image prompt box. The commonAspectRatio / commonResolution / commonQuality fields are the newer values; the older aspectRatio / resolution remain for the code that still reads them.
 interface PromptImageStore {
   prompt: string;
   aspectRatio: AspectRatio;
@@ -129,6 +150,7 @@ interface PromptImageStore {
   setCommonQuality: (quality: CommonQuality | undefined) => void;
 }
 
+// The image store hook and its starting values (the newer common* values start unset, meaning "model default").
 export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   prompt: "",
   aspectRatio: "wide",
@@ -151,17 +173,21 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
 }));
 
 // ----- Video Prompt Box Store -----
+// keyframe = start and end frame images; reference = free-form reference images, videos and audio.
 export type VideoInputMode = "keyframe" | "reference";
 
+// State for the video prompt box. A null value (aspect ratio, duration, bitrate, output format) means "let the model decide".
 interface PromptVideoStore {
   prompt: string;
   resolution: Resolution | string;
   aspectRatio: string | null;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
+  // Optional last frame, used only in keyframe mode.
   endFrameImage?: RefImage;
   referenceVideos: RefVideo[];
   referenceAudios: RefAudio[];
+  // Whether the model should also produce an audio track.
   generateWithSound: boolean;
   duration: number | null;
   bitrate: string | null;
@@ -184,6 +210,7 @@ interface PromptVideoStore {
   setGenerationCount: (count: number) => void;
 }
 
+// The video store hook and its starting values.
 export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   prompt: "",
   resolution: "720p",
@@ -197,6 +224,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   duration: null,
   bitrate: null,
   outputFormat: null,
+  // New sessions start in reference mode.
   inputMode: "reference",
   generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
@@ -216,6 +244,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
 }));
 
 // ----- Audio Prompt Box Store -----
+// State for the audio (music and sound) prompt box.
 interface PromptAudioStore {
   prompt: string;
   // Style/genre direction (Suno's "tags").
@@ -253,6 +282,7 @@ interface PromptAudioStore {
   setReferenceImages: (images: RefImage[]) => void;
 }
 
+// The audio store hook and its starting values (no model chosen yet, tempo on Auto, normal speed and volume, no pitch shift).
 export const usePromptAudioStore = create<PromptAudioStore>()((set) => ({
   prompt: "",
   stylePrompt: "",
@@ -285,8 +315,10 @@ export const usePromptAudioStore = create<PromptAudioStore>()((set) => ({
 }));
 
 // ----- Edit Prompt Box Store -----
+// The edit box adds "auto", which keeps the shape of the source image.
 type EditAspectRatio = "auto" | "wide" | "tall" | "square";
 
+// State for the image-edit prompt box (no prompt text of its own here).
 interface PromptEditStore {
   referenceImages: RefImage[];
   aspectRatio: EditAspectRatio;
@@ -296,6 +328,7 @@ interface PromptEditStore {
   setResolution: (resolution: Resolution) => void;
 }
 
+// The edit store hook and its starting values.
 export const usePromptEditStore = create<PromptEditStore>()((set) => ({
   referenceImages: [],
   aspectRatio: "auto",
@@ -310,8 +343,10 @@ export const usePromptEditStore = create<PromptEditStore>()((set) => ({
 //   false (default): Both Enter and Shift+Enter insert a newline; only the button submits.
 //   true:            Enter submits; Shift+Enter inserts a newline.
 // Persisted to localStorage so the choice survives reloads.
+// The localStorage key the preference is saved under.
 const ENTER_TO_GENERATE_STORAGE_KEY = "artcraft_enter_to_generate";
 
+// Reads the saved choice. Falls back to off when there is no window (tests) or the browser blocks storage.
 const readEnterToGenerate = (): boolean => {
   if (typeof window === "undefined") return false;
   try {
@@ -321,6 +356,7 @@ const readEnterToGenerate = (): boolean => {
   }
 };
 
+// Saves the choice: stores "true" when on and removes the entry when off. A storage failure is ignored.
 const writeEnterToGenerate = (enabled: boolean) => {
   if (typeof window === "undefined") return;
   try {
@@ -334,11 +370,13 @@ const writeEnterToGenerate = (enabled: boolean) => {
   }
 };
 
+// Just the on / off flag and its setter.
 interface EnterToGenerateStore {
   enabled: boolean;
   setEnabled: (enabled: boolean) => void;
 }
 
+// The store hook. Its starting value is read from storage once, when this file first loads.
 export const useEnterToGenerateStore = create<EnterToGenerateStore>()((set) => ({
   enabled: readEnterToGenerate(),
   setEnabled: (enabled) => {
@@ -348,6 +386,7 @@ export const useEnterToGenerateStore = create<EnterToGenerateStore>()((set) => (
 }));
 
 // ----- Characters Store -----
+// One saved character as the prompt box needs it (its token, name and image links).
 export interface StoredCharacter {
   character_token: string;
   name: string;
@@ -355,6 +394,7 @@ export interface StoredCharacter {
   full_image_url?: string;
 }
 
+// The list of saved characters, with a flag saying whether the list has been fetched yet.
 interface CharactersStore {
   characters: StoredCharacter[];
   loaded: boolean;
@@ -364,16 +404,19 @@ interface CharactersStore {
   setLoaded: (loaded: boolean) => void;
 }
 
+// The characters store hook and its starting values (empty list, not loaded).
 export const useCharactersStore = create<CharactersStore>()((set) => ({
   characters: [],
   loaded: false,
   setCharacters: (characters) => set({ characters }),
+  // Merge the changed fields into the one character with this token and leave the others alone.
   updateCharacter: (token, updates) =>
     set((state) => ({
       characters: state.characters.map((c) =>
         c.character_token === token ? { ...c, ...updates } : c,
       ),
     })),
+  // Drop the character with this token from the list.
   removeCharacter: (token) =>
     set((state) => ({
       characters: state.characters.filter((c) => c.character_token !== token),

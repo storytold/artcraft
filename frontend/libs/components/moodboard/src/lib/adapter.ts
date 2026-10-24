@@ -65,6 +65,14 @@ export interface MoodboardAdapter {
    *  and persist beyond the blob URL. */
   uploadImage?: (file: File) => Promise<string | null>;
 
+  /** Turn a media token (from `uploadImage`) into a lasting display URL, or
+   *  null when it can't be found. A just-uploaded image is shown from a blob
+   *  URL that dies with the page and is not saved locally; when this is
+   *  provided the tile is switched to the lasting URL so the image is still
+   *  there after a restart. MUST NOT depend on a signed-in sync session. Omit
+   *  where the host keeps images another way (e.g. `persistence`). */
+  resolveMediaUrl?: (token: string) => Promise<string | null>;
+
   /** Push selected board images to the platform's generation surface
    *  (desktop: prompt store + tab switch; web: sessionStorage + route nav). */
   sendToGeneration: (refs: MoodboardReference[]) => void;

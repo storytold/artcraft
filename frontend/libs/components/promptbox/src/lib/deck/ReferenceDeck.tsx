@@ -1,4 +1,11 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -115,6 +122,25 @@ export const ReferenceDeck = ({
       setPanelMaxWidth(available > 120 ? available : undefined);
     }
   }, [expanded, alwaysExpanded]);
+
+  // FIX: an emptied deck swaps to the placeholder below, which unmounts the
+  // hovered root, so its mouseleave never fires and `hovered` stayed true
+  // (e.g. after "Clear all" or removing the last card). Adding a reference
+  // later then brought the deck back already expanded with the pointer
+  // elsewhere, and it stayed open until the user hovered in and out again.
+  // Drop the hover state (and any pending open/close timer) once it's empty.
+  useEffect(() => {
+    if (items.length > 0) return;
+    if (openTimer.current) {
+      clearTimeout(openTimer.current);
+      openTimer.current = null;
+    }
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setHovered(false);
+  }, [items.length]);
 
   const enabledActions = useMemo(
     () => addActions.filter((a) => !a.disabled),

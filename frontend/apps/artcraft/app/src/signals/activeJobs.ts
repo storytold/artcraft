@@ -8,7 +8,9 @@ import { isJobStatusTerminal } from "~/utilities";
 
 export const recentJobs = signal<Job[] | undefined>(undefined);
 export const setJobs = (newJobList: Job[]) => {
-  if (!deepEqual(setJobs, newJobList)) {
+  // compare against the stored list (not the setter function) so that an
+  // unchanged poll result does not trigger needless re-renders
+  if (!deepEqual(recentJobs.value, newJobList)) {
     recentJobs.value = [...newJobList];
   }
   //else, same list, do nothing.

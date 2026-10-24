@@ -23,7 +23,10 @@ function sanitizeNumericInput(input: string): number {
     return decimal;
   }
 
-  const integer = parseInt(integerPart);
+  // FIX: ".5" and "-.5" have no digits before the dot (or only a sign), so
+  // parseInt gave NaN and the whole result became NaN. Treat that as 0.
+  const integer =
+    integerPart === "" || integerPart === "-" ? 0 : parseInt(integerPart);
 
   if (decimalPart === undefined) {
     return integer;

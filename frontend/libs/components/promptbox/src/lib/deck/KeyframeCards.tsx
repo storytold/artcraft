@@ -10,6 +10,7 @@ import {
   DeckStyles,
 } from "./DeckCard";
 
+// What the parent supplies: the two frames, whether a last frame is allowed, an add menu and a remove callback for each, and an optional swap callback.
 interface KeyframeCardsProps {
   firstFrame?: DeckItem;
   lastFrame?: DeckItem;
@@ -40,6 +41,7 @@ export const KeyframeCards = ({
   onSwap,
   className,
 }: KeyframeCardsProps) => {
+  // The card the user clicked to enlarge, or null while the preview is closed.
   const [previewItem, setPreviewItem] = useState<DeckItem | null>(null);
 
   return (
@@ -49,8 +51,10 @@ export const KeyframeCards = ({
         className,
       )}
     >
+      {/* Adds the pop-in animation the cards use. */}
       <DeckStyles />
 
+      {/* The First frame slot; it tilts left only when a Last frame slot sits beside it. */}
       <DeckSlotCard
         item={firstFrame}
         label="First frame"
@@ -60,9 +64,12 @@ export const KeyframeCards = ({
         onPreview={setPreviewItem}
       />
 
+      {/* Only models that support an ending keyframe get the swap glyph and the Last frame slot. */}
       {showLastFrame && (
         <>
+          {/* The swap glyph between the two slots. */}
           <div className="z-10 -mx-1.5 flex items-center justify-center">
+            {/* A clickable swap button when both frames are set and the parent can swap them; otherwise a dimmed glyph that does nothing. */}
             {firstFrame && lastFrame && onSwap ? (
               <button
                 type="button"
@@ -79,6 +86,7 @@ export const KeyframeCards = ({
             )}
           </div>
 
+          {/* The Last frame slot, tilted right. */}
           <DeckSlotCard
             item={lastFrame}
             label="Last frame"
@@ -90,6 +98,7 @@ export const KeyframeCards = ({
         </>
       )}
 
+      {/* Full-screen preview of the clicked card. */}
       <DeckPreviewModal
         item={previewItem}
         onClose={() => setPreviewItem(null)}
@@ -119,9 +128,11 @@ export const DeckSlotCard = ({
   onRemove?: () => void;
   onPreview: (item: DeckItem) => void;
 }) => {
+  // The add actions that are not disabled.
   const enabledActions = addActions.filter((a) => !a.disabled);
 
   if (item) {
+    // Slot is filled: show the card with its label under it. The remove button is left off while the file is uploading.
     return (
       <div className="flex flex-col items-center gap-0.5">
         <DeckCard
@@ -137,6 +148,7 @@ export const DeckSlotCard = ({
     );
   }
 
+  // Slot is empty: a dashed plus button. Clicking it runs the first enabled action.
   const emptyCard = (
     <button
       type="button"
@@ -154,9 +166,11 @@ export const DeckSlotCard = ({
   );
 
   if (enabledActions.length === 0) {
+    // No action is available: the button is shown but clicking it does nothing.
     return emptyCard;
   }
 
+  // With several actions, hovering the button opens a menu of them; with one, clicking runs it directly.
   return enabledActions.length > 1 ? (
     <Tooltip
       interactive={true}

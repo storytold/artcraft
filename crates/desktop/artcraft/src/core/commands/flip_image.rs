@@ -6,7 +6,7 @@ use std::io::Cursor;
 
 #[tauri::command]
 pub fn flip_image(image: &str) -> Result<String, String> {
-  println!("infer_image called; processing image...");
+  log::debug!("flip_image called; processing image..."); // WHY: no println per AGENTS.md.
 
   let bytes = BASE64_STANDARD.decode(image)
     .map_err(|err| format!("Base64 decode error: {}", err))?;
@@ -30,7 +30,8 @@ pub fn flip_image(image: &str) -> Result<String, String> {
 
   let encoded = BASE64_STANDARD.encode(&buffer);
 
-  println!("Encoded: {:?}", encoded.split_at(10).0);
+  // WHY: println is forbidden (AGENTS.md); split_at(10) panics on short/non-boundary strings, so just log the length.
+  log::debug!("flip_image encoded {} base64 chars", encoded.len());
 
   Ok(encoded)
 }

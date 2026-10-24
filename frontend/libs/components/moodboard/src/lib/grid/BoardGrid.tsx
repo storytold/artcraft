@@ -86,6 +86,9 @@ export const BoardGrid = ({
     moved: boolean;
     additive: boolean;
   }>({ active: false, moved: false, additive: false });
+  // FIX: the live marquee rectangle, mirrored in a ref so pointer-release can
+  // read it WITHOUT going through a setMarquee updater (see the effect below).
+  const marqueeRectRef = useRef<Marquee | null>(null);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
@@ -220,44 +223,66 @@ export const BoardGrid = ({
       moved: false,
       additive: e.shiftKey || e.metaKey || e.ctrlKey,
     };
-    setMarquee({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
+    const start = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+    marqueeRectRef.current = start;
+    setMarquee(start);
   };
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (!marqueeRef.current.active) return;
+      const m = marqueeRectRef.current;
+      if (!m) return;
       const p = pointToContent(e.clientX, e.clientY);
-      setMarquee((m) => {
-        if (!m) return m;
-        if (
-          !marqueeRef.current.moved &&
-          (Math.abs(p.x - m.x0) > MARQUEE_THRESHOLD ||
-            Math.abs(p.y - m.y0) > MARQUEE_THRESHOLD)
-        ) {
-          marqueeRef.current.moved = true;
-        }
-        return { ...m, x1: p.x, y1: p.y };
-      });
+      if (
+        !marqueeRef.current.moved &&
+        (Math.abs(p.x - m.x0) > MARQUEE_THRESHOLD ||
+          Math.abs(p.y - m.y0) > MARQUEE_THRESHOLD)
+      ) {
+        marqueeRef.current.moved = true;
+      }
+      const next = { ...m, x1: p.x, y1: p.y };
+      marqueeRectRef.current = next;
+      setMarquee(next);
     };
     const onUp = () => {
       const st = marqueeRef.current;
       if (!st.active) return;
       marqueeRef.current.active = false;
-      setMarquee((m) => {
-        if (m && st.moved) {
-          const hit = intersectIds(layout, m);
-          onSelectMany(hit, st.additive);
-        } else if (!st.moved) {
-          onClearSelection();
-        }
-        return null;
-      });
+      const m = marqueeRectRef.current;
+      marqueeRectRef.current = null;
+      setMarquee(null);
+      // FIX: these parent callbacks used to run INSIDE the setMarquee updater.
+      // Updaters must be pure: React StrictMode invokes them twice (so the
+      // selection was applied twice), and a parent setState during another
+      // component's render triggers React's "cannot update a component while
+      // rendering a different component" warning. Call them here instead.
+      if (m && st.moved) {
+        const hit = intersectIds(layout, m);
+        onSelectMany(hit, st.additive);
+      } else if (!st.moved) {
+        onClearSelection();
+      }
+    };
+    // FIX: when the browser takes over the gesture (a touch drag on the
+    // scrollable canvas becomes a scroll, an OS interruption) it sends
+    // pointercancel and NEVER pointerup. The marquee used to stay "active", so
+    // the next unrelated pointerup anywhere (e.g. tapping a card) was taken for
+    // its release and cleared or replaced the selection. A cancel just drops
+    // the marquee without touching the selection.
+    const onCancel = () => {
+      if (!marqueeRef.current.active) return;
+      marqueeRef.current.active = false;
+      marqueeRectRef.current = null;
+      setMarquee(null);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
     };
   }, [layout, onSelectMany, onClearSelection]);
 

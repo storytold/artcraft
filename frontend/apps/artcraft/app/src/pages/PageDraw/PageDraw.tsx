@@ -138,7 +138,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
 
       uploadImage: UploadImageMedia,
 
-      onEnqueueMeta: (meta) => (window as any).__storeTaskEnqueueMeta?.(meta),
+      onEnqueueMeta: (meta) => window.__storeTaskEnqueueMeta?.(meta),
 
       renderBaseImageSelector: ({ onImageSelect, showLoading }) => (
         <BaseImageSelector

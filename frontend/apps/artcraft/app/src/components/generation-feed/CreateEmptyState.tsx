@@ -1,6 +1,11 @@
+// CreateEmptyState: the big "nothing here yet" title + subtitle panel shown on the create pages.
+// Used by DesktopCreatePageShell (image/video/audio pages), PageBackgroundChange and ImageTo3DExperience.
+// Pure presentation: no stores, no API calls.
+
 import { type ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
 
+// Tailwind position classes for the four decorative corner marks drawn around the panel.
 const CORNERS = [
   "top-0 left-0",
   "top-0 right-0",
@@ -8,6 +13,8 @@ const CORNERS = [
   "bottom-0 right-0",
 ];
 
+// title/subtitle are the headline and the line under it; children is optional extra content (e.g. buttons);
+// compact uses smaller type and padding; className is merged on top of the defaults.
 interface CreateEmptyStateProps {
   title: string;
   subtitle: string;

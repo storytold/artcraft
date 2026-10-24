@@ -76,3 +76,64 @@ impl CookieStore {
     SerializableCookieStore { cookies }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn adding_a_cookie_with_the_same_name_replaces_it() {
+    let mut store = CookieStore::empty();
+    store.add_cookie_name_and_value("session".to_string(), "old".to_string());
+    store.add_cookie_name_and_value("session".to_string(), "new".to_string());
+    assert_eq!(store.len(), 1);
+    assert_eq!(store.get_cookie("session").unwrap().value, "new");
+  }
+
+  #[test]
+  fn has_cookie_and_remove_cookie() {
+    let mut store = CookieStore::empty();
+    store.add_cookie_name_and_value("a".to_string(), "1".to_string());
+    assert!(store.has_cookie("a"));
+    assert!(!store.has_cookie("b"));
+    store.remove_cookie("a");
+    assert!(!store.has_cookie("a"));
+    store.remove_cookie("never-added"); // Removing a missing cookie does nothing.
+    assert_eq!(store.len(), 0);
+  }
+
+  #[test]
+  fn clear_all_removes_every_cookie() {
+    let mut store = CookieStore::empty();
+    store.add_cookie_name_and_value("a".to_string(), "1".to_string());
+    store.add_cookie_name_and_value("b".to_string(), "2".to_string());
+    store.clear_all();
+    assert_eq!(store.len(), 0);
+    assert_eq!(store.to_cookie_string(), "");
+  }
+
+  #[test]
+  fn cookie_string_joins_name_value_pairs_with_semicolons() {
+    let mut store = CookieStore::empty();
+    assert_eq!(store.to_cookie_string(), "");
+    store.add_cookie_name_and_value("a".to_string(), "1".to_string());
+    assert_eq!(store.to_cookie_string(), "a=1");
+    store.add_cookie_name_and_value("b".to_string(), "2".to_string());
+    // NB: The order of a HashMap is not defined, so compare as a set of pairs.
+    let string = store.to_cookie_string();
+    let mut pairs = string.split("; ").collect::<Vec<_>>();
+    pairs.sort();
+    assert_eq!(pairs, vec!["a=1", "b=2"]);
+  }
+
+  #[test]
+  fn serializable_form_keeps_every_cookie() {
+    let mut store = CookieStore::empty();
+    store.add_cookie_name_and_value("a".to_string(), "1".to_string());
+    store.add_cookie_name_and_value("b".to_string(), "2".to_string());
+    let serializable = store.to_serializable();
+    let mut cookies = serializable.cookies.iter().map(|c| (c.name.clone(), c.value.clone())).collect::<Vec<_>>();
+    cookies.sort();
+    assert_eq!(cookies, vec![("a".to_string(), "1".to_string()), ("b".to_string(), "2".to_string())]);
+  }
+}

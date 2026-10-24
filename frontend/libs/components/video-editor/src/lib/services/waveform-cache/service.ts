@@ -31,13 +31,23 @@ export class WaveformCache {
       return existing;
     }
 
-    const promise = this.buildSummary({
+    // Explicit type annotation so the catch callback below can refer to
+    // `promise` without TypeScript reporting a circular inferred type.
+    const promise: Promise<SourceWaveformSummary> = this.buildSummary({
       sourceKey,
       audioBuffer,
       sourceFile,
       audioUrl,
     }).catch((error) => {
-      this.summaries.delete(sourceKey);
+      // FIX: this rejection can arrive after clearSource()/clearAll() and a
+      // fresh getSourceSummary() already stored a NEWER promise under the same
+      // key. Deleting unconditionally evicted that newer, healthy entry, so the
+      // next caller re-decoded the audio for nothing. Only evict the entry if
+      // it is still THIS failed promise.
+      if (this.summaries.get(sourceKey) === promise) {
+        // Remove only our own failed entry from the cache map.
+        this.summaries.delete(sourceKey);
+      }
       throw error;
     });
 

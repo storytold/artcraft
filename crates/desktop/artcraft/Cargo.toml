@@ -70,6 +70,7 @@ serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
 tauri-plugin-dialog.workspace = true
+tauri-plugin-fs.workspace = true
 tauri-plugin-log.workspace = true
 tauri-plugin-upload.workspace = true
 tauri.workspace = true

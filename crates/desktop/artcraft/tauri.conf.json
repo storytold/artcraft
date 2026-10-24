@@ -42,7 +42,9 @@
           "https://*.clarity.ms",
           "https://*.fakeyou.com",
           "https://*.storyteller.ai",
+          "https://api.frankfurter.dev",
           "https://asset.localhost",
+          "https://getartcraft.com",
           "https://unpkg.com/detect-gpu@5.0.70/",
           "https://www.google-analytics.com",
           "https://www.googletagmanager.com",
@@ -50,6 +52,10 @@
           "tauri://localhost"
         ],
         "font-src": "*",
+        "frame-src": [
+          "'self'",
+          "https://www.youtube.com"
+        ],
         "img-src": [
           "",
           "'self'",
@@ -76,6 +82,7 @@
           "https://*.unpkg.com",
           "https://clarity.ms",
           "https://unpkg.com",
+          "https://www.youtube.com",
           "ipc://localhost",
           "tauri:",
           "tauri://localhost"

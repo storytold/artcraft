@@ -98,10 +98,17 @@ export class SoundManager {
   static async playGenerationFailure() { await this.playEvent("generation_failure_sound"); }
 
   private static async playEvent(prefKey: SoundPrefKey) {
-    const prefs = (await GetAppPreferences()).preferences;
-    if (!prefs?.play_sounds) return;
-    const soundName = prefs[prefKey];
-    if (!soundName) return;
-    SoundRegistry.getInstance().playSound(soundName);
+    // A sound is never worth failing for: callers await this right before
+    // showing a toast (generation/enqueue events), so a rejected preferences
+    // lookup used to swallow the notification. Fail silent instead.
+    try {
+      const prefs = (await GetAppPreferences()).preferences;
+      if (!prefs?.play_sounds) return;
+      const soundName = prefs[prefKey];
+      if (!soundName) return;
+      SoundRegistry.getInstance().playSound(soundName);
+    } catch {
+      // No sound this time.
+    }
   }
 }

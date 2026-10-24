@@ -1,3 +1,12 @@
+//! Ask fal how a queued job is doing (queued, running or finished).
+//!
+//! The desktop app's fal polling thread (`poll_fal_tasks.rs` under
+//! `crates/desktop/artcraft/.../third_party_task_polling_thread/handlers/fal/`) calls
+//! `poll_job_status` repeatedly with the status URL saved when the job was submitted
+//! (`QueueResponse::status_url`). Once the status is `Completed`, the caller fetches the
+//! actual output with `poll_job_response`.
+//! Talks to: GET https://queue.fal.run/<model>/requests/<id>/status
+
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::api_generic_error::FalGenericApiError;
 use crate::error::client_error::FalClientError;
@@ -6,13 +15,17 @@ use crate::polling::poll_job_status::raw_response::RawPollJobStatusResponse;
 use log::info;
 use url::Url;
 
+/// The only host we are willing to poll. We send the API key in a header, so refusing every
+/// other host stops a bad status URL from leaking the key to a stranger's server.
 const EXPECTED_HOST: &str = "queue.fal.run";
 
+/// Inputs for `poll_job_status`.
 pub struct PollJobStatusArgs<'a> {
-  /// This is the "status" URL, not the "response" URL. 
+  /// This is the "status" URL, not the "response" URL.
   /// This only gives us the progress of the job, not details of the final results upon completion.
   pub status_url: &'a str,
-  
+
+  /// The fal API key used to authorize the request.
   pub api_key: &'a FalApiKey,
 }
 
@@ -49,11 +62,15 @@ pub struct PollJobStatusResponse {
 /// Poll the status of a queued FAL job.
 ///
 /// The `status_url` must point to `queue.fal.run`.
+///
+/// Errors (all as `FalErrorPlus`): `UrlParseError` if `status_url` is not a URL;
+/// `ClientError(InvalidUrl)` if the host is not `queue.fal.run`; `ReqwestError` on a network
+/// failure; `ApiGeneric` if fal replies with a non-2xx status or a body we cannot parse.
 pub async fn poll_job_status(args: PollJobStatusArgs<'_>) -> Result<PollJobStatusResponse, FalErrorPlus> {
   let parsed = Url::parse(args.status_url)?;
 
   let host = parsed.host_str().unwrap_or("");
-  
+
   if host != EXPECTED_HOST {
     return Err(FalErrorPlus::ClientError(FalClientError::InvalidUrl(format!(
       "Expected host '{}' but got '{}' in status URL: {}",
@@ -91,6 +108,8 @@ pub async fn poll_job_status(args: PollJobStatusArgs<'_>) -> Result<PollJobStatu
       },
     ))?;
 
+  // Map fal's status strings to our enum; a status we have never seen is kept as `Unknown`
+  // rather than treated as an error, so a new fal state does not break polling.
   let status = match raw.status.as_str() {
     "IN_QUEUE" => FalJobStatus::InQueue,
     "IN_PROGRESS" => FalJobStatus::InProgress,

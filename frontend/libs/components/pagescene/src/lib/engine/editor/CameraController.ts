@@ -306,7 +306,13 @@ export class CameraController {
       const moved = freeCamFrameTick(
         this.camera,
         this.freeCamState,
-        5 * deltaSeconds,
+        // FIX: clamp the frame delta (0.1 s) so the first frame after a
+        // paused requestAnimationFrame (backgrounded tab) cannot fling a held
+        // movement key tens of units; the entrance animator clamps likewise.
+        5 * Math.min(deltaSeconds, 0.1),
+        // FIX: scale keyboard look by elapsed time (60 Hz-frame units, with
+        // the delta clamped so a hitch can't cause a huge snap turn).
+        Math.min(deltaSeconds, 0.1) * 60,
       );
       // Mirror the active camera's transform back into the store so
       // PromptBox3D and the camera-list UI stay in sync.

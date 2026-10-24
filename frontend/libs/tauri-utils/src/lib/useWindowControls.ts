@@ -15,37 +15,49 @@ export function useTauriWindowControls() {
     let unlistenMax: (() => void) | undefined;
     let unlistenUnmax: (() => void) | undefined;
     let unlistenResize: (() => void) | undefined;
+    // FIX: cleanup can run while the async setup below is still awaiting, in which
+    // case the unlisten fns were still undefined and the listeners leaked (and kept
+    // calling setState on an unmounted component). Bail out / unsubscribe once cancelled.
+    let cancelled = false;
 
     (async () => {
       try {
         const win = await getCurrentWindowSafe();
-        setIsMaximized(await win.isMaximized());
+        const maximized = await win.isMaximized();
+        if (cancelled) return;
+        setIsMaximized(maximized);
       } catch (err) {
         // ignore
       }
+      if (cancelled) return;
 
       try {
         const { listen } = await import("@tauri-apps/api/event");
         unlistenMax = await listen("tauri://maximize", () =>
           setIsMaximized(true)
         );
+        if (cancelled) { unlistenMax(); return; }
         unlistenUnmax = await listen("tauri://unmaximize", () =>
           setIsMaximized(false)
         );
+        if (cancelled) { unlistenUnmax(); return; }
         unlistenResize = await listen("tauri://resize", async () => {
           try {
             const win = await getCurrentWindowSafe();
-            setIsMaximized(await win.isMaximized());
+            const maximized = await win.isMaximized();
+            if (!cancelled) setIsMaximized(maximized);
           } catch (err) {
             // ignore
           }
         });
+        if (cancelled) { unlistenResize(); return; }
       } catch (err) {
         // ignore
       }
     })();
 
     return () => {
+      cancelled = true;
       if (unlistenMax) unlistenMax();
       if (unlistenUnmax) unlistenUnmax();
       if (unlistenResize) unlistenResize();

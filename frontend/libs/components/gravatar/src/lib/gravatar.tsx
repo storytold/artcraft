@@ -30,13 +30,14 @@ function Gravatar(props: Props) {
 
   const gravatarUrl = `${EnvironmentVariables.values.GRAVATAR_API}/avatar/${props.email_hash}?s=${props.size}&d=${encondedDefaultImage}`;
 
-  const [{ imgUrl, showLoader }, setState] = useState<{
-    imgUrl: string;
-    showLoader: boolean;
-  }>({
-    imgUrl: gravatarUrl,
-    showLoader: true,
-  });
+  // BUG FIX: the URL used to be copied into state once at mount, so a later
+  // change of email_hash/size/avatarIndex (e.g. the hash arriving after the
+  // first render, or switching accounts) kept showing the stale image. Track
+  // only WHICH url failed / loaded and derive the displayed url from props.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const imgUrl = failedUrl === gravatarUrl ? localDefaultUrl : gravatarUrl;
+  const showLoader = loadedUrl !== imgUrl;
 
   const altText = props.username ? `${props.username}'s gravatar` : "gravatar";
 
@@ -84,18 +85,12 @@ function Gravatar(props: Props) {
         height={props.size}
         width={props.size}
         style={{ backgroundColor: getBackgroundColor(props.backgroundIndex) }}
-        onLoad={() => {
-          setState((curr) => ({
-            imgUrl: curr.imgUrl,
-            showLoader: false,
-          }));
-        }}
+        onLoad={() => setLoadedUrl(imgUrl)}
         onError={() => {
-          setState((curr) => ({
-            imgUrl:
-              curr.imgUrl !== localDefaultUrl ? localDefaultUrl : curr.imgUrl,
-            showLoader: false,
-          }));
+          // Remote url failed -> fall back to the local default; if the
+          // local default itself fails, just stop the spinner.
+          if (imgUrl === gravatarUrl) setFailedUrl(gravatarUrl);
+          else setLoadedUrl(imgUrl);
         }}
       />
     </div>

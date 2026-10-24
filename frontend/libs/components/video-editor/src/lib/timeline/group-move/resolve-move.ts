@@ -2,6 +2,7 @@ import type { SceneTracks } from "../types";
 import { getTrackTypeForElementType } from "../placement/compatibility";
 import { canPlaceTimeSpansOnTrack } from "../placement/overlap";
 import type {
+  GroupMember,
   GroupMoveResult,
   MoveGroup,
   PlannedElementMove,
@@ -236,14 +237,24 @@ function resolveExistingTrackIdsByElementId({
   tracks: SceneTracks;
   anchorTargetDisplayIndex: number;
 }): Map<string, string> | null {
-  const sortedMembers = [...group.members].sort(
-    (leftMember, rightMember) =>
-      leftMember.displayIndex - rightMember.displayIndex,
+  // Members that start on the same track form one "lane" and stay together:
+  // they all land on the same target track. Lanes are what get spread over
+  // different tracks, one per source track. (Treating every member as its own
+  // lane made two selected clips from one track look for a second free track:
+  // they were pulled apart, or the whole move failed and fell back to new tracks.)
+  const membersByDisplayIndex = new Map<number, GroupMember[]>();
+  for (const member of group.members) {
+    const laneMembers = membersByDisplayIndex.get(member.displayIndex) ?? [];
+    laneMembers.push(member);
+    membersByDisplayIndex.set(member.displayIndex, laneMembers);
+  }
+  const lanes = [...membersByDisplayIndex.entries()]
+    .sort(([leftIndex], [rightIndex]) => leftIndex - rightIndex)
+    .map(([, laneMembers]) => laneMembers);
+  const anchorLaneIndex = lanes.findIndex((laneMembers) =>
+    laneMembers.some((member) => member.elementId === group.anchor.elementId),
   );
-  const anchorMemberIndex = sortedMembers.findIndex(
-    (member) => member.elementId === group.anchor.elementId,
-  );
-  if (anchorMemberIndex < 0) {
+  if (anchorLaneIndex < 0) {
     return null;
   }
 
@@ -257,23 +268,18 @@ function resolveExistingTrackIdsByElementId({
     return null;
   }
 
-  targetTrackIdsByElementId.set(
-    group.anchor.elementId,
-    anchorPlacement.trackId,
-  );
+  for (const member of lanes[anchorLaneIndex]) {
+    targetTrackIdsByElementId.set(member.elementId, anchorPlacement.trackId);
+  }
   usedTrackIds.add(anchorPlacement.trackId);
 
   let upperBoundaryIndex = anchorTargetDisplayIndex;
-  for (
-    let memberIndex = anchorMemberIndex - 1;
-    memberIndex >= 0;
-    memberIndex -= 1
-  ) {
-    const member = sortedMembers[memberIndex];
+  for (let laneIndex = anchorLaneIndex - 1; laneIndex >= 0; laneIndex -= 1) {
+    const laneMembers = lanes[laneIndex];
     const targetPlacement = findCompatibleTrackPlacement({
       tracks,
       requiredTrackType: getTrackTypeForElementType({
-        elementType: member.elementType,
+        elementType: laneMembers[0].elementType,
       }),
       startDisplayIndex: upperBoundaryIndex - 1,
       step: -1,
@@ -283,22 +289,24 @@ function resolveExistingTrackIdsByElementId({
       return null;
     }
 
-    targetTrackIdsByElementId.set(member.elementId, targetPlacement.trackId);
+    for (const member of laneMembers) {
+      targetTrackIdsByElementId.set(member.elementId, targetPlacement.trackId);
+    }
     usedTrackIds.add(targetPlacement.trackId);
     upperBoundaryIndex = targetPlacement.displayIndex;
   }
 
   let lowerBoundaryIndex = anchorTargetDisplayIndex;
   for (
-    let memberIndex = anchorMemberIndex + 1;
-    memberIndex < sortedMembers.length;
-    memberIndex += 1
+    let laneIndex = anchorLaneIndex + 1;
+    laneIndex < lanes.length;
+    laneIndex += 1
   ) {
-    const member = sortedMembers[memberIndex];
+    const laneMembers = lanes[laneIndex];
     const targetPlacement = findCompatibleTrackPlacement({
       tracks,
       requiredTrackType: getTrackTypeForElementType({
-        elementType: member.elementType,
+        elementType: laneMembers[0].elementType,
       }),
       startDisplayIndex: lowerBoundaryIndex + 1,
       step: 1,
@@ -308,7 +316,9 @@ function resolveExistingTrackIdsByElementId({
       return null;
     }
 
-    targetTrackIdsByElementId.set(member.elementId, targetPlacement.trackId);
+    for (const member of laneMembers) {
+      targetTrackIdsByElementId.set(member.elementId, targetPlacement.trackId);
+    }
     usedTrackIds.add(targetPlacement.trackId);
     lowerBoundaryIndex = targetPlacement.displayIndex;
   }
@@ -388,10 +398,21 @@ function clampAnchorStartTime({
       ? minimumAnchorStartTime
       : anchorStartTime;
 
-  const memberOnMainTrack = group.members.find(
-    (member) =>
-      targetTrackIdsByElementId.get(member.elementId) === tracks.main.id,
-  );
+  // Several members can land on main (clips that shared a source track move
+  // together), so test the earliest one: that is the clip that would become
+  // the first on main, and the one that has to go to time zero.
+  const memberOnMainTrack = group.members
+    .filter(
+      (member) =>
+        targetTrackIdsByElementId.get(member.elementId) === tracks.main.id,
+    )
+    .reduce<GroupMember | null>(
+      (earliestMember, member) =>
+        earliestMember == null || member.timeOffset < earliestMember.timeOffset
+          ? member
+          : earliestMember,
+      null,
+    );
   if (!memberOnMainTrack) {
     return clampedAnchorStartTime;
   }

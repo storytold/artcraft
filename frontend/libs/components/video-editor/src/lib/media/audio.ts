@@ -411,8 +411,40 @@ export async function createTimelineAudioBuffer({
   sampleRate?: number;
   audioContext?: AudioContext;
 }): Promise<AudioBuffer | null> {
+  // FIX: when the caller passes no context this function makes its own, and
+  // it was never closed. Every export with audio (and every audio-only
+  // extract) left one open AudioContext behind, and webviews cap how many may
+  // exist at once, so a session of exports eventually could not make more.
+  // Close only a context created here; a caller-supplied one stays open. The
+  // returned AudioBuffer does not depend on the context staying open.
+  const ownsContext = !audioContext;
   const context = audioContext ?? createAudioContext({ sampleRate });
+  try {
+    return await buildTimelineAudioBuffer({
+      tracks,
+      mediaAssets,
+      duration,
+      sampleRate,
+      context,
+    });
+  } finally {
+    if (ownsContext) void context.close();
+  }
+}
 
+async function buildTimelineAudioBuffer({
+  tracks,
+  mediaAssets,
+  duration,
+  sampleRate,
+  context,
+}: {
+  tracks: SceneTracks;
+  mediaAssets: MediaAsset[];
+  duration: number;
+  sampleRate: number;
+  context: AudioContext;
+}): Promise<AudioBuffer | null> {
   const audioElements = await collectAudioElements({
     tracks,
     mediaAssets,
@@ -730,10 +762,14 @@ async function fetchLibraryAudioClip({
       id: element.id,
       sourceKey: element.id,
       file,
-      startTime: element.startTime,
-      duration: element.duration,
-      trimStart: element.trimStart,
-      trimEnd: element.trimEnd,
+      // FIX: these were passed through in raw ticks, but AudioClipSource times
+      // are seconds (collectMediaAudioClip and fetchLibraryAudioSource both
+      // convert), so the playback scheduler saw a library clip starting
+      // thousands of seconds in and never played it.
+      startTime: element.startTime / TICKS_PER_SECOND,
+      duration: element.duration / TICKS_PER_SECOND,
+      trimStart: element.trimStart / TICKS_PER_SECOND,
+      trimEnd: element.trimEnd / TICKS_PER_SECOND,
       volume,
       muted,
       retime: element.retime,

@@ -151,7 +151,14 @@ export class AudioManager {
     if (!audioContext) return;
 
     this.stopPlayback();
-    this.playbackSessionId++;
+    // FIX: remember THIS call's session id. startPlayback is fire-and-forget
+    // and is re-entered on every seek / timeline edit while playing. Both
+    // awaits below can finish out of order, and the older call used to resume
+    // anyway: it overwrote this.clips / playbackStartTime with its stale seek
+    // time and started a SECOND schedule interval whose handle replaced the
+    // first one (so the first interval could never be cleared). Re-check the
+    // id after each await and drop the result if a newer start superseded us.
+    const sessionId = ++this.playbackSessionId;
     this.playbackLatencyCompensationSeconds = 0;
 
     const tracks = this.editor.scenes.getActiveScene().tracks;
@@ -162,10 +169,13 @@ export class AudioManager {
 
     if (audioContext.state === "suspended") {
       await audioContext.resume();
+      if (sessionId !== this.playbackSessionId) return;
     }
 
-    this.clips = await collectAudioClips({ tracks, mediaAssets });
+    const clips = await collectAudioClips({ tracks, mediaAssets });
     if (!this.editor.playback.getIsPlaying()) return;
+    if (sessionId !== this.playbackSessionId) return;
+    this.clips = clips;
 
     this.playbackStartTime = time;
     this.playbackStartContextTime = audioContext.currentTime;
@@ -211,6 +221,12 @@ export class AudioManager {
   }
 
   private stopPlayback(): void {
+    // FIX: a stop (pause, scrub, dispose) never invalidated a start that was
+    // still awaiting the audio context or the clip lookup, so that start could
+    // finish afterwards, build a new schedule interval and, after dispose,
+    // even re-create the closed AudioContext. Bumping the id makes every
+    // in-flight start / clip scheduler see it was superseded and bail out.
+    this.playbackSessionId++;
     if (this.scheduleTimer && typeof window !== "undefined") {
       window.clearInterval(this.scheduleTimer);
     }
@@ -676,8 +692,10 @@ export class AudioManager {
     const existingSink = this.sinks.get(clip.sourceKey);
     if (existingSink) return existingSink;
 
+    // Declared outside the try so the catch block can dispose it too.
+    let input: Input | null = null;
     try {
-      const input = new Input({
+      input = new Input({
         source: new BlobSource(clip.file),
         formats: ALL_FORMATS,
       });
@@ -687,12 +705,29 @@ export class AudioManager {
         return null;
       }
 
+      // FIX: two clips cut from the same source (any split) share a sourceKey
+      // and start in the same scheduler tick, so both calls miss the cache
+      // above and both create an Input. The second set() below used to replace
+      // the first Input in this.inputs, so the first was never disposed (a
+      // leaked demuxer + file reader per playback start). If another call
+      // already registered a sink for this key while we were awaiting, drop our
+      // duplicate Input and reuse theirs.
+      const racedSink = this.sinks.get(clip.sourceKey);
+      if (racedSink) {
+        input.dispose();
+        return racedSink;
+      }
+
       const sink = new AudioBufferSink(audioTrack);
       this.inputs.set(clip.sourceKey, input);
       this.sinks.set(clip.sourceKey, sink);
       return sink;
     } catch (error) {
       console.warn("Failed to initialize audio sink:", error);
+      // FIX: if opening the track threw, the Input created above was never
+      // registered in this.inputs, so nothing would ever dispose it. Release it
+      // here. `input` is null when the constructor itself threw.
+      input?.dispose();
       return null;
     }
   }

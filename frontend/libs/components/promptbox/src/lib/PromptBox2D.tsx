@@ -24,6 +24,7 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
+import { isImeKeyDown } from "./common/imeKey";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 
@@ -344,6 +345,8 @@ export const PromptBox2D = ({
     e.stopPropagation();
 
     if (e.key !== "Enter") return;
+    // The Enter that confirms an IME word (Japanese/Chinese/Korean typing) is not a request to generate.
+    if (isImeKeyDown(e)) return;
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();

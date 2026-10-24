@@ -57,6 +57,10 @@ export class ProjectManager {
   private listeners = new Set<() => void>();
   private exportState: ExportProgressState = { ...INITIAL_EXPORT_STATE };
   private exportCancelRequested = false;
+  // FIX (see openProject / closeProject): monotonically increasing id of the
+  // most recent open/close. An in-flight openProject() compares its own id to
+  // this after every await and bails out if a newer open or a close happened.
+  private openRequestId = 0;
 
   constructor(private editor: EditorCore) {}
 
@@ -128,12 +132,42 @@ export class ProjectManager {
   // down here — otherwise they leak into the newly opened project and
   // its next autosave persists the contamination.
   async openProject({ id }: { id: string }): Promise<TProject | null> {
+    // FIX: closeProject() below stops the autosave and drops its pending
+    // debounce timer, so edits made in the last ~800 ms to the project being
+    // left were never written when a host route opened another project
+    // directly (no header exit flow, so no prepareExit()). Save them first.
+    // The ticket taken here invalidates any older open; if a newer open or a
+    // close lands while the save runs, this call stands down instead of
+    // resurrecting a project after the editor was closed.
+    if (this.active && this.editor.save.getIsDirty()) {
+      const preSaveRequestId = ++this.openRequestId;
+      try {
+        await this.editor.save.flush();
+      } catch (error) {
+        // A failed save must not trap the user on the old project; the
+        // header's exit flow also carries on after a failed flush.
+        console.error("Failed to save the project being left:", error);
+      }
+      if (preSaveRequestId !== this.openRequestId) {
+        return null;
+      }
+    }
     this.closeProject();
+    // FIX: take a ticket for THIS open. If the user opens another project (or
+    // closes this one) while our storage read / media download is still in
+    // flight, the slower older call used to resume and overwrite the newer
+    // project's state (active project, scenes, media bin, autosave target).
+    // Every await below re-checks the ticket and returns null when superseded.
+    const requestId = ++this.openRequestId;
     this.isLoading = true;
     this.notify();
     try {
       const envelope =
         await this.editor.adapters.projectStorage.loadProject(id);
+      // Superseded while reading from storage: leave the newer state alone.
+      if (requestId !== this.openRequestId) {
+        return null;
+      }
       const document = envelope
         ? deserializeProjectDocument(envelope.data)
         : null;
@@ -158,13 +192,23 @@ export class ProjectManager {
           mediaSource: this.editor.adapters.mediaSource,
           toast: this.editor.adapters.toast,
         });
+        // Superseded while downloading media: the newer open/close already
+        // reset the media bin, so loading these assets would contaminate it.
+        if (requestId !== this.openRequestId) {
+          return null;
+        }
         this.editor.media.loadProjectMedia({ assets });
       }
 
       return project;
     } finally {
-      this.isLoading = false;
-      this.notify();
+      // Only the latest open owns the loading flag. A superseded call must not
+      // clear it while the newer open is still loading (closeProject() already
+      // reset the flag for the close case).
+      if (requestId === this.openRequestId) {
+        this.isLoading = false;
+        this.notify();
+      }
     }
   }
 
@@ -232,8 +276,18 @@ export class ProjectManager {
   }
 
   closeProject(): void {
+    // FIX: invalidate any openProject() still awaiting storage/media so it
+    // cannot resurrect the project we are closing, and clear the loading flag
+    // it would otherwise have cleared itself (it now skips that when stale).
+    this.openRequestId++;
+    this.isLoading = false;
     this.editor.save.stop();
     this.editor.command.clear();
+    // FIX: the selection holds track and clip ids of the project being left.
+    // Nothing cleared it, so it leaked into the next project opened (the
+    // editor singleton outlives the project), leaving a phantom selection
+    // that matches no clip. switchToScene already does this per scene.
+    this.editor.selection.clearSelection();
     this.editor.scenes.clearScenes();
     this.editor.media.clearAllAssets();
     this.exportState = { ...INITIAL_EXPORT_STATE };

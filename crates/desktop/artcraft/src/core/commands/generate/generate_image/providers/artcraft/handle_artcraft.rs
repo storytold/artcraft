@@ -55,9 +55,28 @@ fn is_legacy_only_model(model: TauriImageModel) -> bool {
   matches!(
     model,
     TauriImageModel::GrokImage
+      | TauriImageModel::FluxPro1
       | TauriImageModel::Recraft3
       | TauriImageModel::Midjourney
       | TauriImageModel::FluxProKontextMax
       | TauriImageModel::FluxDevJuggernaut
   )
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn flux_pro_1_inpainting_is_routed_to_its_own_handler() {
+    // Flux Pro (Inpainting) needs a mask, which the omni endpoint cannot take for this model.
+    assert!(is_legacy_only_model(TauriImageModel::FluxPro1));
+  }
+
+  #[test]
+  fn text_to_image_flux_models_stay_on_the_omni_endpoint() {
+    assert!(!is_legacy_only_model(TauriImageModel::FluxPro11));
+    assert!(!is_legacy_only_model(TauriImageModel::FluxPro11Ultra));
+    assert!(!is_legacy_only_model(TauriImageModel::Flux1Dev));
+  }
 }

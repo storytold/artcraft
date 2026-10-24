@@ -58,8 +58,28 @@ struct Stream {
   frames: Receiver<(ColorImage, f64)>,
   next: Option<(ColorImage, f64)>,
   ended: bool,
+  /// Whether this run decoded at least one frame.
+  produced: bool,
   children: Vec<Child>,
   sink: Option<Sink>,
+}
+
+/// What to do when the decoder's output stops.
+#[derive(Debug, PartialEq)]
+enum DecoderEnded {
+  /// The clip played to its end: start it again.
+  Loop,
+  /// Nothing was ever decoded (bad link, unsupported codec, a dropped connection): starting again would fail
+  /// the same way, over and over.
+  Failed,
+}
+
+fn decoder_ended(produced: bool) -> DecoderEnded {
+  if produced {
+    DecoderEnded::Loop
+  } else {
+    DecoderEnded::Failed
+  }
 }
 
 impl Drop for Stream {
@@ -192,7 +212,10 @@ impl VideoPlayer {
     loop {
       if stream.next.is_none() {
         match stream.frames.try_recv() {
-          Ok(frame) => stream.next = Some(frame),
+          Ok(frame) => {
+            stream.produced = true;
+            stream.next = Some(frame);
+          },
           Err(TryRecvError::Disconnected) => {
             stream.ended = true;
             break;
@@ -213,7 +236,13 @@ impl VideoPlayer {
       }
     }
     if stream.ended && stream.next.is_none() {
-      self.play_from(0.0);
+      match decoder_ended(stream.produced) {
+        DecoderEnded::Loop => self.play_from(0.0),
+        DecoderEnded::Failed => {
+          self.stream = None;
+          self.error = Some("the video could not be decoded".to_owned());
+        },
+      }
     }
   }
 
@@ -248,7 +277,7 @@ impl VideoPlayer {
     std::thread::spawn(move || read_frames(stdout, w, h, start, fps, frame_tx));
     let mut children = vec![video];
     let sink = self.spawn_audio(start, &mut children);
-    Ok(Stream { start, started: Instant::now(), frames: frame_rx, next: None, ended: false, children, sink })
+    Ok(Stream { start, started: Instant::now(), frames: frame_rx, next: None, ended: false, produced: false, children, sink })
   }
 
   /// The soundtrack as PCM into rodio (silently skipped when the clip has none).
@@ -388,6 +417,12 @@ fn command(program: &str) -> Command {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn a_decoder_that_never_produced_a_frame_fails_instead_of_looping() {
+    assert_eq!(decoder_ended(true), DecoderEnded::Loop, "a clip that played to its end starts again");
+    assert_eq!(decoder_ended(false), DecoderEnded::Failed, "ffmpeg that fails at once must not be respawned on every repaint");
+  }
 
   #[test]
   fn output_sizes_are_even_and_capped() {

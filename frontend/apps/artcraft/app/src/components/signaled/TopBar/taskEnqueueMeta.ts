@@ -1,3 +1,8 @@
+// taskEnqueueMeta: remembers the prompt and reference images of each generation the user starts, so the task list
+// (TaskQueue.tsx) and the generation feed (useDesktopGenerationFeed.ts) can show them next to the matching task.
+// Data lives in localStorage (key task_enqueue_meta). Prompt boxes in libs/components/promptbox and several pages
+// (Angles, PageDraw, ImageTo3DExperience) save entries with storeEnqueueMeta or the window.__storeTaskEnqueueMeta hook defined at the bottom.
+
 /**
  * Hacky and temporary lightweight cache that stores enqueue metadata (prompt, ref image thumbnails)
  * so failed/in-progress tasks in the TaskQueue can display them.
@@ -9,11 +14,14 @@
  * survive page refreshes (blob URLs do not).
  */
 
+// localStorage key that holds the JSON array of entries.
 const STORAGE_KEY = "task_enqueue_meta";
+// Keep at most this many saved entries (oldest are dropped).
 const MAX_ENTRIES = 100;
 const MATCH_WINDOW_MS = 30_000; // 30-second window for timestamp matching
 const THUMB_SIZE = 144; // px – 2x the 72px card thumbnail for retina
 
+// What callers pass in when a generation is started.
 export interface EnqueueMeta {
   prompt?: string;
   refImageUrls?: string[];
@@ -23,6 +31,7 @@ export interface EnqueueMeta {
   batchCount?: number;
 }
 
+// What is actually saved: the same data plus an id and, once matched, the task it belongs to.
 interface StoredEntry {
   id: string;
   prompt?: string;
@@ -33,6 +42,7 @@ interface StoredEntry {
   matchedTaskId?: string; // set once matched to a specific task
 }
 
+// The subset of metadata returned to the task list when a task is matched.
 interface TaskMatch {
   prompt?: string;
   refImageUrls?: string[];
@@ -42,6 +52,7 @@ interface TaskMatch {
 // In-memory cache of task_id → matched metadata
 const matchedTasks = new Map<string, TaskMatch>();
 
+// Read the saved entries; returns [] if nothing is saved or the JSON is unreadable.
 function readEntries(): StoredEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -51,6 +62,7 @@ function readEntries(): StoredEntry[] {
   }
 }
 
+// Save the newest MAX_ENTRIES entries. If storage is full, retry with only the newest half; if that fails too, give up silently.
 function writeEntries(entries: StoredEntry[]) {
   const trimmed = entries.slice(-MAX_ENTRIES);
   try {
@@ -66,6 +78,7 @@ function writeEntries(entries: StoredEntry[]) {
   }
 }
 
+// Makes entry ids unique when two generations start in the same millisecond.
 let entryCounter = 0;
 
 /**
@@ -141,6 +154,9 @@ export function storeEnqueueMeta(meta: EnqueueMeta) {
  * Uses timestamp proximity + model type matching.
  * Once matched, the entry stores the taskId so it survives page refresh.
  */
+// The backend does not tell us which saved entry belongs to which task, so we guess: same model type and the closest
+// timestamp within MATCH_WINDOW_MS. The first match is recorded on the entry (matchedTaskId) so later lookups, even
+// after a reload, return the same answer.
 export function getMetaForTask(
   taskId: string,
   modelType: string | undefined,
@@ -203,6 +219,7 @@ export function getMetaForTask(
  * Clean up old entries (older than 24 hours).
  */
 export function cleanupOldEntries() {
+  // 24 hours in milliseconds: 24 h * 60 min * 60 s * 1000 ms.
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   const entries = readEntries().filter((e) => e.timestamp > cutoff);
   writeEntries(entries);

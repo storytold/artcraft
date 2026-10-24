@@ -434,8 +434,11 @@ export function getBoxMaskRectOverlay({
       x: bounds.cx + centerX * bounds.width,
       y: bounds.cy + centerY * bounds.height,
     },
-    width: width * bounds.width,
-    height: height * bounds.height,
+    // FIX: a flipped element has a negative bounds width/height. The outline is drawn with these as CSS sizes,
+    // where a negative size is dropped, so the outline vanished (and could not be dragged). The centre above
+    // already mirrors with the flip, so only the size needs the absolute value.
+    width: Math.abs(width * bounds.width),
+    height: Math.abs(height * bounds.height),
     rotation,
     handleId,
     cursor,
@@ -471,8 +474,9 @@ export function getBoxMaskShapeOverlay({
       x: bounds.cx + centerX * bounds.width,
       y: bounds.cy + centerY * bounds.height,
     },
-    width: width * bounds.width,
-    height: height * bounds.height,
+    // FIX: same as the bounding-box outline: sizes must be positive for a flipped element.
+    width: Math.abs(width * bounds.width),
+    height: Math.abs(height * bounds.height),
     rotation,
     pathData,
     handleId,
