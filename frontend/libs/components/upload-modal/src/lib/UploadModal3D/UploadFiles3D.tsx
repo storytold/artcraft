@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
@@ -54,6 +56,7 @@ export const UploadFiles3D = ({
   onUploadProgress,
   onMeshlessDetected,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const canvasRef = useRef<HTMLCanvasElement | undefined>(undefined);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -637,7 +640,7 @@ export const UploadFiles3D = ({
                 label: name,
                 value: String(index),
               })),
-              { label: "T-pose (none)", value: "-1" },
+              { label: translateUi("T-pose (none)"), value: "-1" },
             ]}
           />
         </div>
@@ -667,8 +670,7 @@ export const UploadFiles3D = ({
   const convertingOverlay = isConvertingCurrent ? (
     <h6 className="pointer-events-none absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-60">
       <LoaderIcon  className="animate-spin" />
-      Converting FBX to GLB...
-    </h6>
+      {translateUi("Converting FBX to GLB...")}</h6>
   ) : currentEntry?.status === "error" && isFbx(currentEntry.file) ? (
     <h6 className="pointer-events-none absolute left-0 top-1/2 -mt-5 w-full px-4 text-center text-red-400">
       {currentEntry.errorMessage ?? "FBX conversion failed."}
@@ -717,7 +719,7 @@ export const UploadFiles3D = ({
                         e.stopPropagation();
                         removeFile(i);
                       }}
-                      title="Remove"
+                      title={translateUi("Remove")}
                     >
                       <XIcon />
                     </button>
@@ -725,18 +727,18 @@ export const UploadFiles3D = ({
                   {(entry.status === "uploading" ||
                     entry.status === "converting") && (
                     <LoaderIcon
-                      
+
                       className="animate-spin opacity-60" />
                   )}
                   {entry.status === "success" && (
                     <CheckIcon
-                      
+
                       className="text-green-400" />
                   )}
                   {entry.status === "error" && (
                     <span className="flex items-center gap-1">
                       <CircleAlertIcon
-                        
+
                         className="text-red-400" />
                       <button
                         className="hidden items-center text-xs text-white/60 transition-colors hover:text-white group-hover:inline-flex"
@@ -744,7 +746,7 @@ export const UploadFiles3D = ({
                           e.stopPropagation();
                           retrySingleFile(i);
                         }}
-                        title="Retry"
+                        title={translateUi("Retry")}
                       >
                         <RotateCwIcon />
                       </button>
@@ -775,8 +777,7 @@ export const UploadFiles3D = ({
               {!currentFile && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
                   <BoxIcon />
-                  Your model preview will appear here
-                </h6>
+                  {translateUi("Your model preview will appear here")}</h6>
               )}
               {previewStatus.type.includes("Error") && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
@@ -823,8 +824,7 @@ export const UploadFiles3D = ({
           {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
               <BoxIcon />
-              Your model preview will appear here
-            </h6>
+              {translateUi("Your model preview will appear here")}</h6>
           )}
           {previewStatus.type.includes("Error") && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
@@ -838,25 +838,21 @@ export const UploadFiles3D = ({
 
       {(isUploading || anyUploading) && overallProgress && isMulti && (
         <p className="text-center text-sm opacity-60">
-          Uploading {overallProgress.current} / {overallProgress.total}...
+          {translateUi("Uploading")}{" "}{overallProgress.current} / {overallProgress.total}...
         </p>
       )}
 
       {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
         <p className="text-center text-sm text-red-400">
-          {fileEntries.filter((e) => e.status === "error").length} file(s)
-          failed to upload.
-        </p>
+          {fileEntries.filter((e) => e.status === "error").length} {" "}{translateUi("file(s) failed to upload.")}</p>
       )}
 
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
+          {translateUi("Cancel")}</Button>
         {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
           <Button variant="secondary" onClick={retryAllFailed}>
-            Retry Failed
-          </Button>
+            {translateUi("Retry Failed")}</Button>
         )}
         {!hasUploadStarted && (
           <Button

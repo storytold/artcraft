@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
@@ -58,6 +60,7 @@ export function DesktopGenerationGallery({
   selectionBarBottomOffset,
   ...feedProps
 }: DesktopGenerationGalleryProps) {
+  const { t: translateUi } = useUiTranslation();
   const viewMode = useGalleryViewStore((s) => s.viewMode);
   const selectionActive = useGallerySelectionStore((s) => s.active);
   const selectedIds = useGallerySelectionStore((s) => s.ids);
@@ -71,11 +74,11 @@ export function DesktopGenerationGallery({
 
   const handleCopyResult = useCallback((success: boolean) => {
     if (success) {
-      toast.success("Prompt copied");
+      toast.success(translateUi("Prompt copied"));
     } else {
-      toast.error("Unable to copy prompt");
+      toast.error(translateUi("Unable to copy prompt"));
     }
-  }, []);
+  }, [translateUi]);
 
   const selectionProps = {
     selectionMode: !!selectable && selectionActive,

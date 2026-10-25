@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useState } from "react";
 import { TransitionTopIcon } from "@hugeicons/core-free-icons";
@@ -99,6 +101,7 @@ function isExportQuality(value: string): value is ExportQuality {
 }
 
 export function ExportButton() {
+  const { t: translateUi } = useUiTranslation();
   const [isExportPopoverOpen, setIsExportPopoverOpen] = useState(false);
   const editor = useEditor();
   const activeProject = useEditor((e) => e.project.getActiveOrNull());
@@ -133,7 +136,7 @@ export function ExportButton() {
           }}
         >
           <HugeiconsIcon icon={TransitionTopIcon} className="z-50 size-3.5" />
-          <span className="z-50 text-[0.875rem]">Export</span>
+          <span className="z-50 text-[0.875rem]">{translateUi("Export")}</span>
         </Button>
       </PopoverTrigger>
       {hasProject && <ExportPopover onOpenChange={setIsExportPopoverOpen} />}
@@ -146,6 +149,7 @@ function ExportPopover({
 }: {
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const { exportSink, toast } = useEditorAdapters();
   const activeProject = useEditor((e) => e.project.getActive());
@@ -223,7 +227,7 @@ function ExportPopover({
         setSaveState((prev) => finalizeSaveState(prev));
       } catch (error) {
         console.error("Export sink failed:", error);
-        toast.error("Couldn't save exported video", {
+        toast.error(translateUi("Couldn't save exported video"), {
           description: error instanceof Error ? error.message : "Unknown error",
         });
         setSaveState((prev) => finalizeSaveState(prev));
@@ -267,7 +271,7 @@ function ExportPopover({
                     showTopBorder={false}
                   >
                     <SectionHeader>
-                      <SectionTitle>Format</SectionTitle>
+                      <SectionTitle>{translateUi("Format")}</SectionTitle>
                     </SectionHeader>
                     <SectionContent>
                       <RadioGroup
@@ -281,14 +285,12 @@ function ExportPopover({
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="mp4" id="mp4" />
                           <Label htmlFor="mp4">
-                            MP4 (H.264) - Better compatibility
-                          </Label>
+                            {translateUi("MP4 (H.264) - Better compatibility")}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="webm" id="webm" />
                           <Label htmlFor="webm">
-                            WebM (VP9) - Smaller file size
-                          </Label>
+                            {translateUi("WebM (VP9) - Smaller file size")}</Label>
                         </div>
                       </RadioGroup>
                     </SectionContent>
@@ -296,7 +298,7 @@ function ExportPopover({
 
                   <Section collapsible defaultOpen={false}>
                     <SectionHeader>
-                      <SectionTitle>Quality</SectionTitle>
+                      <SectionTitle>{translateUi("Quality")}</SectionTitle>
                     </SectionHeader>
                     <SectionContent>
                       <RadioGroup
@@ -309,21 +311,20 @@ function ExportPopover({
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="low" id="low" />
-                          <Label htmlFor="low">Low - Smallest file size</Label>
+                          <Label htmlFor="low">{translateUi("Low - Smallest file size")}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="medium" id="medium" />
-                          <Label htmlFor="medium">Medium - Balanced</Label>
+                          <Label htmlFor="medium">{translateUi("Medium - Balanced")}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="high" id="high" />
-                          <Label htmlFor="high">High - Recommended</Label>
+                          <Label htmlFor="high">{translateUi("High - Recommended")}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="very_high" id="very_high" />
                           <Label htmlFor="very_high">
-                            Very high - Largest file size
-                          </Label>
+                            {translateUi("Very high - Largest file size")}</Label>
                         </div>
                       </RadioGroup>
                     </SectionContent>
@@ -331,7 +332,7 @@ function ExportPopover({
 
                   <Section collapsible defaultOpen={false}>
                     <SectionHeader>
-                      <SectionTitle>Audio</SectionTitle>
+                      <SectionTitle>{translateUi("Audio")}</SectionTitle>
                     </SectionHeader>
                     <SectionContent>
                       <div className="flex items-center space-x-2">
@@ -343,15 +344,14 @@ function ExportPopover({
                           }
                         />
                         <Label htmlFor="include-audio">
-                          Include audio in export
-                        </Label>
+                          {translateUi("Include audio in export")}</Label>
                       </div>
                     </SectionContent>
                   </Section>
 
                   <Section collapsible defaultOpen={true}>
                     <SectionHeader>
-                      <SectionTitle>Destination</SectionTitle>
+                      <SectionTitle>{translateUi("Destination")}</SectionTitle>
                     </SectionHeader>
                     <SectionContent>
                       <div className="flex flex-col gap-2">
@@ -364,8 +364,7 @@ function ExportPopover({
                             }
                           />
                           <Label htmlFor="save-to-disk">
-                            Save to disk
-                          </Label>
+                            {translateUi("Save to disk")}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox
@@ -376,13 +375,11 @@ function ExportPopover({
                             }
                           />
                           <Label htmlFor="save-to-library">
-                            Save to my media library
-                          </Label>
+                            {translateUi("Save to my media library")}</Label>
                         </div>
                         {!canExport && (
                           <p className="text-muted-foreground text-xs">
-                            Pick at least one destination.
-                          </p>
+                            {translateUi("Pick at least one destination.")}</p>
                         )}
                       </div>
                     </SectionContent>
@@ -396,8 +393,7 @@ function ExportPopover({
                     className="w-full gap-2"
                   >
                     <Download className="size-4" />
-                    Export
-                  </Button>
+                    {translateUi("Export")}</Button>
                 </div>
               </>
             )}
@@ -419,8 +415,7 @@ function ExportPopover({
                   className="w-full rounded-md"
                   onClick={handleCancel}
                 >
-                  Cancel
-                </Button>
+                  {translateUi("Cancel")}</Button>
               </div>
             )}
 
@@ -444,6 +439,7 @@ function SavePhasePanel({
   saveState: SaveState;
   onDismiss: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const settled = saveState.phase === "settled";
   const visibleDestinations = (["disk", "library"] as ExportDestination[])
     .map((destination) => ({
@@ -480,8 +476,7 @@ function SavePhasePanel({
           className="w-full rounded-md"
           onClick={onDismiss}
         >
-          Close
-        </Button>
+          {translateUi("Close")}</Button>
       )}
     </div>
   );
@@ -551,6 +546,7 @@ function ExportError({
   error: string;
   onRetry: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -562,7 +558,7 @@ function ExportError({
   return (
     <div className="space-y-4 p-3">
       <div className="flex flex-col gap-1.5">
-        <p className="text-destructive text-sm font-medium">Export failed</p>
+        <p className="text-destructive text-sm font-medium">{translateUi("Export failed")}</p>
         <p className="text-muted-foreground text-xs">{error}</p>
       </div>
 
@@ -574,8 +570,7 @@ function ExportError({
           onClick={handleCopy}
         >
           {copied ? <Check className="text-constructive" /> : <Copy />}
-          Copy
-        </Button>
+          {translateUi("Copy")}</Button>
         <Button
           variant="outline"
           size="sm"
@@ -583,8 +578,7 @@ function ExportError({
           onClick={onRetry}
         >
           <RotateCcw />
-          Retry
-        </Button>
+          {translateUi("Retry")}</Button>
       </div>
     </div>
   );

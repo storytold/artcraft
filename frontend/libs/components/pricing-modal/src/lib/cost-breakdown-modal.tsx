@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import { useMeshCostEstimate } from "./useMeshCostEstimate";
 import { Modal } from "@storyteller/ui-modal";
@@ -63,6 +65,7 @@ export interface CostBreakdownModalProps {
 }
 
 export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
+  const { t: translateUi } = useUiTranslation();
   const { t: tr } = useTranslation();
   const { isOpen, closeModal, estimatedCreditsByPage } =
     useCostBreakdownModalStore();
@@ -163,49 +166,49 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
         return {
           resolution: prompt2D.resolution,
           generationCount: prompt2D.generationCount,
-          label: "Images",
+          label: translateUi("Images"),
         };
       case ModelPage.Stage3D:
         return {
           resolution: prompt3D.resolution,
           generationCount: 1, // 3D doesn't have generation count
-          label: "Images",
+          label: translateUi("Images"),
         };
       case ModelPage.TextToImage:
         return {
           resolution: promptImage.resolution,
           generationCount: promptImage.generationCount,
-          label: "Images",
+          label: translateUi("Images"),
         };
       case ModelPage.ImageToVideo:
         return {
           resolution: promptVideo.resolution,
           generationCount: promptVideo.generationCount,
-          label: "Videos",
+          label: translateUi("Videos"),
         };
       case ModelPage.ImageEditor:
         return {
           resolution: promptEdit.resolution,
           generationCount: 1, // Edit doesn't have generation count in store
-          label: "Images",
+          label: translateUi("Images"),
         };
       case ModelPage.ImageTo3DWorld:
         return {
           resolution: undefined,
           generationCount: 1,
-          label: "Worlds",
+          label: translateUi("Worlds"),
         };
       case ModelPage.Angles:
         return {
           resolution: undefined,
           generationCount: 1,
-          label: "Images",
+          label: translateUi("Images"),
         };
       default:
         return {
           resolution: "1k",
           generationCount: 1,
-          label: "Items",
+          label: translateUi("Items"),
         };
     }
   };

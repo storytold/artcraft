@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React, { useState, useRef, useEffect } from "react";
 import { CircleIcon, DropletIcon, EraserIcon, ImageIcon, MousePointerIcon, PaintbrushIcon, PipetteIcon, Redo2Icon, RotateCcwIcon, SendToBackIcon, ShapesIcon, SquareIcon, Trash2Icon, TriangleIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -66,6 +68,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   activeToolId,
   className = "",
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const store = useSceneStore();
   const { forAction } = useResolvedKeybinds();
   const [open, setOpen] = useState<string | null>(null);
@@ -197,7 +200,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
 
     <>
       <div className="relative">
-        <p className="mb-2 text-sm font-medium text-white">Brush Size</p>
+        <p className="mb-2 text-sm font-medium text-white">{translateUi("Brush Size")}</p>
         <SliderWithIndicator
           value={brushSize}
           onChange={(size) => {
@@ -218,7 +221,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   // separate from the brush so switching tools doesn't clobber either.
   const EraserPopout = (
     <div className="glass relative w-56 rounded-2xl p-4 shadow-lg">
-      <p className="mb-2 text-sm font-medium text-white">Eraser Size</p>
+      <p className="mb-2 text-sm font-medium text-white">{translateUi("Eraser Size")}</p>
       <SliderWithIndicator
         value={eraserSize}
         onChange={setEraserSize}
@@ -232,7 +235,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const tools = [
     {
       id: "select",
-      label: "Select & Move",
+      label: translateUi("Select & Move"),
       icon: (
         <MousePointerIcon  className="pl-0.5 text-lg" />
       ),
@@ -243,7 +246,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     { id: "separator-1", type: "separator" },
     {
       id: "add-shape",
-      label: "Add Shape",
+      label: translateUi("Add Shape"),
       icon: <ShapesIcon  className="h-5 w-5" />,
       onClick: () => {
         store.selectNode(null);
@@ -277,7 +280,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     },
     {
       id: "upload",
-      label: "Upload Image",
+      label: translateUi("Upload Image"),
       icon: <ImageIcon  className="h-5 w-5" />,
       onClick: () => {
         onUploadImage();
@@ -286,7 +289,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     { id: "separator-2", type: "separator" },
     {
       id: "draw",
-      label: "Brush",
+      label: translateUi("Brush"),
       icon: null,
       onClick: () => {
         sendPaint(hsvaToHex(brushHsva), brushSize, brushHsva.a);
@@ -296,7 +299,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     },
     {
       id: "inpaint",
-      label: "Mask",
+      label: translateUi("Mask"),
       icon: <SendToBackIcon  className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("inpaint");
@@ -304,7 +307,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     },
     {
       id: "erase",
-      label: "Eraser",
+      label: translateUi("Eraser"),
       icon: <EraserIcon  className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("eraser");
@@ -314,7 +317,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     { id: "separator-3", type: "separator" },
     {
       id: "background",
-      label: "Canvas Background",
+      label: translateUi("Canvas Background"),
       icon: (
         <div className="relative inline-flex h-5 w-5 items-center justify-center">
           <span
@@ -322,7 +325,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             style={{ backgroundColor: hsvaToHex(bgHsva) }}
           />
           <DropletIcon
-            
+
             className="relative h-2 w-2 text-white drop-shadow-sm"
             style={{
               filter: "drop-shadow(0 0 1px rgba(0,0,0,0.8))",
@@ -333,7 +336,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     },
     {
       id: "undo",
-      label: "Undo",
+      label: translateUi("Undo"),
       icon: <RotateCcwIcon  className="h-5 w-5" />,
       onClick: () => {
         store.undo();
@@ -341,7 +344,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     },
     {
       id: "redo",
-      label: "Redo",
+      label: translateUi("Redo"),
       icon: <Redo2Icon  className="h-5 w-5" />,
       onClick: () => {
         store.redo();
@@ -356,14 +359,12 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const handleResetCanvas = () => {
     showActionReminder({
       reminderType: "default",
-      title: "Reset Canvas",
+      title: translateUi("Reset Canvas"),
       primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName: "bg-red hover:bg-red/80",
       message: (
         <p className="text-sm text-white/70">
-          Are you sure you want to reset the canvas? This will clear all your
-          work and cannot be undone.
-        </p>
+          {translateUi("Are you sure you want to reset the canvas? This will clear all your work and cannot be undone.")}</p>
       ),
       primaryActionText: "Reset all",
       onPrimaryAction: () => {

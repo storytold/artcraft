@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, type ReactNode } from "react";
 import { CircleAlertIcon, XIcon } from "lucide-react";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
@@ -32,6 +34,7 @@ export const FailedRow = memo(function FailedRow({
   onDismiss,
   onCopyPromptResult,
 }: FailedRowProps) {
+  const { t: translateUi } = useUiTranslation();
   const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
 
   return (
@@ -88,8 +91,7 @@ export const FailedRow = memo(function FailedRow({
         className="flex shrink-0 items-center gap-1.5 rounded-[3px] bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
       >
         <XIcon />
-        Dismiss
-      </button>
+        {translateUi("Dismiss")}</button>
     </div>
   );
 });

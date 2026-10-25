@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -56,6 +58,7 @@ export function Viewer3D({
   showGrid = false,
   onThumbnailCapture,
 }: Viewer3DProps) {
+  const { t: translateUi } = useUiTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -605,7 +608,7 @@ export function Viewer3D({
                     label: name,
                     value: String(index),
                   })),
-                  { label: "T-pose (none)", value: NO_ANIMATION_VALUE },
+                  { label: translateUi("T-pose (none)"), value: NO_ANIMATION_VALUE },
                 ]}
               />
             </div>

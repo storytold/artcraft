@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useEffect, useRef } from "react";
 import { ChevronDownIcon, CrosshairIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, TrashIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -40,6 +42,7 @@ const LANE_RIGHT = "2.5rem";
 
 // Expanded multi-track keyframe editor. Replaces the prompt box while open.
 export const TimelineEditor = () => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const rulerRef = useRef<HTMLDivElement>(null);
   const isScrubbing = useRef(false);
@@ -325,7 +328,7 @@ export const TimelineEditor = () => {
       <div className="mb-2 flex items-center gap-2 border-b border-ui-panel-border pb-2">
         <button
           type="button"
-          title="Go to start"
+          title={translateUi("Go to start")}
           onClick={() => editor && seekTimeline(editor, 0)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10"
         >
@@ -344,7 +347,7 @@ export const TimelineEditor = () => {
         </button>
         <button
           type="button"
-          title="Go to end"
+          title={translateUi("Go to end")}
           onClick={() => editor && seekTimeline(editor, duration)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10"
         >
@@ -381,7 +384,7 @@ export const TimelineEditor = () => {
         </div>
         <button
           type="button"
-          title="Collapse timeline"
+          title={translateUi("Collapse timeline")}
           onClick={() => setExpanded(false)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/60 hover:bg-white/10"
         >
@@ -456,8 +459,7 @@ export const TimelineEditor = () => {
 
         {rows.length === 0 ? (
           <div className="py-6 text-center text-xs text-base-fg/40">
-            Add objects to the scene to start animating.
-          </div>
+            {translateUi("Add objects to the scene to start animating.")}</div>
         ) : (
           /* Cap at ~3.5 rows (row = 36px lane + 8px padding) so the panel
              stays compact; the half row hints that the list scrolls. The
@@ -539,7 +541,7 @@ export const TimelineEditor = () => {
             style={{ left: LANE_LEFT, right: LANE_RIGHT }}
           >
             <MotionPopover
-              title="Transition"
+              title={translateUi("Transition")}
               easing={clipTransitionAnchor.easing}
               onChange={(next) =>
                 editor &&
@@ -565,8 +567,7 @@ export const TimelineEditor = () => {
                     usePageSceneStore.getState().setTimelineEasingClipLane(null);
                   }}
                 >
-                  Remove transition
-                </button>
+                  {translateUi("Remove transition")}</button>
               }
             />
           </div>
@@ -576,9 +577,7 @@ export const TimelineEditor = () => {
       {/* footer */}
       <div className="mt-3 flex items-center justify-between gap-2">
         <span className="ms-2 text-[11px] text-base-fg/40">
-          Each diamond stores an object's full position, rotation and scale at
-          that moment. Tap a diamond to jump to it.
-        </span>
+          {translateUi("Each diamond stores an object's full position, rotation and scale at that moment. Tap a diamond to jump to it.")}</span>
         <div className="flex items-center gap-2">
           {selectedKeyframe && (
             /* data-keyframe-delete: exempt from the click-away deselect —
@@ -593,8 +592,7 @@ export const TimelineEditor = () => {
                   editor && deleteKeyframe(editor, selectedKeyframe.id)
                 }
               >
-                Delete
-              </Button>
+                {translateUi("Delete")}</Button>
             </div>
           )}
           <Button
@@ -602,15 +600,13 @@ export const TimelineEditor = () => {
             className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg hover:bg-ui-controls/90"
             onClick={() => editor && cancelTimeline(editor)}
           >
-            Cancel
-          </Button>
+            {translateUi("Cancel")}</Button>
           <Button
             variant="primary"
             className="flex h-9 items-center border-none bg-brand-primary px-3 text-sm text-white"
             onClick={() => editor && saveTimeline(editor)}
           >
-            Save
-          </Button>
+            {translateUi("Save")}</Button>
         </div>
       </div>
     </div>

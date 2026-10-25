@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import type {
   ParamDefinition,
@@ -42,15 +44,16 @@ export function PropertyParamField({
     onToggle: () => void;
   };
 }) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <SectionField
-      label={param.label}
+      label={translateUi(param.label)}
       beforeLabel={
         keyframe && param.keyframable !== false ? (
           <KeyframeToggle
             isActive={keyframe.isActive}
             isDisabled={keyframe.isDisabled}
-            title={`Toggle ${param.label.toLowerCase()} keyframe`}
+            title={translateUi("Toggle {{parameter}} keyframe", { parameter: translateUi(param.label) })}
             onToggle={keyframe.onToggle}
           />
         ) : undefined
@@ -77,6 +80,7 @@ function ParamInput({
   onPreview: (value: ParamValue) => void;
   onCommit: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   if (param.type === "number") {
     return (
       <NumberParamField
@@ -115,7 +119,7 @@ function ParamInput({
         <SelectContent>
           {param.options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
-              {option.label}
+              {translateUi(option.label)}
             </SelectItem>
           ))}
         </SelectContent>

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React from "react";
 import { useShallow } from "zustand/shallow";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -10,6 +12,7 @@ import { openAnimationsModal } from "../actions";
 interface PoseModeSelectorProps {}
 
 export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
+  const { t: translateUi } = useUiTranslation();
   const { poseMode, showPoseControls, setPoseMode } = usePageSceneStore(
     useShallow((s) => ({
       poseMode: s.poseMode,
@@ -46,16 +49,14 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
               onClick={handleModeChange}
               className="rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
             >
-              Enter Pose Mode
-            </Button>
+              {translateUi("Enter Pose Mode")}</Button>
           ) : (
             <Button
               icon={CheckIcon}
               onClick={handleModeChange}
               className="rounded-[3px] outline-none  focus-visible:outline-none"
             >
-              Done
-            </Button>
+              {translateUi("Done")}</Button>
           )}
         </>
       </Tooltip>
@@ -73,8 +74,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
             onClick={() => openAnimationsModal()}
             className="rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
           >
-            Add Animation
-          </Button>
+            {translateUi("Add Animation")}</Button>
         </Tooltip>
       )}
     </div>

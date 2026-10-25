@@ -8,7 +8,7 @@ AI generation and account/provider services retain their existing network requir
 
 ## Current contribution scope
 
-The language pack contains 824 resource entries covering the home page and app
+The language pack contains 1,576 resource entries covering the home page and app
 cards, top navigation, primary image/video/audio creation controls, generation
 feed actions, common settings panes, and the complete shared keyboard-shortcut
 settings panel. Shortcut names and groups can be searched in Chinese or English;
@@ -48,7 +48,20 @@ extraction settings and counts, result actions, and local save/error messages.
 Language switching preserves the loaded video, extraction parameters and results.
 Upload filenames, media tokens and intermediate-file flags remain unchanged.
 
-This is incremental localization. Editor internals, some specialized media tools and
+The expanded pack also covers video-editor panels, effects, timeline controls,
+3D scene menus, drawing tools, moodboards, character management, uploads and
+specialized image/video tools. Static descriptor labels are translated at their
+render sites, preserving action IDs and media names. Error boundaries use reactive
+text leaves so existing error screens update with the selected language.
+
+The separate `artcraft-native` egui app now has an English/简体中文 selector in
+Settings, saved independently from the Tauri app. Its common dialogs, navigation,
+creation and media controls use a separate Rust dictionary. It loads a system CJK
+font (Windows Microsoft YaHei, macOS PingFang, or Linux Noto Sans CJK); these fonts
+are not redistributed. Native compilation is checked, but native GUI behavior
+and non-Windows font availability have not been validated in this change.
+
+This is incremental localization. Some indirect editor labels,
 provider/model-specific descriptions, and server-generated messages are not
 fully translated yet.
 

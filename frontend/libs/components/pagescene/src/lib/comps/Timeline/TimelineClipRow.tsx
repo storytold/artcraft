@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import {
@@ -59,6 +61,7 @@ export const TimelineClipRow = ({
   bakedClips,
   droppable,
 }: TimelineClipRowProps) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -170,12 +173,12 @@ export const TimelineClipRow = ({
     <div className="flex items-center gap-3 py-0.5">
       <div className="flex w-32 shrink-0 items-center gap-2 truncate ps-6 text-xs text-base-fg/50">
         <FilmIcon className="h-3 w-3 opacity-60" />
-        <span className="truncate">Animation</span>
+        <span className="truncate">{translateUi("Animation")}</span>
         {bakedClips && bakedClips.length > 0 && (
           <div className="shrink-0">
             <button
               type="button"
-              title="Add one of this object's baked animations"
+              title={translateUi("Add one of this object's baked animations")}
               className={`flex h-4 w-4 items-center justify-center rounded-[3px] transition-colors ${
                 pickerAnchor
                   ? "bg-brand-primary text-white"
@@ -310,7 +313,7 @@ export const TimelineClipRow = ({
               {isSelected && (
                 <button
                   type="button"
-                  title="Remove animation (Del)"
+                  title={translateUi("Remove animation (Del)")}
                   className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] text-white/70 hover:bg-white/20 hover:text-white"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => {
@@ -328,7 +331,7 @@ export const TimelineClipRow = ({
               {/* right-edge trim handle */}
               <div
                 className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize rounded-r-md bg-white/40 hover:bg-white/70"
-                title="Trim clip length"
+                title={translateUi("Trim clip length")}
                 onPointerDown={(e) => {
                   e.stopPropagation();
                   e.currentTarget.setPointerCapture(e.pointerId);

@@ -11,6 +11,7 @@ mod pages;
 mod prompt_box;
 mod shell;
 mod theme;
+mod i18n;
 mod ui;
 
 const APP_ID: &str = "ai.artcraft.native";

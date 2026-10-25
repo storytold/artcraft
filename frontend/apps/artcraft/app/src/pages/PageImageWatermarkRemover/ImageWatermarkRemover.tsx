@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect } from "react";
 import { DropletIcon, ImagesIcon, RotateCwIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
@@ -7,6 +9,7 @@ import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
 export const ImageWatermarkRemover = () => {
+  const { t: translateUi } = useUiTranslation();
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
@@ -56,7 +59,7 @@ export const ImageWatermarkRemover = () => {
   const handleGallerySelect = async (selectedItems: GalleryItem[]) => {
     const item = selectedItems[0];
     if (!item || !item.fullImage) {
-      toast.error("No image selected");
+      toast.error(translateUi("No image selected"));
       return;
     }
 
@@ -80,7 +83,7 @@ export const ImageWatermarkRemover = () => {
 
   const handleRemoveWatermark = async () => {
     if (!imageUrl) {
-      toast.error("Please select an image first");
+      toast.error(translateUi("Please select an image first"));
       return;
     }
 
@@ -91,11 +94,11 @@ export const ImageWatermarkRemover = () => {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      toast.success("Watermark removal completed!", {
+      toast.success(translateUi("Watermark removal completed!"), {
         id: "watermark-removal",
       });
     } catch (error) {
-      toast.error("Failed to remove watermark", { id: "watermark-removal" });
+      toast.error(translateUi("Failed to remove watermark"), { id: "watermark-removal" });
       console.error("Error removing watermark:", error);
     } finally {
       setIsProcessing(false);
@@ -118,8 +121,8 @@ export const ImageWatermarkRemover = () => {
                 <div className="aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <UploadEntryCard
                     icon={DropletIcon}
-                    title="Remove Image Watermark"
-                    description="Erase watermarks from your images seamlessly. Upload your image and get a clean, watermark-free result."
+                    title={translateUi("Remove Image Watermark")}
+                    description={translateUi("Erase watermarks from your images seamlessly. Upload your image and get a clean, watermark-free result.")}
                     accentBackgroundClass="bg-indigo-500/40"
                     accentBorderClass="border-indigo-400/30"
                     accept="image/*"
@@ -144,13 +147,12 @@ export const ImageWatermarkRemover = () => {
                       }}
                       className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
-                      Switch Image
-                    </Button>
+                      {translateUi("Switch Image")}</Button>
                     <div className="flex min-h-[400px] items-center justify-center p-6">
                       <img
                         ref={imageRef}
                         src={imageUrl}
-                        alt="Selected pic"
+                        alt={translateUi("Selected pic")}
                         className="max-h-[70vh] max-w-full object-contain"
                         onLoad={(e) => {
                           const img = e.currentTarget;
@@ -181,24 +183,21 @@ export const ImageWatermarkRemover = () => {
                   <div>
                     <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       <ImagesIcon
-                        
+
                         className="text-ui-accent-ink" />
-                      Image Information
-                    </div>
+                      {translateUi("Image Information")}</div>
                     {imageDimensions ? (
                       <div className="space-y-3 text-sm">
                         <div className="flex items-center justify-between border-b border-ui-divider py-2">
                           <span className="font-medium text-base-fg/70">
-                            Resolution
-                          </span>
+                            {translateUi("Resolution")}</span>
                           <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                             {imageDimensions.width} × {imageDimensions.height}
                           </span>
                         </div>
                         <div className="flex items-center justify-between py-2">
                           <span className="font-medium text-base-fg/70">
-                            Aspect Ratio
-                          </span>
+                            {translateUi("Aspect Ratio")}</span>
                           <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                             {(
                               imageDimensions.width / imageDimensions.height
@@ -208,7 +207,7 @@ export const ImageWatermarkRemover = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-sm text-base-fg/50">Loading...</div>
+                      <div className="text-sm text-base-fg/50">{translateUi("Loading...")}</div>
                     )}
                   </div>
                 </div>

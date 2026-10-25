@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { ArrowLeftIcon, EyeIcon, ImagesIcon, LoaderCircleIcon, PenIcon, PlusIcon, Trash2Icon, UploadIcon, UsersIcon, XIcon } from "lucide-react";
@@ -218,6 +220,7 @@ const CharacterListView = ({
   pendingCharacters: PendingCharacter[];
   onPendingResolved: (name: string) => void;
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewCharacter, setPreviewCharacter] = useState<Character | null>(
@@ -273,12 +276,10 @@ const CharacterListView = ({
   const handleDelete = (character: Character) => {
     showActionReminder({
       reminderType: "default",
-      title: "Delete character?",
+      title: translateUi("Delete character?"),
       message: (
         <p className="text-sm text-white/70">
-          This will permanently delete <strong>{character.name}</strong>. This
-          action cannot be undone.
-        </p>
+          {translateUi("This will permanently delete")}{" "}<strong>{character.name}</strong>{translateUi(". This action cannot be undone.")}</p>
       ),
       primaryActionText: "Delete",
       primaryActionIcon: Trash2Icon,
@@ -307,7 +308,7 @@ const CharacterListView = ({
             toast.error(res.errorMessage || "Failed to delete character");
           }
         } catch {
-          toast.error("Failed to delete character");
+          toast.error(translateUi("Failed to delete character"));
         } finally {
           isActionReminderOpen.value = false;
         }
@@ -358,7 +359,7 @@ const CharacterListView = ({
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
               <PlusIcon  className="text-lg" />
-              <span className="text-sm font-medium">Create New</span>
+              <span className="text-sm font-medium">{translateUi("Create New")}</span>
             </div>
           </button>
 
@@ -382,11 +383,10 @@ const CharacterListView = ({
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                   <LoaderCircleIcon
-                    
+
                     className="text-lg text-white/80 animate-spin" />
                   <span className="text-xs font-medium text-white/80">
-                    Creating...
-                  </span>
+                    {translateUi("Creating...")}</span>
                 </div>
               </div>
               <div className="px-2 py-1.5 text-center">
@@ -420,7 +420,7 @@ const CharacterListView = ({
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-base-fg/20">
                         <UsersIcon
-                          
+
                           className="text-2xl" />
                       </div>
                     )}
@@ -442,7 +442,7 @@ const CharacterListView = ({
                           e.stopPropagation();
                           setPreviewCharacter(character);
                         }}
-                        title="View full size"
+                        title={translateUi("View full size")}
                         className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                       >
                         <EyeIcon  className="text-[10px]" />
@@ -458,7 +458,7 @@ const CharacterListView = ({
                           className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-black/80"
                         >
                           <PenIcon
-                            
+
                             className="text-[10px]" />
                         </button>
                         <button
@@ -469,7 +469,7 @@ const CharacterListView = ({
                           className="flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                         >
                           <Trash2Icon
-                            
+
                             className="text-[10px]" />
                         </button>
                       </>
@@ -512,6 +512,7 @@ const EditCharacterView = ({
   onBack: () => void;
   onSaved: () => void;
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const updateCharacterInStore = useCharactersStore((s) => s.updateCharacter);
   const [name, setName] = useState(character.name);
   const [description, setDescription] = useState(
@@ -525,7 +526,7 @@ const EditCharacterView = ({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error("Name cannot be empty");
+      toast.error(translateUi("Name cannot be empty"));
       return;
     }
 
@@ -542,14 +543,14 @@ const EditCharacterView = ({
       });
 
       if (res.success) {
-        toast.success("Character updated");
+        toast.success(translateUi("Character updated"));
         updateCharacterInStore(character.token, { name: name.trim() });
         onSaved();
       } else {
         toast.error(res.errorMessage || "Failed to update character");
       }
     } catch {
-      toast.error("Failed to update character");
+      toast.error(translateUi("Failed to update character"));
     } finally {
       setSaving(false);
     }
@@ -567,7 +568,7 @@ const EditCharacterView = ({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 className="text-xl font-bold text-base-fg">Edit Character</h2>
+          <h2 className="text-xl font-bold text-base-fg">{translateUi("Edit Character")}</h2>
         </div>
 
         {/* Avatar preview */}
@@ -584,13 +585,12 @@ const EditCharacterView = ({
         {/* Name input */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="edit-character-name" className={FIELD_LABEL_CLASSES}>
-            Name
-          </Label>
+            {translateUi("Name")}</Label>
           <Input
             id="edit-character-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Character name"
+            placeholder={translateUi("Character name")}
             autoComplete="off"
             inputClassName="bg-ui-controls text-sm"
           />
@@ -602,14 +602,14 @@ const EditCharacterView = ({
             htmlFor="edit-character-description"
             className={FIELD_LABEL_CLASSES}
           >
-            Description{" "}
-            <span className="font-normal text-base-fg/40">(optional)</span>
+            {translateUi("Description")}{" "}
+            <span className="font-normal text-base-fg/40">{translateUi("(optional)")}</span>
           </Label>
           <textarea
             id="edit-character-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description..."
+            placeholder={translateUi("Description...")}
             rows={3}
             autoComplete="off"
             className="w-full resize-none rounded-[3px] border border-ui-panel-border bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/50 outline-none transition-colors focus:border-white focus:!outline-none"
@@ -620,16 +620,14 @@ const EditCharacterView = ({
       {/* Action buttons */}
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="secondary" onClick={onBack}>
-          Cancel
-        </Button>
+          {translateUi("Cancel")}</Button>
         <Button
           variant="primary"
           onClick={handleSave}
           loading={saving}
           disabled={saving || !name.trim() || !hasChanges}
         >
-          Save
-        </Button>
+          {translateUi("Save")}</Button>
       </div>
     </div>
   );
@@ -646,6 +644,7 @@ const NewCharacterView = ({
   onBack: () => void;
   onCreated: (pending: { name: string; previewUrl?: string }) => void;
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -665,7 +664,7 @@ const NewCharacterView = ({
         f.type.startsWith("image/"),
       );
       if (imageFiles.length === 0) {
-        toast.error("Please upload image files");
+        toast.error(translateUi("Please upload image files"));
         return;
       }
 
@@ -715,7 +714,7 @@ const NewCharacterView = ({
       );
       setUploading(false);
     },
-    [name],
+    [name, translateUi],
   );
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -772,13 +771,13 @@ const NewCharacterView = ({
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      toast.error("Please enter a character name");
+      toast.error(translateUi("Please enter a character name"));
       return;
     }
 
     const uploadedImages = images.filter((img) => img.mediaToken);
     if (uploadedImages.length < 1) {
-      toast.error("Please upload a reference image");
+      toast.error(translateUi("Please upload a reference image"));
       return;
     }
 
@@ -804,7 +803,7 @@ const NewCharacterView = ({
         toast.error(res.errorMessage || "Failed to create character");
       }
     } catch {
-      toast.error("Failed to create character");
+      toast.error(translateUi("Failed to create character"));
     } finally {
       setCreating(false);
     }
@@ -829,7 +828,7 @@ const NewCharacterView = ({
           >
             <ArrowLeftIcon />
           </button>
-          <h2 className="text-xl font-bold text-base-fg">New Character</h2>
+          <h2 className="text-xl font-bold text-base-fg">{translateUi("New Character")}</h2>
         </div>
 
         {/* Image upload area */}
@@ -852,13 +851,13 @@ const NewCharacterView = ({
             >
               <img
                 src={images[0]!.url}
-                alt="Reference"
+                alt={translateUi("Reference")}
                 className="max-h-full max-w-full object-contain"
               />
               {!images[0]!.mediaToken && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <LoaderCircleIcon
-                    
+
                     className="text-white animate-spin" />
                 </div>
               )}
@@ -875,12 +874,11 @@ const NewCharacterView = ({
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center text-base-fg/60">
               <UploadIcon
-                
+
                 className="mb-2 text-xl text-base-fg/40" />
-              <p className="text-sm">Upload reference image</p>
+              <p className="text-sm">{translateUi("Upload reference image")}</p>
               <p className="mb-3 text-xs text-base-fg/40">
-                Click or drag an image here
-              </p>
+                {translateUi("Click or drag an image here")}</p>
               <div
                 className="flex items-center gap-3"
                 onClick={(e) => e.stopPropagation()}
@@ -890,15 +888,13 @@ const NewCharacterView = ({
                   className="flex items-center gap-2 rounded-[3px] border border-base-fg/15 bg-transparent px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:border-base-fg/25 hover:bg-base-fg/[0.07] hover:text-base-fg"
                 >
                   <ImagesIcon  className="text-xs" />
-                  Choose from Library
-                </button>
+                  {translateUi("Choose from Library")}</button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2 rounded-[3px] border border-base-fg/15 bg-transparent px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:border-base-fg/25 hover:bg-base-fg/[0.07] hover:text-base-fg"
                 >
                   <UploadIcon  className="text-xs" />
-                  Upload Image
-                </button>
+                  {translateUi("Upload Image")}</button>
               </div>
             </div>
           )}
@@ -915,13 +911,12 @@ const NewCharacterView = ({
         {/* Name input */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="character-name" className={FIELD_LABEL_CLASSES}>
-            Name
-          </Label>
+            {translateUi("Name")}</Label>
           <Input
             id="character-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Character name"
+            placeholder={translateUi("Character name")}
             autoComplete="off"
             inputClassName="bg-ui-controls text-sm"
           />
@@ -933,14 +928,14 @@ const NewCharacterView = ({
             htmlFor="character-description"
             className={FIELD_LABEL_CLASSES}
           >
-            Description{" "}
-            <span className="font-normal text-base-fg/40">(optional)</span>
+            {translateUi("Description")}{" "}
+            <span className="font-normal text-base-fg/40">{translateUi("(optional)")}</span>
           </Label>
           <textarea
             id="character-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description..."
+            placeholder={translateUi("Description...")}
             rows={3}
             autoComplete="off"
             className="w-full resize-none rounded-[3px] border border-ui-panel-border bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/50 outline-none transition-colors focus:border-white focus:!outline-none"
@@ -951,8 +946,7 @@ const NewCharacterView = ({
       {/* Action buttons — sticky at the bottom */}
       <div className="sticky bottom-0 flex justify-end gap-2 pt-4 pb-1 bg-ui-modal">
         <Button variant="secondary" onClick={onBack}>
-          Cancel
-        </Button>
+          {translateUi("Cancel")}</Button>
         <Button
           variant="primary"
           onClick={handleCreate}
@@ -964,8 +958,7 @@ const NewCharacterView = ({
             images.filter((i) => i.mediaToken).length < 1
           }
         >
-          Create
-        </Button>
+          {translateUi("Create")}</Button>
       </div>
 
       <GalleryModal

@@ -1,9 +1,10 @@
+import { SubTabStrip } from "../../components/vfx/src/lib/SubTabStrip";
 import React from "react";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import en from "./locales/en.json";
 import zhCN from "./locales/zh-CN.json";
-import { i18n, isLocale, LOCALE_STORAGE_KEY, readLocale, setLocale, Trans, useTranslation } from "./index";
+import { i18n, isLocale, LOCALE_STORAGE_KEY, readLocale, setLocale, LocalizedText, Trans, useTranslation } from "./index";
 
 const tokens = (message: string) => [...message.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map((match) => match[1]).sort();
 
@@ -91,4 +92,32 @@ describe("React integration", () => {
     await act(() => setLocale("en"));
     expect(screen.getByRole("heading").textContent).toBe("Settings");
   });
+});
+
+
+describe("class boundary translations", () => {
+  it("updates a text leaf even when its class parent does not rerender", async () => {
+    class Boundary extends React.PureComponent {
+      override render() { return <LocalizedText message="The editor ran into a problem" />; }
+    }
+    render(<Boundary />);
+    expect(screen.getByText("The editor ran into a problem")).toBeTruthy();
+    await act(() => setLocale("zh-CN"));
+    expect(screen.getByText(zhCN["The editor ran into a problem"])).toBeTruthy();
+    await act(() => setLocale("en"));
+    expect(screen.getByText("The editor ran into a problem")).toBeTruthy();
+  });
+});
+
+
+it("translates effect tabs while preserving action IDs", async () => {
+  const onChange = vi.fn();
+  render(<SubTabStrip activeTab="history" onChange={onChange} />);
+  fireEvent.click(screen.getByRole("button", { name: "Showcase" }));
+  expect(onChange).toHaveBeenLastCalledWith("showcase");
+  await act(() => setLocale("zh-CN"));
+  fireEvent.click(screen.getByRole("button", { name: zhCN.Showcase }));
+  expect(onChange).toHaveBeenLastCalledWith("showcase");
+  fireEvent.click(screen.getByRole("button", { name: zhCN.History }));
+  expect(onChange).toHaveBeenLastCalledWith("history");
 });

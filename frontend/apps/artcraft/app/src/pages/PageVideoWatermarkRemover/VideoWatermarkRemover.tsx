@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect } from "react";
 import { DropletIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SkipBackIcon, SkipForwardIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -8,6 +10,7 @@ import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
 export const VideoWatermarkRemover = () => {
+  const { t: translateUi } = useUiTranslation();
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -110,7 +113,7 @@ export const VideoWatermarkRemover = () => {
   const handleGallerySelect = async (selectedItems: GalleryItem[]) => {
     const item = selectedItems[0];
     if (!item || !item.fullImage) {
-      toast.error("No video selected");
+      toast.error(translateUi("No video selected"));
       return;
     }
 
@@ -179,7 +182,7 @@ export const VideoWatermarkRemover = () => {
 
   const handleRemoveWatermark = async () => {
     if (!videoRef.current || !videoUrl) {
-      toast.error("Please select a video first");
+      toast.error(translateUi("Please select a video first"));
       return;
     }
 
@@ -190,11 +193,11 @@ export const VideoWatermarkRemover = () => {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      toast.success("Watermark removal completed!", {
+      toast.success(translateUi("Watermark removal completed!"), {
         id: "watermark-removal",
       });
     } catch (error) {
-      toast.error("Failed to remove watermark", { id: "watermark-removal" });
+      toast.error(translateUi("Failed to remove watermark"), { id: "watermark-removal" });
       console.error("Error removing watermark:", error);
     } finally {
       setIsProcessing(false);
@@ -217,8 +220,8 @@ export const VideoWatermarkRemover = () => {
                 <div className="aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                   <UploadEntryCard
                     icon={DropletIcon}
-                    title="Remove Video Watermark"
-                    description="Clean up your videos by removing unwanted watermarks. Upload your video and let AI do the magic."
+                    title={translateUi("Remove Video Watermark")}
+                    description={translateUi("Clean up your videos by removing unwanted watermarks. Upload your video and let AI do the magic.")}
                     accentBackgroundClass="bg-cyan-500/40"
                     accentBorderClass="border-cyan-400/30"
                     accept="video/*"
@@ -243,8 +246,7 @@ export const VideoWatermarkRemover = () => {
                       }}
                       className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
-                      Switch Video
-                    </Button>
+                      {translateUi("Switch Video")}</Button>
                     <video
                       ref={videoRef}
                       src={videoUrl}
@@ -271,10 +273,10 @@ export const VideoWatermarkRemover = () => {
                           <button
                             onClick={() => seekToFrame("first")}
                             className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                            title="First Frame"
+                            title={translateUi("First Frame")}
                           >
                             <SkipBackIcon
-                              
+
                               className="text-sm text-white" />
                           </button>
                           <button
@@ -289,10 +291,10 @@ export const VideoWatermarkRemover = () => {
                           <button
                             onClick={() => seekToFrame("last")}
                             className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                            title="Last Frame"
+                            title={translateUi("Last Frame")}
                           >
                             <SkipForwardIcon
-                              
+
                               className="text-sm text-white" />
                           </button>
                           <div className="mx-1 h-6 w-px bg-white/20" />
@@ -342,15 +344,13 @@ export const VideoWatermarkRemover = () => {
                   <div>
                     <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                       <VideoIcon
-                        
+
                         className="text-ui-accent-ink" />
-                      Video Information
-                    </div>
+                      {translateUi("Video Information")}</div>
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center justify-between border-b border-ui-divider py-2">
                         <span className="font-medium text-base-fg/70">
-                          Duration
-                        </span>
+                          {translateUi("Duration")}</span>
                         <span className="font-mono text-lg font-semibold tabular-nums text-base-fg">
                           {formatTime(duration)}
                         </span>
@@ -358,8 +358,7 @@ export const VideoWatermarkRemover = () => {
                       {videoRef.current && (
                         <div className="flex items-center justify-between py-2">
                           <span className="font-medium text-base-fg/70">
-                            Resolution
-                          </span>
+                            {translateUi("Resolution")}</span>
                           <span className="font-mono font-semibold tabular-nums text-base-fg">
                             {videoRef.current.videoWidth} ×{" "}
                             {videoRef.current.videoHeight}

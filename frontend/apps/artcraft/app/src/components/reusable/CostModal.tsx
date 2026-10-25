@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { CoinsIcon, XIcon } from "lucide-react";
@@ -10,6 +12,7 @@ interface CostModalProps {
 }
 
 export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
+  const { t: translateUi } = useUiTranslation();
   const {
     currency,
     setCurrency,
@@ -42,8 +45,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
         <div className="flex cursor-move select-none items-center justify-between border-b border-white/15 px-4 py-3">
           <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
             <CoinsIcon className="text-primary" />
-            Cost Breakdown
-          </div>
+            {translateUi("Cost Breakdown")}</div>
           <button
             onClick={onClose}
             className="text-base-fg/50 transition-colors hover:text-base-fg"
@@ -55,10 +57,9 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
         <div className="space-y-4 bg-ui-panel p-4">
           <div className="border border-white/15 bg-white/5 p-3">
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm text-base-fg/80">Total Cost</span>
+              <span className="text-sm text-base-fg/80">{translateUi("Total Cost")}</span>
               <span className="text-lg font-semibold tabular-nums tracking-tight text-base-fg">
-                {credits} Credits
-              </span>
+                {credits} {" "}{translateUi("Credits")}</span>
             </div>
             <div className="text-right text-xs text-base-fg/60">
               ≈ {formattedPrice} {currencyOption.value}
@@ -67,8 +68,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
 
           <div className="space-y-1">
             <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-              Currency
-            </label>
+              {translateUi("Currency")}</label>
             <Select
               options={selectOptions}
               value={currency}
@@ -78,8 +78,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
           </div>
 
           <div className="mt-2 border-t border-white/15 pt-3 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/40">
-            1 Credit = $0.01 USD
-          </div>
+            {translateUi("1 Credit = $0.01 USD")}</div>
         </div>
       </motion.div>
     </div>,

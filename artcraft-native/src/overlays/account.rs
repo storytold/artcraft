@@ -1,5 +1,6 @@
 //! The sign-in dialog and the settings dialog.
 
+use crate::i18n::t as ui_text;
 use egui::{Color32, Id, Sense, Stroke, Ui, pos2, vec2};
 
 use crate::overlays::providers::{AccountAction, AccountsView, accounts_section};
@@ -31,52 +32,52 @@ impl LoginDialog {
     let mut action = None;
     let close = widgets::modal(ctx, Id::new("login"), 420.0, |ui| {
       ui.horizontal(|ui| {
-        ui.label(widgets::heading("Sign in to ArtCraft", 24.0));
+        ui.label(widgets::heading(ui_text("Sign in to ArtCraft"), 24.0));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+          if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
             action = Some(LoginAction::Close);
           }
         });
       });
       ui.add_space(4.0);
-      ui.label(egui::RichText::new("Use your ArtCraft account to generate images and videos.").color(theme::MUTED));
+      ui.label(egui::RichText::new(ui_text("Use your ArtCraft account to generate images and videos.")).color(theme::MUTED));
       ui.add_space(16.0);
       let width = ui.available_width();
       match &self.device {
         Some((url, code)) => {
-          widgets::hud(ui, "Confirmation code", theme::FAINT);
+          widgets::hud(ui, ui_text("Confirmation code"), theme::FAINT);
           ui.add_space(6.0);
           ui.label(egui::RichText::new(code).size(28.0).family(theme::mono_bold()).color(theme::INK).extra_letter_spacing(4.0));
           ui.add_space(6.0);
-          ui.label(egui::RichText::new("Approve the sign-in in your browser and check the code matches. This window updates by itself.").color(theme::MUTED));
+          ui.label(egui::RichText::new(ui_text("Approve the sign-in in your browser and check the code matches. This window updates by itself.")).color(theme::MUTED));
           ui.add_space(10.0);
           ui.horizontal(|ui| {
-            if widgets::button(ui, Some(Icon::ExternalLink), "Open page again", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+            if widgets::button(ui, Some(Icon::ExternalLink), ui_text("Open page again"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
               ui.ctx().open_url(egui::OpenUrl::new_tab(url));
             }
-            if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+            if widgets::button(ui, None, ui_text("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
               action = Some(LoginAction::CancelBrowser);
             }
           });
         },
         None => {
-          if ui.add_enabled_ui(!self.busy, |ui| widgets::button(ui, Some(Icon::Globe), "Sign in with browser", widgets::Kind::Primary, width, 40.0)).inner.clicked() {
+          if ui.add_enabled_ui(!self.busy, |ui| widgets::button(ui, Some(Icon::Globe), ui_text("Sign in with browser"), widgets::Kind::Primary, width, 40.0)).inner.clicked() {
             action = Some(LoginAction::Browser);
           }
           ui.add_space(14.0);
           divider_with_label(ui, "or");
           ui.add_space(14.0);
-          widgets::hud(ui, "Username or email", theme::FAINT);
+          widgets::hud(ui, ui_text("Username or email"), theme::FAINT);
           ui.add_space(4.0);
           let user_resp = text_field(ui, &mut self.username, false, "you@example.com");
           ui.add_space(10.0);
-          widgets::hud(ui, "Password", theme::FAINT);
+          widgets::hud(ui, ui_text("Password"), theme::FAINT);
           ui.add_space(4.0);
           let pass_resp = text_field(ui, &mut self.password, true, "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}");
           let submitted = (user_resp.lost_focus() || pass_resp.lost_focus()) && ui.input(|i| i.key_pressed(egui::Key::Enter));
           ui.add_space(14.0);
           let ready = !self.username.trim().is_empty() && !self.password.is_empty() && !self.busy;
-          let clicked = ui.add_enabled_ui(ready, |ui| widgets::button(ui, if self.busy { None } else { Some(Icon::LogIn) }, if self.busy { "Signing in\u{2026}" } else { "Sign in" }, widgets::Kind::Secondary, width, 40.0)).inner.clicked();
+          let clicked = ui.add_enabled_ui(ready, |ui| widgets::button(ui, if self.busy { None } else { Some(Icon::LogIn) }, if self.busy { ui_text("Signing in\u{2026}") } else { ui_text("Sign in") }, widgets::Kind::Secondary, width, 40.0)).inner.clicked();
           if ready && (clicked || submitted) {
             action = Some(LoginAction::Password);
           }
@@ -88,9 +89,9 @@ impl LoginDialog {
       }
       ui.add_space(16.0);
       ui.horizontal(|ui| {
-        widgets::hud_link(ui, "Create account", &format!("{WEB_APP_URL}/signup"));
+        widgets::hud_link(ui, ui_text("Create account"), &format!("{WEB_APP_URL}/signup"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          widgets::hud_link(ui, "Forgot password", &format!("{WEB_APP_URL}/forgot-password"));
+          widgets::hud_link(ui, ui_text("Forgot password"), &format!("{WEB_APP_URL}/forgot-password"));
         });
       });
     });
@@ -115,21 +116,31 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
   let mut action = None;
   let close = widgets::modal(ctx, Id::new("settings"), 520.0, |ui| {
     ui.horizontal(|ui| {
-      ui.label(widgets::heading("Settings", 24.0));
+      ui.label(widgets::heading(ui_text("Settings"), 24.0));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
           action = Some(SettingsAction::Close);
         }
       });
     });
     ui.add_space(14.0);
-    widgets::hud(ui, "General", theme::FAINT);
+    widgets::hud(ui, ui_text("General"), theme::FAINT);
+    ui.horizontal(|ui| {
+      ui.label(ui_text("Language"));
+      let mut chinese = crate::i18n::is_chinese();
+      ui.selectable_value(&mut chinese, false, "English");
+      ui.selectable_value(&mut chinese, true, "简体中文");
+      if chinese != crate::i18n::is_chinese() {
+        crate::i18n::set_chinese(chinese);
+        ctx.request_repaint();
+      }
+    });
     ui.add_space(6.0);
     ui.horizontal(|ui| {
       ui.vertical(|ui| {
         ui.set_width(400.0);
-        ui.label(egui::RichText::new("Enter to generate").size(14.0).family(theme::medium()));
-        ui.label(egui::RichText::new("When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.").size(12.5).color(theme::MUTED));
+        ui.label(egui::RichText::new(ui_text("Enter to generate")).size(14.0).family(theme::medium()));
+        ui.label(egui::RichText::new(ui_text("When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.")).size(12.5).color(theme::MUTED));
       });
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if switch(ui, *enter_to_generate).clicked() {
@@ -138,41 +149,41 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
       });
     });
     ui.add_space(18.0);
-    widgets::hud(ui, "Account", theme::FAINT);
+    widgets::hud(ui, ui_text("Account"), theme::FAINT);
     ui.add_space(6.0);
     match username {
       Some(user) => {
-        ui.label(egui::RichText::new(format!("Signed in as @{user}")).size(14.0));
+        ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("已登录：@{user}") } else { format!("Signed in as @{user}") })).size(14.0));
         if let Some(c) = credits {
-          ui.label(egui::RichText::new(format!("{} credits", group_thousands(c))).size(12.5).color(theme::MUTED));
+          ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("{} 积分", group_thousands(c)) } else { format!("{} credits", group_thousands(c)) })).size(12.5).color(theme::MUTED));
         }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
-          if widgets::button(ui, Some(Icon::Gem), "Buy credits", widgets::Kind::Accent, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, Some(Icon::Gem), ui_text("Buy credits"), widgets::Kind::Accent, 0.0, theme::CONTROL_H).clicked() {
             ui.ctx().open_url(egui::OpenUrl::new_tab(format!("{WEB_APP_URL}/pricing")));
           }
-          if widgets::button(ui, Some(Icon::LogOut), "Log out", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, Some(Icon::LogOut), ui_text("Log out"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
             action = Some(SettingsAction::SignOut);
           }
         });
       },
       None => {
-        if widgets::button(ui, Some(Icon::LogIn), "Sign in", widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, Some(Icon::LogIn), ui_text("Sign in"), widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
           action = Some(SettingsAction::SignIn);
         }
       },
     }
     ui.add_space(18.0);
-    widgets::hud(ui, "Provider accounts", theme::FAINT);
+    widgets::hud(ui, ui_text("Provider accounts"), theme::FAINT);
     ui.add_space(6.0);
     if let Some(account) = accounts_section(ui, accounts, fal_key) {
       action = Some(SettingsAction::Account(account));
     }
     ui.add_space(18.0);
-    widgets::hud(ui, "About", theme::FAINT);
+    widgets::hud(ui, ui_text("About"), theme::FAINT);
     ui.add_space(6.0);
     ui.label(egui::RichText::new(format!("ArtCraft native {}", env!("CARGO_PKG_VERSION"))).size(13.0).color(theme::MUTED));
-    if widgets::button(ui, Some(Icon::Folder), "Open data folder", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+    if widgets::button(ui, Some(Icon::Folder), ui_text("Open data folder"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
       if let Err(err) = open::that(data_root) {
         log::warn!("Couldn't open {}: {err}", data_root.display());
       }

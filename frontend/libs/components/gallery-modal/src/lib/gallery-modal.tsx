@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { LightboxModal } from "@storyteller/ui-lightbox-modal";
@@ -603,6 +605,7 @@ export const GalleryModal = React.memo(
     onDeleteMedia,
     subscribeToMediaEvents,
   }: GalleryModalProps) => {
+  const { t: translateUi } = useUiTranslation();
   const { t: tr, i18n } = useTranslation();
     const [loading, setLoading] = useState(false);
     // Separate state for pagination spinner (bottom of list) — not shared with background refresh
@@ -3647,8 +3650,7 @@ export const GalleryModal = React.memo(
               <div className="flex items-center justify-between border-t border-ui-panel-border bg-ui-panel p-4">
                 <div className="flex items-center gap-3">
                   <div className="text-sm font-semibold text-base-fg/80">
-                    {selectedItemIds.length}/{maxSelections} selected
-                  </div>
+                    {selectedItemIds.length}/{maxSelections} {" "}{translateUi("selected")}</div>
                   {selectedItemIds.length > 0 && (
                     <span className="text-base-fg/10">|</span>
                   )}

@@ -1,6 +1,7 @@
 //! What the create pages share: the page shell (`DesktopCreatePageShell`), uploading references,
 //! cost-estimate bookkeeping and the app-level requests pages make.
 
+use crate::i18n::t as ui_text;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -197,12 +198,12 @@ pub fn selection_bar(ui: &Ui, area: Rect, bottom: f32, feed: &mut FeedStore, kin
       ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 10.0;
         ui.add_space(6.0);
-        ui.label(egui::RichText::new(format!("{} selected", feed.selected.len())).size(13.0).family(theme::medium()));
+        ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("已选择 {} 项", feed.selected.len()) } else { format!("{} selected", feed.selected.len()) })).size(13.0).family(theme::medium()));
         let any = !feed.selected.is_empty();
-        if ui.add_enabled_ui(any, |ui| widgets::button(ui, Some(crate::ui::icons::Icon::Download), "Download", widgets::Kind::Secondary, 0.0, 30.0)).inner.clicked() {
+        if ui.add_enabled_ui(any, |ui| widgets::button(ui, Some(crate::ui::icons::Icon::Download), ui_text("Download"), widgets::Kind::Secondary, 0.0, 30.0)).inner.clicked() {
           requests.push(AppRequest::Download(feed.selected.iter().cloned().collect()));
         }
-        if widgets::ghost(ui, crate::ui::icons::Icon::X, None, "Exit selection", false).clicked() {
+        if widgets::ghost(ui, crate::ui::icons::Icon::X, None, ui_text("Exit selection"), false).clicked() {
           feed.selecting = false;
           feed.selected.clear();
         }
@@ -227,7 +228,7 @@ fn empty_state(ui: &mut Ui, env: &mut Env<'_>, area: Rect, bottom_offset: f32, t
   child.label(egui::RichText::new(subtitle).size(16.0).color(theme::MUTED));
   if !env.signed_in {
     child.add_space(24.0);
-    if widgets::button(&mut child, Some(crate::ui::icons::Icon::Sparkles), "Sign in to create", widgets::Kind::Primary, 0.0, 44.0).clicked() {
+    if widgets::button(&mut child, Some(crate::ui::icons::Icon::Sparkles), ui_text("Sign in to create"), widgets::Kind::Primary, 0.0, 44.0).clicked() {
       env.requests.push(AppRequest::SignIn);
     }
   }

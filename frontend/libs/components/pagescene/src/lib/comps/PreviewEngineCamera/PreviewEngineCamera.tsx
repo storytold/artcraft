@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { twMerge } from "tailwind-merge";
 import { BlindsIcon, FocusIcon, LoaderCircleIcon, PanelTopOpenIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
@@ -10,6 +12,7 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
 export const PreviewEngineCamera = () => {
+  const { t: translateUi } = useUiTranslation();
   const viewport = useViewportSize();
   const {
     camAspect,
@@ -99,7 +102,7 @@ export const PreviewEngineCamera = () => {
             )}
           >
             <FocusIcon  className="text-sm" />
-            <p className="mt-[2px] text-sm font-medium">Camera View</p>
+            <p className="mt-[2px] text-sm font-medium">{translateUi("Camera View")}</p>
           </div>
 
           <div className="flex gap-1.5">

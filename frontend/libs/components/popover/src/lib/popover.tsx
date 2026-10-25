@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import {
   ReactNode,
@@ -818,6 +820,7 @@ export const PopoverMenu = ({
   maxListHeight,
   richList = false,
 }: PopoverMenuProps) => {
+  const { t: translateUi } = useUiTranslation();
   // Search leaves so a grouped list resolves to the selected model, not its
   // (also-selected) family group row.
   const selectedItem = items
@@ -1424,8 +1427,7 @@ export const PopoverMenu = ({
                             onClick={onAdd}
                             disabled={disableAddButton}
                           >
-                            + Add
-                          </Button>
+                            {translateUi("+ Add")}</Button>
                         )}
                       </div>
                     ) : (
@@ -1593,8 +1595,7 @@ export const PopoverMenu = ({
                             onClick={onAdd}
                             disabled={disableAddButton}
                           >
-                            + Add
-                          </Button>
+                            {translateUi("+ Add")}</Button>
                         )}
                       </div>
                     )}

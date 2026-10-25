@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import {
   ChangeEvent,
   useContext,
@@ -42,6 +44,7 @@ const defaultAxises: Record<string, string> = {
 };
 
 export const ControlPanelSceneObject = () => {
+  const { t: translateUi } = useUiTranslation();
   const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
   const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
   const isShowing = usePageSceneStore((s) => s.objectPanelShowing);
@@ -342,7 +345,7 @@ export const ControlPanelSceneObject = () => {
         className={"flex flex-col gap-2 overflow-y-auto"}
       >
         <div className="flex flex-col gap-1">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Color</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">{translateUi("Color")}</p>
           {/* Native <input type="color"> is nested INSIDE the Button's
               <label> so Safari opens the picker reliably. Safari refuses
               to open a color picker triggered via label[htmlFor]→input
@@ -385,7 +388,7 @@ export const ControlPanelSceneObject = () => {
           </Button>
         </div>
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Location</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">{translateUi("Location")}</p>
           <InputVector
             x={localPosition.x.toString()}
             y={localPosition.y.toString()}
@@ -398,7 +401,7 @@ export const ControlPanelSceneObject = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Rotation</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">{translateUi("Rotation")}</p>
           <InputVector
             x={localRotation.x.toString()}
             y={localRotation.y.toString()}
@@ -413,7 +416,7 @@ export const ControlPanelSceneObject = () => {
 
         <div className="mb-1 flex flex-col gap-2">
           <DraggablePrecisionMutator onChange={handleUniformScaleChange}>
-            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Scale</p>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">{translateUi("Scale")}</p>
           </DraggablePrecisionMutator>
           <InputVector
             x={localScale.x.toString()}
@@ -437,8 +440,7 @@ export const ControlPanelSceneObject = () => {
           onClick={handleDeleteObject}
           className="w-full"
         >
-          Delete
-        </Button>
+          {translateUi("Delete")}</Button>
       </div>
     </Transition>
   );

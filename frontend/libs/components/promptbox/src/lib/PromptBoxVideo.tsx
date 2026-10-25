@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -123,6 +125,7 @@ export const PromptBoxVideo = ({
   credits,
   modelSelector,
 }: PromptBoxVideoProps) => {
+  const { t: translateUi } = useUiTranslation();
   const { t } = useTranslation();
   useSignals();
 
@@ -452,13 +455,13 @@ export const PromptBoxVideo = ({
     selectedModel?.supportsReferenceMode
       ? [
           {
-            label: "Keyframe",
-            description: "First/Last frame",
+            label: translateUi("Keyframe"),
+            description: translateUi("First/Last frame"),
             selected: inputMode === "keyframe",
           },
           {
-            label: "Omni Reference",
-            description: "Multi-media ref",
+            label: translateUi("Omni Reference"),
+            description: translateUi("Multi-media ref"),
             selected: inputMode === "reference",
           },
         ]
@@ -633,13 +636,13 @@ export const PromptBoxVideo = ({
     refDeckAddActions.push(
       {
         key: "upload-image",
-        label: "Upload",
+        label: translateUi("Upload"),
         group: "image",
         onSelect: deck.openImageUpload,
       },
       {
         key: "library-image",
-        label: "From library",
+        label: translateUi("From library"),
         group: "image",
         onSelect: () => deck.openGallery("start"),
       },
@@ -649,13 +652,13 @@ export const PromptBoxVideo = ({
     refDeckAddActions.push(
       {
         key: "upload-video",
-        label: "Upload",
+        label: translateUi("Upload"),
         group: "video",
         onSelect: deck.openVideoUpload,
       },
       {
         key: "library-video",
-        label: "From library",
+        label: translateUi("From library"),
         group: "video",
         onSelect: () => deck.openGallery("video"),
       },
@@ -665,13 +668,13 @@ export const PromptBoxVideo = ({
     refDeckAddActions.push(
       {
         key: "upload-audio",
-        label: "Upload",
+        label: translateUi("Upload"),
         group: "audio",
         onSelect: deck.openAudioUpload,
       },
       {
         key: "library-audio",
-        label: "From library",
+        label: translateUi("From library"),
         group: "audio",
         onSelect: () => deck.openGallery("audio"),
       },
@@ -776,24 +779,24 @@ export const PromptBoxVideo = ({
       onFirstAddActions={[
         {
           key: "upload-first",
-          label: "Upload",
+          label: translateUi("Upload"),
           onSelect: deck.openImageUpload,
         },
         {
           key: "library-first",
-          label: "Pick from library",
+          label: translateUi("Pick from library"),
           onSelect: () => deck.openGallery("start"),
         },
       ]}
       onLastAddActions={[
         {
           key: "upload-last",
-          label: "Upload",
+          label: translateUi("Upload"),
           onSelect: deck.openEndUpload,
         },
         {
           key: "library-last",
-          label: "Pick from library",
+          label: translateUi("Pick from library"),
           onSelect: () => deck.openGallery("end"),
         },
       ]}
@@ -1325,8 +1328,7 @@ export const PromptBoxVideo = ({
         onClick={() => setIsCharactersModalOpen(true)}
         className={`flex h-[34px] items-center justify-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-colors duration-150 ${NEUTRAL_BUTTON_HOVER_CLASSES}`}
       >
-        @Characters
-      </button>
+        {translateUi("@Characters")}</button>
     ) : null;
 
   // Input-mode (keyframe/reference) picker, reused in the fullscreen footer.
@@ -1357,7 +1359,7 @@ export const PromptBoxVideo = ({
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon
-                
+
                 className="h-3 w-3 shrink-0" />
               <span>
                 {t("This model can't generate from text alone - add a starting frame to animate your prompt.")}

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useState, useMemo, useRef, useEffect, useCallback, type CSSProperties } from "react";
 import { List, type RowComponentProps } from "react-window";
@@ -43,6 +45,7 @@ export function FontPicker({
   onValueChange,
   className,
 }: FontPickerProps) {
+  const { t: translateUi } = useUiTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FontTab>("all");
@@ -140,31 +143,27 @@ export function FontPicker({
               )}
               onClick={() => setActiveTab(tab.key)}
             >
-              {tab.label}
+              {translateUi(tab.label)}
             </button>
           ))}
         </div>
         {status === "loading" && (
           <div className="py-8 text-center text-sm text-muted-foreground">
-            Loading fonts...
-          </div>
+            {translateUi("Loading fonts...")}</div>
         )}
         {status === "error" && (
           <div className="flex flex-col items-center gap-3 py-8 px-4">
             <p className="text-sm text-muted-foreground text-center">
-              Failed to load font previews.
-            </p>
+              {translateUi("Failed to load font previews.")}</p>
             <Button variant="outline" size="sm" onClick={handleRetry}>
-              Retry
-            </Button>
+              {translateUi("Retry")}</Button>
           </div>
         )}
         {status === "idle" &&
           fontNames.length > 0 &&
           filteredFonts.length === 0 && (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              No fonts found.
-            </div>
+              {translateUi("No fonts found.")}</div>
           )}
         {status === "idle" && atlas && filteredFonts.length > 0 && (
           <List

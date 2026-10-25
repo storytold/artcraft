@@ -60,3 +60,9 @@ function updateDocumentLanguage(language: string) {
 }
 
 export { Trans } from "react-i18next";
+
+/** Reactive text leaf for class-based error boundaries. */
+export function LocalizedText({ message }: { message: string }) {
+  const { t } = useTranslation();
+  return t(message);
+}

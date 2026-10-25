@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -43,6 +45,7 @@ export interface Controls3DProps {
 export const Controls3D = ({
   showImageTo3DButton = true,
 }: Controls3DProps = {}) => {
+  const { t: translateUi } = useUiTranslation();
   useSignals();
   const editor = useContext(EngineContext);
   const {
@@ -149,20 +152,20 @@ export const Controls3D = ({
     {
       value: "move",
       icon: MoveIcon,
-      text: "Move",
-      tooltip: "Move (T)",
+      text: translateUi("Move"),
+      tooltip: translateUi("Move (T)"),
     },
     {
       value: "rotate",
       icon: RefreshCwIcon,
-      text: "Rotate",
-      tooltip: "Rotate (R)",
+      text: translateUi("Rotate"),
+      tooltip: translateUi("Rotate (R)"),
     },
     {
       value: "scale",
       icon: Maximize2Icon,
-      text: "Scale",
-      tooltip: "Scale (G)",
+      text: translateUi("Scale"),
+      tooltip: translateUi("Scale (G)"),
     },
   ];
 
@@ -176,8 +179,7 @@ export const Controls3D = ({
                 {showEmptySceneTooltip && (
                   <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 transform whitespace-nowrap">
                     <div className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-white">
-                      Click + to add your first 3D asset
-                      <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 transform bg-primary" />
+                      {translateUi("Click + to add your first 3D asset")}<div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 transform bg-primary" />
                     </div>
                   </div>
                 )}
@@ -197,38 +199,38 @@ export const Controls3D = ({
                     onOpenChange={setIsAddAssetPopoverOpen}
                     items={[
                       {
-                        label: "ArtCraft Presets (B)",
+                        label: translateUi("ArtCraft Presets (B)"),
                         selected: false,
                         icon: <BoxIcon className="h-4 w-4" />,
                         action: "presets",
                       },
                       {
-                        label: "Animations",
+                        label: translateUi("Animations"),
                         selected: false,
                         icon: <FilmIcon className="h-4 w-4" />,
                         action: "animations",
                       },
                       {
-                        label: "My Library",
+                        label: translateUi("My Library"),
                         selected: false,
                         icon: <ImagesIcon className="h-4 w-4" />,
                         action: "library",
                         divider: true,
                       },
                       {
-                        label: "Upload 3D Model",
+                        label: translateUi("Upload 3D Model"),
                         selected: false,
                         icon: <UploadIcon className="h-4 w-4" />,
                         action: "upload-3d",
                       },
                       {
-                        label: "Upload Image",
+                        label: translateUi("Upload Image"),
                         selected: false,
                         icon: <UploadIcon className="h-4 w-4" />,
                         action: "upload-image",
                       },
                       {
-                        label: "Upload Splat",
+                        label: translateUi("Upload Splat"),
                         selected: false,
                         icon: <UploadIcon className="h-4 w-4" />,
                         action: "upload-splat",
@@ -282,8 +284,7 @@ export const Controls3D = ({
                   className="flex min-w-[92px] cursor-not-allowed items-center justify-center gap-2 rounded-[3px] border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-base-fg opacity-40 transition-colors duration-150"
                 >
                   <BoxIcon className="h-3 w-3 text-base-fg/60" />
-                  Local
-                </button>
+                  {translateUi("Local")}</button>
               </Tooltip>
             ) : (
               <Tooltip
@@ -315,7 +316,7 @@ export const Controls3D = ({
           isOpen: upload3DIsShowing,
           onClose: () => setUpload3DIsShowing(false),
           onSuccess: () => setUpload3DIsShowing(false),
-          title: "Upload a 3D Model",
+          title: translateUi("Upload a 3D Model"),
           titleIcon: BoxIcon,
         })}
 
@@ -324,7 +325,7 @@ export const Controls3D = ({
           isOpen: uploadImageIsShowing,
           onClose: () => setUploadImageIsShowing(false),
           onSuccess: () => setUploadImageIsShowing(false),
-          title: "Upload an Image",
+          title: translateUi("Upload an Image"),
           titleIcon: ImagesIcon,
         })}
 
@@ -333,7 +334,7 @@ export const Controls3D = ({
           isOpen: uploadSplatIsShowing,
           onClose: () => setUploadSplatIsShowing(false),
           onSuccess: () => setUploadSplatIsShowing(false),
-          title: "Upload an spz file",
+          title: translateUi("Upload an spz file"),
           titleIcon: BoxIcon,
         })}
     </>

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { ImageIcon, ImagesIcon, LoaderCircleIcon, PlusIcon, SparklesIcon, SquarePenIcon, VideoIcon, XIcon } from "lucide-react";
@@ -45,6 +47,7 @@ export const PromptBoxVFX = ({
   containerClassName,
   hideResolution = false,
 }: PromptBoxVFXProps) => {
+  const { t: translateUi } = useUiTranslation();
   const source = useVFXStore((s) => s.source);
   const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
@@ -258,13 +261,12 @@ export const PromptBoxVFX = ({
           <div className="glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 shadow-2xl sm:px-4 sm:py-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/60">
-                Prompt (optional)
-              </span>
+                {translateUi("Prompt (optional)")}</span>
               <button
                 type="button"
                 onClick={() => setShowPromptPopover(false)}
                 className="flex h-5 w-5 items-center justify-center rounded-full text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
-                aria-label="Close prompt"
+                aria-label={translateUi("Close prompt")}
               >
                 <XIcon  className="h-3 w-3" />
               </button>
@@ -273,7 +275,7 @@ export const PromptBoxVFX = ({
               ref={promptTextareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe the new scene, lighting, or change..."
+              placeholder={translateUi("Describe the new scene, lighting, or change...")}
               rows={3}
               className="max-h-40 min-h-[3.5rem] w-full resize-none bg-transparent text-sm text-base-fg placeholder-base-fg/50 focus:outline-none"
               onKeyDown={(e) => {
@@ -321,7 +323,7 @@ export const PromptBoxVFX = ({
         {/* Primary inputs — centered, all aspect-video. Source + Reference are required, Mask is optional */}
         <div className="flex items-end justify-center gap-3">
           <UploadTile
-            label="Source Video"
+            label={translateUi("Source Video")}
             icon={VideoIcon}
             previewUrl={source?.url}
             isVideo
@@ -334,7 +336,7 @@ export const PromptBoxVFX = ({
           />
           {/* Mask is hidden for now — backend endpoint doesn't accept it yet. */}
           <UploadTile
-            label="Reference Image"
+            label={translateUi("Reference Image")}
             icon={ImageIcon}
             previewUrl={reference?.url}
             uploading={referenceUploading}
@@ -392,7 +394,7 @@ export const PromptBoxVFX = ({
                 className="hidden h-3 w-3 sm:inline-block"
               />
               <span className="truncate">
-                <span className="sm:hidden">Prompt</span>
+                <span className="sm:hidden">{translateUi("Prompt")}</span>
                 <span className="hidden sm:inline">
                   {hasPrompt ? "Prompt" : "Add prompt"}
                 </span>
@@ -412,8 +414,7 @@ export const PromptBoxVFX = ({
               loading={isSubmitting}
               className="border-none bg-primary px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Generate
-            </GenerateButton>
+              {translateUi("Generate")}</GenerateButton>
           </div>
         </div>
 
@@ -464,6 +465,7 @@ const UploadTile = ({
   onPickFromLibrary,
   onClear,
 }: UploadTileProps) => {
+  const { t: translateUi } = useUiTranslation();
   const showHoverMenu = !previewUrl && !uploading;
   const tileSize = tileClassName ?? "h-12 w-12";
   return (
@@ -473,8 +475,7 @@ const UploadTile = ({
         {required && <span className="text-primary-400">*</span>}
         {optional && (
           <span className="rounded bg-base-fg/10 px-1 py-px text-[9px] font-medium normal-case tracking-normal text-base-fg/40">
-            optional
-          </span>
+            {translateUi("optional")}</span>
         )}
       </div>
 
@@ -493,16 +494,14 @@ const UploadTile = ({
                 icon={PlusIcon}
                 className="w-full"
               >
-                Upload
-              </Button>
+                {translateUi("Upload")}</Button>
               <Button
                 variant="action"
                 onClick={onPickFromLibrary}
                 icon={ImagesIcon}
                 className="w-full bg-base-fg/10 hover:bg-base-fg/20"
               >
-                Pick from library
-              </Button>
+                {translateUi("Pick from library")}</Button>
             </div>
           }
         >
@@ -530,7 +529,7 @@ const UploadTile = ({
         >
           {uploading ? (
             <LoaderCircleIcon
-              
+
               className="h-6 w-6 animate-spin text-base-fg" />
           ) : (
             <>

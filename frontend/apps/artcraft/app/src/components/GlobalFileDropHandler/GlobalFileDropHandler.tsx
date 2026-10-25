@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { BoxIcon, ImagesIcon, Maximize2Icon } from "lucide-react";
@@ -35,6 +37,7 @@ function isGlobalDropSuppressed(): boolean {
 const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
 
 export function GlobalFileDropHandler() {
+  const { t: translateUi } = useUiTranslation();
   const dragCounter = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [modalType, setModalType] = useState<ModalType>(null);
@@ -194,7 +197,7 @@ export function GlobalFileDropHandler() {
         <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
           <div className="flex flex-col items-center gap-3 border border-dashed border-white/60 bg-ui-panel px-16 py-12 text-white">
             <Maximize2Icon className="text-3xl opacity-60" />
-            <div className="font-display text-2xl tracking-tight">Drop to Upload</div>
+            <div className="font-display text-2xl tracking-tight">{translateUi("Drop to Upload")}</div>
             <div className="hud-label text-white/50">GLB, PNG, JPG, JPEG, SPZ</div>
           </div>
         </div>
@@ -204,7 +207,7 @@ export function GlobalFileDropHandler() {
         initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
         onSuccess={(_category: FilterEngineCategories) => closeModal()}
-        title="Upload a 3D Model"
+        title={translateUi("Upload a 3D Model")}
         titleIcon={BoxIcon}
       />
       <UploadModalImage
@@ -212,7 +215,7 @@ export function GlobalFileDropHandler() {
         initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
         onSuccess={() => closeModal()}
-        title="Upload an Image"
+        title={translateUi("Upload an Image")}
         titleIcon={ImagesIcon}
       />
       <UploadModalSplat
@@ -220,7 +223,7 @@ export function GlobalFileDropHandler() {
         initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
         onSuccess={() => {}}
-        title="Upload a Splat"
+        title={translateUi("Upload a Splat")}
         titleIcon={BoxIcon}
       />
     </>

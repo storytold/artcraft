@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext } from "react";
 import { BoneIcon, EyeIcon, EyeOffIcon, LockIcon, LockOpenIcon, LogInIcon, PlusIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -14,6 +16,7 @@ import { toggleSkeletonHelper } from "../../actions/toggleSkeletonHelper";
 import { toggleCameraView } from "../../actions/cameraView";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
+  const { t: translateUi } = useUiTranslation();
   const isSelected = usePageSceneStore(
     (s) => s.outlinerSelectedItem?.id === item.id,
   );
@@ -83,7 +86,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
         {item.isCamera && (
           <button
             onClick={handleViewFromCamera}
-            title="View from camera"
+            title={translateUi("View from camera")}
             className="text-white/60 transition-colors duration-100 hover:text-white text-xs"
           >
             <div className="w-3">
@@ -137,6 +140,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
 };
 
 export const Outliner = () => {
+  const { t: translateUi } = useUiTranslation();
   useSignals();
   const items = usePageSceneStore((s) => s.outlinerItems);
   const showing = usePageSceneStore((s) => s.outlinerShowing);
@@ -156,7 +160,7 @@ export const Outliner = () => {
       leaveTo="opacity-0"
     >
       <div className="flex items-center border-b border-ui-panel-border px-3 py-2.5">
-        <h2 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">Scene</h2>
+        <h2 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">{translateUi("Scene")}</h2>
         <Button
           icon={PlusIcon}
           variant="ghost"
@@ -164,12 +168,11 @@ export const Outliner = () => {
           className="h-7 gap-1 px-1.5 py-0 text-[11px] leading-none text-white/70 hover:text-white"
           onClick={openAssetModal}
         >
-          Add
-        </Button>
+          {translateUi("Add")}</Button>
         <Button
           icon={XIcon}
           variant="ghost"
-          aria-label="Close scene panel"
+          aria-label={translateUi("Close scene panel")}
           iconClassName="h-4 w-4 shrink-0"
           className="h-7 w-7 p-0 text-white/50 hover:text-white"
           onClick={() => {

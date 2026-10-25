@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useMemo, useState } from "react";
 import { PanelView } from "./base-panel";
@@ -57,6 +59,7 @@ import {
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
 export function MediaView() {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const { toast, mediaSource, assetGallery } = useEditorAdapters();
   const mediaFiles = useEditor((e) => e.media.getAssets());
@@ -78,7 +81,7 @@ export function MediaView() {
   const processFiles = async ({ files }: { files: File[] }) => {
     if (!files || files.length === 0) return;
     if (!activeProject) {
-      toast.error("No active project");
+      toast.error(translateUi("No active project"));
       return;
     }
 
@@ -131,7 +134,7 @@ export function MediaView() {
       });
     } catch (error) {
       console.error("Gallery picker failed:", error);
-      toast.error("Couldn't open the gallery");
+      toast.error(translateUi("Couldn't open the gallery"));
       return;
     }
     if (selections.length === 0) return;
@@ -297,7 +300,7 @@ export function MediaView() {
       <input {...fileInputProps} />
 
       <PanelView
-        title="Assets"
+        title={translateUi("Assets")}
         actions={
           <MediaActions
             mediaViewMode={mediaViewMode}
@@ -546,6 +549,7 @@ function MediaPreview({
   item: MediaAsset;
   variant?: "grid" | "compact";
 }) {
+  const { t: translateUi } = useUiTranslation();
   const shouldShowDurationBadge = variant === "grid";
 
   if (item.type === "image") {
@@ -583,7 +587,7 @@ function MediaPreview({
     return (
       <MediaTypePlaceholder
         icon={Video01Icon}
-        label="Video"
+        label={translateUi("Video")}
         duration={item.duration}
         variant="muted"
       />
@@ -594,7 +598,7 @@ function MediaPreview({
     return (
       <MediaTypePlaceholder
         icon={MusicNote03Icon}
-        label="Audio"
+        label={translateUi("Audio")}
         duration={item.duration}
         variant="bordered"
       />
@@ -602,7 +606,7 @@ function MediaPreview({
   }
 
   return (
-    <MediaTypePlaceholder icon={Image02Icon} label="Unknown" variant="muted" />
+    <MediaTypePlaceholder icon={Image02Icon} label={translateUi("Unknown")} variant="muted" />
   );
 }
 
@@ -626,6 +630,7 @@ function MediaActions({
   // Optional: only rendered when the host wires an AssetGalleryAdapter.
   onBrowseGallery?: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <div className="flex gap-1.5">
       <TooltipProvider>
@@ -671,28 +676,28 @@ function MediaActions({
             </TooltipTrigger>
             <DropdownMenuContent align="end">
               <SortMenuItem
-                label="Name"
+                label={translateUi("Name")}
                 sortKey="name"
                 currentSortBy={sortBy}
                 currentSortOrder={sortOrder}
                 onSort={onSort}
               />
               <SortMenuItem
-                label="Type"
+                label={translateUi("Type")}
                 sortKey="type"
                 currentSortBy={sortBy}
                 currentSortOrder={sortOrder}
                 onSort={onSort}
               />
               <SortMenuItem
-                label="Duration"
+                label={translateUi("Duration")}
                 sortKey="duration"
                 currentSortBy={sortBy}
                 currentSortOrder={sortOrder}
                 onSort={onSort}
               />
               <SortMenuItem
-                label="File size"
+                label={translateUi("File size")}
                 sortKey="size"
                 currentSortBy={sortBy}
                 currentSortOrder={sortOrder}
@@ -702,7 +707,7 @@ function MediaActions({
           </DropdownMenu>
           <TooltipContent>
             <p>
-              Sort by {sortBy} (
+              {translateUi("Sort by")}{" "}{sortBy} (
               {sortOrder === "asc" ? "ascending" : "descending"})
             </p>
           </TooltipContent>
@@ -717,8 +722,7 @@ function MediaActions({
           className="items-center justify-center gap-1.5"
         >
           <HugeiconsIcon icon={FolderLibraryIcon} />
-          Browse
-        </Button>
+          {translateUi("Browse")}</Button>
       ) : null}
       <Button
         variant="outline"
@@ -728,8 +732,7 @@ function MediaActions({
         className="items-center justify-center gap-1.5"
       >
         <HugeiconsIcon icon={CloudUploadIcon} />
-        Import
-      </Button>
+        {translateUi("Import")}</Button>
     </div>
   );
 }

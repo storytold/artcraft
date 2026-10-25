@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { type UploadMediaFn } from "@storyteller/api";
@@ -141,6 +143,7 @@ export function useDeckMedia<
   uploadAudio,
   ownGalleryModal,
 }: UseDeckMediaOptions<TImage, TVideo, TAudio>) {
+  const { t: translateUi } = useUiTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const audioFileInputRef = useRef<HTMLInputElement>(null);
@@ -409,7 +412,7 @@ export function useDeckMedia<
             ) {
               URL.revokeObjectURL(entry.previewUrl);
               setUploadingVideo(null);
-              toast.error("Failed to upload video. Please upload an MP4 file.");
+              toast.error(translateUi("Failed to upload video. Please upload an MP4 file."));
             }
           },
         });

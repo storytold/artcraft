@@ -1,3 +1,5 @@
+
+import { i18n as uiI18n } from "@storyteller/i18n";
 import toast from "react-hot-toast";
 import {
   FilterMediaClasses,
@@ -60,7 +62,7 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string, 
       await DownloadUrl(url, { model });
     }
     if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
-      toast.success(`Downloaded 3D model`);
+      toast.success(uiI18n.t("Downloaded 3D model"));
     } else {
       toast.success(`Downloaded ${mediaClass}`);
     }
@@ -121,7 +123,7 @@ export async function downloadMediaFilesToFolder(
       { id: toastId },
     );
   } else {
-    toast.error("Could not save the selected files.", { id: toastId });
+    toast.error(uiI18n.t("Could not save the selected files."), { id: toastId });
   }
   return saved > 0;
 }
@@ -150,10 +152,10 @@ export async function applyMakeVideoFromImage(url: string, mediaToken?: string) 
 export async function copyShareLink(mediaToken: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(`${SHARE_URL_BASE}${mediaToken}`);
-    toast.success("Share link copied");
+    toast.success(uiI18n.t("Share link copied"));
     return true;
   } catch {
-    toast.error("Unable to copy link");
+    toast.error(uiI18n.t("Unable to copy link"));
     return false;
   }
 }
@@ -324,7 +326,7 @@ export async function applyRecreateFromPromptToken(
     }
   }
   if (!promptData) {
-    toast.error("Could not load the original prompt.");
+    toast.error(uiI18n.t("Could not load the original prompt."));
     return;
   }
   applyRecreateFromPromptData({ promptData, mediaClass });

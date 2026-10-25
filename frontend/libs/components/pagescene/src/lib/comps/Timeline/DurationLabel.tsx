@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useEffect, useRef, useState } from "react";
 import { EngineContext } from "../../contexts/EngineContext";
 import { setTimelineDuration } from "../../actions";
@@ -8,6 +10,7 @@ import { formatTimecode } from "./timelineUtils";
 // Enter/blur commits, Escape cancels. Backed by TimelineController.setDuration
 // (clamped to [1,60], covers the required 5–30s range).
 export const DurationLabel = ({ className = "" }: { className?: string }) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const duration = usePageSceneStore((s) => s.timelineDuration);
   const [editing, setEditing] = useState(false);
@@ -49,7 +52,7 @@ export const DurationLabel = ({ className = "" }: { className?: string }) => {
   return (
     <button
       type="button"
-      title="Set timeline duration (seconds)"
+      title={translateUi("Set timeline duration (seconds)")}
       onClick={(e) => {
         e.stopPropagation();
         setValue(String(Math.round(duration)));

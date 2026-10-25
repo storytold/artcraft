@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useState } from "react";
 import { Badge } from "@storyteller/ui-badge";
 import { BoxIcon, FootprintsIcon, MoveIcon } from "lucide-react";
@@ -38,6 +40,7 @@ const patchExpressionObjectType = (mediaType: string) => {
 };
 
 export const ItemElement = ({ item }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   // Broken thumbnail URL (404, CORS) → swap to the icon placeholder instead
   // of the browser's broken-image glyph + alt text. Keyed by media id, NOT a
@@ -141,13 +144,11 @@ export const ItemElement = ({ item }: Props) => {
           {item.type === AssetType.ANIMATION ? (
             <>
               <FootprintsIcon  className="mr-1.5" />
-              Add to Character
-            </>
+              {translateUi("Add to Character")}</>
           ) : (
             <>
               <MoveIcon  className="mr-1.5" />
-              Drag to Scene
-            </>
+              {translateUi("Drag to Scene")}</>
           )}
         </div>
       </div>

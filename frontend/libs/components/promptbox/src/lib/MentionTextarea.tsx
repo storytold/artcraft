@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import {
   forwardRef,
   useCallback,
@@ -402,6 +404,7 @@ function MentionDropdown({
   /** Viewport-space caret coordinates (the "@" trigger). */
   position: { left: number; caretTop: number; caretBottom: number };
 }) {
+  const { t: translateUi } = useUiTranslation();
   const listRef = useRef<HTMLDivElement>(null);
   // Touch-tap bookkeeping for the rows: where the finger landed and whether
   // the list was momentum-scrolling at that moment (see the row handlers).
@@ -515,8 +518,7 @@ function MentionDropdown({
       }}
     >
       <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
-        References
-      </div>
+        {translateUi("References")}</div>
       <div>
         {items.map((item, i) => (
           <button
@@ -579,7 +581,7 @@ function MentionDropdown({
                 />
               ) : item.type === "character" ? (
                 <UserIcon
-                  
+
                   className="h-3.5 w-3.5 text-base-fg/60" />
               ) : item.type === "image" && item.preview ? (
                 <img

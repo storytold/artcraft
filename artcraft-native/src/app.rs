@@ -54,6 +54,7 @@ const MODALITIES: [Modality; 3] = [Modality::Image, Modality::Video, Modality::A
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 struct Saved {
+  chinese: bool,
   page: Page,
   enter_to_generate: bool,
   view_mode: ViewMode,
@@ -66,7 +67,7 @@ struct Saved {
 
 impl Default for Saved {
   fn default() -> Self {
-    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
+    Self { chinese: false, page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
   }
 }
 
@@ -122,6 +123,7 @@ impl ArtcraftApp {
     theme::apply(&cc.egui_ctx);
     egui_extras::install_image_loaders(&cc.egui_ctx);
     let mut saved: Saved = cc.storage.and_then(|s| eframe::get_value(s, STORAGE_KEY)).unwrap_or_default();
+    crate::i18n::set_chinese(saved.chinese);
     if let Some(page) = std::env::var("ARTCRAFT_PAGE").ok().and_then(|p| Page::from_slug(&p)) {
       saved.page = page;
     }
@@ -890,7 +892,7 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
+    let saved = Saved { chinese: crate::i18n::is_chinese(), page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
     eframe::set_value(storage, STORAGE_KEY, &saved);
   }
 

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { CheckIcon, CircleAlertIcon, CopyIcon, LoaderCircleIcon, WandSparklesIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -37,6 +39,7 @@ export const VFXResultCard = ({
   promptLabelClassName = "text-white/50",
   tryButtonClassName = "border-primary/40 bg-primary/15 text-white hover:bg-primary/25",
 }: VFXResultCardProps) => {
+  const { t: translateUi } = useUiTranslation();
   return (
     <div
       className={twMerge(
@@ -55,9 +58,9 @@ export const VFXResultCard = ({
         ) : data.status === "pending" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-white/70">
             <LoaderCircleIcon
-              
+
               className="h-8 w-8 animate-spin" />
-            <span className="text-sm">Generating background change...</span>
+            <span className="text-sm">{translateUi("Generating background change...")}</span>
           </div>
         ) : data.status === "failed" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-4 text-center text-red-300">
@@ -71,25 +74,23 @@ export const VFXResultCard = ({
                 className="mt-1 flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white/80"
               >
                 <XIcon />
-                Dismiss
-              </button>
+                {translateUi("Dismiss")}</button>
             )}
           </div>
         ) : null}
         {data.title && data.status === "complete" && (
           <div className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium uppercase tracking-wider text-white/80 backdrop-blur-sm">
-            Output
-          </div>
+            {translateUi("Output")}</div>
         )}
       </div>
 
       <aside className="flex min-w-0 flex-col gap-2">
         {data.source && (
-          <SidePanelMedia label="Source" url={data.source.url} isVideo />
+          <SidePanelMedia label={translateUi("Source")} url={data.source.url} isVideo />
         )}
-        {data.mask && <SidePanelMedia label="Alpha" url={data.mask.url} />}
+        {data.mask && <SidePanelMedia label={translateUi("Alpha")} url={data.mask.url} />}
         {data.reference && (
-          <SidePanelMedia label="Reference" url={data.reference.url} />
+          <SidePanelMedia label={translateUi("Reference")} url={data.reference.url} />
         )}
         {data.prompt && data.prompt.trim().length > 0 && (
           <div
@@ -105,7 +106,7 @@ export const VFXResultCard = ({
                 promptLabelClassName,
               )}
             >
-              <span>Prompt</span>
+              <span>{translateUi("Prompt")}</span>
               <CopyPromptButton text={data.prompt} />
             </div>
             <div className="leading-relaxed">{data.prompt}</div>
@@ -120,8 +121,7 @@ export const VFXResultCard = ({
             )}
           >
             <WandSparklesIcon  className="h-3 w-3" />
-            Try this
-          </button>
+            {translateUi("Try this")}</button>
         )}
       </aside>
     </div>

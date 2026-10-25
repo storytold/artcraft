@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import { findDesktopModel } from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -211,7 +213,7 @@ const InProgressCard = ({
       <div className="absolute inset-0 bg-black/30" />
       <div className="absolute inset-0 flex items-center justify-center">
         <LoaderCircleIcon
-          
+
           className="animate-spin text-white/80"
           size="lg" />
       </div>
@@ -224,7 +226,7 @@ const InProgressCard = ({
   ) : (
     <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-ui-controls">
       <LoaderCircleIcon
-        
+
         className="animate-spin text-base-fg/60"
         size="lg" />
     </div>
@@ -248,7 +250,7 @@ const InProgressCard = ({
                   delay={100}
                 >
                   <TriangleAlertIcon
-                    
+
                     className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400" />
                 </Tooltip>
               )}
@@ -416,7 +418,7 @@ const FailedCard = ({
       <div className="absolute inset-0 bg-red-900/40" />
       <div className="absolute inset-0 flex items-center justify-center">
         <CircleAlertIcon
-          
+
           className="text-red-400"
           size="lg" />
       </div>
@@ -429,7 +431,7 @@ const FailedCard = ({
   ) : (
     <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-red-500/10">
       <CircleAlertIcon
-        
+
         className="text-red-400"
         size="lg" />
     </div>
@@ -512,6 +514,7 @@ const FailedCard = ({
 };
 
 export const TaskQueue = () => {
+  const { t: translateUi } = useUiTranslation();
   const { t: tr } = useTranslation();
   const [isModalOpen, setModalOpen] = useState(false);
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
@@ -552,7 +555,7 @@ export const TaskQueue = () => {
   const handleClearCompleted = (onSuccess?: () => void) => {
     setConfirmationConfig({
       isOpen: true,
-      title: "Clear completed tasks?",
+      title: translateUi("Clear completed tasks?"),
       message: "This will remove all completed tasks from the task queue.",
       primaryActionText: "Clear completed",
       primaryActionIcon: BrushIcon,
@@ -568,7 +571,7 @@ export const TaskQueue = () => {
   const handleClearStale = () => {
     setConfirmationConfig({
       isOpen: true,
-      title: "Clear stale tasks?",
+      title: translateUi("Clear stale tasks?"),
       message: "This will remove all stale/stuck in-progress tasks from the queue.",
       primaryActionText: "Clear stale",
       primaryActionIcon: Trash2Icon,
@@ -583,7 +586,7 @@ export const TaskQueue = () => {
   const handleClearFailed = () => {
     setConfirmationConfig({
       isOpen: true,
-      title: "Clear failed tasks?",
+      title: translateUi("Clear failed tasks?"),
       message: "This will remove all failed/cancelled tasks from the queue.",
       primaryActionText: "Clear failed",
       primaryActionIcon: Trash2Icon,
@@ -598,7 +601,7 @@ export const TaskQueue = () => {
   const handleRemoveAll = () => {
     setConfirmationConfig({
       isOpen: true,
-      title: "Remove all tasks?",
+      title: translateUi("Remove all tasks?"),
       message: "This will remove ALL tasks (completed and in-progress) from the queue. This cannot be undone.",
       primaryActionText: "Nuke all",
       primaryActionIcon: BombIcon,
@@ -1058,7 +1061,7 @@ export const TaskQueue = () => {
                                 onClick={() => handleClearFailed()}
                               >
                                 <XIcon
-                                  
+
                                   className="mr-1" />
                                 {tr("Clear failed")}
                               </button>
@@ -1083,7 +1086,7 @@ export const TaskQueue = () => {
                                 onClick={() => handleClearCompleted()}
                               >
                                 <XIcon
-                                  
+
                                   className="mr-1" />
                                 {tr("Clear completed")}
                               </button>

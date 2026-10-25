@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -76,6 +78,7 @@ export const PromptBoxImage = ({
   credits,
   modelSelector,
 }: PromptBoxImageProps) => {
+  const { t: translateUi } = useUiTranslation();
   const { t } = useTranslation();
   useSignals();
   const selectedModel = useMemo(
@@ -197,13 +200,13 @@ export const PromptBoxImage = ({
   const deckAddActions: DeckAddAction[] = [
     {
       key: "upload-image",
-      label: "Upload",
+      label: translateUi("Upload"),
       group: "image",
       onSelect: deck.openImageUpload,
     },
     {
       key: "library-image",
-      label: "Pick from library",
+      label: translateUi("Pick from library"),
       group: "image",
       onSelect: () => deck.openGallery("start"),
     },
@@ -242,17 +245,17 @@ export const PromptBoxImage = ({
 
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "Wide",
+      label: translateUi("Wide"),
       selected: aspectRatio === "wide",
       icon: <AspectRatioIcon ratio={[16, 10]} />,
     },
     {
-      label: "Tall",
+      label: translateUi("Tall"),
       selected: aspectRatio === "tall",
       icon: <AspectRatioIcon ratio={[10, 16]} />,
     },
     {
-      label: "Square",
+      label: translateUi("Square"),
       selected: aspectRatio === "square",
       icon: <AspectRatioIcon ratio={[1, 1]} />,
     },

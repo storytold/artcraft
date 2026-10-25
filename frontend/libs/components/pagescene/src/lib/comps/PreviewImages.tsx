@@ -1,7 +1,10 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { MoveRightIcon } from "lucide-react";
 import { useViewportSize } from "../hooks/useViewportSize";
 
 export const PreviewImages = () => {
+  const { t: translateUi } = useUiTranslation();
   const { width, height } = useViewportSize();
   const maxHeight = height - 68 - 120 - 100 - 240;
   const imageWidth1 = (width - 160) / 2;
@@ -20,7 +23,7 @@ export const PreviewImages = () => {
       </div>
       <div className="flex w-[60px] flex-col justify-center">
         <MoveRightIcon
-          
+
           className="text-3xl opacity-60" />
       </div>
       <div
@@ -29,7 +32,7 @@ export const PreviewImages = () => {
       >
         <img
           id="styled-preview"
-          alt="Styled Preview"
+          alt={translateUi("Styled Preview")}
           width={imageWidth}
           height={imageHeight}
         />
