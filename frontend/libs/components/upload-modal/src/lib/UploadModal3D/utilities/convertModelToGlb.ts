@@ -1,34 +1,45 @@
-import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
-import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import {
+  ConvertibleModelExtension,
+  convertModelBufferToGlb,
+  getConvertibleModelExtension,
+} from "./modelToGlb";
 // `?worker&inline` (see src/vite-env.d.ts): the worker is bundled as
 // self-contained inline code inside this library's output. The
 // `new Worker(new URL(...), import.meta.url)` form breaks CONSUMING builds —
 // the lib build rewrites it to a hashed asset path in dist/index.js, which
 // the consumer's vite (worker-import-meta-url plugin) then fails to resolve
 // as an entry module.
-import ConvertFbxToGlbWorker from "./convertFbxToGlb.worker?worker&inline";
+import ConvertModelToGlbWorker from "./convertModelToGlb.worker?worker&inline";
 
-// Convert an FBX file (e.g. a Mixamo download) to a binary GLB, preserving
-// skeletal animation clips. Everything downstream of the picker — the
-// preview canvas, the backend asset, the scene loader, the timeline clip
-// loader, Viewer3D — is GLTF-only, so FBX is normalized here once instead
-// of teaching an FBX loader to every consumer.
+// Convert an FBX (e.g. a Mixamo download), OBJ, STL or PLY mesh to a binary
+// GLB. FBX skeletal animation clips are preserved. Everything downstream of
+// the picker — the preview canvas, the backend asset, the scene loader, the
+// timeline clip loader, Viewer3D — is GLTF-only, so other formats are
+// normalized here once instead of teaching a new loader to every consumer
+// (parsing lives in modelToGlb.ts).
 //
 // The parse + export are synchronous CPU work, so they run in a Web Worker
-// (convertFbxToGlb.worker.ts) to keep the UI responsive; the worker handles
+// (convertModelToGlb.worker.ts) to keep the UI responsive; the worker handles
 // jobs one at a time, which also stops a multi-file pick from
 // oversubscribing cores. If the worker can't start (bundler/environment),
 // conversion falls back to the main thread — same result, just jankier.
 //
-// Caveats (fine for the Mixamo use case, revisit if needed):
-// - Embedded/relative-path textures may not survive; geometry, skeleton and
-//   clips do.
-// - Units are exported as parsed (Mixamo rigs are cm-scaled); no rescaling
-//   is applied here.
-export async function convertFbxToGlb(file: File): Promise<File> {
-  const glb = await convert(file);
+// Caveats (fine for the current use cases, revisit if needed):
+// - Embedded/relative-path textures may not survive (OBJ .mtl files are not
+//   read); geometry, vertex colors, skeleton and clips do.
+// - Units and up axis are exported as parsed (Mixamo rigs are cm-scaled,
+//   STL/PLY are often mm-scaled and Z-up); no rescaling is applied here.
+export async function convertModelToGlb(file: File): Promise<File> {
+  const ext = getConvertibleModelExtension(file.name);
+  if (!ext) throw new Error(`Unsupported model format: ${file.name}`);
   const stem = file.name.slice(0, file.name.lastIndexOf("."));
+  const glb = await convert(file, ext, stem);
   return new File([glb], `${stem}.glb`, { type: "model/gltf-binary" });
+}
+
+// Files that must go through convertModelToGlb before preview/upload.
+export function isConvertibleModelFile(file: File): boolean {
+  return getConvertibleModelExtension(file.name) !== null;
 }
 
 // ─── worker plumbing ──────────────────────────────────────────────────────
@@ -48,18 +59,27 @@ let worker: Worker | null | undefined;
 let nextJobId = 0;
 const pendingJobs = new Map<number, PendingJob>();
 
-async function convert(file: File): Promise<ArrayBuffer> {
+async function convert(
+  file: File,
+  ext: ConvertibleModelExtension,
+  name: string,
+): Promise<ArrayBuffer> {
   const workerInstance = getWorker();
   if (workerInstance) {
     try {
       // The buffer is transferred (detached) to the worker, so the fallback
       // below re-reads it from the File.
-      return await convertInWorker(workerInstance, await file.arrayBuffer());
+      return await convertInWorker(
+        workerInstance,
+        await file.arrayBuffer(),
+        ext,
+        name,
+      );
     } catch (error) {
       if (!(error instanceof WorkerUnavailableError)) throw error;
     }
   }
-  return convertOnMainThread(await file.arrayBuffer());
+  return convertModelBufferToGlb(await file.arrayBuffer(), ext, name);
 }
 
 function getWorker(): Worker | null {
@@ -69,7 +89,7 @@ function getWorker(): Worker | null {
     return worker;
   }
   try {
-    worker = new ConvertFbxToGlbWorker();
+    worker = new ConvertModelToGlbWorker();
     worker.onmessage = (event) => {
       const data = event.data as
         | { id: number; ok: true; glb: ArrayBuffer }
@@ -100,7 +120,7 @@ function getWorker(): Worker | null {
       pendingJobs.clear();
       for (const job of jobs) {
         job.reject(
-          new Error("FBX conversion result failed to decode — please retry."),
+          new Error("Conversion result failed to decode — please retry."),
         );
       }
     };
@@ -113,28 +133,12 @@ function getWorker(): Worker | null {
 function convertInWorker(
   workerInstance: Worker,
   buffer: ArrayBuffer,
+  ext: ConvertibleModelExtension,
+  name: string,
 ): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject) => {
     const id = nextJobId++;
     pendingJobs.set(id, { resolve, reject });
-    workerInstance.postMessage({ id, buffer }, [buffer]);
-  });
-}
-
-async function convertOnMainThread(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  const group = new FBXLoader().parse(buffer, "");
-  return new Promise<ArrayBuffer>((resolve, reject) => {
-    new GLTFExporter().parse(
-      group,
-      (result) => {
-        if (result instanceof ArrayBuffer) {
-          resolve(result);
-        } else {
-          reject(new Error("GLTF export did not produce binary output."));
-        }
-      },
-      (error) => reject(error),
-      { binary: true, animations: group.animations ?? [] },
-    );
+    workerInstance.postMessage({ id, buffer, ext, name }, [buffer]);
   });
 }
