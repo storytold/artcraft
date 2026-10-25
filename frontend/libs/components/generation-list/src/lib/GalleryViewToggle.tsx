@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { LayoutGridIcon, ListIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -19,22 +21,23 @@ const OPTIONS: {
 // Segmented grid/list switch for the create-page galleries. Lives in the
 // TopBar; the selection is shared with the gallery via useGalleryViewStore.
 export function GalleryViewToggle() {
+  const { t: translateUi } = useUiTranslation();
   const viewMode = useGalleryViewStore((s) => s.viewMode);
   const setViewMode = useGalleryViewStore((s) => s.setViewMode);
 
   return (
     <div
       role="group"
-      aria-label="Gallery layout"
+      aria-label={translateUi("Gallery layout")}
       className="flex items-center gap-0.5 rounded-[3px] border border-white/[0.08] bg-white/[0.04] p-0.5"
     >
       {OPTIONS.map(({ mode, icon, label }) => {
         const active = viewMode === mode;
         return (
-          <Tooltip key={mode} content={label} position="bottom" delay={300}>
+          <Tooltip key={mode} content={translateUi(label)} position="bottom" delay={300}>
             <button
               type="button"
-              aria-label={label}
+              aria-label={translateUi(label)}
               aria-pressed={active}
               onClick={() => setViewMode(mode)}
               className={`flex h-6 w-6 items-center justify-center rounded-[3px] text-xs transition-colors ${

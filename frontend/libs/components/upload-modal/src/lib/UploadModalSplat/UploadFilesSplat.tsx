@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
@@ -44,6 +46,7 @@ export const UploadFilesSplat = ({
   onClose,
   onUploadProgress,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const canvasRef = useRef<HTMLCanvasElement | undefined>(undefined);
   const rendererRef = useRef<WebGLRenderer | null>(null);
   const cameraRef = useRef<PerspectiveCamera | null>(null);
@@ -353,14 +356,14 @@ export const UploadFilesSplat = ({
                         e.stopPropagation();
                         removeFile(i);
                       }}
-                      title="Remove"
+                      title={translateUi("Remove")}
                     >
                       <XIcon />
                     </button>
                   )}
                   {entry.status === "uploading" && (
                     <LoaderIcon
-                      
+
                       className="animate-spin opacity-60" />
                   )}
                   {entry.status === "success" && (
@@ -369,7 +372,7 @@ export const UploadFilesSplat = ({
                   {entry.status === "error" && (
                     <span className="flex items-center gap-1">
                       <CircleAlertIcon
-                        
+
                         className="text-red-400" />
                       <button
                         className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
@@ -377,7 +380,7 @@ export const UploadFilesSplat = ({
                           e.stopPropagation();
                           retrySingleFile(i);
                         }}
-                        title="Retry"
+                        title={translateUi("Retry")}
                       >
                         <RotateCwIcon />
                       </button>
@@ -406,8 +409,7 @@ export const UploadFilesSplat = ({
               {!currentFile && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
                   <BoxIcon />
-                  Your model preview will appear here
-                </h6>
+                  {translateUi("Your model preview will appear here")}</h6>
               )}
               {previewStatus.type.includes("Error") && (
                 <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
@@ -452,8 +454,7 @@ export const UploadFilesSplat = ({
           {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
               <BoxIcon />
-              Your model preview will appear here
-            </h6>
+              {translateUi("Your model preview will appear here")}</h6>
           )}
           {previewStatus.type.includes("Error") && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
@@ -467,24 +468,21 @@ export const UploadFilesSplat = ({
 
       {(isUploading || anyUploading) && overallProgress && isMulti && (
         <p className="text-center text-sm opacity-60">
-          Uploading {overallProgress.current} / {overallProgress.total}...
+          {translateUi("Uploading")}{" "}{overallProgress.current} / {overallProgress.total}...
         </p>
       )}
 
       {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
         <p className="text-center text-sm text-red-400">
-          {fileEntries.filter((e) => e.status === "error").length} file(s) failed to upload.
-        </p>
+          {fileEntries.filter((e) => e.status === "error").length} {" "}{translateUi("file(s) failed to upload.")}</p>
       )}
 
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
+          {translateUi("Cancel")}</Button>
         {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
           <Button variant="secondary" onClick={retryAllFailed}>
-            Retry Failed
-          </Button>
+            {translateUi("Retry Failed")}</Button>
         )}
         {!hasUploadStarted && (
           <Button
@@ -492,8 +490,7 @@ export const UploadFilesSplat = ({
             onClick={handleSubmit}
             disabled={fileEntries.length === 0}
           >
-            Upload
-          </Button>
+            {translateUi("Upload")}</Button>
         )}
       </div>
     </div>

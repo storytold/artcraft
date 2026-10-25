@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { PauseIcon, PlayIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -17,22 +19,23 @@ const OPTIONS: {
 // GalleryViewToggle on the video page; the selection is shared with the
 // gallery via useGalleryViewStore.
 export function GalleryAutoplayToggle() {
+  const { t: translateUi } = useUiTranslation();
   const autoplayVideos = useGalleryViewStore((s) => s.autoplayVideos);
   const setAutoplayVideos = useGalleryViewStore((s) => s.setAutoplayVideos);
 
   return (
     <div
       role="group"
-      aria-label="Video preview playback"
+      aria-label={translateUi("Video preview playback")}
       className="flex items-center gap-0.5 rounded-[3px] border border-white/[0.08] bg-white/[0.04] p-0.5"
     >
       {OPTIONS.map(({ autoplay, icon, label }) => {
         const active = autoplayVideos === autoplay;
         return (
-          <Tooltip key={label} content={label} position="bottom" delay={300}>
+          <Tooltip key={label} content={translateUi(label)} position="bottom" delay={300}>
             <button
               type="button"
-              aria-label={label}
+              aria-label={translateUi(label)}
               aria-pressed={active}
               onClick={() => setAutoplayVideos(autoplay)}
               className={`flex h-6 w-6 items-center justify-center rounded-[3px] text-xs transition-colors ${

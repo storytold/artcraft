@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React, {
   useState,
   useRef,
@@ -93,6 +95,7 @@ const Edit3DButton = memo(function Edit3DButton({
   stageRef,
   onEdit,
 }: Edit3DButtonProps) {
+  const { t: translateUi } = useUiTranslation();
   const [, forceUpdate] = useState(0);
   const bump = useCallback(() => forceUpdate((t) => t + 1), []);
   const [interacting, setInteracting] = useState(false);
@@ -156,8 +159,7 @@ const Edit3DButton = memo(function Edit3DButton({
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => onEdit(nodeId)}
     >
-      Edit 3D
-    </button>
+      {translateUi("Edit 3D")}</button>
   );
 });
 
@@ -203,6 +205,7 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
   stageRef,
   overlayHandle,
 }: Edit3DScrubControlsProps) {
+  const { t: translateUi } = useUiTranslation();
   const [, forceUpdate] = useState(0);
   const bump = useCallback(() => forceUpdate((t) => t + 1), []);
 
@@ -236,17 +239,17 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
     >
       <DragScrubButton
         icon={<Maximize2Icon />}
-        title="Scale — drag"
+        title={translateUi("Scale — drag")}
         onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
       />
       <DragScrubButton
         icon={<RefreshCwIcon />}
-        title="Rotate — drag"
+        title={translateUi("Rotate — drag")}
         onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
       />
       <DragScrubButton
         icon={<CameraIcon />}
-        title="Field of view — drag"
+        title={translateUi("Field of view — drag")}
         onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
       />
       <button

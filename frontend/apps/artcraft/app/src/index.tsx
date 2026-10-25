@@ -1,3 +1,4 @@
+import "@storyteller/i18n";
 import { StrictMode, useEffect } from "react";
 import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
 import { BrowserRouter } from "react-router-dom";

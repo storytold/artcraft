@@ -1,3 +1,5 @@
+
+import { i18n as uiI18n } from "@storyteller/i18n";
 import * as THREE from "three";
 import { GLTFLoader, GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MMDLoader } from "three/addons/loaders/MMDLoader.js";
@@ -830,7 +832,7 @@ class Scene {
       }
       // Don't toast aborts — those are us cancelling a superseded load.
       if ((error as { name?: string })?.name !== "AbortError") {
-        toast.error("Failed to load splat.");
+        toast.error(uiI18n.t("Failed to load splat."));
       }
       throw error;
     });
@@ -914,7 +916,7 @@ class Scene {
       }
       // Don't toast aborts — those are us cancelling a superseded load.
       if ((error as { name?: string })?.name !== "AbortError") {
-        toast.error("Failed to load 3D asset.");
+        toast.error(uiI18n.t("Failed to load 3D asset."));
       }
       throw error;
     });

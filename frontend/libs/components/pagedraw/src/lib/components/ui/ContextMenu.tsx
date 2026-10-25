@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -21,6 +23,7 @@ interface ContextMenuProps {
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ items, onAction, onClose, position }) => {
+  const { t: translateUi } = useUiTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,7 +58,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ items, onAction, onClo
             <span className="w-5 h-5 flex items-center justify-center text-base-fg/90">
               {item.icon}
             </span>
-            <span className="font-normal">{item.label}</span>
+            <span className="font-normal">{translateUi(item.label)}</span>
           </button>
           {item.divider && <div className="h-[1px] bg-white/10 mx-2 my-1" />}
         </React.Fragment>
@@ -74,14 +77,15 @@ interface ContextMenuContainerProps {
   isLocked?: boolean;
 }
 
-export const ContextMenuContainer: React.FC<ContextMenuContainerProps> = ({ 
-  children, 
+export const ContextMenuContainer: React.FC<ContextMenuContainerProps> = ({
+  children,
   items = defaultMenuItems,
   onAction,
   onMenuAction,
   className = '',
   isLocked = false
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const [showMenu, setShowMenu] = React.useState(false);
   const [position, setPosition] = React.useState<MenuPosition>({ x: 0, y: 0 });
 
@@ -92,19 +96,19 @@ export const ContextMenuContainer: React.FC<ContextMenuContainerProps> = ({
           icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" strokeWidth="2" strokeLinecap="round"/>
           </svg>,
-          label: 'Unlock',
+          label: translateUi("Unlock"),
           action: 'LOCK'
         }
       ];
     }
     return items;
-  }, [isLocked, items]);
+  }, [isLocked, items, translateUi]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     const newPosition = { x: e.clientX, y: e.clientY };
     setPosition(newPosition);
-    
+
     const shouldShowMenu = onAction?.(e, 'contextMenu');
     if (shouldShowMenu !== undefined) {
       setShowMenu(shouldShowMenu);
@@ -122,9 +126,9 @@ export const ContextMenuContainer: React.FC<ContextMenuContainerProps> = ({
   };
 
   return (
-    <div 
+    <div
       onClick={handleClick}
-      onContextMenu={handleContextMenu} 
+      onContextMenu={handleContextMenu}
       className={`w-full h-full relative z-[99999] ${className}`}
     >
       {children}

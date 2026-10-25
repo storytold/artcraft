@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 
 import { LoadingDots } from "@storyteller/ui-loading";
@@ -44,11 +46,12 @@ export function UploadImageMediaModal({
   }, [isOpen]);
 
   const UploaderModalContent = () => {
+  const { t: translateUi } = useUiTranslation();
     switch (uploaderState.status) {
       case UploaderStates.ready:
         return (
           <UploadImageMedia
-            title={"Image"}
+            title={translateUi("Image")}
             fileTypes={fileTypes}
             onClose={onClose}
             onUploadProgress={updateUploaderState}
@@ -61,13 +64,13 @@ export function UploadImageMediaModal({
         return (
           <>
             <LoadingDots className="mb-1 bg-transparent" />
-            <div className="hud-label w-full text-center text-base-fg/50">Uploading...</div>
+            <div className="hud-label w-full text-center text-base-fg/50">{translateUi("Uploading...")}</div>
           </>
         );
       case UploaderStates.success:
         return (
           <UploadSuccess
-            title={"Image"}
+            title={translateUi("Image")}
             onOk={() => {
               onSuccess(uploaderState.data);
               onClose();

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { HistoryIcon, Trash2Icon, XIcon } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -32,6 +34,7 @@ export const HistoryStack = ({
   selectedImageToken,
   blurredBackgroundUrl,
 }: HistoryStackProps) => {
+  const { t: translateUi } = useUiTranslation();
   const handleSelectWithPreload = (image: BaseSelectorImage) => {
     const preload = new Image();
     preload.crossOrigin = "anonymous";
@@ -76,19 +79,15 @@ export const HistoryStack = ({
     setPendingRemoveTargetId(id);
     showActionReminder({
       reminderType: "default",
-      title: "Remove pending generation",
+      title: translateUi("Remove pending generation"),
       primaryActionIcon: Trash2Icon,
       primaryActionBtnClassName: "bg-red hover:bg-red/80",
       message: (
         <>
           <p className="text-base-fg text-sm opacity-70">
-            Stop showing this generation in the history stack? This action
-            cannot be undone.
-          </p>
+            {translateUi("Stop showing this generation in the history stack? This action cannot be undone.")}</p>
           <p className="text-base-fg text-sm opacity-70">
-            The image may still finish in the background and will be available
-            in your library when it does.
-          </p>
+            {translateUi("The image may still finish in the background and will be available in your library when it does.")}</p>
         </>
       ),
       primaryActionText: "Remove",
@@ -163,7 +162,7 @@ export const HistoryStack = ({
       <div className="glass rounded-lg p-1.5">
         <div className="mb-2 flex w-full items-center justify-center">
           <HistoryIcon
-            
+
             className="p-1 text-base-fg/50" />
         </div>
         <div
@@ -260,7 +259,7 @@ export const HistoryStack = ({
                     >
                       <div className="flex items-center justify-center gap-1 rounded-lg bg-red/80 px-3 py-2 shadow-lg">
                         <Trash2Icon
-                          
+
                           className="text-base-fg text-base" />
                         {tileCount > 1 && (
                           <span className="text-base-fg text-xs font-semibold">
@@ -313,18 +312,15 @@ export const HistoryStack = ({
                         e.stopPropagation();
                         showActionReminder({
                           reminderType: "default",
-                          title: "Remove Image",
+                          title: translateUi("Remove Image"),
                           primaryActionIcon: Trash2Icon,
                           primaryActionBtnClassName: "bg-red hover:bg-red/80",
                           message: (
                             <>
                             <p className="text-base-fg text-sm opacity-70">
-                              Are you sure you want to remove this image from the history stack? This
-                              action cannot be undone.
-                            </p>
+                              {translateUi("Are you sure you want to remove this image from the history stack? This action cannot be undone.")}</p>
                             <p className="text-base-fg text-sm opacity-70">
-                              Images removed here can still be found in the library.
-                            </p>
+                              {translateUi("Images removed here can still be found in the library.")}</p>
                             </>
                           ),
                           primaryActionText: "Delete",
@@ -336,7 +332,7 @@ export const HistoryStack = ({
                       }}
                     >
                       <Trash2Icon
-                        
+
                         className="text-base-fg h-full w-full text-[13px]" />
                     </div>
                   </Button>
@@ -367,14 +363,12 @@ export const HistoryStack = ({
                 onClick={() =>
                   showActionReminder({
                     reminderType: "default",
-                    title: "Reset All",
+                    title: translateUi("Reset All"),
                     primaryActionIcon: Trash2Icon,
                     primaryActionBtnClassName: "bg-red hover:bg-red/80",
                     message: (
                       <p className="text-base-fg text-sm opacity-70">
-                        Are you sure you want to reset all? This will clear all
-                        your work and cannot be undone.
-                      </p>
+                        {translateUi("Are you sure you want to reset all? This will clear all your work and cannot be undone.")}</p>
                     ),
                     primaryActionText: "Reset all",
                     onPrimaryAction: () => {

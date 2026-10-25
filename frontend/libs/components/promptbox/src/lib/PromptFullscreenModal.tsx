@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
@@ -62,6 +64,7 @@ export const PromptFullscreenModal = ({
   dropZoneProps,
   dropOverlay,
 }: PromptFullscreenModalProps) => {
+  const { t: translateUi } = useUiTranslation();
   const overLimit = isFinite(maxLength) && promptLength > maxLength;
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +97,7 @@ export const PromptFullscreenModal = ({
         style={{ height: "70vh" }}
       >
         {dropOverlay}
-        <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
+        <h2 className="shrink-0 text-lg font-bold text-base-fg">{translateUi("Prompt")}</h2>
         {/* flex-1 so the editor takes only the space left after the (shrink-0)
             image row + footer — that's what keeps it from overflowing when the
             window is shorter. min-h-0 + overflow-hidden bound the editor area so
@@ -119,7 +122,7 @@ export const PromptFullscreenModal = ({
           <div className="flex items-center gap-2">{footerControls}</div>
           <div className="flex items-center gap-2">
             {clearAllButton}
-            <Button onClick={onClose}>Done</Button>
+            <Button onClick={onClose}>{translateUi("Done")}</Button>
           </div>
         </div>
       </div>

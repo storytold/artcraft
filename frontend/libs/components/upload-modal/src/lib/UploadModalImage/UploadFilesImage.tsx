@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { Button } from "@storyteller/ui-button";
@@ -31,6 +33,7 @@ export const UploadFilesImage = ({
   onClose,
   onUploadProgress,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const seedFiles = initialFiles ?? [];
 
   const [fileEntries, setFileEntries] = useState<FileEntry[]>(
@@ -224,25 +227,25 @@ export const UploadFilesImage = ({
                           e.stopPropagation();
                           removeFile(i);
                         }}
-                        title="Remove"
+                        title={translateUi("Remove")}
                       >
                         <XIcon />
                       </button>
                     )}
                     {entry.status === "uploading" && (
                       <LoaderIcon
-                        
+
                         className="animate-spin opacity-60" />
                     )}
                     {entry.status === "success" && (
                       <CheckIcon
-                        
+
                         className="text-green-400" />
                     )}
                     {entry.status === "error" && (
                       <span className="flex items-center gap-1">
                         <CircleAlertIcon
-                          
+
                           className="text-red-400" />
                         <button
                           className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
@@ -250,7 +253,7 @@ export const UploadFilesImage = ({
                             e.stopPropagation();
                             retrySingleFile(i);
                           }}
-                          title="Retry"
+                          title={translateUi("Retry")}
                         >
                           <RotateCwIcon />
                         </button>
@@ -275,7 +278,7 @@ export const UploadFilesImage = ({
                 {previewUrl && (
                   <img
                     key={previewIndex}
-                    alt="Preview"
+                    alt={translateUi("Preview")}
                     className="m-auto max-h-full max-w-full object-contain"
                     src={previewUrl}
                   />
@@ -311,7 +314,7 @@ export const UploadFilesImage = ({
           previewUrl && (
             <div className="relative m-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-none border border-white/15 bg-black/30">
               <img
-                alt="Preview"
+                alt={translateUi("Preview")}
                 className="m-auto max-h-full max-w-full object-contain"
                 src={previewUrl}
               />
@@ -322,24 +325,21 @@ export const UploadFilesImage = ({
 
       {(isUploading || anyUploading) && overallProgress && isMulti && (
         <p className="text-center text-sm opacity-60">
-          Uploading {overallProgress.current} / {overallProgress.total}...
+          {translateUi("Uploading")}{" "}{overallProgress.current} / {overallProgress.total}...
         </p>
       )}
 
       {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
         <p className="text-center text-sm text-red-400">
-          {fileEntries.filter((e) => e.status === "error").length} file(s) failed to upload.
-        </p>
+          {fileEntries.filter((e) => e.status === "error").length} {" "}{translateUi("file(s) failed to upload.")}</p>
       )}
 
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
+          {translateUi("Cancel")}</Button>
         {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
           <Button variant="secondary" onClick={retryAllFailed}>
-            Retry Failed
-          </Button>
+            {translateUi("Retry Failed")}</Button>
         )}
         {!hasUploadStarted && (
           <Button
@@ -347,8 +347,7 @@ export const UploadFilesImage = ({
             onClick={handleSubmit}
             disabled={fileEntries.length === 0}
           >
-            Upload
-          </Button>
+            {translateUi("Upload")}</Button>
         )}
       </div>
     </div>

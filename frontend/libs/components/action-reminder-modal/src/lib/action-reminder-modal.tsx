@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import { ReactNode } from "react";
@@ -43,6 +45,7 @@ export function ActionReminderModal({
   primaryActionIcon: customPrimaryActionIcon = LogInIcon,
   primaryActionBtnClassName: customPrimaryActionBtnClassName = "",
 }: ActionReminderModalProps) {
+  const { t: translateUi } = useUiTranslation();
   let titleText: string | undefined;
   let messageContent: ReactNode;
   let primaryActionBtnText: string;
@@ -70,9 +73,7 @@ export function ActionReminderModal({
       titleText = customTitle || "Link Your OpenAI Account";
       messageContent = customMessage || (
         <p>
-          To use this feature, please connect your OpenAI account. This allows
-          us to leverage your existing subscription.
-        </p>
+          {translateUi("To use this feature, please connect your OpenAI account. This allows us to leverage your existing subscription.")}</p>
       );
       primaryActionBtnText = customPrimaryActionText || "Login with OpenAI";
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;
@@ -81,9 +82,7 @@ export function ActionReminderModal({
     case "artcraftLogin":
       messageContent = customMessage || (
         <p className="text-sm text-white/70">
-          Please log in or sign up to ArtCraft to proceed. This will allow you
-          to save your work and access all features.
-        </p>
+          {translateUi("Please log in or sign up to ArtCraft to proceed. This will allow you to save your work and access all features.")}</p>
       );
       primaryActionBtnText = customPrimaryActionText || "Login / Sign Up";
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;
@@ -92,8 +91,7 @@ export function ActionReminderModal({
     default:
       messageContent = customMessage || (
         <p className="text-sm text-white/70">
-          Please complete the required action.
-        </p>
+          {translateUi("Please complete the required action.")}</p>
       );
       primaryActionBtnText = customPrimaryActionText || "Proceed";
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;

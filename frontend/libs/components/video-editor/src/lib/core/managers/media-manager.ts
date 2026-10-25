@@ -1,3 +1,5 @@
+
+import { i18n as uiI18n } from "@storyteller/i18n";
 import type { EditorCore } from "../index";
 import type { MediaAsset } from "../../media/types";
 import { videoCache } from "../../services/video-cache";
@@ -55,7 +57,7 @@ export class MediaManager {
         ...this.assets.slice(insertIndex + 1),
       ];
       this.notify();
-      this.editor.adapters.toast.error("Failed to add media", {
+      this.editor.adapters.toast.error(uiI18n.t("Failed to add media"), {
         description: error instanceof Error ? error.message : undefined,
       });
       return null;

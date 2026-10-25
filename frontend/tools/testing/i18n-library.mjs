@@ -1,0 +1,58 @@
+import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
+import { chromium, expect } from "@playwright/test";
+import { installBrowserFixture } from "../performance/browser-fixture.mjs";
+import { installSessionFixture } from "./session-fixture.mjs";
+
+const url = new URL(process.argv[2] || "http://127.0.0.1:5193");
+if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) throw new Error("Use a local development or preview URL.");
+const browser = await chromium.launch({ channel: "chrome", headless: true });
+try {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await context.addInitScript(installBrowserFixture);
+  await context.addInitScript(installSessionFixture, { withLibraryAndTasks: true });
+  await context.addInitScript(() => localStorage.setItem("artcraft-locale", "zh-CN"));
+  await context.route("**/*", (route) => route.request().url().startsWith(url.origin) || route.request().url().startsWith("blob:") ? route.continue() : route.abort());
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto(url.href);
+  await page.getByRole("button", { name: "任务队列", exact: true }).click();
+  await expect(page.getByText("正在生成图片…", { exact: true })).toBeVisible();
+  await expect(page.getByText("生成失败", { exact: true })).toBeVisible();
+  await expect(page.getByText(/约剩余|即将完成/).first()).toBeVisible();
+  await page.getByRole("button", { name: "显示全部", exact: true }).click();
+  await page.getByRole("button", { name: "移除全部", exact: true }).click();
+  await expect(page.getByText("移除所有任务？", { exact: true })).toBeVisible();
+  await expect(page.getByText("这将从队列中移除所有任务，包括已完成和进行中的任务。此操作无法撤销。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  assert.deepEqual(await page.evaluate(() => window.__i18nMutations), []);
+  await mkdir("../output/playwright", { recursive: true });
+  await page.screenshot({ path: "../output/playwright/i18n-tasks-zh-CN.png", fullPage: true });
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "我的素材库", exact: true }).click();
+  await expect(page.getByRole("img", { name: "Session smoke image", exact: true })).toBeVisible();
+  await expect(page.getByText("My 原始 folder", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "新建文件夹", exact: true }).first().click();
+  await expect(page.getByRole("textbox", { name: "文件夹名称" })).toHaveValue("新建文件夹");
+  await page.getByRole("textbox", { name: "文件夹名称" }).fill("Keep 用户 folder");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await page.getByText("My 原始 folder", { exact: true }).first().click({ button: "right" });
+  await page.getByRole("button", { name: "删除文件夹", exact: true }).click();
+  await expect(page.getByText("删除“My 原始 folder”？", { exact: true })).toBeVisible();
+  await expect(page.getByText("此文件夹将被删除，其中的素材仍保留在素材库中。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  assert.deepEqual(await page.evaluate(() => window.__i18nMutations), []);
+  await page.screenshot({ path: "../output/playwright/i18n-library-zh-CN.png", fullPage: true });
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  await page.getByLabel("语言", { exact: true }).selectOption("en");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Task Queue", exact: true }).click();
+  await expect(page.getByText("Generating Image...", { exact: true })).toBeVisible();
+  await expect(page.getByText("Generation failed", { exact: true })).toBeVisible();
+  assert.deepEqual(errors, [], "Application runtime errors");
+  console.log("PASS: Chinese library menus, untouched names, folder/delete cancellation, task states/confirmation, and English restoration.");
+} finally {
+  await browser.close();
+}

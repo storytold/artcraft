@@ -3,6 +3,7 @@
 //! rodio. Pausing and seeking restart both at the new position. Without FFmpeg the lightbox opens
 //! videos in the system player instead.
 
+use crate::i18n::t as ui_text;
 use std::collections::VecDeque;
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
@@ -126,7 +127,7 @@ impl VideoPlayer {
     p.rect_filled(bar, 0.0, theme::fade(theme::PANEL, 0.95));
     let playing = self.stream.is_some();
     let button = Rect::from_center_size(pos2(bar.left() + 22.0, bar.center().y), vec2(28.0, 28.0));
-    let resp = ui.interact(button, ui.id().with(("video-play", &self.url)), Sense::click()).on_hover_text(if playing { "Pause" } else { "Play" }).on_hover_cursor(egui::CursorIcon::PointingHand);
+    let resp = ui.interact(button, ui.id().with(("video-play", &self.url)), Sense::click()).on_hover_text(if playing { ui_text("Pause") } else { ui_text("Play") }).on_hover_cursor(egui::CursorIcon::PointingHand);
     if playing {
       for dx in [-3.5, 3.5] {
         p.rect_filled(Rect::from_center_size(button.center() + vec2(dx, 0.0), vec2(3.0, 12.0)), 0.0, theme::INK);
@@ -141,7 +142,7 @@ impl VideoPlayer {
     let time = format!("{} / {}", clock(self.position), clock(duration));
     let label = p.text(pos2(button.right() + 8.0, bar.center().y), Align2::LEFT_CENTER, time, FontId::new(11.5, egui::FontFamily::Monospace), theme::MUTED);
     let mute = Rect::from_center_size(pos2(bar.right() - 22.0, bar.center().y), vec2(28.0, 28.0));
-    let mute_resp = ui.interact(mute, ui.id().with(("video-mute", &self.url)), Sense::click()).on_hover_text(if self.muted { "Unmute" } else { "Mute" }).on_hover_cursor(egui::CursorIcon::PointingHand);
+    let mute_resp = ui.interact(mute, ui.id().with(("video-mute", &self.url)), Sense::click()).on_hover_text(if self.muted { ui_text("Unmute") } else { ui_text("Mute") }).on_hover_cursor(egui::CursorIcon::PointingHand);
     icons::paint(&p, mute.shrink(7.0), if self.muted { Icon::VolumeOff } else { Icon::Volume }, theme::INK);
     if mute_resp.clicked() {
       self.muted = !self.muted;

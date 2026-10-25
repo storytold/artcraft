@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, StarIcon, Trash2Icon, WandSparklesIcon, XIcon } from "lucide-react";
@@ -54,6 +56,7 @@ export const ItemInspector = ({
   onAddPaletteToBoard,
   onDelete,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const [palette, setPalette] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
 
@@ -130,7 +133,7 @@ export const ItemInspector = ({
               </span>
             </div>
 
-            <Section title="Rating">
+            <Section title={translateUi("Rating")}>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -141,7 +144,7 @@ export const ItemInspector = ({
                     className="rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <StarIcon
-                      
+
                       className={
                         n <= item.rating
                           ? "h-4 w-4 text-yellow-400"
@@ -152,7 +155,7 @@ export const ItemInspector = ({
               </div>
             </Section>
 
-            <Section title="Tags">
+            <Section title={translateUi("Tags")}>
               <div className="flex flex-wrap gap-1.5">
                 {item.tags.map((tag) => (
                   <button
@@ -172,14 +175,14 @@ export const ItemInspector = ({
                     if (e.key === "Enter") commitTag();
                   }}
                   onBlur={commitTag}
-                  placeholder="Add tag"
+                  placeholder={translateUi("Add tag")}
                   className="w-20 rounded-full bg-base-fg/5 px-2.5 py-1 text-[11px] text-base-fg placeholder:text-base-fg/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
               </div>
             </Section>
 
             {item.kind === "image" && palette.length > 0 && (
-              <Section title="Palette">
+              <Section title={translateUi("Palette")}>
                 <div className="flex flex-wrap gap-1.5">
                   {palette.map((hex) => (
                     <button
@@ -201,8 +204,7 @@ export const ItemInspector = ({
                   className="mt-2.5 flex items-center gap-1.5 rounded text-xs font-medium text-base-fg/60 transition-colors hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <PlusIcon  className="h-3 w-3" />
-                  Add swatches to board
-                </button>
+                  {translateUi("Add swatches to board")}</button>
               </Section>
             )}
           </div>
@@ -216,8 +218,7 @@ export const ItemInspector = ({
                 onClick={onUseReference}
                 className="w-full col-span-2 py-1.5 text-[13px]"
               >
-                Use as reference
-              </Button>
+                {translateUi("Use as reference")}</Button>
             )}
             <Button
               variant="destructive"
@@ -225,8 +226,7 @@ export const ItemInspector = ({
               onClick={onDelete}
               className="w-full col-span-2 py-1.5 text-[13px]"
             >
-              Delete
-            </Button>
+              {translateUi("Delete")}</Button>
           </div>
         </div>
       </div>

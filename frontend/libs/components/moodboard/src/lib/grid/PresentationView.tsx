@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -13,6 +15,7 @@ interface Props {
 // via the "moodboard-grid" keybinds surface (by default ←/→ or Space navigate,
 // Esc exits). For client/team review and sharing-by-screen.
 export const PresentationView = ({ items, onClose }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const [index, setIndex] = useState(0);
   const count = items.length;
   const { matchAction } = useResolvedKeybinds();
@@ -38,7 +41,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
       <button
         type="button"
-        aria-label="Exit presentation"
+        aria-label={translateUi("Exit presentation")}
         onClick={onClose}
         className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
       >
@@ -46,7 +49,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
       </button>
 
       {count === 0 ? (
-        <p className="text-sm text-white/50">This board is empty.</p>
+        <p className="text-sm text-white/50">{translateUi("This board is empty.")}</p>
       ) : (
         <>
           <div className="flex h-full w-full items-center justify-center p-12">

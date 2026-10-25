@@ -1,3 +1,6 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+import { useTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -57,6 +60,7 @@ export function DesktopGenerationGallery({
   selectionBarBottomOffset,
   ...feedProps
 }: DesktopGenerationGalleryProps) {
+  const { t: translateUi } = useUiTranslation();
   const viewMode = useGalleryViewStore((s) => s.viewMode);
   const selectionActive = useGallerySelectionStore((s) => s.active);
   const selectedIds = useGallerySelectionStore((s) => s.ids);
@@ -70,11 +74,11 @@ export function DesktopGenerationGallery({
 
   const handleCopyResult = useCallback((success: boolean) => {
     if (success) {
-      toast.success("Prompt copied");
+      toast.success(translateUi("Prompt copied"));
     } else {
-      toast.error("Unable to copy prompt");
+      toast.error(translateUi("Unable to copy prompt"));
     }
-  }, []);
+  }, [translateUi]);
 
   const selectionProps = {
     selectionMode: !!selectable && selectionActive,
@@ -145,6 +149,7 @@ function SelectionDownloadBar({
   galleryItems: GalleryItem[];
   bottomOffset?: number;
 }) {
+  const { t } = useTranslation();
   const ids = useGallerySelectionStore((s) => s.ids);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -186,7 +191,7 @@ function SelectionDownloadBar({
           icon={isDownloading ? LoaderCircleIcon : ArrowDownToLineIcon}
           className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
         />
-        Download
+        {t("Download")}
       </button>
     </SelectionActionBar>
   );
@@ -208,6 +213,7 @@ function ItemActions({
   enableMakeVideo?: boolean;
   variant: "row" | "card";
 }) {
+  const { t } = useTranslation();
   const [isRecreating, setIsRecreating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -282,12 +288,12 @@ function ItemActions({
   return (
     <>
       {canRecreate && (
-        <Tooltip content="Recreate" position="top">
+        <Tooltip content={t("Recreate")} position="top">
           <button
             type="button"
             onClick={handleRecreate}
             disabled={isRecreating}
-            aria-label="Recreate"
+            aria-label={t("Recreate")}
             className={buttonClass}
           >
             <DynamicIcon
@@ -298,22 +304,22 @@ function ItemActions({
         </Tooltip>
       )}
       {canMakeVideo && (
-        <Tooltip content="Make Video" position="top">
+        <Tooltip content={t("Make Video")} position="top">
           <button
             type="button"
             onClick={handleMakeVideo}
-            aria-label="Make Video"
+            aria-label={t("Make Video")}
             className={buttonClass}
           >
             <VideoIcon className="text-sm" />
           </button>
         </Tooltip>
       )}
-      <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
+      <Tooltip content={shareCopied ? t("Copied") : t("Share")} position="top">
         <button
           type="button"
           onClick={handleShare}
-          aria-label="Share"
+          aria-label={t("Share")}
           className={buttonClass}
         >
           <DynamicIcon
@@ -323,12 +329,12 @@ function ItemActions({
         </button>
       </Tooltip>
       {item.fullImage && (
-        <Tooltip content="Download" position="top">
+        <Tooltip content={t("Download")} position="top">
           <button
             type="button"
             onClick={handleDownload}
             disabled={isDownloading}
-            aria-label="Download"
+            aria-label={t("Download")}
             className={buttonClass}
           >
             <DynamicIcon

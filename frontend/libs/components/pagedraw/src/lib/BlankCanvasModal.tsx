@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
@@ -47,6 +49,7 @@ export const BlankCanvasModal = ({
   onClose,
   onConfirm,
 }: BlankCanvasModalProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [selected, setSelected] = useState<ResolutionPreset | null>(null);
 
   const handleConfirm = () => {
@@ -63,7 +66,7 @@ export const BlankCanvasModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      title="Choose Canvas Size"
+      title={translateUi("Choose Canvas Size")}
       onClose={handleClose}
       width={560}
     >
@@ -111,11 +114,9 @@ export const BlankCanvasModal = ({
 
         <div className="mt-2 flex justify-end gap-3">
           <Button variant="action" onClick={handleClose}>
-            Cancel
-          </Button>
+            {translateUi("Cancel")}</Button>
           <Button variant="primary" onClick={handleConfirm} disabled={!selected}>
-            Create Canvas
-          </Button>
+            {translateUi("Create Canvas")}</Button>
         </div>
       </div>
     </Modal>

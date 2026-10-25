@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { ImagesIcon, MusicIcon, VideoIcon } from "lucide-react";
@@ -452,14 +454,15 @@ export function PromptBoxDropOverlay({
   acceptsAudio,
   keyframeMode,
 }: PromptBoxDropOverlayProps) {
+  const { t: translateUi } = useUiTranslation();
   if (dragState === "idle") return null;
 
   const kinds = [
     ...(acceptsImages
       ? [{ icon: ImagesIcon, label: keyframeMode ? "Frames" : "Images" }]
       : []),
-    ...(acceptsVideos ? [{ icon: VideoIcon, label: "Video" }] : []),
-    ...(acceptsAudio ? [{ icon: MusicIcon, label: "Audio" }] : []),
+    ...(acceptsVideos ? [{ icon: VideoIcon, label: translateUi("Video") }] : []),
+    ...(acceptsAudio ? [{ icon: MusicIcon, label: translateUi("Audio") }] : []),
   ];
   const rejected = dragState === "reject";
 

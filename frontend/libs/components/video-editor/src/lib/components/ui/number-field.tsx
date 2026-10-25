@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { cn } from "../../utils/ui";
 import { clamp } from "../../utils/math";
@@ -134,6 +136,7 @@ function NumberField({
   ref,
   ...props
 }: NumberFieldProps & { ref?: React.Ref<HTMLInputElement> }) {
+  const { t: translateUi } = useUiTranslation();
   const iconRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const ghostRef = useRef<HTMLSpanElement>(null);
@@ -256,7 +259,7 @@ function NumberField({
           <button
             ref={iconRef}
             type="button"
-            aria-label="Drag to adjust value"
+            aria-label={translateUi("Drag to adjust value")}
             disabled={disabled}
             className="text-muted-foreground [&_svg]:size-3.5! shrink-0 select-none pl-2.5 text-sm leading-none cursor-ew-resize"
             onMouseDown={(event) => event.preventDefault()}
@@ -304,7 +307,7 @@ function NumberField({
           <Button
             variant="text"
             size="text"
-            aria-label="Reset to default"
+            aria-label={translateUi("Reset to default")}
             onClick={onReset}
           >
             <HugeiconsIcon icon={ArrowTurnBackwardIcon} className="size-3.5!" />

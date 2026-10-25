@@ -1,8 +1,11 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { ImagePreviewProps } from './types';
 
 const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }) => {
+  const { t: translateUi } = useUiTranslation();
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -22,7 +25,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }
     e.stopPropagation();
     setIsDragging(true);
     handleWeightChange(e.clientY);
-    
+
     // Add event listeners
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -41,33 +44,33 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }
   };
 
   return (
-    <div 
+    <div
       className="relative h-20 w-20 rounded-md overflow-hidden group"
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => !isDragging && setShowControls(false)}
     >
-      <img 
-        src={image.url} 
-        alt="Style reference" 
+      <img
+        src={image.url}
+        alt={translateUi("Style reference")}
         className="w-full h-full object-cover"
       />
-      
+
       {showControls && (
         <>
-          <button 
+          <button
             className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-0.5 text-white hover:bg-opacity-70 transition-colors"
             onClick={() => onRemove(image.id)}
           >
             <X size={16} />
           </button>
-          
-          <div 
+
+          <div
             ref={sliderRef}
             className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-40 cursor-ns-resize"
             onMouseDown={handleMouseDown}
           >
-            <div 
-              className="absolute left-0 right-0 h-0.5 bg-white" 
+            <div
+              className="absolute left-0 right-0 h-0.5 bg-white"
               style={{ bottom: `${image.weight * 100}%` }}
             />
             <div className="absolute bottom-1 right-1 text-xs font-medium text-white">

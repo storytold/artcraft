@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
@@ -30,6 +32,7 @@ interface Props {
 // and OS file drop; delegates layout/virtualization to <BoardGrid>. Platform
 // seams (upload, library picker, "use as reference") arrive via the adapter.
 export const BoardGridView = ({ active, adapter }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const ensureActiveBoard = useBoardLibraryStore((s) => s.ensureActiveBoard);
   const board = useActiveBoard();
   const { density, searchQuery, activeTagFilters, ratingFilter } =
@@ -113,7 +116,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
       )
       .map((it) => ({ id: it.id, url: it.src, mediaToken: it.mediaId as string }));
     if (refs.length === 0) {
-      toast.error("Add images with a media reference to use them in a generation");
+      toast.error(translateUi("Add images with a media reference to use them in a generation"));
       return;
     }
     adapter.sendToGeneration(refs);
@@ -269,8 +272,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-base-fg/45">
-              No items match your search.
-            </div>
+              {translateUi("No items match your search.")}</div>
           )
         ) : (
           <BoardGrid

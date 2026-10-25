@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, useEffect, useRef, useState } from "react";
 import { CheckIcon, Maximize2Icon, StarIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -64,6 +66,7 @@ const BoardCardInner = ({
   onEditText,
   onCommitText,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [entering, setEntering] = useState(
     Boolean(animateIn) && !prefersReducedMotion(),
@@ -151,7 +154,7 @@ const BoardCardInner = ({
               {Array.from({ length: item.rating }).map((_, i) => (
                 <StarIcon
                   key={i}
-                  
+
                   className="h-2.5 w-2.5 text-yellow-400" />
               ))}
             </div>
@@ -174,19 +177,19 @@ const BoardCardInner = ({
               fades up on hover. */}
           <div className="absolute right-2 top-2 flex translate-y-1 items-center gap-1 rounded-full border border-white/15 bg-black/65 p-0.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
             <RailButton
-              label="Open"
+              label={translateUi("Open")}
               icon={Maximize2Icon}
               onClick={() => onOpen(item.id)}
             />
             {item.kind === "image" && (
               <RailButton
-                label="Use as reference"
+                label={translateUi("Use as reference")}
                 icon={WandSparklesIcon}
                 onClick={() => onUseReference(item.id)}
               />
             )}
             <RailButton
-              label="Delete"
+              label={translateUi("Delete")}
               icon={Trash2Icon}
               onClick={() => onDelete(item.id)}
             />
@@ -328,6 +331,7 @@ const NoteEditor = ({
   initial: string;
   onCommit: (text: string) => void;
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const [draft, setDraft] = useState(initial);
 
@@ -360,7 +364,7 @@ const NoteEditor = ({
             onCommit(initial.trim());
           }
         }}
-        placeholder="Write a note…"
+        placeholder={translateUi("Write a note…")}
         className="h-full w-full resize-none bg-transparent text-sm leading-relaxed text-base-fg/90 placeholder:text-base-fg/35 focus:outline-none"
       />
     </div>

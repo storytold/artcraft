@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { ArrowRightIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -65,6 +67,7 @@ function useLocalStorage<T>({
 }
 
 export function Onboarding() {
+  const { t: translateUi } = useUiTranslation();
   const [step, setStep] = useState(0);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useLocalStorage({
     key: "hasSeenOnboarding",
@@ -100,10 +103,10 @@ export function Onboarding() {
         return (
           <div className="space-y-5">
             <div className="space-y-3">
-              <Title title="Welcome to the editor" />
-              <Description description="Drop media onto the timeline, scrub the playhead to preview, and use the panels on the right to tune properties, animations, and effects." />
+              <Title title={translateUi("Welcome to the editor")} />
+              <Description description={translateUi("Drop media onto the timeline, scrub the playhead to preview, and use the panels on the right to tune properties, animations, and effects.")} />
             </div>
-            <NextButton onClick={handleNext}>Next</NextButton>
+            <NextButton onClick={handleNext}>{translateUi("Next")}</NextButton>
           </div>
         );
       case 1:
@@ -111,10 +114,10 @@ export function Onboarding() {
           <div className="space-y-5">
             <div className="space-y-3">
               <Title title={getStepTitle()} />
-              <Description description="This editor is in active development." />
-              <Description description="A lot of features are still being built out — if something looks off, it probably is. Save often." />
+              <Description description={translateUi("This editor is in active development.")} />
+              <Description description={translateUi("A lot of features are still being built out — if something looks off, it probably is. Save often.")} />
             </div>
-            <NextButton onClick={handleNext}>Next</NextButton>
+            <NextButton onClick={handleNext}>{translateUi("Next")}</NextButton>
           </div>
         );
       case 2:
@@ -122,9 +125,9 @@ export function Onboarding() {
           <div className="space-y-5">
             <div className="space-y-3">
               <Title title={getStepTitle()} />
-              <Description description="Keyboard shortcuts are available under the project menu — press the Shortcuts entry to view or rebind them." />
+              <Description description={translateUi("Keyboard shortcuts are available under the project menu — press the Shortcuts entry to view or rebind them.")} />
             </div>
-            <NextButton onClick={handleClose}>Finish</NextButton>
+            <NextButton onClick={handleClose}>{translateUi("Finish")}</NextButton>
           </div>
         );
       default:

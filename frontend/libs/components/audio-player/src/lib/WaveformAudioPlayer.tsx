@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import {
   MouseEvent,
   useCallback,
@@ -46,6 +48,7 @@ export function WaveformAudioPlayer({
   compact = false,
   className = "",
 }: WaveformAudioPlayerProps) {
+  const { t: translateUi } = useUiTranslation();
   const playerId = useId();
   const waveContainerRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -305,7 +308,7 @@ export function WaveformAudioPlayer({
       <div className="relative shrink-0">
         <button
           type="button"
-          aria-label="Volume"
+          aria-label={translateUi("Volume")}
           onClick={() => setShowVolume((visible) => !visible)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
         >

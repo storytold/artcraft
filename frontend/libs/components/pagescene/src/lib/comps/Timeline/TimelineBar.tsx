@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext } from "react";
 import { ChevronUpIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -11,6 +13,7 @@ import { DurationLabel } from "./DurationLabel";
 // Sits above the prompt card (rendered via the promptbox aboveStackSlot).
 // `readOnly` (record mode) hides the expand chevron — playback only.
 export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const playhead = usePageSceneStore((s) => s.timelinePlayhead);
   const isPlaying = usePageSceneStore((s) => s.timelineIsPlaying);
@@ -42,7 +45,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
       </span>
       <input
         type="range"
-        aria-label="Timeline playhead"
+        aria-label={translateUi("Timeline playhead")}
         min={0}
         max={duration}
         step={0.01}
@@ -64,7 +67,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
       {!readOnly && (
         <button
           type="button"
-          title="Expand timeline"
+          title={translateUi("Expand timeline")}
           onClick={() => setExpanded(true)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/60 hover:bg-white/10"
         >

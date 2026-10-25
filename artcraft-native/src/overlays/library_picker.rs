@@ -1,6 +1,7 @@
 //! "Pick from library" (`GalleryModal mode="select"`): the user's images, videos or audio in a
 //! grid, choosing up to the free reference slots.
 
+use crate::i18n::t as ui_text;
 use std::collections::HashSet;
 
 use egui::{Align2, Color32, FontId, Id, Rect, Sense, Stroke, pos2, vec2};
@@ -79,11 +80,11 @@ impl LibraryPicker {
     };
     let close = widgets::modal(ctx, Id::new("library-picker"), width, |ui| {
       ui.horizontal(|ui| {
-        ui.label(widgets::heading("Pick from library", 22.0));
+        ui.label(widgets::heading(ui_text("Pick from library"), 22.0));
         ui.add_space(8.0);
         widgets::hud(ui, noun, theme::MUTED);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+          if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
             actions.push(PickerAction::Close);
           }
         });
@@ -124,13 +125,13 @@ impl LibraryPicker {
       });
       ui.add_space(12.0);
       ui.horizontal(|ui| {
-        widgets::hud(ui, &format!("{}/{} selected", self.selected.len(), self.max), theme::MUTED);
+        widgets::hud(ui, &(if crate::i18n::is_chinese() { format!("已选择 {}/{}", self.selected.len(), self.max) } else { format!("{}/{} selected", self.selected.len(), self.max) }), theme::MUTED);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
           let any = !self.selected.is_empty();
-          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, "Use selected", widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
+          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, ui_text("Use selected"), widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
             actions.push(PickerAction::Confirm(self.picks()));
           }
-          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, "Deselect all", widgets::Kind::Secondary, 0.0, theme::CONTROL_H)).inner.clicked() {
+          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, ui_text("Deselect all"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H)).inner.clicked() {
             self.selected.clear();
           }
         });

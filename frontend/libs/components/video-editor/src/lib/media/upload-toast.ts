@@ -1,3 +1,5 @@
+
+import { i18n as uiI18n } from "@storyteller/i18n";
 import type { ToastAdapter } from "../adapters/toast";
 
 // Upload toast — host-routed. The OpenCut original called sonner's
@@ -50,7 +52,7 @@ export async function showMediaUploadToast<T extends MediaUploadToastResult>({
     } else if (uploadedCount > 1) {
       toast.success(`${uploadedCount} media assets have been uploaded`);
     } else {
-      toast.warning("No media assets were uploaded");
+      toast.warning(uiI18n.t("No media assets were uploaded"));
     }
     return result;
   } catch (error) {

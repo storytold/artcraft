@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { Separator } from "../../components/ui/separator";
 import { type Tab, useAssetsPanelStore } from "./assets-panel-store";
@@ -13,12 +15,14 @@ import { EffectsView } from "../../effects/components/assets-view";
 // Captions tab renders a placeholder; depends on the transcription
 // subsystem which is deferred per port scope.
 function ComingSoon({ label }: { label: string }) {
+  const { t: translateUi } = useUiTranslation();
   return (
-    <div className="text-muted-foreground p-4">{label} view coming soon...</div>
+    <div className="text-muted-foreground p-4">{label} {" "}{translateUi("view coming soon...")}</div>
   );
 }
 
 export function AssetsPanel() {
+  const { t: translateUi } = useUiTranslation();
   const { activeTab } = useAssetsPanelStore();
 
   const viewMap: Record<Tab, React.ReactNode> = {
@@ -27,7 +31,7 @@ export function AssetsPanel() {
     text: <TextView />,
     stickers: <StickersView />,
     effects: <EffectsView />,
-    captions: <ComingSoon label="Captions" />,
+    captions: <ComingSoon label={translateUi("Captions")} />,
     settings: <SettingsView />,
   };
 

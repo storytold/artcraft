@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 import { CameraIcon, ChevronDownIcon, ChevronUpIcon, DownloadIcon, Grid2x2Icon, HistoryIcon, MaximizeIcon, MousePointerIcon, PlusIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SaveIcon, SquareIcon, WandSparklesIcon } from "lucide-react";
@@ -134,6 +136,7 @@ export const PromptBox3D = ({
   onAddTimeline,
   showAddTimelineButton = true,
 }: PromptBox3DProps) => {
+  const { t: translateUi } = useUiTranslation();
   //const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState<React.ReactNode>(null);
@@ -166,17 +169,17 @@ export const PromptBox3D = ({
   const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "Wide",
+      label: translateUi("Wide"),
       selected: true,
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Tall",
+      label: translateUi("Tall"),
       selected: false,
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Square",
+      label: translateUi("Square"),
       selected: false,
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -334,7 +337,7 @@ export const PromptBox3D = ({
     }
     setEnginePrompt(trimmed);
     pushPromptHistory(trimmed);
-    toast.success("Scene update saved — applying edits is coming soon.");
+    toast.success(translateUi("Scene update saved — applying edits is coming soon."));
   };
 
   const handleEnqueue = async () => {
@@ -436,7 +439,7 @@ export const PromptBox3D = ({
         timestamp: Date.now(),
       });
 
-      toast.success("Image added to queue");
+      toast.success(translateUi("Image added to queue"));
     } catch (err) {
       handleError(
         err instanceof Error ? err.message : "Generation request failed",
@@ -529,7 +532,7 @@ export const PromptBox3D = ({
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } finally {
         setIsEnqueueing(false);
-        toast.success("Image added to queue");
+        toast.success(translateUi("Image added to queue"));
       }
     }
 
@@ -636,15 +639,15 @@ export const PromptBox3D = ({
                   {
                     value: "manual",
                     icon: MousePointerIcon,
-                    text: "Manual",
-                    tooltip: "Manual — place and transform objects yourself",
+                    text: translateUi("Manual"),
+                    tooltip: translateUi("Manual — place and transform objects yourself"),
                   },
                   {
                     value: "prompted",
                     icon: WandSparklesIcon,
-                    text: "Prompted",
+                    text: translateUi("Prompted"),
                     tooltip:
-                      "Prompted — describe changes and let AI edit the scene",
+                      translateUi("Prompted — describe changes and let AI edit the scene"),
                   },
                 ]}
                 selectedOption={buildMode}
@@ -670,7 +673,7 @@ export const PromptBox3D = ({
               setContent(
                 <img
                   src={image.fullUrl ?? image.url}
-                  alt="Reference preview"
+                  alt={translateUi("Reference preview")}
                   className="w-full h-full object-contain"
                 />,
               );
@@ -730,7 +733,7 @@ export const PromptBox3D = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                placeholder="Describe your image..."
+                placeholder={translateUi("Describe your image...")}
                 className={`promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
@@ -882,8 +885,7 @@ export const PromptBox3D = ({
                 icon={SaveIcon}
                 onClick={handleSaveFrame}
               >
-                Save frame
-              </Button>
+                {translateUi("Save frame")}</Button>
               <GenerateButton
                 className="flex items-center border-none bg-white px-3 text-sm font-bold text-black hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
                 icon={undefined}
@@ -892,8 +894,7 @@ export const PromptBox3D = ({
                 loading={isEnqueueing}
                 credits={credits}
               >
-                Generate
-              </GenerateButton>
+                {translateUi("Generate")}</GenerateButton>
             </div>
           </div>
           )}
@@ -906,8 +907,7 @@ export const PromptBox3D = ({
                   className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
                   onClick={() => onAddTimeline?.()}
                 >
-                  Add animation timeline
-                </Button>
+                  {translateUi("Add animation timeline")}</Button>
               ) : (
                 <span />
               )}
@@ -924,7 +924,7 @@ export const PromptBox3D = ({
                     panelTitle="Recent prompts"
                     triggerIcon={
                       <HistoryIcon
-                        
+
                         className="h-4 w-4" />
                     }
                     items={
@@ -935,7 +935,7 @@ export const PromptBox3D = ({
                           }))
                         : [
                             {
-                              label: "No prompts yet",
+                              label: translateUi("No prompts yet"),
                               selected: false,
                               disabled: true,
                             },
@@ -953,8 +953,7 @@ export const PromptBox3D = ({
                   onClick={handlePromptedUpdate}
                   disabled={!prompt.trim()}
                 >
-                  Update
-                </Button>
+                  {translateUi("Update")}</Button>
               </div>
             </div>
           )}
@@ -1034,7 +1033,7 @@ export const PromptBox3D = ({
         }
       >
         <textarea
-          placeholder="Describe your image..."
+          placeholder={translateUi("Describe your image...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

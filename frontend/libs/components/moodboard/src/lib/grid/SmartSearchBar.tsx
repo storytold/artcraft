@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { SearchIcon, XIcon } from "lucide-react";
 
 interface Props {
@@ -17,22 +19,23 @@ export const SmartSearchBar = ({
   activeTags,
   onToggleTag,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   return (
     <div className="flex min-w-0 items-center gap-2">
       <div className="bg-ui-controls flex h-9 min-w-[200px] transition-all items-center gap-2 rounded-xl border border-ui-controls px-3 focus-within:ring-2 focus-within:ring-primary/50">
         <SearchIcon
-          
+
           className="h-3.5 w-3.5 text-base-fg/45" />
         <input
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search this board"
+          placeholder={translateUi("Search this board")}
           className="w-full bg-transparent text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
         />
         {query && (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={translateUi("Clear search")}
             onClick={() => onQueryChange("")}
             className="rounded-full text-base-fg/45 transition-colors hover:text-base-fg focus:outline-none focus-visible:text-base-fg focus-visible:ring-2 focus-visible:ring-primary"
           >

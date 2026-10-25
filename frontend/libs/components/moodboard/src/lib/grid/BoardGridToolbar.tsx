@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Grid2x2Icon, Grid3x3Icon, GripHorizontalIcon, ImagesIcon, LayersIcon, StarIcon, StickyNoteIcon, UploadIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -63,6 +65,7 @@ export const BoardGridToolbar = ({
   onAddColor,
   onNewSection,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-3 pt-3">
       <ToolbarShell className="max-w-full">
@@ -79,25 +82,25 @@ export const BoardGridToolbar = ({
         <div className="flex items-center gap-1">
           <ToolbarIconButton
             icon={UploadIcon}
-            label="Upload"
+            label={translateUi("Upload")}
             onClick={onUpload}
           />
           {canPickLibrary && (
             <ToolbarIconButton
               icon={ImagesIcon}
-              label="From library"
+              label={translateUi("From library")}
               onClick={onLibrary}
             />
           )}
           <ToolbarIconButton
             icon={StickyNoteIcon}
-            label="Add note"
+            label={translateUi("Add note")}
             onClick={onAddNote}
           />
           <ColorPickerPopover onAdd={onAddColor} />
           <ToolbarIconButton
             icon={LayersIcon}
-            label="New section"
+            label={translateUi("New section")}
             onClick={onNewSection}
           />
         </div>
@@ -142,7 +145,7 @@ export const BoardGridToolbar = ({
               ? `Showing ${ratingFilter}+ stars`
               : "Filter by rating"
           }
-          aria-label="Filter by rating"
+          aria-label={translateUi("Filter by rating")}
           onClick={onCycleRatingFilter}
           className={[
             "flex h-8 items-center gap-1 rounded-full px-2.5 transition-colors duration-150",
@@ -181,6 +184,7 @@ const BoardTitle = ({
   name: string;
   onRename: (name: string) => void;
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -217,7 +221,7 @@ const BoardTitle = ({
   return (
     <button
       type="button"
-      title="Rename board"
+      title={translateUi("Rename board")}
       onClick={() => {
         setDraft(name);
         setEditing(true);

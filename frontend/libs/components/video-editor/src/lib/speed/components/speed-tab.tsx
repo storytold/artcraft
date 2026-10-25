@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useRef } from "react";
 import { useEditor } from "../../editor/use-editor";
 import { NumberField } from "../../components/ui/number-field";
@@ -64,6 +66,7 @@ export function SpeedTab({
   element: AudioElement | VideoElement;
   trackId: string;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const rate = clampRetimeRate({
     rate: element.retime?.rate ?? DEFAULT_RETIME_RATE,
@@ -111,11 +114,11 @@ export function SpeedTab({
   return (
     <Section collapsible sectionKey={`${element.id}:speed`}>
       <SectionHeader>
-        <SectionTitle>Speed</SectionTitle>
+        <SectionTitle>{translateUi("Speed")}</SectionTitle>
       </SectionHeader>
       <SectionContent>
         <SectionFields>
-          <SectionField label="Speed">
+          <SectionField label={translateUi("Speed")}>
             <NumberField
               icon={<HugeiconsIcon icon={DashboardSpeed02Icon} />}
               value={speedDraft.displayValue}
@@ -140,7 +143,7 @@ export function SpeedTab({
             />
           </SectionField>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Change pitch</span>
+            <span className="text-sm">{translateUi("Change pitch")}</span>
             <Switch
               checked={!maintainPitch}
               disabled={!isPitchPreserveAvailable}

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Grid3x3Icon, GripVerticalIcon, GroupIcon, ImagesIcon, MagnetIcon, MousePointerIcon, PenToolIcon, PlusIcon, RotateCcwIcon, RotateCwIcon, TrashIcon, TypeIcon, UngroupIcon, UploadIcon, WorkflowIcon } from "lucide-react";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu } from "@storyteller/ui-popover";
@@ -31,6 +33,7 @@ interface Props {
 }
 
 export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const tool = useMoodboardStore((s) => s.tool);
   const setTool = useMoodboardStore((s) => s.setTool);
   const group = useMoodboardStore((s) => s.group);
@@ -96,17 +99,17 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
           panelTitle="Add an image"
           items={[
             {
-              label: "Upload Image",
+              label: translateUi("Upload Image"),
               selected: false,
               icon: (
                 <UploadIcon
-                  
+
                   className="h-4 w-4" />
               ),
               action: "upload",
             },
             {
-              label: "Pick from Library",
+              label: translateUi("Pick from Library"),
               selected: false,
               icon: <ImagesIcon  className="h-4 w-4" />,
               action: "library",
@@ -148,20 +151,20 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
 
       <FloatingToolbarButton
         icon={Grid3x3Icon}
-        label="Fit to grid"
+        label={translateUi("Fit to grid")}
         onClick={handleFitToGrid}
         disabled={selectedIds.size === 0}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
         icon={GripVerticalIcon}
-        label="Pack collage"
+        label={translateUi("Pack collage")}
         onClick={handlePackCollage}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
         icon={WorkflowIcon}
-        label="Auto-group by proximity"
+        label={translateUi("Auto-group by proximity")}
         onClick={handleAutoGroup}
         tooltipDelay={100}
       />
@@ -189,7 +192,7 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
       />
       <FloatingToolbarButton
         icon={TrashIcon}
-        label="Delete (Del)"
+        label={translateUi("Delete (Del)")}
         onClick={deleteSelected}
         disabled={selectedIds.size === 0}
         tooltipDelay={100}
