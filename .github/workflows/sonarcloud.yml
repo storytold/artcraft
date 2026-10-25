@@ -1,0 +1,21 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonarcloud-${{ github.ref }}
+  # A push to main is the run that publishes coverage; superseded runs there would never finish.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  sonarcloud:
+    # Tracked at @main so org-wide CI improvements propagate without PR churn.
+    uses: storytold/craft-common-actions/.github/workflows/sonarcloud.yml@main
+    secrets: inherit
