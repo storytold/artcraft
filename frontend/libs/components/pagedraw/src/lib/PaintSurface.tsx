@@ -493,9 +493,9 @@ export const PaintSurface = ({
       // Don't even bother entertaining this event if it's too early
       const eventTime = performance.now();
       if (eventTime - mouseMoveThrottle.current < MOUSE_POLL_THROTTLE_MS) {
-        mouseMoveThrottle.current = eventTime;
         return;
       }
+      mouseMoveThrottle.current = eventTime;
 
       const stage = stageRef.current;
       if (!stage) return;
