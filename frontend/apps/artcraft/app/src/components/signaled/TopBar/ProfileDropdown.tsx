@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Fragment } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { ChevronDownIcon, LogOutIcon, UserIcon } from "lucide-react";
@@ -8,6 +9,8 @@ import { twMerge } from "tailwind-merge";
 import { authentication, logout } from "~/signals";
 
 export default function ProfileDropdown() {
+  const { t: translateUI } = useTranslation();
+
   useSignals();
   const { userInfo } = authentication;
 
@@ -69,9 +72,7 @@ export default function ProfileDropdown() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <UserIcon className="text-[11px] text-white/50" />
-                My Profile
-              </a>
+                <UserIcon className="text-[11px] text-white/50" />{translateUI("My Profile")}</a>
             )}
           </Menu.Item>
           {options.map((option, index) => (
@@ -88,7 +89,7 @@ export default function ProfileDropdown() {
                     icon={option.icon}
                     className="text-[11px] text-white/50"
                   />
-                  {option.label}
+                  {translateUI(option.label)}
                 </button>
               )}
             </Menu.Item>

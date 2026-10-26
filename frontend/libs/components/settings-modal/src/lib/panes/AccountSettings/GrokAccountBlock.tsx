@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
@@ -7,6 +8,8 @@ import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { GrokGetCredentialInfo, GrokGetCredentialInfoSuccess } from "@storyteller/tauri-api";
 
 export const GrokAccountBlock = () => {
+  const { t: translateUI } = useTranslation();
+
   const [grokSession, setGrokSession] = useState<GrokGetCredentialInfoSuccess| undefined>(undefined);
   const [isCheckingGrokSession, setIsCheckingGrokSession] = useState(false);
 
@@ -59,9 +62,7 @@ export const GrokAccountBlock = () => {
   return(
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-          Grok account
-        </p>
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">{translateUI("Grok account")}</p>
         <p className="truncate text-sm font-medium text-base-fg/80">
           {grokSession?.payload?.maybe_email || "Not logged in"}
         </p>

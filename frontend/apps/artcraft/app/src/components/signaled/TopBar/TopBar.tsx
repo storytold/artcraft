@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
@@ -116,6 +117,8 @@ const CreditsCoinWithStatus = ({
 }: {
   iconStatus: CreditsIconStatus;
 }) => {
+  const { t: translateUI } = useTranslation();
+
   const showBadge = iconStatus !== "hidden";
 
   const badgeColorClass =
@@ -158,9 +161,7 @@ const CreditsCoinWithStatus = ({
               variant="secondary"
               className="h-7 self-start px-2 text-xs"
               onClick={handleRetry}
-            >
-              Retry
-            </Button>
+            >{translateUI("Retry")}</Button>
           )}
         </div>
       }
@@ -180,6 +181,8 @@ const CreditsCoinWithStatus = ({
 };
 
 export const TopBar = ({ pageName }: Props) => {
+  const { t: translateUI } = useTranslation();
+
   useSignals();
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -432,7 +435,7 @@ export const TopBar = ({ pageName }: Props) => {
       >
         <nav
           className="mx-auto grid h-[56px] w-screen grid-cols-3 items-center justify-between ps-3"
-          aria-label="navigation"
+          aria-label={translateUI("navigation")}
           data-tauri-drag-region
         >
           <div
@@ -451,7 +454,11 @@ export const TopBar = ({ pageName }: Props) => {
               />
             </div> */}
             <MenuIconSelector
-              menuItems={appMenuTabs}
+              menuItems={appMenuTabs.map((item) => ({
+                ...item,
+                label: translateUI(item.label),
+                description: translateUI(item.description),
+              }))}
               activeMenu={tabStore.activeTabId}
               disabled={disableTabSwitcher()}
               onMenuChange={(tabId) => {
@@ -552,18 +559,14 @@ export const TopBar = ({ pageName }: Props) => {
                 {(close) => (
                   <div className="w-72 p-3 text-white">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-white/70">
-                        Your credit balance
-                      </span>
+                      <span className="text-sm font-medium text-white/70">{translateUI("Your credit balance")}</span>
                       <button
                         className="text-sm font-medium text-primary transition-colors hover:text-primary-300"
                         onClick={() => {
                           close();
                           toggleCreditsModal();
                         }}
-                      >
-                        Buy credits
-                      </button>
+                      >{translateUI("Buy credits")}</button>
                     </div>
                     <div className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-white">
                       <CoinsIcon className="text-xl text-primary" />
@@ -577,9 +580,7 @@ export const TopBar = ({ pageName }: Props) => {
                         useCostBreakdownModalStore.getState().openModal();
                       }}
                     >
-                      <CalculatorIcon />
-                      Cost calculator
-                    </button>
+                      <CalculatorIcon />{translateUI("Cost calculator")}</button>
 
                     <div className="mt-3 flex gap-2">
                       <Button
@@ -589,9 +590,7 @@ export const TopBar = ({ pageName }: Props) => {
                           close();
                           handleOpenBillingSettings();
                         }}
-                      >
-                        See details
-                      </Button>
+                      >{translateUI("See details")}</Button>
                       <Button
                         variant="primary"
                         className="h-9 grow"
@@ -600,9 +599,7 @@ export const TopBar = ({ pageName }: Props) => {
                           toggleSubscriptionModal();
                         }}
                         icon={GemIcon}
-                      >
-                        Support
-                      </Button>
+                      >{translateUI("Support")}</Button>
                     </div>
                   </div>
                 )}
@@ -614,9 +611,7 @@ export const TopBar = ({ pageName }: Props) => {
                   icon={GemIcon}
                   onClick={toggleSubscriptionModal}
                   className="h-8 px-3"
-                >
-                  Upgrade
-                </Button>
+                >{translateUI("Upgrade")}</Button>
               )}
 
               <TaskQueue />
@@ -624,20 +619,18 @@ export const TopBar = ({ pageName }: Props) => {
               <button
                 type="button"
                 onClick={handleOpenGalleryModal}
-                aria-label="My Library"
+                aria-label={translateUI("My Library")}
                 className="flex h-8 items-center gap-1.5 rounded-[3px] border border-white/15 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/30 hover:bg-white/10"
               >
                 <ImagesIcon className="text-[11px]" />
-                <span className="hidden whitespace-nowrap xl:block">
-                  My Library
-                </span>
+                <span className="hidden whitespace-nowrap xl:block">{translateUI("My Library")}</span>
               </button>
 
               <UploadImagesButton />
 
-              <Tooltip content="Settings" position="bottom" delay={300}>
+              <Tooltip content={translateUI("Settings")} position="bottom" delay={300}>
                 <Button
-                  aria-label="Settings"
+                  aria-label={translateUI("Settings")}
                   variant="secondary"
                   icon={SettingsIcon}
                   iconClassName="h-4 w-4 shrink-0"
