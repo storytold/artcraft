@@ -24,18 +24,18 @@ anyhow.workspace = true
 cookie.workspace = true
 chrono.workspace = true
 directories = "6.0.0"
-eframe = { version = "0.36", default-features = false, features = ["default_fonts", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }
-egui = "0.36"
+eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }
+egui = "0.37"
 enums.workspace = true
-egui_extras = { version = "0.36", default-features = false, features = ["image", "svg"] }
+egui_extras = { version = "0.37", default-features = false, features = ["image", "svg"] }
 env_logger.workspace = true
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 log.workspace = true
 open = "5"
 reqwest = { workspace = true, features = ["multipart"] }
-resvg = "0.45"
-rfd = "0.16"
-rodio = { version = "0.20", default-features = false, features = ["symphonia-all"] }
+resvg = "0.48"
+rfd = "0.17"
+rodio = { version = "0.23", default-features = false, features = ["symphonia-all"] }
 serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
@@ -47,7 +47,7 @@ uuid = { workspace = true, features = ["v4"] }
 arboard = { version = "3", default-features = false, features = ["image-data"] }
 
 # The Midjourney sign-in window (its login cookies can only be captured inside a browser).
-wry = "0.55"
+wry = "0.57"
 
 [dev-dependencies]
-egui_kittest = "0.36"
+egui_kittest = "0.37"

@@ -32,7 +32,7 @@ wreq-util.workspace = true
 wreq.workspace = true
 
 # NB: We need to parse HTML to get out the websocket token
-dom_query = "0.20.2"
+dom_query = "0.28.0"
 
 # NB: Midjourney's websocket sends server->client frames as CBOR.
 ciborium = "0.2"
