@@ -1,3 +1,4 @@
+import { setLanguage, useTranslation } from "@storyteller/i18n";
 import { CheckIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { Label } from "@storyteller/ui-label";
@@ -34,6 +35,8 @@ function applyTheme(theme: AppTheme) {
 }
 
 export const AppearanceSettingsPane = () => {
+  const { language, t: translateUI } = useTranslation();
+
   const [selected, setSelected] = useState<AppTheme>(getStoredTheme());
 
   useEffect(() => {
@@ -77,11 +80,28 @@ export const AppearanceSettingsPane = () => {
 
   return (
     <div className="space-y-4 pt-3 text-base-fg">
-      <div className="flex flex-col gap-0.5">
-        <Label>Themes</Label>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="interface-language">{translateUI("Interface language")}</Label>
+        <select
+          id="interface-language"
+          className="border border-ui-panel-border bg-base px-3 py-2 text-base-fg"
+          value={language}
+          onChange={(event) => {
+            if (event.target.value === "en" || event.target.value === "zh-TW") {
+              setLanguage(event.target.value);
+            }
+          }}
+        >
+          <option value="en">English</option>
+          <option value="zh-TW">繁體中文（台灣）</option>
+        </select>
         <p className="text-xs opacity-70">
-          Choose your preferred look. Applies instantly.
+          {translateUI("Changes apply immediately. Your creative work stays unchanged.")}
         </p>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <Label>{translateUI("Themes")}</Label>
+        <p className="text-xs opacity-70">{translateUI("Choose your preferred look. Applies instantly.")}</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {themes.map((t) => {
@@ -100,7 +120,7 @@ export const AppearanceSettingsPane = () => {
             >
               {t.swatch}
               <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-                {t.label}
+                {translateUI(t.label)}
               </span>
               {isSelected && (
                 <CheckIcon aria-hidden className="mr-1 h-3.5 w-3.5" />

@@ -1,7 +1,7 @@
 {
   "files": [],
   "include": [],
-  "references": [
+  "references": [{"path": "../../i18n"},
     {
       "path": "../keybinds"
     },

@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { SoundManager } from "@storyteller/soundboard";
 import { Button } from "@storyteller/ui-button";
@@ -14,6 +15,8 @@ import { Label } from "@storyteller/ui-label";
 interface AudioSettingsPaneProps {}
 
 export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
+  const { t: translateUI } = useTranslation();
+
   const [preferences, setPreferences] = useState<
     AppPreferencesPayload | undefined
   >(undefined);
@@ -108,14 +111,12 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
     <>
       <div className="space-y-4 pt-3 text-base-fg">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="play-sounds" className="mb-0">
-            Play Notification Sounds for Events?
-          </Label>
+          <Label htmlFor="play-sounds" className="mb-0">{translateUI("Play Notification Sounds for Events?")}</Label>
           <Switch enabled={playSounds} setEnabled={setPlaySounds} />
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Delete File Sound</Label>
+          <Label htmlFor="success-sound">{translateUI("Delete File Sound")}</Label>
           <div className="flex items-center gap-2">
             <Select
               id="success-sound"
@@ -134,7 +135,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Enqueue Success Sound</Label>
+          <Label htmlFor="success-sound">{translateUI("Enqueue Success Sound")}</Label>
           <div className="flex items-center gap-2">
             <Select
               id="success-sound"
@@ -153,7 +154,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Enqueue Failure Sound</Label>
+          <Label htmlFor="success-sound">{translateUI("Enqueue Failure Sound")}</Label>
           <div className="flex items-center gap-2">
             <Select
               id="success-sound"
@@ -172,7 +173,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="success-sound">Generation Success Sound</Label>
+          <Label htmlFor="success-sound">{translateUI("Generation Success Sound")}</Label>
           <div className="flex items-center gap-2">
             <Select
               id="success-sound"
@@ -191,7 +192,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="failure-sound">Generation Failure Sound</Label>
+          <Label htmlFor="failure-sound">{translateUI("Generation Failure Sound")}</Label>
           <div className="flex items-center gap-2">
             <Select
               id="failure-sound"

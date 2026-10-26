@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useState } from "react";
 import { CreditCardIcon, DownloadIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
@@ -45,6 +46,8 @@ export const SettingsModal = ({
   onStoryboardPageDisable,
   initialSection = "general",
 }: SettingsModalProps) => {
+  const { t: translateUI } = useTranslation();
+
   const [selectedSection, setSelectedSection] =
     useState<SettingsSection>(initialSection);
 
@@ -140,9 +143,7 @@ export const SettingsModal = ({
           <div className="grid h-full grid-cols-12 gap-3">
             <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
               <div className="flex items-center justify-between gap-2.5 py-0.5">
-                <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                  Settings
-                </h2>
+                <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">{translateUI("Settings")}</h2>
               </div>
               <hr className="my-2 w-full border-ui-panel-border" />
               <div className="space-y-1">
@@ -164,7 +165,7 @@ export const SettingsModal = ({
                   >
                     <div className="flex items-center gap-2.5 text-sm">
                       <DynamicIcon icon={section.icon} />
-                      {section.label}
+                      {translateUI(section.label)}
                     </div>
                   </button>
                 ))}
@@ -173,22 +174,18 @@ export const SettingsModal = ({
             <div className="col-span-8 flex h-full flex-col overflow-y-auto relative">
               <div className="w-full border-b border-ui-panel-border py-2.5 ps-0">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/80">
-                  {sections.find((s) => s.id === selectedSection)?.label}
+                  {translateUI(sections.find((s) => s.id === selectedSection)?.label)}
                 </h2>
               </div>
               {experimentalEnabled && selectedSection === "experimental" && (
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ui-panel-border bg-ui-modal px-3 py-2">
                   <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] opacity-80">
-                    <FlaskConicalIcon />
-                    Experimental features enabled
-                  </div>
+                    <FlaskConicalIcon />{translateUI("Experimental features enabled")}</div>
                   <Button
                     variant="destructive"
                     onClick={() => setIsResetConfirmOpen(true)}
                     className="rounded-[3px] px-2 py-1 text-xs"
-                  >
-                    Reset
-                  </Button>
+                  >{translateUI("Reset")}</Button>
                 </div>
               )}
               <div className="p-3 ps-0 text-sm h-full">{renderContent()}</div>
@@ -200,9 +197,9 @@ export const SettingsModal = ({
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={handleConfirmReset}
-        title="Reset experimental settings?"
-        text="This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page."
-        confirmText="Reset"
+        title={translateUI("Reset experimental settings?")}
+        text={translateUI("This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page.")}
+        confirmText={translateUI("Reset")}
       />
     </>
   );

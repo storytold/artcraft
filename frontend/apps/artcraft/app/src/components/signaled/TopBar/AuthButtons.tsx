@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useSignals } from "@preact/signals-react/runtime";
 import { AUTH_STATUS } from "~/enums";
 import { authentication } from "~/signals";
@@ -8,6 +9,8 @@ export const AuthButtons = ({
 }: {
   loginSignUpPressed: () => void;
 }) => {
+  const { t: translateUI } = useTranslation();
+
   useSignals();
 
   const { status } = authentication;
@@ -23,9 +26,7 @@ export const AuthButtons = ({
             onClick={() => {
               loginSignUpPressed();
             }}
-          >
-            Login / Sign Up
-          </button>
+          >{translateUI("Login / Sign Up")}</button>
         </div>
       </>
     );

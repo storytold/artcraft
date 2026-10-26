@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -10,11 +11,13 @@ interface Props {
 }
 
 export const UploadImagesButton = ({ className }: Props) => {
+  const { t: translateUI } = useTranslation();
+
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <Tooltip content="Upload images" position="bottom" delay={300}>
+      <Tooltip content={translateUI("Upload images")} position="bottom" delay={300}>
         <Button
           variant="secondary"
           icon={UploadIcon}
@@ -30,7 +33,7 @@ export const UploadImagesButton = ({ className }: Props) => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSuccess={() => setIsOpen(false)}
-        title="Upload an Image"
+        title={translateUI("Upload an Image")}
         titleIcon={ImagesIcon}
       />
     </>
