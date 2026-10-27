@@ -1,7 +1,6 @@
 use crate::core::lifecycle::startup::tasks::bootstrap_task_database::bootstrap_task_database;
 use crate::core::lifecycle::startup::tasks::initially_size_and_position_windows::initially_size_and_position_windows;
 use crate::core::lifecycle::startup::tasks::load_provider_priority_state::load_provider_priority_state;
-use crate::core::lifecycle::startup::tasks::set_app_log_level::set_app_log_level;
 use crate::core::lifecycle::startup::tasks::spawn_discord_presence_thread::spawn_discord_presence_thread;
 use crate::core::lifecycle::startup::tasks::spawn_main_window_thread::spawn_main_window_thread;
 use crate::core::lifecycle::startup::tasks::spawn_sora_task_polling_thread::spawn_sora_task_polling_thread;
@@ -43,12 +42,6 @@ pub async fn handle_tauri_startup(
   worldlabs_creds_manager: WorldlabsCredentialManager,
   credential_cache: ProviderCredentialLoadingCache,
 ) -> AnyhowResult<()> {
-
-  set_app_log_level(
-    &app,
-    &root,
-  )?;
-
   let task_database =
       bootstrap_task_database(&app, &root).await?;
 

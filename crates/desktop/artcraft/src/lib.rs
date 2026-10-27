@@ -40,6 +40,8 @@ use crate::core::commands::task_queue::mark_task_as_dismissed_command::mark_task
 use crate::core::commands::task_queue::tasks_nuke_all_command::tasks_nuke_all_command;
 use crate::core::lifecycle::startup::handle_tauri_startup::handle_tauri_startup;
 use crate::core::lifecycle::startup::setup_main_window::setup_main_window;
+use crate::core::lifecycle::startup::tasks::set_app_log_level::set_app_log_level;
+use crate::core::windows::main_window::constants::MAIN_WINDOW_NAME;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::app_preferences::app_preferences_manager::load_app_preferences_or_default;
 use crate::core::state::artcraft_platform_info::ArtcraftPlatformInfo;
@@ -179,7 +181,26 @@ pub fn run() {
       let sora_tasks = sora_task_queue_2.clone();
 
       tauri::async_runtime::block_on(async move {
-        let result = setup_main_window(&app).await;
+        // NB: Install the logger before anything that can fail. Window creation is
+        // the first thing that can, and the webview reports its failures through
+        // `log`, so a logger installed afterwards loses the only useful diagnostic.
+        if let Err(err) = set_app_log_level(&app, &root) {
+          eprintln!("Failed to initialize logging: {:?}", err);
+        }
+
+        // NB: These results used to be dropped on the floor. On Windows the webview
+        // can fail to start - a missing or damaged WebView2 runtime is the usual
+        // reason - and Tauri still hands back a window object, so the app ran
+        // forever with no window at all. Fail loudly instead.
+        if let Err(err) = setup_main_window(&app).await {
+          fail_startup_with(format!("Failed to create the main window: {:?}", err));
+        }
+        if !main_window_is_usable(&app) {
+          fail_startup_with(
+            "Failed to start the main window. This usually means that the WebView2 \
+             runtime is missing or damaged. Reinstall it and start ArtCraft again.",
+          );
+        }
 
         let result = handle_tauri_startup(
           handle,
@@ -292,4 +313,27 @@ pub fn run() {
 
   builder.run(tauri::generate_context!("tauri.conf.json"))
     .expect("error while running tauri application");
+}
+
+/// Whether the main window is actually usable, not merely registered.
+///
+/// On Windows, Tauri reports success even when the native window and its webview
+/// could not be created: the window ends up registered with the window manager,
+/// but every call that has to reach the event loop fails with `failed to receive
+/// message from webview`. Asking for the window's size is the cheapest way to
+/// notice that before the rest of the app starts relying on the window.
+fn main_window_is_usable(app: &tauri::AppHandle) -> bool {
+  app
+    .get_webview_window(MAIN_WINDOW_NAME)
+    .map(|window| window.inner_size().is_ok())
+    .unwrap_or(false)
+}
+
+/// Report a fatal startup problem the best way a GUI app can: to the log file, to
+/// stderr, and then out with a non-zero exit code instead of running headless.
+fn fail_startup_with(message: impl AsRef<str>) -> ! {
+  let message = message.as_ref();
+  error!("{}", message);
+  eprintln!("{}", message);
+  std::process::exit(1)
 }
