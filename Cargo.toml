@@ -86,8 +86,8 @@ web_base64 = { path = "crates/lib/data/web_base64" }
 worldlabs_api_client = { path = "crates/api_clients/worldlabs_api_client" }
 worldlabs_consumer_client = { path = "crates/api_clients/worldlabs_consumer_client" }
 anyhow = "1.0.102"
-assertor = "0.0.3"
-base64 = "0.22.1"
+assertor = "0.0.4"
+base64 = "0.23.1"
 bstr = "1.12.1"
 byteorder = "1.5.0"
 chrono = { version = "0.4.44", features = ["serde"] }
@@ -105,7 +105,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_derive = "1.0.228"
 serde_json = "1.0.149"
 sha2 = "0.11.0-rc.5"
-sha3 = "0.10.8"
+sha3 = "0.12.0"
 strum = { version = "0.28.0", features = ["derive"] }
 tauri = { version = "2.11.2", features = ["unstable", "devtools", "protocol-asset"] } # NB: "devtools" prevents App Store distribution; "ubstable" is needed for window access
 tauri-plugin-dialog = "2.7.1"
@@ -119,7 +119,7 @@ tokio = { version = "1.50.0", features = ["macros"] }
 tokio-util = "0.7.12"
 toml = "1.0.7+spec-1.1.0"
 url = { version = "2.5.8", features = ["serde"] }
-utoipa = { version = "5.4.0", features = ["chrono", "actix_extras", "url"] }
+utoipa = { version = "6.0.0", features = ["chrono", "actix_extras", "url"] }
 uuid = "1.22.0"
 walkdir = "2.4.0"
 # wreq native prerequisites:
