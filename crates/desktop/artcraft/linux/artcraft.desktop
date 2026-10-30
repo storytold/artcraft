@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name={{name}}
-GenericName=AI Image and Video Creator
+GenericName=Crafting Engine
 {{#if comment}}
 Comment={{comment}}
 {{/if}}
@@ -12,4 +12,4 @@ Terminal=false
 StartupNotify=true
 StartupWMClass={{exec}}
 Categories={{categories}}
-Keywords=ai;image;video;generation;3d;art;design;film;
+Keywords=art;design;image;video;audio;3d;film;craft;
