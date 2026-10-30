@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name={{name}}
+GenericName=Crafting Engine
+{{#if comment}}
+Comment={{comment}}
+{{/if}}
+Exec={{exec}}
+TryExec={{exec}}
+Icon={{icon}}
+Terminal=false
+StartupNotify=true
+StartupWMClass={{exec}}
+Categories={{categories}}
+Keywords=art;design;image;video;audio;3d;film;craft;
