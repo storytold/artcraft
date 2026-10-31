@@ -3,8 +3,10 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::backend::wire::{Job, JobPhase, MediaFile, unix_secs};
 use crate::backend::EnqueueMeta;
+use crate::backend::providers::Provider;
+use crate::backend::providers::jobs::ProviderJob;
+use crate::backend::wire::{Job, JobPhase, MediaFile, unix_secs};
 use crate::feed::types::{FailedJob, FeedItem, MediaKind, PendingJob};
 use crate::models::{self, Catalog};
 
@@ -61,7 +63,7 @@ impl FeedStore {
       self.meta.insert(token.clone(), meta.clone());
       self.seen_running.insert(token.clone());
       if !self.pending.iter().any(|p| &p.job_token == token) {
-        self.pending.insert(0, PendingJob { job_token: token.clone(), kind, prompt: meta.prompt.clone(), model_id: Some(meta.model_id.clone()), created_at: now, server_progress: None, expected_secs: expected, batch_count: meta.batch_count });
+        self.pending.insert(0, PendingJob { job_token: token.clone(), kind, prompt: meta.prompt.clone(), model_id: Some(meta.model_id.clone()), created_at: now, server_progress: None, expected_secs: expected, batch_count: meta.batch_count, local: meta.provider != Provider::Artcraft });
       }
     }
   }
@@ -82,7 +84,7 @@ impl FeedStore {
         JobPhase::Running => {
           self.seen_running.insert(job.job_token.clone());
           let expected = model_id.as_deref().and_then(|id| catalog.find(id)).map_or_else(|| models::expected_secs(model_id.as_deref().unwrap_or_default(), kind), |m| m.expected_secs);
-          pending.push(PendingJob { job_token: job.job_token.clone(), kind, prompt, model_id, created_at: unix_secs(&job.created_at), server_progress: Some(job.status.progress_percentage), expected_secs: expected, batch_count: meta.map_or(1, |m| m.batch_count) });
+          pending.push(PendingJob { job_token: job.job_token.clone(), kind, prompt, model_id, created_at: unix_secs(&job.created_at), server_progress: Some(job.status.progress_percentage), expected_secs: expected, batch_count: meta.map_or(1, |m| m.batch_count), local: false });
         },
         JobPhase::Failed => {
           let updated = unix_secs(&job.updated_at);
@@ -90,7 +92,7 @@ impl FeedStore {
             notices.push(FeedNotice::Failed(job.status.maybe_failure_message.clone().unwrap_or_else(|| job.status.failure_reason())));
           }
           if now - updated <= FAILURE_WINDOW_SECS {
-            failed.push(FailedJob { job_token: job.job_token.clone(), prompt, model_id, updated_at: updated, reason: job.status.failure_reason(), message: job.status.maybe_failure_message.clone().filter(|_| job.status.maybe_failure_category_updated.as_deref() != Some("unknown")), ref_image: meta.and_then(|m| m.ref_image.clone()) });
+            failed.push(FailedJob { job_token: job.job_token.clone(), prompt, model_id, updated_at: updated, reason: job.status.failure_reason(), message: job.status.maybe_failure_message.clone().filter(|_| job.status.maybe_failure_category_updated.as_deref() != Some("unknown")), ref_image: meta.and_then(|m| m.ref_image.clone()), local: false });
           }
         },
         JobPhase::Succeeded => {
@@ -113,13 +115,15 @@ impl FeedStore {
         },
       }
     }
-    // Jobs started a moment ago may not be in the list yet: keep them.
+    // Jobs started a moment ago may not be in the list yet, and other providers' never are: keep
+    // them.
     for p in self.pending.drain(..) {
       let listed = jobs.iter().any(|j| j.job_token == p.job_token);
-      if !listed && now - p.created_at < 60 && !pending.iter().any(|q: &PendingJob| q.job_token == p.job_token) {
+      if (p.local || (!listed && now - p.created_at < 60)) && !pending.iter().any(|q: &PendingJob| q.job_token == p.job_token) {
         pending.push(p);
       }
     }
+    failed.extend(self.failed.drain(..).filter(|f| f.local));
     // Everything finished before the first poll comes from the library instead.
     self.first_poll_done = true;
     pending.sort_by_key(|p| std::cmp::Reverse(p.created_at));
@@ -138,6 +142,35 @@ impl FeedStore {
       }
       self.push_item(item);
     }
+  }
+
+  /// Pending cards for the Midjourney and fal jobs still running (after a restart).
+  pub fn restore_local(&mut self, jobs: &[ProviderJob], catalog: &Catalog) {
+    for job in jobs {
+      if !self.pending.iter().any(|p| p.job_token == job.id) {
+        let expected = catalog.find(&job.model_id).map_or_else(|| models::expected_secs(&job.model_id, MediaKind::Image), |m| m.expected_secs);
+        self.pending.push(PendingJob { job_token: job.id.clone(), kind: MediaKind::Image, prompt: job.prompt.clone(), model_id: Some(job.model_id.clone()), created_at: job.created_at, server_progress: None, expected_secs: expected, batch_count: job.batch_count, local: true });
+      }
+    }
+    self.pending.sort_by_key(|p| std::cmp::Reverse(p.created_at));
+  }
+
+  /// A Midjourney or fal job's results are in: its card goes (the batch brings the images).
+  /// Returns whether it was this feed's.
+  pub fn finish_local(&mut self, job_id: &str) -> bool {
+    let before = self.pending.len();
+    self.pending.retain(|p| p.job_token != job_id);
+    self.pending.len() != before
+  }
+
+  /// A Midjourney or fal job failed: its card shows the reason until dismissed.
+  pub fn fail_local(&mut self, job_id: &str, reason: &str) -> bool {
+    let Some(i) = self.pending.iter().position(|p| p.job_token == job_id) else {
+      return false;
+    };
+    let p = self.pending.remove(i);
+    self.failed.insert(0, FailedJob { job_token: p.job_token, prompt: p.prompt, model_id: p.model_id, updated_at: chrono::Utc::now().timestamp(), reason: "Generation failed".to_owned(), message: Some(reason.to_owned()), ref_image: self.meta.get(job_id).and_then(|m| m.ref_image.clone()), local: true });
+    true
   }
 
   pub fn library_started(&self) -> bool {
@@ -254,6 +287,7 @@ fn job_kind(job: &Job, catalog: &Catalog) -> Option<MediaKind> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::backend::providers::Provider;
   use crate::models::ModelInfo;
 
   fn catalog() -> Catalog {
@@ -327,9 +361,26 @@ mod tests {
   }
 
   #[test]
+  fn provider_jobs_outlive_polls_until_they_finish_or_fail() {
+    let (c, mut store) = (catalog(), FeedStore::default());
+    let meta = EnqueueMeta { prompt: "p".into(), model_id: "midjourney_7".into(), batch_count: 4, ref_image: None, provider: Provider::Midjourney };
+    store.add_enqueued(MediaKind::Image, &["local_a".into(), "local_b".into()], &meta, &c);
+    store.pending.iter_mut().for_each(|p| p.created_at -= 3600);
+    store.apply_jobs(MediaKind::Image, &[], &c);
+    assert_eq!(store.pending.len(), 2, "the server never lists them");
+    assert!(store.finish_local("local_a"));
+    assert!(store.fail_local("local_b", "Midjourney didn't finish this job"));
+    store.apply_jobs(MediaKind::Image, &[], &c);
+    assert!(store.pending.is_empty());
+    assert_eq!(store.failed[0].message.as_deref(), Some("Midjourney didn't finish this job"), "the failure stays until dismissed");
+    store.dismiss("local_b");
+    assert!(store.failed.is_empty());
+  }
+
+  #[test]
   fn just_enqueued_jobs_survive_a_poll_that_predates_them() {
     let (c, mut store) = (catalog(), FeedStore::default());
-    let meta = EnqueueMeta { prompt: "p".into(), model_id: "nano_banana_pro".into(), batch_count: 2, ref_image: None };
+    let meta = EnqueueMeta { prompt: "p".into(), model_id: "nano_banana_pro".into(), batch_count: 2, ref_image: None, provider: Provider::Artcraft };
     store.add_enqueued(MediaKind::Image, &["fresh".into()], &meta, &c);
     store.apply_jobs(MediaKind::Image, &[], &c);
     assert_eq!(store.pending.len(), 1);

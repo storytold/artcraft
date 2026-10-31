@@ -62,6 +62,8 @@ pub struct PendingJob {
   /// How long this model usually takes, for the estimated progress bar.
   pub expected_secs: f32,
   pub batch_count: u32,
+  /// Running at Midjourney or fal (tracked here, not in the server's job list).
+  pub local: bool,
 }
 
 /// A generation that failed or was cancelled.
@@ -75,6 +77,8 @@ pub struct FailedJob {
   pub message: Option<String>,
   /// The first reference image, shown faintly behind the error.
   pub ref_image: Option<String>,
+  /// A Midjourney or fal job (tracked here, not in the server's job list).
+  pub local: bool,
 }
 
 /// The progress and time-left labels for a pending job (`derivePendingStatus`).

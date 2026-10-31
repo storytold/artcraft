@@ -1,10 +1,14 @@
-//! Create Image (`TextToImage` + `PromptBoxImage`): prompt, reference images, model, aspect
-//! ratio, resolution, quality and count; the cost; and the image feed.
+//! Create Image (`TextToImage` + `PromptBoxImage`): prompt, reference images, model (and the
+//! provider it runs on), aspect ratio, resolution, quality and count; the cost; and the image
+//! feed.
+
+use std::collections::HashMap;
 
 use egui::{Id, Ui};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
+use crate::backend::providers::Provider;
 use crate::backend::wire::Prompt;
 use crate::backend::{EnqueueMeta, Modality};
 use crate::feed::store::FeedStore;
@@ -29,6 +33,8 @@ pub struct ImageSettings {
   pub resolution: Option<String>,
   pub quality: Option<String>,
   pub count: u16,
+  /// The provider picked for each model (the rest run on their default).
+  pub providers: HashMap<String, Provider>,
 }
 
 #[derive(Default)]
@@ -51,20 +57,32 @@ impl CreateImagePage {
 
   pub fn ui(&mut self, ui: &mut Ui, env: &mut Env<'_>) {
     let models = &env.catalog.image_page;
-    let model = common::selected_model(models, self.settings.model.as_deref(), DEFAULT_IMAGE_MODEL).cloned();
-    if let Some(m) = &model {
-      self.reconcile(m);
-      let fields = self.fields(m, true);
-      self.cost.update(ui, env.backend, Modality::Image, &fields);
+    let base = common::selected_model(models, self.settings.model.as_deref(), DEFAULT_IMAGE_MODEL).cloned();
+    let provider = base.as_ref().map_or(Provider::Artcraft, |m| self.provider(m));
+    // What the model can do on its provider (direct Midjourney: four images, no references).
+    let model = base.as_ref().map(|m| provider.adapt(m));
+    if let (Some(base), Some(m)) = (&base, &model) {
+      self.reconcile(base);
+      let mut fields = self.fields(m, true);
+      if provider != Provider::Artcraft {
+        fields.insert("provider".into(), json!(provider));
+      }
+      let backend = env.backend;
+      self.cost.update_with(ui, &fields, |key, fields| backend.estimate_provider_cost(provider, key, fields));
     }
     let mut feed = std::mem::take(&mut self.feed);
     let mut box_height = self.box_height;
-    common::create_shell(ui, env, MediaKind::Image, "Create Image", "Add a prompt, then generate", &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref()));
+    common::create_shell(ui, env, MediaKind::Image, "Create Image", "Add a prompt, then generate", &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref(), provider));
     self.feed = feed;
     self.box_height = box_height;
   }
 
-  fn prompt_box(&mut self, ui: &mut Ui, env: &mut Env<'_>, model: Option<&ModelInfo>) {
+  /// The provider `model` runs on: the user's pick, else its default.
+  fn provider(&self, model: &ModelInfo) -> Provider {
+    Provider::resolve(&model.id, self.settings.providers.get(&model.id).copied())
+  }
+
+  fn prompt_box(&mut self, ui: &mut Ui, env: &mut Env<'_>, model: Option<&ModelInfo>, provider: Provider) {
     let max_images = model.map_or(0, |m| m.image_refs_max);
     let deck = if max_images > 0 { DeckMode::References(DeckLimits { max_images, max_videos: 0, max_video_secs: None, max_audios: 0, max_audio_secs: None, library: env.signed_in }) } else { DeckMode::None };
     let accepts: &[RefKind] = if max_images > 0 { &[RefKind::Image] } else { &[] };
@@ -77,8 +95,8 @@ impl CreateImagePage {
     let mut picked_count = None;
     let mut slots = |ui: &mut Ui, slot: Slot| match (slot, model) {
       (Slot::ToolbarLeft, _) => {
-        if let Some(id) = model_selector(ui, Id::new("image-model"), models, model, false) {
-          picked_model = Some(id);
+        if let Some(pick) = model_selector(ui, Id::new("image-model"), models, model, false, Some(&settings.providers)) {
+          picked_model = Some(pick);
         }
         let Some(m) = model else {
           return;
@@ -104,20 +122,23 @@ impl CreateImagePage {
       _ => {},
     };
     let actions = prompt_box::show(ui, &mut settings.prompt, &self.refs, &mut self.box_state, &props, env.cache, &mut slots);
-    if let Some(id) = picked_model {
+    if let Some((id, picked_provider)) = picked_model {
+      if let Some(p) = picked_provider {
+        self.settings.providers.insert(id.clone(), p);
+      }
       self.settings.model = Some(id);
     }
     if let Some(n) = picked_count {
       self.settings.count = n;
     }
     for action in actions {
-      self.handle(action, env, model, max_images);
+      self.handle(action, env, model, max_images, provider);
     }
   }
 
-  fn handle(&mut self, action: PromptBoxAction, env: &mut Env<'_>, model: Option<&ModelInfo>, max_images: usize) {
+  fn handle(&mut self, action: PromptBoxAction, env: &mut Env<'_>, model: Option<&ModelInfo>, max_images: usize, provider: Provider) {
     match action {
-      PromptBoxAction::Generate => self.generate(env, model),
+      PromptBoxAction::Generate => self.generate(env, model, provider),
       PromptBoxAction::ClearAll => {
         self.settings.prompt.clear();
         self.refs.clear();
@@ -186,7 +207,7 @@ impl CreateImagePage {
     }
   }
 
-  fn generate(&mut self, env: &mut Env<'_>, model: Option<&ModelInfo>) {
+  fn generate(&mut self, env: &mut Env<'_>, model: Option<&ModelInfo>, provider: Provider) {
     if self.generating || self.settings.prompt.trim().is_empty() {
       return;
     }
@@ -206,9 +227,24 @@ impl CreateImagePage {
       env.toasts.error("Please wait for your references to finish uploading");
       return;
     }
+    // Other providers take the references as links (when the model takes references there).
+    let image_urls = if provider == Provider::Artcraft || model.image_refs_max == 0 {
+      Vec::new()
+    } else {
+      match self.refs.images.iter().map(|r| r.full_url.clone()).collect::<Option<Vec<String>>>() {
+        Some(urls) => urls,
+        None => {
+          env.toasts.error("A reference image is missing its link. Please add it again.");
+          return;
+        },
+      }
+    };
     self.generating = true;
-    let meta = EnqueueMeta { prompt: self.settings.prompt.clone(), model_id: model.id.clone(), batch_count: u32::from(self.settings.count.max(1)), ref_image: self.refs.images.first().and_then(|r| r.preview.clone()) };
-    env.backend.generate(Modality::Image, self.fields(model, false), meta);
+    let meta = EnqueueMeta { prompt: self.settings.prompt.clone(), model_id: model.id.clone(), batch_count: u32::from(model.valid_batch(self.settings.count)), ref_image: self.refs.images.first().and_then(|r| r.preview.clone()), provider };
+    match provider {
+      Provider::Artcraft => env.backend.generate(Modality::Image, self.fields(model, false), meta),
+      _ => env.backend.generate_with_provider(provider, self.fields(model, false), image_urls, meta),
+    }
   }
 
   /// The OmniGen request (`GenerateImageRequest` after `api_fields`). `estimate` swaps

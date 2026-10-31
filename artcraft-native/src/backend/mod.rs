@@ -3,6 +3,7 @@
 
 pub mod audio;
 pub mod media_cache;
+pub mod providers;
 pub mod session;
 pub mod video;
 pub mod wire;
@@ -29,6 +30,7 @@ use artcraft_client::error::storyteller_error::StorytellerError;
 use artcraft_client::utils::api_host::ApiHost;
 use artcraft_client::utils::basic_json_post_request::basic_json_post_request;
 use artcraft_client::utils::login_challenge_client::{LoginChallengeClient, LoginChallengeClientError};
+use cookie_store_wrapper::cookie_store::CookieStore;
 use enums::common::payments_namespace::PaymentsNamespace;
 use log::{error, warn};
 use serde::de::DeserializeOwned;
@@ -37,6 +39,11 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::feed::types::MediaKind;
 use crate::models::{self, ModelInfo};
+use providers::Provider;
+use providers::accounts::ProviderAccounts;
+use providers::jobs::{JobStore, ProviderJob};
+use providers::submit::SubmitError;
+use providers::worker::Worker;
 use session::Credentials;
 use wire::{AudioModels, BatchMedia, CharactersPage, MediaFile, PromptResponse, SessionInfo, SessionJobs, SessionUser, UploadResponse, UserMediaList};
 
@@ -47,6 +54,8 @@ const MODEL_LIST_ATTEMPTS: u32 = 3;
 const MODEL_LIST_BACKOFF: Duration = Duration::from_millis(250);
 /// The share link base (`SHARE_URL_BASE`).
 pub const SHARE_URL_BASE: &str = "https://getartcraft.com/media/";
+/// fal's cost estimate (the provider-aware legacy endpoint; OmniGen only prices ArtCraft).
+const PROVIDER_COST_PATH: &str = "/v1/generate/cost_estimate/image";
 /// Characters are made for this model (the Tauri app's `CharactersModal`).
 const CHARACTER_MODEL: &str = "seedance_2p0";
 /// Sent on every request (`artcraft_client_identity::ARTCRAFT_DESKTOP_USER_AGENT`).
@@ -136,6 +145,19 @@ pub enum Event {
     name: String,
   },
   CharacterChanged,
+  /// Generating with `Provider` needs its account connected first.
+  ProviderSetupNeeded(Provider),
+  /// A Midjourney or fal job's results are in the library, as `batch_token`.
+  ProviderJobFinished {
+    job_id: String,
+    batch_token: String,
+  },
+  ProviderJobFailed {
+    job_id: String,
+    reason: String,
+  },
+  /// A provider account was connected or disconnected.
+  ProviderAccountsChanged,
   Deleted(String),
   Saved(PathBuf),
   Toast {
@@ -151,6 +173,8 @@ pub struct EnqueueMeta {
   pub model_id: String,
   pub batch_count: u32,
   pub ref_image: Option<String>,
+  /// Who runs it (other providers' jobs are tracked locally).
+  pub provider: Provider,
 }
 
 /// A finished upload: the media token, plus what the server knows about the file.
@@ -172,6 +196,8 @@ pub struct Backend {
   creds: Arc<RwLock<Option<Credentials>>>,
   http: reqwest::Client,
   device_login_cancel: Arc<AtomicBool>,
+  accounts: ProviderAccounts,
+  jobs: JobStore,
 }
 
 impl Backend {
@@ -182,7 +208,10 @@ impl Backend {
     let host = session::api_host(&root);
     let creds = session::load(&root);
     let http = reqwest::Client::builder().user_agent(USER_AGENT).gzip(true).timeout(Duration::from_secs(60)).build().unwrap_or_default();
-    Self { rt, ctx, tx, rx, host, root, creds: Arc::new(RwLock::new(creds)), http, device_login_cancel: Arc::new(AtomicBool::new(false)) }
+    let (accounts, jobs) = (ProviderAccounts::load(&root), JobStore::load(&root));
+    let creds = Arc::new(RwLock::new(creds));
+    rt.spawn(Worker { host: host.clone(), creds: creds.clone(), http: http.clone(), accounts: accounts.clone(), jobs: jobs.clone(), tx: tx.clone(), ctx: ctx.clone() }.run());
+    Self { rt, ctx, tx, rx, host, root, creds, http, device_login_cancel: Arc::new(AtomicBool::new(false)), accounts, jobs }
   }
 
   pub fn runtime(&self) -> tokio::runtime::Handle {
@@ -405,6 +434,82 @@ impl Backend {
           let _ = tx.send(Event::EnqueueFailed { modality, message: api_message(&err), status: api_status(&err) });
         },
       }
+    });
+  }
+
+  // --- Other providers ---------------------------------------------------------------------
+
+  /// Starts an image generation at Midjourney or fal; `image_urls` are the references' links.
+  pub fn generate_with_provider(&self, provider: Provider, fields: Map<String, Value>, image_urls: Vec<String>, meta: EnqueueMeta) {
+    let (api, accounts, jobs) = (self.api(), self.accounts.clone(), self.jobs.clone());
+    self.spawn(move |tx| async move {
+      match providers::submit::submit(&api.host, api.creds.as_ref(), &accounts, provider, &fields, image_urls).await {
+        Ok(job) => {
+          let id = job.id.clone();
+          jobs.put(job);
+          let _ = tx.send(Event::Enqueued { modality: Modality::Image, job_tokens: vec![id], meta });
+        },
+        Err(SubmitError::NeedsAccount(provider)) => {
+          let _ = tx.send(Event::ProviderSetupNeeded(provider));
+        },
+        Err(SubmitError::Message(message)) => {
+          let _ = tx.send(Event::EnqueueFailed { modality: Modality::Image, message, status: None });
+        },
+      }
+    });
+  }
+
+  /// What an image generation costs at `provider`: nothing extra for direct Midjourney (it uses
+  /// the user's subscription), fal's price from the server.
+  pub fn estimate_provider_cost(&self, provider: Provider, key: String, fields: Map<String, Value>) {
+    match provider {
+      Provider::Artcraft => self.estimate_cost(Modality::Image, key, fields),
+      Provider::Midjourney => {
+        let _ = self.tx.send(Event::Cost { key, credits: Some(0) });
+      },
+      Provider::Fal => {
+        let api = self.api();
+        self.spawn(move |tx| async move {
+          let credits = match basic_json_post_request::<_, Value>(&api.host, PROVIDER_COST_PATH, None, fal_cost_body(&fields)).await {
+            Ok(response) => response.get("cost_in_credits").and_then(Value::as_u64),
+            Err(err) => {
+              warn!("FAL cost estimate failed: {}", api_message(&err));
+              None
+            },
+          };
+          let _ = tx.send(Event::Cost { key, credits });
+        });
+      },
+    }
+  }
+
+  pub fn accounts(&self) -> &ProviderAccounts {
+    &self.accounts
+  }
+
+  /// Midjourney and fal jobs still running (they get pending cards at startup).
+  pub fn provider_jobs(&self) -> Vec<ProviderJob> {
+    self.jobs.all()
+  }
+
+  /// Keeps the Midjourney login captured by the sign-in window.
+  pub fn save_midjourney_login(&self, cookies: CookieStore) {
+    let accounts = self.accounts.clone();
+    self.spawn(move |tx| async move {
+      if let Err(err) = accounts.midjourney.save_login(cookies).await {
+        let _ = tx.send(Event::Toast { error: true, message: format!("Couldn't save the Midjourney login: {err}") });
+      }
+      let _ = tx.send(Event::ProviderAccountsChanged);
+    });
+  }
+
+  pub fn disconnect_midjourney(&self) {
+    let accounts = self.accounts.clone();
+    self.spawn(move |tx| async move {
+      if let Err(err) = accounts.midjourney.clear_credentials().await {
+        let _ = tx.send(Event::Toast { error: true, message: format!("Couldn't disconnect Midjourney: {err}") });
+      }
+      let _ = tx.send(Event::ProviderAccountsChanged);
     });
   }
 
@@ -775,6 +880,15 @@ fn session_from_set_cookie(header: &str) -> Option<String> {
   cookie::Cookie::parse(header).ok().filter(|c| c.name() == "session").map(|c| c.value().to_owned())
 }
 
+/// The fal cost request (`estimate_image_cost_command`): the page's fields, its references
+/// counted as the generation mode.
+fn fal_cost_body(fields: &Map<String, Value>) -> Value {
+  let images = fields.get("image_media_tokens").and_then(Value::as_array).map_or(0, Vec::len);
+  let mode = if images == 0 { serde_json::json!({ "type": "text_to_image" }) } else { serde_json::json!({ "type": "image_edit", "count": images }) };
+  let field = |name: &str| fields.get(name).cloned().unwrap_or(Value::Null);
+  serde_json::json!({ "model": field("model"), "provider": "fal", "generation_mode": mode, "aspect_ratio": field("aspect_ratio"), "resolution": field("resolution"), "quality": field("quality"), "image_batch_count": field("image_batch_count") })
+}
+
 /// All job tokens a generate call created (`inference_job_token` plus `all_job_tokens`).
 fn job_tokens(response: &Value) -> Vec<String> {
   let mut tokens: Vec<String> = response.get("inference_job_token").and_then(Value::as_str).map(str::to_owned).into_iter().collect();
@@ -847,6 +961,13 @@ mod tests {
     let response = serde_json::json!({ "success": true, "inference_job_token": "j1", "all_job_tokens": ["j1", "j2", "j3"] });
     assert_eq!(job_tokens(&response), ["j1", "j2", "j3"]);
     assert_eq!(job_tokens(&serde_json::json!({ "inference_job_token": "only" })), ["only"]);
+  }
+
+  #[test]
+  fn fal_costs_count_references_as_the_mode() {
+    let fields = serde_json::json!({ "model": "flux_1_dev", "prompt": "x", "aspect_ratio": "square", "image_batch_count": 2, "image_media_tokens": ["mf_estimate_0"] });
+    let body = fal_cost_body(fields.as_object().unwrap());
+    assert_eq!(body, serde_json::json!({ "model": "flux_1_dev", "provider": "fal", "generation_mode": { "type": "image_edit", "count": 1 }, "aspect_ratio": "square", "resolution": null, "quality": null, "image_batch_count": 2 }));
   }
 
   #[test]

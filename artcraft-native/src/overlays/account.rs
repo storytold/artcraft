@@ -2,6 +2,7 @@
 
 use egui::{Color32, Id, Sense, Stroke, Ui, pos2, vec2};
 
+use crate::overlays::providers::{AccountAction, AccountsView, accounts_section};
 use crate::shell::{WEB_APP_URL, group_thousands};
 use crate::theme;
 use crate::ui::icons::Icon;
@@ -105,10 +106,12 @@ pub enum SettingsAction {
   Close,
   SignOut,
   SignIn,
+  Account(AccountAction),
 }
 
-/// The settings dialog (Settings → Misc and Account in the webapp).
-pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, username: Option<&str>, credits: Option<u64>, data_root: &std::path::Path) -> Option<SettingsAction> {
+/// The settings dialog (Settings → Misc and Accounts in the webapp). `fal_key` is the key being
+/// typed.
+pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, username: Option<&str>, credits: Option<u64>, accounts: &AccountsView, fal_key: &mut String, data_root: &std::path::Path) -> Option<SettingsAction> {
   let mut action = None;
   let close = widgets::modal(ctx, Id::new("settings"), 520.0, |ui| {
     ui.horizontal(|ui| {
@@ -160,6 +163,12 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
       },
     }
     ui.add_space(18.0);
+    widgets::hud(ui, "Provider accounts", theme::FAINT);
+    ui.add_space(6.0);
+    if let Some(account) = accounts_section(ui, accounts, fal_key) {
+      action = Some(SettingsAction::Account(account));
+    }
+    ui.add_space(18.0);
     widgets::hud(ui, "About", theme::FAINT);
     ui.add_space(6.0);
     ui.label(egui::RichText::new(format!("ArtCraft native {}", env!("CARGO_PKG_VERSION"))).size(13.0).color(theme::MUTED));
@@ -176,7 +185,7 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
 }
 
 /// A single-line input on the sunken surface with a hairline (and a blue line while focused).
-fn text_field(ui: &mut Ui, value: &mut String, password: bool, hint: &str) -> egui::Response {
+pub(crate) fn text_field(ui: &mut Ui, value: &mut String, password: bool, hint: &str) -> egui::Response {
   let id = ui.next_auto_id();
   let focused = ui.memory(|m| m.has_focus(id));
   egui::Frame::new().fill(theme::SUNKEN).stroke(Stroke::new(1.0, if focused { theme::ACCENT } else { theme::LINE })).corner_radius(theme::RADIUS).inner_margin(egui::Margin::symmetric(10, 8)).show(ui, |ui| ui.add(egui::TextEdit::singleline(value).id(id).password(password).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new(hint).color(theme::FAINT)))).inner
