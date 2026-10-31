@@ -1,4 +1,3 @@
-
 /// When downloading a remote file, it makes sense to try to match the same file extension (with reasonable safeguards).
 #[deprecated(note = "Use `Extension` in `url_utils::extension::extension` instead")]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -18,6 +17,7 @@ pub enum DownloadExtension {
 }
 
 impl DownloadExtension {
+  #[must_use]
   pub fn as_extension_without_period(&self) -> &'static str {
     match self {
       // Image
@@ -35,6 +35,7 @@ impl DownloadExtension {
     }
   }
 
+  #[must_use]
   pub fn as_extension_with_period(&self) -> &'static str {
     match self {
       // Image
@@ -52,6 +53,7 @@ impl DownloadExtension {
     }
   }
 
+  #[must_use]
   pub fn try_from_str(extension: &str) -> Option<Self> {
     match extension.to_lowercase().as_str() {
       // Image
