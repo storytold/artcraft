@@ -8,8 +8,9 @@ The look follows the brutalist webapp (`artcraft-services/frontend/apps/artcraft
 means near-black surfaces with white/15 hairlines and 3 px corners on controls. Type is Archivo for
 display, Inter for body text and Geist Mono for labels. The brand blue marks the primary actions.
 
-Create Image, Create Video and Create Audio are fully built. The other tools show a "coming soon"
-page that links to the same tool in the web app.
+Create Image, Create Video and Create Audio are fully built. Shot List is a local board for
+planning scenes and does not need an account. The other tools show a "coming soon" page that
+links to the same tool in the web app.
 
 ## Running
 
@@ -37,7 +38,7 @@ The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
 | `backend::providers` | Midjourney and fal: accounts, submitting, and a worker that finishes jobs into the library |
 | `models`           | Model catalog from OmniGen listings, plus names, families and limits           |
 | `prompt_box`       | The shared prompt box: editor, reference deck, keyframes, pickers, model selector |
-| `pages`            | Create Image, Video and Audio, Home, Library, and the shared page shell        |
+| `pages`            | Create Image, Video and Audio, Shot List, Home, Library, and the page shell    |
 | `feed`             | Generation feed: running, failed and finished jobs, library paging, grid and list |
 | `overlays`         | Lightbox, library picker, sign-in, settings, provider setup and the Midjourney sign-in window |
 | `shell`            | Custom title bar, sidebar flush to the window edge, content panel header       |
@@ -100,9 +101,10 @@ Feed and lightbox:
 ## Diagnostics
 
 Set `ARTCRAFT_SCREENSHOT=<file.png>` to save a screenshot once the window has settled.
-`ARTCRAFT_PAGE` (`home`, `create-image`, `create-video`, `create-audio` or `library`) picks the page,
-`ARTCRAFT_OPEN` (`settings` or `midjourney-login`) opens a dialog, and `ARTCRAFT_SCREENSHOT_EXIT=1`
-closes the app afterwards. The screenshot shows egui only, not the sign-in webview.
+`ARTCRAFT_PAGE` (`home`, `create-image`, `create-video`, `create-audio`, `library` or `shot-list`)
+picks the page, `ARTCRAFT_OPEN` (`settings` or `midjourney-login`) opens a dialog, and
+`ARTCRAFT_SCREENSHOT_EXIT=1` closes the app afterwards. The screenshot shows egui only, not the
+sign-in webview. Shot List is stored in `~/Artcraft/shot_list.json`.
 
 ## Tests
 
@@ -110,9 +112,10 @@ closes the app afterwards. The screenshot shows egui only, not the sign-in webvi
 cargo test -p artcraft_native
 ```
 
-There are unit tests for the catalog, feed store, wire decoding and backend helpers. Headless UI
-tests (`egui_kittest`) drive the prompt box (generate gating, Enter to generate, the pickers, `@`
-mentions, clear-all), the Characters dialog and the audio toolbar (toggles, Beat & Key, Tuning).
+There are unit tests for the catalog, feed store, wire decoding, backend helpers and Shot List
+(reorder, filter, Markdown export, JSON round-trip). Headless UI tests (`egui_kittest`) drive the
+prompt box (generate gating, Enter to generate, the pickers, `@` mentions, clear-all), the
+Characters dialog, the audio toolbar (toggles, Beat & Key, Tuning) and Shot List (new shot).
 
 ## Fonts and brand assets
 

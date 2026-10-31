@@ -27,6 +27,7 @@ use crate::pages::create_audio::{AudioSettings, CreateAudioPage};
 use crate::pages::create_image::{CreateImagePage, ImageSettings};
 use crate::pages::create_video::{CreateVideoPage, VideoSettings};
 use crate::pages::other;
+use crate::pages::shot_list::ShotListPage;
 use crate::prompt_box::refs::{RefKind, RefMedia, References};
 use crate::shell::{self, Account, FeedToggles, Page, ShellAction};
 use crate::theme;
@@ -86,6 +87,7 @@ pub struct ArtcraftApp {
   image: CreateImagePage,
   video: CreateVideoPage,
   audio: CreateAudioPage,
+  shot_list: ShotListPage,
   library: FeedStore,
   ratios: RatioCache,
   /// Prompt texts by prompt token (list view, lightbox).
@@ -132,7 +134,7 @@ impl ArtcraftApp {
       backend.load_models(modality);
     }
     backend.refresh_session();
-    let mut app = Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
+    let mut app = Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), shot_list: ShotListPage::new(backend.data_root()), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
     app.restore_provider_jobs();
     // Diagnostics: `ARTCRAFT_OPEN=settings` or `midjourney-login` opens that dialog at launch.
     match std::env::var("ARTCRAFT_OPEN").as_deref() {
@@ -635,6 +637,7 @@ impl ArtcraftApp {
             Page::CreateVideo => self.video.ui(ui, &mut env),
             Page::CreateAudio => self.audio.ui(ui, &mut env),
             Page::Library => other::library(ui, &mut env, &mut self.library),
+            Page::ShotList => self.shot_list.ui(ui),
             page => other::coming_soon(ui, page),
           }
         });
