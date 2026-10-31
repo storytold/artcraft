@@ -40,6 +40,16 @@ impl AppSettingsDir {
     self.path.join("provider_preferences.json")
   }
 
+  /// The user's own ComfyUI models (see services/local_comfy).
+  pub fn get_local_models_path(&self) -> PathBuf {
+    self.path.join("local_models.json")
+  }
+
+  /// This install's ComfyUI client id, so it only ever cancels its own runs on a shared ComfyUI.
+  pub fn get_local_comfy_client_id_path(&self) -> PathBuf {
+    self.path.join("local_comfy_client_id.txt")
+  }
+
   pub fn write_app_preferences(&self, prefs: &AppPreferences) -> AnyhowResult<()> {
     let serializable = prefs.to_serializable();
 

@@ -172,6 +172,7 @@ const mergedImageModel = (
   const resolutions = m.resolution_options ?? [];
   const qualityOptions = m.quality_options ?? [];
   const fullName = m.full_name ?? o?.fullName ?? m.model;
+  const creator = creatorFor(m.model_creator, m.model, o?.creator);
 
   return new ImageModel({
     // Identity. Keep the overlay's `id` (BY_ID lookups / history) when known.
@@ -179,7 +180,7 @@ const mergedImageModel = (
     tauriId,
     fullName,
     category: "image",
-    creator: creatorFor(m.model_creator, m.model, o?.creator),
+    creator,
 
     // Presentation — the omni image API has no display fields yet.
     selectorName: o?.selectorName ?? fullName,
@@ -190,7 +191,8 @@ const mergedImageModel = (
 
     // Page-subsetting flags — frontend-owned concepts.
     canTextToImage: o ? o.canTextToImage : m.text_prompt_supported !== false,
-    canEditImages: o?.canEditImages ?? false,
+    // Local (ComfyUI) models declare edit support by taking reference images.
+    canEditImages: o?.canEditImages ?? (creator === ModelCreator.Local && m.image_refs_supported === true),
     usesInpaintingMask: o?.usesInpaintingMask ?? false,
     editingIsInpainting: o?.editingIsInpainting ?? false,
     canEditAngles: o?.canEditAngles ?? false,

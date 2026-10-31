@@ -3,7 +3,7 @@ use crate::core::state::app_preferences::app_preferences::AppPreferences;
 use crate::core::state::app_preferences::app_preferences_manager::AppPreferencesManager;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
-use crate::core::utils::download_url_to_user_download_dir::{download_url_with_filename, suggested_download_filename};
+use crate::core::utils::download_url_to_user_download_dir::{download_url_with_filename, save_bytes_with_filename, suggested_download_filename};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use anyhow::{anyhow, ensure};
 use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
@@ -19,6 +19,12 @@ use tauri::{AppHandle, Manager};
 use tempfile::NamedTempFile;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use url::Url;
+
+/// One result to save. Its URL names the file and keys the checkpoint; bytes already in hand skip the download.
+struct ResultFile<'a> {
+  url: &'a Url,
+  maybe_bytes: Option<&'a [u8]>,
+}
 
 #[derive(Serialize, Deserialize)]
 struct AutoDownloadCheckpoint {
@@ -74,6 +80,14 @@ pub async fn auto_download_task_urls(app: &AppHandle, task: &Task, urls: &[Url])
   download_generated_results(&app.state::<AppDataRoot>(), &prefs, task, urls).await
 }
 
+/// For results whose bytes are already in hand (local generation): saved without downloading them again.
+/// Each URL is the result's library URL, used for naming and the checkpoint.
+pub async fn auto_download_task_bytes(app: &AppHandle, task: &Task, results: &[(Url, &[u8])]) -> AnyhowResult<()> {
+  let prefs = app.state::<AppPreferencesManager>().get_clone()?;
+  let files: Vec<ResultFile> = results.iter().map(|(url, bytes)| ResultFile { url, maybe_bytes: Some(bytes) }).collect();
+  save_generated_results(&app.state::<AppDataRoot>(), &prefs, task, &files).await
+}
+
 pub fn clear_auto_download_checkpoint(app: &AppHandle, task: &Task) {
   let path = checkpoint_path(&app.state::<AppDataRoot>(), task);
   if let Err(err) = std::fs::remove_file(path) {
@@ -89,10 +103,20 @@ async fn download_generated_results(
   task: &Task,
   urls: &[Url],
 ) -> AnyhowResult<()> {
+  let files: Vec<ResultFile> = urls.iter().map(|url| ResultFile { url, maybe_bytes: None }).collect();
+  save_generated_results(root, prefs, task, &files).await
+}
+
+async fn save_generated_results(
+  root: &AppDataRoot,
+  prefs: &AppPreferences,
+  task: &Task,
+  files: &[ResultFile<'_>],
+) -> AnyhowResult<()> {
   if !prefs.auto_download {
     return Ok(());
   }
-  ensure!(!urls.is_empty(), "Completed task has no downloadable results");
+  ensure!(!files.is_empty(), "Completed task has no downloadable results");
   let path = checkpoint_path(root, task);
   let mut checkpoint: AutoDownloadCheckpoint = match std::fs::read(&path) {
     Ok(bytes) => serde_json::from_slice(&bytes)?,
@@ -102,7 +126,7 @@ async fn download_generated_results(
     Err(err) => return Err(err.into()),
   };
   let directory = prefs.preferred_download_directory.download_directory(root);
-  for (index, url) in urls.iter().enumerate() {
+  for (index, ResultFile { url, maybe_bytes }) in files.iter().enumerate() {
     if checkpoint.saved.get(url.as_str()).is_some_and(|path| path.is_file()) {
       continue;
     }
@@ -110,10 +134,13 @@ async fn download_generated_results(
       url,
       prefs,
       task.model_type.as_ref().map(|model| model.to_str()),
-      (urls.len() > 1).then_some(index + 1),
+      (files.len() > 1).then_some(index + 1),
       checkpoint.download_time,
     );
-    let saved = download_url_with_filename(url, &directory, &filename).await?;
+    let saved = match maybe_bytes {
+      Some(bytes) => save_bytes_with_filename(bytes, &directory, &filename).await?,
+      None => download_url_with_filename(url, &directory, &filename).await?,
+    };
     checkpoint.saved.insert(url.to_string(), saved);
     let mut file = NamedTempFile::new_in(root.state_dir().path())?;
     file.write_all(&serde_json::to_vec(&checkpoint)?)?;
@@ -180,6 +207,18 @@ mod tests {
       download_generated_results(&root, &prefs, &task, &urls).await.unwrap();
       assert_eq!(std::fs::read_dir(dir.path().join("chosen")).unwrap().count(), 4);
     }
+  }
+
+  #[tokio::test]
+  async fn results_in_hand_are_saved_without_downloading() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let prefs = preferences(&root);
+    // Nothing listens on this port: a download attempt would fail the save.
+    let url = Url::parse("http://127.0.0.1:1/result.png").unwrap();
+    let files = [ResultFile { url: &url, maybe_bytes: Some(b"local") }];
+    save_generated_results(&root, &prefs, &task(GenerationProvider::Midjourney), &files).await.unwrap();
+    assert_eq!(std::fs::read_to_string(dir.path().join("chosen/midjourney_8_result.png")).unwrap(), "local");
   }
 
   #[tokio::test]

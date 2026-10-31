@@ -1,4 +1,4 @@
-import { ModelCreator } from "./ModelCreator.js";
+import { LOCAL_MODEL_ID_PREFIX, ModelCreator } from "./ModelCreator.js";
 import {
   CreatorIconSource,
   getCreatorIconPath,
@@ -10,6 +10,7 @@ import { ALL_MODELS_LIST } from "../../lists/AllModels.js";
 // Fallback prefix → creator map for model ids that aren't in ALL_MODELS_LIST
 // (legacy / API-only ids). Shared with the model-list loader's creator guess.
 export const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
+  [LOCAL_MODEL_ID_PREFIX, ModelCreator.Local],
   ["flux", ModelCreator.BlackForestLabs],
   ["nano_banana", ModelCreator.Google],
   ["gpt_image", ModelCreator.OpenAi],

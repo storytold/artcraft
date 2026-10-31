@@ -1,3 +1,5 @@
+use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
+use crate::core::utils::enum_conversion::task_type::to_generation_action;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::state::task_database::TaskDatabase;
 use enums::common::generation_provider::GenerationProvider;
@@ -22,36 +24,13 @@ pub struct TaskEnqueueSuccess {
 
 impl TaskEnqueueSuccess{
   pub fn to_frontend_event_action(&self) -> GenerationAction {
-    match self.task_type {
-      TaskType::ImageGeneration => GenerationAction::GenerateImage,
-      TaskType::GaussianGeneration => GenerationAction::GenerateGaussian,
-      TaskType::VideoGeneration => GenerationAction::GenerateVideo,
-      TaskType::AudioGeneration => GenerationAction::GenerateAudio,
-      TaskType::BackgroundRemoval => GenerationAction::RemoveBackground,
-      TaskType::ObjectGeneration => GenerationAction::ImageTo3d,
-      TaskType::ImageInpaintEdit => GenerationAction::ImageInpaintEdit,
-    }
+    to_generation_action(self.task_type)
   }
-  
+
   pub fn to_frontend_event_service(&self) -> GenerationServiceProvider {
-    match self.provider {
-      GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
-      GenerationProvider::Fal => GenerationServiceProvider::Fal,
-      GenerationProvider::Grok => GenerationServiceProvider::Grok,
-      GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
-      GenerationProvider::Sora => GenerationServiceProvider::Sora,
-      GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
-      GenerationProvider::Higgsfield => GenerationServiceProvider::Higgsfield,
-      GenerationProvider::Krea => GenerationServiceProvider::Krea,
-      GenerationProvider::Leonardo => GenerationServiceProvider::Leonardo,
-      GenerationProvider::Magnific => GenerationServiceProvider::Magnific,
-      GenerationProvider::Openart => GenerationServiceProvider::Openart,
-      GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
-      GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
-      GenerationProvider::Runway => GenerationServiceProvider::Runway,
-    }
+    to_generation_service_provider(self.provider)
   }
-  
+
   pub async fn insert_into_task_database(&self, task_database: &TaskDatabase) -> Result<TaskId, SqliteTasksError> {
     self.insert_into_task_database_with_frontend_payload(
       task_database,

@@ -1,10 +1,12 @@
-import { ModelCreator } from "./ModelCreator.js";
+import { LOCAL_MODEL_ID_PREFIX, ModelCreator } from "./ModelCreator.js";
 
 // Model-id-prefix → family display name, used to group the model picker into
 // submenus ("Seedance", "Veo", ...). Matched in order against both canonical
 // and tauri id forms (they share prefixes), so keep more specific prefixes
 // before shorter ones.
 const MODEL_ID_PREFIX_FAMILIES: Array<[string, string]> = [
+  // The user's own ComfyUI workflows (desktop).
+  [LOCAL_MODEL_ID_PREFIX, "Local"],
   // ── Video ──
   ["seedance", "Seedance"],
   ["kling", "Kling"],
@@ -42,6 +44,8 @@ const MODEL_ID_PREFIX_FAMILIES: Array<[string, string]> = [
 // Popular-first ordering for family groups in the picker. Families not listed
 // here sort alphabetically after these; the "Other" bucket always goes last.
 export const FAMILY_ORDER: string[] = [
+  // The user's own models first: they cost no credits.
+  "Local",
   // Video families first (longest picker lists today).
   "Seedance",
   "Veo",
