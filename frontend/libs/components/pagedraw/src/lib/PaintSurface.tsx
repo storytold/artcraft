@@ -25,6 +25,7 @@ import { useRightPanelLayoutManagement } from "./hooks/useRightPanelLayoutManage
 import { useStageCentering } from "./hooks/useCenteredStage";
 import { useGlobalMouseUp } from "./hooks/useGlobalMouseUp";
 import { loadImageFromUrl } from "./utilities/imageHelpers";
+import { throttleAccepts } from "./utilities/throttle";
 import { checkerboard } from "@storyteller/common";
 import { DragState } from "./types";
 
@@ -486,16 +487,54 @@ export const PaintSurface = ({
     }
   };
 
+  // Adds the pointer's stage position to the stroke being drawn.
+  const appendPointerToCurrentLine = () => {
+    const stage = stageRef.current;
+    const point = stage?.getPointerPosition();
+    if (!stage || !point) return;
+
+    const stagePoint = {
+      x: (point.x - stage.x()) / stage.scaleX(),
+      y: (point.y - stage.y()) / stage.scaleY(),
+    };
+
+    const points = currentLinePointsRef.current;
+    if (
+      points[points.length - 2] === stagePoint.x &&
+      points[points.length - 1] === stagePoint.y
+    ) {
+      return;
+    }
+    points.push(stagePoint.x, stagePoint.y);
+    const lineNode = currentLineKonvaRef.current;
+    const layer = lineNode?.getLayer();
+    if (lineNode && layer) {
+      lineNode.points(points);
+      layer.batchDraw();
+    }
+  };
+
+  const isDrawingLine = () =>
+    isDrawing &&
+    currentLineId &&
+    (activeTool === "draw" ||
+      activeTool === "eraser" ||
+      activeTool === "inpaint");
+
   const handleStageMouseMove = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       // This function causes potential re-renders and can fire hundreds of times
       // Throttling this should help keep everything running efficiently.
       // Don't even bother entertaining this event if it's too early
-      const eventTime = performance.now();
-      if (eventTime - mouseMoveThrottle.current < MOUSE_POLL_THROTTLE_MS) {
+      if (
+        !throttleAccepts(
+          mouseMoveThrottle,
+          performance.now(),
+          MOUSE_POLL_THROTTLE_MS,
+        )
+      ) {
         return;
       }
-      mouseMoveThrottle.current = eventTime;
 
       const stage = stageRef.current;
       if (!stage) return;
@@ -573,28 +612,8 @@ export const PaintSurface = ({
         }
       }
 
-      if (
-        isDrawing &&
-        currentLineId &&
-        (activeTool === "draw" ||
-          activeTool === "eraser" ||
-          activeTool === "inpaint")
-      ) {
-        const point = stage.getPointerPosition();
-        if (!point) return;
-
-        const stagePoint = {
-          x: (point.x - stage.x()) / stage.scaleX(),
-          y: (point.y - stage.y()) / stage.scaleY(),
-        };
-
-        currentLinePointsRef.current.push(stagePoint.x, stagePoint.y);
-        const lineNode = currentLineKonvaRef.current;
-        const layer = lineNode?.getLayer();
-        if (lineNode && layer) {
-          lineNode.points(currentLinePointsRef.current);
-          layer.batchDraw();
-        }
+      if (isDrawingLine()) {
+        appendPointerToCurrentLine();
       }
 
       if (isDrawingShape && currentShapeId && shapeStartPoint) {
@@ -686,6 +705,11 @@ export const PaintSurface = ({
   );
 
   const handleStageMouseUp = () => {
+    // The throttle may have dropped the last moves: end the stroke where the pointer stopped.
+    if (isDrawingLine()) {
+      appendPointerToCurrentLine();
+    }
+
     if (isDrawing) {
       saveState();
     }
