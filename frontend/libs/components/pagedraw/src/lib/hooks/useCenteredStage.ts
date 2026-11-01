@@ -20,8 +20,10 @@ function syncDrawingLayerPixelRatio(stage: Konva.Stage) {
     }
 
     // At 1x DPR, 2x supersampling means 4x backing-store pixels per layer.
-    // Keep that cost limited to the two vector stroke layers and redraw only
-    // when their effective pixel ratio actually changed.
+    // For an RGBA scene canvas that is 16 bytes per CSS pixel: about 31.6 MiB
+    // at 1920x1080 or 126.6 MiB at 3840x2160 per affected layer, before
+    // browser/Konva overhead. Keep that cost limited to the two vector stroke
+    // layers and redraw only when their effective pixel ratio actually changed.
     if (changed) {
       stage.batchDraw();
     }
