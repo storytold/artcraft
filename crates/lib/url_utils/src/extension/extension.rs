@@ -34,27 +34,23 @@ impl Extension {
   /// use url_utils::extension::extension::Extension;
   /// const MP4: Extension = Extension::from_static("mp4", ".mp4");
   /// ```
-  #[must_use]
   pub const fn from_static(ext: &'static str, dotted: &'static str) -> Self {
     Self { value: Cow::Borrowed(ext), dotted: Cow::Borrowed(dotted) }
   }
 
   /// Creates an `Extension` from a `&str` at runtime.
   /// The input must NOT include a leading period.
-  #[must_use]
   pub fn new(ext: &str) -> Self {
     let dotted = format!(".{ext}");
     Self { value: Cow::Owned(ext.to_string()), dotted: Cow::Owned(dotted) }
   }
 
   /// Returns the extension without the leading period, e.g. `"png"`.
-  #[must_use]
   pub fn without_period(&self) -> &str {
     &self.value
   }
 
   /// Returns the extension with the leading period, e.g. `".png"`.
-  #[must_use]
   pub fn with_period(&self) -> &str {
     &self.dotted
   }

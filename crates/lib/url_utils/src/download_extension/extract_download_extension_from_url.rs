@@ -3,7 +3,6 @@ use url::Url;
 
 /// This should be used for naming files on the local file system based on their URL.
 #[deprecated(note = "Use `extract_extension_from_url_str` in `url_utils::extension::extract_extension_from_url` instead")]
-#[must_use]
 pub fn extract_download_extension_from_url_str(url: &str) -> Option<DownloadExtension> {
   let parsed_url = Url::parse(url).ok()?;
   extract_download_extension_from_url(&parsed_url)
@@ -11,7 +10,6 @@ pub fn extract_download_extension_from_url_str(url: &str) -> Option<DownloadExte
 
 /// This should be used for naming files on the local file system based on their URL.
 #[deprecated(note = "Use `extract_extension_from_url` in `url_utils::extension::extract_extension_from_url` instead")]
-#[must_use]
 pub fn extract_download_extension_from_url(url: &Url) -> Option<DownloadExtension> {
   let path = url.path();
   let extension = std::path::Path::new(path).extension().and_then(|ext| ext.to_str())?;

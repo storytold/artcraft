@@ -37,21 +37,18 @@ pub enum ExtractExtensions {
 
 impl ExtractExtensions {
   /// Creates a `Set` variant from a `Vec<Extension>`.
-  #[must_use]
   pub fn from_vec(extensions: Vec<Extension>) -> Self {
     Self::Set(extensions.into_iter().collect())
   }
 }
 
 /// Extracts a file extension from a URL string, filtered by `accept`.
-#[must_use]
 pub fn extract_extension_from_url_str(url: &str, accept: &ExtractExtensions) -> Option<Extension> {
   let parsed_url = Url::parse(url).ok()?;
   extract_extension_from_url(&parsed_url, accept)
 }
 
 /// Extracts a file extension from a parsed `Url`, filtered by `accept`.
-#[must_use]
 pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Option<Extension> {
   let path = url.path();
   let raw_ext = std::path::Path::new(path).extension().and_then(|ext| ext.to_str())?;

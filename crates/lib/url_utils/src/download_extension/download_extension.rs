@@ -17,7 +17,6 @@ pub enum DownloadExtension {
 }
 
 impl DownloadExtension {
-  #[must_use]
   pub fn as_extension_without_period(&self) -> &'static str {
     match self {
       // Image
@@ -35,7 +34,6 @@ impl DownloadExtension {
     }
   }
 
-  #[must_use]
   pub fn as_extension_with_period(&self) -> &'static str {
     match self {
       // Image
@@ -53,7 +51,6 @@ impl DownloadExtension {
     }
   }
 
-  #[must_use]
   pub fn try_from_str(extension: &str) -> Option<Self> {
     match extension.to_lowercase().as_str() {
       // Image
