@@ -14,6 +14,8 @@
 //!
 //! Every model id must start with `local_`: that prefix is how a request is routed here instead of the API.
 //! A relative `workflow` path is relative to the settings folder.
+//! `comfy_url` defaults to this computer; another host gets a warning in the log, since prompts, reference images
+//! and workflows are then sent to it.
 //! The model takes exactly as many reference images as it has `images` bindings.
 //! Size: bind `width` + `height` (text-to-image latents) and/or `megapixels` (edit workflows that keep the source
 //! shape); the picker then offers `aspect_ratios` / `resolutions` and writes the chosen size there.
@@ -25,6 +27,7 @@ use std::time::SystemTime;
 use log::{error, warn};
 use once_cell::sync::Lazy;
 use serde_derive::Deserialize;
+use url::{Host, Url};
 
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_resolution::CommonResolution;
@@ -186,6 +189,9 @@ pub fn load_config(root: &AppDataRoot) -> LocalModelsConfig {
   let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
   match serde_json::from_str::<LocalModelsConfig>(text) {
     Ok(mut config) => {
+      if log_problems {
+        warn_remote_url(&config.comfy_url);
+      }
       config.models.retain(|m| {
         let ok = is_local_model(&m.id);
         if !ok && log_problems {
@@ -303,6 +309,27 @@ fn default_comfy_url() -> String {
   DEFAULT_COMFY_URL.to_string()
 }
 
+/// Logs a `comfy_url` that is not on this computer (or not a URL at all).
+fn warn_remote_url(comfy_url: &str) {
+  match is_loopback_url(comfy_url) {
+    Some(true) => {}
+    Some(false) => warn!(
+      "local models: comfy_url {} is not on this computer: prompts, reference images and workflows are sent there",
+      comfy_url),
+    None => warn!("local models: comfy_url {:?} is not an http(s) URL", comfy_url),
+  }
+}
+
+/// Whether the URL points at this computer; None if it is not an http(s) URL with a host.
+fn is_loopback_url(comfy_url: &str) -> Option<bool> {
+  let url = Url::parse(comfy_url.trim()).ok().filter(|url| matches!(url.scheme(), "http" | "https"))?;
+  Some(match url.host()? {
+    Host::Domain(name) => name.eq_ignore_ascii_case("localhost"),
+    Host::Ipv4(ip) => ip.is_loopback(),
+    Host::Ipv6(ip) => ip.is_loopback(),
+  })
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -314,6 +341,19 @@ mod tests {
     assert_eq!(size_for(aspect_ratio_value(CommonAspectRatio::WideSixteenByNine).unwrap(), one_k), (1360, 768));
     assert_eq!(size_for(aspect_ratio_value(CommonAspectRatio::TallTwoByThree).unwrap(), one_k), (832, 1248));
     assert!(aspect_ratio_value(CommonAspectRatio::Auto).is_none());
+  }
+
+  #[test]
+  fn tells_loopback_from_remote_urls() {
+    for url in [DEFAULT_COMFY_URL, "http://localhost:8188/", "http://LOCALHOST", "http://127.0.0.2:8188", "http://[::1]:8188"] {
+      assert_eq!(is_loopback_url(url), Some(true), "{}", url);
+    }
+    for url in ["http://192.168.1.20:8188", "https://comfy.example.com", "http://[2001:db8::1]:8188", "http://localhost.example.com"] {
+      assert_eq!(is_loopback_url(url), Some(false), "{}", url);
+    }
+    for url in ["127.0.0.1:8188", "file:///tmp/comfy", "", "not a url"] {
+      assert_eq!(is_loopback_url(url), None, "{}", url);
+    }
   }
 
   mod picker_tests {

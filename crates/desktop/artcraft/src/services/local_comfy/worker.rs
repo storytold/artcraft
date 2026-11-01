@@ -1,11 +1,12 @@
 //! Runs queued local jobs on ComfyUI, then hands the results to ArtCraft like any third-party provider:
 //! upload to the user's library, mark the task done, notify the frontend (same steps as the Grok image thread).
 
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::anyhow;
+use image::{ImageFormat, ImageReader};
 use log::{error, info, warn};
 use rand::random_range;
 use reqwest::multipart::{Form, Part};
@@ -60,6 +61,10 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
 const COMFY_MEGAPIXEL: f64 = 1024.0 * 1024.0;
 /// Seeds stay below 2^48 so they survive JSON number handling everywhere.
 const MAX_SEED: u64 = 1 << 48;
+/// Largest result file accepted from ComfyUI (an 8K 16-bit PNG stays well below it).
+const MAX_OUTPUT_BYTES: usize = 256 * 1024 * 1024;
+/// Largest width or height accepted for a result.
+const MAX_OUTPUT_SIDE: u32 = 16_384;
 const INTERRUPTED_REASON: &str = "ArtCraft was closed before this local job finished";
 
 /// Context shared by every job.
@@ -90,8 +95,8 @@ enum QueueState {
 /// One image produced by ComfyUI.
 struct OutputImage {
   bytes: Vec<u8>,
-  /// File extension ComfyUI used ("png", "webp", ...).
-  extension: String,
+  /// File extension of the format found in the bytes ("png", "jpg" or "webp").
+  extension: &'static str,
 }
 
 pub async fn local_comfy_thread(
@@ -303,9 +308,10 @@ impl Worker {
         let filename = img.get("filename").and_then(Value::as_str).unwrap_or_default();
         let subfolder = img.get("subfolder").and_then(Value::as_str).unwrap_or_default();
         let view = self.http.get(format!("{}/view", comfy)).query(&[("filename", filename), ("subfolder", subfolder), ("type", kind)]);
-        let bytes = self.comfy_send(comfy, view).await?.error_for_status()?.bytes().await?;
-        let extension = filename.rsplit_once('.').map_or("png", |(_, ext)| ext).to_ascii_lowercase();
-        images.push(OutputImage { bytes: bytes.to_vec(), extension });
+        let response = self.comfy_send(comfy, view).await?.error_for_status()?;
+        let bytes = read_bounded(response, MAX_OUTPUT_BYTES).await?;
+        let extension = check_output_image(&bytes).map_err(|err| anyhow!("{} ({})", err, filename))?;
+        images.push(OutputImage { bytes, extension });
       }
     }
     if images.is_empty() {
@@ -374,13 +380,7 @@ impl Worker {
 
   /// Sends a ComfyUI request; an unreachable or stalled server becomes an error the user can act on.
   async fn comfy_send(&self, comfy: &str, request: RequestBuilder) -> AnyhowResult<Response> {
-    request.send().await.map_err(|err| {
-      if err.is_connect() || err.is_timeout() {
-        anyhow!("Cannot reach ComfyUI at {}. Is it running?", comfy)
-      } else {
-        err.into()
-      }
-    })
+    send_to_comfy(comfy, request).await
   }
 
   /// Uploads the results to the user's library, completes the task, saves the results if the user turned on
@@ -411,7 +411,7 @@ impl Worker {
     let mut generated = Vec::new();
     let mut saved = Vec::new();
     for (i, image) in images.iter().enumerate() {
-      let mut file = self.app_data_root.temp_dir().new_named_temp_file_with_extension(&image.extension)?;
+      let mut file = self.app_data_root.temp_dir().new_named_temp_file_with_extension(image.extension)?;
       file.write_all(&image.bytes)?;
       file.flush()?;
       let uploaded = upload_image_media_file_from_file(UploadImageFromFileArgs {
@@ -586,6 +586,50 @@ fn execution_error_summary(entry: &Value) -> String {
   "see the ComfyUI console".to_string()
 }
 
+async fn send_to_comfy(comfy: &str, request: RequestBuilder) -> AnyhowResult<Response> {
+  request.send().await.map_err(|err| {
+    if err.is_connect() || err.is_timeout() {
+      anyhow!("Cannot reach ComfyUI at {}. Is it running?", comfy)
+    } else {
+      err.into()
+    }
+  })
+}
+
+/// Reads a response body, refusing one larger than `limit` bytes (before reading it when the size is announced).
+async fn read_bounded(mut response: Response, limit: usize) -> AnyhowResult<Vec<u8>> {
+  let too_large = || anyhow!("ComfyUI returned a file larger than {} MB", limit / (1024 * 1024));
+  if response.content_length().is_some_and(|length| length > limit as u64) {
+    return Err(too_large());
+  }
+  let mut bytes = Vec::new();
+  while let Some(chunk) = response.chunk().await? {
+    if bytes.len() + chunk.len() > limit {
+      return Err(too_large());
+    }
+    bytes.extend_from_slice(&chunk);
+  }
+  Ok(bytes)
+}
+
+/// Checks that a ComfyUI result is a PNG, JPEG or WebP image of a sane size, from its bytes (never its file name);
+/// returns the file extension for that format. Only the header is read: the image is not decoded.
+fn check_output_image(bytes: &[u8]) -> AnyhowResult<&'static str> {
+  let format = image::guess_format(bytes).map_err(|_| anyhow!("ComfyUI returned a file that is not an image"))?;
+  let extension = match format {
+    ImageFormat::Png => "png",
+    ImageFormat::Jpeg => "jpg",
+    ImageFormat::WebP => "webp",
+    other => return Err(anyhow!("ComfyUI returned a {:?} image; local models must save PNG, JPEG or WebP", other)),
+  };
+  let (width, height) = ImageReader::with_format(Cursor::new(bytes), format).into_dimensions()
+      .map_err(|err| anyhow!("ComfyUI returned an unreadable {} image: {}", extension, err))?;
+  if width == 0 || height == 0 || width > MAX_OUTPUT_SIDE || height > MAX_OUTPUT_SIDE {
+    return Err(anyhow!("ComfyUI returned a {} x {} image (at most {} pixels a side)", width, height, MAX_OUTPUT_SIDE));
+  }
+  Ok(extension)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -656,6 +700,105 @@ mod tests {
 
       let interrupted = json!({ "status": { "messages": [["execution_interrupted", {}]] } });
       assert_eq!(execution_error_summary(&interrupted), "the run was interrupted in ComfyUI");
+    }
+  }
+
+  mod output_tests {
+    use super::*;
+    use std::io::Read;
+    use std::net::TcpListener;
+
+    fn encoded(width: u32, height: u32, format: ImageFormat) -> Vec<u8> {
+      let mut bytes = Cursor::new(Vec::new());
+      image::DynamicImage::new_rgb8(width, height).write_to(&mut bytes, format).unwrap();
+      bytes.into_inner()
+    }
+
+    #[test]
+    fn takes_the_format_from_the_bytes() {
+      assert_eq!(check_output_image(&encoded(8, 4, ImageFormat::Png)).unwrap(), "png");
+      assert_eq!(check_output_image(&encoded(8, 4, ImageFormat::Jpeg)).unwrap(), "jpg");
+      assert_eq!(check_output_image(&encoded(8, 4, ImageFormat::WebP)).unwrap(), "webp");
+    }
+
+    #[test]
+    fn refuses_other_files_and_sizes() {
+      assert!(check_output_image(b"<html>not an image</html>").unwrap_err().to_string().contains("not an image"));
+      assert!(check_output_image(&encoded(8, 4, ImageFormat::Gif)).unwrap_err().to_string().contains("PNG, JPEG or WebP"));
+      // A PNG signature with a cut header.
+      let png = encoded(8, 4, ImageFormat::Png);
+      assert!(check_output_image(&png[..12]).unwrap_err().to_string().contains("unreadable"));
+      let wide = encoded(MAX_OUTPUT_SIDE + 1, 1, ImageFormat::Png);
+      assert!(check_output_image(&wide).unwrap_err().to_string().contains("at most"));
+    }
+
+    /// A one-request HTTP server: replies with `reply` (or never, when None) and returns its address.
+    fn serve_once(reply: Option<Vec<u8>>) -> String {
+      let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+      let address = format!("http://{}", listener.local_addr().unwrap());
+      std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = [0u8; 4096];
+        let _ = stream.read(&mut request);
+        match reply {
+          Some(reply) => { let _ = stream.write_all(&reply); }
+          None => std::thread::sleep(Duration::from_secs(5)),
+        }
+      });
+      address
+    }
+
+    fn http(timeout: Duration) -> Client {
+      Client::builder().connect_timeout(timeout).timeout(timeout).build().unwrap()
+    }
+
+    #[tokio::test]
+    async fn unreachable_and_stalled_servers_say_so() {
+      // Bound, then closed: nothing listens on that port.
+      let closed = { let listener = TcpListener::bind("127.0.0.1:0").unwrap(); format!("http://{}", listener.local_addr().unwrap()) };
+      let err = send_to_comfy(&closed, http(Duration::from_secs(2)).get(&closed)).await.unwrap_err();
+      assert_eq!(err.to_string(), format!("Cannot reach ComfyUI at {}. Is it running?", closed));
+
+      let stalled = serve_once(None);
+      let err = send_to_comfy(&stalled, http(Duration::from_millis(300)).get(&stalled)).await.unwrap_err();
+      assert!(err.to_string().starts_with("Cannot reach ComfyUI"), "{}", err);
+    }
+
+    #[tokio::test]
+    async fn malformed_and_oversized_replies_are_errors() {
+      let garbage = serve_once(Some(b"HTTP/1.1 200 OK
+Content-Length: 8
+Connection: close
+
+not json".to_vec()));
+      let response = send_to_comfy(&garbage, http(Duration::from_secs(2)).get(&garbage)).await.unwrap();
+      assert!(response.json::<Value>().await.is_err());
+
+      let announced = serve_once(Some(b"HTTP/1.1 200 OK
+Content-Length: 100
+Connection: close
+
+".to_vec()));
+      let response = send_to_comfy(&announced, http(Duration::from_secs(2)).get(&announced)).await.unwrap();
+      assert!(read_bounded(response, 10).await.unwrap_err().to_string().contains("larger than"));
+
+      // No announced size: the limit applies while reading.
+      let mut chunked = b"HTTP/1.1 200 OK
+Connection: close
+
+".to_vec();
+      chunked.extend_from_slice(&[0u8; 64]);
+      let unannounced = serve_once(Some(chunked));
+      let response = send_to_comfy(&unannounced, http(Duration::from_secs(2)).get(&unannounced)).await.unwrap();
+      assert!(read_bounded(response, 10).await.unwrap_err().to_string().contains("larger than"));
+
+      let small = serve_once(Some(b"HTTP/1.1 200 OK
+Content-Length: 4
+Connection: close
+
+abcd".to_vec()));
+      let response = send_to_comfy(&small, http(Duration::from_secs(2)).get(&small)).await.unwrap();
+      assert_eq!(read_bounded(response, 10).await.unwrap(), b"abcd");
     }
   }
 

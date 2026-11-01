@@ -5,7 +5,8 @@ ArtCraft can generate and edit images with your own ComfyUI, at no credit cost. 
 
 # Setup
 
-1. Run ComfyUI (default address `http://127.0.0.1:8188`).
+1. Run ComfyUI (default address `http://127.0.0.1:8188`). ComfyUI on another computer works too, but ArtCraft
+   logs a warning: prompts, reference images and workflows are then sent to that host.
 2. Export each workflow you want from ComfyUI with **Export (API)**.
 3. Describe them in `local_models.json` in ArtCraft's settings folder (`settings/` in the ArtCraft data folder,
    next to `app_preferences.json`). A relative `workflow` path is relative to that folder:
@@ -47,6 +48,8 @@ Each binding is `[node id, input name]` in the API-format workflow:
 A model takes exactly as many images as it has `images` bindings, the canvas and scene images included: a request
 with more or fewer is refused before anything is uploaded. On the Draw page the canvas fills the first binding, so
 a one-image model takes no extra reference there. Naming `output_node` also accepts a PreviewImage node.
+Results must be PNG, JPEG or WebP images, at most 16384 pixels a side and 256 MB; the format is read from the
+file itself, not its name.
 
 ## Picker options
 
