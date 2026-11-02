@@ -52,4 +52,39 @@ describe("uploadImage", () => {
       data: "m_token",
     });
   });
+
+  it("reports an asset error when the upload returns no response", async () => {
+    uploadImageMock.mockResolvedValue(undefined);
+    const progressCallback = vi.fn();
+
+    await uploadImage({
+      title: "flat",
+      assetFile: new File(["png"], "flat.png", { type: "image/png" }),
+      progressCallback,
+    });
+
+    expect(progressCallback).toHaveBeenLastCalledWith({
+      status: UploaderStates.assetError,
+      errorMessage: "Could not upload image plane!",
+    });
+  });
+
+  it("reports an asset error with the API message when the upload fails", async () => {
+    uploadImageMock.mockResolvedValue({
+      success: false,
+      errorMessage: "upload rejected",
+    });
+    const progressCallback = vi.fn();
+
+    await uploadImage({
+      title: "flat",
+      assetFile: new File(["png"], "flat.png", { type: "image/png" }),
+      progressCallback,
+    });
+
+    expect(progressCallback).toHaveBeenLastCalledWith({
+      status: UploaderStates.assetError,
+      errorMessage: "upload rejected",
+    });
+  });
 });
