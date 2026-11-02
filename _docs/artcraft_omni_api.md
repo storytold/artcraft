@@ -68,6 +68,23 @@ Authorization: artcraft_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 `Bearer` is recommended. **Do not send cookies.**
 
+### User-Agent
+
+Send a descriptive `User-Agent`, for example `MyTool/1.0 (+https://example.com)`. Cloudflare in front of `api.storyteller.ai` answers **403 error 1010** for a library's default agent (Python `urllib`'s is one) before the key is checked. A request that already carries `Authorization` still needs that header.
+
+### Library and job reads
+
+These reads accept the same `Authorization` header as generation. The header may be an API key or an MCP session token. A bad header is rejected. With no header, the website session cookie is required, except `GET /v1/jobs/session`, which still lists an anonymous visitor's own jobs from the visitor cookie.
+
+The rows are the caller's own. A key does not read another account.
+
+| Endpoint | What it lists |
+| --- | --- |
+| `GET /v1/media_files/project/list` | saved projects, including 3D Stage scenes |
+| `GET /v1/media_files/mesh/list` | the caller's meshes |
+| `GET /v1/media_files/splat/list` | the caller's splats |
+| `GET /v1/jobs/session` | recent jobs |
+
 ---
 
 ## Video generation — `POST /v1/omni_api/generate/video`
@@ -620,6 +637,7 @@ while (true) {
 - **Type mismatches** (e.g. a `.webm` passed as a reference video, which requires `mp4`) are
   rejected with a `400` describing the unpermitted type.
 - **`401 Unauthorized`** — missing/invalid API key, or the key's owner is banned.
+- **`403` Cloudflare error 1010** — the `User-Agent` is a library default. Send a descriptive one. The key is not checked until that header gets past Cloudflare.
 - **`402 Payment required`** — insufficient credits/balance.
 - There is a companion image endpoint, `POST /v1/omni_api/generate/image`, which accepts
   `image_urls` (mutually exclusive with `image_media_tokens`) following the same rules.
