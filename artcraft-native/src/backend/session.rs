@@ -8,6 +8,7 @@ use artcraft_client::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::credentials::storyteller_session_cookie::StorytellerSessionCookie;
 use artcraft_client::utils::api_host::ApiHost;
+use artcraft_data_dir::{DataDir, DEFAULT_DATA_DIR_NAME};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
@@ -30,9 +31,18 @@ impl Credentials {
   }
 }
 
-/// `~/Artcraft`, shared with the Tauri app (`AppDataRoot`).
+/// `~/Artcraft` (or `ARTCRAFT_DATA_DIR`), shared with the Tauri app (`AppDataRoot`).
 pub fn data_root() -> PathBuf {
-  directories::UserDirs::new().map(|d| d.home_dir().to_path_buf()).unwrap_or_else(|| PathBuf::from(".")).join("Artcraft")
+  match DataDir::resolve() {
+    Ok(data_dir) => {
+      data_dir.log_choice();
+      data_dir.path
+    },
+    Err(err) => {
+      warn!("{err}; using {DEFAULT_DATA_DIR_NAME:?} in the working directory");
+      PathBuf::from(".").join(DEFAULT_DATA_DIR_NAME)
+    },
+  }
 }
 
 /// The API host from `~/Artcraft/settings/env_configs.json` (production unless it says

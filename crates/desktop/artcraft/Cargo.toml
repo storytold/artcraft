@@ -29,6 +29,7 @@ cookie_store_wrapper = { workspace = true, features = ["wreq"] }
 # Internal
 artcraft_api_defs.workspace = true
 artcraft_client.workspace = true
+artcraft_data_dir.workspace = true
 artcraft_router.workspace = true
 build_metadata.workspace = true
 cookie_store.workspace = true
@@ -55,7 +56,6 @@ anyhow.workspace = true
 base64.workspace = true
 bytes = "1.10.1"
 chrono.workspace = true
-directories = "6.0.0"
 dirs = "6.0.0"
 discord-rich-presence = "1.1.0"
 futures = "0.3"

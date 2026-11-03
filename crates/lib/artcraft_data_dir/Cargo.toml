@@ -1,0 +1,22 @@
+[package]
+name = "artcraft_data_dir"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "artcraft_data_dir"
+path = "src/lib.rs"
+
+[dependencies]
+
+# Internal
+# (None)
+
+# External
+anyhow.workspace = true
+directories = "6.0.0"
+log.workspace = true
+
+[dev-dependencies]
+# (None)
