@@ -63,7 +63,8 @@ export const GrokAccountBlock = () => {
           Grok account
         </p>
         <p className="truncate text-sm font-medium text-base-fg/80">
-          {grokSession?.payload?.maybe_email || "Not logged in"}
+          {grokSession?.payload?.maybe_email
+            || (grokSession?.payload?.can_clear_state ? "Connected" : "Not logged in")}
         </p>
       </div>
       <Button
