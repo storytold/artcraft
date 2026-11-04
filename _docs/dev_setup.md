@@ -70,6 +70,45 @@ the launcher, wait for the desktop window, make a Rust source edit, and check fo
 a rebuild/restart in the same terminal. Frontend edits should update the webview
 without restarting the Rust process.
 
+**Linux Production Build**
+
+Tested on Arch Linux (CachyOS) with KDE Plasma on Wayland. In addition to Rust,
+Node.js 20+, and the Tauri CLI, install the Tauri system dependencies. `cmake` is
+needed to compile BoringSSL for `wreq`:
+
+```bash
+# Arch Linux / CachyOS
+sudo pacman -S --needed base-devel webkit2gtk-4.1 libsoup3 librsvg openssl cmake clang \
+  libayatana-appindicator xdotool gst-plugins-base gst-plugins-good gst-libav
+```
+
+Build a standalone release binary from the repository root. `--no-bundle` skips the
+AppImage, `.deb`, and `.rpm` packaging:
+
+```bash
+(cd frontend && npm install)
+
+TAURI_FRONTEND_PATH="$PWD/frontend" \
+TAURI_APP_PATH="$PWD/crates/desktop/artcraft" \
+VITE_ENVIRONMENT_TYPE=production \
+SQLX_OFFLINE=true \
+  cargo tauri build --config crates/desktop/artcraft/tauri.conf.json --no-bundle
+
+./target/release/artcraft
+```
+
+The frontend is embedded in the binary. A release build needs about 3 GB for `target/`
+and 1.2 GB for `frontend/node_modules`.
+
+Linux GPU notes:
+
+* On NVIDIA under Wayland, WebKitGTK crashes at startup with `Error 71 (Protocol error)
+  dispatching to Wayland display`. The app sets `__NV_DISABLE_EXPLICIT_SYNC=1` at
+  startup to avoid this, unless the variable is already set.
+* `WEBKIT_DISABLE_DMABUF_RENDERER=1`, which the dev launcher sets by default, made the
+  release window transparent on KDE Wayland with an AMD iGPU (only `<video>` elements
+  rendered). The release binary does not need it on that setup.
+
 **Windows Development**
 
 ```powershell

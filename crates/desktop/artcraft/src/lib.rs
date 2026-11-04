@@ -87,6 +87,7 @@ use crate::services::worldlabs::commands::worldlabs_receive_bearer_command::worl
 use crate::services::worldlabs::state::worldlabs_bearer_bridge::WorldlabsBearerBridge;
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
 use log::error;
+use std::env;
 
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use tauri_plugin_dialog;
@@ -96,6 +97,9 @@ use tauri_plugin_log::TargetKind;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  // NB: This must run before any threads are spawned or GTK/WebKit is initialized.
+  configure_linux_gpu_environment();
+
   // NB: Tauri wants to install the logger itself, so we can't rely on the logger crate
   // until the tauri runtime begins.
   println!("Loading config...");
@@ -292,4 +296,15 @@ pub fn run() {
 
   builder.run(tauri::generate_context!("tauri.conf.json"))
     .expect("error while running tauri application");
+}
+
+/// On Linux with the NVIDIA driver under Wayland, WebKitGTK crashes at startup with
+/// "Error 71 (Protocol error) dispatching to Wayland display" unless explicit sync is
+/// disabled. Other drivers ignore this variable. A value set by the user takes precedence.
+fn configure_linux_gpu_environment() {
+  const NVIDIA_EXPLICIT_SYNC_VAR: &str = "__NV_DISABLE_EXPLICIT_SYNC";
+
+  if cfg!(target_os = "linux") && env::var_os(NVIDIA_EXPLICIT_SYNC_VAR).is_none() {
+    env::set_var(NVIDIA_EXPLICIT_SYNC_VAR, "1");
+  }
 }
