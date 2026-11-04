@@ -40,6 +40,7 @@ use crate::core::commands::task_queue::mark_task_as_dismissed_command::mark_task
 use crate::core::commands::task_queue::tasks_nuke_all_command::tasks_nuke_all_command;
 use crate::core::lifecycle::startup::handle_tauri_startup::handle_tauri_startup;
 use crate::core::lifecycle::startup::setup_main_window::setup_main_window;
+use crate::core::lifecycle::startup::webkit_nvidia_compat::apply_webkit_nvidia_workarounds;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::app_preferences::app_preferences_manager::load_app_preferences_or_default;
 use crate::core::state::artcraft_platform_info::ArtcraftPlatformInfo;
@@ -96,6 +97,11 @@ use tauri_plugin_log::TargetKind;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  // NB: Must run before any WebKitGTK/webview initialization so NVIDIA's
+  // explicit-sync handshake is disabled for startup. Silent by design: the
+  // Tauri logger does not exist yet.
+  apply_webkit_nvidia_workarounds();
+
   // NB: Tauri wants to install the logger itself, so we can't rely on the logger crate
   // until the tauri runtime begins.
   println!("Loading config...");

@@ -91,8 +91,13 @@ async function main() {
       TAURI_APP_PATH: rustDir,
       SQLX_OFFLINE: process.env.SQLX_OFFLINE ?? "true",
       RUSTFLAGS: process.env.RUSTFLAGS ?? "-Awarnings",
-      WEBKIT_DISABLE_DMABUF_RENDERER: process.env.WEBKIT_DISABLE_DMABUF_RENDERER ?? "1",
-      WEBKIT_DISABLE_COMPOSITING_MODE: process.env.WEBKIT_DISABLE_COMPOSITING_MODE ?? "1",
+      // Do not force WEBKIT_DISABLE_DMABUF_RENDERER / WEBKIT_DISABLE_COMPOSITING_MODE:
+      // those defaults broke video stacking (the <video> painted above all DOM
+      // with compositing disabled) and crashed on NVIDIA. The app's Rust startup
+      // now applies the NVIDIA explicit-sync workaround itself (see the
+      // webkit_nvidia_compat module). Anyone who genuinely needs the old
+      // behavior can still export WEBKIT_DISABLE_* explicitly; the spread above
+      // passes those through untouched.
     },
   });
   rust.on("error", fail);
