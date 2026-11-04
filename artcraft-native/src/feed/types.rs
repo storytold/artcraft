@@ -92,13 +92,13 @@ pub fn pending_status(job: &PendingJob, now: i64) -> (u8, String) {
   let left = (job.expected_secs - elapsed).max(1.0) as i64;
   let (h, m, s) = (left / 3600, (left % 3600) / 60, left % 60);
   let label = if h > 0 && m > 0 {
-    format!("~{h}h {m}m")
+    crate::i18n::tf("~{}h {}m", &[h.to_string(), m.to_string()])
   } else if h > 0 {
-    format!("~{h}h")
+    crate::i18n::tf("~{}h", &[h.to_string()])
   } else if m > 0 {
-    format!("~{m}m")
+    crate::i18n::tf("~{}m", &[m.to_string()])
   } else {
-    format!("~{s}s")
+    crate::i18n::tf("~{}s", &[s.to_string()])
   };
   (progress, label)
 }
@@ -106,7 +106,7 @@ pub fn pending_status(job: &PendingJob, now: i64) -> (u8, String) {
 /// "just now", "5 minutes ago", … for list rows.
 pub fn time_ago(then: i64, now: i64) -> String {
   let d = (now - then).max(0);
-  let plural = |n: i64, unit: &str| format!("{n} {unit}{} ago", if n == 1 { "" } else { "s" });
+  let plural = |n: i64, unit: &str| crate::i18n::tf("{} {}{} ago", &[n.to_string(), crate::i18n::t(unit), (if n == 1 || crate::i18n::is_arabic() { "" } else { "s" }).to_string()]);
   match d {
     0..=59 => "just now".to_owned(),
     60..=3599 => plural(d / 60, "minute"),

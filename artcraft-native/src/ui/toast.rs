@@ -35,11 +35,11 @@ pub struct Toasts {
 
 impl Toasts {
   pub fn success(&mut self, message: impl Into<String>) {
-    self.pending.push((ToastKind::Success, message.into()));
+    self.pending.push((ToastKind::Success, crate::i18n::t(&message.into())));
   }
 
   pub fn error(&mut self, message: impl Into<String>) {
-    self.pending.push((ToastKind::Error, message.into()));
+    self.pending.push((ToastKind::Error, crate::i18n::t(&message.into())));
   }
 
   /// Draws the stack over everything else and drops expired toasts.
