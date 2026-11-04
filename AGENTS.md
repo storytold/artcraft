@@ -1,17 +1,22 @@
 # AGENTS.md
 
 This file provides guidance for coding agents when working with the Artcraft monorepo.
+Claude Code, Codex and other agents read `AGENTS.md` files directly; do not add
+`CLAUDE.md` mirrors (see [agent documentation](_docs/AGENTS.md)).
 
 ## Project Overview
 
 Artcraft is a public-facing Tauri desktop app for generating AI images and video.
-It uses Rust and TypeScript. Backend services, company tooling, and website builds
-live in the separate `artcraft-services` repository.
+It uses Rust and TypeScript. `artcraft-native/` is a separate pure Rust/egui
+desktop app over the same API client crates. Backend services, company tooling,
+and website builds live in the separate `artcraft-services` repository.
+[Development setup](_docs/dev_setup.md) owns environment commands.
 
 ## Project Structure
 
 ```
 artcraft/
+├── artcraft-native/                  # Rust/egui desktop app over shared API clients
 ├── _database/sql/artcraft_migrations/  # Embedded SQLite task database migrations
 ├── .sqlx/                             # SQLite query metadata for offline builds
 ├── crates/
@@ -66,11 +71,32 @@ Organize for top-to-bottom reading. Important things first, details later.
   column width:
 
   ```markdown
-  | Model        | Configuration | Credits    | Speed | Score   |
-  |--------------|---------------|--------------------|---------|
-  | Meshy 6      | text or image | 104        | 80.0  | +24     |
-  | Rodin 2.5    | text or image | 13         | 10.0  | +3      |
+  | Model        | Configuration | Credits | Speed | Score |
+  |--------------|---------------|---------|-------|-------|
+  | Meshy 6      | text or image | 104     | 80.0  | +24   |
+  | Rodin 2.5    | text or image | 13      | 10.0  | +3    |
   ```
 
   Not: `| Model | Configuration | Credits | Speed | Score |` packed tight
   with varying widths per row.
+
+## Working Rules
+
+- Reproduce a found defect with a test before fixing it and confirm the failure's cause.
+  If automation cannot reach it, record the limitation and the nearest executable check.
+  Never weaken a valid test to make a suite pass.
+- Use the owning boundary's existing types, error idiom and dependency direction. Read a
+  dependency's source before wrapping it; avoid unrelated cleanup or new frameworks.
+- Run checks that reach the changed boundary and widen them for shared wire types or
+  routing. Compilation, fixture tests, live-provider behavior, native startup and visual
+  acceptance are different evidence; report which ones ran and which were skipped.
+- Keep ordinary tests local and hermetic. Paid generation, uploads, real credentials,
+  account changes, releases and destructive operations need explicit authorization.
+- Nested `AGENTS.md` files own their context. For a change that crosses boundaries, read
+  the `AGENTS.md` of each affected directory before editing.
+
+Contexts: [Rust](crates/AGENTS.md), [frontend](frontend/AGENTS.md),
+[pagescene](frontend/libs/components/pagescene/AGENTS.md),
+[native app](artcraft-native/AGENTS.md), [agent documentation](_docs/AGENTS.md).
+The [engineering methodology](_docs/agent-engineering-methodology.md) explains these
+rules and describes optional review and concurrent-agent workflows.
