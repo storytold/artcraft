@@ -34,3 +34,5 @@ pub mod path_to_string;
 pub mod read_to_trimmed_string;
 pub mod recursively_find_file_by_name;
 pub mod rename_across_devices;
+
+pub mod private_file;

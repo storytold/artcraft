@@ -499,6 +499,7 @@ dependencies = [
  "enums",
  "env_logger",
  "fal_client",
+ "filesys",
  "image",
  "log",
  "midjourney_client",
@@ -2858,6 +2859,7 @@ version = "0.0.1"
 dependencies = [
  "errors",
  "log",
+ "tempfile",
  "test_utils",
  "walkdir",
 ]
