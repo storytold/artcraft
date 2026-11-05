@@ -198,6 +198,9 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
           isLoading={gallery.isLoading}
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
+          // A failed history request shows "Try again" (which re-asks for the same page) instead of an endless spinner.
+          loadFailed={gallery.loadFailed}
+          onRetry={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
           lastViewedId={lastViewedId}
           selectable

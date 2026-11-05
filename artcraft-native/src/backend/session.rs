@@ -22,6 +22,9 @@ pub struct Credentials {
   pub session: String,
   #[serde(default)]
   pub visitor: Option<String>,
+  /// Written by sign-out. The file stays so the next start does not import the desktop app's login again.
+  #[serde(default)]
+  pub signed_out: bool,
 }
 
 impl Credentials {
@@ -53,15 +56,20 @@ pub fn api_host(root: &Path) -> ApiHost {
 
 /// The saved session, or the Tauri app's (imported and saved for next time).
 pub fn load(root: &Path) -> Option<Credentials> {
+  load_with(root, import_tauri_cookies)
+}
+
+fn load_with(root: &Path, import: impl FnOnce() -> Option<Credentials>) -> Option<Credentials> {
   let path = credentials_path(root);
   if let Ok(text) = fs::read_to_string(&path) {
     match serde_json::from_str::<Credentials>(&text) {
+      Ok(creds) if creds.signed_out => return None,
       Ok(creds) if !creds.session.is_empty() => return Some(creds),
       Ok(_) => {},
       Err(err) => warn!("Ignoring unreadable {}: {err}", path.display()),
     }
   }
-  let imported = import_tauri_cookies()?;
+  let imported = import()?;
   info!("Imported the ArtCraft login from the desktop app's cookie jar");
   save(root, &imported);
   Some(imported)
@@ -75,13 +83,10 @@ pub fn save(root: &Path, creds: &Credentials) {
   }
 }
 
+/// Forgets the session (sign-out). The file is kept, emptied and marked, because with no file the next start would
+/// import the desktop app's login and sign the person straight back in.
 pub fn delete(root: &Path) {
-  let path = credentials_path(root);
-  if let Err(err) = fs::remove_file(&path) {
-    if err.kind() != std::io::ErrorKind::NotFound {
-      warn!("Couldn't delete {}: {err}", path.display());
-    }
-  }
+  save(root, &Credentials { signed_out: true, ..Credentials::default() });
 }
 
 fn credentials_path(root: &Path) -> PathBuf {
@@ -115,4 +120,35 @@ fn import_tauri_cookies() -> Option<Credentials> {
     }
   }
   (!creds.session.is_empty()).then_some(creds)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn root() -> PathBuf {
+    std::env::temp_dir().join(format!("artcraft-native-session-{}", uuid::Uuid::new_v4()))
+  }
+
+  fn desktop_login() -> Option<Credentials> {
+    Some(Credentials { session: "from-the-desktop-app".into(), ..Credentials::default() })
+  }
+
+  #[test]
+  fn signing_out_stays_signed_out_even_when_the_desktop_app_is_signed_in() {
+    let root = root();
+    save(&root, &Credentials { session: "mine".into(), visitor: Some("v".into()), signed_out: false });
+    assert_eq!(load_with(&root, || None).map(|c| c.session).as_deref(), Some("mine"));
+    delete(&root);
+    assert!(load_with(&root, desktop_login).is_none(), "the next start must not import the desktop app's login");
+    let _ = fs::remove_dir_all(root);
+  }
+
+  #[test]
+  fn a_first_start_imports_the_desktop_apps_login_once() {
+    let root = root();
+    assert_eq!(load_with(&root, desktop_login).map(|c| c.session).as_deref(), Some("from-the-desktop-app"));
+    assert_eq!(load_with(&root, || None).map(|c| c.session).as_deref(), Some("from-the-desktop-app"), "it was saved");
+    let _ = fs::remove_dir_all(root);
+  }
 }

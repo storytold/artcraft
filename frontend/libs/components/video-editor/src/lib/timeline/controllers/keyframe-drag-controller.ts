@@ -329,8 +329,45 @@ export class KeyframeDragController {
       ((clientX - this.session.startMouseX) / pixelsPerSecond) *
         TICKS_PER_SECOND,
     );
-    this.session.deltaTicks = roundFrameTicks({ ticks: rawDeltaTicks, fps });
+    this.session.deltaTicks = this.clampGroupDeltaTicks({
+      keyframeRefs: this.session.keyframeRefs,
+      deltaTicks: roundFrameTicks({ ticks: rawDeltaTicks, fps }),
+    });
     this.notify();
+  }
+
+  // Limits the drag distance so the whole group stops when its first or last
+  // keyframe reaches the clip edge. Clamping each keyframe on its own would
+  // squash a group dragged past the end onto a single time and lose the gaps.
+  private clampGroupDeltaTicks({
+    keyframeRefs,
+    deltaTicks,
+  }: {
+    keyframeRefs: SelectedKeyframeRef[];
+    deltaTicks: number;
+  }): number {
+    const { element } = this.config;
+    let earliestTime = Infinity;
+    let latestTime = -Infinity;
+    for (const ref of keyframeRefs) {
+      if (ref.elementId !== element.id) continue;
+      const keyframe = getKeyframeById({
+        animations: element.animations,
+        propertyPath: ref.propertyPath,
+        keyframeId: ref.keyframeId,
+      });
+      if (!keyframe) continue;
+      earliestTime = Math.min(earliestTime, keyframe.time);
+      latestTime = Math.max(latestTime, keyframe.time);
+    }
+    if (earliestTime === Infinity) return deltaTicks;
+
+    const minDeltaTicks = ZERO_MEDIA_TIME - earliestTime;
+    const maxDeltaTicks = element.duration - latestTime;
+    // A group wider than the clip cannot keep its gaps; leave the per-keyframe
+    // clamp in commitDrag to deal with it.
+    if (maxDeltaTicks < minDeltaTicks) return deltaTicks;
+    return Math.max(minDeltaTicks, Math.min(maxDeltaTicks, deltaTicks));
   }
 
   private handleMouseUp(): void {

@@ -1,3 +1,7 @@
+// AppsQuickMenu: the two-column "Create / Edit" list of apps shown in the tooltip/popover of the Apps button in the top bar.
+// Rendered by TopBar.tsx. The list of apps, icons and colours comes from ~/config/appMenu; clicking an app calls goToApp(),
+// which switches the page.
+
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import {
@@ -9,6 +13,9 @@ import {
   type FullAppItem,
 } from "~/config/appMenu";
 
+/**
+ * Two sections side by side: apps that generate new media (Create) and apps that change existing media (Edit).
+ */
 export const AppsQuickMenu = () => {
   const generateApps = useGenerateApps();
   const editApps = useEditApps();
@@ -20,6 +27,10 @@ export const AppsQuickMenu = () => {
   );
 };
 
+/**
+ * One column: a heading plus a button per app. Apps without an action (not built yet) are drawn dimmed and disabled.
+ * title: column heading; apps: the entries to list.
+ */
 const AppsQuickMenuSection = ({
   title,
   apps,

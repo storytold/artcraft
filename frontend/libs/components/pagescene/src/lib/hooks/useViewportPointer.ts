@@ -46,6 +46,16 @@ export const useViewportPointer = (
       editor.mouse_controls?.onMouseUp(e);
     };
 
+    // FIX: a touch or pen gesture the browser takes over fires `pointercancel`
+    // and never a `pointerup`. MouseControls then kept `isMouseClicked` set, so
+    // every later mouse move rotated the camera as if a button were still held
+    // (the same gap B-106 closed for the free-cam drag). Treat a cancel as a
+    // primary-button release; `button: 0` is passed explicitly because a cancel
+    // event does not reliably carry the button that was pressed.
+    const onPointerCancel = () => {
+      editor.mouse_controls?.onMouseUp({ button: 0 });
+    };
+
     const onClick = (_e: MouseEvent) => {
       if (cameraViewActive) return;
       editor.mouse_controls?.onMouseClick();
@@ -67,6 +77,7 @@ export const useViewportPointer = (
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointercancel", onPointerCancel);
     canvas.addEventListener("click", onClick);
     canvas.addEventListener("dblclick", onDoubleClick);
 
@@ -74,6 +85,7 @@ export const useViewportPointer = (
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointercancel", onPointerCancel);
       canvas.removeEventListener("click", onClick);
       canvas.removeEventListener("dblclick", onDoubleClick);
     };

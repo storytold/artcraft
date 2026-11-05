@@ -19,7 +19,6 @@ export const useGenerationFailedEvent = () => {
 
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<GenerationFailedEvent>>('generation-failed-event', async (event) => {
-        console.log("Generation failed event received:", event);
         await SoundManager.playGenerationFailure();
         const message = makeMessage(event.payload.data);
         toast.error(message);

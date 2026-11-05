@@ -3,16 +3,17 @@ import type {
   ExportSinkAdapter,
 } from "@storyteller/ui-video-editor";
 import { kindFromMime } from "@storyteller/ui-video-editor";
-import { promptDownloadLocationIfNeeded, downloadUrlToPath } from "@storyteller/tauri-api";
-import { downloadDir } from "@tauri-apps/api/path";
+import { saveBlobToDisk } from "@storyteller/tauri-api";
 import { uploadByKind } from "./upload-by-kind";
 
 // Tauri ExportSinkAdapter.
 //
 // Two destinations the user controls from the export popover:
-//   - saveToDisk: native save-as dialog (promptDownloadLocationIfNeeded
-//     falls back to the OS Downloads dir when the "Ask location before
-//     download" setting is off) → downloadUrlToPath writes the file.
+//   - saveToDisk: saveBlobToDisk shows the native save-as dialog when the
+//     "Ask location before download" setting is on (else uses the OS
+//     Downloads dir) and writes the render's bytes with the Tauri fs plugin.
+//     FIX: this used to hand a blob: URL to downloadUrlToPath, whose Rust
+//     HTTP client rejects non-http(s) URLs, so "Save to disk" always failed.
 //   - saveToLibrary: UploadNewVideo / UploadAudio / UploadImage mirrors
 //     the render into the user's Artcraft media library.
 //
@@ -26,21 +27,6 @@ import { uploadByKind } from "./upload-by-kind";
 // `null` because the browser can't observe the chosen download path.
 
 const inFlight = new Set<string>();
-
-async function ensureSavePath(
-  url: string,
-  filename: string,
-): Promise<string | null> {
-  const chosen = await promptDownloadLocationIfNeeded(url);
-  if (chosen === null) {
-    // User explicitly cancelled the dialog.
-    return null;
-  }
-  if (typeof chosen === "string") return chosen;
-  // "Ask location before download" is off — default to Downloads/<filename>.
-  const dir = await downloadDir();
-  return `${dir}/${filename}`;
-}
 
 async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
   const baseTitle = artifact.filename.replace(/\.[^.]+$/, "");
@@ -62,8 +48,6 @@ export const tauriExportSinkAdapter: ExportSinkAdapter = {
       return null;
     }
 
-    const downloadUrl = URL.createObjectURL(artifact.blob);
-
     if (inFlight.has(artifact.filename)) {
       if (saveToDisk) {
         onProgress?.({
@@ -79,7 +63,6 @@ export const tauriExportSinkAdapter: ExportSinkAdapter = {
           error: "Already uploading this export",
         });
       }
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 60_000);
       return null;
     }
     inFlight.add(artifact.filename);
@@ -89,9 +72,8 @@ export const tauriExportSinkAdapter: ExportSinkAdapter = {
       if (saveToDisk) {
         onProgress?.({ destination: "disk", status: "pending" });
         try {
-          const targetPath = await ensureSavePath(downloadUrl, artifact.filename);
+          const targetPath = await saveBlobToDisk(artifact.blob, artifact.filename);
           if (targetPath) {
-            await downloadUrlToPath(downloadUrl, targetPath);
             savedPath = targetPath;
             onProgress?.({ destination: "disk", status: "success" });
           } else {
@@ -129,7 +111,6 @@ export const tauriExportSinkAdapter: ExportSinkAdapter = {
       }
     } finally {
       inFlight.delete(artifact.filename);
-      URL.revokeObjectURL(downloadUrl);
     }
 
     return savedPath;

@@ -2,7 +2,7 @@ use crate::client::browser_user_agents::FIREFOX_143_MAC_USER_AGENT;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use log::info;
+use log::{debug, info};
 use std::ops::Deref;
 use wreq::header::{ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, CONTENT_TYPE, COOKIE, ORIGIN, PRAGMA, REFERER, TE, UPGRADE, USER_AGENT};
 use wreq::ws::message::Message;
@@ -53,7 +53,8 @@ pub async fn get_index(args: GetIndexPageArgs<'_>) -> Result<IndexPage, GrokErro
       .map_err(|err| GrokClientError::WreqClientError(err))?;
 
   let status = response.status();
-  println!("Status: {}", status);
+  // println! is forbidden outside tests (AGENTS.md); use log macros.
+  debug!("Index page status: {}", status);
 
   //let body = response.text()
   //    .await
@@ -61,11 +62,14 @@ pub async fn get_index(args: GetIndexPageArgs<'_>) -> Result<IndexPage, GrokErro
 
   // stblid=08552693-0377-49d3-b17f-8e4c68b153ec
   for cookie in response.cookies() {
-    println!("Cookie: {}={}", cookie.name(), cookie.value());
+    // Only log the cookie name: the value is a session secret.
+    debug!("Index page cookie: {}", cookie.name());
   }
 
   for (name, value) in response.headers() {
-    println!("Header: {}: {}", name.as_str(), value.to_str().unwrap());
+    // FIX: `value.to_str().unwrap()` panics on any non-visible-ASCII response header
+    // (header values may be arbitrary bytes). Log lossily instead.
+    debug!("Index page header: {}: {}", name.as_str(), String::from_utf8_lossy(value.as_bytes()));
   }
 
   let body = response.text()

@@ -1,4 +1,4 @@
-import type { HeadersFunction } from "@remix-run/deno";
+import type { HeadersFunction } from "@remix-run/node";
 import { useParams } from "react-router-dom";
 
 import { withProtectionRoute } from "~/hoc/withProtectedRoute";
@@ -10,12 +10,7 @@ import { MainApp } from "~/pages/MainApp";
 // netlify.toml) will apply to statically served files (images, css, js), however.
 // Setting these headers in `vite.config.ts` will also fail to apply them in
 // production.
-export const headers: HeadersFunction = ({
-  actionHeaders,
-  errorHeaders,
-  loaderHeaders,
-  parentHeaders,
-}) => ({
+export const headers: HeadersFunction = () => ({
   // NB(bt): The following two headers are required for enabling SharedArrayBuffer (required by
   // ffmpeg.wasm) in the post-SPECTRE world. Without these headers being sent by the page, the
   // page cannot use SharedArrayBuffer. Downstream services must also set relevant CORS headers.

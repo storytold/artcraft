@@ -39,6 +39,7 @@ type ImageTo3DWorldState = {
   ) => void;
   uploadCoverFromPreview: (mediaToken: string) => Promise<void>;
   failGeneration: (subscriberId: string) => void;
+  failOnlyPendingGeneration: () => void;
   setPendingExternalImage: (url: string, mediaToken: string) => void;
   clearPendingExternalImage: () => void;
   reset: () => void;
@@ -203,6 +204,17 @@ export const useImageTo3DWorldStore = create<ImageTo3DWorldState>(
         results: s.results.filter((r) => r.subscriberId !== subscriberId),
       }));
     },
+    // The backend reports a failed job as "a generate_gaussian job failed" with no job id. If exactly one
+    // row is still pending, that row is the failed job, so its spinner row is removed. If none or several
+    // are pending the failure cannot be pinned on one row, so nothing is removed (a wrong guess would hide a
+    // job that is still running).
+    failOnlyPendingGeneration: () => {
+      set((s) => {
+        const pending = s.results.filter((r) => r.status === "pending");
+        if (pending.length !== 1) return {};
+        return { results: s.results.filter((r) => r !== pending[0]) };
+      });
+    },
     setPendingExternalImage: (url: string, mediaToken: string) => {
       set({ pendingExternalImage: { url, mediaToken } });
     },
@@ -247,3 +259,12 @@ listen<GaussianGenerationEvent>(
     }
   },
 );
+
+// A job can also fail after it was accepted (server error, input rejected). The backend then sends
+// "generation-failed-event" with the action "generate_gaussian" and no job id; without this listener the
+// spinner row stayed in the session list until "Clear Session". Only this tab starts generate_gaussian
+// jobs, so the action alone identifies it.
+listen<{ data?: { action?: string } }>("generation-failed-event", (event) => {
+  if (event.payload?.data?.action !== "generate_gaussian") return;
+  useImageTo3DWorldStore.getState().failOnlyPendingGeneration();
+});

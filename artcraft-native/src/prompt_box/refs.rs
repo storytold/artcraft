@@ -139,6 +139,16 @@ impl References {
   pub fn swap_frames(&mut self) {
     std::mem::swap(&mut self.first_frame, &mut self.last_frame);
   }
+
+  /// Moves the image at `from` to position `to`. The deck holds `from` from the moment a drag starts, and the list can
+  /// shrink meanwhile (an upload fails and its card goes), so an index that is no longer there is ignored.
+  pub fn reorder_images(&mut self, from: usize, to: usize) {
+    if from >= self.images.len() {
+      return;
+    }
+    let item = self.images.remove(from);
+    self.images.insert(to.min(self.images.len()), item);
+  }
 }
 
 #[cfg(test)]
@@ -152,6 +162,21 @@ mod tests {
     assert_eq!(RefKind::from_path(Path::new("clip.mov")), Some(RefKind::Video));
     assert_eq!(RefKind::from_path(Path::new("beat.m4a")), Some(RefKind::Audio));
     assert_eq!(RefKind::from_path(Path::new("notes.txt")), None);
+  }
+
+  #[test]
+  fn reordering_images_ignores_a_position_that_is_gone() {
+    let mut refs = References::default();
+    refs.images = ["a", "b", "c"].map(|t| RefMedia::from_library(RefKind::Image, t.into(), None, None, 0.0)).to_vec();
+    let order = |refs: &References| refs.images.iter().filter_map(|r| r.token.clone()).collect::<Vec<_>>();
+    refs.reorder_images(2, 0);
+    assert_eq!(order(&refs), ["c", "a", "b"]);
+    refs.reorder_images(0, 9);
+    assert_eq!(order(&refs), ["a", "b", "c"], "a target past the end goes last");
+    // A card was dragged from the last place, then an earlier upload failed and left two cards.
+    refs.images.remove(0);
+    refs.reorder_images(2, 0);
+    assert_eq!(order(&refs), ["b", "c"], "nothing to move, and no panic");
   }
 
   #[test]

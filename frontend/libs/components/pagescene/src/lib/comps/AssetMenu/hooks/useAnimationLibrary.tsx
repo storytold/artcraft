@@ -10,6 +10,7 @@ import {
 import {
   fetchFeaturedMediaItems,
   fetchUserMediaItems,
+  type FetchMediaItemStates,
 } from "../utilities/fetchMediaItems";
 import { demoAnimationItems } from "../../../signals/demoAssets";
 import type { MediaItem } from "../../../models/assets";
@@ -77,13 +78,20 @@ const fetchFeaturedAnimations = async (
   if (featuredSucceeded) return;
   if (store.getState().featuredFetchStatus === FetchStatus.IN_PROGRESS) return;
   store.setState({ featuredFetchStatus: FetchStatus.IN_PROGRESS });
-  const result = await fetchFeaturedMediaItems(
-    {
-      ...ANIMATION_FILTERS,
-      defaultErrorMessage: "Error fetching featured animations",
-    },
-    adapter,
-  );
+  let result: FetchMediaItemStates;
+  try {
+    result = await fetchFeaturedMediaItems(
+      {
+        ...ANIMATION_FILTERS,
+        defaultErrorMessage: "Error fetching featured animations",
+      },
+      adapter,
+    );
+  } catch {
+    // The store is shared for the whole session: a thrown request must not
+    // leave the status on IN_PROGRESS, or this fetch would never retry.
+    result = { status: FetchStatus.ERROR };
+  }
   if (result.status === FetchStatus.SUCCESS) featuredSucceeded = true;
   store.setState({
     featuredFetchStatus: result.status,
@@ -98,15 +106,21 @@ const fetchUserAnimationsShared = async (
   const store = useAnimationLibraryStore;
   if (store.getState().userFetchStatus === FetchStatus.IN_PROGRESS) return;
   store.setState({ userFetchStatus: FetchStatus.IN_PROGRESS });
-  const result = await fetchUserMediaItems(
-    {
-      ...ANIMATION_FILTERS,
-      defaultErrorMessage: "Error fetching your animations",
-      suppressErrorToast: true,
-      nextPageIndex: pageIndex,
-    },
-    adapter,
-  );
+  let result: FetchMediaItemStates;
+  try {
+    result = await fetchUserMediaItems(
+      {
+        ...ANIMATION_FILTERS,
+        defaultErrorMessage: "Error fetching your animations",
+        suppressErrorToast: true,
+        nextPageIndex: pageIndex,
+      },
+      adapter,
+    );
+  } catch {
+    // Same reason as the featured fetch: never stay stuck on IN_PROGRESS.
+    result = { status: FetchStatus.ERROR };
+  }
   store.setState((prev) => ({
     userFetchStatus: result.status,
     ...(result.mediaItems

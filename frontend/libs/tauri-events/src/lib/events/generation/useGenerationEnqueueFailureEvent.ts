@@ -19,7 +19,6 @@ export const useGenerationEnqueueFailureEvent = () => {
 
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<GenerationEnqueueFailureEvent>>('generation-enqueue-failure-event', async (event) => {
-        console.log("Generation enqueue failure event received:", event);
         await SoundManager.playEnqueueFailure();
         const message = makeMessage(event.payload.data);
         toast.error(message);

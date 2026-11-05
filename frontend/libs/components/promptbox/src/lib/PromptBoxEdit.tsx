@@ -10,6 +10,7 @@ import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
 import { RefImage, usePromptEditStore, useEnterToGenerateStore } from "./promptStore";
+import { isImeKeyDown } from "./common/imeKey";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
@@ -227,6 +228,8 @@ export const PromptBoxEdit = ({
     e.stopPropagation();
 
     if (e.key !== "Enter") return;
+    // FIX: Enter that confirms an IME composition (Japanese/Chinese/Korean) must not submit the prompt; same guard as the other prompt boxes.
+    if (isImeKeyDown(e)) return;
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();

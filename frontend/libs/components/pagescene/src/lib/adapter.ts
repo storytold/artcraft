@@ -240,7 +240,7 @@ export interface PageSceneAdapter {
   }): ReactNode;
 
   // Upload an image File and emit upload-progress states. Wraps the
-  // host's UploadImageMedia / UploadModalMedia.uploadImage pipeline.
+  // host's UploadImageMedia pipeline.
   // Used by PromptBox3D for reference-image uploads. Signature
   // matches @storyteller/common's UploadImageArgs so it can pass
   // through to PromptBox3D.uploadImage as-is.

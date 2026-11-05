@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT OR Apache-2.0",
   "scripts": {
+    "test": "node tools/testing/run-all-unit-tests.mjs",
     "test:desktop-session": "node tools/testing/desktop-session.mjs",
     "perf:desktop": "node tools/performance/run.mjs"
   },

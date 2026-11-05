@@ -5,6 +5,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImageModel } from "@storyteller/model-list";
 import { AspectRatioIcon, AutoIcon } from "./AspectRatioIcon";
 
+// What the parent hands the picker: the chosen model, the ratio picked so far, and a callback for a new pick.
 interface AspectRatioPickerProps {
   model: ImageModel;
   currentAspectRatio?: CommonAspectRatio;
@@ -23,11 +24,13 @@ interface AspectRatioPickerProps {
  * @param currentAspectRatio - currently selected aspect ratio
  * @param handleCommonAspectRatioSelect - callback when an aspect ratio is selected
  */
+// The aspect-ratio menu in the image prompt box. It keeps no state of its own; the parent owns the choice.
 export const AspectRatioPicker = ({
   model,
   currentAspectRatio,
   handleCommonAspectRatioSelect,
 }: AspectRatioPickerProps) => {
+  // The ratio to show: the user's pick, else the model's default, else none.
   const useAspectRatio =
     currentAspectRatio ?? model.defaultAspectRatio ?? undefined;
 
@@ -35,6 +38,7 @@ export const AspectRatioPicker = ({
   // SquareHd on Imagen then switched to Flux Pro 1.1), reset to the model's
   // default. Otherwise PopoverMenu's toggle mode finds no selected item and
   // renders just the icon with no label.
+  // If the model was switched to one that does not offer the stored ratio, move the choice to that model's default.
   useEffect(() => {
     if (currentAspectRatio === undefined) return;
     if (model.aspectRatios?.includes(currentAspectRatio)) return;
@@ -43,17 +47,20 @@ export const AspectRatioPicker = ({
     handleCommonAspectRatioSelect(def);
   }, [model, currentAspectRatio, handleCommonAspectRatioSelect]);
 
+  // True for any of the "Auto" ratios (plain, 2K, 3K, 4K), which get the Auto icon instead of a shape.
   const isAutoRatio =
     useAspectRatio === CommonAspectRatio.Auto ||
     useAspectRatio === CommonAspectRatio.Auto2k ||
     useAspectRatio === CommonAspectRatio.Auto3k ||
     useAspectRatio === CommonAspectRatio.Auto4k;
 
+  // Turns a clicked menu row back into a ratio value and passes it up.
   const handleSelectAdapter = (item: PopoverItem) => {
     const ratio = (item.action ?? item.label) as CommonAspectRatio;
     handleCommonAspectRatioSelect(ratio);
   };
 
+  // Same check as isAutoRatio, but for any ratio passed in (used when building the menu rows).
   const isAutoAspectRatio = (ratio: CommonAspectRatio): boolean => {
     return (
       ratio === CommonAspectRatio.Auto ||
@@ -63,8 +70,10 @@ export const AspectRatioPicker = ({
     );
   };
 
+  // The menu rows, built from the ratios this model supports.
   let aspectRatioList: PopoverItem[] = [];
 
+  // One row per supported ratio: text label, the ratio as its action, whether it is the current one, and an icon.
   model.aspectRatios?.forEach((ratio: CommonAspectRatio) => {
     aspectRatioList.push({
       label: getAspectRatioTextLabel(ratio),
@@ -78,6 +87,7 @@ export const AspectRatioPicker = ({
     });
   });
 
+  // Draw a hover tooltip around a popover menu whose button shows the current ratio's icon.
   return (
     <>
       <Tooltip
@@ -105,6 +115,7 @@ export const AspectRatioPicker = ({
   );
 };
 
+// Maps each ratio to the text shown in the menu (for example 16:9 (Wide)); unknown values show as they are.
 const getAspectRatioTextLabel = (aspectRatio: CommonAspectRatio): string => {
   switch (aspectRatio) {
     case CommonAspectRatio.Auto:

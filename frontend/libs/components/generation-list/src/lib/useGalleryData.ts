@@ -65,9 +65,17 @@ export function useGalleryData(options: {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  // True after the latest history request failed (rejected, or answered success:false). Without it a failed load looked
+  // exactly like "still loading": hasMore stays true, so the feed showed its "more is loading" spinner forever and,
+  // because pageIndex did not move, nothing ever asked again. The feed views show a "Try again" notice while it is set.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const isLoadingRef = useRef(false);
+  // Bumped whenever the feed is reset or a new request starts. A response
+  // whose id is no longer current (filters changed, refresh pressed, logged
+  // out) is dropped so it can't overwrite the newer feed.
+  const requestIdRef = useRef(0);
 
   const api = useMemo(() => new GalleryModalApi(), []);
 
@@ -108,7 +116,10 @@ export function useGalleryData(options: {
       if (!username) return;
       if (isLoadingRef.current) return;
       isLoadingRef.current = true;
+      const requestId = ++requestIdRef.current;
       setIsLoading(true);
+      // A new attempt is under way, so the previous failure notice goes away (the spinner takes over until it settles).
+      setLoadFailed(false);
 
       try {
         const response = await api.listUserMediaFiles({
@@ -118,6 +129,9 @@ export function useGalleryData(options: {
           page_index: reset ? 0 : pageIndex,
           page_size: PAGE_SIZE,
         });
+
+        // Superseded while in flight: the newer request owns all state now.
+        if (requestId !== requestIdRef.current) return;
 
         if (response.success && response.data) {
           const modelIdSet =
@@ -152,9 +166,15 @@ export function useGalleryData(options: {
           const total = response.pagination?.total_page_count ?? 1;
           setPageIndex(current + 1);
           setHasMore(current + 1 < total);
+        } else {
+          // The server (or the network layer, which turns errors into success:false) said no: this is a failed load,
+          // not an empty history. hasMore and pageIndex stay as they were so a retry asks for the same page again.
+          setLoadFailed(true);
         }
       } catch {
-        // ignore
+        // A thrown request is a failed load too. A superseded request still stays silent: the newer one owns the state.
+        if (requestId !== requestIdRef.current) return;
+        setLoadFailed(true);
       }
 
       setIsLoading(false);
@@ -175,10 +195,14 @@ export function useGalleryData(options: {
   // Initial load + filter change. When logged out (no username), clear the
   // loading flag so the shell renders the empty state instead of a spinner.
   useEffect(() => {
+    requestIdRef.current++; // drop any response still in flight
     setItems([]);
     setPageIndex(0);
+    // A different user or filter starts clean: the old failure notice does not apply to the new feed.
+    setLoadFailed(false);
     isLoadingRef.current = false;
     if (!username) {
+      setIsLoading(false);
       setHasMore(false);
       setIsInitialLoading(false);
       return;
@@ -196,6 +220,7 @@ export function useGalleryData(options: {
   }, [hasMore, loadItems]);
 
   const refresh = useCallback(() => {
+    requestIdRef.current++; // drop any response still in flight
     setItems([]);
     setPageIndex(0);
     setHasMore(true);
@@ -211,6 +236,7 @@ export function useGalleryData(options: {
     items,
     isLoading,
     isInitialLoading,
+    loadFailed,
     hasMore,
     loadMore,
     refresh,

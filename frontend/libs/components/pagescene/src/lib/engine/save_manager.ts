@@ -215,28 +215,36 @@ export class SaveManager {
     this.deps.removeTransformControls();
     this.deps.bus.emit(new EditorLoaderEvent(true));
 
-    const sceneJson = this.getSceneJson({ sceneGenerationMetadata });
+    // FIX: the loader-hide emit used to run only on the success path, so a
+    // throw anywhere below (getSceneJson, JSON.stringify, or a rejected
+    // saveSceneState from a network/backend error) left the "saving"
+    // loader on screen forever. try/finally guarantees it is dismissed on
+    // every exit; the error still propagates to the caller unchanged.
+    try {
+      const sceneJson = this.getSceneJson({ sceneGenerationMetadata });
 
-    // Capture the thumbnail in parallel with the JSON.stringify of the
-    // scene. canvas.toBlob yields a Blob directly, no toDataURL →
-    // fetch → blob roundtrip. Adapters fire-and-forget the cover-image
-    // PATCH internally, so this doesn't extend the save's critical path.
-    const sceneThumbnailPromise = captureCanvasThumbnail(
-      this.deps.getRenderer(),
-    );
-    const saveJson = JSON.stringify(sceneJson);
-    const sceneThumbnail = await sceneThumbnailPromise;
+      // Capture the thumbnail in parallel with the JSON.stringify of the
+      // scene. canvas.toBlob yields a Blob directly, no toDataURL →
+      // fetch → blob roundtrip. Adapters fire-and-forget the cover-image
+      // PATCH internally, so this doesn't extend the save's critical path.
+      const sceneThumbnailPromise = captureCanvasThumbnail(
+        this.deps.getRenderer(),
+      );
+      const saveJson = JSON.stringify(sceneJson);
+      const sceneThumbnail = await sceneThumbnailPromise;
 
-    const result = await this.deps.saveSceneState({
-      saveJson,
-      sceneTitle,
-      sceneToken,
-      sceneThumbnail,
-    });
+      const result = await this.deps.saveSceneState({
+        saveJson,
+        sceneTitle,
+        sceneToken,
+        sceneThumbnail,
+      });
 
-    this.deps.bus.emit(new EditorLoaderEvent(false));
-    console.debug("Save Scene Result: ", result);
-    return result;
+      console.debug("Save Scene Result: ", result);
+      return result;
+    } finally {
+      this.deps.bus.emit(new EditorLoaderEvent(false));
+    }
   }
 
   public async loadCache(cacheJson: string): Promise<{ applied: boolean }> {
@@ -321,7 +329,11 @@ export class SaveManager {
       );
     }
 
-    if (scene_json.positivePrompt) {
+    // FIX: this used to be a truthiness check, so a prompt the user had
+    // cleared and saved ("") was skipped and the default (or previous
+    // scene's) prompt came back on reload / Reset. Only a missing field
+    // (legacy scenes) should leave the editor's prompt alone.
+    if (typeof scene_json.positivePrompt === "string") {
       this.deps.setPositivePrompt(scene_json.positivePrompt);
     }
     if (scene_json.cameraAspectRatio) {

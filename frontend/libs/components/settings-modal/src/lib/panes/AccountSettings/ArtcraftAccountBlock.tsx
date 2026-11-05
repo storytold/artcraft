@@ -29,7 +29,8 @@ export const ArtcraftAccountBlock = ({
       setIsCheckingArtcraftSession(true);
       try {
         const result = await usersApi.GetSession();
-        console.log(">>> result", result);
+        // FIX: a debug `console.log(">>> result", result)` used to dump the
+        // whole session response (user profile) to the console; removed.
         setArtcraftSession(result?.data?.user);
         setIsLoggedIn(result?.data?.loggedIn || false);
       } catch (e) {
@@ -47,7 +48,17 @@ export const ArtcraftAccountBlock = ({
     if (isCheckingArtcraftSession) return;
     if (isLoggedIn) {
       setIsCheckingArtcraftSession(true);
-      await usersApi.Logout();
+      // FIX: Logout() used to be awaited with no catch. When the request threw
+      // the spinner never cleared (the button stayed disabled forever) and the
+      // rejection went unhandled. Now we always clear the spinner, and on
+      // failure we stay logged in (nothing was logged out) so the user can retry.
+      try {
+        await usersApi.Logout();
+      } catch (e) {
+        console.error("Error logging out of Artcraft", e);
+        setIsCheckingArtcraftSession(false);
+        return;
+      }
       setArtcraftSession(undefined);
       setIsLoggedIn(false);
       setIsCheckingArtcraftSession(false);
@@ -56,8 +67,14 @@ export const ArtcraftAccountBlock = ({
 
       triggerRecheck(); // Trigger modal to recheck session and potentially open
 
-      await invoke("storyteller_purge_credentials_command");
-
+      // WHY: the purge command rejects when the Rust side cannot delete the
+      // stored credentials; uncaught, that surfaces as an unhandled promise
+      // rejection from this click handler.
+      try {
+        await invoke("storyteller_purge_credentials_command");
+      } catch (e) {
+        console.error("Error purging Artcraft credentials", e);
+      }
     } else {
       triggerRecheck(); // Open login modal instead of redirecting
     }

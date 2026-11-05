@@ -7,7 +7,7 @@ import { Button, GenerateButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import { PromptClearAllButton } from "@storyteller/ui-promptbox";
+import { isImeKeyDown, PromptClearAllButton } from "@storyteller/ui-promptbox";
 import { UploaderStates, type UploaderState } from "@storyteller/common";
 import { useVFXStore } from "./store";
 import {
@@ -277,6 +277,9 @@ export const PromptBoxVFX = ({
               rows={3}
               className="max-h-40 min-h-[3.5rem] w-full resize-none bg-transparent text-sm text-base-fg placeholder-base-fg/50 focus:outline-none"
               onKeyDown={(e) => {
+                // Keys pressed while an IME is composing (Japanese/Chinese/Korean typing) belong to the IME: its Enter
+                // confirms the chosen word. Treating that Enter as a real one started a paid generation.
+                if (isImeKeyDown(e)) return;
                 if (e.key === "Escape") {
                   e.preventDefault();
                   setShowPromptPopover(false);

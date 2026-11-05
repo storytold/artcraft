@@ -190,8 +190,14 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
           const boards = { ...s.boards };
           delete boards[id];
           const boardOrder = s.boardOrder.filter((b) => b !== id);
-          const activeBoardId =
-            s.activeBoardId === id ? boardOrder[0] ?? null : s.activeBoardId;
+          const wasActive = s.activeBoardId === id;
+          const activeBoardId = wasActive ? boardOrder[0] ?? null : s.activeBoardId;
+          // The selection belongs to the board it was made on (setActiveBoard clears it on a
+          // switch). When the active board is deleted its picked items go with it, so drop the
+          // selection instead of showing a stale "N selected" bar over the board that takes over.
+          if (wasActive) {
+            return { boards, boardOrder, activeBoardId, selectedItemIds: new Set<string>() };
+          }
           return { boards, boardOrder, activeBoardId };
         });
       },

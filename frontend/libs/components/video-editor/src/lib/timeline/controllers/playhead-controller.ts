@@ -125,6 +125,16 @@ export class PlayheadController {
   }
 
   destroy(): void {
+    // FIX: removing the window listeners alone strands an in-flight scrub.
+    // The mouseup handler (the only place that clears the shared "is
+    // scrubbing" flag) can no longer fire, so the flag stayed true after the
+    // timeline unmounted mid-drag and AudioManager.handleSeek kept stopping
+    // playback on every later seek. Only reset when a scrub is actually in
+    // progress so a StrictMode mount/cleanup/mount stays a no-op.
+    if (this.session.kind === "scrubbing") {
+      this.session = { kind: "idle" };
+      this.config.setScrubbing(false);
+    }
     this.deactivate();
   }
 

@@ -4,15 +4,15 @@ import { isVisualElement } from "../../../../timeline/element-utils";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
 import type { SceneTracks, VisualElement } from "../../../../timeline/types";
 import { buildDefaultEffectInstance } from "../../../../effects";
+import type { Effect } from "../../../../effects/types";
 
 function addEffectToElement({
   element,
-  effectType,
+  instance,
 }: {
   element: VisualElement;
-  effectType: string;
+  instance: Effect;
 }): VisualElement {
-  const instance = buildDefaultEffectInstance({ effectType });
   const currentEffects = element.effects ?? [];
   return { ...element, effects: [...currentEffects, instance] };
 }
@@ -20,6 +20,10 @@ function addEffectToElement({
 export class AddClipEffectCommand extends Command {
   private savedState: SceneTracks | null = null;
   private effectId: string | null = null;
+  // Built on the first execute and reused by redo, so redo brings back the
+  // SAME effect id that later commands in the history (toggle, edit, remove)
+  // were recorded against.
+  private instance: Effect | null = null;
   private readonly trackId: string;
   private readonly elementId: string;
   private readonly effectType: string;
@@ -42,6 +46,11 @@ export class AddClipEffectCommand extends Command {
   execute(): CommandResult | undefined {
     const editor = EditorCore.getInstance();
     this.savedState = editor.scenes.getActiveScene().tracks;
+    const instance =
+      this.instance ??
+      (this.instance = buildDefaultEffectInstance({
+        effectType: this.effectType,
+      }));
 
     const updatedTracks = updateElementInSceneTracks({
       tracks: this.savedState,
@@ -51,7 +60,7 @@ export class AddClipEffectCommand extends Command {
       update: (element) => {
         const updated = addEffectToElement({
           element: element as VisualElement,
-          effectType: this.effectType,
+          instance,
         });
         const effects = updated.effects ?? [];
         this.effectId = effects[effects.length - 1]?.id ?? null;

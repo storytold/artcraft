@@ -163,6 +163,33 @@ impl GenerateError {
   pub fn needs_worldlabs_credentials() -> Self {
     Self::MissingCredentials(MissingCredentialsReason::NeedsWorldLabsCredentials)
   }
+
+  //
+  // Messages
+  //
+
+  /// A sentence that is safe to show a person. The frontend shows a command's `error_message` as-is in a toast,
+  /// and the `Debug` text of this enum (for example `MissingCredentials(NeedsGrokCredentials)`) is not that;
+  /// callers log the `Debug` text and send this instead.
+  pub fn user_message(&self) -> &'static str {
+    match self {
+      Self::BadInput(BadInputReason::NoModelSpecified) => "No model was selected. Pick a model and try again.",
+      Self::BadInput(_) => "That request wasn't valid. Check your images and settings, then try again.",
+      Self::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => "You need to set a FAL api key.",
+      Self::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials) => "You need to log in to Grok.",
+      Self::MissingCredentials(
+        MissingCredentialsReason::NeedsMidjourneyCredentials
+        | MissingCredentialsReason::NeedsMidjourneyUserId
+        | MissingCredentialsReason::NeedsMidjourneyUserInfo,
+      ) => "You need to log in to Midjourney.",
+      Self::MissingCredentials(MissingCredentialsReason::NeedsSoraCredentials) => "You need to log in to Sora.",
+      Self::MissingCredentials(MissingCredentialsReason::NeedsWorldLabsCredentials) => "You need to log in to World Labs.",
+      Self::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials) => "You need to be logged into Artcraft.",
+      Self::NoProviderAvailable => "No configured provider is available for this model.",
+      Self::BillingIssue(_) => "There is a problem with your credits or billing. Check your account and try again.",
+      _ => "A server error occurred. Please try again. If it continues, please tell our staff about the problem.",
+    }
+  }
 }
 
 impl From<AnyhowError> for GenerateError {
@@ -256,5 +283,39 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::UnsupportedModel(model) => Self::NotYetImplemented(format!("Unsupported model: {}", model)),
       ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(message) => Self::ArtcraftRouterNotYetSupportedProvider("unsupported model for new router API"),
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn user_messages_are_sentences_not_debug_text() {
+    let errors = [
+      GenerateError::no_model_specified(),
+      GenerateError::required_source_image_not_provided(),
+      GenerateError::needs_fal_api_key(),
+      GenerateError::needs_grok_credentials(),
+      GenerateError::needs_midjourney_credentials(),
+      GenerateError::needs_sora_credentials(),
+      GenerateError::needs_storyteller_credentials(),
+      GenerateError::needs_worldlabs_credentials(),
+      GenerateError::NoProviderAvailable,
+      GenerateError::ResponseHadNoJobTokens,
+    ];
+    for error in errors {
+      let message = error.user_message();
+      assert_ne!(message, format!("{:?}", error));
+      assert!(message.ends_with('.'), "{}", message);
+      assert!(!message.contains("Needs") && !message.contains("::"), "{}", message);
+    }
+  }
+
+  #[test]
+  fn missing_credentials_name_the_provider() {
+    assert!(GenerateError::needs_grok_credentials().user_message().contains("Grok"));
+    assert!(GenerateError::needs_midjourney_credentials().user_message().contains("Midjourney"));
+    assert!(GenerateError::needs_sora_credentials().user_message().contains("Sora"));
   }
 }

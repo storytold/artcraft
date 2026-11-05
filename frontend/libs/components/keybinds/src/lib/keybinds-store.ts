@@ -39,7 +39,33 @@ function resolveFrom(
   preset: PresetId,
   id: ActionId,
 ): Binding[] {
-  return overrides[id] ?? PRESETS[preset].bindings[id] ?? BASE_BINDINGS[id] ?? [];
+  // FIX: `PRESETS[preset]` is undefined for a preset id this build does not know, and `.bindings` on it threw on every key
+  // press. The optional chain falls back to BASE_BINDINGS for an unknown preset.
+  return overrides[id] ?? PRESETS[preset]?.bindings[id] ?? BASE_BINDINGS[id] ?? [];
+}
+
+// FIX: the saved value was loaded as-is, so a stale preset id (after a downgrade) or a damaged override (not a list of
+// bindings) made the store throw from then on. Keep only the parts of the saved value that have the right shape.
+function isBinding(value: unknown): value is Binding {
+  return !!value && typeof value === "object" && typeof (value as Binding).code === "string";
+}
+
+function sanitizeSaved(saved: unknown): Partial<KeybindsState> {
+  if (!saved || typeof saved !== "object") return {};
+  const { selectedPreset, overrides, cheatsheetSticky } = saved as Record<string, unknown>;
+  const clean: Partial<KeybindsState> = {};
+  if (typeof selectedPreset === "string" && selectedPreset in PRESETS) {
+    clean.selectedPreset = selectedPreset as PresetId;
+  }
+  if (overrides && typeof overrides === "object") {
+    clean.overrides = Object.fromEntries(
+      Object.entries(overrides).filter(
+        ([, bindings]) => Array.isArray(bindings) && bindings.every(isBinding),
+      ),
+    ) as Record<ActionId, Binding[]>;
+  }
+  if (typeof cheatsheetSticky === "boolean") clean.cheatsheetSticky = cheatsheetSticky;
+  return clean;
 }
 
 export const useKeybindsStore = create<KeybindsState>()(
@@ -112,6 +138,7 @@ export const useKeybindsStore = create<KeybindsState>()(
     {
       name: "artcraft-keybinds",
       version: 1,
+      merge: (saved, current) => ({ ...current, ...sanitizeSaved(saved) }),
       partialize: (s) => ({
         selectedPreset: s.selectedPreset,
         overrides: s.overrides,

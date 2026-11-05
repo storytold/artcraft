@@ -21,7 +21,7 @@ const mockRequest = {
   use_strength: 0,
   use_upscaler: true,
   uuid_idempotency_token: "i token",
-};
+} as any; // deliberately partial: only the fields under test
 
 describe("VideoApi", () => {
   beforeAll(() => {
@@ -43,7 +43,7 @@ describe("VideoApi", () => {
         enqueueVideo: mockRequest,
       });
       expect(videoApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/video/enqueue_vst",
+        "http://localhost:3000/v1/workflows/enqueue_studio",
         {
           method: "POST",
           body: {
@@ -76,7 +76,7 @@ describe("VideoApi", () => {
         },
       });
       expect(videoApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/video/enqueue_vst",
+        "http://localhost:3000/v1/workflows/enqueue_studio",
         {
           method: "POST",
           body: {
@@ -104,7 +104,7 @@ describe("VideoApi", () => {
         enqueueVideo: mockRequest,
       });
       expect(videoApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/video/enqueue_vst",
+        "http://localhost:3000/v1/workflows/enqueue_studio",
         {
           method: "POST",
           body: {
@@ -133,7 +133,7 @@ describe("VideoApi", () => {
         enqueueVideo: mockRequest,
       });
       expect(videoApi.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/video/enqueue_vst",
+        "http://localhost:3000/v1/workflows/enqueue_studio",
         {
           method: "POST",
           body: {

@@ -744,6 +744,14 @@ export class TimelineManager {
     if (!committedTracks) {
       return;
     }
+    // FIX: a drag released back on its start, or a field re-entered with the
+    // value it already had, left an overlay equal to the committed element and
+    // still pushed an undo step that changed nothing (one dead Ctrl+Z press).
+    // Drop the preview without recording history when nothing really differs.
+    if (!this.previewDiffersFromCommitted(committedTracks)) {
+      this.discardPreview();
+      return;
+    }
     const afterTracks =
       this.previewTracks ?? this.applyPreviewOverlay(committedTracks);
     const command = new TracksSnapshotCommand({
@@ -900,6 +908,31 @@ export class TimelineManager {
     return null;
   }
 
+  // True when any previewed field holds a value different from the committed element's.
+  private previewDiffersFromCommitted(committedTracks: SceneTracks): boolean {
+    const allTracks: TimelineTrack[] = [
+      ...committedTracks.overlay,
+      committedTracks.main,
+      ...committedTracks.audio,
+    ];
+    for (const [elementId, overlay] of this.previewOverlay) {
+      let element: TimelineElement | undefined;
+      for (const track of allTracks) {
+        element = (track.elements as TimelineElement[]).find(
+          (candidate) => candidate.id === elementId,
+        );
+        if (element) break;
+      }
+      if (!element) continue;
+      for (const [key, value] of Object.entries(overlay)) {
+        if (!isDeepEqual(element[key as keyof TimelineElement], value)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   private applyPreviewOverlay(tracks: SceneTracks): SceneTracks {
     if (this.previewOverlay.size === 0) return tracks;
 
@@ -929,4 +962,26 @@ export class TimelineManager {
       audio: tracks.audio.map((track) => applyTrackOverlay(track)),
     };
   }
+}
+
+// Structural equality for plain element data (numbers, strings, arrays, objects).
+function isDeepEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (
+    typeof a !== "object" ||
+    typeof b !== "object" ||
+    a === null ||
+    b === null
+  ) {
+    return false;
+  }
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) =>
+    isDeepEqual(
+      (a as Record<string, unknown>)[key],
+      (b as Record<string, unknown>)[key],
+    ),
+  );
 }

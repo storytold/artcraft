@@ -26,7 +26,7 @@ bstr.workspace = true
 byteorder.workspace = true
 chrono.workspace = true
 futures.workspace = true
-indexmap.workspace = true
+indexmap = { workspace = true, features = ["serde"] }
 log.workspace = true
 once_cell.workspace = true
 regex.workspace = true
@@ -36,7 +36,7 @@ serde_json.workspace = true
 sha2.workspace = true
 tokio = { version = "1", features = ["full"] }
 url.workspace = true
-uuid.workspace = true
+uuid = { workspace = true, features = ["v4"] }
 wreq-util.workspace = true
 wreq.workspace = true
 

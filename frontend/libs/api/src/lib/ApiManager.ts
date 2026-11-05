@@ -112,8 +112,13 @@ export class ApiManager {
         {} as Record<string, string>,
       );
 
-    const endpointWithQueries = queryInString
-      ? endpoint + "?" + new URLSearchParams(queryInString)
+    // Only append when there is something to send, and join with "&" when the
+    // endpoint already carries a query, otherwise we'd emit "?a=1?b=2" or a bare "?".
+    const queryString = queryInString
+      ? new URLSearchParams(queryInString).toString()
+      : "";
+    const endpointWithQueries = queryString
+      ? endpoint + (endpoint.includes("?") ? "&" : "?") + queryString
       : endpoint;
 
     const bodyInString = JSON.stringify(body);
@@ -166,7 +171,18 @@ export class ApiManager {
       credentials: "include",
       body: body,
     });
-    return response.json();
+
+    // A non-JSON error body (eg. an HTML 502 page) would make json() reject with
+    // a cryptic SyntaxError; surface the HTTP status like fetch() does instead.
+    // JSON error bodies are still returned so callers can read their error fields.
+    try {
+      return await response.json();
+    } catch (err) {
+      if (!response.ok) {
+        throw new HttpApiError(response.status);
+      }
+      throw err;
+    }
   }
 
   protected get<T>({
@@ -298,7 +314,8 @@ export class ApiManager {
   ): Record<string, string> {
     return Object.entries(params).reduce(
       (allParams, [key, value]) => {
-        if (!value) {
+        // FIX: skip only absent values (undefined / null). `!value` also dropped false, 0 and "", so a flag switched off, a zero or an emptied text field was silently left out of the request.
+        if (value === undefined || value === null) {
           return allParams;
         }
         const snakeKey = this.camelToSnakeCase(key);
@@ -315,7 +332,8 @@ export class ApiManager {
     params: NonNullableObject<T>,
   ): B {
     return Object.entries(params).reduce((allParams, [key, value]) => {
-      if (!value) {
+      // FIX: same as parseQueryValues: only undefined / null mean "not provided"; false, 0 and "" are real values to send.
+      if (value === undefined || value === null) {
         return allParams;
       }
       const snakeKey = this.camelToSnakeCase(key);

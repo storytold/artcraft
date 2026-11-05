@@ -63,13 +63,34 @@ export const useBoardItemEntry = (
       });
       if (!adapter.uploadImage) return;
       adapter.uploadImage(file).then(
-        (token) => {
+        async (token) => {
           if (!token) return;
           const current = useBoardLibraryStore.getState();
           // The item may have been deleted while the upload was in flight.
           if (!current.boards[boardId]?.items[itemId]) return;
           const patch: Partial<BoardImageItem> = { mediaId: token };
           current.updateItem(boardId, itemId, patch);
+
+          // WHY: the tile still shows the page-bound blob URL, and the saved library drops every blob-backed tile (an object URL cannot
+          // outlive the page), so without a lasting address an uploaded image was gone after the next restart even though the upload
+          // worked. Hosts that can turn the token into a lasting address (adapter.resolveMediaUrl) get the tile switched over to it.
+          if (!adapter.resolveMediaUrl) return;
+          let durableUrl: string | null = null;
+          try {
+            durableUrl = await adapter.resolveMediaUrl(token);
+          } catch (err) {
+            // A failed lookup leaves the tile as it was (blob + token), exactly like a host without the lookup.
+            console.error("[Moodboard] resolving the uploaded image failed", err);
+          }
+          if (!durableUrl) return;
+          // The tile may also have been deleted while the lookup was running; re-read the store so a stale handle is never used.
+          const latest = useBoardLibraryStore.getState();
+          if (!latest.boards[boardId]?.items[itemId]) return;
+          latest.updateItem(boardId, itemId, { src: durableUrl });
+          // The blob URL is deliberately NOT released here: "Send to generation" copies the tile's src into the prompt store, so a tile
+          // sent in the moment between the token arriving and this swap leaves the prompt holding the blob, and revoking it would break
+          // that reference thumbnail. The cost is that a swapped tile's blob lives until the page closes, which is how long it lived
+          // for every tile that was never deleted before this change.
         },
         (err) => {
           console.error("[Moodboard] upload failed", err);
@@ -97,27 +118,35 @@ export const useBoardItemEntry = (
   const handlePicked = useCallback(async (items: MoodboardPickedItem[]) => {
     const store = useBoardLibraryStore.getState();
     const boardId = store.ensureActiveBoard();
-    for (const it of items) {
-      if (!it.url) continue;
-      if (it.kind === "video") {
-        const dims = await measureVideo(it.url);
-        store.addVideoItem(boardId, {
-          src: it.url,
-          mediaId: it.mediaToken,
-          naturalW: dims.w,
-          naturalH: dims.h,
-        });
-      } else {
-        const dims = await measureImage(it.url);
-        store.addImageItem(boardId, {
-          src: it.url,
-          mediaId: it.mediaToken,
-          naturalW: dims.w,
-          naturalH: dims.h,
-        });
+    // WHY: if measuring a picked item throws, the picker used to stay open
+    // forever (setPickerOpen only ran on success). finally always closes it;
+    // items measured before the failure are kept.
+    try {
+      for (const it of items) {
+        if (!it.url) continue;
+        if (it.kind === "video") {
+          const dims = await measureVideo(it.url);
+          store.addVideoItem(boardId, {
+            src: it.url,
+            mediaId: it.mediaToken,
+            naturalW: dims.w,
+            naturalH: dims.h,
+          });
+        } else {
+          const dims = await measureImage(it.url);
+          store.addImageItem(boardId, {
+            src: it.url,
+            mediaId: it.mediaToken,
+            naturalW: dims.w,
+            naturalH: dims.h,
+          });
+        }
       }
+    } catch (err) {
+      console.error("[Moodboard] adding picked media failed", err);
+    } finally {
+      setPickerOpen(false);
     }
-    setPickerOpen(false);
   }, []);
 
   // ----- clipboard paste (images + URLs) -----
@@ -125,7 +154,11 @@ export const useBoardItemEntry = (
     if (!enabled) return undefined;
     const onPaste = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && /input|textarea/i.test(target.tagName)) return;
+      // WHY: pasting into any text-entry field must stay a normal text paste.
+      // input/textarea were already skipped, but contenteditable hosts (rich
+      // text editors, note overlays) were hijacked. jsdom lacks
+      // isContentEditable, so also check the attribute via closest().
+      if (target && isTextEntryTarget(target)) return;
       const data = e.clipboardData;
       if (!data) return;
 
@@ -177,6 +210,13 @@ export const useBoardItemEntry = (
 };
 
 // ---------- helpers ----------
+
+export const isTextEntryTarget = (target: HTMLElement): boolean => {
+  if (/^(input|textarea)$/i.test(target.tagName)) return true;
+  if (target.isContentEditable) return true;
+  const host = target.closest?.("[contenteditable]");
+  return !!host && host.getAttribute("contenteditable") !== "false";
+};
 
 const isUrl = (text: string): boolean => {
   if (!/^https?:\/\//i.test(text)) return false;

@@ -1,6 +1,7 @@
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { BasicEventWrapper } from '../../common/BasicEventWrapper';
 import { useEffect } from 'react';
+import { useLatestRef } from '../../common/useLatestRef';
 
 const EVENT_NAME : string = 'text_to_image_generation_complete_event';
 
@@ -17,13 +18,14 @@ export interface GeneratedImage {
 }
 
 export const useTextToImageGenerationCompleteEvent = (asyncCallback: (event: TextToImageGenerationCompleteEvent) => Promise<void>) => {
+  const callbackRef = useLatestRef(asyncCallback);
   useEffect(() => {
     let isUnmounted = false;
     let unlisten: Promise<UnlistenFn>;
 
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<TextToImageGenerationCompleteEvent>>(EVENT_NAME, async (wrappedEvent) => {
-        await asyncCallback(wrappedEvent.payload.data);
+        await callbackRef.current(wrappedEvent.payload.data);
       });
 
       if (isUnmounted) {

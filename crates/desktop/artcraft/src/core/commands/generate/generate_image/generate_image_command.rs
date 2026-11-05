@@ -186,7 +186,9 @@ async fn handle_error_behavior(
 
   Err(CommandErrorResponseWrapper {
     status: CommandErrorStatus::ServerError,
-    error_message: Some(format!("{:?}", err)),
+    // FIX: this used to be `format!("{:?}", err)`, so a toast could read `MissingCredentials(NeedsGrokCredentials)`.
+    // The Debug text is already in the log above.
+    error_message: Some(err.user_message().to_string()),
     error_type: Some(error_type),
     error_details: None,
   })

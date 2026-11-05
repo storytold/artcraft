@@ -119,7 +119,10 @@ async fn polling_loop(
             TaskStatus::CompleteFailure => continue, // NB: We're done with this task.
             _ => {}
           }
-          handle_failed_job(app_handle, job, task, task_database).await?;
+          if let Err(err) = handle_failed_job(app_handle, job, task, task_database).await {
+            // One failed status write must not stop other jobs from being processed; it retries next poll.
+            error!("Failure handling for task {} will be retried: {}", task.id.as_str(), err);
+          }
         }
         _ => continue,
       }

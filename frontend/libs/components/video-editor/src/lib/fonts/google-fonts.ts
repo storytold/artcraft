@@ -66,10 +66,18 @@ export async function loadFullFont({
   link.rel = "stylesheet";
   link.href = url;
   document.head.appendChild(link);
-  await new Promise<void>((resolve) => {
-    link.addEventListener("load", () => resolve(), { once: true });
-    link.addEventListener("error", () => resolve(), { once: true });
+  const stylesheetLoaded = await new Promise<boolean>((resolve) => {
+    link.addEventListener("load", () => resolve(true), { once: true });
+    link.addEventListener("error", () => resolve(false), { once: true });
   });
+  if (!stylesheetLoaded) {
+    // FIX: the request failed (offline, CDN unreachable). Do not remember the
+    // family as loaded: it used to be cached as a success, so picking the font
+    // again did nothing for the rest of the session. Drop the dead <link> so the
+    // next call asks again; callers keep falling back to the system font now.
+    link.remove();
+    return;
+  }
   await Promise.all(
     weights.map((weight) =>
       document.fonts.load(`${weight} 16px "${family.replace(/"/g, '\\"')}"`),

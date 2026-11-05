@@ -1,3 +1,7 @@
+// How long a download URL stays valid after the click (matches the default
+// export sink): the browser reads the blob asynchronously.
+const REVOKE_DELAY_MS = 60_000;
+
 export function downloadBlob({
   blob,
   filename,
@@ -12,7 +16,9 @@ export function downloadBlob({
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
+  // FIX: revoking right after click() can cancel the download before the
+  // browser (WebKit in the macOS Tauri webview) has read the blob. Defer it.
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS);
 }
 
 export function findScrollParent({

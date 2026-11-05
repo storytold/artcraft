@@ -24,6 +24,8 @@ pub enum LoginAction {
   Password,
   Browser,
   CancelBrowser,
+  /// Closes the dialog and stops a browser sign-in that is still waiting for approval.
+  CancelAndClose,
 }
 
 impl LoginDialog {
@@ -34,7 +36,7 @@ impl LoginDialog {
         ui.label(widgets::heading("Sign in to ArtCraft", 24.0));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
           if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
-            action = Some(LoginAction::Close);
+            action = Some(close_action(self.device.is_some()));
           }
         });
       });
@@ -99,6 +101,12 @@ impl LoginDialog {
     }
     action
   }
+}
+
+/// What the dialog's close button asks for: a browser sign-in still waiting for approval must be
+/// stopped too, or it keeps polling and signs the user in after they closed the window.
+fn close_action(browser_sign_in_waiting: bool) -> LoginAction {
+  if browser_sign_in_waiting { LoginAction::CancelAndClose } else { LoginAction::Close }
 }
 
 #[derive(Debug, PartialEq)]
@@ -210,4 +218,19 @@ fn divider_with_label(ui: &mut Ui, label: &str) {
   p.hline(rect.left()..=rect.center().x - gap, rect.center().y, theme::hairline());
   p.hline(rect.center().x + gap..=rect.right(), rect.center().y, theme::hairline());
   p.galley(rect.center() - galley.size() / 2.0, galley, theme::FAINT);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn closing_while_a_browser_sign_in_waits_also_cancels_it() {
+    assert_eq!(close_action(true), LoginAction::CancelAndClose);
+  }
+
+  #[test]
+  fn closing_with_nothing_waiting_just_closes() {
+    assert_eq!(close_action(false), LoginAction::Close);
+  }
 }

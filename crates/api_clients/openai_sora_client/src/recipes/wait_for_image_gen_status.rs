@@ -24,15 +24,16 @@ pub async fn wait_for_image_gen_status(task_id: &String, creds: &SoraCredentialS
           return Err(anyhow::anyhow!("Task failed"));
         },
         TaskStatus::Unknown(status) => {
-          println!("Unknown task status: {}", status);
+          // println! is forbidden outside tests (AGENTS.md); use log macros.
+          log::warn!("Unknown task status: {}", status);
           continue;
         },
         TaskStatus::Queued => {
-          println!("Task is queued");
+          log::info!("Task is queued");
           continue;
         },
         TaskStatus::Running => {
-          println!("Task is running");
+          log::info!("Task is running");
           continue;
         },
       },

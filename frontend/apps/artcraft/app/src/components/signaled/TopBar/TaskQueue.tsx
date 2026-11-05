@@ -1,8 +1,12 @@
-import { findDesktopModel } from "@storyteller/tauri-api";
+import { findDesktopModel ,
+  GetTaskQueue,
+  MarkTaskAsDismissed,
+  TasksNukeAll,
+} from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon } from "lucide-react";
-import { DynamicIcon } from "@storyteller/icons";
+import { BombIcon, BrushIcon, CircleAlertIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon, type LucideIcon } from "lucide-react";
+import { CopyPromptButton } from "./CopyPromptButton";
 import { Modal } from "@storyteller/ui-modal";
 import {
   galleryModalLightboxMediaId,
@@ -11,11 +15,6 @@ import {
 } from "@storyteller/ui-gallery-modal";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  GetTaskQueue,
-  MarkTaskAsDismissed,
-  TasksNukeAll,
-} from "@storyteller/tauri-api";
 import type { TaskQueueItem } from "@storyteller/tauri-api";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import {
@@ -42,6 +41,7 @@ import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
+import { FAILURE_REASON_LABEL } from "../../generation-feed/failureReasonLabels";
 
 type InProgressTask = {
   id: string;
@@ -144,36 +144,6 @@ const PromptLine = ({
           {prompt}
         </div>
       </div>
-    </Tooltip>
-  );
-};
-
-const CopyPromptButton = ({ prompt }: { prompt: string }) => {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Tooltip
-      content={copied ? "Copied!" : "Copy prompt"}
-      position="bottom"
-      strategy="fixed"
-      className="text-xs"
-      zIndex={50}
-      delay={300}
-    >
-      <button
-        className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
-        aria-label="Copy prompt"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.clipboard.writeText(prompt);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 3000);
-        }}
-      >
-        <DynamicIcon
-          icon={copied ? CheckIcon : CopyIcon}
-          className={copied ? "text-green-400" : ""}
-        />
-      </button>
     </Tooltip>
   );
 };
@@ -376,17 +346,6 @@ const FAILED_STATUS_LABEL: Record<string, string> = {
   cancelled_by_us: "Cancelled",
 };
 
-const FAILURE_REASON_LABEL: Record<string, string> = {
-  rule_bans_user_image: "Image violates content policy",
-  rule_bans_user_image_with_faces: "Images with faces are not allowed",
-  rule_bans_user_text_prompt: "Text prompt violates content policy",
-  rule_bans_user_content: "Content violates content policy",
-  rule_bans_generated_video: "Generated video flagged by content policy",
-  rule_bans_generated_audio: "Generated audio flagged by content policy",
-  rule_bans_generated_content: "Generated content flagged by content policy",
-  generation_failed: "Generation failed",
-  unknown: "An unknown error occurred",
-};
 
 const FailedCard = ({
   task,
@@ -506,6 +465,32 @@ const FailedCard = ({
   );
 };
 
+// Opens one finished task in the full-screen viewer (the lightbox that the TopBar's gallery modal shows).
+// Both places that list finished tasks (the popover list and the "Show all" window) call this, so the viewer is always
+// handed the same record. Writes the three lightbox signals (media id, image record, visible flag) and touches nothing else.
+// The viewer looks up the prompt, the creator and the tags by the id it is given, so that id has to be the generated FILE's
+// token. The task's own id is a local job number, not a file token, so it is used only when the task has no file at all.
+const openFinishedTaskInLightbox = (t: CompletedTask) => {
+  // The generated file's token if the backend reported one, else the task id (nothing better exists for a task with no file).
+  const viewerId = t.mediaTokens?.[0] || t.id;
+  // The record the viewer shows: label, picture, date and kind, plus the fields it needs to build a carousel for a batch.
+  const item = {
+    id: viewerId,
+    label: t.title,
+    thumbnail: t.thumbnailUrl || null,
+    fullImage: t.imageUrls?.[0] || null,
+    createdAt: (t.completedAt || new Date()).toISOString(),
+    mediaClass: t.mediaFileClass,
+    batchImageToken: t.batchImageToken,
+    mediaTokens: t.mediaTokens,
+    imageUrls: t.imageUrls,
+  } as GalleryItem;
+  // Tell the viewer which file to look up, hand it the record, then show it.
+  galleryModalLightboxMediaId.value = item.id;
+  galleryModalLightboxImage.value = item;
+  galleryModalLightboxVisible.value = true;
+};
+
 export const TaskQueue = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
@@ -520,6 +505,10 @@ export const TaskQueue = () => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  // Becomes true after the first successful poll. That poll only records which tasks were already finished (the
+  // backend returns every task the user has not dismissed, so old finished work is there on every launch);
+  // only tasks that finish after it count as unread on the badge.
+  const completedSeenInitializedRef = useRef(false);
   // Failed-task ids already seen by the poll — seeded on first load so
   // failures from previous sessions don't trigger a credits refresh.
   const prevFailedIdsRef = useRef<Set<string>>(new Set());
@@ -530,7 +519,7 @@ export const TaskQueue = () => {
     title: string;
     message: React.ReactNode;
     primaryActionText: string;
-    primaryActionIcon: any;
+    primaryActionIcon: LucideIcon;
     primaryActionBtnClassName: string;
     onConfirm: () => Promise<void>;
   }>({
@@ -852,11 +841,16 @@ export const TaskQueue = () => {
         // Track newly completed IDs when popover is closed
         const newCompletedIdSet = new Set(done.map((d) => d.id));
         const newlyCompletedIds: string[] = [];
-        newCompletedIdSet.forEach((id) => {
-          if (!prevCompletedIdsRef.current.has(id)) {
-            newlyCompletedIds.push(id);
-          }
-        });
+        // The first successful poll only seeds the set: everything already finished at launch was there before
+        // this session, so it must not light up the badge.
+        if (completedSeenInitializedRef.current) {
+          newCompletedIdSet.forEach((id) => {
+            if (!prevCompletedIdsRef.current.has(id)) {
+              newlyCompletedIds.push(id);
+            }
+          });
+        }
+        completedSeenInitializedRef.current = true;
         prevCompletedIdsRef.current = newCompletedIdSet;
         if (!isPopoverOpen && newlyCompletedIds.length > 0) {
           setUnreadCompletedIds((prev) =>
@@ -1103,29 +1097,8 @@ export const TaskQueue = () => {
                                 key={t.id}
                                 task={t}
                                 onClick={() => {
-                                  const firstMediaToken =
-                                    t.mediaTokens?.[0] || t.id;
-                                  const item: GalleryItem = {
-                                    id: firstMediaToken,
-                                    label: t.title,
-                                    thumbnail: t.thumbnailUrl || null,
-                                    fullImage: t.imageUrls?.[0] || null,
-                                    createdAt: (
-                                      t.completedAt || new Date()
-                                    ).toISOString(),
-                                    mediaClass: t.mediaFileClass,
-                                    batchImageToken: t.batchImageToken,
-                                    mediaTokens: t.mediaTokens,
-                                    imageUrls: t.imageUrls,
-                                  } as GalleryItem;
-                                  galleryModalLightboxMediaId.value = item.id;
-                                  galleryModalLightboxImage.value = {
-                                    ...item,
-                                    imageUrls: t.imageUrls,
-                                    mediaTokens: t.mediaTokens,
-                                    batchImageToken: t.batchImageToken,
-                                  } as unknown as GalleryItem;
-                                  galleryModalLightboxVisible.value = true;
+                                  // Open the viewer (same helper as the "Show all" window), then close this popover.
+                                  openFinishedTaskInLightbox(t);
                                   close();
                                 }}
                                 onDismiss={() => dismissTask(t.id)}
@@ -1249,22 +1222,8 @@ export const TaskQueue = () => {
                         key={t.id}
                         task={t}
                         onClick={() => {
-                          const item: GalleryItem = {
-                            id: t.id,
-                            label: t.title,
-                            thumbnail: t.thumbnailUrl || null,
-                            fullImage: t.imageUrls?.[0] || null,
-                            createdAt: (
-                              t.completedAt || new Date()
-                            ).toISOString(),
-                            mediaClass: t.mediaFileClass,
-                            batchImageToken: t.batchImageToken,
-                            mediaTokens: t.mediaTokens,
-                            imageUrls: t.imageUrls,
-                          } as GalleryItem;
-                          galleryModalLightboxMediaId.value = item.id;
-                          galleryModalLightboxImage.value = item as GalleryItem;
-                          galleryModalLightboxVisible.value = true;
+                          // Open the viewer with the file's token (this used to pass the task id), then close this window.
+                          openFinishedTaskInLightbox(t);
                           setModalOpen(false);
                         }}
                       />

@@ -33,7 +33,10 @@ pub fn signature_xa(svg_data: &str) -> Result<Vec<Vec<u32>>, GrokClientError> {
   debug!("[xa] s.len() ={}", s.len());
 
   // substr = s[9:]
-  let substr = &s[9..];
+  // FIX: `&s[9..]` panics on svg path data shorter than 9 bytes or when byte 9 is inside a
+  // multi-byte char. The data is scraped from a remote page, so treat that as "script logic
+  // out of date" rather than crashing.
+  let substr = s.get(9..).ok_or(GrokClientError::ScriptSvgLogicOutOfDate)?;
   debug!("[xa] substr ={}", substr);
   debug!("[xa] substr.len() ={}", substr.len());
 
@@ -96,5 +99,13 @@ mod tests {
     let output = signature_xa(&svg_data).unwrap();
 
     assert_eq!(output, expected);
+  }
+
+  /// Short or non-char-boundary svg data must be an error, not a slicing panic.
+  #[test]
+  fn short_or_multibyte_svg_is_error_not_panic() {
+    assert!(signature_xa("M 10,30").is_err());
+    // 'é' is two bytes; index 9 lands mid-character.
+    assert!(signature_xa("12345678é").is_err());
   }
 }

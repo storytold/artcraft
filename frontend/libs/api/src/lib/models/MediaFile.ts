@@ -30,6 +30,13 @@ export interface MediaFile {
   media_links: {
     cdn_url: string;
     thumbnail_template: string;
+    // Newer fields the server sends for video files; absent on older responses.
+    maybe_thumbnail_template?: string | null;
+    maybe_video_previews?: {
+      animated?: string | null;
+      still?: string | null;
+      still_thumbnail_template?: string | null;
+    } | null;
   };
   cover_image: {
     maybe_cover_image_public_bucket_path: null | string;

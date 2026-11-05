@@ -6,7 +6,8 @@ use enums::tauri::tasks::task_status::TaskStatus;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 use sqlite_tasks::queries::task::Task;
-use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
+use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
 use tauri::AppHandle;
 
 pub async fn handle_fal_failure(
@@ -17,10 +18,14 @@ pub async fn handle_fal_failure(
 ) {
   info!("[FalPolling] Marking task {} as failed: {}", task.id.as_str(), reason);
 
-  let update_result = update_task_status(UpdateTaskArgs {
+  // Store the reason with the task so the task queue (rebuilt from SQLite on every poll) can show it, not just
+  // the one-time event below.
+  let update_result = update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
     status: TaskStatus::CompleteFailure,
+    maybe_failure_type: Some(TaskFailureType::GenerationFailed),
+    maybe_failure_message: Some(reason),
   }).await;
 
   if let Err(err) = update_result {

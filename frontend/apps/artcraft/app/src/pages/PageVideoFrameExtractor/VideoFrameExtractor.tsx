@@ -42,6 +42,23 @@ export const VideoFrameExtractor = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const extractedFramesRef = useRef<HTMLDivElement>(null);
+  // Which "Extract Frames" run is the current one. A run is abandoned by bumping this number (switching
+  // video, leaving the page); the run notices after each wait and stops without touching the page.
+  const extractionRunRef = useRef(0);
+
+  // Abandons any run in progress and frees the Extract button. Called whenever the video changes, since
+  // the run's <video> is gone and its "seeked" events would never come.
+  const cancelExtraction = () => {
+    extractionRunRef.current += 1;
+    setIsExtracting(false);
+  };
+
+  // Leaving the page abandons a run in progress too, so it cannot write state afterwards.
+  useEffect(() => {
+    return () => {
+      extractionRunRef.current += 1;
+    };
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -99,6 +116,7 @@ export const VideoFrameExtractor = () => {
   const handleLocalVideoSelect = (files: FileList) => {
     const file = files[0];
     if (file && file.type.startsWith("video/")) {
+      cancelExtraction();
       setIsPlaying(false);
       setCurrentTime(0);
       setStartTime(0);
@@ -140,6 +158,7 @@ export const VideoFrameExtractor = () => {
     }
 
     setIsLoadingFromGallery(true);
+    cancelExtraction();
 
     if (videoUrl && videoUrl.startsWith("blob:")) {
       URL.revokeObjectURL(videoUrl);
@@ -223,26 +242,37 @@ export const VideoFrameExtractor = () => {
     setConvertingFrames(new Set());
 
     const video = videoRef.current;
+    // This run's number; if the page abandons the run (cancelExtraction), the number no longer matches
+    // and the run stops at its next checkpoint without touching the page.
+    const runId = ++extractionRunRef.current;
+    const isAbandoned = () => runId !== extractionRunRef.current;
 
     // Ensure video metadata is loaded before extraction
     if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("Video failed to load metadata"));
-        }, 5000);
-
-        const handleLoadedData = () => {
+      // Waits for the first frame, but only up to 5 seconds: some webviews (WebKit) never announce
+      // "loadeddata" for a video that is only preloading its metadata, even though the frame size is
+      // already known and seeking works. What decides below is whether the size is known.
+      await new Promise<void>((resolve) => {
+        const finish = () => {
           clearTimeout(timeout);
-          video.removeEventListener("loadeddata", handleLoadedData);
+          video.removeEventListener("loadeddata", finish);
           resolve();
         };
+        const timeout = setTimeout(finish, 5000);
+        video.addEventListener("loadeddata", finish);
+      });
+      if (isAbandoned()) return;
 
-        video.addEventListener("loadeddata", handleLoadedData);
-      }).catch((error) => {
-        console.error("Video loading error:", error);
+      // Still no frame size: the video did not load at all. Seeking it would wait for "seeked" events
+      // that never come, so tell the user and stop instead of hanging with no message.
+      if (!video.videoWidth || !video.videoHeight) {
+        console.error("Video loading error: the video did not report a frame size");
+        toast.error(
+          "The video has not loaded yet. Wait for it to finish loading and try again.",
+        );
         setIsExtracting(false);
         return;
-      });
+      }
     }
 
     const originalTime = video.currentTime;
@@ -297,6 +327,7 @@ export const VideoFrameExtractor = () => {
         video.addEventListener("seeked", handleSeeked, { once: true });
       });
 
+      if (isAbandoned()) return;
       if (corsError) break;
     }
 
@@ -309,6 +340,8 @@ export const VideoFrameExtractor = () => {
       };
       video.addEventListener("seeked", handleRestored, { once: true });
     });
+
+    if (isAbandoned()) return;
 
     if (wasPlaying) {
       video.play();
@@ -492,6 +525,7 @@ export const VideoFrameExtractor = () => {
                       icon={RotateCwIcon}
                       variant="action"
                       onClick={() => {
+                        cancelExtraction();
                         setVideoUrl("");
                         setStartTime(0);
                         setCurrentTime(0);

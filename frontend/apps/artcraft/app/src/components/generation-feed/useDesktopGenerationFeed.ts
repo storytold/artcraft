@@ -1,7 +1,12 @@
-import { findDesktopModel } from "@storyteller/tauri-api";
+// useDesktopGenerationFeed: hook that builds the live feed of generations for the Generate Image and Generate Video pages
+// (pages/PageImage/TextToImage.tsx and pages/PageVideo/ImageToVideo.tsx), which hand the result to DesktopGenerationGallery.
+// Data sources: the Rust task queue (GetTaskQueue / MarkTaskAsDismissed from @storyteller/tauri-api), Tauri events
+// (generation complete/failed) and a browser "task-queue-update" event that pages fire right after enqueueing.
+// Prompt text and reference images for each task come from the localStorage cache in signaled/TopBar/taskEnqueueMeta.ts.
+
+import { findDesktopModel , GetTaskQueue, MarkTaskAsDismissed } from "@storyteller/tauri-api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { GetTaskQueue, MarkTaskAsDismissed } from "@storyteller/tauri-api";
 import type { TaskQueueItem } from "@storyteller/tauri-api";
 import {
   useTextToImageGenerationCompleteEvent,
@@ -28,18 +33,23 @@ import {
   getMetaForTask,
   cleanupOldEntries,
 } from "../signaled/TopBar/taskEnqueueMeta";
+import { FAILURE_REASON_LABEL } from "./failureReasonLabels";
 
 // Desktop twin of the webapp's useGenerationJobs: feeds the shared
 // GenerationListView from the Tauri task queue instead of JobsApi. Polls every
 // 5s and reloads instantly on Tauri generation events / local enqueues.
 
+// How often (milliseconds) the task queue is re-read: every 5 seconds.
 const POLL_INTERVAL_MS = 5000;
 
 // Newly completed videos that arrived without a thumbnail URL are looked up
 // again on this interval, for up to MISSING_THUMBNAIL_GIVE_UP_MS.
+// Retry interval: 15_000 ms = 15 s.
 const MISSING_THUMBNAIL_POLL_MS = 15_000;
+// Stop retrying after 10 minutes (10 * 60_000 ms).
 const MISSING_THUMBNAIL_GIVE_UP_MS = 10 * 60_000;
 
+// Task statuses that count as "failed" (shown in the failed list) rather than pending or completed.
 const FAILED_STATUSES = new Set([
   "complete_failure",
   "attempt_failed",
@@ -49,24 +59,20 @@ const FAILED_STATUSES = new Set([
   "cancelled_by_us",
 ]);
 
-const FAILURE_REASON_LABEL: Record<string, string> = {
-  rule_bans_user_image: "Image violates content policy",
-  rule_bans_user_image_with_faces: "Images with faces are not allowed",
-  rule_bans_user_text_prompt: "Text prompt violates content policy",
-  rule_bans_user_content: "Content violates content policy",
-  rule_bans_generated_video: "Generated video flagged by content policy",
-  rule_bans_generated_audio: "Generated audio flagged by content policy",
-  rule_bans_generated_content: "Generated content flagged by content policy",
-  generation_failed: "Generation failed",
-  unknown: "An unknown error occurred",
-};
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
+/**
+ * Returns { inProgress, failed, newlyCompleted, dismissFailed, refresh }.
+ * options.mediaType: which kind of task this page shows ("image" or "video"); other kinds are filtered out.
+ * inProgress / failed come from the task queue; newlyCompleted holds items that finished while the page was open
+ * (older history is loaded elsewhere from the gallery API); dismissFailed hides a failed task; refresh reloads now.
+ */
 export function useDesktopGenerationFeed(options: {
   mediaType: "image" | "video";
 }) {
   const { mediaType } = options;
+  // Refs (useRef) keep a value across renders without causing a re-render when it changes. This one holds a single MediaFilesApi instance.
   const mediaApiRef = useRef(new MediaFilesApi());
 
   const [inProgress, setInProgress] = useState<InProgressJob[]>([]);
@@ -75,19 +81,31 @@ export function useDesktopGenerationFeed(options: {
 
   // Snapshot per-task durations so the fake progress stays stable.
   const durationsRef = useRef<Map<string, number>>(new Map());
+  // Ids of tasks that were already completed at the last load, to spot newly finished ones.
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  // False until the first load finishes; the first load does not report "newly completed" items.
   const initialLoadDoneRef = useRef(false);
   // Locally dismissed failed tasks — hides them until the server-side
   // dismissal lands in the next poll.
   const dismissedRef = useRef<Set<string>>(new Set());
 
+  // Loads overlap (poll + Tauri events + local enqueue events). Only the most
+  // recently started load may commit, so a slow older response can't overwrite
+  // newer state (e.g. bring back a job that already finished or was dismissed).
+  const loadSeqRef = useRef(0);
+
+  // Read the task queue and update the three lists. Safe to call often: loadSeqRef numbers each call and only the
+  // latest one is allowed to commit its results (see the note above loadSeqRef).
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     try {
       const { tasks } = await GetTaskQueue();
+      if (seq !== loadSeqRef.current) return;
       const filtered = tasks.filter(
         (t) => getTaskMediaType(t) === mediaType && !dismissedRef.current.has(t.id),
       );
 
+      // Pending/started tasks, newest first, each turned into a progress card.
       const newInProgress = filtered
         .filter(
           (t) => t.task_status === "pending" || t.task_status === "started",
@@ -95,6 +113,7 @@ export function useDesktopGenerationFeed(options: {
         .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
         .map((t) => taskToInProgress(t, mediaType, durationsRef.current));
 
+      // Failed or cancelled tasks, most recently updated first.
       const newFailed = filtered
         .filter((t) => FAILED_STATUSES.has(String(t.task_status)))
         .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
@@ -123,6 +142,9 @@ export function useDesktopGenerationFeed(options: {
           expandedNewItems = expanded.flat();
         }
       }
+      // A newer load started while expanding; it will commit instead. Leaving
+      // prevCompletedIdsRef untouched means it re-detects the same new tasks.
+      if (seq !== loadSeqRef.current) return;
       initialLoadDoneRef.current = true;
       prevCompletedIdsRef.current = completedIdSet;
 
@@ -206,10 +228,15 @@ export function useDesktopGenerationFeed(options: {
   // Rust media-file lookup fails open). The library copy would have it, but the
   // newly completed item takes precedence in the feed, so look it up again
   // until the URL shows up. GalleryThumbnail then re-checks the image itself.
+  // A ref mirroring the latest newlyCompleted state, so the interval below can read current items
+  // without restarting every time the list changes.
   const newlyCompletedRef = useRef(newlyCompleted);
   newlyCompletedRef.current = newlyCompleted;
+  // When we first noticed each item had no thumbnail (item id -> timestamp), used to stop after the give-up time.
   const missingThumbnailSinceRef = useRef<Map<string, number>>(new Map());
 
+  // Video pages only: every 15 s, look up thumbnails for completed videos that arrived without one.
+  // The `running` flag prevents two rounds from overlapping; `cancelled` stops work after unmount.
   useEffect(() => {
     if (mediaType !== "video") return;
     let cancelled = false;
@@ -225,6 +252,7 @@ export function useDesktopGenerationFeed(options: {
       }
     };
 
+    // One round: for each item still missing a thumbnail (and younger than the give-up time), ask the backend for its media links.
     const lookUpMissingThumbnailsOnce = async () => {
       const now = Date.now();
       const missing = newlyCompletedRef.current.filter((item) => {
@@ -239,7 +267,7 @@ export function useDesktopGenerationFeed(options: {
         });
         if (cancelled) return;
         const links = response.success
-          ? (response.data?.media_links as VideoMediaLinks | undefined)
+          ? response.data?.media_links
           : undefined;
         // Without a preview or template, getMediaThumbnail would fall back to
         // the .mp4 itself, which an <img> can't show. Try again next round.
@@ -269,6 +297,8 @@ export function useDesktopGenerationFeed(options: {
 
   // Poll + reload on Tauri generation events and local "task-queue-update"
   // dispatches (fired by the pages right after enqueueing).
+  // Main loop. On mount: clear stale cache entries, load now, then poll every 5 s. Also reloads when the page fires
+  // "task-queue-update" or the Rust side emits generation-complete/failed events. The cleanup removes every listener and timer.
   useEffect(() => {
     cleanupOldEntries();
     load();
@@ -300,6 +330,7 @@ export function useDesktopGenerationFeed(options: {
     };
   }, [load]);
 
+  // Hide a failed task right away (local set + state), then tell the Rust side so it stays hidden after the next poll.
   const dismissFailed = useCallback(async (taskId: string) => {
     dismissedRef.current.add(taskId);
     setFailed((prev) => prev.filter((f) => f.id !== taskId));
@@ -319,22 +350,10 @@ export function useDesktopGenerationFeed(options: {
   };
 }
 
-// ── Types ───────────────────────────────────────────────────────────────────
-
-// The media-file API's link fields used for video thumbnails. (The shared
-// MediaFile type predates these fields.)
-interface VideoMediaLinks {
-  cdn_url?: string | null;
-  maybe_thumbnail_template?: string | null;
-  maybe_video_previews?: {
-    animated?: string | null;
-    still?: string | null;
-    still_thumbnail_template?: string | null;
-  } | null;
-}
-
 // ── Task mapping helpers ────────────────────────────────────────────────────
 
+// Classify a task as "image", "video" or "other" from its task_type / model_type text.
+// 3D objects and Gaussian splats (World Labs / Marble) count as "other" so they stay out of these feeds.
 function getTaskMediaType(t: TaskQueueItem): "image" | "video" | "other" {
   const taskTypeStr = t.task_type ? String(t.task_type).toLowerCase() : "";
   const modelTypeStr = t.model_type ? String(t.model_type).toLowerCase() : "";
@@ -353,6 +372,7 @@ function getTaskMediaType(t: TaskQueueItem): "image" | "video" | "other" {
   return "other";
 }
 
+// Friendly "Model name · Provider" text for a task, falling back to whichever part is known.
 function getTaskModelLabel(t: TaskQueueItem): string {
   const modelType = t.model_type ? String(t.model_type) : "";
   const modelDisplay = modelType ? findDesktopModel(modelType)?.fullName ?? getModelDisplayName(modelType) : undefined;
@@ -363,6 +383,9 @@ function getTaskModelLabel(t: TaskQueueItem): string {
   return modelDisplay || provider || "Unknown model";
 }
 
+// Turn a running task into a progress card. Progress is an estimate, not a real percentage: elapsed time divided by the model's
+// typical duration, capped at 95% until the task really completes. Default duration if the model gives none:
+// 900000 ms (15 min) for video, 30000 ms (30 s) for images.
 function taskToInProgress(
   t: TaskQueueItem,
   mediaType: "image" | "video",
@@ -407,6 +430,7 @@ function taskToInProgress(
   };
 }
 
+// Turn a failed task into a card: a readable reason (from FAILURE_REASON_LABEL) plus the raw backend message when it is informative.
 function taskToFailed(
   t: TaskQueueItem,
   mediaType: "image" | "video",
@@ -445,6 +469,7 @@ async function taskToGalleryItems(
   mediaType: "image" | "video",
   mediaFilesApi: MediaFilesApi,
 ): Promise<GalleryItem[]> {
+  // A completed task with no output file produces no gallery items.
   const file = t.completed_item?.primary_media_file;
   if (!file) return [];
 
@@ -475,6 +500,7 @@ async function taskToGalleryItems(
     batchImageToken: t.completed_item?.maybe_batch_token,
   };
 
+  // Image tasks can generate several pictures in one batch; if so, fetch all siblings so every picture appears in the feed.
   const batchToken = t.completed_item?.maybe_batch_token;
   if (!batchToken) return [primary];
 
@@ -486,10 +512,22 @@ async function taskToGalleryItems(
       return [primary];
     }
     return batchResponse.data
-      .map((batchFile: any): GalleryItem | null => {
-        const cdnUrl = batchFile.media_links?.cdn_url;
+      .map((batchFile): GalleryItem | null => {
+        // The batch endpoint returns the full media_links shape, which the shared MediaFile type under-describes.
+        const links = batchFile.media_links as unknown as
+          | {
+              cdn_url?: string;
+              maybe_thumbnail_template?: string | null;
+              maybe_video_previews?: {
+                animated?: string | null;
+                still?: string | null;
+                still_thumbnail_template?: string | null;
+              } | null;
+            }
+          | undefined;
+        const cdnUrl = links?.cdn_url;
         if (!cdnUrl) return null;
-        const thumbnail = getMediaThumbnail(batchFile.media_links, mediaType, {
+        const thumbnail = getMediaThumbnail(links, mediaType, {
           size: THUMBNAIL_SIZES.LARGE,
         });
         return {
@@ -498,7 +536,7 @@ async function taskToGalleryItems(
           thumbnail: thumbnail || cdnUrl,
           stillThumbnail:
             mediaType === "video"
-              ? getMediaStillThumbnail(batchFile.media_links, {
+              ? getMediaStillThumbnail(links, {
                   size: THUMBNAIL_SIZES.LARGE,
                 })
               : null,

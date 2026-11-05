@@ -684,11 +684,18 @@ export function retimeKeyframe({
       return channel;
     }
 
-    const nextKeys = [...channel.keys];
-    nextKeys[keyframeByIdIndex] = {
-      ...nextKeys[keyframeByIdIndex],
-      time,
-    };
+    // FIX: dropping a key onto another key's time used to leave BOTH at that time (duplicate keys that
+    // resolve and drag unpredictably). The moved key now replaces the one underneath, matching what
+    // inserting a key at an occupied time already does.
+    const movedKey = { ...channel.keys[keyframeByIdIndex], time };
+    const nextKeys = [
+      ...channel.keys.filter(
+        (keyframe) =>
+          keyframe.id !== keyframeId &&
+          !isNearlySameTime({ leftTime: keyframe.time, rightTime: time }),
+      ),
+      movedKey,
+    ];
 
     return normalizeScalarChannel({
       channel: {
@@ -705,11 +712,16 @@ export function retimeKeyframe({
     return channel;
   }
 
-  const nextKeys = [...channel.keys];
-  nextKeys[keyframeByIdIndex] = {
-    ...nextKeys[keyframeByIdIndex],
-    time,
-  };
+  // FIX: same replace-the-key-underneath rule as the scalar branch above.
+  const movedKeyframe = { ...channel.keys[keyframeByIdIndex], time };
+  const nextKeys = [
+    ...channel.keys.filter(
+      (keyframe) =>
+        keyframe.id !== keyframeId &&
+        !isNearlySameTime({ leftTime: keyframe.time, rightTime: time }),
+    ),
+    movedKeyframe,
+  ];
 
   return normalizeDiscreteChannel({
     channel: {
@@ -1101,7 +1113,9 @@ function splitScalarChannelAtTime({
       const r1 = lerpPoint({ left: q1, right: q2, progress });
       const splitPoint = lerpPoint({ left: r0, right: r1, progress });
       leftKeys = [
-        ...normalizedChannel.keys.filter((key) => key.time < splitTime),
+        // Keys strictly before leftKey: leftKey itself is re-added below with its new handle,
+        // so keeping it here would leave two keys with the same id and time on the left half.
+        ...normalizedChannel.keys.filter((key) => key.time < leftKey.time),
         {
           ...leftKey,
           rightHandle: {
@@ -1185,6 +1199,40 @@ function splitScalarChannelAtTime({
         },
       }),
     };
+  }
+
+  // No segment contains the cut, so it lies after the last key or before the first one. The side
+  // that gets no keys from the partition would lose the animation entirely and fall back to the
+  // property's static value, which jumps away from what the element was showing at the cut. Give
+  // that side one key carrying the value the channel has at the cut (the held first or last key's
+  // value) so it keeps showing exactly that. The other side already has its keys and holds them.
+  // This runs only when boundaries are wanted: the early return above handles the other case.
+  if (leftKeys.length === 0 || rightKeys.length === 0) {
+    const boundaryValue = getChannelValueAtTime({
+      channel: normalizedChannel,
+      time: splitTime,
+      fallbackValue: normalizedChannel.keys[0].value,
+    });
+    if (leftKeys.length === 0) {
+      leftKeys = [
+        createScalarKey({
+          id: leftBoundaryId,
+          time: splitTime,
+          value: boundaryValue,
+          interpolation: "linear",
+        }),
+      ];
+    }
+    if (rightKeys.length === 0) {
+      rightKeys = [
+        createScalarKey({
+          id: rightBoundaryId,
+          time: ZERO_MEDIA_TIME,
+          value: boundaryValue,
+          interpolation: "linear",
+        }),
+      ];
+    }
   }
 
   return {

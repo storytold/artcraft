@@ -1,6 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "rootDir": "../..",
     "outDir": "./out-tsc/vitest",
     "types": [
       "vitest/globals",
@@ -12,6 +13,7 @@
     "jsx": "react-jsx"
   },
   "include": [
+    "../../shared-vite-config.ts",
     "vite.config.ts",
     "vite.config.mts",
     "vitest.config.ts",

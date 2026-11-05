@@ -5,7 +5,6 @@ use crate::error::grok_client_error::GrokClientError;
 use crate::requests::index_page::signature::signature_xs::signature_xs;
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
-use byteorder::{LittleEndian, WriteBytesExt};
 use chrono::{TimeDelta, Utc};
 use log::{debug, error};
 use sha2::{Digest, Sha256};
@@ -61,12 +60,18 @@ pub fn generate_xsid_with_timestamp(timestamp: u32, args: GenerateXsidArgs<'_>) 
           return b64encode(bytes(arr)).decode('ascii').replace('=', '')
    */
 
-  let n = timestamp - 1682924400;
+  // FIX: a plain `timestamp - 1682924400` underflows (panic in debug, silent wrap in release)
+  // when the user's system clock is before 2023-04-31 (e.g. a dead CMOS battery resetting the
+  // clock to 1970). Return an error instead of crashing or signing with a garbage timestamp.
+  let n = timestamp.checked_sub(1682924400).ok_or_else(|| {
+    error!("Timestamp {} is before the xsid epoch; system clock is wrong.", timestamp);
+    GrokClientError::BadSignatureInputs
+  })?;
 
   debug!("[xsid] n = {}", n);
 
-  let mut t = vec![];
-  t.write_u32::<LittleEndian>(n).unwrap(); // TODO Unwrap
+  // FIX: `to_le_bytes` is infallible, replacing `Vec::write_u32(..).unwrap()`.
+  let t: Vec<u8> = n.to_le_bytes().to_vec();
 
   debug!("[xsid] t = {:?}", t);
 
@@ -182,5 +187,23 @@ mod tests {
 
     assert_eq!(&observed, expected);
     Ok(())
+  }
+
+  /// A system clock set before the xsid epoch must produce an error, not an underflow panic.
+  #[test]
+  fn timestamp_before_epoch_is_error_not_panic() {
+    let ver = VerificationToken("yt16CWiUI42s7wGGeMxcdEIT2miPF5PVOGZF1Jcae7K7HMQrLeI4RTYufmdfBIZU".to_string());
+    let svg_data = SvgPathData("M 10,30 C 147,16 51,222 136,87".to_string());
+    let numbers = XsidNumbers { numbers: vec![40, 18, 3, 18] };
+
+    let result = generate_xsid_with_timestamp(0, GenerateXsidArgs {
+      path: "/rest/app-chat/conversations/new",
+      method: "POST",
+      verification_token: &ver,
+      svg_data: &svg_data,
+      numbers: &numbers,
+    });
+
+    assert!(result.is_err());
   }
 }

@@ -33,7 +33,14 @@ export function KeybindCaptureInput({
   return (
     <button
       type="button"
-      onClick={() => setCapturing((v) => !v)}
+      onClick={(e) => {
+        // WebKit (Tauri on macOS) doesn't focus a button on click; focus it so the blur below can disarm the capture.
+        e.currentTarget.focus();
+        setCapturing((v) => !v);
+      }}
+      // Stop listening once focus leaves this control (another row, the search box, a click elsewhere, the window losing
+      // focus). Otherwise the next key typed anywhere is swallowed and silently rebinds this action.
+      onBlur={() => setCapturing(false)}
       aria-label="Change keybinding"
       className={twMerge(
         "inline-flex min-h-8 min-w-[7rem] items-center justify-center rounded-[3px] border px-2 py-1 text-sm transition-colors",

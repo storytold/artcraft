@@ -137,7 +137,13 @@ function readCookie(key: string): string | undefined {
     .split("; ")
     .find((entry) => entry.startsWith(prefix));
   if (!match) return undefined;
-  return decodeURIComponent(match.slice(prefix.length)) || undefined;
+  try {
+    return decodeURIComponent(match.slice(prefix.length)) || undefined;
+  } catch {
+    // FIX: a malformed escape (e.g. "%E0%A4%A") makes decodeURIComponent throw a URIError,
+    // which escaped the public getters. Treat it as "no cookie" so read() falls back to localStorage.
+    return undefined;
+  }
 }
 
 function getApexCookieDomainAttr(): string {

@@ -64,7 +64,8 @@ export class VideoApi extends ApiManager {
       }))
       .catch((err) => {
         console.log(err.message);
-        return { success: false, error_reason: err.message };
+        // ApiResponse reads `errorMessage`; `error_reason` was dropped by callers.
+        return { success: false, errorMessage: err.message };
       });
   }
 }

@@ -65,7 +65,6 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
   completeBatch: (
     images: GeneratedImage[],
     maybeSubscriberId?: string,
-    maybePrompt?: string,
   ) => {
     const pending = maybeSubscriberId
       ? get().batches.find((b) => b.subscriberId === maybeSubscriberId)

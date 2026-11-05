@@ -1,11 +1,11 @@
 import { render } from '@testing-library/react';
 
-import ActionReminderModal from './action-reminder-modal';
+import { ActionReminderModal } from './action-reminder-modal';
 
 describe('ActionReminderModal', () => {
   
   it('should render successfully', () => {
-    const { baseElement } = render(<ActionReminderModal />);
+    const { baseElement } = render(<ActionReminderModal isOpen={true} onClose={() => undefined} onPrimaryAction={() => undefined} />);
     expect(baseElement).toBeTruthy();
   });
   

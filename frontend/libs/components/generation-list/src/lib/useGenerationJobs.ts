@@ -341,6 +341,10 @@ export function useGenerationJobs(options: {
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
   const prevFailedIdsRef = useRef<Set<string>>(new Set());
   const initialLoadDoneRef = useRef(false);
+  // Bumped on every poll start and on every reset (media type or enabled
+  // change). A poll whose id is stale when its awaits finish is dropped, so an
+  // old media type's response can't overwrite the new type's feed.
+  const loadIdRef = useRef(0);
 
   const promptTokens = useMemo(() => {
     const tokens: string[] = [];
@@ -381,8 +385,10 @@ export function useGenerationJobs(options: {
   );
 
   const load = useCallback(async () => {
+    const loadId = ++loadIdRef.current;
     try {
       const response = await apiRef.current.ListRecentJobs();
+      if (loadId !== loadIdRef.current) return; // superseded while in flight
       if (!response.success || !response.data) return;
 
       const jobs: Job[] = response.data;
@@ -439,6 +445,7 @@ export function useGenerationJobs(options: {
           }
         }
       }
+      if (loadId !== loadIdRef.current) return; // superseded during expansion
       initialLoadDoneRef.current = true;
       prevCompletedIdsRef.current = completedIdSet;
 
@@ -467,6 +474,16 @@ export function useGenerationJobs(options: {
   // hit an authenticated endpoint every 5s for nothing, which on mobile
   // Safari shows up as periodic main-thread jank during the menu animation.
   useEffect(() => {
+    // Fresh start for this media type / login: forget what the previous one
+    // had seen (otherwise every already-finished job of the new type looks
+    // "newly completed" on the first poll) and drop any poll still in flight.
+    loadIdRef.current++;
+    prevCompletedIdsRef.current = new Set();
+    prevFailedIdsRef.current = new Set();
+    initialLoadDoneRef.current = false;
+    setInProgressJobs([]);
+    setFailedJobsRaw([]);
+    setNewlyCompleted([]);
     if (!enabled) return;
     load();
     const intervalId = setInterval(load, 5000);

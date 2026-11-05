@@ -29,6 +29,7 @@ import {
 import { useInfiniteScroll } from "../../hooks/use-infinite-scroll";
 import { useSoundSearch } from "../use-sound-search";
 import { useSoundsStore } from "../sounds-store";
+import { useSoundPreview } from "../use-sound-preview";
 import type { SavedSound, SoundEffect } from "../types";
 import { cn } from "../../utils/ui";
 import { EditorCore } from "../../core";
@@ -100,10 +101,7 @@ function SoundEffectsView() {
     commercialOnly: showCommercialOnly,
   });
 
-  const [playingId, setPlayingId] = useState<number | null>(null);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(
-    null,
-  );
+  const { playingId, togglePreview } = useSoundPreview();
 
   const { scrollAreaRef, handleScroll } = useInfiniteScroll({
     onLoadMore: loadMore,
@@ -199,33 +197,6 @@ function SoundEffectsView() {
 
   const displayedSounds = searchQuery ? searchResults : topSoundEffects;
 
-  const playSound = ({ sound }: { sound: SoundEffect }) => {
-    if (playingId === sound.id) {
-      audioElement?.pause();
-      setPlayingId(null);
-      return;
-    }
-
-    audioElement?.pause();
-
-    if (sound.previewUrl) {
-      const audio = new Audio(sound.previewUrl);
-      audio.addEventListener("ended", () => {
-        setPlayingId(null);
-      });
-      audio.addEventListener("error", () => {
-        setPlayingId(null);
-      });
-      audio.play().catch((error) => {
-        console.error("Failed to play sound preview:", error);
-        setPlayingId(null);
-      });
-
-      setAudioElement(audio);
-      setPlayingId(sound.id);
-    }
-  };
-
   return (
     <div className="mt-1 flex h-full flex-col gap-5">
       <div className="flex items-center gap-3">
@@ -286,7 +257,7 @@ function SoundEffectsView() {
                 key={sound.id}
                 sound={sound}
                 isPlaying={playingId === sound.id}
-                onPlay={playSound}
+                onPlay={togglePreview}
               />
             ))}
             {!isLoading && !isSearching && displayedSounds.length === 0 && (
@@ -315,43 +286,13 @@ function SavedSoundsView() {
     clearSavedSounds,
   } = useSoundsStore();
 
-  const [playingId, setPlayingId] = useState<number | null>(null);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(
-    null,
-  );
+  const { playingId, togglePreview } = useSoundPreview();
 
   const [showClearDialog, setShowClearDialog] = useState(false);
 
   useEffect(() => {
     loadSavedSounds();
   }, [loadSavedSounds]);
-
-  const playSound = ({ sound }: { sound: SoundEffect }) => {
-    if (playingId === sound.id) {
-      audioElement?.pause();
-      setPlayingId(null);
-      return;
-    }
-
-    audioElement?.pause();
-
-    if (sound.previewUrl) {
-      const audio = new Audio(sound.previewUrl);
-      audio.addEventListener("ended", () => {
-        setPlayingId(null);
-      });
-      audio.addEventListener("error", () => {
-        setPlayingId(null);
-      });
-      audio.play().catch((error) => {
-        console.error("Failed to play sound preview:", error);
-        setPlayingId(null);
-      });
-
-      setAudioElement(audio);
-      setPlayingId(sound.id);
-    }
-  };
 
   const convertToSoundEffect = ({
     savedSound,
@@ -469,7 +410,7 @@ function SavedSoundsView() {
                 key={sound.id}
                 sound={convertToSoundEffect({ savedSound: sound })}
                 isPlaying={playingId === sound.id}
-                onPlay={playSound}
+                onPlay={togglePreview}
               />
             ))}
           </div>

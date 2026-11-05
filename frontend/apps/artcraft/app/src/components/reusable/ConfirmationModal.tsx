@@ -1,9 +1,16 @@
+// ConfirmationModal: a generic OK / Cancel dialog built on Headless UI, with an optional "Do not show this again" checkbox.
+// At the time of writing no other file in app/src imports it. Its "do not show" flag is stored in
+// localStorage using the DoNotShow constant from ~/constants.
+
 import { Fragment, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { DoNotShow } from "~/constants";
 import { Button } from "@storyteller/ui-button"
 import { Checkbox } from "@storyteller/ui-checkbox";
 
+// text/title: dialog body and heading. open/onClose: visibility. onOk/onCancel: button handlers (a button is
+// only drawn when its handler is given). okText/cancelText/okColor: button labels and extra classes.
+// canHide: show the "do not show again" checkbox.
 interface Props {
   text: string;
   title: string;
@@ -17,6 +24,9 @@ interface Props {
   canHide?: boolean;
 }
 
+/**
+ * Renders the dialog with fade/scale transitions. Returns the Headless UI Transition + Dialog tree.
+ */
 export const ConfirmationModal = ({
   text,
   title,
@@ -29,6 +39,8 @@ export const ConfirmationModal = ({
   cancelText = "Cancel",
   canHide,
 }: Props) => {
+  // If the "do not show again" checkbox (id hide-dialog) is ticked, remember that in localStorage under the
+  // title, then run the caller's onOk. Reads the DOM by id because the Checkbox is not controlled here.
   const handleOk = useCallback(() => {
     const element = document.getElementById("hide-dialog");
     if (element) {

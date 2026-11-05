@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use egui::{ColorImage, TextureHandle, TextureOptions};
 use image::AnimationDecoder;
@@ -29,6 +29,8 @@ const SOFT_CAPACITY: usize = 160;
 /// Frames an image may go undrawn before it can be evicted (animations go sooner: they're heavy).
 const EVICT_AFTER_FRAMES: u64 = 600;
 const EVICT_ANIMATED_AFTER_FRAMES: u64 = 120;
+/// How long a failed download stays failed before the next request for it tries again.
+const FAILED_RETRY_AFTER: Duration = Duration::from_secs(60);
 
 pub struct MediaCache {
   rt: Handle,
@@ -61,7 +63,10 @@ enum Entry {
     total: f32,
     last_used: u64,
   },
-  Failed,
+  /// When it failed, so a later request can try again (a dropped connection shouldn't last all session).
+  Failed {
+    at: Instant,
+  },
 }
 
 struct Loaded {
@@ -120,7 +125,7 @@ impl MediaCache {
           let frames = frames.into_iter().enumerate().map(|(i, (img, d))| (ctx.load_texture(format!("{key}#{i}"), img, TextureOptions::LINEAR), d)).collect();
           Entry::Animated { frames, total, last_used: self.frame }
         },
-        None => Entry::Failed,
+        None => Entry::Failed { at: Instant::now() },
       };
     }
     let frame = self.frame;
@@ -128,12 +133,16 @@ impl MediaCache {
     self.entries.retain(|_, e| match e {
       Entry::Animated { last_used, .. } => frame.saturating_sub(*last_used) < EVICT_ANIMATED_AFTER_FRAMES,
       Entry::Ready { last_used, .. } | Entry::Loading { last_used } => !crowded || frame.saturating_sub(*last_used) < EVICT_AFTER_FRAMES,
-      Entry::Failed => true,
+      Entry::Failed { .. } => true,
     });
   }
 
   fn lookup(&mut self, ctx: &egui::Context, key: &str, url: &str, animated: bool) -> Lookup {
     let frame = self.frame;
+    // A download that failed a while ago gets another go; local previews are decoded from bytes we already have, so they would only fail again.
+    if matches!(self.entries.get(key), Some(Entry::Failed { at }) if at.elapsed() >= FAILED_RETRY_AFTER) && !key.starts_with("local://") {
+      self.entries.remove(key);
+    }
     match self.entries.get_mut(key) {
       Some(Entry::Ready { texture, last_used }) => {
         *last_used = frame;
@@ -157,7 +166,7 @@ impl MediaCache {
         *last_used = frame;
         Lookup::Loading
       },
-      Some(Entry::Failed) => Lookup::Failed,
+      Some(Entry::Failed { .. }) => Lookup::Failed,
       None => {
         self.entries.insert(key.to_owned(), Entry::Loading { last_used: frame });
         self.spawn_download(ctx, key.to_owned(), url.to_owned(), animated);
@@ -241,4 +250,24 @@ fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
 fn to_color_image(rgba: image::RgbaImage) -> ColorImage {
   let size = [rgba.width() as usize, rgba.height() as usize];
   ColorImage::from_rgba_unmultiplied(size, rgba.as_raw())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn a_failed_download_is_tried_again_after_a_while_but_not_straight_away() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+    let mut cache = MediaCache::new(rt.handle().clone(), reqwest::Client::new());
+    let ctx = egui::Context::default();
+    let long_ago = Instant::now().checked_sub(FAILED_RETRY_AFTER + Duration::from_secs(1)).expect("a clock that has run for more than a minute");
+    cache.entries.insert("https://cdn/old.png".into(), Entry::Failed { at: long_ago });
+    cache.entries.insert("https://cdn/new.png".into(), Entry::Failed { at: Instant::now() });
+    cache.entries.insert("local://7".into(), Entry::Failed { at: long_ago });
+
+    assert!(matches!(cache.get(&ctx, "https://cdn/old.png"), Lookup::Loading), "an old failure starts a new download");
+    assert!(matches!(cache.get(&ctx, "https://cdn/new.png"), Lookup::Failed), "a fresh failure is not retried at once");
+    assert!(matches!(cache.get(&ctx, "local://7"), Lookup::Failed), "a local preview would only fail again");
+  }
 }

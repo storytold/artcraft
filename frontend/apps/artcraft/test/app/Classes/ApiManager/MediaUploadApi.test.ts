@@ -1,6 +1,6 @@
 import { authentication } from "~/signals";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
-import { MediaUploadApi } from "~/Classes/ApiManager/MediaUploadApi";
+import { MediaUploadApi } from "@storyteller/api";
 import { Visibility } from "~/enums";
 import { UserInfo } from "~/models";
 
@@ -19,7 +19,7 @@ describe("MediaUploadApi", () => {
     [
       {
         name: "UploadAudio",
-        function: api.UploadAudio.bind(api),
+        function: api.UploadAudio.bind(api) as (args: any) => Promise<unknown>,
         endpoint: "http://localhost:3000/v1/media_files/upload/audio",
         is_intermediate_system_file: false,
         params: {
@@ -29,7 +29,7 @@ describe("MediaUploadApi", () => {
       },
       {
         name: "UploadImage",
-        function: api.UploadImage.bind(api),
+        function: api.UploadImage.bind(api) as (args: any) => Promise<unknown>,
         endpoint: "http://localhost:3000/v1/media_files/upload/image",
         is_intermediate_system_file: true,
         params: {
@@ -39,7 +39,7 @@ describe("MediaUploadApi", () => {
       },
       {
         name: "UploadNewEngineAsset",
-        function: api.UploadNewEngineAsset.bind(api),
+        function: api.UploadNewEngineAsset.bind(api) as (args: any) => Promise<unknown>,
         endpoint:
           "http://localhost:3000/v1/media_files/upload/new_engine_asset",
         is_intermediate_system_file: false,
@@ -52,7 +52,7 @@ describe("MediaUploadApi", () => {
       },
       {
         name: "UploadNewScene",
-        function: api.UploadNewScene.bind(api),
+        function: api.UploadNewScene.bind(api) as (args: any) => Promise<unknown>,
         endpoint: "http://localhost:3000/v1/media_files/upload/new_scene",
         is_intermediate_system_file: false,
         params: {
@@ -62,7 +62,7 @@ describe("MediaUploadApi", () => {
       },
       {
         name: "UploadNewVideo",
-        function: api.UploadNewVideo.bind(api),
+        function: api.UploadNewVideo.bind(api) as (args: any) => Promise<unknown>,
         endpoint: "http://localhost:3000/v1/media_files/upload/new_video",
         is_intermediate_system_file: true,
         params: {
@@ -74,7 +74,7 @@ describe("MediaUploadApi", () => {
       },
       {
         name: "UploadPmx",
-        function: api.UploadPmx.bind(api),
+        function: api.UploadPmx.bind(api) as (args: any) => Promise<unknown>,
         endpoint: "http://localhost:3000/v1/media_files/upload/pmx",
         is_intermediate_system_file: true,
         params: {
@@ -92,7 +92,7 @@ describe("MediaUploadApi", () => {
         });
 
         it("no parameters", async () => {
-          jest.spyOn(api, "fetch").mockResolvedValueOnce({
+          jest.spyOn(api as any, "fetchMultipartFormData").mockResolvedValueOnce({
             media_file_token: "mft1",
             success: true,
           });
@@ -100,6 +100,8 @@ describe("MediaUploadApi", () => {
           const uuid = "some uuid";
           const response = await testMethod.function({
             blob: blob,
+            // UploadNewEngineAsset and UploadPmx read `file`; the rest read `blob`.
+            file: blob as File,
             fileName: "some file name",
             uuid,
           });
@@ -114,7 +116,7 @@ describe("MediaUploadApi", () => {
             formData.append(key, value);
           });
           formData.append("file", blob, "some file name");
-          expect(api.fetch).toHaveBeenCalledWith(testMethod.endpoint, {
+          expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(testMethod.endpoint, {
             method: "POST",
             body: formData,
           });
@@ -126,7 +128,7 @@ describe("MediaUploadApi", () => {
         });
 
         it("all parameters", async () => {
-          jest.spyOn(api, "fetch").mockResolvedValueOnce({
+          jest.spyOn(api as any, "fetchMultipartFormData").mockResolvedValueOnce({
             media_file_token: "mft1",
             success: true,
           });
@@ -134,6 +136,8 @@ describe("MediaUploadApi", () => {
           const uuid = "some uuid";
           const response = await testMethod.function({
             blob: blob,
+            // UploadNewEngineAsset and UploadPmx read `file`; the rest read `blob`.
+            file: blob as File,
             fileName: "some file name",
             uuid,
             ...testMethod.params,
@@ -151,7 +155,7 @@ describe("MediaUploadApi", () => {
             }
           });
           formData.append("file", blob, "some file name");
-          expect(api.fetch).toHaveBeenCalledWith(testMethod.endpoint, {
+          expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(testMethod.endpoint, {
             method: "POST",
             body: formData,
           });
@@ -163,13 +167,15 @@ describe("MediaUploadApi", () => {
         });
 
         it("failure", async () => {
-          jest.spyOn(api, "fetch").mockResolvedValueOnce({
+          jest.spyOn(api as any, "fetchMultipartFormData").mockResolvedValueOnce({
             BadInput: "error error",
           });
           const blob = new Blob(["my blob data"]);
           const uuid = "some uuid";
           const response = await testMethod.function({
             blob: blob,
+            // UploadNewEngineAsset and UploadPmx read `file`; the rest read `blob`.
+            file: blob as File,
             fileName: "some file name",
             uuid,
           });
@@ -184,7 +190,7 @@ describe("MediaUploadApi", () => {
             formData.append(key, value);
           });
           formData.append("file", blob, "some file name");
-          expect(api.fetch).toHaveBeenCalledWith(testMethod.endpoint, {
+          expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(testMethod.endpoint, {
             method: "POST",
             body: formData,
           });
@@ -196,11 +202,13 @@ describe("MediaUploadApi", () => {
         });
 
         it("exception", async () => {
-          jest.spyOn(api, "fetch").mockRejectedValue(new Error("error error"));
+          jest.spyOn(api as any, "fetchMultipartFormData").mockRejectedValue(new Error("error error"));
           const blob = new Blob(["my blob data"]);
           const uuid = "some uuid";
           const response = await testMethod.function({
             blob: blob,
+            // UploadNewEngineAsset and UploadPmx read `file`; the rest read `blob`.
+            file: blob as File,
             fileName: "some file name",
             uuid,
           });
@@ -215,7 +223,7 @@ describe("MediaUploadApi", () => {
             formData.append(key, value);
           });
           formData.append("file", blob, "some file name");
-          expect(api.fetch).toHaveBeenCalledWith(testMethod.endpoint, {
+          expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(testMethod.endpoint, {
             method: "POST",
             body: formData,
           });
@@ -232,7 +240,7 @@ describe("MediaUploadApi", () => {
   describe("UploadSavedScene", () => {
     it("success", async () => {
       const api = new MediaUploadApi();
-      jest.spyOn(api, "fetch").mockResolvedValueOnce({
+      jest.spyOn(api as any, "fetchMultipartFormData").mockResolvedValueOnce({
         media_file_token: "mft1",
         success: true,
       });
@@ -247,7 +255,7 @@ describe("MediaUploadApi", () => {
       const formData = new FormData();
       formData.append("uuid_idempotency_token", uuid);
       formData.append("file", blob, "some file name");
-      expect(api.fetch).toHaveBeenCalledWith(
+      expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(
         "http://localhost:3000/v1/media_files/upload/saved_scene/mt1",
         {
           method: "POST",
@@ -263,7 +271,7 @@ describe("MediaUploadApi", () => {
 
     it("failure", async () => {
       const api = new MediaUploadApi();
-      jest.spyOn(api, "fetch").mockResolvedValueOnce({
+      jest.spyOn(api as any, "fetchMultipartFormData").mockResolvedValueOnce({
         BadInput: "error error",
       });
       const blob = new Blob(["my blob data"]);
@@ -277,7 +285,7 @@ describe("MediaUploadApi", () => {
       const formData = new FormData();
       formData.append("uuid_idempotency_token", uuid);
       formData.append("file", blob, "some file name");
-      expect(api.fetch).toHaveBeenCalledWith(
+      expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(
         "http://localhost:3000/v1/media_files/upload/saved_scene/mt1",
         {
           method: "POST",
@@ -293,7 +301,7 @@ describe("MediaUploadApi", () => {
 
     it("exception", async () => {
       const api = new MediaUploadApi();
-      jest.spyOn(api, "fetch").mockRejectedValue(new Error("error error"));
+      jest.spyOn(api as any, "fetchMultipartFormData").mockRejectedValue(new Error("error error"));
       const blob = new Blob(["my blob data"]);
       const uuid = "some uuid";
       const response = await api.UploadSavedScene({
@@ -305,7 +313,7 @@ describe("MediaUploadApi", () => {
       const formData = new FormData();
       formData.append("uuid_idempotency_token", uuid);
       formData.append("file", blob, "some file name");
-      expect(api.fetch).toHaveBeenCalledWith(
+      expect((api as any).fetchMultipartFormData).toHaveBeenCalledWith(
         "http://localhost:3000/v1/media_files/upload/saved_scene/mt1",
         {
           method: "POST",

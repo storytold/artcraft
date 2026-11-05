@@ -1,3 +1,7 @@
+// DesktopCreatePageShell: the page layout shared by the Generate Image, Generate Video and Audio pages.
+// Used by pages/PageImage/TextToImage.tsx, pages/PageVideo/ImageToVideo.tsx and pages/PageAudio/CreateAudio.tsx.
+// It only lays out slots (feed list, prompt box, empty-state splash); the pages supply the real content.
+
 import { useEffect, useState, type ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
 import { CreateEmptyState } from "./CreateEmptyState";
@@ -12,8 +16,11 @@ import { CreateEmptyState } from "./CreateEmptyState";
 // switches, so this covers the reload) and fade out once content arrives.
 // With a genuinely empty library they simply stay.
 
+// How long (milliseconds) the empty-state splash fades out; must match the Tailwind duration-700 class below.
 const SPLASH_FADE_MS = 700;
 
+// hasContent: the feed has items to show; emptyStateTitle/Subtitle: text for the splash;
+// listContent: the feed itself; promptBox: the fixed prompt box; bottomRight: optional corner controls.
 interface DesktopCreatePageShellProps {
   hasContent: boolean;
   emptyStateTitle: string;
@@ -29,6 +36,10 @@ interface DesktopCreatePageShellProps {
   bottomRight?: ReactNode;
 }
 
+/**
+ * Full-height page frame: scrollable feed behind, splash on top, prompt box floating at the bottom.
+ * Returns the layout JSX; holds one piece of state (splashState) to drive the fade.
+ */
 export function DesktopCreatePageShell({
   hasContent,
   emptyStateTitle,
@@ -39,10 +50,14 @@ export function DesktopCreatePageShell({
   promptBox,
   bottomRight,
 }: DesktopCreatePageShellProps) {
+  // Splash life cycle: visible -> fading (opacity transition) -> hidden (unmounted).
   const [splashState, setSplashState] = useState<
     "visible" | "fading" | "hidden"
   >("visible");
 
+  // Runs whenever content appears/disappears. When the first content arrives, start the fade and unmount
+  // the splash after SPLASH_FADE_MS (the cleanup cancels the timer if we re-run early). If the feed
+  // empties again after being hidden, show the splash again.
   useEffect(() => {
     if (hasContent && splashState === "visible") {
       setSplashState("fading");

@@ -3,6 +3,20 @@ import Konva from "konva";
 import { addCanvasImageFromFile } from "../addCanvasImageFile";
 import type { MoodboardAdapter } from "../../adapter";
 
+// The middle of the visible viewport, in CANVAS coordinates. The stage can be
+// panned (x/y) and zoomed (scale), and nodes are placed in canvas space, so the
+// raw screen centre must be mapped back through that transform. (Pasting used
+// the raw screen centre, so images landed off-screen once the view was moved.)
+export const viewportCenterOnCanvas = (
+  stage: Konva.Stage | null,
+): { x: number; y: number } => {
+  if (!stage) return { x: 400, y: 400 };
+  return {
+    x: (stage.width() / 2 - stage.x()) / stage.scaleX(),
+    y: (stage.height() / 2 - stage.y()) / stage.scaleY(),
+  };
+};
+
 // Listens for paste events while the moodboard page is mounted. For each
 // image entry on the clipboard, immediately drops a blob-URL image onto the
 // canvas at the viewport center, then asynchronously uploads it and writes
@@ -33,10 +47,7 @@ export const usePasteHandler = (
       if (fileItems.length === 0) return;
       e.preventDefault();
 
-      const stage = stageRef.current;
-      const center = stage
-        ? { x: stage.width() / 2, y: stage.height() / 2 }
-        : { x: 400, y: 400 };
+      const center = viewportCenterOnCanvas(stageRef.current);
 
       for (const file of fileItems) {
         await addCanvasImageFromFile({ file, position: center, adapter });

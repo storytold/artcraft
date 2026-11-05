@@ -1,3 +1,8 @@
+// desktopMediaActions: helper functions for actions on a finished media item (download, share link, make a video from it,
+// recreate it). Used by DesktopGenerationGallery.tsx and by the TopBar's gallery modal/lightbox wiring (TopBar.tsx).
+// They talk to the Tauri backend through @storyteller/tauri-api (downloads), the web backend through PromptsApi
+// (@storyteller/api), and change the prompt-box, model-selector and tab stores directly via getState().
+
 import toast from "react-hot-toast";
 import {
   FilterMediaClasses,
@@ -44,11 +49,19 @@ import { useTabStore } from "~/pages/Stores/TabState";
 // the create pages' generation feed (rows + cards). All of them operate on
 // global stores via getState(), so they're safe to call from anywhere.
 
+// Public web address; the media token is appended to build a share link.
 export const SHARE_URL_BASE = "https://getartcraft.com/media/";
 
 /** Download a media file, prompting for a location when configured to. */
+// url: file to save; mediaClass: "image"/"video"/... used only for the success message; model: used in the saved file name.
+// A failure on the default route is only logged here: the Rust download command flashes its own failure toast (MainApp.tsx shows it).
+// Every other failure (working out the save location, or the plugin download to a path the user picked) never reaches
+// that Rust command, so this function shows the toast for those itself; otherwise the user would see nothing at all.
 export async function downloadMediaFileToDisk(url: string, mediaClass?: string, model?: string) {
+  // Flips to true just before the Rust download command runs; from then on Rust reports a failure, so no second toast here.
+  let rustReportsFailure = false;
   try {
+    // Ask the Rust side where to save. null = user cancelled; a string = a path they chose; anything else = use the default folder.
     const chosenPath = await promptDownloadLocationIfNeeded(url, model);
     if (chosenPath === null) {
       // User dismissed the picker.
@@ -57,6 +70,7 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string, 
     if (typeof chosenPath === "string") {
       await downloadUrlToPath(url, chosenPath);
     } else {
+      rustReportsFailure = true;
       await DownloadUrl(url, { model });
     }
     if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
@@ -66,8 +80,10 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string, 
     }
   } catch (error) {
     console.error(">>> Failed to download file:", error);
-    // NB: Rust/Tauri should now flash a toast instead.
-    //toast.error("Failed to download file");
+    // NB: on the default route Rust/Tauri already flashed a toast; every other route has to say so itself.
+    if (!rustReportsFailure) {
+      toast.error("Failed to download file");
+    }
   }
 }
 
@@ -91,6 +107,7 @@ export async function downloadMediaFilesToFolder(
     return false;
   }
 
+  // One toast that is updated in place ("Saving 2 of 5...") instead of stacking many toasts.
   const toastId = toast.loading(`Saving 1 of ${downloadable.length}…`);
   let failedCount = 0;
   for (let i = 0; i < downloadable.length; i++) {
@@ -110,6 +127,7 @@ export async function downloadMediaFilesToFolder(
     }
   }
 
+  // Successful count = total minus failures; the toast wording depends on all / some / none saved.
   const saved = downloadable.length - failedCount;
   if (failedCount === 0) {
     toast.success(`Saved ${saved} ${saved === 1 ? "file" : "files"}`, {
@@ -127,8 +145,10 @@ export async function downloadMediaFilesToFolder(
 }
 
 /** Seed the video page with `url` as the starting image and switch to it. */
+// mediaToken (optional) links the reference image back to the library item it came from.
 export async function applyMakeVideoFromImage(url: string, mediaToken?: string) {
   try {
+    // A RefImage needs a File; an empty placeholder File is enough because the picture is loaded from url.
     const referenceImage: RefImage = {
       id: Math.random().toString(36).substring(7),
       url,
@@ -138,6 +158,7 @@ export async function applyMakeVideoFromImage(url: string, mediaToken?: string) 
     // Update zustand store for Video directly
     usePromptVideoStore.getState().setReferenceImages([referenceImage]);
     useTabStore.getState().setActiveTab("VIDEO");
+    // Close the gallery modal/lightbox (these are signals, set through .value) so the user sees the create page.
     galleryModalVisibleViewMode.value = false;
     galleryModalVisibleDuringDrag.value = false;
     galleryModalLightboxVisible.value = false;
@@ -167,6 +188,7 @@ export function applyRecreateFromPromptData(data: {
   mediaClass: string | undefined;
 }) {
   try {
+    // promptData is the saved record of the original request (prompt text, settings, reference images, model).
     const { promptData, mediaClass: recreateMediaClass } = data;
     const contextImages = promptData.maybe_context_images || [];
 
@@ -176,6 +198,7 @@ export function applyRecreateFromPromptData(data: {
     const vidRefs: RefVideo[] = [];
     const audioRefs: RefAudio[] = [];
 
+    // Sort the saved reference media into buckets by the role each played in the original request.
     for (const ci of contextImages) {
       const base = {
         id: Math.random().toString(36).substring(7),
@@ -209,6 +232,7 @@ export function applyRecreateFromPromptData(data: {
     }
 
     // Determine input mode from generation_mode or context image semantics
+    // Decide whether the video was made from start/end frames ("keyframe") or from reference images ("reference").
     const hasKeyframeSemantics = contextImages.some(
       (ci) =>
         ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
@@ -222,12 +246,14 @@ export function applyRecreateFromPromptData(data: {
             ? "reference"
             : "keyframe";
 
+    // Global model selector; used below to preselect the same model that made the original.
     const modelStore = useClassyModelSelectorStore.getState();
 
     if (recreateMediaClass === "video") {
       const videoStore = usePromptVideoStore.getState();
 
       // Set model first so the UI syncs sizeOptions / durationOptions
+      // Look the model up by its Tauri id or app id in the live models store, falling back to the built-in catalogue.
       const videoModel = promptData.maybe_model_type
         ? useModelsStore.getState().videoModels.find((model) => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type)
           ?? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type)
@@ -236,13 +262,15 @@ export function applyRecreateFromPromptData(data: {
         modelStore.setSelectedModel(ModelPage.ImageToVideo, videoModel);
       }
 
-      if (promptData.maybe_positive_prompt) {
-        videoStore.setPrompt(promptData.maybe_positive_prompt);
-      }
-      if (imgRefs.length > 0) videoStore.setReferenceImages(imgRefs);
-      if (endFrameImage) videoStore.setEndFrameImage(endFrameImage);
-      if (vidRefs.length > 0) videoStore.setReferenceVideos(vidRefs);
-      if (audioRefs.length > 0) videoStore.setReferenceAudios(audioRefs);
+      // FIX: Recreate means "run the original request again", so every slot is SET from the saved record,
+      // and a slot the original did not use is CLEARED. Skipping the empty ones used to leave the previous
+      // session's prompt, reference images, end frame, reference videos and audio in the box, which then got
+      // silently sent along with the "recreated" request.
+      videoStore.setPrompt(promptData.maybe_positive_prompt ?? "");
+      videoStore.setReferenceImages(imgRefs);
+      videoStore.setEndFrameImage(endFrameImage);
+      videoStore.setReferenceVideos(vidRefs);
+      videoStore.setReferenceAudios(audioRefs);
       if (promptData.maybe_generate_audio !== null) {
         videoStore.setGenerateWithSound(promptData.maybe_generate_audio);
       }
@@ -273,10 +301,9 @@ export function applyRecreateFromPromptData(data: {
       // Default to image
       const imageStore = usePromptImageStore.getState();
 
-      if (promptData.maybe_positive_prompt) {
-        imageStore.setPrompt(promptData.maybe_positive_prompt);
-      }
-      if (imgRefs.length > 0) imageStore.setReferenceImages(imgRefs);
+      // FIX: same set-or-clear rule as the video branch above.
+      imageStore.setPrompt(promptData.maybe_positive_prompt ?? "");
+      imageStore.setReferenceImages(imgRefs);
       if (promptData.maybe_aspect_ratio) {
         imageStore.setCommonAspectRatio(
           promptData.maybe_aspect_ratio as CommonAspectRatio,
@@ -296,6 +323,7 @@ export function applyRecreateFromPromptData(data: {
       useTabStore.getState().setActiveTab("IMAGE");
     }
 
+    // Close the gallery modal/lightbox, as above.
     galleryModalVisibleViewMode.value = false;
     galleryModalVisibleDuringDrag.value = false;
     galleryModalLightboxVisible.value = false;

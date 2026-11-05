@@ -59,6 +59,7 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
+import { isImeKeyDown } from "./common/imeKey";
 
 declare global {
   interface Window {
@@ -1206,13 +1207,6 @@ export const PromptBoxVideo = ({
       return request;
     };
 
-    window.__storeTaskEnqueueMeta?.({
-      prompt,
-      refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
-      modelType: (selectedModel as any)?.tauriId || String(selectedModel),
-      timestamp: Date.now(),
-    });
-
     const subscriberIds: string[] = [];
     const enqueuePromises: Promise<unknown>[] = [];
 
@@ -1221,6 +1215,15 @@ export const PromptBoxVideo = ({
         ? crypto.randomUUID()
         : Math.random().toString(36).slice(2);
       subscriberIds.push(subscriberId);
+      // Each task claims one saved record (prompt + reference thumbnails) when it shows up in the Task Queue and the
+      // feed (see taskEnqueueMeta.ts), so a press that starts `count` tasks must save `count` records. One record
+      // only covered the first task; the other cards had no prompt or thumbnails.
+      window.__storeTaskEnqueueMeta?.({
+        prompt,
+        refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
+        modelType: (selectedModel as any)?.tauriId || String(selectedModel),
+        timestamp: Date.now(),
+      });
       enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }
 
@@ -1243,6 +1246,10 @@ export const PromptBoxVideo = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Keys pressed while an IME is composing (Japanese/Chinese/Korean typing) belong to the IME: its Enter confirms the
+    // chosen word. Treating it as a real Enter started a paid generation (Enter-to-generate) or picked an @-mention.
+    if (isImeKeyDown(e)) return;
+
     // Handle mention dropdown navigation
     if (mentionOpen && mentionItems.length > 0) {
       if (e.key === "ArrowDown") {

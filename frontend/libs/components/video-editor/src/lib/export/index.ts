@@ -66,5 +66,6 @@ export function downloadBuffer({
   document.body.appendChild(downloadLink);
   downloadLink.click();
   document.body.removeChild(downloadLink);
-  URL.revokeObjectURL(url);
+  // FIX: same as downloadBlob: defer the revoke so the download can start.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

@@ -27,6 +27,7 @@ import {
   GenerateImageRequest,
 } from "@storyteller/tauri-api";
 import { usePrompt3DStore, useEnterToGenerateStore } from "./promptStore";
+import { isImeKeyDown } from "./common/imeKey";
 import { gtagEvent } from "@storyteller/google-analytics";
 import {
   CommonAspectRatio,
@@ -540,6 +541,8 @@ export const PromptBox3D = ({
     e.stopPropagation();
 
     if (e.key !== "Enter") return;
+    // FIX: Enter that confirms an IME composition (Japanese/Chinese/Korean) must not submit the prompt; same guard as the other prompt boxes.
+    if (isImeKeyDown(e)) return;
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();

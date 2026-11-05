@@ -7,7 +7,7 @@ interface SignupRequest {
   password: string;
   password_confirmation: string;
   signup_source?: string;
-};
+}
 
 export class UsersApi extends ApiManager {
   public GetSession(): Promise<
@@ -130,13 +130,13 @@ export class UsersApi extends ApiManager {
     signupSource?: string;
   }): Promise<ApiResponse<{ signedSession?: string }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/create_account`;
-    let body: SignupRequest = {
+    const body: SignupRequest = {
       email_address: email,
       password,
       password_confirmation: passwordConfirmation,
       username,
     };
-    if (!!signupSource) {
+    if (signupSource) {
       body.signup_source = signupSource;
     }
     return await this.post<

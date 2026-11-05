@@ -1,10 +1,10 @@
 use crate::credentials::grok_cookies::GrokCookies;
-use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::requests::image_websocket::create_listen_websocket::{create_listen_websocket, CreateListenWebsocketArgs};
 use crate::requests::image_websocket::grok_websocket::GrokWebsocket;
 use crate::requests::image_websocket::messages::websocket_client_message::{ClientMessageAspectRatio, WebsocketClientMessage};
 use log::{error, info};
+use std::fmt::Display;
 
 pub struct PromptWebsocketImageWithRetryArgs<'a> {
   pub websocket: &'a mut GrokWebsocket,
@@ -18,50 +18,66 @@ pub struct PromptWebsocketImageWithRetryResult {
 }
 
 
+/// How many times the prompt is sent before giving up.
+const MAX_ATTEMPTS: usize = 3;
+
 pub async fn prompt_websocket_image_with_retry(args: PromptWebsocketImageWithRetryArgs<'_>) -> Result<PromptWebsocketImageWithRetryResult, GrokError>
 {
-  let mut maybe_new_websocket : Option<GrokWebsocket> = None;
+  let message = WebsocketClientMessage::new_image_prompt(args.prompt, args.aspect_ratio);
+  let cookies = args.cookies;
 
-  for i in 0..3 {
-    info!("Starting Grok Websocket image generation (attempt {}) ...", (i+1));
-
-    let message = WebsocketClientMessage::new_image_prompt(args.prompt, args.aspect_ratio);
-
-    let result =
-        if let Some(websocket) = maybe_new_websocket.as_mut() {
-          websocket.send_serializable(&message).await
-        } else {
-          args.websocket.send_serializable(&message).await
-        };
-
-    match result {
-      Ok(()) => {
-        break;
-      }
-      Err(GrokError::Client(GrokClientError::WreqClientError(err))) => {
-        error!("Error sending message to websocket (WreqClientError): {}", err);
-      }
-      Err(GrokError::Client(err)) => {
-        error!("Error sending message to websocket (GrokClientError): {}", err);
-      }
-      Err(GrokError::ApiSpecific(err)) => {
-        error!("Error sending message to websocket (GrokSpecificApiError): {}", err);
-      }
-      Err(GrokError::ApiGeneric(err)) => {
-        error!("Error sending message to websocket (GrokGenericApiError): {}", err);
-      }
-    }
-
-    let result = create_listen_websocket(CreateListenWebsocketArgs {
-      cookies: args.cookies.as_str(),
-    }).await?;
-
-    maybe_new_websocket = Some(GrokWebsocket::new(result));
-  }
+  let maybe_new_websocket = send_with_reconnect(
+    args.websocket,
+    MAX_ATTEMPTS,
+    async |websocket: &mut GrokWebsocket| websocket.send_serializable(&message).await,
+    async || {
+      let websocket = create_listen_websocket(CreateListenWebsocketArgs {
+        cookies: cookies.as_str(),
+      }).await?;
+      Ok(GrokWebsocket::new(websocket))
+    },
+  ).await?;
 
   Ok(PromptWebsocketImageWithRetryResult {
     maybe_new_websocket,
   })
+}
+
+/// Sends with `send` on `first`, and after each failure reconnects with `reconnect` and sends on the
+/// new connection, up to `attempts` sends. Returns the replacement connection when one was needed.
+/// The last failure is returned as an error: a prompt that was never sent must not look sent.
+async fn send_with_reconnect<W, E: Display>(
+  first: &mut W,
+  attempts: usize,
+  mut send: impl AsyncFnMut(&mut W) -> Result<(), E>,
+  mut reconnect: impl AsyncFnMut() -> Result<W, E>,
+) -> Result<Option<W>, E> {
+  let mut maybe_new : Option<W> = None;
+
+  for i in 0..attempts {
+    info!("Starting Grok Websocket image generation (attempt {}) ...", (i+1));
+
+    let result = match maybe_new.as_mut() {
+      Some(websocket) => send(websocket).await,
+      None => send(first).await,
+    };
+
+    match result {
+      Ok(()) => return Ok(maybe_new),
+      Err(err) => {
+        error!("Error sending message to websocket: {}", err);
+        // Out of attempts: report the failure instead of reconnecting for a send that never comes.
+        if i + 1 == attempts {
+          return Err(err);
+        }
+      }
+    }
+
+    maybe_new = Some(reconnect().await?);
+  }
+
+  // Only reachable with zero attempts.
+  Ok(maybe_new)
 }
 
 #[cfg(test)]
@@ -80,6 +96,59 @@ mod tests {
   use std::io::Write;
   use std::time::Duration;
   use wreq::ws::message::{CloseCode, Message, Utf8Bytes};
+  use super::send_with_reconnect;
+
+  #[tokio::test]
+  async fn a_prompt_that_fails_every_attempt_is_an_error_not_a_success() {
+    let mut first = 0_u32;
+    let mut sends = 0;
+    let mut reconnects = 0;
+
+    let result = send_with_reconnect(
+      &mut first,
+      3,
+      async |_: &mut u32| { sends += 1; Err::<(), String>("closed".to_string()) },
+      async || { reconnects += 1; Ok::<u32, String>(1) },
+    ).await;
+
+    assert_eq!(result, Err("closed".to_string()));
+    assert_eq!(sends, 3);
+    // No reconnect after the final failed send.
+    assert_eq!(reconnects, 2);
+  }
+
+  #[tokio::test]
+  async fn a_send_that_works_after_a_reconnect_returns_the_new_connection() {
+    let mut first = 0_u32;
+    let mut sends = 0;
+
+    let result = send_with_reconnect(
+      &mut first,
+      3,
+      async |websocket: &mut u32| {
+        sends += 1;
+        if *websocket == 0 { Err("closed".to_string()) } else { Ok(()) }
+      },
+      async || Ok::<u32, String>(7),
+    ).await;
+
+    assert_eq!(result, Ok(Some(7)));
+    assert_eq!(sends, 2);
+  }
+
+  #[tokio::test]
+  async fn a_first_send_that_works_keeps_the_connection() {
+    let mut first = 0_u32;
+
+    let result = send_with_reconnect(
+      &mut first,
+      3,
+      async |_: &mut u32| Ok::<(), String>(()),
+      async || Ok::<u32, String>(7),
+    ).await;
+
+    assert_eq!(result, Ok(None));
+  }
 
   #[tokio::test]
   #[ignore] // manually test

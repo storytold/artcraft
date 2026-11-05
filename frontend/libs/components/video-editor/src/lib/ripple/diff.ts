@@ -126,9 +126,11 @@ function collectTrackIntervals({
     }
 
     if (beforeElement.endTime > afterElement.endTime) {
+      // A clip that jumped left by more than its own length only gave up its old
+      // slot; the stretch between the new end and the old start was never its.
       pushInterval({
         intervals: vacatedIntervals,
-        startTime: afterElement.endTime,
+        startTime: Math.max(afterElement.endTime, beforeElement.startTime),
         endTime: beforeElement.endTime,
       });
     }

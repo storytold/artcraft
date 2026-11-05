@@ -153,12 +153,26 @@ export const useViewportControls = (
       }
     };
 
+    // FIX: when the window loses focus (Cmd+Tab, Cmd+Space/Spotlight, a native
+    // dialog) the matching keyup / mouseup goes to another app and never
+    // arrives here. Space then stayed "held" (every later left-click panned
+    // instead of selecting, cursor stuck on grab) and an in-flight pan kept
+    // following the mouse with no button down. Nothing to do when idle, so an
+    // unrelated blur doesn't touch a cursor someone else set.
+    const handleBlur = () => {
+      if (!spaceHeld.current && !panState.current.active) return;
+      spaceHeld.current = false;
+      endPan();
+      container.style.cursor = "";
+    };
+
     // Capture-phase so we run BEFORE Konva's internal mousedown dispatch.
     // stopPropagation inside pan-claim branches then prevents Konva from
     // forwarding the event to node/stage handlers.
     container.addEventListener("mousedown", handleMouseDown, { capture: true });
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("blur", handleBlur);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
     return () => {
@@ -167,6 +181,7 @@ export const useViewportControls = (
       } as EventListenerOptions);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("blur", handleBlur);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
       container.style.cursor = "";

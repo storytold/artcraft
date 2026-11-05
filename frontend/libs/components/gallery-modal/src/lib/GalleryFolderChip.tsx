@@ -18,8 +18,12 @@ interface GalleryFolderChipProps {
 
 /** A folder thumbnail that removes itself on error so a fallback can show. */
 const ChipImg = ({ src, className }: { src: string; className: string }) => {
-  const [failed, setFailed] = useState(false);
-  if (failed)
+  // BUG FIX: this used to be a boolean `failed` flag that was never reset. React
+  // reuses this component at the same tree position, so after one broken url
+  // (e.g. a deleted cover) a NEW src (cover replaced / collage refreshed) kept
+  // showing the grey placeholder forever. Remember WHICH src failed instead.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (failedSrc === src)
     return <div className={twMerge(className, "bg-ui-controls/30")} />;
   return (
     <img
@@ -27,7 +31,7 @@ const ChipImg = ({ src, className }: { src: string; className: string }) => {
       alt=""
       draggable={false}
       className={className}
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
     />
   );
 };

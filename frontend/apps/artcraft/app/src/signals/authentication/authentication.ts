@@ -1,6 +1,6 @@
 import { computed, signal } from "@preact/signals-core";
 import { ActiveSubscriptions, UserInfo } from "~/models";
-import { AUTH_STATUS, LoyaltyProgram, USER_FEATURE_FLAGS } from "~/enums";
+import { AUTH_STATUS, LoyaltyProgram } from "~/enums";
 
 const status = signal<AUTH_STATUS>(AUTH_STATUS.INIT);
 const userInfo = signal<UserInfo | undefined>(undefined);

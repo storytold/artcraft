@@ -12,6 +12,8 @@ const SEVERITY = {
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
+  // Vendored, minified third-party builds (e.g. the emscripten Ammo.js bundle) are not ours to lint.
+  ignorePatterns: ["app/public/jsm/libs/**"],
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
@@ -82,6 +84,14 @@ module.exports = {
         "plugin:import/recommended",
         "plugin:import/typescript",
       ],
+    },
+
+    // Tests: mocks and endpoint fixtures deliberately use loose types.
+    {
+      files: ["test/**/*.{ts,tsx}", "**/*.{spec,test}.{ts,tsx}"],
+      rules: {
+        "@typescript-eslint/no-explicit-any": SEVERITY.OFF,
+      },
     },
 
     // Node

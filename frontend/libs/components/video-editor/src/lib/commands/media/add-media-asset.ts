@@ -42,7 +42,24 @@ export class AddMediaAssetCommand extends Command {
   undo(): void {
     if (!this.savedAssets) return;
     const editor = EditorCore.getInstance();
-    editor.media.setAssets({ assets: this.savedAssets });
+
+    // FIX: undo used to put back the whole asset list snapshotted in execute(),
+    // which also threw away every asset added AFTER this command by something
+    // outside the undo history (the assets panel and timeline drag-drop call
+    // editor.media.addMediaAsset directly). Remove only the entry this command
+    // appended instead. execute() appends at the end, so it is the last entry
+    // with this id; removing just that one also leaves a same-id asset that was
+    // already in the bin untouched. If it is already gone there is nothing to do.
+    const current = editor.media.getAssets();
+    const appendedIndex = current.map((a) => a.id).lastIndexOf(this.asset.id);
+    if (appendedIndex !== -1) {
+      editor.media.setAssets({
+        assets: [
+          ...current.slice(0, appendedIndex),
+          ...current.slice(appendedIndex + 1),
+        ],
+      });
+    }
 
     // If execute() ratcheted the project FPS up to accommodate this
     // media, roll it back. previousProjectFps is the rate the project

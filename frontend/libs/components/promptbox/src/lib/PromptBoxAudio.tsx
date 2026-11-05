@@ -47,6 +47,7 @@ import {
 import { AudioTuningPopover } from "./common/AudioTuningPopover";
 import { SoundsSettingsPopover } from "./common/SoundsSettingsPopover";
 import { StylePromptRow } from "./common/StylePromptRow";
+import { isImeKeyDown } from "./common/imeKey";
 
 const DEFAULT_AUDIO_MODEL_ID = "suno_music";
 
@@ -350,6 +351,8 @@ export const PromptBoxAudio = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key !== "Enter") return;
+    // The Enter that confirms an IME word (Japanese/Chinese/Korean typing) is not a request to generate.
+    if (isImeKeyDown(e)) return;
     if (enterToGenerate && !e.shiftKey) {
       e.preventDefault();
       handleEnqueue();

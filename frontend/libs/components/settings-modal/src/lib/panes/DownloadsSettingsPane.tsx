@@ -71,37 +71,52 @@ export const DownloadsSettingsPane = () => {
     setPreferences(prefs.preferences);
   };
 
-  const openDirectoryPicker = async () => {
-    let directory = await open({
-      multiple: false,
-      directory: true,
-      defaultPath: downloadDirectory || undefined,
-    });
-    if (directory === null) {
-      return; // User dismissed the dialog choice
+  // WHY: these three click handlers awaited Tauri calls with no catch, so a
+  // failed preference write or dialog became an unhandled promise rejection
+  // and the user saw nothing. Report it through the pane's existing alert.
+  const runDirectoryAction = async (action: () => Promise<void>) => {
+    setSettingsError(null);
+    try {
+      await action();
+    } catch (error) {
+      setSettingsError(String(error));
     }
-    await UpdateAppPreferences({
-      preference: PreferenceName.PreferredDownloadDirectory,
-      value: {
-        custom: directory,
-      } as CustomDirectory,
-    });
-    await reloadPreferences();
   };
 
-  const clearDirectory = async () => {
-    await UpdateAppPreferences({
-      preference: PreferenceName.PreferredDownloadDirectory,
-      value: {
-        system: "downloads",
-      } as SystemDirectory,
+  const openDirectoryPicker = () =>
+    runDirectoryAction(async () => {
+      let directory = await open({
+        multiple: false,
+        directory: true,
+        defaultPath: downloadDirectory || undefined,
+      });
+      if (directory === null) {
+        return; // User dismissed the dialog choice
+      }
+      await UpdateAppPreferences({
+        preference: PreferenceName.PreferredDownloadDirectory,
+        value: {
+          custom: directory,
+        } as CustomDirectory,
+      });
+      await reloadPreferences();
     });
-    await reloadPreferences();
-  };
 
-  const showDirectory = async () => {
-    await DownloadDirectoryReveal();
-  };
+  const clearDirectory = () =>
+    runDirectoryAction(async () => {
+      await UpdateAppPreferences({
+        preference: PreferenceName.PreferredDownloadDirectory,
+        value: {
+          system: "downloads",
+        } as SystemDirectory,
+      });
+      await reloadPreferences();
+    });
+
+  const showDirectory = () =>
+    runDirectoryAction(async () => {
+      await DownloadDirectoryReveal();
+    });
 
   const toggleAutoDownload = async (enabled: boolean) => {
     setSaving(true);

@@ -378,7 +378,7 @@ fn highlight(text: &str, mentions: &[MentionItem]) -> LayoutJob {
   let bytes = text.as_bytes();
   let (mut start, mut i) = (0, 0);
   while i < text.len() {
-    let hit = (bytes[i] == b'@').then(|| sorted.iter().find(|m| text.get(i..i + m.label.len()).is_some_and(|s| s.eq_ignore_ascii_case(&m.label)))).flatten();
+    let hit = (bytes[i] == b'@').then(|| sorted.iter().find(|m| is_mention_at(text, i, &m.label))).flatten();
     match hit {
       Some(m) => {
         job.append(&text[start..i], 0.0, plain.clone());
@@ -392,6 +392,12 @@ fn highlight(text: &str, mentions: &[MentionItem]) -> LayoutJob {
   }
   job.append(&text[start..], 0.0, plain);
   job
+}
+
+/// Whether `label` starts at byte `i` of `text` as a whole word: the same rule submitting uses, so `@Bob` is not found inside `@Bobby`.
+fn is_mention_at(text: &str, i: usize, label: &str) -> bool {
+  let end = i + label.len();
+  text.get(i..end).is_some_and(|s| s.eq_ignore_ascii_case(label)) && !text[end..].chars().next().is_some_and(|c| c.is_alphanumeric() || c == '_')
 }
 
 /// `@Name` mentions for characters (newest first), coloured by position.
@@ -421,6 +427,15 @@ mod tests {
     let coloured: Vec<&str> = job.sections.iter().filter(|s| s.format.color != theme::INK).map(|s| &job.text[s.byte_range.start.0..s.byte_range.end.0]).collect();
     assert_eq!(coloured, ["@image2", "@Image1"]);
     assert_eq!(mentions[1].color(), IMAGE_COLORS[1]);
+  }
+
+  #[test]
+  fn a_mention_is_not_coloured_inside_a_longer_word() {
+    // Submitting only counts `@Bob` when the next character is not a letter, digit or `_`, so the colour must follow the same rule.
+    let mentions = character_mentions([("Bob", "t1", None)].into_iter());
+    let job = highlight("hi @Bobby and @Bob_2, then @Bob.", &mentions);
+    let coloured: Vec<&str> = job.sections.iter().filter(|s| s.format.color != theme::INK).map(|s| &job.text[s.byte_range.start.0..s.byte_range.end.0]).collect();
+    assert_eq!(coloured, ["@Bob"], "only the last, whole-word @Bob is a mention");
   }
 
   #[test]

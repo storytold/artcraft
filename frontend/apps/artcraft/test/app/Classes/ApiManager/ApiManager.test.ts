@@ -14,11 +14,12 @@ describe("ApiManager", () => {
   });
   it("should populate the environment variables", () => {
     expect(apiManager.ApiTargets).toEqual({
-      BaseApi: "http://localhost:3000",
+      // BaseApi is gone: the base URL now comes from StorytellerApiHostStore (see ApiManager.ts).
       CdnApi: undefined,
       FunnelApi: undefined,
       GoggleApi: undefined,
       GravatarApi: undefined,
+      uploadApi: undefined,
     });
   });
 });

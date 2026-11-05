@@ -267,7 +267,15 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
 
       const arrayBuffer = await response.arrayBuffer();
       const audioContext = new AudioContext();
-      const buffer = await audioContext.decodeAudioData(arrayBuffer);
+      // FIX: the context was only used to decode, but was never closed. Each
+      // sound added opened one more, and browsers cap how many can be open
+      // (Chromium allows about six), after which adding sounds fails.
+      let buffer: AudioBuffer;
+      try {
+        buffer = await audioContext.decodeAudioData(arrayBuffer);
+      } finally {
+        void audioContext.close().catch(() => undefined);
+      }
 
       const element = buildLibraryAudioElement({
         sourceUrl: audioUrl,

@@ -85,7 +85,8 @@ pub async fn download_url_command(
         error_type = DownloadUrlErrorType::FilesystemError;
 
         flash_error_type = FlashFileDownloadErrorType::FileAlreadyDownloaded;
-        flash_message = Some(format!("File already downloaded: {:?}", path));
+        // `{:?}` would print the path in quotes with escapes; this text goes straight into a toast.
+        flash_message = Some(format!("File already downloaded: {}", path.display()));
         flash_filename = Some(path);
       }
       _ => {}, // NB: Fall-through

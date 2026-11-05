@@ -5,7 +5,7 @@ import { useResolvedKeybinds } from "../useResolvedKeybinds";
 import { useKeybindCapture } from "../useKeybindCapture";
 import { ACTIONS, ACTIONS_BY_SURFACE } from "../registry";
 import { BASE_BINDINGS, PRESETS } from "../presets";
-import { bindingsEqual } from "../matcher";
+import { bindingHasModifier, bindingsEqual } from "../matcher";
 import { ActionDef, ActionId, Binding, PresetId, Surface } from "../types";
 import { KbdBindings } from "../components/Kbd";
 import { KeybindCaptureInput } from "../components/KeybindCaptureInput";
@@ -64,6 +64,8 @@ export function KeybindsSettings({
   const [keyQuery, setKeyQuery] = useState<Binding | null>(null);
   const [listening, setListening] = useState(false); // key-mode capture armed
   const [pending, setPending] = useState<PendingConflict | null>(null);
+  // Set when a captured key was refused (a modifier chord on a held camera key); shown until dismissed or the next capture.
+  const [notice, setNotice] = useState<string | null>(null);
   const [openSurfaces, setOpenSurfaces] = useState<Record<Surface, boolean>>({
     global: true,
     pagescene: true,
@@ -132,6 +134,16 @@ export function KeybindsSettings({
     setBinding(id, [binding]);
 
   const handleCapture = (id: ActionId, binding: Binding) => {
+    setNotice(null);
+    // Held camera keys are matched by the bare key (Ctrl/Cmd+key never moves the camera, Shift/Alt only change its
+    // speed), so a chord would be saved and shown but could not do what the row says. Refuse it and say why.
+    const def = ACTIONS[id];
+    if (def?.continuous && bindingHasModifier(binding)) {
+      setNotice(
+        `“${def.label}” is a held key, so it can’t use Ctrl, Shift or Alt. Press a single key instead.`,
+      );
+      return;
+    }
     const conflicts = findConflicts(id, binding);
     if (conflicts.length) {
       setPending({ id, binding, conflicts });
@@ -197,6 +209,22 @@ export function KeybindsSettings({
             onConfirm={confirmRebind}
             onCancel={() => setPending(null)}
           />
+        )}
+
+        {notice && (
+          <div
+            role="status"
+            className="flex items-center justify-between gap-3 rounded-none bg-white/[0.06] p-3.5 text-[13px] leading-relaxed text-base-fg/80 ring-1 ring-white/15"
+          >
+            <span>{notice}</span>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="shrink-0 rounded-[3px] bg-white/[0.06] px-3 py-1 text-[13px] text-base-fg/80 transition-all hover:bg-white/10"
+            >
+              Dismiss
+            </button>
+          </div>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
+import { toast } from "@storyteller/ui-toaster";
 
 export interface FolderDropPromptOptions {
   count: number;
@@ -33,20 +34,26 @@ export function promptFolderDrop({
       </p>
     ),
     primaryActionText: "Move here",
-    onPrimaryAction: async () => {
-      try {
-        await onMove();
-      } finally {
-        isActionReminderOpen.value = false;
-      }
-    },
+    onPrimaryAction: () => runAction(onMove, "move"),
     secondaryActionText: "Add a copy",
-    onSecondaryAction: async () => {
-      try {
-        await onAdd();
-      } finally {
-        isActionReminderOpen.value = false;
-      }
-    },
+    onSecondaryAction: () => runAction(onAdd, "copy"),
   });
+}
+
+// BUG FIX: try/finally alone re-threw a failed move/copy as an unhandled
+// promise rejection (the modal's click handler never awaits it), so the user
+// saw the dialog just vanish with no hint that nothing was moved.
+async function runAction(
+  action: () => void | Promise<void>,
+  verb: string,
+): Promise<void> {
+  try {
+    await action();
+  } catch (err) {
+    toast.error(
+      `Failed to ${verb} items: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  } finally {
+    isActionReminderOpen.value = false;
+  }
 }

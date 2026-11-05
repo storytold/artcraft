@@ -362,10 +362,6 @@ export const TopBar = ({ pageName }: Props) => {
         return ["Studio", "Edit Image"];
       case "VIDEO_FRAME_EXTRACTOR":
         return ["Studio", "Frame Extractor"];
-      case "VIDEO_WATERMARK_REMOVAL":
-        return ["Studio", "Video Watermark Remover"];
-      case "IMAGE_WATERMARK_REMOVAL":
-        return ["Studio", "Image Watermark Remover"];
       case "IMAGE_TO_3D_OBJECT":
         return ["Create", "3D Object"];
       case "IMAGE_TO_3D_WORLD":
@@ -395,7 +391,7 @@ export const TopBar = ({ pageName }: Props) => {
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
   // Pick logo based on current theme (light uses black logo; others use white)
-  const [_logoSrc, setLogoSrc] = useState<string>(
+  const [, setLogoSrc] = useState<string>(
     "/resources/logo/artcraft-logo-color-white.svg",
   );
   useEffect(() => {

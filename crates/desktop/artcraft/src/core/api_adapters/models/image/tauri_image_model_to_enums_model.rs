@@ -8,7 +8,6 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
   match model {
     TauriImageModel::Flux1Dev => Some(CommonImageModel::Flux1Dev),
     TauriImageModel::Flux1Schnell => Some(CommonImageModel::Flux1Schnell),
-    TauriImageModel::FluxPro1 => Some(CommonImageModel::FluxPro11), // TODO: Might be a slight mismatch
     TauriImageModel::FluxPro11 => Some(CommonImageModel::FluxPro11),
     TauriImageModel::FluxPro11Ultra => Some(CommonImageModel::FluxPro11Ultra),
     TauriImageModel::GptImage1 => Some(CommonImageModel::GptImage1),
@@ -32,7 +31,20 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::GrokImage => None,
     TauriImageModel::Recraft3 => None,
     TauriImageModel::Midjourney => None, // NB: Generic Midjourney is served by the native Midjourney provider.
+    TauriImageModel::FluxPro1 => None, // NB: Flux Pro 1 is the inpainting model, served by its own endpoint. It is not Flux Pro 1.1.
     TauriImageModel::FluxProKontextMax => None,
     TauriImageModel::FluxDevJuggernaut => None,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn flux_pro_1_inpainting_is_not_sent_to_omni_as_flux_pro_1_1() {
+    // Flux Pro 1 is the inpainting model; Flux Pro 1.1 is a different, text-to-image model.
+    assert!(tauri_image_model_to_enums_model(TauriImageModel::FluxPro1).is_none());
+    assert!(tauri_image_model_to_enums_model(TauriImageModel::FluxPro11).is_some());
   }
 }

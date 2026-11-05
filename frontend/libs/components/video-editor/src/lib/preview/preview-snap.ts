@@ -101,8 +101,12 @@ export function snapPosition({
   const rotRad = (rotation * Math.PI) / 180;
   const cosR = Math.abs(Math.cos(rotRad));
   const sinR = Math.abs(Math.sin(rotRad));
-  const halfWidth = (elementSize.width * cosR + elementSize.height * sinR) / 2;
-  const halfHeight = (elementSize.width * sinR + elementSize.height * cosR) / 2;
+  // FIX: a flipped element reports a negative width/height. Mixed with the rotation terms below, the sign gave
+  // the wrong footprint (a flipped, rotated element snapped to the wrong edges), so use the absolute size.
+  const elementWidth = Math.abs(elementSize.width);
+  const elementHeight = Math.abs(elementSize.height);
+  const halfWidth = (elementWidth * cosR + elementHeight * sinR) / 2;
+  const halfHeight = (elementWidth * sinR + elementHeight * cosR) / 2;
   const activeLines: SnapLine[] = [];
 
   type AxisSnapCandidate = {

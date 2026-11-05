@@ -1,6 +1,9 @@
+//! Errors caused on our side, before or without any answer from fal.
+
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+/// A client-side mistake. Wrapped by `FalErrorPlus::ClientError`.
 #[derive(Debug)]
 pub enum FalClientError {
   /// The URL provided was invalid or pointed to an unexpected host.

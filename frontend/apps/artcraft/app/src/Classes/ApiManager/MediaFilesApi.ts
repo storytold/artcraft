@@ -6,14 +6,12 @@ import type {
 } from "@storyteller/ui-pagescene";
 import { ApiManager, ApiResponse } from "./ApiManager";
 import { authentication } from "~/signals";
-import type { Property } from "csstype";
-import { Visibility } from "~/enums";
-
-import {
+import { Visibility ,
   FilterEngineCategories,
   FilterMediaClasses,
   FilterMediaType,
 } from "~/enums";
+
 
 interface ListMediaQuery {
   sort_ascending?: boolean;

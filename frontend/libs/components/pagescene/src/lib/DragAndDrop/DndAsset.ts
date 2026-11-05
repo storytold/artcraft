@@ -69,6 +69,7 @@ class DndAsset {
   constructor() {
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
+    this.onPointerCancel = this.onPointerCancel.bind(this);
   }
 
   onPointerDown(
@@ -92,6 +93,10 @@ class DndAsset {
         this.beginClipInspection(editor, item.media_id);
       }
       window.addEventListener("pointerup", this.onPointerUp);
+      // FIX: also listen for pointercancel (touch/pen interrupted by the OS,
+      // a system gesture, etc.). The browser then never sends pointerup, so
+      // the drag ghost, dim state and window listeners stayed stuck forever.
+      window.addEventListener("pointercancel", this.onPointerCancel);
       window.addEventListener("pointermove", this.onPointerMove);
     }
   }
@@ -139,8 +144,32 @@ class DndAsset {
     return positionX <= size.width;
   }
 
+  // FIX: a cancelled pointer gesture must end the drag WITHOUT dropping the
+  // asset (the user never released it over anything). It mirrors the
+  // pointerup bookkeeping — drop the window listeners and reset drag state —
+  // but skips every add/drop call.
+  onPointerCancel() {
+    window.removeEventListener("pointerup", this.onPointerUp);
+    window.removeEventListener("pointercancel", this.onPointerCancel);
+    window.removeEventListener("pointermove", this.onPointerMove);
+
+    if (this.isDragging) {
+      // A real drag was in flight: reuse the normal end-of-drag reset.
+      this.endDrag();
+      return;
+    }
+    // Never crossed the drag threshold: just clear the press state.
+    const store = usePageSceneStore.getState();
+    store.setDragItem(null);
+    store.setDragPosition({ currX: 0, currY: 0 });
+    this.editor = null;
+  }
+
   onPointerUp(event: PointerEvent) {
     window.removeEventListener("pointerup", this.onPointerUp);
+    // FIX: pointerup and pointercancel are mutually exclusive; drop the
+    // cancel listener too so it cannot fire later for a finished gesture.
+    window.removeEventListener("pointercancel", this.onPointerCancel);
     window.removeEventListener("pointermove", this.onPointerMove);
 
     const store = usePageSceneStore.getState();

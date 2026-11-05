@@ -24,10 +24,11 @@ import { PREVIEW_ZOOM_PRESETS } from "../zoom";
 import { usePreviewViewport } from "./preview-viewport";
 import type { MediaTime } from "../../wasm";
 
+// onToggleFullscreen is undefined where the webview cannot do full screen; the button is then not drawn.
 export function PreviewToolbar({
   onToggleFullscreen,
 }: {
-  onToggleFullscreen: () => void;
+  onToggleFullscreen: (() => void) | undefined;
 }) {
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center pb-3 pt-5 px-5">
@@ -49,9 +50,11 @@ export function PreviewToolbar({
             )}
           </Button>
         </GridPopover> */}
-        <Button variant="text" onClick={onToggleFullscreen}>
-          <HugeiconsIcon icon={FullScreenIcon} />
-        </Button>
+        {onToggleFullscreen && (
+          <Button variant="text" onClick={onToggleFullscreen}>
+            <HugeiconsIcon icon={FullScreenIcon} />
+          </Button>
+        )}
       </div>
     </div>
   );

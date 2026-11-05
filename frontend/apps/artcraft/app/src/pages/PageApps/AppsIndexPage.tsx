@@ -1,3 +1,7 @@
+// AppsIndexPage: the "Apps" home tab, a catalogue of every tool as a clickable card, grouped into Create and Edit.
+// Rendered by pages/MainApp.tsx when the APPS tab is active. The list of apps, their colors and badges come from
+// ~/config/appMenu; clicking a card calls goToApp, which switches the active tab. No network or Tauri calls.
+
 import { ArrowRightIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
@@ -10,9 +14,13 @@ import {
   type FullAppItem,
 } from "~/config/appMenu";
 
+/**
+ * Full-screen scrolling page with a heading and one section per category. Takes no props.
+ */
 export const AppsIndexPage = () => {
   const generateApps = useGenerateApps();
   const editApps = useEditApps();
+  // Section titles with their apps; the hook results already hide apps that are switched off.
   const categories = [
     { title: "Create", apps: generateApps },
     { title: "Edit", apps: editApps },
@@ -57,8 +65,13 @@ export const AppsIndexPage = () => {
   );
 };
 
+/**
+ * One tool card. Prop app: icon, label, description, optional badge (NEW / BEST / SOON ...) and the tab id to open.
+ */
 function AppCard({ app }: { app: FullAppItem }) {
+  // Per-app color classes (icon background, icon color, hover style).
   const palette = getAppCardPalette(app.id);
+  // An app with no action yet cannot be opened, so its card is disabled and dimmed.
   const enabled = !!app.action;
 
   return (

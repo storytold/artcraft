@@ -14,7 +14,8 @@ export const updateUserInfo = (
   newInfo: UserInfo | undefined,
   flush?: boolean,
 ) => {
-  console.log('updateUserInfo()', newInfo)
+  // Deliberately no logging of newInfo here: it holds the user's profile
+  // (username, email, ...) and must not end up in the browser console.
   if (newInfo && !flush) {
     //case of updating UserInfo partly
     authentication.userInfo.value = {

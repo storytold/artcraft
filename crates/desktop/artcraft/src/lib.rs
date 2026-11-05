@@ -90,6 +90,7 @@ use log::error;
 
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use tauri_plugin_dialog;
+use tauri_plugin_fs;
 use tauri_plugin_http;
 use tauri_plugin_log::Target;
 use tauri_plugin_log::TargetKind;
@@ -156,6 +157,7 @@ pub fn run() {
 
   let builder = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_upload::init())

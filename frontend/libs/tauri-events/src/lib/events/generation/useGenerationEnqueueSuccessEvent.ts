@@ -18,7 +18,6 @@ export const useGenerationEnqueueSuccessEvent = () => {
 
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<GenerationEnqueueSuccessEvent>>('generation-enqueue-success-event', async (event) => {
-        console.log("Generation enqueue success event received:", event);
         await SoundManager.playEnqueueSuccess();
         const message = makeMessage(event.payload.data);
         toast.success(message);

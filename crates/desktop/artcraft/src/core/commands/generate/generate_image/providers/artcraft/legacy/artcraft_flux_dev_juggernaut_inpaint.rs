@@ -82,7 +82,7 @@ pub async fn handle_flux_dev_juggernaut_inpaint(
   })
 }
 
-fn get_first_image_token(
+pub(super) fn get_first_image_token(
   request: &TauriGenerateImageRequest,
   semantic_media_files: &SemanticMediaFiles,
 ) -> Option<MediaFileToken> {

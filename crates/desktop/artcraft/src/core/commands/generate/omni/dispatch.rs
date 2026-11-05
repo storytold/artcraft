@@ -121,12 +121,31 @@ fn api_error(err: &StorytellerError) -> CommandErrorResponseWrapper<String, ()> 
     StorytellerError::Api(ApiError::Unauthorized(body) | ApiError::Forbidden(body)) => command_error(CommandErrorStatus::Unauthorized, "unauthorized", api_message(body)),
     StorytellerError::Api(ApiError::TooManyRequests(body)) => command_error(CommandErrorStatus::TooManyRequests, "too_many_requests", api_message(body)),
     StorytellerError::Api(ApiError::PaymentRequired(body)) => command_error(CommandErrorStatus::BadRequest, "billing_issue", api_message(body)),
-    _ => local_error(err),
+    _ => {
+      // FIX: this used to send `err.to_string()` ("Storyteller API error: InternalServerError { body: ... }"), which
+      // the frontend shows as-is in a toast. Keep the detail in the log and send a sentence.
+      error!("Omni generation request failed: {:?}", err);
+      command_error(CommandErrorStatus::ServerError, "server_error", friendly_message(err).to_string())
+    }
   }
 }
 
+fn friendly_message(err: &StorytellerError) -> &'static str {
+  match err {
+    StorytellerError::Api(ApiError::Timeout(_)) => "The request timed out. Please try again.",
+    StorytellerError::Api(ApiError::NetworkError(_) | ApiError::OtherReqwestError(_)) => "Couldn't reach the ArtCraft servers. Check your connection and try again.",
+    StorytellerError::Client(_) => "Something went wrong preparing the request. Please try again.",
+    _ => "A server error occurred. Please try again. If it continues, please tell our staff about the problem.",
+  }
+}
+
+// The message the API put in its JSON error body. A body that is not that JSON (an HTML error page, a long dump) is
+// not something to show a person, so it gets a plain sentence.
 fn api_message(body: &str) -> String {
-  serde_json::from_str::<Value>(body).ok().and_then(|value| value.get("error_message").or_else(|| value.get("message")).and_then(Value::as_str).map(str::to_owned)).unwrap_or_else(|| body.to_owned())
+  serde_json::from_str::<Value>(body)
+      .ok()
+      .and_then(|value| value.get("error_message").or_else(|| value.get("message")).and_then(Value::as_str).map(str::to_owned))
+      .unwrap_or_else(|| "The request could not be completed. Please try again.".to_string())
 }
 
 fn command_error(status: CommandErrorStatus, kind: &str, message: String) -> CommandErrorResponseWrapper<String, ()> {
@@ -202,6 +221,26 @@ mod tests {
     let err = api_error(&StorytellerError::Api(ApiError::InvalidRequest(r#"{"success":false,"error_message":"Duration must be between 4 and 30 seconds."}"#.into())));
     assert!(matches!(err.status, CommandErrorStatus::BadRequest));
     assert_eq!(err.error_message.as_deref(), Some("Duration must be between 4 and 30 seconds."));
+  }
+
+  #[test]
+  fn a_body_that_is_not_json_is_not_shown_to_the_user() {
+    let err = api_error(&StorytellerError::Api(ApiError::InvalidRequest("<html><body>502 Bad Gateway</body></html>".into())));
+    let message = err.error_message.unwrap();
+    assert!(!message.contains("html"), "{}", message);
+  }
+
+  #[test]
+  fn server_and_network_failures_get_a_sentence_not_debug_text() {
+    let server = api_error(&StorytellerError::Api(ApiError::InternalServerError { body: "boom".into(), backend_hostname: Some("host-1".into()) }));
+    let message = server.error_message.unwrap();
+    assert!(!message.contains("InternalServerError") && !message.contains("host-1"), "{}", message);
+
+    let network = api_error(&StorytellerError::Api(ApiError::NetworkError("dns error".into())));
+    assert!(network.error_message.unwrap().contains("connection"));
+
+    let timeout = api_error(&StorytellerError::Api(ApiError::Timeout("30s".into())));
+    assert!(timeout.error_message.unwrap().contains("timed out"));
   }
 
   #[test]

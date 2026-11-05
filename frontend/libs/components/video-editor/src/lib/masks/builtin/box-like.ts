@@ -222,6 +222,8 @@ export function computeBoxMaskParamUpdate({
   startParams,
   deltaX,
   deltaY,
+  startCanvasX,
+  startCanvasY,
   bounds,
 }: MaskParamUpdateArgs<RectangleMaskParams>): Partial<RectangleMaskParams> {
   if (handleId.kind === "position") {
@@ -232,9 +234,29 @@ export function computeBoxMaskParamUpdate({
   }
 
   if (handleId.kind === "rotation") {
-    const currentAngle = (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
-    const newRotation = (startParams.rotation + currentAngle) % 360;
-    return { rotation: newRotation < 0 ? newRotation + 360 : newRotation };
+    // FIX: this used the direction of the drag vector as the angle, so
+    // dragging the handle sideways at the top of the mask did not turn it
+    // and dragging down turned it 90 degrees at once. The mask now turns by
+    // the angle the pointer sweeps around the mask centre (as the freeform
+    // mask already does).
+    const pivotX = bounds.cx + startParams.centerX * bounds.width;
+    const pivotY = bounds.cy + startParams.centerY * bounds.height;
+    const startAngle =
+      (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) /
+      Math.PI;
+    const currentAngle =
+      (Math.atan2(
+        startCanvasY + deltaY - pivotY,
+        startCanvasX + deltaX - pivotX,
+      ) *
+        180) /
+      Math.PI;
+    let deltaAngle = currentAngle - startAngle;
+    if (deltaAngle > 180) deltaAngle -= 360;
+    if (deltaAngle < -180) deltaAngle += 360;
+    return {
+      rotation: (((startParams.rotation + deltaAngle) % 360) + 360) % 360,
+    };
   }
 
   if (handleId.kind === "feather") {
@@ -248,8 +270,17 @@ export function computeBoxMaskParamUpdate({
     });
   }
 
-  const halfWidth = startParams.width * bounds.width;
-  const halfHeight = startParams.height * bounds.height;
+  // FIX: the edge and corner drags used the raw canvas-space pointer delta,
+  // so on a rotated mask they resized along the screen axes instead of the
+  // mask's own axes. Turn the delta into the mask's local frame first.
+  const rotationRad = (startParams.rotation * Math.PI) / 180;
+  const cos = Math.cos(rotationRad);
+  const sin = Math.sin(rotationRad);
+  const localDeltaX = deltaX * cos + deltaY * sin;
+  const localDeltaY = -deltaX * sin + deltaY * cos;
+  // Half of the mask's current size in pixels (where the handles sit).
+  const halfWidth = (startParams.width * bounds.width) / 2;
+  const halfHeight = (startParams.height * bounds.height) / 2;
 
   if (
     handleId.kind === "edge" &&
@@ -259,7 +290,7 @@ export function computeBoxMaskParamUpdate({
     return {
       width: Math.max(
         MIN_MASK_DIMENSION,
-        startParams.width + (sign * deltaX * 2) / bounds.width,
+        startParams.width + (sign * localDeltaX * 2) / bounds.width,
       ),
     };
   }
@@ -272,7 +303,7 @@ export function computeBoxMaskParamUpdate({
     return {
       height: Math.max(
         MIN_MASK_DIMENSION,
-        startParams.height + (sign * deltaY * 2) / bounds.height,
+        startParams.height + (sign * localDeltaY * 2) / bounds.height,
       ),
     };
   }
@@ -280,8 +311,12 @@ export function computeBoxMaskParamUpdate({
   if (handleId.kind === "corner") {
     const signX = handleId.corner.x === "right" ? 1 : -1;
     const signY = handleId.corner.y === "bottom" ? 1 : -1;
+    // FIX: `halfWidth` / `halfHeight` held the FULL size here, so the corner
+    // lagged the pointer by half. They are now true half sizes, so the corner
+    // ends up where the pointer is.
     const distance = Math.sqrt(
-      (signX * deltaX + halfWidth) ** 2 + (signY * deltaY + halfHeight) ** 2,
+      (signX * localDeltaX + halfWidth) ** 2 +
+        (signY * localDeltaY + halfHeight) ** 2,
     );
     const originalDistance = Math.sqrt(halfWidth ** 2 + halfHeight ** 2);
     const scale = originalDistance > 0 ? distance / originalDistance : 1;
@@ -293,7 +328,11 @@ export function computeBoxMaskParamUpdate({
 
   if (handleId.kind === "scale") {
     const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-    const originalDistance = Math.sqrt(halfWidth ** 2 + halfHeight ** 2);
+    // Unchanged maths: measured against the FULL size, as before the
+    // half-size fix above (no box mask shows a scale handle, so this is dead).
+    const originalDistance = Math.sqrt(
+      (halfWidth * 2) ** 2 + (halfHeight * 2) ** 2,
+    );
     const scale = originalDistance > 0 ? 1 + distance / originalDistance : 1;
     return {
       scale: Math.max(MIN_MASK_DIMENSION, startParams.scale * scale),

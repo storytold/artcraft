@@ -6,6 +6,7 @@ import type {
   TimelineElement,
   TrackType,
 } from "../../../timeline/types";
+import type { TProjectSettings } from "../../../project/types";
 import { generateUUID } from "../../../utils/id";
 import { requiresMediaId } from "../../../timeline/element-utils";
 import type { MediaAsset } from "../../../media/types";
@@ -33,6 +34,14 @@ export class InsertElementCommand extends Command {
   private elementId: string;
   private savedState: SceneTracks | null = null;
   private targetTrackId: string | null = null;
+  // FIX: the first clip into an empty timeline also resizes the canvas and
+  // may raise the fps (pushHistory false, so they are not separate undo
+  // steps). Undo used to restore only the tracks and left those changes
+  // behind. These hold the settings from before, or null if untouched.
+  private previousSettings: Pick<
+    TProjectSettings,
+    "canvasSize" | "originalCanvasSize" | "fps"
+  > | null = null;
 
   constructor({ element, placement }: InsertElementParams) {
     super();
@@ -47,6 +56,7 @@ export class InsertElementCommand extends Command {
   execute(): CommandResult | undefined {
     const editor = EditorCore.getInstance();
     this.savedState = editor.scenes.getActiveScene().tracks;
+    this.previousSettings = null;
 
     if (!this.validateElementBasics({ element: this.element })) {
       return;
@@ -86,6 +96,14 @@ export class InsertElementCommand extends Command {
       const asset = mediaAssets.find(
         (item: MediaAsset) => item.id === newElement.mediaId,
       );
+
+      if (activeProject && ((asset?.width && asset?.height) || (asset?.type === "video" && asset?.fps))) {
+        this.previousSettings = {
+          canvasSize: activeProject.settings.canvasSize,
+          originalCanvasSize: activeProject.settings.originalCanvasSize,
+          fps: activeProject.settings.fps,
+        };
+      }
 
       if (asset?.width && asset?.height) {
         const nextCanvasSize = { width: asset.width, height: asset.height };
@@ -128,6 +146,16 @@ export class InsertElementCommand extends Command {
     if (this.savedState) {
       const editor = EditorCore.getInstance();
       editor.timeline.updateTracks(this.savedState);
+      if (this.previousSettings) {
+        editor.project.updateSettings({
+          settings: {
+            canvasSize: this.previousSettings.canvasSize,
+            originalCanvasSize: this.previousSettings.originalCanvasSize,
+            fps: this.previousSettings.fps,
+          },
+          pushHistory: false,
+        });
+      }
     }
   }
 

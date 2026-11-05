@@ -13,8 +13,8 @@
 import { lazy, Suspense, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 
-import { TopBar } from "~/components";
-import { ErrorDialog } from "~/components";
+import { TopBar , ErrorDialog } from "~/components";
+import type { UserInfo } from "~/models";
 import { LoginModal, useLoginModalStore } from "@storyteller/ui-login-modal";
 import { toast, Toaster } from "@storyteller/ui-toaster";
 import {
@@ -72,12 +72,6 @@ const CreateAudio = lazy(() => import("./PageAudio/CreateAudio"));
 const VideoFrameExtractor = lazy(() =>
   import("./PageVideoFrameExtractor").then((m) => ({ default: m.VideoFrameExtractor })),
 );
-const VideoWatermarkRemover = lazy(() =>
-  import("./PageVideoWatermarkRemover").then((m) => ({ default: m.VideoWatermarkRemover })),
-);
-const ImageWatermarkRemover = lazy(() =>
-  import("./PageImageWatermarkRemover").then((m) => ({ default: m.ImageWatermarkRemover })),
-);
 const ImageTo3DObject = lazy(() =>
   import("./PageImageTo3DObject").then((m) => ({ default: m.ImageTo3DObject })),
 );
@@ -106,10 +100,16 @@ const PageMoodboard = lazy(() =>
   import("./PageMoodboard").then((m) => ({ default: m.PageMoodboard })),
 );
 
+// sceneToken: optional id of a saved 3D scene, taken from the /$sceneToken route; only the 3D page uses it.
 interface Props {
   sceneToken?: string;
 }
 
+/**
+ * The app shell, mounted by routes/_index.tsx (no scene) and routes/$sceneToken.tsx (opens a saved scene).
+ * It renders the always-on chrome (TopBar, login/pricing/credits modals, toaster, error dialog) and registers
+ * the Tauri event listeners and background hooks, then lets TabBody show the page for the active tab.
+ */
 export const MainApp = ({ sceneToken }: Props) => {
   useSignals();
 
@@ -125,6 +125,7 @@ export const MainApp = ({ sceneToken }: Props) => {
   useGenerationCompleteEvent();
   useGenerationFailedEvent();
 
+  // When Rust reports a finished text-to-image batch, hand its images to the Text-to-Image page store (matched by the subscriber id it sent).
   const completeBatch = useTextToImageStore((s) => s.completeBatch);
   useTextToImageGenerationCompleteEvent(async (event) => {
     completeBatch(
@@ -133,6 +134,7 @@ export const MainApp = ({ sceneToken }: Props) => {
     );
   });
 
+  // Rust-side problems are surfaced as toasts here, because this component is mounted on every tab.
   useFlashUserInputErrorEvent(async (event) => {
     console.log("Flash user input error event received:", event);
     toast.error(event.message);
@@ -159,14 +161,19 @@ export const MainApp = ({ sceneToken }: Props) => {
     });
   }, []);
 
+  // Store hooks for the modals: the login modal re-check trigger, the credits modal open flag, and the 3D page hotkey switches.
   const { triggerRecheck } = useLoginModalStore();
   const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =
     useCreditsModalStore();
   const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
   const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
 
+  // A signal holding the props of the pending action-reminder popup (null = none); reading .value inside a useSignals() component re-renders when it changes.
   const currentReminderModalProps = actionReminderProps.value;
 
+  // Layout, top to bottom: TopBar and LoginModal (always), the active page inside Suspense (shows "Loading..." while a lazy
+  // page chunk downloads), then global overlays. Toaster offsets are in pixels; the TopBar is 56 px tall.
+  // The LoginModal open/close callback turns the scene editor's keyboard shortcuts off while the dialog is open.
   return (
     <div className="w-screen">
       <TopBar
@@ -186,7 +193,7 @@ export const MainApp = ({ sceneToken }: Props) => {
             enableHotkeyInput(DomLevels.DIALOGUE);
           }
         }}
-        onArtCraftAuthSuccess={(userInfo: any) => {
+        onArtCraftAuthSuccess={(userInfo: UserInfo) => {
           authentication.status.value = AUTH_STATUS.LOGGED_IN;
           authentication.userInfo.value = userInfo;
         }}
@@ -233,6 +240,10 @@ export const MainApp = ({ sceneToken }: Props) => {
   );
 };
 
+/**
+ * Shows the page for the tab selected in the TabState store. Props: sceneToken is passed to the 3D page.
+ * Most pages are wrapped in a plain <div> (the 3D page is not); the pages are lazy-loaded so their code is only fetched on first visit.
+ */
 const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
   const activeTabId = useTabStore((s) => s.activeTabId);
   const storyboardPageEnabled = useStoryboardPageEnabled();
@@ -284,18 +295,6 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
           <VideoFrameExtractor />
         </div>
       );
-    case "VIDEO_WATERMARK_REMOVAL":
-      return (
-        <div>
-          <VideoWatermarkRemover />
-        </div>
-      );
-    case "IMAGE_WATERMARK_REMOVAL":
-      return (
-        <div>
-          <ImageWatermarkRemover />
-        </div>
-      );
     case "IMAGE_TO_3D_OBJECT":
       return (
         <div>
@@ -320,6 +319,7 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
           <Angles />
         </div>
       );
+    // Hidden unless the Storyboard feature is switched on in settings.
     case "STORYBOARD":
       return storyboardPageEnabled ? (
         <div>
@@ -360,7 +360,12 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
 // inside the pagedraw lib) so we don't have to add a gallery-modal
 // dep there. Mounted only when the 2D tab is active, so it doesn't
 // race the 3D-tab gallery handler.
+/**
+ * The 2D (drawing) tab: PageDraw plus a bridge for images dragged out of the gallery modal. No props.
+ */
 const PageDrawWithGalleryDrop = () => {
+  // On mount, listen for gallery drops; on unmount, stop listening. A drop only counts if it lands inside the
+  // first <canvas> on the page; the position is converted to canvas-relative pixels before it is re-sent as a window event.
   useEffect(() => {
     const handler = onImageDrop(
       (item: GalleryItem, position: { x: number; y: number }) => {

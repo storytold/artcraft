@@ -159,6 +159,13 @@ export function useMoodboardSync(adapter: MoodboardAdapter): {
       // Logged out (or logged out mid-session): stop pushing. Local
       // replicas and needsSync flags stay — pushes resume on login.
       syncPhase = "idle";
+      // Forget the account too. Keeping it made a same-account sign-in look
+      // like "nothing changed" (neither branch below ran), so the phase stayed
+      // idle and nothing was pushed again until a reload. Cleared, the next
+      // sign-in, same account or not, takes the reset + hydrate path. It also
+      // makes an in-flight hydration for the signed-out account abandon itself
+      // instead of flipping the phase back to ready.
+      syncUserId = null;
       clearSaveTimer();
       return;
     }

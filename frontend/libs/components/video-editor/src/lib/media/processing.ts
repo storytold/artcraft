@@ -140,8 +140,14 @@ export async function processMediaAssets({
           duration = videoData.duration;
           width = videoData.width;
           height = videoData.height;
+          // FIX: round to 3 decimals, not to a whole number. Math.round turned
+          // NTSC 29.97 / 23.976 / 59.94 into 30 / 24 / 60, so floatToFrameRate
+          // (which snaps those floats to 30000/1001 etc.) never saw them and
+          // the project ran at the integer rate, drifting ~3.6 s per hour
+          // against the source footage. 3 decimals still strips packet-rate
+          // noise (29.9712 -> 29.971) while staying inside the snap tolerance.
           fps = Number.isFinite(videoData.fps)
-            ? Math.round(videoData.fps)
+            ? Math.round(videoData.fps * 1000) / 1000
             : undefined;
           hasAudio = videoData.hasAudio;
           thumbnailUrl = videoData.thumbnailUrl ?? undefined;
@@ -225,17 +231,55 @@ export async function processMediaAssets({
   return processedAssets;
 }
 
-const getMediaDuration = ({ file }: { file: File }): Promise<number> => {
+// How long to wait for a stream with no length in its header to report one
+// after we force it to scan to the end.
+const DURATION_RECOVERY_TIMEOUT_MS = 3000;
+
+// FIX: resolves `undefined` (length unknown) instead of Infinity/NaN. Browser-
+// recorded audio (Chrome MediaRecorder .webm) has no length in its header, so
+// `element.duration` is Infinity; that value was stored on the asset and then
+// threw "expected an integer tick count" in mediaTimeFromSeconds when the clip
+// was added to the timeline. We first try the seek-to-end trick to make the
+// browser compute the real length, then fall back to "unknown", which callers
+// already handle with DEFAULT_NEW_ELEMENT_DURATION.
+export const getMediaDuration = ({
+  file,
+}: {
+  file: File;
+}): Promise<number | undefined> => {
   return new Promise((resolve, reject) => {
     const element = document.createElement(
       file.type.startsWith("video/") ? "video" : "audio",
     ) as HTMLVideoElement;
     const objectUrl = URL.createObjectURL(file);
+    let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    element.addEventListener("loadedmetadata", () => {
-      resolve(element.duration);
+    const finish = (value: number | undefined) => {
+      if (recoveryTimer !== undefined) clearTimeout(recoveryTimer);
+      resolve(value);
       URL.revokeObjectURL(objectUrl);
       element.remove();
+    };
+
+    const onDurationChange = () => {
+      if (Number.isFinite(element.duration)) finish(element.duration);
+    };
+
+    element.addEventListener("loadedmetadata", () => {
+      if (Number.isFinite(element.duration)) {
+        finish(element.duration);
+        return;
+      }
+      if (element.duration === Infinity) {
+        element.addEventListener("durationchange", onDurationChange);
+        recoveryTimer = setTimeout(
+          () => finish(undefined),
+          DURATION_RECOVERY_TIMEOUT_MS,
+        );
+        element.currentTime = 1e101;
+        return;
+      }
+      finish(undefined);
     });
 
     element.addEventListener("error", () => {

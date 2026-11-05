@@ -53,6 +53,7 @@ type ImageTo3DState = {
     mediaToken: string,
   ) => Promise<void>;
   failGeneration: (subscriberId: string) => void;
+  failOnlyPendingGeneration: () => void;
   reset: () => void;
 };
 
@@ -233,6 +234,17 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
       results: s.results.filter((r) => r.subscriberId !== subscriberId),
     }));
   },
+  // The backend reports a failed job as "an image_to_3d job failed" with no job id. If exactly one row is
+  // still pending, that row is the failed job, so its spinner row is removed. If none or several are
+  // pending the failure cannot be pinned on one row, so nothing is removed (a wrong guess would hide a job
+  // that is still running).
+  failOnlyPendingGeneration: () => {
+    set((s) => {
+      const pending = s.results.filter((r) => r.status === "pending");
+      if (pending.length !== 1) return {};
+      return { results: s.results.filter((r) => r !== pending[0]) };
+    });
+  },
   reset: () => set({ results: [] }),
 }));
 
@@ -269,4 +281,14 @@ listen<ObjectGenerationEvent>("object_generation_complete_event", (event) => {
         payload.generated_object.media_token,
       );
   }
+});
+
+// A job can also fail after it was accepted (server error, input rejected). The backend then sends
+// "generation-failed-event" with the action "image_to_3d" and no job id; without this listener the spinner
+// row stayed in the session list until "Clear Session". Only this tab starts image_to_3d jobs, so the
+// action alone identifies it (the model name is not used: the list spells Hunyuan 2.0 "hunyuan_3d_2_0"
+// while the backend reports "hunyuan_3d_2.0").
+listen<{ data?: { action?: string } }>("generation-failed-event", (event) => {
+  if (event.payload?.data?.action !== "image_to_3d") return;
+  useImageTo3DStore.getState().failOnlyPendingGeneration();
 });

@@ -1,6 +1,6 @@
 import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MidjourneyGetCredentialInfo, MidjourneyGetCredentialInfoSuccess } from "@storyteller/tauri-api";
 import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
@@ -10,16 +10,26 @@ export const MidjourneyAccountBlock = () => {
   const [midjourneySession, setMidjourneySession] = useState<MidjourneyGetCredentialInfoSuccess| undefined>(undefined);
   const [isCheckingMidjourneySession, setIsCheckingMidjourneySession] = useState(false);
 
+  // WHY: the mount fetch and the refresh-event fetch can overlap; only the
+  // newest request may write state, otherwise a slow older "logged out"
+  // answer overwrites the fresh "logged in" one (and clears the spinner early).
+  const latestFetchId = useRef(0);
+
   const fetchSession = async () => {
+    const fetchId = ++latestFetchId.current;
     setIsCheckingMidjourneySession(true);
     try {
       const result = await MidjourneyGetCredentialInfo();
+      if (fetchId !== latestFetchId.current) return;
       setMidjourneySession(result);
     } catch (e) {
       console.error("Error fetching Midjourney session", e);
+      if (fetchId !== latestFetchId.current) return;
       setMidjourneySession(undefined);
     } finally {
-      setIsCheckingMidjourneySession(false);
+      if (fetchId === latestFetchId.current) {
+        setIsCheckingMidjourneySession(false);
+      }
     }
   };
 
@@ -31,11 +41,13 @@ export const MidjourneyAccountBlock = () => {
     fetchSession();
   });
 
-  const clearState = async() => {
+  const clearState = async(): Promise<boolean> => {
     try {
       await invoke("midjourney_clear_credentials_command");
+      return true;
     } catch (e) {
       console.error("Error clearing Midjourney credentials", e);
+      return false;
     }
   }
 
@@ -49,8 +61,10 @@ export const MidjourneyAccountBlock = () => {
 
   const handleMidjourneyButton = async () => {
     if (midjourneySession?.payload?.can_clear_state) {
-      await clearState();
-      setMidjourneySession(undefined);
+      // WHY: only show "Not logged in" if the clear really succeeded;
+      // on failure the credentials are still stored, so keep Disconnect.
+      const cleared = await clearState();
+      if (cleared) setMidjourneySession(undefined);
     } else {
       await openLogin();
     }

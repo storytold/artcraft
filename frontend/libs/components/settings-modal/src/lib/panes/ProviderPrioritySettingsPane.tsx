@@ -86,7 +86,7 @@ const SortableItem = ({
   );
 };
 
-const ProviderItemMap = {
+const ProviderItemMap: Partial<Record<Provider, ProviderItem>> = {
   [Provider.ArtCraft]: { id: Provider.ArtCraft, name: "ArtCraft" },
   [Provider.Fal]: { id: Provider.Fal, name: "Fal" },
   [Provider.Sora]: { id: Provider.Sora, name: "Sora / ChatGPT" },
@@ -121,18 +121,29 @@ export const ProviderPrioritySettingsPane = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const providers = await GetProviderOrder();
+      // WHY: a rejected GetProviderOrder was an unhandled promise rejection.
+      let providers;
+      try {
+        providers = await GetProviderOrder();
+      } catch (error) {
+        console.error("Failed to load provider priority:", error);
+        return;
+      }
 
       let items: ProviderItem[] = [];
 
       // Add providers from backend (in order)
       for (let provider of providers.payload.providers) {
-        items.push(ProviderItemMap[provider]);
+        // Skip providers this pane has no entry for instead of pushing undefined.
+        const item = ProviderItemMap[provider];
+        if (item) {
+          items.push(item);
+        }
       }
 
       // Add providers not in backend (in order)
       for (const [key, value] of Object.entries(ProviderItemMap)) {
-        if (!providers.payload.providers.includes(key as Provider)) {
+        if (value && !providers.payload.providers.includes(key as Provider)) {
           items.push(value);
         }
       }
@@ -170,19 +181,21 @@ export const ProviderPrioritySettingsPane = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
-      setItems((prevItems) => {
-        const oldIndex = prevItems.findIndex((item) => item.id === active.id);
-        const newIndex = prevItems.findIndex((item) => item.id === over?.id);
+    // WHY: dropping outside the list gives over === null. The old check
+    // (active.id !== over?.id) passed for that, findIndex returned -1 and
+    // arrayMove(-1) sent the dragged provider to the bottom and saved it.
+    if (!over || active.id === over.id) return;
 
-        const newOrder = arrayMove(prevItems, oldIndex, newIndex);
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
 
-        // Send update to backend
-        updateProviderPriorityOnBackend(newOrder);
+    const newOrder = arrayMove(items, oldIndex, newIndex);
+    setItems(newOrder);
 
-        return newOrder;
-      });
-    }
+    // WHY: this used to run inside the setItems updater. Updaters must be
+    // pure; React StrictMode runs them twice, which sent two backend writes.
+    updateProviderPriorityOnBackend(newOrder);
   };
 
   return (

@@ -189,10 +189,7 @@ impl CreateVideoPage {
           self.refs.videos.clear();
           self.refs.audios.clear();
         },
-        DeckAction::ReorderImages { from, to } => {
-          let item = self.refs.images.remove(from);
-          self.refs.images.insert(to.min(self.refs.images.len()), item);
-        },
+        DeckAction::ReorderImages { from, to } => self.refs.reorder_images(from, to),
         DeckAction::Preview(id) => match self.refs.find_mut(id) {
           // Audio cards play and stop on click (the webapp's DeckCard).
           Some(r) if r.kind == RefKind::Audio => {
@@ -566,7 +563,10 @@ fn supports_characters(m: &ModelInfo) -> bool {
 fn mentioned_characters(prompt: &str, characters: &[crate::backend::wire::Character], picks: &std::collections::HashMap<String, String>) -> Vec<String> {
   let mut names: Vec<&str> = characters.iter().map(|c| c.name.as_str()).filter(|n| !n.is_empty()).collect();
   names.sort_by_key(|n| std::cmp::Reverse(n.len()));
-  names.dedup();
+  // Characters can share a name; keep each name once. `dedup` only drops neighbours, and the sort above can leave
+  // two same-named characters apart when another name of the same length sits between them.
+  let mut seen = std::collections::HashSet::new();
+  names.retain(|n| seen.insert(*n));
   let mut tokens = Vec::new();
   for name in names {
     let needle = format!("@{name}");
@@ -636,5 +636,13 @@ mod tests {
     let picks = std::collections::HashMap::from([("Bob".to_owned(), "c1".to_owned())]);
     assert_eq!(mentioned_characters("hi @Bob", &characters, &picks), ["c1"], "the explicit pick wins");
     assert!(mentioned_characters("no mentions", &characters, &none).is_empty());
+  }
+
+  #[test]
+  fn a_shared_name_sends_one_token_even_when_another_name_of_the_same_length_sits_between() {
+    // Bob, Ann, Bob: the two Bobs are the same length as Ann, so a sort by length leaves them apart.
+    let characters = [character("c3", "Bob"), character("c2", "Ann"), character("c1", "Bob")];
+    let none = std::collections::HashMap::new();
+    assert_eq!(mentioned_characters("@Bob and @Ann", &characters, &none), ["c3", "c2"], "one token per name, no repeat");
   }
 }

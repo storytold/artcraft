@@ -707,6 +707,10 @@ impl ArtcraftApp {
     if let Some(login) = &mut self.login {
       match login.show(ctx) {
         Some(LoginAction::Close) => self.login = None,
+        Some(LoginAction::CancelAndClose) => {
+          self.backend.cancel_browser_login();
+          self.login = None;
+        },
         Some(LoginAction::Password) => {
           login.busy = true;
           login.error = None;

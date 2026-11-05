@@ -1,14 +1,23 @@
+// CostModal: a small draggable "Cost Breakdown" popup that shows a credit cost and its approximate price
+// in the user's chosen currency. At the time of writing no other file in app/src imports it.
+// Uses useCurrency from @storyteller/ui-pricing-modal for currency choice and formatting.
+
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { CoinsIcon, XIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
 import { useCurrency } from "@storyteller/ui-pricing-modal";
 
+// credits: the cost to show (defaults to 1); onClose: called when the X button is pressed.
 interface CostModalProps {
   credits?: number;
   onClose: () => void;
 }
 
+/**
+ * Renders the popup into document.body through a portal so it floats above everything else.
+ * It can be dragged around (framer-motion drag) and has a currency dropdown.
+ */
 export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
   const {
     currency,
@@ -66,9 +75,9 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
           </div>
 
           <div className="space-y-1">
-            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
               Currency
-            </label>
+            </div>
             <Select
               options={selectOptions}
               value={currency}

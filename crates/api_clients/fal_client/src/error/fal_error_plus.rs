@@ -1,3 +1,9 @@
+//! `FalErrorPlus`: the error type returned by almost every function in this crate.
+//!
+//! It wraps `FalError` plus the extra failure kinds the app needs to tell apart (bad API key,
+//! out of credit, invalid URL, ...). Thanks to the `From` impls at the bottom, `?` converts
+//! errors from reqwest, anyhow, the url crate and `FalError` into it automatically.
+
 use crate::error::api_generic_error::FalGenericApiError;
 use crate::error::api_specific_error::FalSpecificApiError;
 use crate::error::classify_fal_error::classify_fal_error;
@@ -40,6 +46,7 @@ pub enum FalErrorPlus {
   ReqwestError(reqwest::Error),
 }
 
+// Human-readable text, prefixed with the variant name so logs show which kind of error it was.
 impl Display for FalErrorPlus {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
@@ -60,6 +67,7 @@ impl Display for FalErrorPlus {
 
 impl Error for FalErrorPlus {}
 
+// Goes through `classify_fal_error` so billing and API-key failures get their own variants.
 impl From<FalError> for FalErrorPlus {
   fn from(err: FalError) -> Self {
     classify_fal_error(err)

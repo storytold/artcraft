@@ -59,6 +59,9 @@ interface AnglesState {
   // Processing
   isProcessing: boolean;
   pendingSubscriberIds: string[];
+  // Which model each pending job was started with (keyed by subscriber id). The backend's
+  // failure event names the model but not the job, so this is how a failure finds its job.
+  pendingModels: Record<string, string>;
   isLoadingImage: boolean;
 
   // Actions
@@ -75,7 +78,8 @@ interface AnglesState {
   clearGeneratedAngles: () => void;
   removePendingSubscriber: (subscriberId: string) => void;
   setIsLoadingImage: (value: boolean) => void;
-  startGeneration: (subscriberId: string) => void;
+  startGeneration: (subscriberId: string, modelId?: string) => void;
+  failGenerationForModel: (modelId: string) => void;
   completeGeneration: (
     subscriberId: string,
     images: Array<{
@@ -94,6 +98,16 @@ const DEFAULT_CONFIG: AngleConfig = {
   zoom: 0,
 };
 
+// Copy of the id→model record without one id (used when a job leaves the pending list).
+const withoutModel = (
+  models: Record<string, string>,
+  subscriberId: string,
+): Record<string, string> => {
+  const rest = { ...models };
+  delete rest[subscriberId];
+  return rest;
+};
+
 export const useAnglesStore = create<AnglesState>((set, get) => ({
   sourceImageUrl: null,
   sourceMediaToken: null,
@@ -105,6 +119,7 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
   activeAngleId: null,
   isProcessing: false,
   pendingSubscriberIds: [],
+  pendingModels: {},
   isLoadingImage: false,
 
   setSourceImage: (url, mediaToken, thumbnailUrlTemplate) => {
@@ -171,6 +186,7 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
       activeAngleId: null,
       isProcessing: false,
       pendingSubscriberIds: [],
+      pendingModels: {},
     });
   },
 
@@ -181,6 +197,7 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
       );
       return {
         pendingSubscriberIds: remaining,
+        pendingModels: withoutModel(s.pendingModels, subscriberId),
         isProcessing: remaining.length > 0,
       };
     });
@@ -190,11 +207,28 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
     set({ isLoadingImage: value });
   },
 
-  startGeneration: (subscriberId) => {
+  startGeneration: (subscriberId, modelId) => {
     set((s) => ({
       isProcessing: true,
       pendingSubscriberIds: [...s.pendingSubscriberIds, subscriberId],
+      // Remember the model so a failure event (which names the model, not the job) can find this job.
+      pendingModels: modelId
+        ? { ...s.pendingModels, [subscriberId]: modelId }
+        : s.pendingModels,
     }));
+  },
+
+  // The backend reports a failed job as "model X failed" with no job id. If exactly one pending job
+  // used that model it is the one that failed, so take its placeholder away. If none or several used
+  // it, the failure cannot be pinned on one job, so nothing is removed (a wrong guess would discard
+  // the placeholder of a job that is still running).
+  failGenerationForModel: (modelId) => {
+    const state = get();
+    const matches = state.pendingSubscriberIds.filter(
+      (id) => state.pendingModels[id] === modelId,
+    );
+    if (matches.length !== 1) return;
+    state.removePendingSubscriber(matches[0]);
   },
 
   completeGeneration: (subscriberId, images) => {
@@ -219,6 +253,7 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
       activeAngleId: newAngles[0]?.id ?? s.activeAngleId,
       isProcessing: remaining.length > 0,
       pendingSubscriberIds: remaining,
+      pendingModels: withoutModel(s.pendingModels, subscriberId),
     }));
   },
 
@@ -232,6 +267,7 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
       generateFromBestAngles: false,
       isProcessing: false,
       pendingSubscriberIds: [],
+      pendingModels: {},
       isLoadingImage: false,
     });
   },
@@ -248,6 +284,7 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
       activeAngleId: null,
       isProcessing: false,
       pendingSubscriberIds: [],
+      pendingModels: {},
       isLoadingImage: false,
     });
   },
@@ -285,4 +322,22 @@ listen<{
   }));
 
   state.completeGeneration(resolvedId, images);
+});
+
+// A job can also fail after it was accepted (flagged prompt, server error). The backend then sends
+// "generation-failed-event" with the action and the model but no job id, so without this listener the
+// loading placeholder stayed up and Download stayed disabled until the user cleared the history.
+// Angle models are image generations, so only a failed "generate_image" with a model name is considered;
+// the store matches it to the one pending job that used that model (and does nothing if that is unclear).
+listen<{
+  status: string;
+  data: {
+    action?: string;
+    model?: string | null;
+  };
+}>("generation-failed-event", (wrappedEvent) => {
+  const failure = wrappedEvent.payload.data;
+  if (failure?.action !== "generate_image") return;
+  if (typeof failure.model !== "string") return;
+  useAnglesStore.getState().failGenerationForModel(failure.model);
 });

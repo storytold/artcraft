@@ -45,6 +45,9 @@ export const useCheatsheetVisibility = (): boolean => {
     const modKey = isMac ? "Meta" : "Control";
     let timer: ReturnType<typeof setTimeout> | null = null;
     let modHeld = false;
+    // Mirrors the `held` state so onKeyUp can read it without a side effect
+    // inside a setState updater (StrictMode runs updaters twice).
+    let peeking = false;
 
     const clearTimer = () => {
       if (timer !== null) {
@@ -53,7 +56,10 @@ export const useCheatsheetVisibility = (): boolean => {
       }
     };
 
-    const hide = () => setHeld((v) => (v ? false : v));
+    const hide = () => {
+      peeking = false;
+      setHeld(false);
+    };
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === modKey) {
@@ -62,6 +68,7 @@ export const useCheatsheetVisibility = (): boolean => {
         clearTimer();
         timer = setTimeout(() => {
           timer = null;
+          peeking = true;
           setHeld(true);
         }, HOLD_MS);
         return;
@@ -77,12 +84,10 @@ export const useCheatsheetVisibility = (): boolean => {
         clearTimer();
         // Sticky preference: releasing the modifier hands the peek over to
         // the pin instead of hiding, so it stays until Esc / click outside.
-        setHeld((v) => {
-          if (v && useKeybindsStore.getState().cheatsheetSticky) {
-            useCheatsheetPin.getState().setPinned(true);
-          }
-          return false;
-        });
+        if (peeking && useKeybindsStore.getState().cheatsheetSticky) {
+          useCheatsheetPin.getState().setPinned(true);
+        }
+        hide();
       }
     };
 

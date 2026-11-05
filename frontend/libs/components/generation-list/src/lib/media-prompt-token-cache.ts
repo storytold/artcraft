@@ -11,6 +11,10 @@ import { MediaFilesApi } from "@storyteller/api";
 // mediaToken → promptToken ("" = resolved, but the media has no prompt token).
 const tokenCache = new Map<string, string>();
 const inFlight = new Set<string>();
+// Tokens whose lookup FAILED (offline, 5xx). The hook reports them as "no prompt" so the loading skeleton clears, but
+// they are deliberately not in `tokenCache`: that would record a failure as the server's answer and hide the prompt for
+// the rest of the session. The next mount or token change asks the server about them again.
+const failedTokens = new Set<string>();
 const subscribers = new Set<() => void>();
 let api: MediaFilesApi | null = null;
 
@@ -33,33 +37,40 @@ async function fetchMissing(mediaTokens: readonly string[]): Promise<void> {
   if (missing.length === 0) return;
   for (const t of missing) inFlight.add(t);
 
+  const chunks: string[][] = [];
+  for (let i = 0; i < missing.length; i += CHUNK_SIZE) {
+    chunks.push(missing.slice(i, i + CHUNK_SIZE));
+  }
+
   try {
-    const chunks: string[][] = [];
-    for (let i = 0; i < missing.length; i += CHUNK_SIZE) {
-      chunks.push(missing.slice(i, i + CHUNK_SIZE));
-    }
-    const responses = await Promise.all(
-      chunks.map((chunk) =>
-        getApi().ListMediaFilesByTokens({ mediaTokens: chunk }),
-      ),
+    // Each chunk settles on its own, so one failed chunk cannot throw away the prompts another chunk brought back.
+    await Promise.all(
+      chunks.map(async (chunk) => {
+        try {
+          const response = await getApi().ListMediaFilesByTokens({
+            mediaTokens: chunk,
+          });
+          if (!response.success || !response.data) {
+            // The API client turns network errors into `success: false` instead of throwing.
+            for (const t of chunk) failedTokens.add(t);
+            return;
+          }
+          for (const file of response.data) {
+            tokenCache.set(file.token, file.maybe_prompt_token ?? "");
+          }
+          // The server answered: a token it did not return has no prompt. That is an answer, so it is cached.
+          for (const t of chunk) {
+            if (!tokenCache.has(t)) tokenCache.set(t, "");
+            failedTokens.delete(t);
+          }
+        } catch {
+          for (const t of chunk) failedTokens.add(t);
+        }
+      }),
     );
-    for (const response of responses) {
-      if (!response.success || !response.data) continue;
-      for (const file of response.data) {
-        tokenCache.set(file.token, file.maybe_prompt_token ?? "");
-      }
-    }
-  } catch {
-    // Swallow — the finally block marks the tokens resolved (empty) so the
-    // loading skeleton clears and we don't refetch in a loop.
   } finally {
-    // Mark every requested token resolved. Tokens that errored or weren't
-    // returned get "" (no prompt) so the row falls back to its label instead
-    // of showing a skeleton forever. Always notify so skeletons clear.
-    for (const t of missing) {
-      if (!tokenCache.has(t)) tokenCache.set(t, "");
-      inFlight.delete(t);
-    }
+    // Always notify so skeletons clear (failed tokens read as "no prompt" until a later lookup succeeds).
+    for (const t of missing) inFlight.delete(t);
     notifySubscribers();
   }
 }
@@ -99,6 +110,8 @@ export function useMediaPromptTokens(
     // Include "" entries so callers can tell "resolved, no prompt" (present)
     // apart from "still loading" (absent).
     if (promptToken !== undefined) result.set(t, promptToken);
+    // A failed lookup reads as "no prompt" so the skeleton clears, but stays out of the cache so it is retried.
+    else if (failedTokens.has(t)) result.set(t, "");
   }
   return result;
 }

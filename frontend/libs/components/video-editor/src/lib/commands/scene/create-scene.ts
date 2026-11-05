@@ -26,7 +26,9 @@ export class CreateSceneCommand extends Command {
     const editor = EditorCore.getInstance();
     this.savedScenes = [...editor.scenes.getScenes()];
 
-    this.createdScene = buildDefaultScene({
+    // Built once and reused by redo, so the scene keeps the id that later
+    // commands in the history (rename, bookmarks) were recorded against.
+    this.createdScene ??= buildDefaultScene({
       name: this.name,
       isMain: this.isMain,
     });

@@ -12,7 +12,7 @@ use crate::requests::index_page::signature::generate_xsid::{generate_xsid, Gener
 use crate::requests::media_posts::like_media_post::request::LikeMediaWireRequest;
 use crate::requests::upload_file::grok_upload_file::{GrokUploadFile, GrokUploadFileResponse};
 use crate::utils::user_and_file_id_to_image_url::user_and_file_id_to_image_url;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use std::time::Duration;
 use uuid::Uuid;
 use wreq::header::{ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, CONTENT_TYPE, COOKIE, ORIGIN, PRAGMA, REFERER, TE, USER_AGENT};
@@ -51,10 +51,11 @@ impl <'a> GrokLikeMediaPost<'a> {
         .map_err(|err| GrokClientError::WreqClientError(err))?;
 
     let xai_request_id = Uuid::new_v4().to_string();
-    println!("xai_request_id (uuid) = {}", xai_request_id);
+    // println! is forbidden outside tests (AGENTS.md); use log macros (debug level).
+    debug!("xai_request_id (uuid) = {}", xai_request_id);
 
     let sentry_trace_header = self.sentry_trace.to_http_request_header();
-    println!("sentry_trace = {}", sentry_trace_header);
+    debug!("sentry_trace = {}", sentry_trace_header);
 
     let x_statsig_id = generate_xsid(GenerateXsidArgs {
       path: "/rest/app-chat/conversations/new",
@@ -64,7 +65,7 @@ impl <'a> GrokLikeMediaPost<'a> {
       numbers: &self.numbers,
     })?;
 
-    println!("x_statsig_id = {}", x_statsig_id);
+    debug!("x_statsig_id = {}", x_statsig_id);
 
     // NB: Adapting to firefox
     let mut request_builder = client.post(LIKE_MEDIA_POST_URL)

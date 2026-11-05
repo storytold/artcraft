@@ -1,4 +1,4 @@
-import { ModelCreator } from "src/index.js";
+import { ModelCreator } from "../../index.js";
 import { Model, ModelKind } from "./Model.js";
 import { ModelCategory } from "../legacy/ModelConfig.js";
 import { ModelTag } from "./metadata/ModelTag.js";

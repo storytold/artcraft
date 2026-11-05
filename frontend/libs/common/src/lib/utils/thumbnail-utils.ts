@@ -33,7 +33,9 @@ export function getThumbnailUrl(
 
 export function addCorsParam(url: string | null | undefined): string | null {
   if (!url) return null;
-  return `${url}?cors=1`;
+  // A URL that already has a query string needs "&", otherwise the second "?"
+  // would be read as part of the previous parameter's value.
+  return `${url}${url.includes("?") ? "&" : "?"}cors=1`;
 }
 
 interface MediaThumbnailOptions {
@@ -188,6 +190,8 @@ export const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz", ".obj", ".p
  *  feeds and library. */
 export function is3DModelUrl(url: string | null | undefined): boolean {
   if (!url) return false;
-  const lower = url.toLowerCase();
-  return MODEL_3D_EXTENSIONS.some((ext) => lower.includes(ext));
+  // Look only at the path: drop any query string / fragment, then require the
+  // extension at the end so names like "scene.object.png" do not match ".obj".
+  const path = url.toLowerCase().split(/[?#]/)[0];
+  return MODEL_3D_EXTENSIONS.some((ext) => path.endsWith(ext));
 }

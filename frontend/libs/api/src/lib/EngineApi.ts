@@ -1,4 +1,7 @@
-import { ApiManager, ApiResponse, buildSessionHeaders } from "./ApiManager";
+import { ApiManager, ApiResponse, buildSessionHeaders } from "./ApiManager.js";
+// Use the proxy like sibling APIs: plain fetch loses the session cookie on Mac
+// (third-party cookies blocked), so the upload would be unauthenticated.
+import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 
 export class EngineApi extends ApiManager {
   public async ConvertTbxToGltf({
@@ -64,9 +67,13 @@ export class EngineApi extends ApiManager {
       body: formData,
     });
 
-    const postResponse = await response.json();
-
-    console.log(postResponse);
+    // A non-JSON body (eg. HTML 502) must yield the error shape, not a rejection.
+    let postResponse: any;
+    try {
+      postResponse = await response.json();
+    } catch {
+      return { success: false, errorMessage: "Failed to generate snapshot." };
+    }
 
     let result: { success: boolean; data?: string; errorMessage?: string };
 

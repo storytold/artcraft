@@ -147,10 +147,13 @@ export const useFreeCam = (
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (usePageSceneStore.getState().isPromptBoxFocused) return;
-      if (usePageSceneStore.getState().modalTransformActive) return;
-      if (isEventFromEditableElement(e)) return;
-      if (e.ctrlKey || e.metaKey) return;
+      // FIX: keyup used to bail out under the same guards as keydown
+      // (prompt box focused, modal transform active, editable element,
+      // Ctrl/Cmd held). If any of those became true WHILE a movement key was
+      // held (e.g. hold W, press G for a modal grab, release W), the release
+      // was swallowed and the key stayed "held" forever, so the camera kept
+      // flying on its own. A release can only ever mean "no longer held", so
+      // it must always clear the slot; the guards only make sense on keydown.
       state.movementSpeed = movementSpeedForEvent(e);
       const moveSlot = moveSlotForKeyCode(e.code, moveMap);
       if (moveSlot) state.moveKeys[moveSlot] = 0;
@@ -225,6 +228,11 @@ export const useFreeCam = (
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointerup", onPointerUp);
+    // FIX: a cancelled pointer (system gesture, touch/pen interrupted)
+    // never fires pointerup, so dragRef stayed set and every later hover
+    // over the canvas kept panning the camera. Cancel ends the drag exactly
+    // like release does, so reuse the same handler.
+    canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("wheel", onWheel, { passive: true });
     canvas.addEventListener("contextmenu", onContextMenu);
@@ -241,6 +249,7 @@ export const useFreeCam = (
       dragRef.current = null;
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointercancel", onPointerUp);
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("contextmenu", onContextMenu);

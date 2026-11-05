@@ -1,3 +1,7 @@
+// ErrorDialog: the app-wide error popup. Rendered once by pages/MainApp.tsx.
+// It reads its title/message/visibility from the page-scene store (usePageSceneStore in @storyteller/ui-pagescene),
+// so any code can show an error with usePageSceneStore.getState().setErrorDialog(title, message).
+
 import { TriangleAlertIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 
@@ -5,6 +9,9 @@ import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
+/**
+ * Modal with the stored error message and a Close button. Takes no props; useShallow avoids re-renders when unrelated store fields change.
+ */
 export function ErrorDialog() {
   const { showErrorDialog, errorDialogTitle, errorDialogMessage, setShowErrorDialog } =
     usePageSceneStore(

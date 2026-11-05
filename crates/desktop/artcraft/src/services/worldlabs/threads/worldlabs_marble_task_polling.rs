@@ -194,12 +194,21 @@ async fn poll_grok_tasks(
   for (world_id, local_task) in local_tasks_by_world_labs_world_id.iter() {
     let world_id = WorldObjectId(world_id.to_string());
 
-    let poll_world_response = poll_world_status(PollWorldStatusArgs {
+    // FIX: a poll error for ONE world (expired world, 404, transient network error) used to `?`-abort the
+    // whole pass, so every other pending world after it in the map was never polled and the same bad world
+    // aborted every pass. Log it and move on to the next world instead.
+    let poll_world_response = match poll_world_status(PollWorldStatusArgs {
       cookies: &world_labs_cookies,
       bearer_token: &world_labs_bearer,
       world_id: &world_id,
       request_timeout: None,
-    }).await?;
+    }).await {
+      Ok(response) => response,
+      Err(err) => {
+        error!("Failed to poll WorldLabs world {}: {:?}", world_id.0, err);
+        continue;
+      }
+    };
 
     if !poll_world_response.is_complete {
       tokio::time::sleep(Duration::from_millis(2_000)).await;
@@ -214,7 +223,8 @@ async fn poll_grok_tasks(
       }
     };
 
-    upload_spz_splat(
+    // FIX: same as above; one failed download/upload must not stop the remaining worlds from finishing.
+    if let Err(err) = upload_spz_splat(
       &app_handle,
       &app_env_configs,
       app_data_root,
@@ -222,7 +232,10 @@ async fn poll_grok_tasks(
       &storyteller_creds,
       &local_task,
       &spz_url,
-    ).await?;
+    ).await {
+      error!("Failed to finish WorldLabs world {}: {:?}", world_id.0, err);
+      continue;
+    }
   }
 
   tokio::time::sleep(Duration::from_millis(5_000)).await;
@@ -366,7 +379,8 @@ async fn download_spz(
 ) -> AnyhowResult<PathBuf> {
   info!("Downloading splat from URL: {}", spz_url);
 
-  let response = reqwest::get(spz_url).await?;
+  // WHY: an HTTP error body would otherwise be saved and uploaded as a .spz splat.
+  let response = reqwest::get(spz_url).await?.error_for_status()?;
   let image_bytes = response.bytes().await?;
 
   let uuid = generate_random_uuid();

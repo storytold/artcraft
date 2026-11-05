@@ -3,6 +3,7 @@ import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { PendingRow } from "./PendingRow";
 import { FailedRow } from "./FailedRow";
 import { GalleryRow } from "./GalleryRow";
+import { GalleryLoadError } from "./GalleryLoadError";
 import {
   useMergedGalleryEntries,
   useInfiniteScrollSentinel,
@@ -58,6 +59,11 @@ export interface GenerationListViewProps {
   onToggleSelect?: (item: GalleryItem) => void;
   /** Marks the row the user most recently viewed in the lightbox. */
   lastViewedId?: string | null;
+  /** True when the latest history request failed. Swaps the bottom "more is loading" spinner for a notice, because a
+   *  failed request never ends on its own and the spinner would otherwise spin forever (see useGalleryData). */
+  loadFailed?: boolean;
+  /** Runs when the user presses "Try again" in that notice (pages pass useGalleryData's loadMore). */
+  onRetry?: () => void;
 }
 
 export function GenerationListView({
@@ -78,6 +84,8 @@ export function GenerationListView({
   selectedIds,
   onToggleSelect,
   lastViewedId,
+  loadFailed = false,
+  onRetry,
 }: GenerationListViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -221,8 +229,14 @@ export function GenerationListView({
       </div>
 
       {hasMore && (
+        // The same element stays mounted either way so the scroll observer keeps watching it; only its content changes.
         <div ref={sentinelRef} className="flex justify-center py-8">
-          <LoadingSpinner className="h-6 w-6 text-white/60" />
+          {loadFailed ? (
+            // The last request failed: say so and offer a retry instead of spinning forever.
+            <GalleryLoadError onRetry={onRetry} />
+          ) : (
+            <LoadingSpinner className="h-6 w-6 text-white/60" />
+          )}
         </div>
       )}
     </div>

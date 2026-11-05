@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import Konva from "konva";
 import { BG_LAYER_ID, DRAW_LAYER_ID } from "../PaintSurface";
 
@@ -75,7 +75,11 @@ export const useStageSnapshot = (
   isSelectingRef: React.RefObject<boolean>,
   transformerRefs: React.RefObject<{ [key: string]: Konva.Transformer }>,
 ) => {
-  const [animationFrameId, setAnimationFrameId] = useState<number | null>(null);
+  // The pending animation-frame id lives in a ref, not state: the loop below
+  // runs every frame, and setting state each time re-rendered the host
+  // component ~60 times a second. A ref is also what the cleanup needs to see
+  // the LATEST id (a state value captured at mount is always null).
+  const animationFrameIdRef = useRef<number | null>(null);
 
   const captureStageImage = (
     stageRef: React.RefObject<Konva.Stage>,
@@ -129,16 +133,16 @@ export const useStageSnapshot = (
           img.src = uri;
         }
       }
-      const frameId = requestAnimationFrame(updateSnapshot);
-      setAnimationFrameId(frameId);
+      animationFrameIdRef.current = requestAnimationFrame(updateSnapshot);
     };
 
-    const frameId = requestAnimationFrame(updateSnapshot);
-    setAnimationFrameId(frameId);
+    animationFrameIdRef.current = requestAnimationFrame(updateSnapshot);
 
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      // Stop the loop on unmount (it previously ran forever).
+      if (animationFrameIdRef.current !== null) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
       }
     };
   }, []);

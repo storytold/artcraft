@@ -132,6 +132,11 @@ function onPointerDown(
   document.body.style.cursor = "grabbing";
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
+  // BUG FIX: the browser fires pointercancel (not pointerup) when it takes over
+  // the gesture (touch scroll/pan, OS interruption). With no handler the drag
+  // never ended: the modal stayed faded + pointer-transparent, the cursor stayed
+  // "grabbing", the count chip stayed on screen and the window listeners leaked.
+  window.addEventListener("pointercancel", onPointerCancel);
 }
 
 /**
@@ -301,6 +306,16 @@ function onPointerUp(event: PointerEvent) {
     }
   }
 
+  endDrag(closedHidden);
+}
+
+// A cancelled gesture ends the drag WITHOUT dropping anything anywhere.
+function onPointerCancel() {
+  endDrag(false);
+}
+
+// Shared teardown for pointerup and pointercancel.
+function endDrag(closedHidden: boolean) {
   // Cleanup
   removeDragPreview();
 
@@ -322,6 +337,7 @@ function onPointerUp(event: PointerEvent) {
   document.body.style.cursor = "";
   window.removeEventListener("pointermove", onPointerMove);
   window.removeEventListener("pointerup", onPointerUp);
+  window.removeEventListener("pointercancel", onPointerCancel);
 }
 
 function getDragState() {

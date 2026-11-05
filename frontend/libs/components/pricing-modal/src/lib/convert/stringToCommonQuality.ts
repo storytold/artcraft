@@ -1,3 +1,4 @@
+// CommonQuality is the list of quality tiers the desktop (Tauri) side understands.
 import { CommonQuality } from "@storyteller/api-enums";
 
 /**
@@ -5,10 +6,13 @@ import { CommonQuality } from "@storyteller/api-enums";
  *
  * Preserves all API quality tiers, including values added after this build.
  */
+// Only caller: useImageCostEstimate, with the model's own resolved quality text (or undefined for models without a quality choice).
+// Returns the value to put in the price request, or null when there is no quality (the request then leaves the field out).
 export function stringToCommonQuality(
   quality: string | undefined,
 ): string | null {
   switch (quality) {
+    // The six tiers known to this build map to their enum values.
     case "auto":
       return CommonQuality.Auto;
     case "max":
@@ -22,6 +26,7 @@ export function stringToCommonQuality(
     case "low":
       return CommonQuality.Low;
     default:
+      // Any other text is passed through unchanged (that is the "values added after this build" promise above); undefined becomes null.
       return quality ?? null;
   }
 }

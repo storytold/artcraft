@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { UploaderStates } from "@storyteller/common";
-import { UploadImageMedia } from "@storyteller/api";
+import { MediaFilesApi, UploadImageMedia } from "@storyteller/api";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useLoginModalStore } from "@storyteller/ui-login-modal";
 import { usePromptImageStore, RefImage } from "@storyteller/ui-promptbox";
@@ -30,6 +30,27 @@ const uploadImage = async (file: File): Promise<string | null> => {
     console.error("[Moodboard] upload failed", err);
   }
   return token;
+};
+
+// Turns the token an upload returned into the lasting address the media service serves the file from. WHY: the moodboard shows a fresh
+// upload from a page-bound blob URL and its saved copy drops blob-backed pictures, so without this the uploaded image vanished (grid) or
+// came back blank (canvas) after an app restart. Same lookup and same address order (cdn_url, then public_bucket_url) as the other
+// pages that turn a token into a picture (BaseImageSelector). Never throws: any failure is "no address", and the tile keeps its blob.
+const resolveMediaUrl = async (token: string): Promise<string | null> => {
+  try {
+    const response = await new MediaFilesApi().GetMediaFileByToken({
+      mediaFileToken: token,
+    });
+    if (!response.success || !response.data) return null;
+    return (
+      response.data.media_links?.cdn_url ||
+      response.data.public_bucket_url ||
+      null
+    );
+  } catch (err) {
+    console.error("[Moodboard] resolving the uploaded image failed", err);
+    return null;
+  }
 };
 
 const sendToGeneration = (refs: MoodboardReference[]): void => {
@@ -89,6 +110,7 @@ const DesktopLibraryPicker = ({
 
 export const desktopMoodboardAdapter: MoodboardAdapter = {
   uploadImage,
+  resolveMediaUrl,
   sendToGeneration,
   renderLibraryPicker: (props) => <DesktopLibraryPicker {...props} />,
 };

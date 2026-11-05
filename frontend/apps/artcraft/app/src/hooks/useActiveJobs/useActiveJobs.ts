@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { useSignalEffect, useSignals } from "@preact/signals-react/runtime";
 
 import { JobType } from "~/enums";
@@ -17,52 +17,43 @@ import { WindowExtended } from "./types";
 export const useActiveJobs = () => {
   useSignals();
 
-  const [timerState, setTimerState] = useState<{
-    timer: NodeJS.Timeout | undefined;
-    interval: number;
-  }>({
-    timer: undefined,
-    interval: TWO_SECONDS,
-  });
+  // The poll timer and its interval live in refs, not state. They used to be
+  // state that was changed inside setState updater functions which also
+  // called setInterval: React may run an updater twice (StrictMode), which
+  // started a second interval nobody tracked, so polling could never be
+  // stopped; and every timer change re-rendered the host for no reason.
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined,
+  );
+  const intervalRef = useRef<number>(TWO_SECONDS);
 
   const resetTimer = useCallback((newTimeInterval: number) => {
-    setTimerState((curr) => {
-      if (!curr.timer) {
-        // if no timer, just change interval
-        return {
-          timer: curr.timer,
-          interval: newTimeInterval,
-        };
-      }
-      // if timer already exist, first clear
-      // then set new one with new interval
-      clearInterval(curr.timer);
-      const newTimer = setInterval(() => {
-        PollRecentJobs();
-      }, newTimeInterval);
-      return {
-        timer: newTimer,
-        interval: newTimeInterval,
-      };
-    });
+    intervalRef.current = newTimeInterval;
+    if (!timerRef.current) {
+      // if no timer, just change interval
+      return;
+    }
+    // if timer already exist, first clear
+    // then set new one with new interval
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      PollRecentJobs();
+    }, newTimeInterval);
   }, []);
 
   const clearTimer = useCallback(() => {
-    if (timerState.timer) {
-      clearInterval(timerState.timer);
-      setTimerState((curr) => ({
-        ...curr,
-        timer: undefined,
-      }));
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = undefined;
     }
-  }, [timerState.timer]);
+  }, []);
 
   useEffect(() => {
     return () => {
       //make sure we run clear timer as well on dismount;
-      clearInterval(timerState.timer);
+      clearTimer();
     };
-  }, [timerState.timer]);
+  }, [clearTimer]);
 
   useLayoutEffect(() => {
     //TODO: add dev account guard
@@ -90,10 +81,10 @@ export const useActiveJobs = () => {
             job.request.inference_category === JobType.VoiceConversion
           );
         }) !== undefined;
-      if (!hasShortJobs && timerState.interval < TEN_SECONDS) {
+      if (!hasShortJobs && intervalRef.current < TEN_SECONDS) {
         resetTimer(TEN_SECONDS);
       }
-      if (hasShortJobs && timerState.interval > TWO_SECONDS) {
+      if (hasShortJobs && intervalRef.current > TWO_SECONDS) {
         resetTimer(TWO_SECONDS);
       }
 
@@ -107,21 +98,13 @@ export const useActiveJobs = () => {
   useSignalEffect(() => {
     //trigger the pull via a timer
     if (shouldPollActiveJobs.value) {
-      setTimerState((curr) => {
-        if (curr.timer) {
-          //do nothing if timer is already running;
-          return curr;
-        }
-
+      //do nothing if timer is already running;
+      if (!timerRef.current) {
         //else make and set timer
-        const newTimer = setInterval(() => {
+        timerRef.current = setInterval(() => {
           PollRecentJobs();
-        }, curr.interval);
-        return {
-          ...curr,
-          timer: newTimer,
-        };
-      });
+        }, intervalRef.current);
+      }
       return;
     }
     // should not poll, then clear timer

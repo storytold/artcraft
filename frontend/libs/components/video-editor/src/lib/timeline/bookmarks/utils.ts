@@ -105,6 +105,15 @@ export function moveBookmarkInArray({
     return bookmarks;
   }
 
+  // There is at most one bookmark per frame (toggleBookmarkInArray relies on
+  // it). Moving onto an occupied frame would create a duplicate, so it is a no-op.
+  if (
+    fromTime !== toTime &&
+    findBookmarkIndex({ bookmarks, frameTime: toTime }) !== -1
+  ) {
+    return bookmarks;
+  }
+
   const updated = { ...bookmarks[index], time: toTime };
   const result = [...bookmarks];
   result[index] = updated;

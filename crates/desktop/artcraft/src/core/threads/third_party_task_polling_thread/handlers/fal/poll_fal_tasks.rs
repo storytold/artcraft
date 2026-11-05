@@ -9,6 +9,8 @@ use crate::core::threads::third_party_task_polling_thread::handlers::fal::handle
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::tauri::tasks::task_status::TaskStatus;
 use fal_client::creds::fal_api_key::FalApiKey;
+use fal_client::error::api_generic_error::FalGenericApiError;
+use fal_client::error::fal_error_plus::FalErrorPlus;
 use fal_client::polling::poll_job_response::poll_job_response::{poll_job_response, PollJobResponseArgs};
 use fal_client::polling::poll_job_status::poll_job_status::{poll_job_status, FalJobStatus, PollJobStatusArgs};
 use log::{error, info, warn};
@@ -127,6 +129,17 @@ async fn poll_single_fal_task(
   }).await {
     Ok(response) => response,
     Err(err) => {
+      // FIX: a job that failed on fal's side reports COMPLETED, then answers the response fetch with a
+      // permanent 4xx. Treating every error as "retry later" left such tasks pending (spinner) forever.
+      if let Some(reason) = permanent_response_failure_reason(&err) {
+        error!(
+          "[FalPolling] Task {} failed permanently on fal: {}",
+          task.id.as_str(),
+          err,
+        );
+        handle_fal_failure(app_handle, task_database, task, &reason).await;
+        return Ok(());
+      }
       error!(
         "[FalPolling] Failed to fetch response for task {}: {}. Skipping for now.",
         task.id.as_str(),
@@ -161,6 +174,21 @@ fn load_fal_api_key(credential_cache: &ProviderCredentialLoadingCache) -> Option
   }
 }
 
+/// Returns a failure reason when the response fetch error can never succeed on retry.
+/// Network errors, 5xx, 401/402/403 (key or billing) and "still in progress" stay retryable.
+fn permanent_response_failure_reason(err: &FalErrorPlus) -> Option<String> {
+  match err {
+    // The reason is shown to the user in a toast and stored on the task, so it must not carry fal's raw JSON body;
+    // the caller already logs the full error.
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, .. })
+      if matches!(status_code.as_u16(), 400 | 404 | 410 | 422) =>
+    {
+      Some(format!("The provider reported that the generation failed (error {})", status_code.as_u16()))
+    }
+    _ => None,
+  }
+}
+
 /// Use the task's stored response URL first; fall back to the one from the status poll.
 /// Log if they differ.
 fn pick_response_url(task: &Task, polled_response_url: &Option<String>) -> Option<String> {
@@ -179,5 +207,51 @@ fn pick_response_url(task: &Task, polled_response_url: &Option<String>) -> Optio
     (Some(db_url), None) => Some(db_url.clone()),
     (None, Some(polled_url)) => Some(polled_url.clone()),
     (None, None) => None,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use fal_client::error::api_specific_error::FalSpecificApiError;
+  use reqwest::StatusCode;
+
+  #[test]
+  fn permanent_4xx_fails_the_task() {
+    for code in [StatusCode::BAD_REQUEST, StatusCode::NOT_FOUND, StatusCode::GONE, StatusCode::UNPROCESSABLE_ENTITY] {
+      let err = bad_response(code);
+      assert!(permanent_response_failure_reason(&err).is_some(), "{} should be permanent", code);
+    }
+  }
+
+  #[test]
+  fn the_reason_shown_to_the_user_does_not_contain_the_raw_response_body() {
+    let err = FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code: StatusCode::UNPROCESSABLE_ENTITY,
+      body: r#"{"detail":[{"loc":["body","prompt"],"msg":"flagged"}]}"#.to_string(),
+    });
+    let reason = permanent_response_failure_reason(&err).unwrap();
+    assert!(!reason.contains("detail"), "reason leaked the body: {}", reason);
+    assert!(reason.contains("422"));
+  }
+
+  #[test]
+  fn transient_and_account_errors_keep_retrying() {
+    for code in [StatusCode::INTERNAL_SERVER_ERROR, StatusCode::BAD_GATEWAY, StatusCode::TOO_MANY_REQUESTS, StatusCode::UNAUTHORIZED, StatusCode::PAYMENT_REQUIRED, StatusCode::FORBIDDEN] {
+      assert!(permanent_response_failure_reason(&bad_response(code)).is_none(), "{} should retry", code);
+    }
+  }
+
+  #[test]
+  fn incomplete_job_keeps_retrying() {
+    let err = FalErrorPlus::ApiSpecific(FalSpecificApiError::IncompleteJob("Request is still in progress".to_string()));
+    assert!(permanent_response_failure_reason(&err).is_none());
+  }
+
+  fn bad_response(status_code: StatusCode) -> FalErrorPlus {
+    FalErrorPlus::ApiGeneric(FalGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code,
+      body: "detail".to_string(),
+    })
   }
 }

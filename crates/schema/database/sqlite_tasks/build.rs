@@ -2,6 +2,9 @@ use std::env;
 use std::path::PathBuf;
 
 pub fn main() {
+  // New migration files must rebuild the crate, since `sqlx::migrate!` embeds the directory at compile time.
+  println!("cargo:rerun-if-changed=../../../../_database/sql/artcraft_migrations");
+
   // NB: This should help JetBrains' RustRover from highlighting failing query macros,
   // but we do not want to interfere with the following: 
   // 

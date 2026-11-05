@@ -603,6 +603,11 @@ export const GalleryModal = React.memo(
     const [paginationLoading, setPaginationLoading] = useState(false);
     // Ref-based lock to prevent re-entrant loadItems calls
     const isLoadingRef = useRef(false);
+    // Monotonic id of the latest loadItems request. A reset (refresh / filter
+    // switch) supersedes any in-flight request; the older response is dropped
+    // so it can't write the previous filter's items into the new filter's
+    // state and cache.
+    const loadRequestIdRef = useRef(0);
     // Lightbox state is now handled via signals
     const lightboxImageSignal = galleryModalLightboxImage;
     const lightboxVisibleSignal = galleryModalLightboxVisible;
@@ -1065,9 +1070,13 @@ export const GalleryModal = React.memo(
         const currentUsername = usernameRef.current;
         const currentFilter = activeFilterRef.current;
         if (!currentUsername) return;
-        // Ref-based lock prevents concurrent/re-entrant calls
-        if (isLoadingRef.current) return;
+        // Ref-based lock prevents concurrent pagination calls. A reset is
+        // allowed through: it supersedes the in-flight request (see
+        // loadRequestIdRef) — dropping it instead left a filter switch with
+        // no fetch of its own and showed the old filter's response.
+        if (isLoadingRef.current && !reset) return;
         isLoadingRef.current = true;
+        const requestId = ++loadRequestIdRef.current;
         setLoading(true);
         if (!reset) setPaginationLoading(true);
         try {
@@ -1088,6 +1097,8 @@ export const GalleryModal = React.memo(
                     page_size: PAGE_SIZE,
                   });
 
+            // Superseded by a newer request: it owns state and the lock now.
+            if (requestId !== loadRequestIdRef.current) return;
             if (response.success && response.data) {
               setItemsLoadError(null);
               const newItems = response.data.map(mapApiItem);
@@ -1144,6 +1155,8 @@ export const GalleryModal = React.memo(
           };
           const response = await api.listUserMediaFiles(query);
 
+          // Superseded by a newer request: it owns state and the lock now.
+          if (requestId !== loadRequestIdRef.current) return;
           if (response.success && response.data) {
             setItemsLoadError(null);
             const newItems = response.data
@@ -1228,6 +1241,8 @@ export const GalleryModal = React.memo(
             );
           }
         } catch (error) {
+          // A superseded request's failure must not flag the newer one.
+          if (requestId !== loadRequestIdRef.current) return;
           const msg = error instanceof Error ? error.message : String(error);
           console.error("Failed to fetch library items:", msg);
           setItemsLoadError(msg);
@@ -1657,8 +1672,15 @@ export const GalleryModal = React.memo(
         onPrimaryAction: async () => {
           try {
             const ids = Array.from(bulkSelectedIds);
-            await Promise.allSettled(ids.map((id) => onDeleteMedia(id)));
-            const idSet = new Set(ids);
+            const results = await Promise.allSettled(
+              ids.map((id) => onDeleteMedia(id)),
+            );
+            // Only drop items whose delete actually succeeded; removing the
+            // rejected ones hid still-existing media until the next reload.
+            const deletedIds = ids.filter(
+              (_, i) => results[i].status === "fulfilled",
+            );
+            const idSet = new Set(deletedIds);
             setAllItems((prev) => prev.filter((it) => !idSet.has(it.id)));
             for (const [key, entry] of galleryCacheMap.entries()) {
               galleryCacheMap.set(key, {
@@ -1666,7 +1688,15 @@ export const GalleryModal = React.memo(
                 items: entry.items.filter((it) => !idSet.has(it.id)),
               });
             }
-            clearBulkSelection();
+            if (deletedIds.length === ids.length) {
+              clearBulkSelection();
+            } else {
+              // Keep the failed items selected so the user can retry.
+              setBulkSelectedIds(new Set(ids.filter((id) => !idSet.has(id))));
+              toast.error(
+                `Failed to delete ${ids.length - deletedIds.length} item(s)`,
+              );
+            }
           } finally {
             isActionReminderOpen.value = false;
           }

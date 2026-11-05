@@ -179,4 +179,38 @@ describe("native login modal integration", () => {
     expect(useLoginModalStore.getState().isOpen).toBe(false);
     expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
   });
+
+  // Create an account through the sign-up form so the modal reaches its "Join our community" (Discord) step.
+  const signUpToDiscordStep = async () => {
+    await act(async () => { render(<LoginModal isSignUp onArtCraftAuthSuccess={vi.fn()} />); });
+    fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "native_user" } });
+    fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "user@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText("Min. 8 characters"), { target: { value: "password123" } });
+    fireEvent.change(screen.getByPlaceholderText("Re-enter password"), { target: { value: "password123" } });
+    const submit = screen.getAllByRole("button", { name: "Sign up" }).find((button) => button.getAttribute("type") === "submit")!;
+    await act(async () => { fireEvent.click(submit); });
+  };
+
+  it("opens the Discord invite in the system browser when Join Discord is pressed after sign-up", async () => {
+    // The desktop webview ignores window.open for the main window (no new-window handler is set), so the button
+    // must go through the opener plugin like the rest of this modal does. jsdom's window.open is a stub.
+    const windowOpen = vi.spyOn(window, "open").mockReturnValue(null);
+    await signUpToDiscordStep();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Join Discord" })); });
+    expect(native).toHaveBeenCalledWith("plugin:opener|open_url", { url: "https://discord.gg/75svZP2Vje" });
+    expect(windowOpen).not.toHaveBeenCalled();
+    // The modal still moves on to the thank-you screen.
+    expect(screen.getByText("Thank you for signing in!")).toBeTruthy();
+    windowOpen.mockRestore();
+  });
+
+  it("opens nothing when Skip for now is pressed on the Discord step, and moves on", async () => {
+    const windowOpen = vi.spyOn(window, "open").mockReturnValue(null);
+    await signUpToDiscordStep();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Skip for now" })); });
+    expect(native.mock.calls.filter(([command]) => command === "plugin:opener|open_url")).toHaveLength(0);
+    expect(windowOpen).not.toHaveBeenCalled();
+    expect(screen.getByText("Thank you for signing in!")).toBeTruthy();
+    windowOpen.mockRestore();
+  });
 });

@@ -36,6 +36,12 @@ export function bindingFromEvent(e: KeyboardEvent): Binding | null {
   };
 }
 
+/** True when the binding needs Ctrl/Cmd, Shift or Alt held. "Held key" actions (the camera) are looked up by the bare key
+ *  and treat those modifiers as speed boosts, so the capture UI uses this to refuse chords for them. */
+export function bindingHasModifier(b: Binding): boolean {
+  return !!(b.ctrl || b.shift || b.alt);
+}
+
 export function bindingsEqual(a: Binding, b: Binding): boolean {
   return (
     a.code === b.code &&

@@ -1,3 +1,16 @@
+//! The low-level HTTP request to the fal.ai API: `FalRequest`.
+//!
+//! Every model-specific function in `requests/api/...` (and the old ones in `requests_old/...`)
+//! builds a `FalRequest` with its model endpoint (e.g. "fal-ai/nano-banana-pro") plus a
+//! serializable params struct, then calls one of the send methods below.
+//!
+//! Two fal hosts are involved:
+//!
+//! - `fal.run` is synchronous: the HTTP call stays open until the result is ready (`send`).
+//! - `queue.fal.run` is asynchronous: it returns a request id right away, and the result is
+//!   fetched later by polling (`queue`, `queue_request`) or pushed to us (`queue_webhook`).
+
+// Zero-sized marker so the struct can remember its `Response` type without storing one.
 use std::marker::PhantomData;
 
 use reqwest::{IntoUrl, Url};
@@ -14,6 +27,11 @@ const DEFAULT_SYNC_BASE_URL: &str = "https://fal.run";
 
 /// Host for the asynchronous queue API (polling and webhooks).
 const DEFAULT_QUEUE_BASE_URL: &str = "https://queue.fal.run";
+
+/// Error returned when neither `with_api_key` nor `FAL_API_KEY` supplied a key.
+fn missing_api_key_error() -> FalError {
+  FalError::Other("No fal API key provided, and FAL_API_KEY environment variable is not set".to_string())
+}
 
 /// A request to the FAL API.
 ///
@@ -44,6 +62,11 @@ pub struct FalRequest<Params: Serialize, Response: DeserializeOwned> {
 }
 
 impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response> {
+  /// Create a request for a fal model endpoint (the path after the host, e.g.
+  /// "fal-ai/nano-banana-pro"). `params` is serialized to the JSON body when sent.
+  ///
+  /// The API key defaults to the `FAL_API_KEY` environment variable (or `None` if unset);
+  /// override it with `with_api_key`. A missing key is reported when the request is sent.
   pub fn new(endpoint: impl Into<String>, params: Params) -> Self {
     Self {
       client: reqwest::Client::new(),
@@ -81,23 +104,26 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
   }
 
   /// Send the request and wait for the response
+  ///
+  /// Uses the synchronous host (`fal.run`): the HTTP call stays open until the finished result is ready.
+  ///
+  /// Errors: `FalError::Other` if no API key is set, a transport error from reqwest, or the
+  /// response body text converted into a `FalError` when fal answers with any status except 200.
   pub async fn send(self) -> Result<Response, FalError> {
+    // FIX: a missing API key is a configuration error the caller can hit at runtime;
+    // return an error instead of panicking (applies to send/queue/queue_webhook/queue_request).
+    let key = self.api_key.clone().ok_or_else(missing_api_key_error)?;
+
+    // fal authenticates with the header `Authorization: Key <id>:<secret>` (not "Bearer").
     let response = self
       .client
       .post(format!("{}/{}", self.sync_base_url, self.endpoint))
       .json(&self.params)
-      .header(
-        "Authorization",
-        format!(
-          "Key {}",
-          self.api_key.expect(
-            "No fal API key provided, and FAL_API_KEY environment variable is not set"
-          )
-        ),
-      )
+      .header("Authorization", format!("Key {}", key))
       .send()
       .await?;
 
+    // Any non-200 reply carries fal's error message in the body; surface that text as the error.
     if response.status() != 200 {
       let error = response.text().await?;
       return Err(error.into());
@@ -107,10 +133,15 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
   }
 
   /// Submit the request to the Fal queue system.
+  ///
+  /// Posts to `queue.fal.run` and returns a `Queue` handle.
+  ///
+  /// The handle remembers the request id and URLs fal gave back, so the caller can poll for
+  /// status and fetch the result later. Errors are the same as `send`.
   pub async fn queue(self) -> Result<Queue<Response>, FalError> {
     let key = self
       .api_key
-      .expect("No fal API key provided, and FAL_API_KEY environment variable is not set");
+      .ok_or_else(missing_api_key_error)?;
 
     let response = self
       .client
@@ -132,13 +163,16 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
 
   /// Submit the request to the Fal queue with a webhook callback URL.
   ///
+  /// Fal will POST the finished result to `url` instead of us polling for it.
+  /// Errors: missing API key, `url` that is not a valid URL, transport error, or a non-200 reply.
+  ///
   /// NB: The `fal_webhook` query value MUST be percent-encoded. Since Fal's 2026-09-08 gateway
   /// change, a raw `fal_webhook=https://host/path` value is silently ignored: the job completes
   /// but no webhook is ever delivered. `query_pairs_mut` encodes it for us.
   pub async fn queue_webhook<U: IntoUrl>(self, url: U) -> Result<WebhookResponse, FalError> {
     let key = self
       .api_key
-      .expect("No fal API key provided, and FAL_API_KEY environment variable is not set");
+      .ok_or_else(missing_api_key_error)?;
 
     let webhook_url = url.into_url()?;
 
@@ -169,10 +203,16 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
   }
 
   /// Submit the request to the Fal queue system.
+  ///
+  /// Returns just the raw `QueueResponse` (request id plus status/response/cancel URLs),
+  /// without wrapping it in a `Queue` handle.
+  /// Callers keep the request id and poll by id later (see the `polling` module).
+  ///
+  /// Errors: missing API key, transport error, non-200 reply, or a body that is not valid JSON.
   pub async fn queue_request(self) -> Result<QueueResponse, FalError> {
     let key = self
         .api_key
-        .expect("No fal API key provided, and FAL_API_KEY environment variable is not set");
+        .ok_or_else(missing_api_key_error)?;
 
     let response = self
         .client
@@ -338,6 +378,22 @@ mod tests {
         .map(|(_, v)| v.into_owned())
         .expect("fal_webhook param");
       assert_eq!(decoded, WEBHOOK_URL);
+    }
+  }
+
+  mod missing_api_key_tests {
+    use super::*;
+
+    /// A missing API key must be an `Err`, never a panic.
+    #[tokio::test]
+    async fn missing_key_returns_error_not_panic() {
+      let mut request = new_request();
+      request.api_key = None;
+      assert!(request.queue_request().await.is_err());
+
+      let mut request = new_request();
+      request.api_key = None;
+      assert!(request.send().await.is_err());
     }
   }
 

@@ -15,6 +15,7 @@ import { DynamicIcon } from "@storyteller/icons";
 import { useEnterToGenerateStore } from "./promptStore";
 import { MentionChipMenu } from "./MentionChipMenu";
 import { DeckPreviewModal } from "./deck/DeckCard";
+import { isImeKeyDown } from "./common/imeKey";
 
 export interface MentionItem {
   label: string;
@@ -1323,6 +1324,11 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
+        // Keys pressed while an IME is composing (Japanese/Chinese/Korean typing) belong to the IME: its Enter confirms
+        // the chosen word, its arrows move through candidates. Without this, that Enter inserted a stray line break (or
+        // submitted the prompt with Enter-to-generate on) and the arrows/Enter hijacked the @-mention list.
+        if (isImeKeyDown(e)) return;
+
         if (mentionState.isOpen && filteredItems.length > 0) {
           if (e.key === "ArrowDown") {
             e.preventDefault();

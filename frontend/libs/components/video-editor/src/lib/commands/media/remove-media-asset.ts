@@ -8,9 +8,11 @@ import { hasMediaId } from "../../timeline/element-utils";
 import type { SceneTracks } from "../../timeline/types";
 
 export class RemoveMediaAssetCommand extends Command {
-  private savedAssets: MediaAsset[] | null = null;
   private savedTracks: SceneTracks | null = null;
   private removedAsset: MediaAsset | null = null;
+  // Where the asset sat in the bin when it was removed, so undo can put it back
+  // in the same spot instead of restoring a snapshot of the whole list.
+  private removedIndex = 0;
 
   constructor({
     projectId,
@@ -31,11 +33,13 @@ export class RemoveMediaAssetCommand extends Command {
     const editor = EditorCore.getInstance();
     const assets = editor.media.getAssets();
 
-    this.savedAssets = [...assets];
     this.savedTracks = editor.scenes.getActiveScene().tracks;
 
+    this.removedIndex = assets.findIndex(
+      (media: MediaAsset) => media.id === this.assetId,
+    );
     this.removedAsset =
-      assets.find((media: MediaAsset) => media.id === this.assetId) ?? null;
+      this.removedIndex === -1 ? null : assets[this.removedIndex];
 
     if (!this.removedAsset) {
       console.error("Media asset not found:", this.assetId);
@@ -85,17 +89,30 @@ export class RemoveMediaAssetCommand extends Command {
   undo(): void {
     const editor = EditorCore.getInstance();
 
-    if (this.savedAssets && this.removedAsset) {
-      const restoredAsset: MediaAsset = {
-        ...this.removedAsset,
-        url: URL.createObjectURL(this.removedAsset.file),
-      };
+    // FIX: undo used to restore the whole asset list snapshotted in execute().
+    // That dropped any asset added afterwards outside the undo history (assets
+    // panel, timeline drag-drop), and in a multi-select delete it put the other
+    // deleted assets back from an older snapshot with their already-revoked blob
+    // URLs. Put back only the asset this command removed, at its old position
+    // (clamped to the current length), with a freshly created URL. If it is
+    // already in the bin there is nothing to restore.
+    if (this.removedAsset) {
+      const current = editor.media.getAssets();
+      if (!current.some((a) => a.id === this.assetId)) {
+        const restoredAsset: MediaAsset = {
+          ...this.removedAsset,
+          url: URL.createObjectURL(this.removedAsset.file),
+        };
+        const index = Math.min(this.removedIndex, current.length);
 
-      editor.media.setAssets({
-        assets: this.savedAssets.map((a) =>
-          a.id === this.assetId ? restoredAsset : a,
-        ),
-      });
+        editor.media.setAssets({
+          assets: [
+            ...current.slice(0, index),
+            restoredAsset,
+            ...current.slice(index),
+          ],
+        });
+      }
 
       // Persistence handled by host via ProjectStorageAdapter
     }

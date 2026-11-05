@@ -19,7 +19,8 @@ export class MiscApi extends ApiManager {
       .catch((err) => {
         return {
           success: false,
-          errorMessage: err.mesasge,
+          // Was a typo ("mesasge"), which made errorMessage always undefined.
+          errorMessage: err.message,
         };
       });
   }

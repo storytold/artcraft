@@ -155,10 +155,7 @@ impl CreateImagePage {
         },
         DeckAction::Remove(id) => self.refs.remove(id),
         DeckAction::ClearAll => self.refs.images.clear(),
-        DeckAction::ReorderImages { from, to } => {
-          let item = self.refs.images.remove(from);
-          self.refs.images.insert(to.min(self.refs.images.len()), item);
-        },
+        DeckAction::ReorderImages { from, to } => self.refs.reorder_images(from, to),
         DeckAction::Preview(id) => {
           if let Some(url) = self.refs.find_mut(id).and_then(|r| r.full_url.clone().or_else(|| r.preview.clone())) {
             env.requests.push(AppRequest::Preview(url));

@@ -1,3 +1,9 @@
+// DesktopGenerationGallery: shows the feed of generated media (in-progress, failed, finished) on the Generate Image,
+// Video and Audio pages. Used by pages/PageImage/TextToImage.tsx, pages/PageVideo/ImageToVideo.tsx and
+// pages/PageAudio/CreateAudio.tsx, which feed it data (the image and video pages get theirs from useDesktopGenerationFeed).
+// The list/grid views and selection stores come from @storyteller/ui-generation-list; the per-item quick action
+// buttons (recreate, make video, share, download) are built here and call desktopMediaActions.ts.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -26,6 +32,8 @@ import {
 // desktop flavors of the quick actions (recreate / make-video / share /
 // download) through the views' render-prop seams.
 
+// Props. Everything except enableMakeVideo / selectable / selectionBarBottomOffset is feed data and callbacks that
+// are passed straight through to the list or grid view (see useDesktopGenerationFeed for where they come from).
 export interface DesktopGenerationGalleryProps {
   inProgressJobs: InProgressJob[];
   failedJobs: FailedJob[];
@@ -37,6 +45,10 @@ export interface DesktopGenerationGalleryProps {
   isLoading?: boolean;
   isInitialLoading: boolean;
   onLoadMore: () => void;
+  /** True when the latest history request failed; the views then show a "Try again" notice instead of a spinner. */
+  loadFailed?: boolean;
+  /** Runs when the user presses "Try again" (pages pass the gallery hook's loadMore). */
+  onRetry?: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
   /** Id of the item most recently viewed in the lightbox; that tile gets a
    *  persistent "Last viewed" badge. */
@@ -51,12 +63,17 @@ export interface DesktopGenerationGalleryProps {
   selectionBarBottomOffset?: number;
 }
 
+/**
+ * Chooses list or grid layout from the shared view-mode store, and wires in multi-select and the quick-action buttons.
+ * enableMakeVideo / selectable / selectionBarBottomOffset are described on the props; the rest (...feedProps) go to the view.
+ */
 export function DesktopGenerationGallery({
   enableMakeVideo,
   selectable,
   selectionBarBottomOffset,
   ...feedProps
 }: DesktopGenerationGalleryProps) {
+  // Read from global zustand stores shared with the TopBar toggles (list/grid choice and select mode).
   const viewMode = useGalleryViewStore((s) => s.viewMode);
   const selectionActive = useGallerySelectionStore((s) => s.active);
   const selectedIds = useGallerySelectionStore((s) => s.ids);
@@ -68,6 +85,7 @@ export function DesktopGenerationGallery({
     return () => useGallerySelectionStore.getState().setActive(false);
   }, [selectable]);
 
+  // Toast shown after the list view tries to copy a prompt to the clipboard.
   const handleCopyResult = useCallback((success: boolean) => {
     if (success) {
       toast.success("Prompt copied");
@@ -76,11 +94,13 @@ export function DesktopGenerationGallery({
     }
   }, []);
 
+  // Props that switch the views into checkbox-select mode (only when this page enabled selection).
   const selectionProps = {
     selectionMode: !!selectable && selectionActive,
     selectedIds,
     onToggleSelect: handleToggleSelect,
   };
+  // Floating "Download" bar, rendered only on pages that allow selection.
   const selectionBar = selectable && (
     <SelectionDownloadBar
       newlyCompletedItems={feedProps.newlyCompletedItems}
@@ -89,6 +109,7 @@ export function DesktopGenerationGallery({
     />
   );
 
+  // List layout: one row per item. Otherwise (below) the default grid of cards is used.
   if (viewMode === "list") {
     return (
       <>
@@ -129,6 +150,7 @@ export function DesktopGenerationGallery({
   );
 }
 
+// Tick/untick one item in the shared selection store.
 function handleToggleSelect(item: GalleryItem) {
   useGallerySelectionStore.getState().toggle(item.id);
 }
@@ -148,6 +170,7 @@ function SelectionDownloadBar({
   const ids = useGallerySelectionStore((s) => s.ids);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Turn the selected ids back into gallery items (looking in both lists); items with no downloadable file are dropped.
   const selectedItems = useMemo(() => {
     const byId = new Map(
       [...newlyCompletedItems, ...galleryItems].map(
@@ -159,6 +182,7 @@ function SelectionDownloadBar({
       .filter((it): it is GalleryItem => !!it?.fullImage);
   }, [newlyCompletedItems, galleryItems, ids]);
 
+  // Ask for a folder, save every selected file, and leave select mode only if something was saved. isDownloading blocks double clicks.
   const handleDownload = useCallback(async () => {
     if (isDownloading || selectedItems.length === 0) return;
     setIsDownloading(true);
@@ -197,6 +221,8 @@ function SelectionDownloadBar({
 // record, make-video seeds the video page, share copies the public media
 // link, download saves via Tauri. stopPropagation keeps taps from also
 // opening the lightbox.
+// Props: item is the finished media; promptToken links to the prompt record used by Recreate; enableMakeVideo shows
+// the Make Video button (image page only); variant picks the button size for list rows vs grid cards.
 function ItemActions({
   item,
   promptToken,
@@ -208,6 +234,7 @@ function ItemActions({
   enableMakeVideo?: boolean;
   variant: "row" | "card";
 }) {
+  // Spinner/disable flags for the async buttons, and a short "Copied" confirmation for Share.
   const [isRecreating, setIsRecreating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -216,6 +243,7 @@ function ItemActions({
   const is3D = item.mediaClass === "dimensional";
   const isAudio = item.mediaClass === "audio";
   // Audio v1: no recreate / make-video — share + download only.
+  // Which create page Recreate should fill: video for video, nothing for 3D/audio, image otherwise.
   const recreateMediaClass: "image" | "video" | null = isVideo
     ? "video"
     : is3D || isAudio
@@ -253,6 +281,7 @@ function ItemActions({
     [item.fullImage, item.thumbnail, item.id],
   );
 
+  // Copy the public link, then show a check mark for 1500 ms (1.5 s).
   const handleShare = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -276,7 +305,7 @@ function ItemActions({
         setIsDownloading(false);
       }
     },
-    [item.fullImage, item.mediaClass, isDownloading],
+    [item.fullImage, item.mediaClass, item.modelId, isDownloading],
   );
 
   return (

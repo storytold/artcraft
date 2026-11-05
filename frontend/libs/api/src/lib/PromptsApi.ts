@@ -27,9 +27,25 @@ export class PromptsApi extends ApiManager {
   > {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/jobs/job/${jobToken}`;
 
-    const response = await this.get<any>({
-      endpoint,
-    });
+    // Siblings return an error shape instead of rejecting; a polling caller
+    // would otherwise get an unhandled rejection on any HTTP error (eg. 404/502).
+    let response: any;
+    try {
+      response = await this.get<any>({
+        endpoint,
+      });
+    } catch (err: any) {
+      return { success: false, errorMessage: err.message };
+    }
+
+    // A body without state/status would throw a TypeError on the reads below.
+    if (!response?.state?.status) {
+      return {
+        success: false,
+        errorMessage: response?.BadInput ?? "Job state missing from response.",
+      };
+    }
+
     console.log("Job Polling Response:");
     console.log(response);
 
@@ -152,7 +168,13 @@ export class PromptsApi extends ApiManager {
       body: formData,
     });
 
-    const postResponse = await response.json();
+    // A non-JSON body (eg. HTML 502) must yield the error shape, not a rejection.
+    let postResponse: any;
+    try {
+      postResponse = await response.json();
+    } catch {
+      return { success: false, errorMessage: "Failed to generate snapshot." };
+    }
 
     console.log(postResponse);
 

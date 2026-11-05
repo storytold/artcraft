@@ -5,6 +5,7 @@ import {
   CommonResolution,
   CommonQuality,
   ImageModel,
+  Model,
 } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 
@@ -15,7 +16,8 @@ export interface GenerateImageRequest {
   provider?: GenerationProvider;
 
   // The model to use.
-  model?: ImageModel | string;
+  // Only the model's tauriId is read, so the base Model class is accepted too.
+  model?: ImageModel | Model | string;
 
   // Text prompt for the image generation.
   prompt?: string;

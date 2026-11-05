@@ -34,6 +34,19 @@ export const cubicBezierYForX = (easing: EasingSpec, x: number): number => {
     t -= err / d;
   }
   t = Math.max(0, Math.min(1, t));
+  // FIX: Newton can overshoot when the slope is near zero (both handles
+  // dragged to x = 0 or x = 1), and the clamp above then pins t to 0 or 1, so
+  // the eased value jumped to an end of the segment. When the solve did not
+  // land on x, bisect instead: x(t) never decreases for handles in 0..1.
+  if (Math.abs(bezierAxis(t, easing.p1x, easing.p2x) - x) > 1e-4) {
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 40; i++) {
+      t = (lo + hi) / 2;
+      if (bezierAxis(t, easing.p1x, easing.p2x) < x) lo = t;
+      else hi = t;
+    }
+  }
   return bezierAxis(t, easing.p1y, easing.p2y);
 };
 
