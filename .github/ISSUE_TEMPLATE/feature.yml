@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose an improvement to an ArtCraft workflow.
+title: '[Feature]: '
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Image or video generation
+        - Audio generation
+        - 2D canvas
+        - 3D stage
+        - Library and media management
+        - Experimental native app
+        - Developer tooling
+        - Another ArtCraft workflow
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the workflow and what makes it difficult today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain the desired interaction or result, with examples if helpful.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How would you know it works?
+      description: Suggest observable success criteria for the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and related requests
+      description: Optional workarounds, related issues, screenshots, or design references.
