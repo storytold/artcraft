@@ -105,7 +105,7 @@ impl CharactersModal {
       let dismissed = widgets::modal(ctx, Id::new("character-delete"), 420.0, |ui| {
         ui.label(widgets::heading("Delete character?", 20.0));
         ui.add_space(8.0);
-        ui.label(egui::RichText::new(format!("\u{201c}{name}\u{201d} will be removed from your characters.")).color(theme::MUTED));
+        ui.label(egui::RichText::new(crate::i18n::tf("\u{201c}{}\u{201d} will be removed from your characters.", &[name.to_string()])).color(theme::MUTED));
         ui.add_space(16.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
           if widgets::button(ui, None, "Delete", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
@@ -211,7 +211,7 @@ impl CharactersModal {
         let (r, _) = ui.allocate_exact_size(vec2(240.0, 240.0), Sense::hover());
         thumbnail(ui, r, c.full_url().or_else(|| c.avatar_url()).as_deref(), cache);
         if let Some(url) = c.full_url() {
-          if ui.add(egui::Button::new(egui::RichText::new("View full size").size(12.0).color(theme::ACCENT_INK)).frame(false)).clicked() {
+          if ui.add(egui::Button::new(egui::RichText::new(crate::i18n::t("View full size")).size(12.0).color(theme::ACCENT_INK)).frame(false)).clicked() {
             actions.push(CharactersAction::Preview(url));
           }
         }
@@ -270,7 +270,7 @@ impl CharactersModal {
                 actions.push(CharactersAction::Upload { ref_id: img.id, path });
                 self.image = Some(img);
               },
-              Err(err) => actions.push(CharactersAction::Toast(format!("Failed to upload {}: {err}", crate::pages::common::file_name(&path)))),
+              Err(err) => actions.push(CharactersAction::Toast(crate::i18n::tf("Failed to upload {}: {}", &[crate::pages::common::file_name(&path).to_string(), err.to_string()]))),
             }
           }
         }
@@ -305,11 +305,11 @@ impl CharactersModal {
 fn fields(ui: &mut Ui, name: &mut String, description: &mut String) {
   widgets::hud(ui, "Character name", theme::FAINT);
   ui.add_space(4.0);
-  input_frame(ui, |ui| ui.add(egui::TextEdit::singleline(name).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new("Character name").color(theme::FAINT))));
+  input_frame(ui, |ui| ui.add(egui::TextEdit::singleline(name).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new(crate::i18n::t("Character name")).color(theme::FAINT))));
   ui.add_space(10.0);
   widgets::hud(ui, "Description", theme::FAINT);
   ui.add_space(4.0);
-  input_frame(ui, |ui| ui.add(egui::TextEdit::multiline(description).frame(egui::Frame::NONE).desired_width(f32::INFINITY).desired_rows(4).hint_text(egui::RichText::new("Description...").color(theme::FAINT))));
+  input_frame(ui, |ui| ui.add(egui::TextEdit::multiline(description).frame(egui::Frame::NONE).desired_width(f32::INFINITY).desired_rows(4).hint_text(egui::RichText::new(crate::i18n::t("Description...")).color(theme::FAINT))));
 }
 
 fn input_frame(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> egui::Response) {

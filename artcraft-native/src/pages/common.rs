@@ -138,6 +138,8 @@ impl FeedKey {
 /// and the prompt box (drawn by `prompt_box`) floating at the bottom centre.
 #[allow(clippy::too_many_arguments)]
 pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str, subtitle: &str, feed: &mut FeedStore, box_height: &mut f32, prompt_box: impl FnOnce(&mut Ui, &mut Env<'_>)) {
+  let title = crate::i18n::t(title);
+  let subtitle = crate::i18n::t(subtitle);
   let area = ui.max_rect();
   let bottom_offset = *box_height + 40.0;
   if feed.has_content() {
@@ -197,7 +199,7 @@ pub fn selection_bar(ui: &Ui, area: Rect, bottom: f32, feed: &mut FeedStore, kin
       ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 10.0;
         ui.add_space(6.0);
-        ui.label(egui::RichText::new(format!("{} selected", feed.selected.len())).size(13.0).family(theme::medium()));
+        ui.label(egui::RichText::new(crate::i18n::tf("{} selected", &[feed.selected.len().to_string()])).size(13.0).family(theme::medium()));
         let any = !feed.selected.is_empty();
         if ui.add_enabled_ui(any, |ui| widgets::button(ui, Some(crate::ui::icons::Icon::Download), "Download", widgets::Kind::Secondary, 0.0, 30.0)).inner.clicked() {
           requests.push(AppRequest::Download(feed.selected.iter().cloned().collect()));
@@ -270,7 +272,7 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
         item.preview = Some(key);
       },
       Err(err) => {
-        env.toasts.error(format!("Couldn't read {}: {err}", file_name(path)));
+        env.toasts.error(crate::i18n::tf("Couldn't read {}: {}", &[file_name(path).to_string(), err.to_string()]));
         return;
       },
     }
@@ -315,7 +317,7 @@ pub fn apply_upload(toasts: &mut Toasts, refs: &mut References, ref_id: u64, res
     Err(message) => {
       let kind = refs.find_mut(ref_id).map_or("file", |r| r.kind.noun());
       refs.remove(ref_id);
-      toasts.error(format!("Failed to upload {kind}: {message}"));
+      toasts.error(crate::i18n::tf("Failed to upload {}: {}", &[crate::i18n::t(kind), message.to_string()]));
       false
     },
   }
