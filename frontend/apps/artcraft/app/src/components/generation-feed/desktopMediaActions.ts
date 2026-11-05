@@ -6,6 +6,7 @@ import {
 import type { Prompts } from "@storyteller/api";
 import {
   DownloadUrl,
+  DownloadDirectoryReveal,
   useModelsStore,
   downloadUrlToPath,
   pickDownloadDirectory,
@@ -124,6 +125,16 @@ export async function downloadMediaFilesToFolder(
     toast.error("Could not save the selected files.", { id: toastId });
   }
   return saved > 0;
+}
+
+/** Open the user's downloads folder in the OS file manager. */
+export async function openDownloadsFolder() {
+  try {
+    await DownloadDirectoryReveal();
+  } catch (error) {
+    console.error(">>> Failed to open downloads folder:", error);
+    toast.error("Could not open downloads folder");
+  }
 }
 
 /** Seed the video page with `url` as the starting image and switch to it. */

@@ -64,6 +64,7 @@ import {
   BoxIcon,
   EllipsisIcon,
   FolderIcon,
+  FolderOpenIcon,
   FolderPlusIcon,
   GlobeIcon,
   Grid3x3Icon,
@@ -281,6 +282,7 @@ interface GalleryModalProps {
    *  of a Retry link. */
   onLoginClick?: () => void;
   onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
+  onOpenDownloadsFolder?: () => void | Promise<void>;
   onAddToSceneClicked?: (
     url: string,
     media_id: string | undefined,
@@ -585,6 +587,7 @@ export const GalleryModal = React.memo(
     useSelectedLoading,
     onLoginClick,
     onDownloadClicked,
+    onOpenDownloadsFolder,
     onAddToSceneClicked,
     isOpen,
     forceFilter,
@@ -2838,6 +2841,22 @@ export const GalleryModal = React.memo(
                       />
                     </Button>
                   </Tooltip>
+                  {mode === "view" && onOpenDownloadsFolder && (
+                    <Tooltip
+                      position="top"
+                      content="Open downloads folder"
+                      closeOnClick={true}
+                    >
+                      <Button
+                        variant="action"
+                        onClick={onOpenDownloadsFolder}
+                        className="relative z-[51] h-9 w-9 p-2.5"
+                        aria-label="Open downloads folder"
+                      >
+                        <FolderOpenIcon className="text-lg text-base-fg" />
+                      </Button>
+                    </Tooltip>
+                  )}
                   {/* Image fit toggle button */}
                   <Tooltip
                     position="top"
@@ -3693,6 +3712,7 @@ export const GalleryModal = React.memo(
             downloadUrl={imageUrl}
             mediaId={lightboxImageSignal.value?.id}
             onDownloadClicked={onDownloadClicked}
+            onOpenDownloadsFolder={onOpenDownloadsFolder}
             onAddToSceneClicked={onAddToSceneClicked}
             mediaClass={lightboxImageSignal.value?.mediaClass}
             onEditClicked={onEditClicked}

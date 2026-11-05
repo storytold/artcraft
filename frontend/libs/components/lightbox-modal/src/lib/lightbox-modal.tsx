@@ -2,7 +2,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
-import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, FolderOpenIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
@@ -61,6 +61,7 @@ interface LightboxModalProps {
   downloadUrl?: string;
   mediaId?: string;
   onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
+  onOpenDownloadsFolder?: () => void | Promise<void>;
   onAddToSceneClicked?: (
     url: string,
     media_id: string | undefined,
@@ -111,6 +112,7 @@ export function LightboxModal({
   downloadUrl, // cdn url of the image
   mediaId, // media id of the image
   onDownloadClicked,
+  onOpenDownloadsFolder,
   onAddToSceneClicked,
   mediaClass,
   onEditClicked,
@@ -1181,6 +1183,24 @@ export function LightboxModal({
                     }}
                   >
                     Download
+                  </Button>
+                )}
+
+                {onOpenDownloadsFolder && (
+                  <Button
+                    className={
+                      derivedMediaClass === "image"
+                        ? "w-full py-1.5 text-[13px]"
+                        : "w-full col-span-2 py-1.5 text-[13px]"
+                    }
+                    variant="secondary"
+                    icon={FolderOpenIcon}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await onOpenDownloadsFolder();
+                    }}
+                  >
+                    Open downloads folder
                   </Button>
                 )}
 
