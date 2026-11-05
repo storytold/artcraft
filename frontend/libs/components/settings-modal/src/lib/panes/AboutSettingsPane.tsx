@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   GetAppInfo,
@@ -14,6 +15,8 @@ const UNLOCK_WINDOW_MS = 5000;
 interface AboutSettingsPaneProps {}
 
 export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
+  const { t: translateUI } = useTranslation();
+
   const [appInfo, setAppInfo] = useState<
     GetAppInfoPayload | undefined
   >(undefined);
@@ -48,9 +51,7 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
     <>
       <div className="space-y-4 pt-3 text-base-fg">
         <div className="space-y-1">
-          <Label>
-            Artcraft Version
-          </Label>
+          <Label>{translateUI("Artcraft Version")}</Label>
           <div
             className="text-sm font-medium"
             onClick={handleVersionClick}
@@ -61,45 +62,37 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label>Artcraft Host</Label>
+          <Label>{translateUI("Artcraft Host")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.storyteller_host}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>Git Commit ID</Label>
-          <div className="break-all text-sm font-medium">{appInfo?.git_commit_short_id} &middot; {appInfo?.git_commit_id}</div>
+          <Label>{translateUI("Git Commit ID")}</Label>
+          <div className="break-all text-sm font-medium">{appInfo?.git_commit_short_id}{translateUI(" &middot; ")}{appInfo?.git_commit_id}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>Git Commit Timestamp</Label>
+          <Label>{translateUI("Git Commit Timestamp")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.git_commit_timestamp}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>
-            Build Timestamp
-          </Label>
+          <Label>{translateUI("Build Timestamp")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.build_timestamp}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>
-            Operating System
-          </Label>
+          <Label>{translateUI("Operating System")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.os_platform} ({appInfo?.os_version})</div>
         </div>
 
         <div className="space-y-1">
-          <Label>
-            Artcraft Data Directory
-          </Label>
+          <Label>{translateUI("Artcraft Data Directory")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.artcraft_root_directory}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>
-            Downloads Directory
-          </Label>
+          <Label>{translateUI("Downloads Directory")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.download_directory}</div>
         </div>
 

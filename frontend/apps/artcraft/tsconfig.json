@@ -26,7 +26,7 @@
     // Vite takes care of building everything, not tsc.
     "noEmit": true
   },
-  "references": [
+  "references": [{"path": "../../libs/i18n"},
     {
       "path": "../../libs/components/video-editor"
     },
