@@ -8897,6 +8897,7 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "tauri-plugin-fs",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
