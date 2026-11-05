@@ -27,7 +27,7 @@ class BucketConfig {
     width?: number,
     quality?: number,
   ): string {
-    const cndBasePath = environmentVariables.values.CDN_API;
+    const cdnBasePath = environmentVariables.values.CDN_API;
     const path = bucketRelativePath?.startsWith("/")
       ? bucketRelativePath
       : "/" + bucketRelativePath;
@@ -43,9 +43,9 @@ class BucketConfig {
       resizeParams = resizeParams.slice(0, -1);
     }
     if (resizeParams) {
-      return `${cndBasePath}/${resizeParams}${path}`;
+      return `${cdnBasePath}/${resizeParams}${path}`;
     } else {
-      return `${cndBasePath}${path}`;
+      return `${cdnBasePath}${path}`;
     }
   }
 }
