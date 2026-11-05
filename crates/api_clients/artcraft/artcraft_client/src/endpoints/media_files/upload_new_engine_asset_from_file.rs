@@ -2,7 +2,7 @@ use crate::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use crate::error::api_error::ApiError;
 use crate::utils::api_host::ApiHost;
 use crate::utils::constants::APPLICATION_JSON;
-use crate::utils::storyteller_client_builder::storyteller_client_builder;
+use crate::utils::storyteller_client_builder::storyteller_upload_client_builder;
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
 use enums::common::generation_provider::GenerationProvider;
@@ -32,7 +32,7 @@ pub async fn upload_new_engine_asset_from_file<P: AsRef<Path>>(
 
   debug!("Requesting {:?}", &url);
 
-  let client = storyteller_client_builder(api_host)
+  let client = storyteller_upload_client_builder(api_host)
       .build()?;
 
   let file_bytes = std::fs::read(path.as_ref())?;

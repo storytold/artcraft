@@ -4,7 +4,7 @@ use crate::error::client_error::ClientError;
 use crate::error::storyteller_error::StorytellerError;
 use crate::utils::api_host::ApiHost;
 use crate::utils::constants::APPLICATION_JSON;
-use crate::utils::storyteller_client_builder::storyteller_client_builder;
+use crate::utils::storyteller_client_builder::storyteller_upload_client_builder;
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
 use enums::common::generation_provider::GenerationProvider;
@@ -72,7 +72,7 @@ pub async fn upload_image_media_file_from_bytes(
 
   debug!("Requesting {:?}", &url);
 
-  let client = storyteller_client_builder(args.api_host)
+  let client = storyteller_upload_client_builder(args.api_host)
       .build()
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 
