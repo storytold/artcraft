@@ -26,11 +26,18 @@ export class MediaManager {
   // the asset id is already in the bin so re-imports of the same gallery
   // token don't produce duplicate rows.
   async addMediaAsset({
+    projectId,
     asset,
   }: {
     projectId?: string;
     asset: MediaAsset;
   }): Promise<MediaAsset | null> {
+    if (
+      projectId !== undefined &&
+      this.editor.project.getActiveOrNull()?.metadata.id !== projectId
+    ) {
+      return null;
+    }
     const existing = this.assets.find((a) => a.id === asset.id);
     if (existing) {
       return existing;
