@@ -22,6 +22,7 @@ tokens.workspace = true
 # External
 anyhow.workspace = true
 cookie.workspace = true
+cookie_store_rfc = { package = "cookie_store", version = "0.21.1", default-features = false, features = ["serde_json"] }
 chrono.workspace = true
 directories = "6.0.0"
 eframe = { version = "0.36", default-features = false, features = ["default_fonts", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }

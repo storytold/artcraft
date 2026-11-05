@@ -490,6 +490,7 @@ dependencies = [
  "artcraft_router",
  "chrono",
  "cookie",
+ "cookie_store 0.21.1",
  "cookie_store_wrapper",
  "directories",
  "eframe",
