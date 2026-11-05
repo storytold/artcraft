@@ -18,6 +18,11 @@ interface ArtCraftSignUpProps {
   isLoading?: boolean;
 }
 
+// Server signup rules; the messages match the desktop's server error mapping
+// (password_auth_error_message.rs) so both read the same.
+const MIN_PASSWORD_LENGTH = 6;
+const USERNAME_PATTERN = /^[A-Za-z0-9_-]*$/;
+
 const FIELD_LABEL =
   "block font-mono text-[11px] font-semibold leading-4 uppercase tracking-[0.12em] text-white/70";
 const FIELD_INPUT =
@@ -47,26 +52,28 @@ export const ArtCraftSignUp = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLocalError(undefined);
     const form = e.currentTarget;
     if (isSignUp) {
       const username = (form.elements.namedItem("username") as HTMLInputElement)
-        .value;
+        .value.trim();
       const email = (form.elements.namedItem("email") as HTMLInputElement)
-        .value;
+        .value.trim();
       const password = (form.elements.namedItem("password") as HTMLInputElement)
         .value;
       const confirmPassword = (
         form.elements.namedItem("confirmPassword") as HTMLInputElement
       ).value;
-      if (password !== confirmPassword) {
-        setLocalError("Passwords do not match.");
+      const validationError = validateSignup(username, password, confirmPassword);
+      if (validationError) {
+        setLocalError(validationError);
         return;
       }
       onSubmit(username, email, password, confirmPassword);
     } else {
       const usernameOrEmail = (
         form.elements.namedItem("usernameOrEmail") as HTMLInputElement
-      ).value;
+      ).value.trim();
       const password = (form.elements.namedItem("password") as HTMLInputElement)
         .value;
       onSubmit(usernameOrEmail, "", password, "");
@@ -129,7 +136,7 @@ export const ArtCraftSignUp = ({
           <Input
             name="password"
             type={showPassword ? "text" : "password"}
-            placeholder="Min. 8 characters"
+            placeholder={`Min. ${MIN_PASSWORD_LENGTH} characters`}
             required
             autoComplete="off"
             inputClassName={`${FIELD_INPUT} pr-12`}
@@ -198,3 +205,21 @@ export const ArtCraftSignUp = ({
     </form>
   );
 };
+
+/** Returns the first problem in form order, or undefined when the server should accept it. */
+function validateSignup(
+  username: string,
+  password: string,
+  confirmPassword: string,
+): string | undefined {
+  if (username.length < 3) return "Usernames must be at least 3 characters.";
+  if (username.length > 16) return "Usernames can be at most 16 characters.";
+  if (!USERNAME_PATTERN.test(username)) {
+    return "Usernames can only contain letters, numbers, underscores (_), and hyphens (-).";
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Passwords must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (password !== confirmPassword) return "Passwords do not match.";
+  return undefined;
+}
