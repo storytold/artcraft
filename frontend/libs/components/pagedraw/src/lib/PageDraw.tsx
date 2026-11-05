@@ -50,6 +50,7 @@ import {
 } from "./components/Model3DOverlay";
 import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
+import { useGenerationSubmission } from "./hooks/useGenerationSubmission";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
@@ -417,11 +418,9 @@ const PageDraw = ({
   const baseImageUrl = baseImageInfo?.url;
 
   // Synchronous re-entry guard for the Generate flow. A ref (not state) is the
-  // safety belt against duplicate paid generations: it flips before the first
-  // await so a panic-clicked second click sees the in-flight value immediately,
-  // independent of React state batching. The state below is only for the UI.
-  const generateInFlightRef = useRef(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  // safety belt against duplicate paid generations: the hook locks before the
+  // first await, reports failures, and releases the button for another attempt.
+  const { isGenerating, runGeneration } = useGenerationSubmission();
 
   const selectedImageModel: ImageModel | undefined =
     useSelectedImageModel(PAGE_ID);
@@ -828,10 +827,7 @@ const PageDraw = ({
         selectedProvider?: GenerationProvider;
       },
     ) => {
-      if (generateInFlightRef.current) return;
-      generateInFlightRef.current = true;
-      setIsGenerating(true);
-      try {
+      await runGeneration(async () => {
         // Yield once so React paints the disabled button before the heavy
         // canvas readback / encode / upload runs and locks the main thread.
         await new Promise<void>((resolve) =>
@@ -954,15 +950,14 @@ const PageDraw = ({
             provider: options?.selectedProvider,
           });
         }
-        if (result?.status === "success") {
-          addPendingGeneration(subscriberId, generationCount);
+        if (result?.status !== "success") {
+          throw result;
         }
-      } finally {
-        generateInFlightRef.current = false;
-        setIsGenerating(false);
-      }
+        addPendingGeneration(subscriberId, generationCount);
+      });
     },
     [
+      runGeneration,
       generationCount,
       getCompositeFile,
       getMaskArrayBuffer,
