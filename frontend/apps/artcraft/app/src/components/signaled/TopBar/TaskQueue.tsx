@@ -42,6 +42,7 @@ import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
+import { readLastReadAt, writeLastReadAt } from "./taskQueueStorage";
 
 type InProgressTask = {
   id: string;
@@ -511,10 +512,7 @@ export const TaskQueue = () => {
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
   const [completed, setCompleted] = useState<CompletedTask[]>([]);
   const [failed, setFailed] = useState<FailedTask[]>([]);
-  const [lastReadAt, setLastReadAt] = useState<number>(() => {
-    const stored = localStorage.getItem("taskQueueLastReadAt");
-    return stored ? parseInt(stored, 10) : 0;
-  });
+  const [lastReadAt, setLastReadAt] = useState<number>(readLastReadAt);
 
   // remove unread state; unread tracking handled via IDs below
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -933,7 +931,7 @@ export const TaskQueue = () => {
     if (open) {
       const now = Date.now();
       setLastReadAt(now);
-      localStorage.setItem("taskQueueLastReadAt", String(now));
+      writeLastReadAt(now);
       setUnreadCompletedIds([]);
     }
   };

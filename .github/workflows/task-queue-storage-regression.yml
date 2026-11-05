@@ -1,0 +1,44 @@
+name: Task queue storage regression
+
+on:
+  pull_request:
+    paths:
+      - "frontend/apps/artcraft/app/src/components/signaled/TopBar/TaskQueue.tsx"
+      - "frontend/apps/artcraft/app/src/components/signaled/TopBar/TaskQueue.spec.tsx"
+      - "frontend/apps/artcraft/app/src/components/signaled/TopBar/taskQueueStorage.ts"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "frontend/apps/artcraft/vitest.config.ts"
+      - "frontend/apps/artcraft/vite.config.ts"
+      - ".github/workflows/task-queue-storage-regression.yml"
+  push:
+    branches:
+      - bugfix/task-queue-localstorage-guard
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  task-queue-storage:
+    name: TaskQueue storage regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend workspace dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run TaskQueue storage regression tests
+        working-directory: frontend/apps/artcraft
+        run: npx vitest run --config vitest.config.ts app/src/components/signaled/TopBar/TaskQueue.spec.tsx
