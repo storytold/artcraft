@@ -24,7 +24,7 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -39,7 +39,7 @@ jobs:
         shell: cmd
 
       - name: setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
@@ -90,7 +90,7 @@ jobs:
           $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
           RUSTFLAGS: "-C target-feature=+crt-static"
