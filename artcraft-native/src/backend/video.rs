@@ -31,11 +31,11 @@ pub fn ffmpeg_available() -> bool {
 }
 
 #[derive(Clone, Copy, Debug)]
-struct VideoInfo {
-  width: u32,
-  height: u32,
-  fps: f64,
-  duration: f64,
+pub struct VideoInfo {
+  pub width: u32,
+  pub height: u32,
+  pub fps: f64,
+  pub duration: f64,
 }
 
 pub struct VideoPlayer {
@@ -330,7 +330,7 @@ impl Source for PcmStream {
 
 /// Reads the clip's size, rate and length. A small probe keeps this ~2 s on CDN files instead of
 /// ~14 s (ffprobe otherwise scans much of the file over HTTP).
-fn probe(url: &str) -> Result<VideoInfo, String> {
+pub fn probe(url: &str) -> Result<VideoInfo, String> {
   #[derive(serde::Deserialize, Default)]
   #[serde(default)]
   struct Probe {
@@ -357,6 +357,16 @@ fn probe(url: &str) -> Result<VideoInfo, String> {
     None => stream.avg_frame_rate.parse().unwrap_or(24.0),
   };
   Ok(VideoInfo { width: stream.width.max(2), height: stream.height.max(2), fps: if fps.is_finite() && fps > 0.0 { fps } else { 24.0 }, duration: probe.format.duration.parse().unwrap_or(0.0) })
+}
+
+/// One frame of `path` at `secs`, at the clip's full size, as PNG bytes.
+pub fn grab_frame(path: &str, secs: f64) -> Result<Vec<u8>, String> {
+  let out = command("ffmpeg").args(["-nostdin", "-loglevel", "error", "-ss", &format!("{:.3}", secs.max(0.0)), "-i", path, "-frames:v", "1", "-f", "image2pipe", "-vcodec", "png", "-"]).output().map_err(|e| format!("ffmpeg: {e}"))?;
+  if out.stdout.is_empty() {
+    let detail = String::from_utf8_lossy(&out.stderr);
+    return Err(if detail.trim().is_empty() { "no frame at this time".to_owned() } else { detail.trim().to_owned() });
+  }
+  Ok(out.stdout)
 }
 
 /// The decoded size: at most `MAX_WIDTH` wide, both sides even (as `scale` requires).
@@ -418,5 +428,9 @@ mod tests {
     assert!((pts - 1.0).abs() < 1e-9, "frames are stamped from the start position");
     let count = 1 + stream.frames.iter().count();
     assert!((20..=28).contains(&count), "about a second of frames at 24 fps, got {count}");
+
+    let png = grab_frame(&url, 1.0).unwrap();
+    assert_eq!(image::load_from_memory(&png).unwrap().to_rgba8().dimensions(), (640, 360));
+    assert!(grab_frame(&url, 60.0).is_err(), "no frame past the end of the clip");
   }
 }
