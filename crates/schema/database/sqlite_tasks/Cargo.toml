@@ -34,7 +34,8 @@ serde_derive.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
-# serial_test = "3.0.0"
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt"] }
 
 [build-dependencies]
 tempfile.workspace = true
