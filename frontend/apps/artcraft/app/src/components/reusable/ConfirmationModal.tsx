@@ -33,7 +33,11 @@ export const ConfirmationModal = ({
     const element = document.getElementById("hide-dialog");
     if (element) {
       if ((element as HTMLInputElement).checked) {
-        localStorage.setItem(title.replace(" ", "-"), DoNotShow);
+        try {
+          localStorage.setItem(title.replace(" ", "-"), DoNotShow);
+        } catch {
+          // ignore storage access errors
+        }
       }
     }
 
