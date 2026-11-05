@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, ReactNode } from "react";
 import { toast } from "@storyteller/ui-toaster";
 import {
   GalleryModal,
@@ -167,6 +167,10 @@ export const PromptBoxAudio = ({
   const imageRefsSupported = supports(
     selectedModel?.image_references_supported,
   );
+  const audioLibraryLimitRef = useRef(audioRefsSupported ? maxAudioRefs : 0);
+  useLayoutEffect(() => {
+    audioLibraryLimitRef.current = audioRefsSupported ? maxAudioRefs : 0;
+  }, [audioRefsSupported, maxAudioRefs]);
   const requiresAudioRef = AUDIO_MODELS_REQUIRING_AUDIO_REF.has(
     selectedModel?.model ?? "",
   );
@@ -202,7 +206,7 @@ export const PromptBoxAudio = ({
   // Seed Audio can't combine audio and image references — adding one kind
   // clears the other so the request is always valid.
   const handleReferenceAudiosChange = (audios: typeof referenceAudios) => {
-    if (audios.length > 0 && referenceImages.length > 0) {
+    if (audios.length > 0 && usePromptAudioStore.getState().referenceImages.length > 0) {
       setReferenceImages([]);
       toast.error("Removed image reference — it can't be combined with audio");
     }
@@ -261,8 +265,11 @@ export const PromptBoxAudio = ({
       );
 
       const added: RefAudio[] = [];
-      let total = referenceAudios.reduce((sum, a) => sum + a.duration, 0);
+      const currentAudios = usePromptAudioStore.getState().referenceAudios;
+      const currentSlots = Math.max(0, audioLibraryLimitRef.current - currentAudios.length);
+      let total = currentAudios.reduce((sum, a) => sum + a.duration, 0);
       for (let i = 0; i < picked.length; i++) {
+        if (added.length >= currentSlots) break;
         const item = picked[i]!;
         const duration = durations[i]!;
         if (total + duration > AUDIO_REF_MAX_DURATION_SECONDS) {
@@ -281,7 +288,7 @@ export const PromptBoxAudio = ({
         });
       }
       if (added.length > 0) {
-        handleReferenceAudiosChange([...referenceAudios, ...added]);
+        handleReferenceAudiosChange([...currentAudios, ...added]);
       }
     } finally {
       setIsAudioLibraryProcessing(false);
@@ -290,7 +297,7 @@ export const PromptBoxAudio = ({
   };
 
   const handleReferenceImagesChange = (images: typeof referenceImages) => {
-    if (images.length > 0 && referenceAudios.length > 0) {
+    if (images.length > 0 && usePromptAudioStore.getState().referenceAudios.length > 0) {
       setReferenceAudios([]);
       toast.error("Removed audio reference — it can't be combined with an image");
     }
