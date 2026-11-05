@@ -10,6 +10,7 @@ name = "artcraft-native"
 path = "src/main.rs"
 
 [dependencies]
+craft-ui = { git = "https://github.com/storytold/craft-libs", rev = "8134693a69e0fca8ec7913ad5a95dedc05daad74" }
 # Internal (Tauri-free) API crates shared with the Tauri app.
 artcraft_api_defs.workspace = true
 artcraft_client.workspace = true
@@ -50,4 +51,4 @@ arboard = { version = "3", default-features = false, features = ["image-data"] }
 wry = "0.55"
 
 [dev-dependencies]
-egui_kittest = "0.36"
+egui_kittest = { version = "0.36", features = ["wgpu"] }

@@ -189,7 +189,7 @@ fn tile_ui(ui: &mut egui::Ui, rect: Rect, item: &MediaFile, kind: RefKind, attac
     p.rect_stroke(rect, 0.0, Stroke::new(2.0, theme::ACCENT_400), egui::StrokeKind::Inside);
     let chip = Rect::from_min_size(rect.min + vec2(8.0, 8.0), vec2(22.0, 22.0));
     p.rect_filled(chip, theme::RADIUS, theme::ACCENT_400);
-    p.text(chip.center(), Align2::CENTER_CENTER, (i + 1).to_string(), FontId::new(11.0, theme::semibold()), Color32::WHITE);
+    p.text(chip.center(), Align2::CENTER_CENTER, (i + 1).to_string(), FontId::new(11.0, theme::semibold()), theme::ACCENT_ON);
   } else if resp.hovered() {
     p.rect_stroke(rect, 0.0, Stroke::new(2.0, theme::fade(theme::ACCENT_400, 0.6)), egui::StrokeKind::Inside);
   }
