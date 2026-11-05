@@ -90,6 +90,7 @@ export function PreviewInteractionOverlay() {
           trackId={editingText.trackId}
           elementId={editingText.elementId}
           element={editingText.element}
+          editPoint={editingText.editPoint}
           onCommit={commitTextEdit}
         />
       ) : isMaskMode ? (
