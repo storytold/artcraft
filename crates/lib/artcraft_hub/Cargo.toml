@@ -1,0 +1,21 @@
+[package]
+name = "artcraft-hub"
+edition = "2021"
+version = "0.0.1"
+publish = false
+description = "Artcraft's CraftHub client path: the HubAdapter that maps the artcraft.project document (scenes, generations, the shared job log and team outputs) onto craft-collab's generalized object/property model, the unified hub.* command catalog, deep links and presence projections (no networking and no Tauri surface — the session wiring lands behind the desktop app's `crafthub` feature flag)"
+
+[lib]
+name = "artcraft_hub"
+path = "src/lib.rs"
+
+[dependencies]
+# The generalized collaboration core (CraftHub spec §3.4): consumed by git reference exactly as
+# the family consumes `craft-print`, pinned to the reviewed commit. Retargeted to the org's
+# canonical home (storytold/craft-libs or storytold/crafthub) the day that PR merges — a one-line
+# change, noted in this PR's description.
+craft-collab = { git = "https://github.com/hasan-sdaif/crafthub", rev = "91ed152c63a2b43d9c66c9dd719d001627ca5ce1" }
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
