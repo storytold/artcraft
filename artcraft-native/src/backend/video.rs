@@ -17,8 +17,11 @@ use rodio::{OutputStream, OutputStreamHandle, Sink, Source};
 use crate::theme;
 use crate::ui::icons::{self, Icon};
 
-/// Frames are scaled down to at most this width (the lightbox never shows them larger).
+/// Frames are scaled down to at most this width (the lightbox never shows them larger)...
 const MAX_WIDTH: u32 = 1280;
+/// ...and this height (portrait 1080p plays as is). ffprobe reports whatever size the file
+/// claims, so without it a 2 px wide clip could ask for a frame of 2^30 rows.
+const MAX_HEIGHT: u32 = 1920;
 const AUDIO_RATE: u32 = 44_100;
 /// Decoded frames buffered ahead of the clock (back-pressure on `ffmpeg`).
 const FRAME_QUEUE: usize = 4;
@@ -278,7 +281,7 @@ impl VideoPlayer {
 
 /// Reads fixed-size RGBA frames from `ffmpeg` and stamps them with their media time.
 fn read_frames(mut stdout: impl Read, w: u32, h: u32, start: f64, fps: f64, tx: SyncSender<(ColorImage, f64)>) {
-  let mut buf = vec![0u8; (w * h * 4) as usize];
+  let mut buf = vec![0u8; w as usize * h as usize * 4];
   let mut n = 0u64;
   while stdout.read_exact(&mut buf).is_ok() {
     let image = ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &buf);
@@ -359,11 +362,15 @@ fn probe(url: &str) -> Result<VideoInfo, String> {
   Ok(VideoInfo { width: stream.width.max(2), height: stream.height.max(2), fps: if fps.is_finite() && fps > 0.0 { fps } else { 24.0 }, duration: probe.format.duration.parse().unwrap_or(0.0) })
 }
 
-/// The decoded size: at most `MAX_WIDTH` wide, both sides even (as `scale` requires).
+/// The decoded size: at most `MAX_WIDTH` x `MAX_HEIGHT`, both sides even (as `scale` requires).
 fn output_size(info: VideoInfo) -> (u32, u32) {
   let w = info.width.min(MAX_WIDTH) & !1;
   let h = ((info.height as f64 * w as f64 / info.width as f64).round() as u32).max(2) & !1;
-  (w, h)
+  if h <= MAX_HEIGHT {
+    return (w, h);
+  }
+  // Too tall: fit the height instead.
+  (((w as f64 * MAX_HEIGHT as f64 / h as f64).round() as u32).max(2) & !1, MAX_HEIGHT)
 }
 
 /// `m:ss`.
@@ -395,6 +402,16 @@ mod tests {
     assert_eq!(output_size(info(1920, 1080)), (1280, 720));
     assert_eq!(output_size(info(721, 1281)), (720, 1278));
     assert_eq!(clock(65.9), "1:05");
+  }
+
+  #[test]
+  fn tall_output_sizes_are_capped_too() {
+    let info = |width, height| VideoInfo { width, height, fps: 24.0, duration: 5.0 };
+    // A container can claim any size: 2 x 2^30 made `read_frames` size its buffer as w * h * 4 in
+    // u32, which overflows (a panic in debug; a 0-byte buffer and a size assert in release).
+    assert_eq!(output_size(info(2, 1 << 30)), (2, 1920));
+    assert_eq!(output_size(info(1080, 1920)), (1080, 1920));
+    assert_eq!(output_size(info(2160, 3840)), (1080, 1920));
   }
 
   /// Needs FFmpeg on the PATH: `cargo test -p artcraft_native -- --ignored`.
