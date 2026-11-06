@@ -4,7 +4,7 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
-import { ChevronDownIcon, ChevronUpIcon, FrameIcon, MaximizeIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SquareIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, FrameIcon, MaximizeIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SparklesIcon, SquareIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 
@@ -27,7 +27,8 @@ import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 
-export type AspectRatio = "wide" | "tall" | "square";
+// "auto" keeps the aspect ratio of the image being edited.
+export type AspectRatio = "auto" | "wide" | "tall" | "square";
 
 export interface PromptBox2DProps {
   uploadImage?: UploadImageFn;
@@ -106,6 +107,11 @@ export const PromptBox2D = ({
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
+    {
+      label: "Auto",
+      selected: aspectRatio === "auto",
+      icon: <SparklesIcon className="h-4 w-4" />,
+    },
     {
       label: "Wide",
       selected: aspectRatio === "wide",
