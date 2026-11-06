@@ -19,11 +19,11 @@ path = "src/lib.rs"
 # (None yet)
 
 # External
-build-info = "0.0.40"
+build-info = "0.0.47"
 
 [dev-dependencies]
 # None yet
 
 [build-dependencies]
-build-info-build = "0.0.40"
+build-info-build = "0.0.47"
 
