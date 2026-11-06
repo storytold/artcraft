@@ -333,6 +333,7 @@ const PageDraw = ({
       removePendingGeneration: state.removePendingGeneration,
       clearPendingGenerations: state.clearPendingGenerations,
       setAspectRatioType: state.setAspectRatioType,
+      setSafeZoneId: state.setSafeZoneId,
       setActiveTool: state.setActiveTool,
       selectNode: state.selectNode,
       setCurrentShape: state.setCurrentShape,
@@ -386,6 +387,7 @@ const PageDraw = ({
     removePendingGeneration,
     clearPendingGenerations,
     setAspectRatioType,
+    setSafeZoneId,
     setActiveTool,
     selectNode,
     setCurrentShape,
@@ -1213,6 +1215,8 @@ const PageDraw = ({
               onImageSelect: (image: BaseSelectorImage) => {
                 addHistoryImageBundle({ images: [image] });
                 setBaseImageInfo(image);
+                // A new canvas starts with its preset's safe zone, or none.
+                setSafeZoneId(image.safeZoneId ?? null);
               },
               showLoading:
                 baseImageInfo !== null &&

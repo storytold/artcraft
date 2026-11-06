@@ -310,6 +310,11 @@ export interface SceneState {
   setAspectRatioType: (type: AspectRatioType) => void;
   getAspectRatioDimensions: () => { width: number; height: number };
 
+  // The safe zone drawn over the canvas, or null for none. It only shows
+  // while the canvas has its exact aspect ratio (see useCanvasSafeZones).
+  safeZoneId: string | null;
+  setSafeZoneId: (id: string | null) => void;
+
   historyImageBundles: ImageBundle[];
   clearHistoryImages: () => void;
   addHistoryImageBundle: (bundle: ImageBundle) => void;
@@ -365,6 +370,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   pendingGenerations: [],
 
   aspectRatioType: AspectRatioType.NONE,
+
+  safeZoneId: null,
 
   // Actions
   addNode: (node: Node) => {
@@ -1362,6 +1369,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     set({ aspectRatioType: type });
     get().saveState();
   },
+
+  setSafeZoneId: (id: string | null) => set({ safeZoneId: id }),
 
   getAspectRatioDimensions: () => {
     const bitmap = get().baseImageBitmap;

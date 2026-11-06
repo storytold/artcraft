@@ -60,7 +60,11 @@ export const BaseImageSelector = ({
     onImageSelect(referenceImage);
   };
 
-  const handleBlankCanvasConfirm = (width: number, height: number) => {
+  const handleBlankCanvasConfirm = (
+    width: number,
+    height: number,
+    safeZoneId?: string,
+  ) => {
     setIsBlankCanvasModalOpen(false);
     const blankImage: BaseSelectorImage = {
       url: "",
@@ -68,6 +72,7 @@ export const BaseImageSelector = ({
       isBlankCanvas: true,
       blankCanvasWidth: width,
       blankCanvasHeight: height,
+      safeZoneId,
     };
     onImageSelect(blankImage);
   };

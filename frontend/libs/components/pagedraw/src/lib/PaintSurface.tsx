@@ -27,6 +27,7 @@ import { useGlobalMouseUp } from "./hooks/useGlobalMouseUp";
 import { loadImageFromUrl } from "./utilities/imageHelpers";
 import { checkerboard } from "@storyteller/common";
 import { DragState } from "./types";
+import { SafeZoneLayer } from "./components/SafeZoneLayer";
 
 export type MiraiProps = {
   drawNodes: (Node | LineNode)[];
@@ -1865,6 +1866,7 @@ export const PaintSurface = ({
                   />
                 )}
             </Layer>
+            <SafeZoneLayer />
             <Layer
               ref={cursorLayerRef}
               listening={false}

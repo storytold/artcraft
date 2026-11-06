@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { CircleIcon, DropletIcon, EraserIcon, ImageIcon, MousePointerIcon, PaintbrushIcon, PipetteIcon, Redo2Icon, RotateCcwIcon, SendToBackIcon, ShapesIcon, SquareIcon, Trash2Icon, TriangleIcon, XIcon } from "lucide-react";
+import { CheckIcon, CircleIcon, DropletIcon, EraserIcon, ImageIcon, MousePointerIcon, PaintbrushIcon, PipetteIcon, Redo2Icon, RotateCcwIcon, ScanIcon, SendToBackIcon, ShapesIcon, SquareIcon, Trash2Icon, TriangleIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
@@ -11,6 +11,7 @@ import {
   type ActionId,
 } from "@storyteller/keybinds";
 import { ActiveTool, useSceneStore } from "../../stores/SceneState";
+import { useCanvasSafeZones } from "../../hooks/useCanvasSafeZones";
 import { Node } from "../../Node";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -67,6 +68,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   className = "",
 }) => {
   const store = useSceneStore();
+  const safeZones = useCanvasSafeZones();
   const { forAction } = useResolvedKeybinds();
   const [open, setOpen] = useState<string | null>(null);
   // Canonical brush/eraser size lives in the store (PaintSurface draws with
@@ -228,6 +230,32 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     </div>
   );
 
+  // When several safe zones fit the canvas (9:16 has Meta's and TikTok's),
+  // the toggle asks which one to show.
+  const SafeZonePopout = (
+    <div className="glass relative flex w-60 flex-col gap-1 rounded-2xl p-2 shadow-lg">
+      <p className="px-2 pb-1 pt-1 text-sm font-medium text-white">Safe Zone</p>
+      {safeZones.matching.map((zone) => {
+        const isShown = safeZones.shown?.id === zone.id;
+        return (
+          <button
+            key={zone.id}
+            className={`flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm text-white transition-colors hover:bg-white/10 ${
+              isShown ? "bg-primary/30" : ""
+            }`}
+            onClick={() => {
+              safeZones.show(isShown ? null : zone.id);
+              setOpen(null);
+            }}
+          >
+            {zone.label}
+            {isShown && <CheckIcon className="h-4 w-4 shrink-0" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   // Tools
   const tools = [
     {
@@ -332,6 +360,17 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       popout: BgPopout,
     },
     {
+      id: "safe-zone",
+      label: "Safe Zone",
+      icon: <ScanIcon className="h-5 w-5" />,
+      onClick: () => {
+        if (safeZones.matching.length === 1) {
+          safeZones.show(safeZones.shown ? null : safeZones.matching[0].id);
+        }
+      },
+      popout: safeZones.matching.length > 1 ? SafeZonePopout : undefined,
+    },
+    {
       id: "undo",
       label: "Undo",
       icon: <RotateCcwIcon  className="h-5 w-5" />,
@@ -420,7 +459,11 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         const active =
           id === activeToolId ||
           (id === "add-shape" && activeToolId === "shape") ||
-          (id === "erase" && activeToolId === "eraser");
+          (id === "erase" && activeToolId === "eraser") ||
+          (id === "safe-zone" && safeZones.shown !== null);
+        const isDisabled =
+          (id === "inpaint" && !supportsMaskTool) ||
+          (id === "safe-zone" && safeZones.matching.length === 0);
 
         // Resolved shortcut badge in the button corner (switchable tools only).
         const toolActionId = TOOL_ACTION_IDS[id];
@@ -432,7 +475,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         ) : null;
         const btnStyle = active
           ? "bg-primary/30 border-2 !border-primary text-white"
-          : (id === "inpaint" && !supportsMaskTool)
+          : isDisabled
             ? "opacity-50 cursor-not-allowed hover:bg-transparent hover:border-transparent hover:text-white/50"
             : "hover:bg-white/10 text-white";
 
@@ -465,6 +508,8 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         const tooltipLabel =
           id === "inpaint" && !supportsMaskTool
             ? label + " (Model unsupported)"
+            : id === "safe-zone" && isDisabled
+              ? label + " (none for this canvas size)"
             : id === "add-shape" && toolBinding
               ? `${label} — ${formatBinding(toolBinding)} cycles shapes`
               : label;
@@ -519,7 +564,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                       onClick?.();
                     }}
                     className={`${baseBtn} ${btnStyle}`}
-                    disabled={id === "inpaint" && !supportsMaskTool}
+                    disabled={isDisabled}
                   >
                     {displayIcon}
                     {keyBadge}

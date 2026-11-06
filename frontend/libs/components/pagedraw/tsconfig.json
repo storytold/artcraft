@@ -48,6 +48,12 @@
       "path": "../modal"
     },
     {
+      "path": "../input"
+    },
+    {
+      "path": "../tab-selector"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {
