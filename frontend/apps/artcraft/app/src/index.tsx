@@ -10,7 +10,6 @@ import "./styles/base.css";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { pageHeight, pageWidth, persistLogin } from "~/signals";
 import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
-import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
 
@@ -34,21 +33,9 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     persistLogin();
   });
 
-  /// Initizations that depends on ENV vars ///
-  function PostHogInit() {
-    const apiKey = import.meta.env.VITE_POSTHOG_API_KEY;
-    posthog.init(apiKey, {
-      api_host: "https://us.i.posthog.com/",
-      ui_host: "https://us.i.posthog.com/",
-    });
-  }
-
+  // PostHog analytics initialization removed (privacy).
   useEffect(() => {
     EnvironmentVariables.initialize(env);
-    if (import.meta.env.DEV) {
-      return;
-    }
-    PostHogInit();
   }, [env]);
 
   // Apply stored theme early on mount

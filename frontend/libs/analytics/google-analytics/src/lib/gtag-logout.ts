@@ -1,10 +1,5 @@
-import { TAG_ID } from './tag-id.js';
 
+// Google Analytics disabled (privacy). Kept as a no-op so existing call sites compile.
 export const gtagLogout = function() {
-  console.debug("gtagLogout", TAG_ID);
-
-  (window as any).gtag(
-    'config', TAG_ID, {
-    'user_id': null
-  });
+  // no-op
 }
