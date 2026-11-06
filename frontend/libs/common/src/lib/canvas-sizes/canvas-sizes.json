@@ -1,0 +1,246 @@
+{
+  "format": 1,
+  "channels": [
+    {
+      "id": "social",
+      "name": "Social",
+      "platforms": [
+        {
+          "id": "instagram",
+          "name": "Instagram",
+          "types": [
+            {
+              "id": "instagram-feed-portrait",
+              "name": "Feed portrait",
+              "width": 1440,
+              "height": 1800,
+              "safeZones": [],
+              "source": "https://www.facebook.com/business/ads-guide/update/image/instagram-feed"
+            },
+            {
+              "id": "instagram-stories",
+              "name": "Stories",
+              "width": 1440,
+              "height": 2560,
+              "safeZones": [
+                "meta-stories-reels"
+              ],
+              "source": "https://www.facebook.com/business/ads-guide/update/image/instagram-story"
+            },
+            {
+              "id": "instagram-reels",
+              "name": "Reels",
+              "width": 1440,
+              "height": 2560,
+              "safeZones": [
+                "meta-stories-reels"
+              ],
+              "source": "https://www.facebook.com/business/ads-guide/update/video/instagram-reels"
+            }
+          ]
+        },
+        {
+          "id": "facebook",
+          "name": "Facebook",
+          "types": [
+            {
+              "id": "facebook-stories",
+              "name": "Stories",
+              "width": 1440,
+              "height": 2560,
+              "safeZones": [
+                "meta-stories-reels"
+              ],
+              "source": "https://www.facebook.com/business/ads-guide/update/image/facebook-story"
+            }
+          ]
+        },
+        {
+          "id": "tiktok",
+          "name": "TikTok",
+          "types": [
+            {
+              "id": "tiktok-in-feed",
+              "name": "In-feed",
+              "width": 1080,
+              "height": 1920,
+              "safeZones": [
+                "tiktok-in-feed",
+                "tiktok-in-feed-anchor"
+              ],
+              "source": "https://ads.tiktok.com/help/article/tiktok-auction-in-feed-ads"
+            }
+          ]
+        },
+        {
+          "id": "youtube",
+          "name": "YouTube",
+          "types": [
+            {
+              "id": "youtube-thumbnail",
+              "name": "Thumbnail",
+              "width": 3840,
+              "height": 2160,
+              "safeZones": [],
+              "source": "https://support.google.com/youtube/answer/72431"
+            },
+            {
+              "id": "youtube-channel-banner",
+              "name": "Channel banner",
+              "width": 2560,
+              "height": 1440,
+              "safeZones": [
+                "youtube-channel-banner"
+              ],
+              "source": "https://support.google.com/youtube/answer/10456525"
+            }
+          ]
+        },
+        {
+          "id": "pinterest",
+          "name": "Pinterest",
+          "types": [
+            {
+              "id": "pinterest-standard-pin",
+              "name": "Standard pin",
+              "width": 1000,
+              "height": 1500,
+              "safeZones": [],
+              "source": "https://help.pinterest.com/en/business/article/pinterest-product-specs"
+            }
+          ]
+        },
+        {
+          "id": "linkedin",
+          "name": "LinkedIn",
+          "types": [
+            {
+              "id": "linkedin-landscape",
+              "name": "Landscape",
+              "width": 1200,
+              "height": 628,
+              "safeZones": [],
+              "source": "https://www.linkedin.com/help/lms/answer/a426534"
+            },
+            {
+              "id": "linkedin-square",
+              "name": "Square",
+              "width": 1200,
+              "height": 1200,
+              "safeZones": [],
+              "source": "https://www.linkedin.com/help/lms/answer/a426534"
+            },
+            {
+              "id": "linkedin-vertical",
+              "name": "Vertical",
+              "width": 720,
+              "height": 900,
+              "safeZones": [],
+              "source": "https://www.linkedin.com/help/lms/answer/a426534"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "safeZones": [
+    {
+      "id": "meta-stories-reels",
+      "name": "Meta Stories & Reels",
+      "ratio": [
+        9,
+        16
+      ],
+      "frame": [
+        100,
+        100
+      ],
+      "margins": {
+        "top": 14,
+        "right": 6,
+        "bottom": 35,
+        "left": 6
+      },
+      "covered": [],
+      "source": "https://www.facebook.com/business/ads-guide/update/image/instagram-story",
+      "notes": "Meta publishes these margins in percent, the same for Instagram Stories, Instagram Reels and Facebook Stories. Reels ads with a disclaimer need the bottom 40% clear: https://www.facebook.com/business/help/980593475366490"
+    },
+    {
+      "id": "tiktok-in-feed",
+      "name": "TikTok",
+      "ratio": [
+        9,
+        16
+      ],
+      "frame": [
+        720,
+        1280
+      ],
+      "margins": {
+        "top": 160,
+        "right": 80,
+        "bottom": 440,
+        "left": 80
+      },
+      "covered": [
+        {
+          "x": 520,
+          "y": 560,
+          "width": 120,
+          "height": 280
+        }
+      ],
+      "source": "https://ads.tiktok.com/help/article/tiktok-auction-in-feed-ads",
+      "notes": "Measured from TikTok's 2025 In-Feed template without an anchor, which is drawn at 720 × 1280. The covered area is the like, comment and share column. TikTok's Arabic (RTL) template is the exact mirror image."
+    },
+    {
+      "id": "tiktok-in-feed-anchor",
+      "name": "TikTok with product link",
+      "ratio": [
+        9,
+        16
+      ],
+      "frame": [
+        540,
+        960
+      ],
+      "margins": {
+        "top": 126,
+        "right": 60,
+        "bottom": 406,
+        "left": 60
+      },
+      "covered": [
+        {
+          "x": 420,
+          "y": 200,
+          "width": 60,
+          "height": 354
+        }
+      ],
+      "source": "https://ads.tiktok.com/help/article/tiktok-auction-in-feed-ads",
+      "notes": "Measured from TikTok's 2021 In-Feed template for ads with an anchor (a product link), which is drawn at 540 × 960, in its version for a one-line caption. Captions of two to four lines need a bottom margin of up to 507. TikTok's Arabic (RTL) template is the exact mirror image."
+    },
+    {
+      "id": "youtube-channel-banner",
+      "name": "YouTube channel banner",
+      "ratio": [
+        16,
+        9
+      ],
+      "frame": [
+        2048,
+        1152
+      ],
+      "margins": {
+        "top": 407,
+        "right": 406.5,
+        "bottom": 407,
+        "left": 406.5
+      },
+      "covered": [],
+      "source": "https://support.google.com/youtube/answer/10456525",
+      "notes": "YouTube gives a 1235 × 338 safe area, centred, at the minimum upload size of 2048 × 1152: (2048 − 1235) / 2 = 406.5 and (1152 − 338) / 2 = 407."
+    }
+  ]
+}
