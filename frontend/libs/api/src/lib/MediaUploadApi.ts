@@ -48,19 +48,15 @@ export class MediaUploadApi extends ApiManager {
     const endpoint = `${this.ApiTargets.uploadApi}/v1/media_files/upload/studio_shot`;
 
     if (!this.sessionToken) {
-      console.log("Session Token");
       const response = await this.getSessionTokenForUploadStudioShot();
       if (response.success && response.data) {
         this.sessionToken = response.data;
-        console.log(`Token ${this.sessionToken}`);
       } else {
         return {
           success: false,
           errorMessage: "Could not obtain session tokens.",
         };
       }
-    } else {
-      console.log(`Session Token: ${this.sessionToken}`);
     }
 
     const options: Record<string, string | number | undefined> = {
