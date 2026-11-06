@@ -369,6 +369,15 @@ export const PromptBoxImage = ({
       return;
     }
 
+    // A reference that is still uploading has no media token yet, so
+    // generating now would silently leave it out of the request.
+    if (deck.uploadingImages.length > 0) {
+      toast.error("Please wait for your reference images to finish uploading", {
+        id: "image-ref-uploading",
+      });
+      return;
+    }
+
     console.debug("Selected model:", selectedModel);
     console.debug("Prompt:", prompt);
 
