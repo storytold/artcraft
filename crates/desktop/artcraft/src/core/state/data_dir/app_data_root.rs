@@ -65,6 +65,9 @@ impl AppDataRoot {
     
     let assets_dir = AppAssetsDir::get_or_create_in_root_dir(&dir)?;
     let credentials_dir = AppCredentialsDir::get_or_create_in_root_dir(&dir)?;
+    if let Err(err) = credentials_dir.restrict_to_owner() {
+      println!("Couldn't restrict {:?} to its owner: {}", credentials_dir.path(), err);
+    }
     let downloads_dir = AppDownloadsDir::get_or_create_in_root_dir(&dir)?;
     let settings_dir = AppSettingsDir::get_or_create_in_root_dir(&dir)?;
     let state_dir = AppStateDir::get_or_create_in_root_dir(&dir)?;
