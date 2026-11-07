@@ -8,6 +8,7 @@ trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/stage" dist/release
 tar -xzf "dist/linux/$base.tar.gz" --strip-components=1 -C "$work/stage"
 cp packaging/linux/flatpak.yml "$work/manifest.yml"
+cp packaging/linux/artcraft-wrapper "$work/artcraft-wrapper"
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 sign=()
 keys=()
@@ -21,7 +22,7 @@ flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --forc
 # Fail on missing WebKitGTK or other runtime libraries rather than shipping an unloadable binary.
 # shellcheck disable=SC2016 # Expand these variables inside the Flatpak runtime shell.
 flatpak build --runtime "$work/build" sh -c '
-  dependencies=$(ldd /app/bin/artcraft) || exit 1
+  dependencies=$(ldd /app/bin/artcraft.real) || exit 1
   printf "%s\n" "$dependencies"
   case "$dependencies" in *"not found"*) exit 1 ;; esac
 '

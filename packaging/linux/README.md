@@ -13,9 +13,10 @@ existing `artcraft-v<version>` draft, retaining Windows and macOS assets. The ve
 Native AppImages also include zsync delta-update metadata.
 
 Flatpak uses native Ubuntu 24.04 runners and GNOME 51 for GTK3/WebKitGTK 4.1. Its build checks
-for missing ELF dependencies inside the sandbox. RISC-V packages require Ubuntu 24.04-era
-libraries; x86_64 and ARM64 use Ubuntu 22.04 as their build baseline. The suite does not publish
-RISC-V AppImages, Arch packages or Flatpaks.
+for missing ELF dependencies inside the sandbox, grants `--persist=Artcraft` so settings and task
+data survive restarts, and provides a launcher wrapper keeping WebKitGTK's accelerated rendering
+path enabled. RISC-V packages require Ubuntu 24.04-era libraries; x86_64 and ARM64 use Ubuntu 22.04
+as their build baseline. The suite does not publish RISC-V AppImages, Arch packages or Flatpaks.
 
 `package.sh <architecture> <rust-target>` normalizes Tauri's DEB/RPM/AppImage filenames and
 extracts the DEB's `/usr` tree into the suite's `bin/` and `share/` tarball layout. Shared Craft
