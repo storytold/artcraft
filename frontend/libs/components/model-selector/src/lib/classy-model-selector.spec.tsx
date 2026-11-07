@@ -21,6 +21,7 @@ const MODELS = buildImageModelsFromListing([], [
 ]);
 const INITIAL_MODEL = MODELS.find((model) => model.id === "nano_banana_pro")!;
 const MIDJOURNEY_MODEL = MODELS.find((model) => model.id === "midjourney_8")!;
+const FLUX_MODEL = MODELS.find((model) => model.id === "flux_dev")!;
 const ITEMS = MODELS.map((model) => ({ label: model.selectorName, model }));
 
 beforeEach(() => {
@@ -44,7 +45,8 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-  useClassyModelSelectorStore.setState({ selectedModels: {}, selectedProviders: {} });
+  localStorage.clear();
+  useClassyModelSelectorStore.setState({ selectedModels: {}, selectedModelIds: {}, selectedProviders: {} });
   useModelPickerStyleStore.getState().setStyle("grouped");
 });
 
@@ -82,6 +84,57 @@ it("still dismisses the grouped picker on an outside press without changing sele
   expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
   expect(useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[MIDJOURNEY_MODEL.id])
     .toBe(GenerationProvider.Artcraft);
+});
+
+it("restores the remembered model instead of the page default", () => {
+  useClassyModelSelectorStore.setState({
+    selectedModels: {},
+    selectedModelIds: { [PAGE]: MIDJOURNEY_MODEL.tauriId },
+  });
+
+  render(<ClassyModelSelector items={ITEMS} page={PAGE} variant="embedded" />);
+
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(MIDJOURNEY_MODEL);
+  expect(screen.getByRole("button", { name: new RegExp(MIDJOURNEY_MODEL.selectorName) })).toBeTruthy();
+});
+
+it("selects a remembered backend-only model once the listing hydrates", () => {
+  useClassyModelSelectorStore.setState({
+    selectedModels: {},
+    selectedModelIds: { [PAGE]: MIDJOURNEY_MODEL.tauriId },
+  });
+  const staticItems = ITEMS.filter((item) => item.model !== MIDJOURNEY_MODEL);
+
+  const { rerender } = render(<ClassyModelSelector items={staticItems} page={PAGE} variant="embedded" />);
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
+  expect(useClassyModelSelectorStore.getState().selectedModelIds[PAGE]).toBe(MIDJOURNEY_MODEL.tauriId);
+
+  rerender(<ClassyModelSelector items={ITEMS} page={PAGE} variant="embedded" />);
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(MIDJOURNEY_MODEL);
+  expect(useClassyModelSelectorStore.getState().selectedModelIds[PAGE]).toBe(MIDJOURNEY_MODEL.tauriId);
+});
+
+it("remembers an explicit pick", async () => {
+  const user = userEvent.setup();
+  useModelPickerStyleStore.getState().setStyle("flat");
+  render(<ClassyModelSelector items={ITEMS} page={PAGE} variant="embedded" />);
+
+  await user.click(screen.getByRole("button", { name: new RegExp(INITIAL_MODEL.selectorName) }));
+  await user.click(await screen.findByText(FLUX_MODEL.selectorName, { exact: true }));
+
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(FLUX_MODEL);
+  expect(useClassyModelSelectorStore.getState().selectedModelIds[PAGE]).toBe(FLUX_MODEL.tauriId);
+});
+
+it("falls back to the page default when the remembered model is no longer listed", () => {
+  useClassyModelSelectorStore.setState({
+    selectedModels: {},
+    selectedModelIds: { [PAGE]: "removed_model" },
+  });
+
+  render(<ClassyModelSelector items={ITEMS} page={PAGE} variant="embedded" />);
+
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
 });
 
 async function openProviderPicker(style: "grouped" | "flat") {

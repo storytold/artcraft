@@ -2,6 +2,7 @@ use crate::core::artcraft_error::ArtcraftError;
 use crate::core::state::app_preferences::app_preferences::AppPreferences;
 use crate::core::state::app_preferences::preferred_download_filename::{model_slug_from_model_type_str, DownloadFilenameParts, PreferredDownloadFilename};
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
+use crate::core::utils::local_generations::local_generation_path;
 use anyhow::anyhow;
 use errors::AnyhowResult;
 use log::{error, info};
@@ -46,8 +47,32 @@ pub fn suggested_download_filename(
 /// generations finish in the same second or use the same custom name.
 pub async fn download_url_with_filename(url: &Url, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
   check_url_file_name_for_downloadability(filename)?;
+  let temporary = fetch_to_temporary(url, directory).await?;
+  let path = persist_download(temporary, directory, filename)?;
+  info!("Downloaded generation to {:?}", path);
+  Ok(path)
+}
+
+/// Saves to exactly `directory/filename`, replacing what's there: the user picked this name (and
+/// confirmed any overwrite) in a save dialog. Only checks the name is a single file name.
+pub async fn save_url_as(url: &Url, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
+  check_single_file_name(filename)?;
+  let temporary = fetch_to_temporary(url, directory).await?;
+  let path = directory.join(filename);
+  temporary.persist(&path).map_err(|err| err.error)?;
+  info!("Saved generation as {:?}", path);
+  Ok(path)
+}
+
+/// Copies a local generation, or streams a remote one, into a temporary file in `directory`, so
+/// it's published atomically.
+async fn fetch_to_temporary(url: &Url, directory: &Path) -> Result<NamedTempFile, ArtcraftError> {
   tokio::fs::create_dir_all(directory).await?;
   let temporary = NamedTempFile::new_in(directory)?;
+  if let Some(source) = local_generation_path(url) {
+    tokio::fs::copy(&source, temporary.path()).await?;
+    return Ok(temporary);
+  }
   let mut file = tokio::fs::File::from_std(temporary.reopen()?);
   let client = reqwest::Client::builder().connect_timeout(Duration::from_secs(30)).timeout(Duration::from_secs(600)).build()?;
   let mut response = client.get(url.clone()).send().await?.error_for_status()?;
@@ -57,9 +82,7 @@ pub async fn download_url_with_filename(url: &Url, directory: &Path, filename: &
   file.flush().await?;
   file.sync_all().await?;
   drop(file);
-  let path = persist_download(temporary, directory, filename)?;
-  info!("Downloaded generation to {:?}", path);
-  Ok(path)
+  Ok(temporary)
 }
 
 fn persist_download(mut file: NamedTempFile, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
@@ -123,4 +146,53 @@ fn check_url_file_name_for_downloadability(filename: &str) -> Result<(), Artcraf
   }
 
   Ok(())
+}
+
+fn check_single_file_name(filename: &str) -> Result<(), ArtcraftError> {
+  let is_single = !filename.is_empty()
+    && filename != "."
+    && filename != ".."
+    && !filename.contains('/')
+    && !filename.contains('\\');
+  if !is_single {
+    error!("Save-as filename isn't a single file name: {:?}", filename);
+    return Err(ArtcraftError::BadDownloadFilename { path: filename.into() });
+  }
+  Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::core::utils::local_generations::asset_url;
+
+  #[tokio::test]
+  async fn saving_as_a_chosen_name_overwrites_exactly_that_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = local_image(dir.path(), b"new");
+    let target_dir = dir.path().join("Pictures");
+    std::fs::create_dir_all(&target_dir).unwrap();
+    std::fs::write(target_dir.join("Ada's fox.png"), b"old").unwrap();
+    let saved = save_url_as(&asset_url(&source).unwrap(), &target_dir, "Ada's fox.png").await.unwrap();
+    assert_eq!(saved, target_dir.join("Ada's fox.png"));
+    assert_eq!(std::fs::read(&saved).unwrap(), b"new", "the file the user confirmed is replaced");
+    assert_eq!(std::fs::read_dir(&target_dir).unwrap().count(), 1, "no Ada's fox_1.png beside it");
+  }
+
+  #[tokio::test]
+  async fn chosen_names_must_be_a_single_file_name() {
+    let dir = tempfile::tempdir().unwrap();
+    let url = asset_url(&local_image(dir.path(), b"new")).unwrap();
+    for name in ["", ".", "..", "a/b.png", "a\\b.png", "/fox.png"] {
+      assert!(save_url_as(&url, dir.path(), name).await.is_err(), "{name:?}");
+    }
+  }
+
+  fn local_image(root: &Path, bytes: &[u8]) -> PathBuf {
+    let folder = root.join("data").join("local_generations");
+    std::fs::create_dir_all(&folder).unwrap();
+    let path = folder.join("local_file_abc.png");
+    std::fs::write(&path, bytes).unwrap();
+    path
+  }
 }

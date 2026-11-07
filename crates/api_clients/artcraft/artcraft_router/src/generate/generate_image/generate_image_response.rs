@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use openrouter_client::api::generate_image::OpenRouterImage;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 #[derive(Clone, Debug)]
@@ -36,12 +37,21 @@ pub struct KinoviWebImageResponsePayload {
   pub maybe_task_ids: Option<Vec<String>>,
 }
 
+/// OpenRouter answers with the finished images (there is no job to poll).
+#[derive(Clone, Debug)]
+pub struct OpenRouterImageResponsePayload {
+  pub images: Vec<OpenRouterImage>,
+  /// What OpenRouter charged the user's account, in US dollars.
+  pub maybe_cost_usd: Option<f64>,
+}
+
 #[derive(Clone, Debug)]
 pub enum GenerateImageResponse {
   Midjourney(MidjourneyImageResponsePayload),
   Artcraft(ArtcraftImageResponsePayload),
   Fal(FalImageResponsePayload),
   KinoviWeb(KinoviWebImageResponsePayload),
+  OpenRouter(OpenRouterImageResponsePayload),
 }
 
 impl GenerateImageResponse {
@@ -55,6 +65,13 @@ impl GenerateImageResponse {
   pub fn get_fal_payload(&self) -> Option<FalImageResponsePayload> {
     match self {
       Self::Fal(p) => Some(p.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn get_openrouter_payload(&self) -> Option<OpenRouterImageResponsePayload> {
+    match self {
+      Self::OpenRouter(p) => Some(p.clone()),
       _ => None,
     }
   }

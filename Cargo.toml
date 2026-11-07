@@ -14,6 +14,7 @@ members = [
   "crates/api_clients/kinovi_web_client",
   "crates/api_clients/midjourney_client",
   "crates/api_clients/openai_sora_client",
+  "crates/api_clients/openrouter_client",
   "crates/api_clients/worldlabs_api_client",
   "crates/api_clients/worldlabs_consumer_client",
   "crates/desktop/artcraft",
@@ -34,6 +35,7 @@ members = [
   "crates/lib/files/mimetypes",
   "crates/lib/http_headers",
   "crates/lib/jwt_light",
+  "crates/lib/local_generations",
   "crates/lib/url_utils",
   "crates/lib/uuid_utils",
   "crates/schema/database/sqlite_tasks",
@@ -70,10 +72,12 @@ grok_consumer_client = { path = "crates/api_clients/grok_consumer_client" }
 http_headers = { path = "crates/lib/http_headers" }
 images = { path = "crates/lib/files/images" }
 jwt_light = { path = "crates/lib/jwt_light" }
+local_generations = { path = "crates/lib/local_generations" }
 memory_store = { path = "crates/lib/caching/memory_store" }
 midjourney_client = { path = "crates/api_clients/midjourney_client" }
 mimetypes = { path = "crates/lib/files/mimetypes" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
+openrouter_client = { path = "crates/api_clients/openrouter_client" }
 primitives = { path = "crates/lib/data/primitives" }
 kinovi_web_client = { path = "crates/api_clients/kinovi_web_client" }
 sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }

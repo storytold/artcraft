@@ -18,6 +18,7 @@ use crate::core::events::functional_events::credits_balance_changed_event::Credi
 use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::state::openrouter_jobs::OpenRouterJobs;
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
@@ -67,6 +68,7 @@ async fn generate_image_native(
         &app_env_configs,
         &credential_cache,
         &storyteller_creds_manager,
+        &app.state::<OpenRouterJobs>(),
       ).await
     }
   };
@@ -99,6 +101,7 @@ async fn handle_success_behavior(
 
   if let Err(err) = db_result {
     error!("Failed to create task in database: {:?}", err);
+    forget_untracked_job(&app.state::<OpenRouterJobs>(), &success);
   }
 
   /*
@@ -129,6 +132,16 @@ async fn handle_success_behavior(
   Ok(TauriGenerateImageResponse {}.into())
 }
 
+/// An OpenRouter job is only ever sent for its task, so without one it would wait forever.
+fn forget_untracked_job(openrouter_jobs: &OpenRouterJobs, success: &TaskEnqueueSuccess) {
+  if success.provider != GenerationProvider::OpenRouter {
+    return;
+  }
+  if let Some(job_id) = success.provider_job_id.as_deref() {
+    openrouter_jobs.remove(job_id);
+  }
+}
+
 async fn handle_error_behavior(
   app: &AppHandle,
   err: GenerateError,
@@ -139,10 +152,14 @@ async fn handle_error_behavior(
   if matches!(&err, GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo)) {
     ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::Midjourney, app);
   }
+  if matches!(&err, GenerateError::MissingCredentials(MissingCredentialsReason::NeedsOpenRouterApiKey)) {
+    ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::OpenRouter, app);
+  }
 
   let error_type = match &err {
     GenerateError::BadInput(_) => TauriGenerateImageErrorType::BadInput,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => TauriGenerateImageErrorType::NeedsFalApiKey,
+    GenerateError::MissingCredentials(MissingCredentialsReason::NeedsOpenRouterApiKey) => TauriGenerateImageErrorType::NeedsOpenRouterApiKey,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials) => TauriGenerateImageErrorType::NeedsGrokCredentials,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo) => TauriGenerateImageErrorType::NeedsMidjourneyCredentials,
     GenerateError::MissingCredentials(_) => TauriGenerateImageErrorType::NeedsStorytellerCredentials,
@@ -190,4 +207,34 @@ async fn handle_error_behavior(
     error_type: Some(error_type),
     error_details: None,
   })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::core::state::openrouter_jobs::OpenRouterJobState;
+  use enums::tauri::tasks::task_type::TaskType;
+
+  #[test]
+  fn openrouter_jobs_without_a_task_are_dropped() {
+    let jobs = OpenRouterJobs::default();
+    jobs.queue("openrouter_job", Vec::new());
+    jobs.queue("other_job", Vec::new());
+    forget_untracked_job(&jobs, &success(GenerationProvider::OpenRouter, "openrouter_job"));
+    forget_untracked_job(&jobs, &success(GenerationProvider::Fal, "other_job"));
+    assert!(jobs.state("openrouter_job").is_none());
+    assert!(matches!(jobs.state("other_job"), Some(OpenRouterJobState::Queued(_))), "only OpenRouter jobs live here");
+  }
+
+  fn success(provider: GenerationProvider, job_id: &str) -> TaskEnqueueSuccess {
+    TaskEnqueueSuccess {
+      task_type: TaskType::ImageGeneration,
+      model: None,
+      provider,
+      provider_job_id: Some(job_id.to_owned()),
+      maybe_queue_status_url: None,
+      maybe_queue_response_url: None,
+      maybe_prompt_token: None,
+    }
+  }
 }

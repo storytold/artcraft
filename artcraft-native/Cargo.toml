@@ -16,11 +16,14 @@ artcraft_client.workspace = true
 artcraft_router.workspace = true
 cookie_store_wrapper.workspace = true
 fal_client.workspace = true
+local_generations.workspace = true
 midjourney_client.workspace = true
+openrouter_client.workspace = true
 tokens.workspace = true
 
 # External
 anyhow.workspace = true
+base64.workspace = true
 cookie.workspace = true
 chrono.workspace = true
 directories = "6.0.0"
@@ -51,3 +54,4 @@ wry = "0.55"
 
 [dev-dependencies]
 egui_kittest = "0.36"
+tokio = { workspace = true, features = ["macros", "net", "io-util"] }

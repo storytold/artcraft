@@ -4,6 +4,7 @@ use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
+use crate::client::router_openrouter_client::RouterOpenRouterClient;
 use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
@@ -15,6 +16,7 @@ pub struct MultiRouterClient {
   pub(crate) grok_api_client: Option<RouterGrokApiClient>,
   pub(crate) kinovi_web_client: Option<RouterKinoviWebClient>,
   pub(crate) worldlabs_client: Option<RouterWorldLabsClient>,
+  pub(crate) openrouter_client: Option<RouterOpenRouterClient>,
 }
 
 impl MultiRouterClient {
@@ -51,5 +53,10 @@ impl MultiRouterClient {
   pub fn get_worldlabs_client_ref(&self) -> Result<&RouterWorldLabsClient, ClientError> {
     self.worldlabs_client.as_ref()
       .ok_or(ClientError::ClientNotConfigured(ClientType::WorldLabs))
+  }
+
+  pub fn get_openrouter_client_ref(&self) -> Result<&RouterOpenRouterClient, ClientError> {
+    self.openrouter_client.as_ref()
+      .ok_or(ClientError::ClientNotConfigured(ClientType::OpenRouter))
   }
 }

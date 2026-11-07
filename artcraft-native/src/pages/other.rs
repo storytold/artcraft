@@ -63,11 +63,11 @@ fn card(ui: &mut Ui, width: f32, icon: Icon, title: &str, text: &str) -> bool {
 /// The Library: everything generated, newest first.
 pub fn library(ui: &mut Ui, env: &mut Env<'_>, feed: &mut FeedStore) {
   let area = ui.max_rect();
-  if !env.signed_in {
-    placeholder(ui, area, "Library", "Sign in to see everything you've generated.", None);
+  if !env.signed_in && !feed.has_content() {
+    placeholder(ui, area, "Library", "Sign in to see everything you've generated. Images you make with your own fal or OpenRouter key show here too.", None);
     return;
   }
-  if !feed.library_started() {
+  if env.signed_in && !feed.library_started() {
     env.requests.push(AppRequest::LoadMoreLibrary(FeedKey::Library));
   }
   if !feed.has_content() && !feed.loading {

@@ -23,6 +23,7 @@ export enum ModelCreator {
   WorldLabs = "WorldLabs",
   Beeble = "Beeble",
   Suno = "Suno",
+  OpenRouter = "OpenRouter",
 }
 
 /** Backend `model_creator` snake_case string -> frontend `ModelCreator` enum. */
@@ -45,6 +46,7 @@ export const modelCreatorFromBackend = (
     case "midjourney": return ModelCreator.Midjourney;
     case "open_ai": return ModelCreator.OpenAi;
     case "open_art": return ModelCreator.OpenArt;
+    case "open_router": return ModelCreator.OpenRouter;
     case "recraft": return ModelCreator.Recraft;
     case "replicate": return ModelCreator.Replicate;
     case "runway": return ModelCreator.Runway;

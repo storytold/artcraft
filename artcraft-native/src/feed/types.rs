@@ -1,5 +1,7 @@
 //! What the generation feed shows: jobs still running, jobs that failed, and finished media.
 
+use crate::backend::local_library::is_local_token;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MediaKind {
   Image,
@@ -46,6 +48,14 @@ pub struct FeedItem {
   pub duration_secs: Option<f32>,
   /// A video's animated preview (shown when previews play).
   pub animated: Option<String>,
+}
+
+impl FeedItem {
+  /// Kept on this computer (made while signed out), not in the library: the library's actions
+  /// (share, make video) don't apply.
+  pub fn is_local(&self) -> bool {
+    is_local_token(&self.token)
+  }
 }
 
 /// A generation the server is still working on.

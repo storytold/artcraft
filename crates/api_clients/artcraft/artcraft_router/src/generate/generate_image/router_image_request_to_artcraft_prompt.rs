@@ -1,4 +1,5 @@
-//! The ArtCraft prompt record for an image request sent to another provider (Midjourney, fal),
+//! The ArtCraft prompt record for an image request sent to another provider (Midjourney, fal,
+//! OpenRouter),
 //! created first so the results can be attributed to it.
 
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
@@ -22,7 +23,7 @@ pub fn router_image_request_to_artcraft_prompt(
     positive_prompt: request.prompt.clone(),
     negative_prompt: None,
     model_type: image_model_to_common_model_type(request.model),
-    generation_provider: Some(provider_to_generation_provider(request.provider)),
+    generation_provider: provider_to_generation_provider(request.provider),
     maybe_generation_mode: Some(determine_image_generation_mode(request)),
     maybe_aspect_ratio: request.aspect_ratio.map(router_aspect_ratio_to_enums),
     maybe_resolution: request.resolution.map(router_resolution_to_enums),
@@ -71,16 +72,18 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
   }
 }
 
-fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvider {
+fn provider_to_generation_provider(provider: RouterProvider) -> Option<GenerationProvider> {
   match provider {
-    RouterProvider::Artcraft => GenerationProvider::Artcraft,
-    RouterProvider::Midjourney => GenerationProvider::Midjourney,
-    RouterProvider::Fal => GenerationProvider::Fal,
+    RouterProvider::Artcraft => Some(GenerationProvider::Artcraft),
+    RouterProvider::Midjourney => Some(GenerationProvider::Midjourney),
+    RouterProvider::Fal => Some(GenerationProvider::Fal),
     // Unused providers -> ArtCraft
-    RouterProvider::KinoviWeb => GenerationProvider::Artcraft ,
-    RouterProvider::GmiCloud => GenerationProvider::Artcraft,
-    RouterProvider::GrokApi => GenerationProvider::Artcraft,
-    RouterProvider::WorldLabs => GenerationProvider::Artcraft,
+    RouterProvider::KinoviWeb => Some(GenerationProvider::Artcraft),
+    RouterProvider::GmiCloud => Some(GenerationProvider::Artcraft),
+    RouterProvider::GrokApi => Some(GenerationProvider::Artcraft),
+    RouterProvider::WorldLabs => Some(GenerationProvider::Artcraft),
+    // Left unset: servers that predate `open_router` would reject the prompt.
+    RouterProvider::OpenRouter => None,
   }
 }
 
@@ -222,5 +225,7 @@ mod tests {
     let builder = GenerateImageRequestBuilder { provider: RouterProvider::Artcraft, ..base_builder() };
     let prompt = router_image_request_to_artcraft_prompt(&builder);
     assert_eq!(prompt.generation_provider, Some(GenerationProvider::Artcraft));
+    let openrouter = GenerateImageRequestBuilder { provider: RouterProvider::OpenRouter, ..base_builder() };
+    assert_eq!(router_image_request_to_artcraft_prompt(&openrouter).generation_provider, None);
   }
 }

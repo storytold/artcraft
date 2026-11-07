@@ -25,10 +25,12 @@ import {
 } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
+  localGenerationsToGalleryItems,
   useGalleryData,
   useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
+import { useLocalGenerations } from "@storyteller/tauri-api";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
@@ -81,10 +83,14 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   // queue, completed history from the library (like the webapp list view).
   const username = useDesktopUsername();
   const feed = useDesktopGenerationFeed({ mediaType: "image" });
+  // Images made without an account live on this computer: shown with the library's.
+  const localImages = useLocalGenerations();
+  const localItems = useMemo(() => localGenerationsToGalleryItems(localImages), [localImages]);
   const gallery = useGalleryData({
     username,
     filterMediaClasses: IMAGE_FILTER,
     excludeUploads: true,
+    localItems,
   });
 
   // Content only — while the gallery is still loading the shell keeps the

@@ -15,6 +15,12 @@
       "path": "../modal"
     },
     {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../input"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {
