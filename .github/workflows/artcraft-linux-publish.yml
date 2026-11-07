@@ -189,5 +189,6 @@ jobs:
           app-title: ArtCraft
           tag-prefix: artcraft-v
           retain: "true"
+          allow-published: "true"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           signing-key: ${{ secrets.LINUX_SIGNING_KEY }}
