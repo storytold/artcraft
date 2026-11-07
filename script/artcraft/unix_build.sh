@@ -10,6 +10,9 @@ root_dir=$(pwd)
 frontend_path="${root_dir}/frontend"
 rust_crate_path="${root_dir}/crates/desktop/artcraft"
 
+source "${root_dir}/script/common/linux_preflight.sh"
+linux_preflight
+
 # Build with the desktop app configuration.
 config_path="${rust_crate_path}/tauri.conf.json"
 

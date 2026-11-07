@@ -63,6 +63,17 @@ test("invalid ports fail before starting Tauri", { timeout: 40000 }, async (t) =
   assert.match(run.output(), /ARTCRAFT_DEV_PORT must be an integer/);
 });
 
+test("missing Linux pkg-config dependencies fail before starting Tauri", { skip: process.platform !== "linux", timeout: 20000 }, async (t) => {
+  const run = await fixture(t, { ARTCRAFT_SKIP_SYSTEM_PREFLIGHT: "0" });
+  assert.deepEqual(await run.exited, [1, null], run.output());
+  assert.match(run.output(), /Missing Linux build dependencies/);
+  assert.match(run.output(), /pkg-config could not find/);
+
+  const calls = await readFile(path.join(run.dir, "pkg-config.log"), "utf8");
+  assert.match(calls, /--exists webkit2gtk-4\.1/);
+  assert.doesNotMatch(calls, /webkit2gtk-4\.0/);
+});
+
 test("concurrent launchers use different ports without replacing either frontend", { timeout: 40000 }, async (t) => {
   const occupied = await occupyPort(t);
   const env = { ARTCRAFT_DEV_PORT: String(occupied.address().port) };
@@ -143,11 +154,25 @@ if (process.env.TEST_EXIT_CODE) setTimeout(() => process.exit(Number(process.env
 setInterval(() => {}, 1000);
 `, { mode: 0o755 });
 
+  const pkgConfigLog = path.join(dir, "pkg-config.log");
+  await writeFile(path.join(dir, "pkg-config"), `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> '${pkgConfigLog}'
+exit 1
+`, { mode: 0o755 });
+
   const recordFile = path.join(dir, "record.json");
   const proc = spawn(launcher, [], {
     // Prove the launcher is independent of the invoking working directory.
     cwd: dir,
-    env: { ...process.env, ...env, PATH: `${dir}:${process.env.PATH}`, TEST_RECORD: recordFile },
+    env: {
+      ...process.env,
+      ...env,
+      // The launcher tests use a fake cargo and must work on machines without
+      // the Linux GTK/WebKit development packages installed.
+      ARTCRAFT_SKIP_SYSTEM_PREFLIGHT: env.ARTCRAFT_SKIP_SYSTEM_PREFLIGHT ?? "1",
+      PATH: `${dir}:${process.env.PATH}`,
+      TEST_RECORD: recordFile,
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";
@@ -159,7 +184,7 @@ setInterval(() => {}, 1000);
     await exited;
   });
   return {
-    proc, exited, output: () => output,
+    proc, exited, dir, output: () => output,
     async record() {
       return until(async () => {
         if (proc.exitCode !== null) throw new Error(output);
