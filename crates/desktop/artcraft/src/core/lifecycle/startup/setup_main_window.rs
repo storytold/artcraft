@@ -12,9 +12,16 @@ pub async fn setup_main_window(
           .title("ArtCraft")
           .resizable(true)
           .fullscreen(false)
-          .background_color(Color(0, 0, 0, 0))
           .enable_clipboard_access()
           .inner_size(2400.0, 1300.0);
+
+  // Pre-paint opaque background for Linux (matches default dark theme).
+  // A transparent surface causes WebKitGTK composition failure on Linux compositors.
+  #[cfg(target_os = "linux")]
+  let win_builder = win_builder.background_color(Color(18, 19, 22, 255));
+
+  #[cfg(not(target_os = "linux"))]
+  let win_builder = win_builder.background_color(Color(0, 0, 0, 0));
 
   #[cfg(target_os = "macos")]
   let win_builder = win_builder
