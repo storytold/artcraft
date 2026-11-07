@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { MediaUploadApi } from "@storyteller/api";
+import { EIntermediateFile, MediaUploadApi } from "@storyteller/api";
 import {
   UploaderState,
   UploaderStates,
@@ -24,6 +24,9 @@ export const uploadImage = async ({
     fileName: getFileName(assetFile),
     uuid: uuidv4(),
     maybe_title: title,
+    // Files the user uploads must show up in their library. UploadImage
+    // defaults to an intermediate system file, which the library hides.
+    is_intermediate_system_file: EIntermediateFile.false,
   });
 
   if (assetResponse == undefined) {
