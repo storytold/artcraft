@@ -73,7 +73,7 @@ const BlurPreview = memo(
           ref={canvasRef}
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute right-1 bottom-1 left-1 text-center">
+        <div className="absolute end-1 bottom-1 start-1 text-center">
           <span className="rounded bg-black/50 px-1 text-xs text-white">
             {blur.label}
           </span>
@@ -165,7 +165,7 @@ function CustomColorPreview({
             style={{ background: CUSTOM_COLOR_SWATCH_BACKGROUND }}
           />
           <span
-            className="absolute right-1 bottom-1 size-5 rounded-sm border border-white/70 shadow-sm"
+            className="absolute end-1 bottom-1 size-5 rounded-sm border border-white/70 shadow-sm"
             style={{ backgroundColor: currentBackgroundColor }}
           />
         </button>

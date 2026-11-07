@@ -485,14 +485,14 @@ export const Stage3DBody = ({
             <CompletionModal />
 
             <div
-              className="absolute left-0 top-0 w-full"
+              className="absolute start-0 top-0 w-full"
               onClick={handleOverlayClick}
             >
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 2xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                 <div className="min-w-0 flex flex-col items-start gap-2">
                   {!isRecord && <ControlsTopButtons />}
                   {!isRecord && topBarStartSlot && (
-                    <div className="pl-3">{topBarStartSlot}</div>
+                    <div className="ps-3">{topBarStartSlot}</div>
                   )}
                 </div>
                 <div className="col-span-2 row-start-2 flex flex-col items-center 2xl:col-span-1 2xl:col-start-2 2xl:row-start-1">
@@ -501,7 +501,7 @@ export const Stage3DBody = ({
                     <Controls3D showImageTo3DButton={showImageTo3DButton} />
                   )}
                 </div>
-                <div className="col-start-2 row-start-1 flex min-w-0 flex-wrap items-start justify-end gap-2 pr-3 pt-3 2xl:col-start-3">
+                <div className="col-start-2 row-start-1 flex min-w-0 flex-wrap items-start justify-end gap-2 pe-3 pt-3 2xl:col-start-3">
                   {/* Camera cluster: which camera drives the viewport +
                       the render-frame aspect ratio. */}
                   {!isRecord && <CameraStatusPill />}
@@ -515,7 +515,7 @@ export const Stage3DBody = ({
             {/* Outliner: vertically centered against the viewport. Sized in
                 vh — deliberately independent of the camera aspect ratio. */}
             <div
-              className={`absolute left-4 top-1/2 -translate-y-1/2${
+              className={`absolute start-4 top-1/2 -translate-y-1/2${
                 isRecord ? " hidden" : ""
               }`}
             >
@@ -523,7 +523,7 @@ export const Stage3DBody = ({
             </div>
 
             <div
-              className="absolute bottom-0 left-0 right-0"
+              className="absolute bottom-0 start-0 end-0"
               onClick={handleOverlayClick}
             >
               {/* Always mounted: PreviewEngineCamera owns the cam-view canvas
@@ -531,7 +531,7 @@ export const Stage3DBody = ({
                   tears down + recreates the whole engine (wiping the scene).
                   Hide with CSS in record instead. */}
               <div
-                className={`absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2${
+                className={`absolute bottom-20 mb-4 ms-4 flex origin-bottom-left rtl:origin-bottom-right flex-col gap-2${
                   isRecord ? " hidden" : ""
                 }`}
                 style={{ transform: `scale(${getScale()})` }}
@@ -550,27 +550,27 @@ export const Stage3DBody = ({
             {!isRecord && !timelineExpanded && (
               <div className="absolute bottom-4 left-1/2 w-[90vw] max-w-3xl -translate-x-1/2">
                 <TimelineBar />
-                <ExitCameraView className="absolute -right-2 top-1/2 -translate-y-1/2 translate-x-full" />
+                <ExitCameraView className="absolute -end-2 top-1/2 -translate-y-1/2 translate-x-full rtl:-translate-x-full" />
               </div>
             )}
             {!isRecord && timelineExpanded && (
               <>
                 <TimelineEditor />
-                <ExitCameraView className="absolute bottom-4 right-4" />
+                <ExitCameraView className="absolute bottom-4 end-4" />
               </>
             )}
 
             {isRecord && <RecordControls />}
 
             <LoadingDots
-              className="absolute left-0 top-0 z-50"
+              className="absolute start-0 top-0 z-50"
               isShowing={editorLoader.isShowing}
               type="bricks"
               message={editorLoader.message}
             />
 
             {modelSelectorPlacement === "bottom-left" && (
-              <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
+              <div className="absolute bottom-6 start-6 z-20 flex items-center gap-3">
                 <ClassyModelSelector
                   items={stage3dModelList}
                   page={PAGE_ID}
@@ -583,7 +583,7 @@ export const Stage3DBody = ({
               </div>
             )}
             {(showCostCalculator || showHelpMenu) && (
-              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+              <div className="absolute bottom-4 end-4 z-20 flex items-center gap-2">
                 {showCostCalculator && (
                   <CostCalculatorButton modelPage={PAGE_ID} />
                 )}

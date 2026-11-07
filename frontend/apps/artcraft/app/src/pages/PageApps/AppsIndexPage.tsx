@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "@storyteller/i18n";
 import { ArrowRightIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
@@ -11,11 +12,12 @@ import {
 } from "~/config/appMenu";
 
 export const AppsIndexPage = () => {
+  const { t } = useTranslation();
   const generateApps = useGenerateApps();
   const editApps = useEditApps();
   const categories = [
-    { title: "Create", apps: generateApps },
-    { title: "Edit", apps: editApps },
+    { title: t("Create"), apps: generateApps },
+    { title: t("Edit"), apps: editApps },
   ];
 
   return (
@@ -25,13 +27,13 @@ export const AppsIndexPage = () => {
     <div className="fixed inset-0 overflow-y-auto bg-ui-background pt-[56px] text-base-fg">
       <main className="mx-auto w-full max-w-6xl px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
         <p className="hud-label mb-4 text-ui-accent-ink">
-          Your creative workspace
+          {t("Your creative workspace")}
         </p>
         <h1 className="max-w-3xl font-display text-3xl leading-tight tracking-tight sm:text-5xl">
-          What will you <span className="text-ui-accent-ink">craft</span> today?
+          <Trans t={t} i18nKey="What will you <craft>craft</craft> today?" components={{ craft: <span className="text-ui-accent-ink" /> }} />
         </h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-base-fg/70 sm:text-base">
-          Start with an idea. Choose a tool to bring it to life.
+          {t("Start with an idea. Choose a tool to bring it to life.")}
         </p>
 
         {categories.map((category, index) => (
@@ -58,6 +60,7 @@ export const AppsIndexPage = () => {
 };
 
 function AppCard({ app }: { app: FullAppItem }) {
+  const { t } = useTranslation();
   const palette = getAppCardPalette(app.id);
   const enabled = !!app.action;
 
@@ -66,7 +69,7 @@ function AppCard({ app }: { app: FullAppItem }) {
       onClick={() => goToApp(app.action)}
       disabled={!enabled}
       className={twMerge(
-        "group relative flex h-full rounded-[3px] border border-ui-border bg-white/5 p-5 text-left transition-colors duration-150 focus-visible:border-primary",
+        "group relative flex h-full rounded-[3px] border border-ui-border bg-white/5 p-5 text-start transition-colors duration-150 focus-visible:border-primary",
         enabled ? twMerge("cursor-pointer", palette.hoverStyle) : "cursor-default opacity-60",
       )}
     >
@@ -84,7 +87,7 @@ function AppCard({ app }: { app: FullAppItem }) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h3 className="text-base font-bold uppercase tracking-tight text-ui-ink">
-                {app.label}
+                {t(app.label)}
               </h3>
               {app.badge && (
                 <span
@@ -95,7 +98,7 @@ function AppCard({ app }: { app: FullAppItem }) {
                       : "border-primary/30 text-ui-accent-ink",
                   )}
                 >
-                  {app.badge}
+                  {t(app.badge)}
                 </span>
               )}
             </div>
@@ -106,7 +109,7 @@ function AppCard({ app }: { app: FullAppItem }) {
             )}
           </div>
           <p className="mt-2 text-sm leading-relaxed text-base-fg/70">
-            {app.description}
+            {t(app.description)}
           </p>
         </div>
       </div>

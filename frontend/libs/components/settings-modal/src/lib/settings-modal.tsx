@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useState } from "react";
 import { CreditCardIcon, DownloadIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
@@ -45,6 +46,7 @@ export const SettingsModal = ({
   onStoryboardPageDisable,
   initialSection = "general",
 }: SettingsModalProps) => {
+  const { t } = useTranslation();
   const [selectedSection, setSelectedSection] =
     useState<SettingsSection>(initialSection);
 
@@ -67,25 +69,25 @@ export const SettingsModal = ({
   }, [experimentalEnabled, selectedSection]);
 
   const sections = [
-    { id: "general" as const, label: "General", icon: SettingsIcon },
-    { id: "downloads" as const, label: "Downloads", icon: DownloadIcon },
+    { id: "general" as const, label: t("General"), icon: SettingsIcon },
+    { id: "downloads" as const, label: t("Downloads"), icon: DownloadIcon },
 
-    { id: "accounts" as const, label: "Accounts", icon: UserIcon },
-    { id: "billing" as const, label: "Plan & Credits", icon: CreditCardIcon },
+    { id: "accounts" as const, label: t("Accounts"), icon: UserIcon },
+    { id: "billing" as const, label: t("Plan & Credits"), icon: CreditCardIcon },
 
     /* {
       id: "provider_priority" as const,
       label: "Provider Priority",
       icon: RouteIcon,
     }, */
-    { id: "appearance" as const, label: "Appearance", icon: PaletteIcon },
-    { id: "keybinds" as const, label: "Keybinds", icon: KeyboardIcon },
-    { id: "alerts" as const, label: "Alerts", icon: Volume2Icon },
-    { id: "about" as const, label: "About", icon: InfoIcon },
+    { id: "appearance" as const, label: t("Appearance"), icon: PaletteIcon },
+    { id: "keybinds" as const, label: t("Keybinds"), icon: KeyboardIcon },
+    { id: "alerts" as const, label: t("Alerts"), icon: Volume2Icon },
+    { id: "about" as const, label: t("About"), icon: InfoIcon },
     //{ id: "video" as const, label: "Video", icon: VideoIcon },
     //{ id: "image" as const, label: "Image", icon: ImageIcon },
     ...(experimentalEnabled
-      ? [{ id: "experimental" as const, label: "Experimental", icon: FlaskConicalIcon }]
+      ? [{ id: "experimental" as const, label: t("Experimental"), icon: FlaskConicalIcon }]
       : []),
   ];
 
@@ -138,10 +140,10 @@ export const SettingsModal = ({
       >
         <div className="h-[600px]">
           <div className="grid h-full grid-cols-12 gap-3">
-            <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
+            <div className="relative col-span-4 p-3 pt-2 after:absolute after:end-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
               <div className="flex items-center justify-between gap-2.5 py-0.5">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                  Settings
+                  {t("Settings")}
                 </h2>
               </div>
               <hr className="my-2 w-full border-ui-panel-border" />
@@ -150,7 +152,7 @@ export const SettingsModal = ({
                   <button
                     key={section.id}
                     className={twMerge(
-                      "h-9 w-full px-2 text-left transition-colors duration-100",
+                      "h-9 w-full px-2 text-start transition-colors duration-100",
                       section.id === selectedSection
                         ? "bg-base-fg/10 text-base-fg"
                         : "text-base-fg/70 hover:bg-base-fg/[0.06] hover:text-base-fg",
@@ -180,14 +182,14 @@ export const SettingsModal = ({
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ui-panel-border bg-ui-modal px-3 py-2">
                   <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] opacity-80">
                     <FlaskConicalIcon />
-                    Experimental features enabled
+                    {t("Experimental features enabled")}
                   </div>
                   <Button
                     variant="destructive"
                     onClick={() => setIsResetConfirmOpen(true)}
                     className="rounded-[3px] px-2 py-1 text-xs"
                   >
-                    Reset
+                    {t("Reset")}
                   </Button>
                 </div>
               )}
@@ -200,9 +202,9 @@ export const SettingsModal = ({
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={handleConfirmReset}
-        title="Reset experimental settings?"
-        text="This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page."
-        confirmText="Reset"
+        title={t("Reset experimental settings?")}
+        text={t("This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page.")}
+        confirmText={t("Reset")}
       />
     </>
   );

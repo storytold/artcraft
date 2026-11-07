@@ -4,7 +4,12 @@
   "license": "MIT OR Apache-2.0",
   "scripts": {
     "test:desktop-session": "node tools/testing/desktop-session.mjs",
-    "perf:desktop": "node tools/performance/run.mjs"
+    "perf:desktop": "node tools/performance/run.mjs",
+    "test:i18n": "node tools/testing/i18n.mjs",
+    "test:i18n-library": "node tools/testing/i18n-library.mjs",
+    "test:i18n-billing": "node tools/testing/i18n-billing.mjs",
+    "test:i18n-lightbox": "node tools/testing/i18n-lightbox.mjs",
+    "test:i18n-frames": "node tools/testing/i18n-frames.mjs"
   },
   "private": true,
   "dependencies": {

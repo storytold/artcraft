@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useMemo, useRef, useState } from "react";
 import { TagIcon, XIcon } from "lucide-react";
 
@@ -36,6 +37,7 @@ export function TagChipInput({
   onAdd,
   onRemove,
 }: TagChipInputProps) {
+  const { t: tr } = useTranslation();
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
   // -1 = free-typing (Enter commits the draft, not a suggestion).
@@ -134,7 +136,7 @@ export function TagChipInput({
   };
 
   const chipClass = (value: string) =>
-    `flex items-center gap-1 break-all text-left rounded-[3px] border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-all ${
+    `flex items-center gap-1 break-all text-start rounded-[3px] border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-all ${
       flashValue === value ? "ring-2 ring-primary" : ""
     }`;
 
@@ -150,7 +152,7 @@ export function TagChipInput({
           disabled ? (
             <span key={value.toLowerCase()} className={chipClass(value)}>
               <TagIcon  className="h-2.5 w-2.5 text-base-fg/40" />
-              {value}
+              <bdi>{value}</bdi>
             </span>
           ) : (
             <button
@@ -160,10 +162,10 @@ export function TagChipInput({
                 e.stopPropagation();
                 onRemove(value);
               }}
-              title={`Remove "${value}"`}
+              title={tr('Remove "{{tag}}"', { tag: value })}
               className={`group/tag ${chipClass(value)} hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red`}
             >
-              {value}
+              <bdi>{value}</bdi>
               <XIcon  className="h-2.5 w-2.5" />
             </button>
           ),
@@ -171,6 +173,7 @@ export function TagChipInput({
         {!disabled && (
           <input
             ref={inputRef}
+            dir="auto"
             value={draft}
             onChange={(e) => {
               setDraft(e.target.value);
@@ -183,8 +186,8 @@ export function TagChipInput({
               setFocused(false);
               if (draft.trim()) commit(draft);
             }}
-            aria-label="Tags"
-            placeholder={chips.length === 0 ? "Add tags (comma separated)" : "Add tag"}
+            aria-label={tr("Tags")}
+            placeholder={chips.length === 0 ? tr("Add tags (comma separated)") : tr("Add tag")}
             className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
           />
         )}
@@ -192,7 +195,7 @@ export function TagChipInput({
 
       {dropdownOpen && (
         <div
-          className={`absolute left-0 right-0 z-30 max-h-48 overflow-y-auto rounded-none border border-ui-panel-border bg-ui-panel p-1 shadow-xl ${
+          className={`absolute start-0 end-0 z-30 max-h-48 overflow-y-auto rounded-none border border-ui-panel-border bg-ui-panel p-1 shadow-xl ${
             dropUp ? "bottom-full mb-1" : "top-full mt-1"
           }`}
         >
@@ -209,8 +212,8 @@ export function TagChipInput({
               }`}
             >
               <TagIcon  className="text-[10px] text-base-fg/40" />
-              <span className="truncate">{suggestion.value}</span>
-              <span className="ml-auto text-[11px] text-base-fg/40">
+              <span dir="auto" className="truncate">{suggestion.value}</span>
+              <span className="ms-auto text-[11px] text-base-fg/40">
                 {suggestion.useCount}
               </span>
             </button>

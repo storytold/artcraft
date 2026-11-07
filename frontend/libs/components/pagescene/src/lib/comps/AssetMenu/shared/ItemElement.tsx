@@ -105,7 +105,7 @@ export const ItemElement = ({ item }: Props) => {
                 ? patchExpressionObjectType(item.media_type)
                 : item.media_type.toUpperCase()
           }
-          className="absolute right-0 mr-[3px] mt-[3px]"
+          className="absolute end-0 me-[3px] mt-[3px]"
         />
       )}
 
@@ -140,18 +140,18 @@ export const ItemElement = ({ item }: Props) => {
         <div className="text-shadow-md absolute inset-0 flex items-center justify-center bg-brand-primary-950/50 text-[13px] font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           {item.type === AssetType.ANIMATION ? (
             <>
-              <FootprintsIcon  className="mr-1.5" />
+              <FootprintsIcon  className="me-1.5" />
               Add to Character
             </>
           ) : (
             <>
-              <MoveIcon  className="mr-1.5" />
+              <MoveIcon  className="me-1.5" />
               Drag to Scene
             </>
           )}
         </div>
       </div>
-      <div className="pointer-events-none w-full select-none truncate py-1.5 text-start text-[13px] text-white/80 transition-all duration-200">
+      <div dir="auto" className="pointer-events-none w-full select-none truncate py-1.5 text-start text-[13px] text-white/80 transition-all duration-200">
         {item.name || item.media_id}
       </div>
     </div>

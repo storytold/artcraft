@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   GetAppInfo,
@@ -14,6 +15,7 @@ const UNLOCK_WINDOW_MS = 5000;
 interface AboutSettingsPaneProps {}
 
 export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
+  const { t } = useTranslation();
   const [appInfo, setAppInfo] = useState<
     GetAppInfoPayload | undefined
   >(undefined);
@@ -40,7 +42,7 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
       clickTimes.current = [];
       enable();
       gtagEvent("unlock_experimental_menu", {});
-      toast.success("Experimental features unlocked");
+      toast.success(t("Experimental features unlocked"));
     }
   };
 
@@ -49,7 +51,7 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
       <div className="space-y-4 pt-3 text-base-fg">
         <div className="space-y-1">
           <Label>
-            Artcraft Version
+            {t("Artcraft Version")}
           </Label>
           <div
             className="text-sm font-medium"
@@ -61,44 +63,44 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
         </div>
 
         <div className="space-y-1">
-          <Label>Artcraft Host</Label>
+          <Label>{t("Artcraft Host")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.storyteller_host}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>Git Commit ID</Label>
+          <Label>{t("Git Commit ID")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.git_commit_short_id} &middot; {appInfo?.git_commit_id}</div>
         </div>
 
         <div className="space-y-1">
-          <Label>Git Commit Timestamp</Label>
+          <Label>{t("Git Commit Timestamp")}</Label>
           <div className="break-all text-sm font-medium">{appInfo?.git_commit_timestamp}</div>
         </div>
 
         <div className="space-y-1">
           <Label>
-            Build Timestamp
+            {t("Build Timestamp")}
           </Label>
           <div className="break-all text-sm font-medium">{appInfo?.build_timestamp}</div>
         </div>
 
         <div className="space-y-1">
           <Label>
-            Operating System
+            {t("Operating System")}
           </Label>
           <div className="break-all text-sm font-medium">{appInfo?.os_platform} ({appInfo?.os_version})</div>
         </div>
 
         <div className="space-y-1">
           <Label>
-            Artcraft Data Directory
+            {t("Artcraft Data Directory")}
           </Label>
           <div className="break-all text-sm font-medium">{appInfo?.artcraft_root_directory}</div>
         </div>
 
         <div className="space-y-1">
           <Label>
-            Downloads Directory
+            {t("Downloads Directory")}
           </Label>
           <div className="break-all text-sm font-medium">{appInfo?.download_directory}</div>
         </div>

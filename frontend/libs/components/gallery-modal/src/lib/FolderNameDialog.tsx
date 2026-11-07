@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import React, { useEffect, useRef, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
@@ -27,6 +28,7 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
   onConfirm,
   onClose,
 }) => {
+  const { t: tr } = useTranslation();
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +59,7 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
         <input
           ref={inputRef}
           type="text"
-          aria-label="Folder name"
+          aria-label={tr("Folder name")}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
@@ -72,7 +74,7 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
             onClick={onClose}
             className="px-3 py-1.5 text-[11px]"
           >
-            Cancel
+            {tr("Cancel")}
           </Button>
           <Button
             onClick={submit}

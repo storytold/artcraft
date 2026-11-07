@@ -1,3 +1,4 @@
+import { i18n, tn } from "@storyteller/i18n";
 import {
   showActionReminder,
   isActionReminderOpen,
@@ -21,18 +22,18 @@ export function promptFolderDrop({
   onMove,
   onAdd,
 }: FolderDropPromptOptions): void {
-  const plural = count === 1 ? "" : "s";
-  const dest = targetFolderName ? ` to "${targetFolderName}"` : "";
+  const tr = i18n.t.bind(i18n);
   showActionReminder({
     reminderType: "default",
-    title: `Move or copy ${count} item${plural}?`,
+    title: tn(tr, count, "Move or copy {{n}} item?", "Move or copy {{n}} items?"),
     message: (
       <p className="text-sm text-white/70">
-        Move{dest} removes {count === 1 ? "it" : "them"} from the current folder.
-        Add a copy keeps {count === 1 ? "it" : "them"} in both.
+        {targetFolderName
+          ? tr("Moving to “{{folder}}” removes the selected items from the current folder. Adding a copy keeps them in both folders.", { folder: targetFolderName })
+          : tr("Moving removes the selected items from the current folder. Adding a copy keeps them in both folders.")}
       </p>
     ),
-    primaryActionText: "Move here",
+    primaryActionText: tr("Move here"),
     onPrimaryAction: async () => {
       try {
         await onMove();
@@ -40,7 +41,7 @@ export function promptFolderDrop({
         isActionReminderOpen.value = false;
       }
     },
-    secondaryActionText: "Add a copy",
+    secondaryActionText: tr("Add a copy"),
     onSecondaryAction: async () => {
       try {
         await onAdd();

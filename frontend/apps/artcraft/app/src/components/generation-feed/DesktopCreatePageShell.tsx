@@ -100,7 +100,7 @@ export function DesktopCreatePageShell({
         {promptBox}
 
         {bottomRight && (
-          <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+          <div className="absolute bottom-4 end-4 z-20 flex items-center gap-2">
             {bottomRight}
           </div>
         )}

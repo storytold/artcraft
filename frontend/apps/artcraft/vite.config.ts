@@ -5,6 +5,7 @@ import path from "path";
 import { resolve } from "node:path";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
+import { craftFonts, craftI18n } from "../../libs/i18n/build/vite-plugins";
 
 // NB(bt): This configuration file can specify bundler rollup options, compiler plugins,
 // import path resolution, dev server HTTP headers, CORS options, path rewriting, etc.
@@ -68,6 +69,8 @@ export default defineConfig({
     }),
     wasm(),
     topLevelAwait(),
+    craftI18n(),
+    craftFonts(),
   ],
   server: {
     fs: {
