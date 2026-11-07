@@ -130,13 +130,15 @@ Additional provider integrations are planned for Kling, Google, Runway, and Luma
 
 ## Downloads
 
-- [Stable releases for Windows and macOS](https://getartcraft.com/)
-- [Latest builds on GitHub](https://github.com/storytold/artcraft/releases)
+- [Stable releases for Windows, macOS, and Linux](https://getartcraft.com/)
+- [Latest builds on GitHub](https://github.com/storytold/artcraft/releases) (including AppImage, DEB, RPM, Arch, and Flatpak packages)
+- [Linux packaging notes](./packaging/linux/README.md)
 - [Build from source](./_docs/dev_setup.md), including Linux
 
 ## Documentation
 
 - [Development setup](./_docs/dev_setup.md)
+- [Linux packaging](./packaging/linux/README.md)
 - [Developer documentation](./_docs)
 - [Desktop build and development scripts](./script/artcraft)
 - [Roadmap](./ROADMAP.md)

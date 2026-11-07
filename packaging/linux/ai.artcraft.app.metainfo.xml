@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ai.artcraft.app</id>
+  <name>ArtCraft Studio</name>
+  <summary>Create AI images and video</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <description><p>ArtCraft Studio is a desktop workspace for generating AI images and video with connected AI providers.</p></description>
+  <launchable type="desktop-id">ai.artcraft.app.desktop</launchable>
+  <url type="homepage">https://getartcraft.com</url>
+  <developer id="ai.artcraft"><name>ArtCraft</name></developer>
+  <categories><category>Graphics</category><category>AudioVideo</category></categories>
+  <provides><binary>artcraft</binary></provides>
+</component>
