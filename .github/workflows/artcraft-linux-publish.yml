@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: storytold/craft-common-actions/actions/install-apt-packages@main
         with:
           packages: rpm jq binutils zsync
@@ -34,7 +34,7 @@ jobs:
       TAURI_FRONTEND_PATH: ${{ github.workspace }}/frontend
       TAURI_APP_PATH: ${{ github.workspace }}/crates/desktop/artcraft
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: storytold/craft-common-actions/actions/install-apt-packages@main
         with:
           packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libclang-dev libasound2-dev libxdo-dev libdbus-1-dev build-essential clang file jq perl cmake nasm rpm zsync gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
@@ -63,7 +63,7 @@ jobs:
           PKG_CONFIG_LIBDIR_riscv64gc_unknown_linux_gnu=/usr/lib/riscv64-linux-gnu/pkgconfig:/usr/share/pkgconfig
           ENV
           echo "CMAKE_TOOLCHAIN_FILE_riscv64gc_unknown_linux_gnu=$GITHUB_WORKSPACE/packaging/linux/riscv64.cmake" >> "$GITHUB_ENV"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -89,7 +89,7 @@ jobs:
           ARCH: ${{ matrix.arch }}
           TARGET: ${{ matrix.target }}
         run: packaging/linux/package.sh "$ARCH" "$TARGET"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-linux-${{ matrix.arch }}
           path: dist/release/*
@@ -102,8 +102,8 @@ jobs:
       matrix:
         arch: [x86_64, aarch64]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: release-linux-${{ matrix.arch }}
           path: dist/linux
@@ -126,7 +126,7 @@ jobs:
           for package in dist/release/*.pkg.tar.zst; do
             tar --zstd -xOf "$package" .PKGINFO | grep -Fx 'depend = webkit2gtk-4.1'
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-arch-${{ matrix.arch }}
           path: dist/release/*.pkg.tar.zst
@@ -145,8 +145,8 @@ jobs:
           - {arch: x86_64, runner: ubuntu-24.04}
           - {arch: aarch64, runner: ubuntu-24.04-arm}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: release-linux-${{ matrix.arch }}
           path: dist/linux
@@ -162,7 +162,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: packaging/linux/flatpak.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-flatpak-${{ matrix.arch }}
           path: |
@@ -175,7 +175,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Read version
         id: version
         run: echo "value=$(jq -r .version crates/desktop/artcraft/tauri.conf.json)" >> "$GITHUB_OUTPUT"
