@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+# ArtCraft Studio is a Tauri (WebKitGTK) desktop app.
+#
+# Keep WebKitGTK's accelerated path on, the opposite of the older recipe of
+# disabling the DMABUF renderer. On org.gnome.Platform//51 the unaccelerated
+# path draws this window wrong.
+#
+# ${VAR:-0} rather than plain assignment, so a user whose driver does need the
+# unaccelerated path can take it back:
+#   flatpak override --user --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 ai.artcraft.app
+export WEBKIT_DISABLE_DMABUF_RENDERER="${WEBKIT_DISABLE_DMABUF_RENDERER:-0}"
+export WEBKIT_DISABLE_COMPOSITING_MODE="${WEBKIT_DISABLE_COMPOSITING_MODE:-0}"
+
+exec /app/bin/artcraft.real "$@"
