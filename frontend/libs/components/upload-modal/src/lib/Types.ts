@@ -45,11 +45,15 @@ export enum MediaFileAnimationType {
 }
 
 // Accepted file extensions (lowercase — the backend rejects uppercase).
-// FBX is accepted at the picker but converted to GLB in the browser before
-// preview/upload (convertFbxToGlb) — the rest of the pipeline is GLTF-only.
+// Everything but GLB is accepted at the picker but converted to GLB in the
+// browser before preview/upload (convertModelToGlb) — the rest of the
+// pipeline is GLTF-only.
 export enum OBJECT_FILE_TYPE {
   GLB = "glb",
   FBX = "fbx",
+  OBJ = "obj",
+  STL = "stl",
+  PLY = "ply",
 }
 
 export enum IMAGEPLANE_FILE_TYPE {
@@ -69,8 +73,8 @@ export const getFileExtension = (file: File): string =>
   file.name.substring(file.name.lastIndexOf("."));
 
 // Per-file row status shown in the multi-file upload sidebar. "converting"
-// = an FBX being normalized to GLB client-side before it can be previewed
-// or uploaded.
+// = a non-GLB model being normalized to GLB client-side before it can be
+// previewed or uploaded.
 export type FileEntryStatus =
   | "idle"
   | "converting"
