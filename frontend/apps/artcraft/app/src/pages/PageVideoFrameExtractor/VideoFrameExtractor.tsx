@@ -500,7 +500,7 @@ export const VideoFrameExtractor = () => {
                         setSavedFrames(new Set());
                         setConvertingFrames(new Set());
                       }}
-                      className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
+                      className="absolute end-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
                       Switch Video
                     </Button>
@@ -513,7 +513,7 @@ export const VideoFrameExtractor = () => {
                       playsInline
                       crossOrigin="anonymous"
                     />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
+                    <div className="absolute bottom-0 start-0 end-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
                         ref={progressBarRef}
                         className="group relative mb-3 h-3 cursor-pointer bg-white/15"

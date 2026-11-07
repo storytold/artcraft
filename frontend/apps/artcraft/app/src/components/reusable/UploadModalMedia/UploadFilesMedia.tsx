@@ -86,7 +86,7 @@ export const UploadFilesMedia = ({
 
         <div className="relative m-auto aspect-square w-full overflow-hidden border border-white/15 bg-ui-controls">
           {!assetFile.value && (
-            <h6 className="absolute left-0 top-1/2 -mt-5 w-full text-center">
+            <h6 className="absolute start-0 top-1/2 -mt-5 w-full text-center">
               File Preview
             </h6>
           )}

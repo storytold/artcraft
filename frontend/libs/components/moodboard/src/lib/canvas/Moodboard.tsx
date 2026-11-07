@@ -44,7 +44,7 @@ export const Moodboard = ({ adapter }: Props) => {
           onGalleryClick={triggerGallery}
         />
       )} */}
-      <div className="absolute left-0 right-0 top-0 z-10">
+      <div className="absolute start-0 end-0 top-0 z-10">
         <MoodboardToolbar
           onUploadClick={triggerUpload}
           onGalleryClick={triggerGallery}

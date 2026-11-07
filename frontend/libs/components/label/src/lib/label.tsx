@@ -21,7 +21,7 @@ export const Label = ({
     {...rest}
   >
     {children}
-    {required && <span className="ml-0.5 text-red-400">*</span>}
+    {required && <span className="ms-0.5 text-red-400">*</span>}
   </label>
 );
 

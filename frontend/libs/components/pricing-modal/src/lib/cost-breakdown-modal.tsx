@@ -346,6 +346,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
           <div className="flex justify-between items-center">
             <span className="text-base-fg/60">Model</span>
             <span
+              dir="auto"
               className="text-base-fg font-medium truncate max-w-[140px]"
               title={selectedModel.selectorName}
             >

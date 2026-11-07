@@ -77,7 +77,7 @@ export const ButtonDropdown = ({
 
   return (
     <div className="relative">
-      <Menu as="div" className="inline-block text-left">
+      <Menu as="div" className="inline-block text-start">
         <Menu.Button as="div">
           <Button
             className={className}
@@ -102,7 +102,7 @@ export const ButtonDropdown = ({
             static
             className={twMerge(
               "absolute z-20 mt-2 w-max min-w-48 overflow-hidden rounded-[3px] border border-ui-panel-border bg-ui-controls p-1.5 text-base-fg focus:outline-none",
-              align === "left" ? "left-0" : "right-0",
+              align === "left" ? "start-0" : "end-0",
             )}
           >
             <div>
@@ -130,11 +130,11 @@ export const ButtonDropdown = ({
                           {option.icon && (
                             <DynamicIcon
                               icon={option.icon}
-                              className="mr-2 h-4 w-4 shrink-0"
+                              className="me-2 h-4 w-4 shrink-0"
                             />
                           )}
                           <div className="grow text-start">{option.label}</div>
-                          <div className="ml-6 font-mono text-[11px] font-normal text-white/45">
+                          <div className="ms-6 font-mono text-[11px] font-normal text-white/45">
                             {option.description && option.description}
                           </div>
                           {showSelected && (
@@ -143,7 +143,7 @@ export const ButtonDropdown = ({
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 512 512"
-                                  className="ml-3 flex h-5"
+                                  className="ms-3 flex h-5"
                                 >
                                   <path
                                     opacity="1"

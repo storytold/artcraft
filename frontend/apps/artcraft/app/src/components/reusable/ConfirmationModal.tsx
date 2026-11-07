@@ -64,7 +64,7 @@ export const ConfirmationModal = ({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-md transform overflow-hidden border border-white/15 bg-ui-modal p-5 text-left align-middle transition-all">
+            <Dialog.Panel className="w-full max-w-md transform overflow-hidden border border-white/15 bg-ui-modal p-5 text-start align-middle transition-all">
               <Dialog.Title
                 as="h4"
                 className="mb-4 font-display text-xl tracking-tight text-white"

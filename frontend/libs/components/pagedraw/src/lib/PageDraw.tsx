@@ -1229,7 +1229,7 @@ const PageDraw = ({
     <>
       <div className={`fixed inset-0 -z-10 ${backgroundClassName}`} />
       <div
-        className={`preserve-aspect-ratio fixed right-4 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform ${
+        className={`preserve-aspect-ratio fixed end-4 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform ${
           isSelecting ? "pointer-events-none" : "pointer-events-auto"
         }`}
       >
@@ -1292,7 +1292,7 @@ const PageDraw = ({
         />
       </div>
       <SideToolbar
-        className="fixed left-0 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform"
+        className="fixed start-0 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform"
         onSelect={handleSelectTool}
         onActivateShapeTool={handleActivateShapeTool}
         onPaintBrush={handlePaintBrush}
@@ -1351,7 +1351,7 @@ const PageDraw = ({
         </ContextMenuContainer>
       </div>
       {showBottomRightControls && (
-        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+        <div className="absolute bottom-4 end-4 z-20 flex items-center gap-2">
           <CostCalculatorButton modelPage={PAGE_ID} />
           <HelpMenuButton />
         </div>

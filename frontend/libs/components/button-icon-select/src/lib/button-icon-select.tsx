@@ -40,7 +40,7 @@ export function ButtonIconSelect({
   };
 
   return (
-    <div className="flex space-x-1">
+    <div className="flex space-x-1 rtl:space-x-reverse">
       {options.map(({ value, icon, text, tooltip }) =>
         tooltip ? (
           <Tooltip

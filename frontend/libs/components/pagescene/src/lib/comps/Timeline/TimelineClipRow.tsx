@@ -211,9 +211,10 @@ export const TimelineClipRow = ({
                   >
                     {bakedClips.map((clipName, clipIndex) => (
                       <button
+                        dir="auto"
                         key={clipIndex}
                         type="button"
-                        className="block w-full truncate px-2.5 py-1 text-left text-[11px] text-base-fg/90 hover:bg-white/10"
+                        className="block w-full truncate px-2.5 py-1 text-start text-[11px] text-base-fg/90 hover:bg-white/10"
                         onClick={() => addBaked(clipIndex)}
                       >
                         {clipName}

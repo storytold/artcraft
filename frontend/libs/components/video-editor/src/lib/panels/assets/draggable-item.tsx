@@ -126,7 +126,8 @@ export function DraggableItem({
             </AspectRatio>
             {shouldShowLabel && (
               <span
-                className="text-muted-foreground w-full truncate text-left text-[0.7rem]"
+                dir="auto"
+                className="text-muted-foreground w-full truncate text-start text-[0.7rem]"
                 title={name}
               >
                 <span className="sr-only">{name}</span>
@@ -158,7 +159,10 @@ export function DraggableItem({
             <div className="size-6 shrink-0 overflow-hidden rounded-sm">
               {preview}
             </div>
-            <span className="w-full flex-1 truncate text-sm text-left">
+            <span
+              dir="auto"
+              className="w-full flex-1 truncate text-sm text-start"
+            >
               {name}
             </span>
           </button>
@@ -212,7 +216,7 @@ function PlusButton({
     <Button
       size="icon"
       className={cn(
-        "bg-background hover:bg-background text-foreground absolute right-2 bottom-2 size-5",
+        "bg-background hover:bg-background text-foreground absolute end-2 bottom-2 size-5",
         className,
       )}
       onClick={(e) => {

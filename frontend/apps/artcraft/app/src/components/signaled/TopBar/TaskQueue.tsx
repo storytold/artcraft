@@ -141,7 +141,7 @@ const PromptLine = ({
               : undefined
           }
         >
-          {prompt}
+          <bdi>{prompt}</bdi>
         </div>
       </div>
     </Tooltip>
@@ -213,7 +213,7 @@ const InProgressCard = ({
           size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
-        <div className="absolute bottom-0.5 right-0.5 bg-black/60 px-1 text-[9px] text-white/80">
+        <div className="absolute bottom-0.5 end-0.5 bg-black/60 px-1 text-[9px] text-white/80">
           +{task.refImageUrls!.length - 1}
         </div>
       )}
@@ -250,12 +250,12 @@ const InProgressCard = ({
                 </Tooltip>
               )}
             </div>
-            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
+            <div className="ms-2 shrink-0 text-xs tabular-nums text-base-fg/60">
               {progressPercent}%
             </div>
           </div>
           {task.subtitle && (
-            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+            <div dir="auto" className="mt-0.5 truncate text-xs text-base-fg opacity-60">
               {task.subtitle}
             </div>
           )}
@@ -274,7 +274,7 @@ const InProgressCard = ({
           )}
           {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="ms-auto flex shrink-0 items-center gap-1">
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
@@ -337,7 +337,7 @@ const CompletedCard = ({
           {task.title}
         </div>
         {task.subtitle && (
-          <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+          <div dir="auto" className="mt-0.5 truncate text-xs text-base-fg opacity-60">
             {task.subtitle}
           </div>
         )}
@@ -348,7 +348,7 @@ const CompletedCard = ({
         )}
         {task.prompt && <PromptLine prompt={task.prompt} />}
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-1">
+      <div className="ms-auto flex shrink-0 items-center gap-1">
         {task.prompt && <CopyPromptButton prompt={task.prompt} />}
         {onDismiss && (
           <button
@@ -416,7 +416,7 @@ const FailedCard = ({
           size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
-        <div className="absolute bottom-0.5 right-0.5 bg-black/60 px-1 text-[9px] text-white/80">
+        <div className="absolute bottom-0.5 end-0.5 bg-black/60 px-1 text-[9px] text-white/80">
           +{task.refImageUrls!.length - 1}
         </div>
       )}
@@ -441,7 +441,7 @@ const FailedCard = ({
             </div>
           </div>
           {task.subtitle && (
-            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+            <div dir="auto" className="mt-0.5 truncate text-xs text-base-fg opacity-60">
               {task.subtitle}
             </div>
           )}
@@ -486,7 +486,7 @@ const FailedCard = ({
           )}
           {task.prompt && <PromptLine prompt={task.prompt} />}
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="ms-auto flex shrink-0 items-center gap-1">
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
@@ -1008,7 +1008,7 @@ export const TaskQueue = () => {
       <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
         <div className="relative">
           {badgeCount > 0 && (
-            <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center bg-white px-1 font-mono text-[10px] font-semibold text-black ring-2 ring-[#0b0b0c]">
+            <div className="absolute -end-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center bg-white px-1 font-mono text-[10px] font-semibold text-black ring-2 ring-[#0b0b0c]">
               {badgeCount}
             </div>
           )}
@@ -1069,7 +1069,7 @@ export const TaskQueue = () => {
                               >
                                 <XIcon
                                   
-                                  className="mr-1" />
+                                  className="me-1" />
                                 Clear failed
                               </button>
                             </div>
@@ -1094,7 +1094,7 @@ export const TaskQueue = () => {
                               >
                                 <XIcon
                                   
-                                  className="mr-1" />
+                                  className="me-1" />
                                 Clear completed
                               </button>
                             </div>
@@ -1171,31 +1171,31 @@ export const TaskQueue = () => {
                   className="flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
-                  <BrushIcon  className="mr-1.5" />
+                  <BrushIcon  className="me-1.5" />
                   Clear completed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
+                  <Trash2Icon  className="me-1.5" />
                   Clear stale
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
+                  <Trash2Icon  className="me-1.5" />
                   Clear failed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
-                  <BombIcon  className="mr-1.5" />
+                  <BombIcon  className="me-1.5" />
                   Remove all
                 </Button>
-                <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />
+                <div className="me-2 h-4 w-[1px] bg-base-fg/10" />
                 <CloseButton onClick={() => setModalOpen(false)} />
               </div>
             </div>

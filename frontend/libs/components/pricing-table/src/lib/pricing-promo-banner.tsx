@@ -16,7 +16,7 @@ export const PricingPromoBanner = ({ className }: PricingPromoBannerProps) => (
     {/* Decorative glow, top-right */}
     <div
       aria-hidden
-      className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 bg-primary/25 blur-3xl"
+      className="pointer-events-none absolute -end-16 -top-20 h-64 w-64 bg-primary/25 blur-3xl"
     />
 
     <div className="relative flex flex-col gap-3">
