@@ -24,6 +24,8 @@ The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
   `~/Artcraft/credentials/native_session.json`. Otherwise use "Sign in with browser" (device code)
   or a username and password.
 - **API host.** `~/Artcraft/settings/env_configs.json` selects it, exactly as for the Tauri app.
+- **Data folder.** `~/Artcraft` is shared with the Tauri app. `ARTCRAFT_DATA_DIR` moves it for both
+  apps (see [Data directory](../_docs/dev_setup.md)).
 
 ## Architecture
 
