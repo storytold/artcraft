@@ -43,7 +43,10 @@
         "typecheckTargetName": "typecheck",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
-      }
+      },
+      "exclude": [
+        "vitest.config.ts"
+      ]
     },
     {
       "plugin": "@nx/eslint/plugin",
