@@ -1,3 +1,6 @@
+/** Model ids of the user's own ComfyUI workflows (desktop) start with this. */
+export const LOCAL_MODEL_ID_PREFIX = "local_";
+
 export enum ModelCreator {
   BlackForestLabs = "BlackForestLabs",
   Bytedance = "Bytedance",
@@ -23,6 +26,8 @@ export enum ModelCreator {
   WorldLabs = "WorldLabs",
   Beeble = "Beeble",
   Suno = "Suno",
+  // Models run on the user's own ComfyUI (desktop only, ids start with LOCAL_MODEL_ID_PREFIX).
+  Local = "Local",
 }
 
 /** Backend `model_creator` snake_case string -> frontend `ModelCreator` enum. */

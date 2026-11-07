@@ -4,6 +4,8 @@ use crate::error::SqliteTasksError;
 use enums::tauri::tasks::task_status::TaskStatus;
 use tokens::tokens::sqlite::tasks::TaskId;
 
+const MAX_FAILURE_MESSAGE_BYTES: usize = 255;
+
 pub struct UpdateTaskWithRichFailureArgs<'a> {
   pub db: &'a TaskDbConnection,
   pub task_id: &'a TaskId,
@@ -22,9 +24,8 @@ pub async fn update_task_status_with_rich_failure(
   let status_temp = args.status.to_str();
   let maybe_failure_type_temp = args.maybe_failure_type.map(|val| val.to_str());
 
-  // Trim the message so it doesn't overflow the database column
-  let maybe_failure_message_temp = args.maybe_failure_message
-      .map(|s| if s.len() > 255 { &s[..255] } else { s });
+  // Trim the message so it doesn't overflow the database column (on a char boundary: slicing inside one panics).
+  let maybe_failure_message_temp = args.maybe_failure_message.map(|s| &s[..s.floor_char_boundary(MAX_FAILURE_MESSAGE_BYTES)]);
 
   // info!("Update task id: {}, status: {}", task_id_temp, status_temp);
 

@@ -17,6 +17,8 @@ use artcraft_client::utils::api_host::ApiHost;
 use crate::core::commands::generate::models::image::response_types::ListImageModelsResponse;
 use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::state::data_dir::app_data_root::AppDataRoot;
+use crate::services::local_comfy::commands::append_local_models;
 
 const MAX_ATTEMPTS: u32 = 3;
 const RETRY_BACKOFF: Duration = Duration::from_millis(250);
@@ -33,23 +35,24 @@ static CACHE: Lazy<RwLock<Option<CacheEntry>>> = Lazy::new(|| RwLock::new(None))
 #[tauri::command]
 pub async fn list_image_models_command(
   app_env_configs: State<'_, AppEnvConfigs>,
+  app_data_root: State<'_, AppDataRoot>,
 ) -> ResponseOrErrorMessage<ListImageModelsResponse> {
   if let Some(cached) = cached_response() {
     debug!("list_image_models_command: serving cached response");
-    return Ok(cached.into());
+    return Ok(append_local_models(cached, &app_data_root).into());
   }
 
   match fetch_with_retry(&app_env_configs.storyteller_host).await {
     Ok(api_response) => {
       let response: ListImageModelsResponse = api_response.into();
       store_response(response.clone());
-      Ok(response.into())
+      Ok(append_local_models(response, &app_data_root).into())
     }
     Err(error_message) => {
       warn!("list_image_models_command failed after {} attempts: {}", MAX_ATTEMPTS, error_message);
       if let Some(stale) = any_cached_response() {
         warn!("list_image_models_command: refresh failed; serving stale cached response");
-        return Ok(stale.into());
+        return Ok(append_local_models(stale, &app_data_root).into());
       }
       Err(error_message.into())
     }

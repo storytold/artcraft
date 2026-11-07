@@ -236,3 +236,20 @@ it("offers ArtCraft and direct Midjourney only for supported Midjourney models",
   }
   expect(models[3].getProviders()).toEqual([GenerationProvider.Artcraft]);
 });
+
+it("groups local ComfyUI models under Local and lets image-taking ones edit", async () => {
+  const { getModelFamilyName } = await import("../classes/metadata/ModelFamilies.js");
+  const { ModelCreator } = await import("../classes/metadata/ModelCreator.js");
+  const [t2i, edit] = buildImageModelsFromListing([], [
+    { model: "local_z_image_turbo", full_name: "Z-Image Turbo (local)", image_refs_supported: false,
+      aspect_ratio_options: ["square", "wide_sixteen_by_nine"], resolution_options: ["one_k", "two_k"] },
+    { model: "local_qwen_image_edit", full_name: "Qwen Image Edit (local)", image_refs_supported: true },
+  ]);
+  expect(t2i.creator).toBe(ModelCreator.Local);
+  expect(getModelFamilyName(t2i.tauriId, t2i.creator)).toBe("Local");
+  expect(getModelFamilyName(edit.tauriId, edit.creator)).toBe("Local");
+  expect(t2i.canEditImages).toBe(false);
+  expect(t2i.canChangeAspectRatio).toBe(true);
+  expect(t2i.canChangeResolution).toBe(true);
+  expect(edit.canEditImages).toBe(true);
+});
