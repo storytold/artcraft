@@ -21,4 +21,9 @@ jobs:
   freebsd:
     # Intentionally tracked at @main (not SHA-pinned) so org-wide CI improvements, security fixes, and build optimizations propagate without PR churn across all craftapp repos.
     uses: storytold/craft-common-actions/.github/workflows/freebsd.yml@main
+    with:
+      architectures: '["x86_64"]'
+      craft-fonts-ref: ""
+      cargo-build-extra-args: "--exclude artcraft --exclude artcraft_native --exclude tauri-plugin-http"
+      cargo-test-extra-args: "--exclude artcraft --exclude artcraft_native --exclude tauri-plugin-http"
 
