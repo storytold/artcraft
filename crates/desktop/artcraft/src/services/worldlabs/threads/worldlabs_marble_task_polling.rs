@@ -366,7 +366,7 @@ async fn download_spz(
 ) -> AnyhowResult<PathBuf> {
   info!("Downloading splat from URL: {}", spz_url);
 
-  let response = reqwest::get(spz_url).await?;
+  let response = reqwest::get(spz_url).await?.error_for_status()?;
   let image_bytes = response.bytes().await?;
 
   let uuid = generate_random_uuid();
