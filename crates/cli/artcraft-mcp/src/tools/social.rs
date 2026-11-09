@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
 use crate::tools::http::{raw_json_get, raw_json_post};
-use crate::tools::safety::{audit, bounded_array, bounded_str, idempotency_token, rate_limit, sanitize_field, url_path_segment};
+use crate::tools::safety::{audit, bounded_array, bounded_str, idempotency_token, rate_limit, require_confirm, sanitize_field, url_path_segment};
 
 /// Media files are the only entity type these tools support.
 const ENTITY_TYPE_MEDIA_FILE: &str = "media_file";
@@ -43,9 +43,10 @@ pub fn tools() -> Vec<Tool> {
           "properties": {
               "media_token": { "type": "string" },
               "text": { "type": "string" },
-              "idempotency_token": { "type": "string", "description": "Optional client idempotency token" }
+              "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+              "confirm": { "type": "boolean", "description": "Must be true to confirm posting this comment publicly." }
           },
-          "required": ["media_token", "text"]
+          "required": ["media_token", "text", "confirm"]
       })),
     },
     Tool {
@@ -164,6 +165,7 @@ pub async fn rate_media(arguments: Value, client: &ArtCraftClient) -> Result<Vec
 }
 
 pub async fn create_comment(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
+  require_confirm(&arguments, "post a public comment on a media file")?;
   let media_token = arguments["media_token"].as_str().ok_or_else(|| anyhow!("media_token is required"))?;
   let text = bounded_str(&arguments, "text", 2000)?.ok_or_else(|| anyhow!("text is required"))?;
   let idem = idempotency_token(&arguments)?;
@@ -177,6 +179,7 @@ pub async fn create_comment(arguments: Value, client: &ArtCraftClient) -> Result
       "uuid_idempotency_token": idem,
   });
   let response = raw_json_post(&url, body, client.creds_ref()).await?;
+  rate_limit("artcraft_create_comment")?;
 
   let comment_token = response.get("comment_token").and_then(|v| v.as_str());
   Ok(vec![ToolContent {

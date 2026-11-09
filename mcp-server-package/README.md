@@ -139,7 +139,8 @@ unauthenticated and auth-required tools return clean errors.
 All scripts share `tools/artcraft_mcp_client.py` — the binary path is found
 via `ARTCRAFT_MCP_PATH`, packaged `bin/`, the cargo `target/` dirs, or PATH.
 Running a script that generates or uploads constitutes the `confirm`
-approval for those operations.
+approval for those operations. Run these from inside `mcp-server-package/`
+(`cd mcp-server-package` first if you are at the repository root).
 
 ```bash
 # Diagnostics — exits non-zero on any failure

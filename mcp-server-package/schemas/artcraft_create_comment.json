@@ -3,6 +3,10 @@
   "description": "Comment on a media file (markdown, max 2000 chars).",
   "inputSchema": {
     "properties": {
+      "confirm": {
+        "description": "Must be true to confirm posting this comment publicly.",
+        "type": "boolean"
+      },
       "idempotency_token": {
         "description": "Optional client idempotency token",
         "type": "string"
@@ -16,7 +20,8 @@
     },
     "required": [
       "media_token",
-      "text"
+      "text",
+      "confirm"
     ],
     "type": "object"
   }

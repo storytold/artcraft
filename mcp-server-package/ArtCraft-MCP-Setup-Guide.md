@@ -139,7 +139,7 @@ If you get an error about missing credentials, double-check Step 2.
 
 ## Safety Gates
 
-Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true`. Important nuance: the server can only check that `confirm` arrived as `true` — **it cannot verify a human approved.** Approval is the client's job (MCP clients typically ask first); automation scripts in `tools/` send `confirm` on your behalf, so treat running them as the approval. Generation and editing tools also accept an `idempotency_token` so retries can't double-charge. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories.
+Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true`. Important nuance: the server can only check that `confirm` arrived as `true` — **it cannot verify a human approved.** Approval is the client's job (MCP clients typically ask first); automation scripts in `tools/` send `confirm` on your behalf, so treat running them as the approval. Generation and editing tools also accept an `idempotency_token` — if you omit it the server generates a fresh one per call, so for safe retries you must supply a token yourself and reuse the same token on each retry; otherwise a retry can start a second paid job. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories.
 
 ## Available Tools (61)
 

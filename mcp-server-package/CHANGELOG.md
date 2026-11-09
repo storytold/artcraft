@@ -71,9 +71,9 @@ Server version is `0.1.0` (`crates/cli/artcraft-mcp/Cargo.toml`); MCP protocol
   - `artcraft_create_subscription_checkout`: Direct Stripe subscription checkout session setup.
   - `artcraft_get_billing_portal_url`: Stripe customer billing and subscription portal access.
 - **Enhanced 3D Mesh & Radiance Splatting**:
-  - Added Tripo3D H3.1 (`tripo_h3_1`) model support to `artcraft_generate_3d_object`.
-  - Added multi-view camera references (`back_media_file_token`, `left_media_file_token`, `right_media_file_token`).
-  - Added retopology and PBR material synthesis controls (`enable_pbr`, `enable_texture`, `texture_quality`, `face_count`).
+  - Added Tripo3D H3.1 (`tripo_3d_h3p1`) model support to `artcraft_generate_3d_object`.
+  - Added multi-view camera references (`back_image_media_token`, `left_image_media_token`, `right_image_media_token`).
+  - Added retopology and PBR material synthesis controls (`enable_pbr`, `enable_texture`, `texture_quality`, `target_face_count`).
   - Added WorldLabs Marble 1.0 & 1.1 support with 360° panoramic mode (`is_panoramic`).
 - **Extended Model Coverage**:
   - Video: MiniMax H3 / Turbo / Ultra, Seedance 2.5 / Fast / Ultra, Wan 3.0 / Prime, Kling 3.0 Pro, Sora 2, Beeble SwitchX.

@@ -53,5 +53,8 @@
   - video: `text_to_video` | `start_frame_to_video` |
     `start_and_end_frame_to_video` | `reference_image_to_video`
 
-Unknown values for any of these are rejected with an explicit
-invalid-params error — nothing silently defaults.
+Unknown values for any of these are rejected — nothing silently
+defaults. The server reports the failure as a tool result with
+`isError: true` (a successful JSON-RPC response carrying an error
+payload), not a JSON-RPC `-32602` invalid-params error; check
+`result.isError`/`content[].text` rather than only the error field.

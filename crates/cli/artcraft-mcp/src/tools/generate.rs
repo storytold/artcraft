@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use serde_json::{json, Value};
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
@@ -226,8 +226,8 @@ pub async fn generate_video(arguments: Value, client: &ArtCraftClient) -> Result
     model: Some(model),
     prompt: Some(prompt.to_string()),
     negative_prompt: negative_prompt.map(|s| s.to_string()),
-    start_frame_image_media_token: parse_media_token(arguments["start_frame_image_media_token"].as_str()),
-    end_frame_image_media_token: parse_media_token(arguments["end_frame_image_media_token"].as_str()),
+    start_frame_image_media_token: media_token_arg(&arguments, "start_frame_image_media_token")?,
+    end_frame_image_media_token: media_token_arg(&arguments, "end_frame_image_media_token")?,
     reference_image_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_image_media_tokens", MAX_TOKEN_ARRAY)?)?,
     reference_video_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_video_media_tokens", MAX_TOKEN_ARRAY)?)?,
     reference_audio_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_audio_media_tokens", MAX_TOKEN_ARRAY)?)?,
@@ -286,7 +286,7 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
   let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.map(|s| s.to_string());
   let idem = idempotency_token(&arguments)?;
 
-  let primary_image = parse_media_token(arguments["image_media_token"].as_str());
+  let primary_image = media_token_arg(&arguments, "image_media_token")?;
   let mut ref_images = parse_media_tokens(bounded_array(&arguments, "reference_image_media_tokens", MAX_TOKEN_ARRAY)?)?.unwrap_or_default();
   if let Some(img) = primary_image {
     if !ref_images.contains(&img) {
@@ -300,11 +300,11 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
     model: Some(model),
     prompt,
     reference_image_media_tokens: ref_images_opt,
-    front_image_media_token: parse_media_token(arguments["front_image_media_token"].as_str()),
-    back_image_media_token: parse_media_token(arguments["back_image_media_token"].as_str()),
-    left_image_media_token: parse_media_token(arguments["left_image_media_token"].as_str()),
-    right_image_media_token: parse_media_token(arguments["right_image_media_token"].as_str()),
-    input_mesh_media_token: parse_media_token(arguments["input_mesh_media_file_token"].as_str()),
+    front_image_media_token: media_token_arg(&arguments, "front_image_media_token")?,
+    back_image_media_token: media_token_arg(&arguments, "back_image_media_token")?,
+    left_image_media_token: media_token_arg(&arguments, "left_image_media_token")?,
+    right_image_media_token: media_token_arg(&arguments, "right_image_media_token")?,
+    input_mesh_media_token: media_token_arg(&arguments, "input_mesh_media_file_token")?,
     mesh_output_type: parse_mesh_output_type(arguments["output_type"].as_str())?,
     polygon_type: parse_polygon_type(arguments["polygon_type"].as_str())?,
     face_count: bounded_u64(&arguments, "target_face_count", 100, 10_000_000)?,
@@ -330,7 +330,7 @@ pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result
   let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.map(|s| s.to_string());
   let idem = idempotency_token(&arguments)?;
 
-  let primary_image = parse_media_token(arguments["image_media_token"].as_str());
+  let primary_image = media_token_arg(&arguments, "image_media_token")?;
   let mut ref_images = parse_media_tokens(bounded_array(&arguments, "reference_image_media_tokens", MAX_TOKEN_ARRAY)?)?.unwrap_or_default();
   if let Some(img) = primary_image {
     if !ref_images.contains(&img) {
@@ -339,7 +339,7 @@ pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result
   }
   let ref_images_opt = if ref_images.is_empty() { None } else { Some(ref_images) };
 
-  let request = OmniGenSplatCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt, reference_image_media_tokens: ref_images_opt, reference_video_media_token: parse_media_token(arguments["reference_video_media_token"].as_str()), is_panoramic: arguments["is_panoramic"].as_bool(), disable_recaption: arguments["disable_recaption"].as_bool() };
+  let request = OmniGenSplatCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt, reference_image_media_tokens: ref_images_opt, reference_video_media_token: media_token_arg(&arguments, "reference_video_media_token")?, is_panoramic: arguments["is_panoramic"].as_bool(), disable_recaption: arguments["disable_recaption"].as_bool() };
 
   let response = omni_gen_splat_generate(&client.api_host, client.creds_ref(), request).await?;
   audit("generate_splat", model_str, if response.success { "success" } else { "failure" });
@@ -610,6 +610,17 @@ pub fn parse_polygon_type(pt: Option<&str>) -> Result<Option<CommonPolygonType>>
 
 pub fn parse_media_token(token: Option<&str>) -> Option<MediaFileToken> {
   token.map(MediaFileToken::new_from_str)
+}
+
+/// Strict optional-media-token parser: absent/null -> None, string -> parsed,
+/// present-but-wrong-type -> Err. Prevents a non-string value (e.g. a number)
+/// from being silently dropped while a paid job is submitted without it.
+pub fn media_token_arg(arguments: &Value, key: &str) -> Result<Option<MediaFileToken>> {
+  match arguments.get(key) {
+    None | Some(Value::Null) => Ok(None),
+    Some(Value::String(s)) => Ok(parse_media_token(Some(s))),
+    Some(_) => bail!("{} must be a string media token", key),
+  }
 }
 
 pub fn parse_media_tokens(value: Option<&Vec<Value>>) -> Result<Option<Vec<MediaFileToken>>> {

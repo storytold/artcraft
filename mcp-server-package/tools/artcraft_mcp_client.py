@@ -110,6 +110,8 @@ class McpClient:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             bufsize=1,
         )
         self.stderr_tail = deque(maxlen=STDERR_TAIL_LINES)

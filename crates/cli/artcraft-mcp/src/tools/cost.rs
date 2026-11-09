@@ -66,7 +66,7 @@ pub fn tools() -> Vec<Tool> {
                   "description": "Whether an image reference is supplied"
               }
           },
-          "required": ["model"]
+          "required": []
       })),
     },
     Tool {

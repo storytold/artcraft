@@ -33,14 +33,18 @@ def find_mcp_binary():
 
 def get_target_configs():
     home = os.path.expanduser("~")
-    appdata = os.environ.get("APPDATA", os.path.join(home, "AppData", "Roaming"))
-    
+    if sys.platform == "darwin":
+        claude_dir = os.path.join(home, "Library", "Application Support", "Claude")
+    else:
+        appdata = os.environ.get("APPDATA", os.path.join(home, "AppData", "Roaming"))
+        claude_dir = os.path.join(appdata, "Claude")
+
     configs = [
         # Windsurf / Codeium
         ("Windsurf", os.path.join(home, ".codeium", "windsurf", "mcp_config.json")),
         ("Windsurf (Alt)", os.path.join(home, ".windsurf", "mcp_config.json")),
         # Claude Desktop
-        ("Claude Desktop", os.path.join(appdata, "Claude", "claude_desktop_config.json")),
+        ("Claude Desktop", os.path.join(claude_dir, "claude_desktop_config.json")),
         # Cursor
         ("Cursor", os.path.join(home, ".cursor", "mcp.json")),
     ]
