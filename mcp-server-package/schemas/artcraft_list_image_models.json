@@ -1,1 +1,8 @@
-{"name":"artcraft_list_image_models","description":"List all available image generation models with their capabilities.","parameters":{"properties":{"provider":{"description":"Filter by provider (default: artcraft)","enum":["artcraft","all"],"type":"string"}},"type":"object"}}
+{
+  "name": "artcraft_list_image_models",
+  "description": "List all available image generation models.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}

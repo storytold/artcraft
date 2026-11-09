@@ -1,1 +1,20 @@
-{"name":"artcraft_delete_character","description":"Delete a character.","parameters":{"properties":{"character_token":{"type":"string"}},"required":["character_token"],"type":"object"}}
+{
+  "name": "artcraft_delete_character",
+  "description": "Delete a character. This is a DESTRUCTIVE action; it requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "character_token": {
+        "type": "string"
+      },
+      "confirm": {
+        "description": "Must be true to confirm deletion.",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "character_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

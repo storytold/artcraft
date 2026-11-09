@@ -1,1 +1,34 @@
-{"name":"artcraft_create_character","description":"Create a character from a reference image for consistent identity.","parameters":{"properties":{"image_media_token":{"type":"string"},"name":{"type":"string"}},"required":["name","image_media_token"],"type":"object"}}
+{
+  "name": "artcraft_create_character",
+  "description": "Create a character from a reference image for consistent identity. PAID action (queues a generation job); requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid character creation.",
+        "type": "boolean"
+      },
+      "description": {
+        "description": "Optional character description (max 2000 chars)",
+        "type": "string"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "description": "Reference image media file token",
+        "type": "string"
+      },
+      "name": {
+        "description": "Character name (max 200 chars)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "image_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

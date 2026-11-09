@@ -1,1 +1,20 @@
-{"name":"artcraft_create_prompt","description":"Create a prompt object to associate with future generations.","parameters":{"properties":{"text":{"type":"string"}},"required":["text"],"type":"object"}}
+{
+  "name": "artcraft_create_prompt",
+  "description": "Create a prompt object to associate with future generations.",
+  "inputSchema": {
+    "properties": {
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "text": {
+        "description": "Prompt text (max 8000 chars)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "type": "object"
+  }
+}

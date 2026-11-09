@@ -1,1 +1,30 @@
-{"name":"artcraft_tts_generate","description":"Generate speech from text using available TTS models.","parameters":{"properties":{"text":{"type":"string"},"voice_model":{"type":"string"}},"required":["text","voice_model"],"type":"object"}}
+{
+  "name": "artcraft_tts_generate",
+  "description": "Generate speech from text using a TTS model. PAID action (queues a generation job); requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "text": {
+        "description": "Text to synthesize (max 4000 chars)",
+        "type": "string"
+      },
+      "tts_model_token": {
+        "description": "TTS model token (see artcraft_tts_search_models)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text",
+      "tts_model_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

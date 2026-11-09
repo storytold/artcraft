@@ -1,1 +1,21 @@
-{"name":"artcraft_upload_image","description":"Upload an image for use as reference or keyframe in generation.","parameters":{"properties":{"file_path":{"description":"Local file path to image","type":"string"}},"required":["file_path"],"type":"object"}}
+{
+  "name": "artcraft_upload_image",
+  "description": "Upload a local image file for use as a generation reference. Reads a local file and sends it to ArtCraft; requires confirm: true. File must live inside the user's home directory (or ARTCRAFT_MCP_ALLOWED_DIRS), be an image type, and be <= 50 MB.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this local file may be read and uploaded.",
+        "type": "boolean"
+      },
+      "file_path": {
+        "description": "Local path to an image (png/jpg/jpeg/webp/gif/bmp/avif) inside an allowed directory",
+        "type": "string"
+      }
+    },
+    "required": [
+      "file_path",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

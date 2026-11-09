@@ -248,11 +248,12 @@ class McpClient:
         return final
 
     def close(self):
-        try:
-            if self.proc.stdin:
-                self.proc.stdin.close()
-        except OSError:
-            pass
+        for stream in (self.proc.stdin, self.proc.stdout, self.proc.stderr):
+            try:
+                if stream:
+                    stream.close()
+            except OSError:
+                pass
         try:
             self.proc.terminate()
             self.proc.wait(timeout=3)

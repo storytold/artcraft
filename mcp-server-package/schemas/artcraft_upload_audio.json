@@ -1,1 +1,21 @@
-{"name":"artcraft_upload_audio","description":"Upload an audio file.","parameters":{"properties":{"file_path":{"type":"string"}},"required":["file_path"],"type":"object"}}
+{
+  "name": "artcraft_upload_audio",
+  "description": "Upload a local audio file. Reads a local file and sends it to ArtCraft; requires confirm: true. File must live inside the user's home directory (or ARTCRAFT_MCP_ALLOWED_DIRS), be an audio type, and be <= 100 MB.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this local file may be read and uploaded.",
+        "type": "boolean"
+      },
+      "file_path": {
+        "description": "Local path to an audio file (mp3/wav/ogg/flac/m4a/aac/opus) inside an allowed directory",
+        "type": "string"
+      }
+    },
+    "required": [
+      "file_path",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

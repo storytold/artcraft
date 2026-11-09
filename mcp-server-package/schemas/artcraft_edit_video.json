@@ -1,1 +1,28 @@
-{"name":"artcraft_edit_video","description":"Edit a video using Beeble SwitchX.","parameters":{"properties":{"prompt":{"type":"string"},"video_media_token":{"type":"string"}},"required":["video_media_token","prompt"],"type":"object"}}
+{
+  "name": "artcraft_edit_video",
+  "description": "Edit a video using Beeble SwitchX.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid edit.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "video_media_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "video_media_token",
+      "prompt",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

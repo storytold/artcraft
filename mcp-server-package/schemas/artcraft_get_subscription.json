@@ -1,1 +1,8 @@
-{"name":"artcraft_get_subscription","description":"Get subscription tier and limits.","parameters":{"properties":{},"type":"object"}}
+{
+  "name": "artcraft_get_subscription",
+  "description": "Get subscription tier and limits.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}

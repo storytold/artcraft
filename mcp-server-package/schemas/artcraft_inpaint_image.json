@@ -1,1 +1,34 @@
-{"name":"artcraft_inpaint_image","description":"Inpaint an image using a mask and prompt.","parameters":{"properties":{"image_media_token":{"type":"string"},"mask_media_token":{"type":"string"},"model":{"type":"string"},"prompt":{"type":"string"}},"required":["prompt","image_media_token"],"type":"object"}}
+{
+  "name": "artcraft_inpaint_image",
+  "description": "Inpaint an image using a mask and prompt.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid edit.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "type": "string"
+      },
+      "mask_media_token": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "prompt",
+      "image_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

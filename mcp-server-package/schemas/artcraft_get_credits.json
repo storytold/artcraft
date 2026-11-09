@@ -1,1 +1,17 @@
-{"name":"artcraft_get_credits","description":"Get wallet credits and usage info.","parameters":{"properties":{"namespace":{"description":"Payment namespace to query credits for","enum":["artcraft","fakeyou"],"type":"string"}},"type":"object"}}
+{
+  "name": "artcraft_get_credits",
+  "description": "Get wallet credits and usage info.",
+  "inputSchema": {
+    "properties": {
+      "namespace": {
+        "description": "Payment namespace to query credits for (default: artcraft)",
+        "enum": [
+          "artcraft",
+          "fakeyou"
+        ],
+        "type": "string"
+      }
+    },
+    "type": "object"
+  }
+}

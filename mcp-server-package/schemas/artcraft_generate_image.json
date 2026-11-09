@@ -1,1 +1,65 @@
-{"name":"artcraft_generate_image","description":"Generate images using ArtCraft's unified OmniGen API. Supports 13+ models including Flux, GPT-Image, Nano Banana, and Seedream.","parameters":{"properties":{"adjust_horizontal_angle":{"description":"Horizontal angle adjustment (for angle manipulation models)","type":"number"},"adjust_vertical_angle":{"description":"Vertical angle adjustment (for angle manipulation models)","type":"number"},"adjust_zoom":{"description":"Zoom adjustment (for angle manipulation models)","type":"number"},"aspect_ratio":{"description":"Aspect ratio: 'square', 'wide_16_9', 'tall_9_16', 'wide_21_9', 'tall_9_21', 'standard_4_3', 'standard_3_4'","type":"string"},"image_batch_count":{"description":"Number of images to generate (default: 1)","type":"integer"},"image_media_tokens":{"description":"Optional input image media tokens for image-to-image editing","items":{"type":"string"},"type":"array"},"model":{"description":"Model to use (e.g., 'flux_1_dev', 'flux_1_schnell', 'gpt_image_1', 'nano_banana_pro', 'seedream_4')","type":"string"},"prompt":{"description":"Text prompt for generation","type":"string"},"quality":{"description":"Quality: 'low', 'medium', 'high', 'ultra'","type":"string"},"resolution":{"description":"Resolution preset","type":"string"}},"required":["model","prompt"],"type":"object"}}
+{
+  "name": "artcraft_generate_image",
+  "description": "Generate images using ArtCraft's unified OmniGen API. PAID action (spends credits); requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "adjust_horizontal_angle": {
+        "description": "Horizontal angle -180..180",
+        "type": "number"
+      },
+      "adjust_vertical_angle": {
+        "description": "Vertical angle -180..180",
+        "type": "number"
+      },
+      "adjust_zoom": {
+        "description": "Zoom adjustment 0..10",
+        "type": "number"
+      },
+      "aspect_ratio": {
+        "description": "Aspect ratio: 'square', 'wide_16_9', 'tall_9_16', 'wide_21_9', 'tall_9_21', 'wide_4_3', 'tall_3_4', 'wide_3_2', 'tall_2_3', 'wide_5_4', 'tall_4_5', 'wide', 'tall', 'square_hd', 'auto'",
+        "type": "string"
+      },
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token for safe retries",
+        "type": "string"
+      },
+      "image_batch_count": {
+        "description": "Number of images to generate (1-8, default 1)",
+        "type": "integer"
+      },
+      "image_media_tokens": {
+        "description": "Optional input image media tokens for image-to-image (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "model": {
+        "description": "Model id (e.g., 'flux_1_dev', 'gpt_image_1', 'seedream_5p0_pro', 'midjourney_8', 'nano_banana_pro')",
+        "type": "string"
+      },
+      "prompt": {
+        "description": "Text prompt (max 8000 chars)",
+        "type": "string"
+      },
+      "quality": {
+        "description": "Quality: 'low', 'medium', 'high', 'xhigh', 'max', 'auto'",
+        "type": "string"
+      },
+      "resolution": {
+        "description": "Resolution preset: 'half_k', 'one_k', 'two_k', 'three_k', 'four_k', 'four_eighty_p', 'seven_twenty_p', 'ten_eighty_p' (aliases: 480p, 720p, 1080p, 1k-4k)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "model",
+      "prompt",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

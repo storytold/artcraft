@@ -1,1 +1,30 @@
-{"name":"artcraft_voice_convert","description":"Convert voice using a trained voice conversion model.","parameters":{"properties":{"audio_media_token":{"type":"string"},"model_token":{"type":"string"}},"required":["audio_media_token","model_token"],"type":"object"}}
+{
+  "name": "artcraft_voice_convert",
+  "description": "Convert audio using a trained voice conversion model. PAID action (queues a job); requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "audio_media_token": {
+        "description": "Source audio media file token",
+        "type": "string"
+      },
+      "confirm": {
+        "description": "Must be true to confirm this paid conversion.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "model_token": {
+        "description": "Voice conversion model token",
+        "type": "string"
+      }
+    },
+    "required": [
+      "audio_media_token",
+      "model_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

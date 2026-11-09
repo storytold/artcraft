@@ -7,11 +7,15 @@ Requires a built binary (cargo build -p artcraft-mcp) or ARTCRAFT_MCP_PATH.
 Network-free: no tool that hits the ArtCraft API is invoked here.
 """
 
+import json
 import os
 import sys
 import unittest
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 
 from artcraft_mcp_client import (
     McpClient,
@@ -89,6 +93,35 @@ class TestProtocol(unittest.TestCase):
         for _ in range(3):
             self.client.send_request("tools/list", {})
         self.assertTrue(True)
+
+
+class TestSchemaParity(unittest.TestCase):
+    """schemas/*.json must match the server's live tools/list exactly —
+    same tool set, same inputSchema. Regenerate with schemas/generate_schemas.py."""
+
+    @classmethod
+    def setUpClass(cls):
+        if not find_mcp_executable():
+            raise unittest.SkipTest("artcraft-mcp binary not found; build it first")
+        client = McpClient(client_name="artcraft-schema-parity-test")
+        try:
+            res = client.send_request("tools/list", {})
+            cls.live = {t["name"]: t for t in res["result"]["tools"]}
+        finally:
+            client.close()
+
+    def test_schema_files_cover_exactly_the_live_tools(self):
+        on_disk = {p.stem for p in SCHEMAS_DIR.glob("*.json")}
+        self.assertEqual(on_disk, set(self.live.keys()),
+                         f"schema/tool mismatch: extra={on_disk - set(self.live)} missing={set(self.live) - on_disk}")
+
+    def test_each_schema_matches_live_definition(self):
+        for name, tool in self.live.items():
+            path = SCHEMAS_DIR / f"{name}.json"
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(doc["name"], name)
+            self.assertEqual(doc["description"], tool.get("description", ""), name)
+            self.assertEqual(doc["inputSchema"], tool.get("inputSchema"), name)
 
 
 class TestHelpers(unittest.TestCase):

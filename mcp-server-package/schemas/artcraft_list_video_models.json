@@ -1,1 +1,8 @@
-{"name":"artcraft_list_video_models","description":"List all available video generation models with their capabilities.","parameters":{"properties":{"provider":{"description":"Filter by provider (default: artcraft)","enum":["artcraft","all"],"type":"string"}},"type":"object"}}
+{
+  "name": "artcraft_list_video_models",
+  "description": "List all available video generation models.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}

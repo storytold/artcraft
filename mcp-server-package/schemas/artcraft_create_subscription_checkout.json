@@ -1,1 +1,34 @@
-{"name":"artcraft_create_subscription_checkout","description":"Create a Stripe subscription checkout link to upgrade or subscribe to ArtCraft Basic, Pro, or Max.","parameters":{"type":"object","properties":{"plan":{"type":"string","enum":["artcraft_basic","artcraft_pro","artcraft_max"],"description":"Subscription tier"},"cadence":{"type":"string","enum":["monthly","yearly"],"description":"Billing cycle (default: monthly)"}},"required":["plan"]}}
+{
+  "name": "artcraft_create_subscription_checkout",
+  "description": "Create a Stripe subscription checkout link for ArtCraft Basic, Pro, or Max. This is a PAID action; it requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "cadence": {
+        "description": "Billing cycle (default: monthly)",
+        "enum": [
+          "monthly",
+          "yearly"
+        ],
+        "type": "string"
+      },
+      "confirm": {
+        "description": "Must be true to confirm creating a paid subscription checkout.",
+        "type": "boolean"
+      },
+      "plan": {
+        "description": "Subscription tier",
+        "enum": [
+          "artcraft_basic",
+          "artcraft_pro",
+          "artcraft_max"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "plan",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

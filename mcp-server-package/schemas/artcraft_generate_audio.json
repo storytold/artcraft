@@ -1,1 +1,83 @@
-{"name":"artcraft_generate_audio","description":"Generate music, remix audio, or synthesize sound effects using ArtCraft's OmniGen Audio API. Supports Suno Music, Suno Remix, Suno Sounds, Suno Sample, and Seed Audio 1.0.","parameters":{"type":"object","properties":{"model":{"type":"string","description":"Model: 'suno_music', 'suno_remix', 'suno_sounds', 'suno_sample', 'seed_audio_1p0' (default: suno_music)"},"prompt":{"type":"string","description":"Lyrics or text prompt for the audio generation"},"style_prompt":{"type":"string","description":"Genre/style tags (e.g. 'synthwave, electronic, upbeat 120bpm')"},"audio_media_tokens":{"type":"array","items":{"type":"string"},"description":"Reference audio or remix source media tokens"},"image_media_tokens":{"type":"array","items":{"type":"string"},"description":"Optional reference image for image-to-audio (Seed Audio)"},"keep_lyrics":{"type":"boolean","description":"Whether to retain original lyrics (Suno Remix)"},"is_instrumental":{"type":"boolean","description":"Whether to generate instrumental music without vocals"},"is_loopable":{"type":"boolean","description":"Whether sound effect should cleanly loop (Suno Sounds)"},"bpm":{"type":"integer","description":"Tempo in beats per minute (e.g. 120)"},"musical_key":{"type":"string","description":"Musical key ('c_major', 'a_minor', 'auto', etc.)"},"sample_rate_hz":{"type":"integer","description":"Sample rate in Hz: 8000, 16000, 24000, 32000, 44100, 48000 (Seed Audio)"},"speed":{"type":"number","description":"Playback speed multiplier 0.5 - 2.0 (Seed Audio)"},"volume":{"type":"number","description":"Volume multiplier 0.5 - 2.0 (Seed Audio)"},"pitch":{"type":"number","description":"Pitch shift in semitones -12 to 12 (Seed Audio)"}},"required":["prompt"]}}
+{
+  "name": "artcraft_generate_audio",
+  "description": "Generate music, remix audio, or synthesize sound effects via OmniGen Audio (Suno Music/Remix/Sounds/Sample, Seed Audio). PAID action; requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "audio_media_tokens": {
+        "description": "Reference/remix source audio tokens (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "bpm": {
+        "description": "Tempo in BPM (30-300)",
+        "type": "integer"
+      },
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_tokens": {
+        "description": "Reference image tokens for image-to-audio (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "is_instrumental": {
+        "description": "Generate instrumental without vocals",
+        "type": "boolean"
+      },
+      "is_loopable": {
+        "description": "Cleanly looping sound effect (Suno Sounds)",
+        "type": "boolean"
+      },
+      "keep_lyrics": {
+        "description": "Retain original lyrics (Suno Remix)",
+        "type": "boolean"
+      },
+      "model": {
+        "description": "'suno_music', 'suno_remix', 'suno_sounds', 'suno_sample', 'seed_audio_1p0' (default: suno_music)",
+        "type": "string"
+      },
+      "musical_key": {
+        "description": "Musical key ('c_major', 'a_minor', ..., 'auto')",
+        "type": "string"
+      },
+      "pitch": {
+        "description": "Pitch shift in semitones (-12 to 12)",
+        "type": "number"
+      },
+      "prompt": {
+        "description": "Lyrics or text prompt (max 8000 chars)",
+        "type": "string"
+      },
+      "sample_rate_hz": {
+        "description": "Sample rate: 8000/16000/24000/32000/44100/48000",
+        "type": "integer"
+      },
+      "speed": {
+        "description": "Speed multiplier 0.5-2.0",
+        "type": "number"
+      },
+      "style_prompt": {
+        "description": "Genre/style tags (max 2000 chars)",
+        "type": "string"
+      },
+      "volume": {
+        "description": "Volume multiplier 0.5-2.0",
+        "type": "number"
+      }
+    },
+    "required": [
+      "prompt",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

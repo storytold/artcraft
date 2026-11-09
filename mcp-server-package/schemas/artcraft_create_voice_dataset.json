@@ -1,1 +1,16 @@
-{"name":"artcraft_create_voice_dataset","description":"Create a voice training dataset.","parameters":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"}}
+{
+  "name": "artcraft_create_voice_dataset",
+  "description": "Create a voice training dataset.",
+  "inputSchema": {
+    "properties": {
+      "name": {
+        "description": "Dataset name (max 200 chars)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "type": "object"
+  }
+}

@@ -1,1 +1,20 @@
-{"name":"artcraft_delete_media_file","description":"Delete a media file by token.","parameters":{"properties":{"media_token":{"type":"string"}},"required":["media_token"],"type":"object"}}
+{
+  "name": "artcraft_delete_media_file",
+  "description": "Delete a media file by token. This is a DESTRUCTIVE action; it requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm deletion.",
+        "type": "boolean"
+      },
+      "media_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

@@ -1,1 +1,20 @@
-{"name":"artcraft_remove_background","description":"Remove the background from an image.","parameters":{"properties":{"image_media_token":{"type":"string"}},"required":["image_media_token"],"type":"object"}}
+{
+  "name": "artcraft_remove_background",
+  "description": "Remove the background from an image.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid edit.",
+        "type": "boolean"
+      },
+      "image_media_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "image_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

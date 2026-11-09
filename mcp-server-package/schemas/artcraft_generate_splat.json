@@ -1,1 +1,51 @@
-{"name":"artcraft_generate_splat","description":"Generate Gaussian splat worlds using WorldLabs Marble.","parameters":{"properties":{"image_media_token":{"description":"Optional input image","type":"string"},"prompt":{"type":"string"}},"required":["prompt"],"type":"object"}}
+{
+  "name": "artcraft_generate_splat",
+  "description": "Generate 3D Gaussian splat worlds via OmniGen Splat (WorldLabs Marble, TripoSplat). PAID action; requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "disable_recaption": {
+        "description": "Bypass automatic prompt recaptioning",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "description": "Primary reference image",
+        "type": "string"
+      },
+      "is_panoramic": {
+        "description": "Input is a 360-degree equirectangular panorama",
+        "type": "boolean"
+      },
+      "model": {
+        "description": "'marble_0p1_mini', 'marble_0p1_plus', 'marble_1p0', 'marble_1p0_draft', 'marble_1p1', 'marble_1p1_plus', 'triposplat' (default: marble_1p1_plus)",
+        "type": "string"
+      },
+      "prompt": {
+        "description": "Text prompt describing the 3D world (max 8000 chars)",
+        "type": "string"
+      },
+      "reference_image_media_tokens": {
+        "description": "Multi-view reference images (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "reference_video_media_token": {
+        "description": "Optional reference video",
+        "type": "string"
+      }
+    },
+    "required": [
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

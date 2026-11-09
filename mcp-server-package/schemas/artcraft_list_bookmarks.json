@@ -1,1 +1,8 @@
-{"name":"artcraft_list_bookmarks","description":"List your bookmarks.","parameters":{"properties":{},"type":"object"}}
+{
+  "name": "artcraft_list_bookmarks",
+  "description": "List your bookmarks.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}

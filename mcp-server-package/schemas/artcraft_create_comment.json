@@ -1,1 +1,23 @@
-{"name":"artcraft_create_comment","description":"Comment on a media file.","parameters":{"properties":{"media_token":{"type":"string"},"text":{"type":"string"}},"required":["media_token","text"],"type":"object"}}
+{
+  "name": "artcraft_create_comment",
+  "description": "Comment on a media file (markdown, max 2000 chars).",
+  "inputSchema": {
+    "properties": {
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "media_token": {
+        "type": "string"
+      },
+      "text": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "media_token",
+      "text"
+    ],
+    "type": "object"
+  }
+}
