@@ -204,6 +204,33 @@ mod tests {
     }
   }
 
+  mod env_var_tests {
+    use super::*;
+
+    /// The only test that touches `ARTCRAFT_DATA_DIR`; every other test calls `resolve_from`, so
+    /// nothing else in this binary reads the variable while it's changed.
+    #[test]
+    fn resolve_reads_the_env_var() {
+      let saved = std::env::var_os(DATA_DIR_ENV_VAR);
+      let dir = absolute_dir().join("from env");
+
+      // SAFETY: No other test in this crate reads or writes the environment (see above).
+      unsafe { std::env::set_var(DATA_DIR_ENV_VAR, &dir) };
+      let set = DataDir::resolve();
+      unsafe { std::env::set_var(DATA_DIR_ENV_VAR, "relative/Artcraft") };
+      let ignored = DataDir::resolve();
+      match &saved {
+        Some(value) => unsafe { std::env::set_var(DATA_DIR_ENV_VAR, value) },
+        None => unsafe { std::env::remove_var(DATA_DIR_ENV_VAR) },
+      }
+
+      assert_eq!(set.unwrap(), DataDir { path: dir, source: DataDirSource::EnvVar });
+      let ignored = ignored.unwrap();
+      assert!(matches!(ignored.source, DataDirSource::IgnoredEnvVar(_)), "{ignored:?}");
+      assert!(ignored.path.ends_with(DEFAULT_DATA_DIR_NAME), "{ignored:?}");
+    }
+  }
+
   #[cfg(windows)]
   mod windows_tests {
     use super::*;

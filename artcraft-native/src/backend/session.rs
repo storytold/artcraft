@@ -8,7 +8,7 @@ use artcraft_client::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::credentials::storyteller_session_cookie::StorytellerSessionCookie;
 use artcraft_client::utils::api_host::ApiHost;
-use artcraft_data_dir::{DataDir, DEFAULT_DATA_DIR_NAME};
+use artcraft_data_dir::DataDir;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
@@ -32,17 +32,13 @@ impl Credentials {
 }
 
 /// `~/Artcraft` (or `ARTCRAFT_DATA_DIR`), shared with the Tauri app (`AppDataRoot`).
-pub fn data_root() -> PathBuf {
-  match DataDir::resolve() {
-    Ok(data_dir) => {
-      data_dir.log_choice();
-      data_dir.path
-    },
-    Err(err) => {
-      warn!("{err}; using {DEFAULT_DATA_DIR_NAME:?} in the working directory");
-      PathBuf::from(".").join(DEFAULT_DATA_DIR_NAME)
-    },
-  }
+///
+/// Fails, like the Tauri app, when there's no usable folder (no home directory and no
+/// `ARTCRAFT_DATA_DIR`), rather than falling back to a folder in the working directory.
+pub fn data_root() -> anyhow::Result<PathBuf> {
+  let data_dir = DataDir::resolve()?;
+  data_dir.log_choice();
+  Ok(data_dir.path)
 }
 
 /// The API host from `~/Artcraft/settings/env_configs.json` (production unless it says

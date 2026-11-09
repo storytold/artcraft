@@ -19,13 +19,14 @@ cargo run -p artcraft_native --release
 
 The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
 
+- **Data folder.** `~/Artcraft` by default, shared with the Tauri app. `ARTCRAFT_DATA_DIR` moves it
+  for both apps (see [Data directory](../_docs/dev_setup.md)). The paths below are inside it.
 - **Sign-in.** On first launch the app reuses an existing ArtCraft login. It reads the session
   cookie from the Tauri app's jar (`<cache dir>/ai.artcraft.app/.cookies`) and keeps its own copy in
-  `~/Artcraft/credentials/native_session.json`. Otherwise use "Sign in with browser" (device code)
-  or a username and password.
-- **API host.** `~/Artcraft/settings/env_configs.json` selects it, exactly as for the Tauri app.
-- **Data folder.** `~/Artcraft` is shared with the Tauri app. `ARTCRAFT_DATA_DIR` moves it for both
-  apps (see [Data directory](../_docs/dev_setup.md)).
+  `credentials/native_session.json` in the data folder. Otherwise use "Sign in with browser" (device
+  code) or a username and password.
+- **API host.** `settings/env_configs.json` in the data folder selects it, exactly as for the Tauri
+  app.
 
 ## Architecture
 
