@@ -38,4 +38,13 @@ if [[ -n "${SIGNING_FPR:-}" ]]; then
     skopeo copy --format oci --dest-creds "$creds" "oci:dist/release/$base-oci" "docker://$registry:stable-$arch"
   fi
   skopeo inspect --raw --creds "$creds" "docker://$registry:$version-$arch" >"dist/release/$base.oci-manifest.json"
+
+  if [[ -n "${DOCKERHUB_USERNAME:-}" && -n "${DOCKERHUB_TOKEN:-}" ]]; then
+    dh_registry="docker.io/storytold/${GITHUB_REPOSITORY##*/}"
+    dh_creds="$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN"
+    skopeo copy --format oci --dest-creds "$dh_creds" "oci:dist/release/$base-oci" "docker://$dh_registry:$version-$arch"
+    if [[ "$version" != *-* && ( "$GITHUB_REF" == refs/heads/release || "$GITHUB_REF" == refs/heads/artcraft-release ) ]]; then
+      skopeo copy --format oci --dest-creds "$dh_creds" "oci:dist/release/$base-oci" "docker://$dh_registry:stable-$arch"
+    fi
+  fi
 fi
