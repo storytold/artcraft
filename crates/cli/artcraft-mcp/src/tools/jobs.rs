@@ -93,7 +93,7 @@ pub async fn get_job_status(arguments: Value, client: &ArtCraftClient) -> Result
 pub async fn list_jobs(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
   let limit = bounded_u64(&arguments, "limit", 1, 100)?.unwrap_or(50) as usize;
 
-  let states = match arguments["status"].as_str() {
+  let states = match bounded_str(&arguments, "status", 64)? {
     None => States::All,
     Some("pending") => States::Include(HashSet::from([JobStatusPlus::Pending])),
     Some("started") => States::Include(HashSet::from([JobStatusPlus::Started])),

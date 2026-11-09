@@ -32,7 +32,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
-use crate::tools::safety::{audit, bounded_array, bounded_f64, bounded_str, bounded_u64, idempotency_token, rate_limit, require_confirm};
+use crate::tools::safety::{audit, bounded_array, bounded_f64, bounded_str, bounded_u64, idempotency_token, opt_bool, rate_limit, require_confirm};
 
 const MAX_PROMPT_LEN: usize = 8000;
 const MAX_TOKEN_ARRAY: usize = 16;
@@ -202,7 +202,7 @@ pub async fn generate_image(arguments: Value, client: &ArtCraftClient) -> Result
   let model = parse_image_model(model_str)?;
   let idem = idempotency_token(&arguments)?;
 
-  let request = OmniGenImageCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt: Some(prompt.to_string()), image_media_tokens: parse_media_tokens(bounded_array(&arguments, "image_media_tokens", MAX_TOKEN_ARRAY)?)?, resolution: parse_resolution(arguments["resolution"].as_str())?, aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?, quality: parse_quality(arguments["quality"].as_str())?, image_batch_count: bounded_u64(&arguments, "image_batch_count", 1, MAX_BATCH_COUNT)?.map(|v| v as u16), adjust_horizontal_angle: bounded_f64(&arguments, "adjust_horizontal_angle", -180.0, 180.0)?, adjust_vertical_angle: bounded_f64(&arguments, "adjust_vertical_angle", -180.0, 180.0)?, adjust_zoom: bounded_f64(&arguments, "adjust_zoom", 0.0, 10.0)? };
+  let request = OmniGenImageCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt: Some(prompt.to_string()), image_media_tokens: parse_media_tokens(bounded_array(&arguments, "image_media_tokens", MAX_TOKEN_ARRAY)?)?, resolution: parse_resolution(bounded_str(&arguments, "resolution", 64)?)?, aspect_ratio: parse_aspect_ratio(bounded_str(&arguments, "aspect_ratio", 64)?)?, quality: parse_quality(bounded_str(&arguments, "quality", 64)?)?, image_batch_count: bounded_u64(&arguments, "image_batch_count", 1, MAX_BATCH_COUNT)?.map(|v| v as u16), adjust_horizontal_angle: bounded_f64(&arguments, "adjust_horizontal_angle", -180.0, 180.0)?, adjust_vertical_angle: bounded_f64(&arguments, "adjust_vertical_angle", -180.0, 180.0)?, adjust_zoom: bounded_f64(&arguments, "adjust_zoom", 0.0, 10.0)? };
 
   let response = omni_gen_image_generate(&client.api_host, client.creds_ref(), request).await?;
   audit("generate_image", model_str, if response.success { "success" } else { "failure" });
@@ -232,14 +232,14 @@ pub async fn generate_video(arguments: Value, client: &ArtCraftClient) -> Result
     reference_video_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_video_media_tokens", MAX_TOKEN_ARRAY)?)?,
     reference_audio_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_audio_media_tokens", MAX_TOKEN_ARRAY)?)?,
     reference_character_tokens: parse_character_tokens(bounded_array(&arguments, "reference_character_tokens", MAX_TOKEN_ARRAY)?)?,
-    resolution: parse_resolution(arguments["resolution"].as_str())?,
-    aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?,
-    bitrate: parse_bitrate(arguments["bitrate"].as_str())?,
-    maybe_output_format: parse_video_output_format(arguments["output_format"].as_str())?,
-    quality: parse_quality(arguments["quality"].as_str())?,
+    resolution: parse_resolution(bounded_str(&arguments, "resolution", 64)?)?,
+    aspect_ratio: parse_aspect_ratio(bounded_str(&arguments, "aspect_ratio", 64)?)?,
+    bitrate: parse_bitrate(bounded_str(&arguments, "bitrate", 64)?)?,
+    maybe_output_format: parse_video_output_format(bounded_str(&arguments, "output_format", 64)?)?,
+    quality: parse_quality(bounded_str(&arguments, "quality", 64)?)?,
     duration_seconds: bounded_u64(&arguments, "duration_seconds", 1, MAX_DURATION_SECONDS)?.map(|v| v as u16),
     video_batch_count: bounded_u64(&arguments, "video_batch_count", 1, MAX_BATCH_COUNT)?.map(|v| v as u16),
-    generate_audio: arguments["generate_audio"].as_bool(),
+    generate_audio: opt_bool(&arguments, "generate_audio")?,
     estimate_only: None,
   };
 
@@ -254,7 +254,7 @@ pub async fn generate_audio(arguments: Value, client: &ArtCraftClient) -> Result
   rate_limit("artcraft_generate_audio")?;
 
   let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.ok_or_else(|| anyhow!("prompt is required"))?;
-  let model_str = arguments["model"].as_str().unwrap_or("suno_music");
+  let model_str = bounded_str(&arguments, "model", 256)?.unwrap_or("suno_music");
   let model = parse_audio_model(model_str)?;
   let idem = idempotency_token(&arguments)?;
 
@@ -268,7 +268,7 @@ pub async fn generate_audio(arguments: Value, client: &ArtCraftClient) -> Result
     None => None,
   };
 
-  let request = OmniGenAudioCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt: Some(prompt.to_string()), style_prompt: bounded_str(&arguments, "style_prompt", 2000)?.map(|s| s.to_string()), audio_media_tokens: parse_media_tokens(bounded_array(&arguments, "audio_media_tokens", MAX_TOKEN_ARRAY)?)?, image_media_tokens: parse_media_tokens(bounded_array(&arguments, "image_media_tokens", MAX_TOKEN_ARRAY)?)?, keep_lyrics: arguments["keep_lyrics"].as_bool(), is_instrumental: arguments["is_instrumental"].as_bool(), is_loopable: arguments["is_loopable"].as_bool(), bpm: bounded_u64(&arguments, "bpm", 30, 300)?.map(|v| v as u16), musical_key: parse_musical_key(arguments["musical_key"].as_str())?, sample_rate_hz, speed: bounded_f64(&arguments, "speed", 0.5, 2.0)?, volume: bounded_f64(&arguments, "volume", 0.5, 2.0)?, pitch: bounded_f64(&arguments, "pitch", -12.0, 12.0)? };
+  let request = OmniGenAudioCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt: Some(prompt.to_string()), style_prompt: bounded_str(&arguments, "style_prompt", 2000)?.map(|s| s.to_string()), audio_media_tokens: parse_media_tokens(bounded_array(&arguments, "audio_media_tokens", MAX_TOKEN_ARRAY)?)?, image_media_tokens: parse_media_tokens(bounded_array(&arguments, "image_media_tokens", MAX_TOKEN_ARRAY)?)?, keep_lyrics: opt_bool(&arguments, "keep_lyrics")?, is_instrumental: opt_bool(&arguments, "is_instrumental")?, is_loopable: opt_bool(&arguments, "is_loopable")?, bpm: bounded_u64(&arguments, "bpm", 30, 300)?.map(|v| v as u16), musical_key: parse_musical_key(bounded_str(&arguments, "musical_key", 64)?)?, sample_rate_hz, speed: bounded_f64(&arguments, "speed", 0.5, 2.0)?, volume: bounded_f64(&arguments, "volume", 0.5, 2.0)?, pitch: bounded_f64(&arguments, "pitch", -12.0, 12.0)? };
 
   let response = omni_gen_audio_generate(&client.api_host, client.creds_ref(), request).await?;
   audit("generate_audio", model_str, if response.success { "success" } else { "failure" });
@@ -280,7 +280,7 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
   require_confirm(&arguments, "spend credits on 3D mesh generation")?;
   rate_limit("artcraft_generate_3d_object")?;
 
-  let model_str = arguments["model"].as_str().unwrap_or("hunyuan_3d_3");
+  let model_str = bounded_str(&arguments, "model", 256)?.unwrap_or("hunyuan_3d_3");
   let model = parse_mesh_model(model_str)?;
 
   let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.map(|s| s.to_string());
@@ -305,11 +305,11 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
     left_image_media_token: media_token_arg(&arguments, "left_image_media_token")?,
     right_image_media_token: media_token_arg(&arguments, "right_image_media_token")?,
     input_mesh_media_token: media_token_arg(&arguments, "input_mesh_media_file_token")?,
-    mesh_output_type: parse_mesh_output_type(arguments["output_type"].as_str())?,
-    polygon_type: parse_polygon_type(arguments["polygon_type"].as_str())?,
+    mesh_output_type: parse_mesh_output_type(bounded_str(&arguments, "output_type", 64)?)?,
+    polygon_type: parse_polygon_type(bounded_str(&arguments, "polygon_type", 64)?)?,
     face_count: bounded_u64(&arguments, "target_face_count", 100, 10_000_000)?,
-    enable_pbr: arguments["enable_pbr"].as_bool(),
-    enable_texture: arguments["enable_texture"].as_bool(),
+    enable_pbr: opt_bool(&arguments, "enable_pbr")?,
+    enable_texture: opt_bool(&arguments, "enable_texture")?,
     texture_quality: parse_mesh_quality_named(&arguments, "texture_quality")?,
     geometry_quality: parse_mesh_quality_named(&arguments, "geometry_quality")?,
   };
@@ -324,7 +324,7 @@ pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result
   require_confirm(&arguments, "spend credits on splat generation")?;
   rate_limit("artcraft_generate_splat")?;
 
-  let model_str = arguments["model"].as_str().unwrap_or("marble_1p1_plus");
+  let model_str = bounded_str(&arguments, "model", 256)?.unwrap_or("marble_1p1_plus");
   let model = parse_splat_model(model_str)?;
 
   let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.map(|s| s.to_string());
@@ -339,7 +339,7 @@ pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result
   }
   let ref_images_opt = if ref_images.is_empty() { None } else { Some(ref_images) };
 
-  let request = OmniGenSplatCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt, reference_image_media_tokens: ref_images_opt, reference_video_media_token: media_token_arg(&arguments, "reference_video_media_token")?, is_panoramic: arguments["is_panoramic"].as_bool(), disable_recaption: arguments["disable_recaption"].as_bool() };
+  let request = OmniGenSplatCostAndGenerateRequest { idempotency_token: Some(idem), model: Some(model), prompt, reference_image_media_tokens: ref_images_opt, reference_video_media_token: media_token_arg(&arguments, "reference_video_media_token")?, is_panoramic: opt_bool(&arguments, "is_panoramic")?, disable_recaption: opt_bool(&arguments, "disable_recaption")? };
 
   let response = omni_gen_splat_generate(&client.api_host, client.creds_ref(), request).await?;
   audit("generate_splat", model_str, if response.success { "success" } else { "failure" });

@@ -12,7 +12,7 @@ use enums::common::generation_provider::GenerationProvider;
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
 use crate::tools::generate::{parse_aspect_ratio, parse_image_model, parse_quality, parse_resolution, parse_splat_model, parse_video_model};
-use crate::tools::safety::bounded_u64;
+use crate::tools::safety::{bounded_str, bounded_u64, opt_bool};
 
 pub fn tools() -> Vec<Tool> {
   vec![
@@ -96,7 +96,7 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
   match media_type {
     "image" => {
       let model = parse_image_model(model_str)?;
-      let mode = match arguments["generation_mode"].as_str() {
+      let mode = match bounded_str(&arguments, "generation_mode", 64)? {
         None => ImageGenerationMode::TextToImage,
         Some("text_to_image") => ImageGenerationMode::TextToImage,
         Some("image_edit") => {
@@ -106,7 +106,7 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
         Some(other) => return Err(anyhow!("Invalid generation_mode '{}' for image. Expected text_to_image or image_edit.", other)),
       };
 
-      let request = EstimateImageCostRequest { model, provider: GenerationProvider::Artcraft, generation_mode: mode, aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?, resolution: parse_resolution(arguments["resolution"].as_str())?, quality: parse_quality(arguments["quality"].as_str())?, image_batch_count: bounded_u64(&arguments, "batch_count", 1, 8)?.map(|v| v as u16) };
+      let request = EstimateImageCostRequest { model, provider: GenerationProvider::Artcraft, generation_mode: mode, aspect_ratio: parse_aspect_ratio(bounded_str(&arguments, "aspect_ratio", 64)?)?, resolution: parse_resolution(bounded_str(&arguments, "resolution", 64)?)?, quality: parse_quality(bounded_str(&arguments, "quality", 64)?)?, image_batch_count: bounded_u64(&arguments, "batch_count", 1, 8)?.map(|v| v as u16) };
 
       let response = estimate_image_cost::estimate_image_cost(&client.api_host, client.creds_ref(), request).await?;
 
@@ -116,7 +116,7 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
     },
     "video" => {
       let model = parse_video_model(model_str)?;
-      let mode = match arguments["generation_mode"].as_str() {
+      let mode = match bounded_str(&arguments, "generation_mode", 64)? {
         None => VideoGenerationMode::TextToVideo,
         Some("text_to_video") => VideoGenerationMode::TextToVideo,
         Some("start_frame_to_video") => VideoGenerationMode::StartFrameToVideo,
@@ -128,7 +128,7 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
         Some(other) => return Err(anyhow!("Invalid generation_mode '{}' for video. Expected text_to_video, start_frame_to_video, start_and_end_frame_to_video, or reference_image_to_video.", other)),
       };
 
-      let request = EstimateVideoCostRequest { model, provider: GenerationProvider::Artcraft, generation_mode: mode, aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?, resolution: parse_resolution(arguments["resolution"].as_str())?, duration_seconds: bounded_u64(&arguments, "duration_seconds", 1, 600)?.map(|v| v as u16), video_batch_count: bounded_u64(&arguments, "batch_count", 1, 8)?.map(|v| v as u16), generate_audio: arguments["generate_audio"].as_bool() };
+      let request = EstimateVideoCostRequest { model, provider: GenerationProvider::Artcraft, generation_mode: mode, aspect_ratio: parse_aspect_ratio(bounded_str(&arguments, "aspect_ratio", 64)?)?, resolution: parse_resolution(bounded_str(&arguments, "resolution", 64)?)?, duration_seconds: bounded_u64(&arguments, "duration_seconds", 1, 600)?.map(|v| v as u16), video_batch_count: bounded_u64(&arguments, "batch_count", 1, 8)?.map(|v| v as u16), generate_audio: opt_bool(&arguments, "generate_audio")? };
 
       let response = estimate_video_cost::estimate_video_cost(&client.api_host, client.creds_ref(), request).await?;
 
@@ -142,9 +142,9 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
 }
 
 pub async fn estimate_splat_cost(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
-  let model_str = arguments["model"].as_str().unwrap_or("marble_1p1_plus");
+  let model_str = bounded_str(&arguments, "model", 256)?.unwrap_or("marble_1p1_plus");
   let model = parse_splat_model(model_str)?;
-  let has_reference_image = arguments["has_reference_image"].as_bool();
+  let has_reference_image = opt_bool(&arguments, "has_reference_image")?;
 
   let request = EstimateSplatCostRequest { model, provider: GenerationProvider::Artcraft, has_reference_image };
 

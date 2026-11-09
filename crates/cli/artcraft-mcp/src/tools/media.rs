@@ -328,14 +328,14 @@ pub async fn download_media_file(arguments: Value, client: &ArtCraftClient) -> R
   let info = response.media_file;
   let cdn_url = info.media_links.cdn_url;
 
-  let download_dir = resolve_download_dir(arguments["download_dir"].as_str())?;
+  let download_dir = resolve_download_dir(bounded_str(&arguments, "download_dir", 1024)?)?;
 
   let extension = {
     let path = cdn_url.path();
     std::path::Path::new(path).extension().and_then(|s| s.to_str()).map(|s| s.to_string()).unwrap_or_else(|| "bin".to_string())
   };
 
-  let filename = if let Some(name) = arguments["filename"].as_str() {
+  let filename = if let Some(name) = bounded_str(&arguments, "filename", 255)? {
     name.to_string()
   } else {
     let base_name = info.maybe_title.as_deref().unwrap_or(token.as_str());

@@ -16,7 +16,7 @@ use enums::common::payments_namespace::PaymentsNamespace;
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
 use crate::tools::http::raw_json_get;
-use crate::tools::safety::{audit, rate_limit, require_confirm, sanitize_field};
+use crate::tools::safety::{audit, bounded_str, rate_limit, require_confirm, sanitize_field};
 
 pub fn tools() -> Vec<Tool> {
   vec![
@@ -134,7 +134,7 @@ pub async fn get_session_info(_arguments: Value, client: &ArtCraftClient) -> Res
 }
 
 pub async fn get_credits(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
-  let namespace = match arguments["namespace"].as_str() {
+  let namespace = match bounded_str(&arguments, "namespace", 64)? {
     None => PaymentsNamespace::Artcraft,
     Some("artcraft") => PaymentsNamespace::Artcraft,
     Some("fakeyou") => PaymentsNamespace::FakeYou,
@@ -200,7 +200,7 @@ pub async fn create_subscription_checkout(arguments: Value, client: &ArtCraftCli
     other => return Err(anyhow!("Unknown subscription plan: {}", other)),
   };
 
-  let cadence = match arguments["cadence"].as_str() {
+  let cadence = match bounded_str(&arguments, "cadence", 64)? {
     None => Some(PlanBillingCadence::Monthly),
     Some("monthly") => Some(PlanBillingCadence::Monthly),
     Some("yearly") => Some(PlanBillingCadence::Yearly),

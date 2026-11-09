@@ -79,12 +79,24 @@ pub fn bounded_f64(args: &Value, name: &str, min: f64, max: f64) -> Result<Optio
 }
 
 pub fn bounded_str<'a>(args: &'a Value, name: &str, max_len: usize) -> Result<Option<&'a str>> {
-  match args.get(name).and_then(|v| v.as_str()) {
-    None => Ok(None),
-    Some(s) if s.len() > max_len => {
-      bail!("{} exceeds maximum length of {} characters", name, max_len)
+  match args.get(name) {
+    None | Some(Value::Null) => Ok(None),
+    Some(v) => {
+      let s = v.as_str().ok_or_else(|| anyhow!("{} must be a string", name))?;
+      if s.len() > max_len {
+        bail!("{} exceeds maximum length of {} characters", name, max_len)
+      }
+      Ok(Some(s))
     },
-    Some(s) => Ok(Some(s)),
+  }
+}
+
+/// Strict optional bool arg: absent/null -> None, bool -> Some,
+/// present-but-wrong-type -> Err.
+pub fn opt_bool(args: &Value, name: &str) -> Result<Option<bool>> {
+  match args.get(name) {
+    None | Some(Value::Null) => Ok(None),
+    Some(v) => v.as_bool().map(Some).ok_or_else(|| anyhow!("{} must be a boolean", name)),
   }
 }
 
