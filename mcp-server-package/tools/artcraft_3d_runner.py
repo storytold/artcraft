@@ -1,236 +1,121 @@
 #!/usr/bin/env python3
-"""
-ArtCraft 3D & Gaussian Splatting Automation Tool
-Interfaces with artcraft-mcp-server.exe to generate Hunyuan 3D meshes and WorldLabs Marble Splat scenes.
+"""ArtCraft 3D mesh & Gaussian splat automation.
+
+Uploads a reference image, enqueues Hunyuan 3D mesh and/or WorldLabs Marble
+splat generation, polls, and downloads results. Paid actions and the local
+file upload are confirmed by running this script.
 """
 
+import argparse
 import os
 import sys
-import json
-import time
-import re
-import argparse
-import subprocess
 
-def find_mcp_executable():
-    """Dynamically locate artcraft-mcp executable across OS environments."""
-    env_path = os.environ.get("ARTCRAFT_MCP_PATH")
-    if env_path and os.path.exists(env_path):
-        return env_path
-    
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(script_dir, "..", "bin", "artcraft-mcp.exe"),
-        os.path.join(script_dir, "artcraft-mcp.exe"),
-        os.path.join(script_dir, "..", "artcraft-mcp.exe"),
-        os.path.join(script_dir, "..", "bin", "artcraft-mcp"),
-        os.path.join(script_dir, "artcraft-mcp"),
-        os.path.join(script_dir, "..", "artcraft-mcp"),
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return os.path.abspath(c)
-    return "artcraft-mcp.exe"
+from artcraft_mcp_client import McpClient, McpError, extract_token
 
 DEFAULT_3D_OUT = os.environ.get("ARTCRAFT_3D_OUT") or os.path.expanduser("~/ArtCraft/3D_Assets")
 
-class ArtCraft3DClient:
-    def __init__(self, exe_path=None):
-        self.exe_path = exe_path or find_mcp_executable()
-        if not os.path.exists(self.exe_path):
-            raise FileNotFoundError(f"ArtCraft MCP binary not found at: {self.exe_path}. Set ARTCRAFT_MCP_PATH or place binary alongside tool.")
-        
-        self.proc = subprocess.Popen(
-            [self.exe_path],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
-        )
-        self.req_id = 1
-        self._initialize()
-
-    def send_request(self, method, params=None):
-        msg = {"jsonrpc": "2.0", "id": self.req_id, "method": method}
-        if params is not None:
-            msg["params"] = params
-        self.req_id += 1
-        try:
-            self.proc.stdin.write(json.dumps(msg) + "\n")
-            self.proc.stdin.flush()
-            line = self.proc.stdout.readline()
-            if not line:
-                return None
-            return json.loads(line.strip())
-        except (BrokenPipeError, OSError, json.JSONDecodeError):
-            return None
-
-    def _initialize(self):
-        self.send_request("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "artcraft-3d-runner", "version": "1.0.0"}
-        })
-        self.proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
-        self.proc.stdin.flush()
-
-    def upload_media(self, file_path):
-        res = self.send_request("tools/call", {
-            "name": "upload_media",
-            "arguments": {"file_path": file_path}
-        })
-        if res and "result" in res:
-            for c in res["result"].get("content", []):
-                text = c.get("text", "")
-                m = re.search(r"m_[a-zA-Z0-9_-]+", text)
-                if m:
-                    return m.group(0)
-        return None
-
-    def generate_object_3d(self, media_file_token, version="2.0"):
-        res = self.send_request("tools/call", {
-            "name": "artcraft_generate_3d_object",
-            "arguments": {
-                "image_media_token": media_file_token,
-                "prompt": f"Generate 3D object from image (Hunyuan 3D {version})",
-                "mode": "image_to_3d"
-            }
-        })
-        if not res or "error" in res:
-            res = self.send_request("tools/call", {
-                "name": "generate_object_3d",
-                "arguments": {"media_file_token": media_file_token, "version": version}
-            })
-        if res and "result" in res:
-            for c in res["result"].get("content", []):
-                text = c.get("text", "")
-                m = re.search(r"jinf_[a-zA-Z0-9_-]+", text)
-                if m:
-                    return m.group(0)
-        return None
-
-    def generate_splat_3d(self, media_file_token=None, prompt=None, version="mini"):
-        args = {"prompt": prompt or "Generate 3D Gaussian Splat scene"}
-        if media_file_token:
-            args["image_media_token"] = media_file_token
-        res = self.send_request("tools/call", {
-            "name": "artcraft_generate_splat",
-            "arguments": args
-        })
-        if not res or "error" in res:
-            fallback_args = {"version": version}
-            if media_file_token:
-                fallback_args["image_media_file_token"] = media_file_token
-            if prompt:
-                fallback_args["prompt"] = prompt
-            res = self.send_request("tools/call", {
-                "name": "generate_splat_3d",
-                "arguments": fallback_args
-            })
-        if res and "result" in res:
-            for c in res["result"].get("content", []):
-                text = c.get("text", "")
-                m = re.search(r"jinf_[a-zA-Z0-9_-]+", text)
-                if m:
-                    return m.group(0)
-        return None
-
-    def get_job_status(self, job_token):
-        return self.send_request("tools/call", {
-            "name": "get_job_status",
-            "arguments": {"job_token": job_token}
-        })
-
-    def download_media(self, media_token, out_dir):
-        os.makedirs(out_dir, exist_ok=True)
-        return self.send_request("tools/call", {
-            "name": "download_media_file",
-            "arguments": {
-                "media_token": media_token,
-                "download_directory": out_dir
-            }
-        })
-
-    def close(self):
-        try:
-            self.proc.terminate()
-        except:
-            pass
+MESH_MODELS = {
+    "2.0": "hunyuan_3d_2p0",
+    "2.1": "hunyuan_3d_2p1",
+    "3": "hunyuan_3d_3",
+    "3.1": "hunyuan_3d_3p1_pro",
+}
+SPLAT_MODELS = {
+    "mini": "marble_0p1_mini",
+    "plus": "marble_0p1_plus",
+    "1.0": "marble_1p0",
+    "1.1": "marble_1p1_plus",
+}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ArtCraft 3D Mesh & Gaussian Splat Generator")
+    parser = argparse.ArgumentParser(
+        description="ArtCraft 3D Mesh & Gaussian Splat Generator (paid; runs with confirm)"
+    )
     parser.add_argument("--image", type=str, help="Source image path")
-    parser.add_argument("--mode", type=str, choices=["object", "splat", "both"], default="both", help="Generation mode")
-    parser.add_argument("--prompt", type=str, help="Text prompt for Splat generation")
-    parser.add_argument("--version", type=str, default="2.0", help="Hunyuan 3D version (2.0/2.1) or Splat (mini/plus)")
-    parser.add_argument("--out-dir", type=str, default=DEFAULT_3D_OUT, help="Output folder")
+    parser.add_argument("--mode", choices=["object", "splat", "both"], default="both")
+    parser.add_argument("--prompt", type=str, help="Text prompt (splat; or mesh text-to-3D)")
+    parser.add_argument("--version", type=str, default="3", help="Mesh version: 2.0/2.1/3/3.1")
+    parser.add_argument("--splat-version", type=str, default="1.1", help="Splat: mini/plus/1.0/1.1")
+    parser.add_argument("--out-dir", type=str, default=DEFAULT_3D_OUT)
+    parser.add_argument("--timeout", type=int, default=900)
     args = parser.parse_args()
 
-    client = ArtCraft3DClient()
-    media_token = None
+    job_labels = {}
 
-    if args.image:
-        print(f"[*] Uploading reference image: {args.image}", flush=True)
-        media_token = client.upload_media(args.image)
-        print(f"[+] Media Token: {media_token}", flush=True)
-
-    job_tokens = {}
-
-    if args.mode in ["object", "both"]:
-        if not media_token:
-            print("[-] Image path is required for Hunyuan 3D object generation.", flush=True)
+    def on_done(token, state, text):
+        label = job_labels.get(token, token)
+        if state == "complete_success":
+            print(f"[+] {label} completed.", flush=True)
+            media = extract_token("media", text)
+            if media:
+                try:
+                    saved = client.download(media, args.out_dir)
+                    print(f"[+] Saved: {saved}", flush=True)
+                except McpError as e:
+                    print(f"[-] Download failed for {media}: {e}", flush=True)
         else:
-            print("[*] Enqueuing 3D Mesh generation (Hunyuan 3D)...", flush=True)
-            jtoken = client.generate_object_3d(media_token, version=args.version)
-            if jtoken:
-                print(f"[+] 3D Mesh Job Enqueued: {jtoken}", flush=True)
-                job_tokens[jtoken] = "3D_Mesh"
+            print(f"[-] {label} ended with status: {state}", flush=True)
 
-    if args.mode in ["splat", "both"]:
-        print("[*] Enqueuing 3D Gaussian Splat generation (WorldLabs Marble)...", flush=True)
-        splat_ver = "mini" if args.version not in ["mini", "plus"] else args.version
-        jtoken = client.generate_splat_3d(media_file_token=media_token, prompt=args.prompt, version=splat_ver)
-        if jtoken:
-            print(f"[+] Gaussian Splat Job Enqueued: {jtoken}", flush=True)
-            job_tokens[jtoken] = "Gaussian_Splat"
+    try:
+        client = McpClient(client_name="artcraft-3d-runner")
+    except (FileNotFoundError, McpError) as e:
+        print(f"[-] {e}", flush=True)
+        sys.exit(1)
 
-    if not job_tokens:
-        print("[-] No jobs were enqueued. Exiting.", flush=True)
+    try:
+        media_token = None
+        if args.image:
+            print(f"[*] Uploading reference image: {args.image}", flush=True)
+            media_token = client.upload(args.image, kind="image")
+            print(f"[+] Media Token: {media_token}", flush=True)
+
+        if args.mode in ("object", "both"):
+            if not media_token and not args.prompt:
+                print("[-] --image or --prompt is required for mesh generation.", flush=True)
+            else:
+                mesh_model = MESH_MODELS.get(args.version, args.version)
+                gen_args = {"model": mesh_model}
+                if media_token:
+                    gen_args["image_media_token"] = media_token
+                if args.prompt:
+                    gen_args["prompt"] = args.prompt
+                print(f"[*] Enqueuing 3D mesh generation ({mesh_model})...", flush=True)
+                try:
+                    text = client.call_text("artcraft_generate_3d_object", gen_args, confirm=True)
+                    jtoken = extract_token("job", text)
+                    if jtoken:
+                        print(f"[+] Mesh Job Enqueued: {jtoken}", flush=True)
+                        job_labels[jtoken] = f"3D_Mesh {jtoken}"
+                except McpError as e:
+                    print(f"[-] Mesh enqueue failed: {e}", flush=True)
+
+        if args.mode in ("splat", "both"):
+            splat_model = SPLAT_MODELS.get(args.splat_version, args.splat_version)
+            gen_args = {"model": splat_model}
+            if media_token:
+                gen_args["image_media_token"] = media_token
+            if args.prompt:
+                gen_args["prompt"] = args.prompt
+            print(f"[*] Enqueuing Gaussian splat generation ({splat_model})...", flush=True)
+            try:
+                text = client.call_text("artcraft_generate_splat", gen_args, confirm=True)
+                jtoken = extract_token("job", text)
+                if jtoken:
+                    print(f"[+] Splat Job Enqueued: {jtoken}", flush=True)
+                    job_labels[jtoken] = f"Gaussian_Splat {jtoken}"
+            except McpError as e:
+                print(f"[-] Splat enqueue failed: {e}", flush=True)
+
+        if not job_labels:
+            print("[-] No jobs were enqueued. Exiting.", flush=True)
+            sys.exit(1)
+
+        print(f"[*] Monitoring {len(job_labels)} 3D job(s)...", flush=True)
+        client.wait_for_jobs(list(job_labels), timeout_s=args.timeout, on_event=on_done)
+    finally:
         client.close()
-        return
 
-    print(f"[*] Monitoring {len(job_tokens)} 3D generation jobs...", flush=True)
-    completed = set()
-
-    for _ in range(90): # 7.5 min timeout for 3D processing
-        for jtoken, label in job_tokens.items():
-            if jtoken in completed:
-                continue
-            status_res = client.get_job_status(jtoken)
-            if status_res and "result" in status_res:
-                text = ""
-                for c in status_res["result"].get("content", []):
-                    text += c.get("text", "")
-                if "completed" in text.lower() or "finished" in text.lower():
-                    print(f"[+] {label} Job {jtoken} completed!", flush=True)
-                    completed.add(jtoken)
-                    m = re.search(r"(?:m_|med_)[a-zA-Z0-9_-]+", text)
-                    if m:
-                        dl_token = m.group(0)
-                        print(f"[*] Downloading {label} ({dl_token}) to {args.out_dir}...", flush=True)
-                        client.download_media(dl_token, args.out_dir)
-                elif "failed" in text.lower():
-                    print(f"[-] {label} Job {jtoken} failed.", flush=True)
-                    completed.add(jtoken)
-
-        if len(completed) == len(job_tokens):
-            print("[+] All 3D generation jobs completed successfully!", flush=True)
-            break
-        time.sleep(5)
-
-    client.close()
 
 if __name__ == "__main__":
     main()

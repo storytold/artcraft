@@ -1,141 +1,90 @@
 #!/usr/bin/env python3
-"""
-ArtCraft Audio & Voice Synthesis Weaver
-Interfaces with artcraft-mcp-server.exe to generate ambient audio, TTS narrations, and sound effects.
+"""ArtCraft audio generation weaver.
+
+Generates music/SFX via artcraft_generate_audio (Suno/Seed Audio), with an
+optional uploaded reference track for remixing. Polls the job and downloads
+the result. Paid actions and local uploads are confirmed by running this
+script.
 """
 
+import argparse
 import os
 import sys
-import json
-import time
-import re
-import argparse
-import subprocess
 
-def find_mcp_executable():
-    """Dynamically locate artcraft-mcp executable across OS environments."""
-    env_path = os.environ.get("ARTCRAFT_MCP_PATH")
-    if env_path and os.path.exists(env_path):
-        return env_path
-    
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(script_dir, "..", "bin", "artcraft-mcp.exe"),
-        os.path.join(script_dir, "artcraft-mcp.exe"),
-        os.path.join(script_dir, "..", "artcraft-mcp.exe"),
-        os.path.join(script_dir, "..", "bin", "artcraft-mcp"),
-        os.path.join(script_dir, "artcraft-mcp"),
-        os.path.join(script_dir, "..", "artcraft-mcp"),
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return os.path.abspath(c)
-    return "artcraft-mcp.exe"
+from artcraft_mcp_client import McpClient, McpError, extract_token
 
-class ArtCraftAudioClient:
-    def __init__(self, exe_path=None):
-        self.exe_path = exe_path or find_mcp_executable()
-        if not os.path.exists(self.exe_path):
-            raise FileNotFoundError(f"ArtCraft MCP binary not found at: {self.exe_path}. Set ARTCRAFT_MCP_PATH or place binary alongside tool.")
-        
-        self.proc = subprocess.Popen(
-            [self.exe_path],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
-        )
-        self.req_id = 1
-        self._initialize()
-
-    def send_request(self, method, params=None):
-        msg = {"jsonrpc": "2.0", "id": self.req_id, "method": method}
-        if params is not None:
-            msg["params"] = params
-        self.req_id += 1
-        try:
-            self.proc.stdin.write(json.dumps(msg) + "\n")
-            self.proc.stdin.flush()
-            line = self.proc.stdout.readline()
-            if not line:
-                return None
-            return json.loads(line.strip())
-        except (BrokenPipeError, OSError, json.JSONDecodeError):
-            return None
-
-    def _initialize(self):
-        self.send_request("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "artcraft-audio-runner", "version": "1.0.0"}
-        })
-        self.proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
-        self.proc.stdin.flush()
-
-    def upload_media(self, file_path):
-        res = self.send_request("tools/call", {
-            "name": "upload_media",
-            "arguments": {"file_path": file_path}
-        })
-        if res and "result" in res:
-            for c in res["result"].get("content", []):
-                text = c.get("text", "")
-                m = re.search(r"m_[a-zA-Z0-9_-]+", text)
-                if m:
-                    return m.group(0)
-        return None
-
-    def create_prompt(self, prompt, is_negative=False):
-        res = self.send_request("tools/call", {
-            "name": "create_prompt",
-            "arguments": {"prompt": prompt, "is_negative": is_negative}
-        })
-        if res and "result" in res:
-            for c in res["result"].get("content", []):
-                text = c.get("text", "")
-                m = re.search(r"prompt_[a-zA-Z0-9_-]+", text)
-                if m:
-                    return m.group(0)
-        return None
-
-    def download_media(self, media_token, out_dir):
-        os.makedirs(out_dir, exist_ok=True)
-        return self.send_request("tools/call", {
-            "name": "download_media_file",
-            "arguments": {
-                "media_token": media_token,
-                "download_directory": out_dir
-            }
-        })
-
-    def close(self):
-        try:
-            self.proc.terminate()
-        except:
-            pass
+DEFAULT_OUT_DIR = os.path.expanduser("~/ArtCraft/audio")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ArtCraft Audio & Voice Weaver Tool")
-    parser.add_argument("--prompt", type=str, required=True, help="Audio text or prompt description")
-    parser.add_argument("--audio-ref", type=str, help="Optional reference audio path")
-    parser.add_argument("--out-dir", type=str, default=os.getcwd(), help="Output directory")
+    parser = argparse.ArgumentParser(
+        description="ArtCraft Audio & Voice Weaver (paid; runs with confirm)"
+    )
+    parser.add_argument("--prompt", type=str, required=True, help="Audio text prompt or lyrics")
+    parser.add_argument("--model", type=str, default="suno_music",
+                        help="suno_music | suno_remix | suno_sounds | suno_sample | seed_audio_1p0")
+    parser.add_argument("--style", type=str, help="Genre/style tags")
+    parser.add_argument("--audio-ref", type=str, help="Optional reference audio file path")
+    parser.add_argument("--instrumental", action="store_true", help="No vocals")
+    parser.add_argument("--bpm", type=int, help="Tempo 30-300")
+    parser.add_argument("--out-dir", type=str, default=DEFAULT_OUT_DIR)
+    parser.add_argument("--timeout", type=int, default=600)
     args = parser.parse_args()
 
-    client = ArtCraftAudioClient()
+    try:
+        client = McpClient(client_name="artcraft-audio-runner")
+    except (FileNotFoundError, McpError) as e:
+        print(f"[-] {e}", flush=True)
+        sys.exit(1)
 
-    audio_token = None
-    if args.audio_ref:
-        print(f"[*] Uploading reference audio: {args.audio_ref}", flush=True)
-        audio_token = client.upload_media(args.audio_ref)
-        print(f"[+] Audio Reference Token: {audio_token}", flush=True)
+    job_token = None
 
-    print(f"[*] Staging prompt token for audio synthesis...", flush=True)
-    prompt_token = client.create_prompt(args.prompt)
-    print(f"[+] Prompt Token Staged: {prompt_token}", flush=True)
+    def on_done(token, state, text):
+        if state == "complete_success":
+            print(f"[+] Job {token} completed.", flush=True)
+            media = extract_token("media", text)
+            if media:
+                try:
+                    saved = client.download(media, args.out_dir)
+                    print(f"[+] Saved: {saved}", flush=True)
+                except McpError as e:
+                    print(f"[-] Download failed for {media}: {e}", flush=True)
+        else:
+            print(f"[-] Job {token} ended with status: {state}", flush=True)
 
-    client.close()
+    try:
+        audio_token = None
+        if args.audio_ref:
+            print(f"[*] Uploading reference audio: {args.audio_ref}", flush=True)
+            audio_token = client.upload(args.audio_ref, kind="audio")
+            print(f"[+] Audio Reference Token: {audio_token}", flush=True)
+
+        gen_args = {"model": args.model, "prompt": args.prompt}
+        if args.style:
+            gen_args["style_prompt"] = args.style
+        if audio_token:
+            gen_args["audio_media_tokens"] = [audio_token]
+        if args.instrumental:
+            gen_args["is_instrumental"] = True
+        if args.bpm:
+            gen_args["bpm"] = args.bpm
+
+        print(f"[*] Enqueuing audio generation ({args.model})...", flush=True)
+        try:
+            text = client.call_text("artcraft_generate_audio", gen_args, confirm=True)
+        except McpError as e:
+            print(f"[-] Enqueue failed: {e}", flush=True)
+            sys.exit(1)
+        job_token = extract_token("job", text)
+        if not job_token:
+            print(f"[-] No job token in response: {text[:200]}", flush=True)
+            sys.exit(1)
+        print(f"[+] Enqueued Job Token: {job_token}", flush=True)
+
+        client.wait_for_jobs([job_token], timeout_s=args.timeout, on_event=on_done)
+    finally:
+        client.close()
+
 
 if __name__ == "__main__":
     main()

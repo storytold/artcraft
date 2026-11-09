@@ -1,163 +1,87 @@
 #!/usr/bin/env python3
-"""
-ArtCraft MCP Comprehensive Health Check & Diagnostic Tool
-Verifies MCP server binary discovery, JSON-RPC protocol initialization,
-local credentials resolution, and live endpoint connectivity.
-"""
+"""ArtCraft MCP health check.
 
-import os
+Verifies binary discovery, MCP protocol handshake, tool discovery, and live
+API connectivity (credits + cost estimate). Prints PASS/FAIL per check and
+exits non-zero if any check fails."""
+
 import sys
-import json
-import subprocess
 from pathlib import Path
 
-def find_binary(preferred="artcraft-mcp.exe"):
-    script_dir = Path(__file__).resolve().parent
-    candidates = [
-        script_dir.parent / "bin" / preferred,
-        script_dir.parent / preferred,
-        script_dir / preferred,
-        script_dir.parent / "bin" / "artcraft-mcp",
-        script_dir.parent / "artcraft-mcp",
-    ]
-    for c in candidates:
-        if c.exists():
-            return c
-    return None
+from artcraft_mcp_client import McpClient, McpError, find_mcp_executable
 
-def run_session(binary_path, requests):
-    proc = subprocess.Popen(
-        [str(binary_path)],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1
-    )
-    responses = []
-    for req in requests:
-        proc.stdin.write(json.dumps(req) + "\n")
-        proc.stdin.flush()
-        line = proc.stdout.readline()
-        if line:
-            try:
-                responses.append(json.loads(line.strip()))
-            except json.JSONDecodeError:
-                responses.append(None)
-        else:
-            responses.append(None)
-    proc.terminate()
-    try:
-        proc.wait(timeout=3)
-    except:
-        proc.kill()
-    return responses
 
 def main():
     print("=" * 65)
     print("   ArtCraft MCP Diagnostic & Health Check Suite")
     print("=" * 65)
 
-    bin_path = find_binary()
+    failures = []
+
+    bin_path = find_mcp_executable()
     if not bin_path:
-        print("[-] FAILED: Could not locate ArtCraft MCP binary in project tree.")
+        print("[FAIL] artcraft-mcp binary not found.")
+        print("       Build it: cargo build --release -p artcraft-mcp (from repo root)")
+        print("       Or set ARTCRAFT_MCP_PATH to the binary.")
         sys.exit(1)
-    print(f"[+] Found MCP Server Binary: {bin_path.name}")
-    print(f"    Path: {bin_path}")
+    print(f"[PASS] Found MCP Server Binary: {bin_path}")
 
-    # Check local credentials
     creds_dir = Path.home() / "Artcraft" / "credentials"
-    session_file = creds_dir / "artcraft_session.txt"
-    avt_file = creds_dir / "artcraft_avt.txt"
-    if session_file.exists() and avt_file.exists():
-        print(f"[+] Credentials Found in: {creds_dir}")
-        print("    - artcraft_session.txt: OK")
-        print("    - artcraft_avt.txt: OK")
-    elif os.environ.get("ARTCRAFT_API_KEY"):
-        print("[+] Credentials Found: ARTCRAFT_API_KEY environment variable configured.")
+    if (creds_dir / "artcraft_session.txt").exists() or (creds_dir / "artcraft_avt.txt").exists():
+        print(f"[PASS] Credential files present under {creds_dir}")
     else:
-        print("[!] Note: No desktop credentials or API key detected. Auth tools may fail.")
+        print("[WARN] No credential files found; authenticated tools may fail.")
+        print(f"       (expected under {creds_dir}; cookie-store fallback may still work)")
 
-    # Execute diagnostic requests
-    requests = [
-        {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": "artcraft-healthcheck", "version": "1.0.0"}
-            }
-        },
-        {
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/list",
-            "params": {}
-        },
-        {
-            "jsonrpc": "2.0",
-            "id": 3,
-            "method": "tools/call",
-            "params": {
-                "name": "artcraft_get_credits" if "artcraft-mcp" in bin_path.name else "get_credits",
-                "arguments": {}
-            }
-        },
-        {
-            "jsonrpc": "2.0",
-            "id": 4,
-            "method": "tools/call",
-            "params": {
-                "name": "artcraft_estimate_cost" if "artcraft-mcp" in bin_path.name else "estimate_image_cost",
-                "arguments": {
-                    "media_type": "image",
-                    "model": "flux_1_dev"
-                } if "artcraft-mcp" in bin_path.name else {
-                    "model": "flux_1_dev",
-                    "provider": "artcraft",
-                    "generation_mode": "text_to_image"
-                }
-            }
-        }
-    ]
-
-    print("\n[*] Initializing MCP JSON-RPC protocol...")
-    res = run_session(bin_path, requests)
-
-    # 1. Initialize
-    if res[0] and "result" in res[0]:
-        s_info = res[0]["result"].get("serverInfo", {})
-        print(f"[PASS] MCP Protocol Connected: {s_info.get('name')} v{s_info.get('version')}")
-    else:
-        print(f"[FAIL] Initialize failed: {res[0]}")
+    try:
+        client = McpClient(bin_path, client_name="artcraft-healthcheck")
+    except McpError as e:
+        print(f"[FAIL] initialize: {e}")
         sys.exit(1)
 
-    # 2. List tools
-    if res[1] and "result" in res[1]:
-        tools = res[1]["result"].get("tools", [])
-        print(f"[PASS] Tools Discovery: {len(tools)} tools registered and accessible.")
-    else:
-        print(f"[FAIL] tools/list failed: {res[1]}")
+    info = client.server_info
+    print(f"[PASS] MCP Protocol Connected: {info.get('name')} v{info.get('version')}")
 
-    # 3. Credits
-    if res[2] and "result" in res[2]:
-        text = res[2]["result"]["content"][0]["text"].replace("\n", " | ")
-        print(f"[PASS] Account Authentication: {text}")
-    else:
-        print(f"[FAIL] Account check failed: {res[2]}")
+    try:
+        res = client.send_request("tools/list", {})
+        tools = res.get("result", {}).get("tools", [])
+        if tools:
+            print(f"[PASS] Tools Discovery: {len(tools)} tools registered.")
+        else:
+            failures.append("tools/list returned no tools")
+            print("[FAIL] tools/list returned no tools")
+    except McpError as e:
+        failures.append(f"tools/list: {e}")
+        print(f"[FAIL] tools/list: {e}")
 
-    # 4. Cost estimation
-    if res[3] and "result" in res[3]:
-        text = res[3]["result"]["content"][0]["text"].replace("\n", " | ")
-        print(f"[PASS] API Cost Estimator: {text}")
-    else:
-        print(f"[FAIL] Cost estimation check failed: {res[3]}")
+    try:
+        text = client.call_text("artcraft_get_credits")
+        print(f"[PASS] Account Authentication: {text.splitlines()[0] if text else '(empty)'}")
+    except McpError as e:
+        failures.append(f"artcraft_get_credits: {e}")
+        print(f"[FAIL] Account check: {e}")
+
+    try:
+        text = client.call_text(
+            "artcraft_estimate_cost",
+            {"media_type": "image", "model": "flux_1_dev"},
+        )
+        first = text.splitlines()[0] if text else "(empty)"
+        print(f"[PASS] API Cost Estimator: {first}")
+    except McpError as e:
+        failures.append(f"artcraft_estimate_cost: {e}")
+        print(f"[FAIL] Cost estimation: {e}")
+
+    client.close()
 
     print("\n" + "=" * 65)
-    print("   [+] All diagnostic checks PASSED successfully!")
+    if failures:
+        print(f"   [-] {len(failures)} diagnostic check(s) FAILED")
+        print("=" * 65)
+        sys.exit(1)
+    print("   [+] All diagnostic checks PASSED")
     print("=" * 65)
+
 
 if __name__ == "__main__":
     main()
