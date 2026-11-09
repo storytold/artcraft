@@ -34,6 +34,8 @@ pub enum GenerationProvider {
   Picsart,
   Pixverse,
   Runway,
+  #[serde(rename = "wavespeed")]
+  WaveSpeed,
 }
 
 impl_enum_display_and_debug_using_to_str!(GenerationProvider);
@@ -50,6 +52,7 @@ impl GenerationProvider {
     match self {
       Self::Artcraft => "artcraft",
       Self::Fal => "fal",
+      Self::WaveSpeed => "wavespeed",
       Self::Grok => "grok",
       Self::Midjourney => "midjourney",
       Self::Sora => "sora",
@@ -69,6 +72,7 @@ impl GenerationProvider {
     match value {
       "artcraft" => Ok(Self::Artcraft),
       "fal" => Ok(Self::Fal),
+      "wavespeed" => Ok(Self::WaveSpeed),
       "grok" => Ok(Self::Grok),
       "midjourney" => Ok(Self::Midjourney),
       "sora" => Ok(Self::Sora),
@@ -103,6 +107,7 @@ impl GenerationProvider {
       Self::Picsart,
       Self::Pixverse,
       Self::Runway,
+      Self::WaveSpeed,
     ])
   }
 }
@@ -120,6 +125,7 @@ mod tests {
     fn test_serialization() {
       assert_serialization(GenerationProvider::Artcraft, "artcraft");
       assert_serialization(GenerationProvider::Fal, "fal");
+      assert_serialization(GenerationProvider::WaveSpeed, "wavespeed");
       assert_serialization(GenerationProvider::Grok, "grok");
       assert_serialization(GenerationProvider::Midjourney, "midjourney");
       assert_serialization(GenerationProvider::Sora, "sora");
@@ -184,7 +190,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = GenerationProvider::all_variants();
-      assert_eq!(variants.len(), 14);
+      assert_eq!(variants.len(), 15);
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
@@ -199,6 +205,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Picsart));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Pixverse));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Runway));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::WaveSpeed));
       assert_eq!(variants.pop_first(), None);
     }
   }

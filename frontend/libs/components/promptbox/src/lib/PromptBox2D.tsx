@@ -13,11 +13,13 @@ import {
   RefImage,
   useEnterToGenerateStore,
 } from "./promptStore";
-import { ImageModel } from "@storyteller/model-list";
+import { CommonAspectRatio, CommonResolution, ImageModel } from "@storyteller/model-list";
 import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import { AspectRatioPicker } from "./common/AspectRatioPicker";
+import { ResolutionPicker } from "./common/ResolutionPicker";
 import {
   PromptFullscreenModal,
   useFullscreenPrompt,
@@ -99,6 +101,13 @@ export const PromptBox2D = ({
   const setAspectRatio = usePrompt2DStore((s) => s.setAspectRatio);
   const resolution = usePrompt2DStore((s) => s.resolution);
   const setResolution = usePrompt2DStore((s) => s.setResolution);
+  const isWaveSpeed = selectedProvider === GenerationProvider.WaveSpeed;
+  const [commonAspectRatio, setCommonAspectRatio] = useState<CommonAspectRatio>();
+  const [commonResolution, setCommonResolution] = useState<CommonResolution>();
+  const effectiveAspectRatio = commonAspectRatio && selectedImageModel?.aspectRatios.includes(commonAspectRatio)
+    ? commonAspectRatio : selectedImageModel?.defaultAspectRatio;
+  const effectiveResolution = commonResolution && selectedImageModel?.resolutions.includes(commonResolution)
+    ? commonResolution : selectedImageModel?.defaultResolution;
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
 
   const referenceImages = usePrompt2DStore((s) => s.referenceImages);
@@ -281,6 +290,10 @@ export const PromptBox2D = ({
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
+    if (isWaveSpeed && referenceImages.length > (selectedImageModel?.maxImagePromptCount ?? 0)) {
+      toast.error(`This model supports at most ${selectedImageModel?.maxImagePromptCount ?? 0} additional image references`);
+      return;
+    }
     if (isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
@@ -294,8 +307,8 @@ export const PromptBox2D = ({
     try {
       await Promise.resolve(
         onGenerateClick(prompt, {
-          aspectRatio,
-          resolution,
+          aspectRatio: isWaveSpeed ? effectiveAspectRatio : aspectRatio,
+          resolution: isWaveSpeed ? effectiveResolution : resolution,
           images: referenceImages,
           selectedProvider: selectedProvider,
         }),
@@ -452,7 +465,13 @@ export const PromptBox2D = ({
           <div className="mt-3.5 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
-              {selectedImageModel?.canChangeAspectRatio && (
+              {isWaveSpeed && selectedImageModel ? (
+                <AspectRatioPicker
+                  model={selectedImageModel}
+                  currentAspectRatio={effectiveAspectRatio}
+                  handleCommonAspectRatioSelect={setCommonAspectRatio}
+                />
+              ) : selectedImageModel?.canChangeAspectRatio && (
                 <Tooltip
                   content="Aspect ratio"
                   position="top"
@@ -474,7 +493,13 @@ export const PromptBox2D = ({
                   />
                 </Tooltip>
               )}
-              {selectedImageModel?.canChangeResolution && (
+              {isWaveSpeed && selectedImageModel?.supportsNewResolution() ? (
+                <ResolutionPicker
+                  model={selectedImageModel}
+                  currentResolution={effectiveResolution}
+                  handleCommonResolutionSelect={setCommonResolution}
+                />
+              ) : !isWaveSpeed && selectedImageModel?.canChangeResolution && (
                 <Tooltip
                   content="Resolution"
                   position="top"

@@ -1,4 +1,6 @@
 pub mod create_task;
+pub mod create_task_once;
+pub mod get_task_status;
 pub mod dismiss_all_tasks;
 pub mod list_non_artcraft_pending_tasks;
 pub mod get_task_by_provider_and_provider_job_id;

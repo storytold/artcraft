@@ -38,10 +38,13 @@ import {
   GalleryAutoplayToggle,
   GallerySelectToggle,
   GalleryViewToggle,
+  localGenerationsToGalleryItems,
 } from "@storyteller/ui-generation-list";
+import { useLocalGenerations } from "@storyteller/tauri-api";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useLoginModalStore } from "@storyteller/ui-login-modal";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import {
   applyMakeVideoFromImage,
@@ -181,6 +184,10 @@ const CreditsCoinWithStatus = ({
 
 export const TopBar = ({ pageName }: Props) => {
   useSignals();
+
+  // Images made without an account live on this computer: the library lists them too.
+  const localImages = useLocalGenerations();
+  const localGalleryItems = useMemo(() => localGenerationsToGalleryItems(localImages), [localImages]);
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
@@ -535,7 +542,7 @@ export const TopBar = ({ pageName }: Props) => {
               {(tabStore.activeTabId === "IMAGE" ||
                 tabStore.activeTabId === "VIDEO" ||
                 tabStore.activeTabId === "AUDIO") && <GalleryViewToggle />}
-              <PopoverMenu
+              {authStatus === AUTH_STATUS.LOGGED_IN && <PopoverMenu
                 position="bottom"
                 align="end"
                 triggerIcon={
@@ -606,9 +613,9 @@ export const TopBar = ({ pageName }: Props) => {
                     </div>
                   </div>
                 )}
-              </PopoverMenu>
+              </PopoverMenu>}
 
-              {!hasPaidPlan && (
+              {authStatus === AUTH_STATUS.LOGGED_IN && !hasPaidPlan && (
                 <Button
                   variant="primary"
                   icon={GemIcon}
@@ -633,7 +640,12 @@ export const TopBar = ({ pageName }: Props) => {
                 </span>
               </button>
 
-              <UploadImagesButton />
+              {authStatus === AUTH_STATUS.LOGGED_IN && <UploadImagesButton />}
+              {authStatus !== AUTH_STATUS.LOGGED_IN && (
+                <Button variant="secondary" className="h-8 px-3" onClick={() => useLoginModalStore.getState().openModal()}>
+                  Log in
+                </Button>
+              )}
 
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
@@ -712,6 +724,8 @@ export const TopBar = ({ pageName }: Props) => {
         onRecreateClicked={handleRecreateFromGallery}
         onDeleteMedia={galleryModalDeleteMedia}
         subscribeToMediaEvents={galleryModalSubscribeToMediaEvents}
+        localItems={localGalleryItems}
+        onLoginClick={() => useLoginModalStore.getState().openModal()}
       />
 
       <ProviderSetupModal />

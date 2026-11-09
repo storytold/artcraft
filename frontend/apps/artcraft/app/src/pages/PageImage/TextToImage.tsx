@@ -8,6 +8,7 @@ import {
   ClassyModelSelector,
   useSelectedImageModel,
   useSelectedProviderForModel,
+  useClassyModelSelectorStore,
 } from "@storyteller/ui-model-selector";
 import { ImageModel } from "@storyteller/model-list";
 import { useTextToImageStore } from "./TextToImageStore";
@@ -25,14 +26,19 @@ import {
 } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
+  localGenerationsToGalleryItems,
   useGalleryData,
   useLastViewedGenerationStore,
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
+import { useLocalGenerations } from "@storyteller/tauri-api";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
+import { useSignals } from "@preact/signals-react/runtime";
+import { authentication } from "~/signals";
+import { AUTH_STATUS } from "~/enums";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 
@@ -44,6 +50,8 @@ interface TextToImageProps {
 }
 
 const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
+  useSignals();
+  const isSignedIn = authentication.status.value === AUTH_STATUS.LOGGED_IN;
   const textToImageModelList = useTextToImagePageModelList();
   const startBatch = useTextToImageStore((s) => s.startBatch);
   const promptContentRef = useRef<HTMLDivElement>(null);
@@ -54,6 +62,16 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+
+  const useWaveSpeed = () => {
+    const model = selectedImageModel?.getProviders().includes(GenerationProvider.WaveSpeed)
+      ? selectedImageModel
+      : textToImageModelList.find((item) => item.model?.getProviders().includes(GenerationProvider.WaveSpeed))?.model;
+    if (!model) return;
+    const store = useClassyModelSelectorStore.getState();
+    store.setSelectedModel(PAGE_ID, model);
+    store.setSelectedProvider(PAGE_ID, model.id, GenerationProvider.WaveSpeed);
+  };
 
   const imageCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[PAGE_ID],
@@ -81,10 +99,14 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   // queue, completed history from the library (like the webapp list view).
   const username = useDesktopUsername();
   const feed = useDesktopGenerationFeed({ mediaType: "image" });
+  // Images made without an account live on this computer: shown with the library's.
+  const localImages = useLocalGenerations();
+  const localItems = useMemo(() => localGenerationsToGalleryItems(localImages), [localImages]);
   const gallery = useGalleryData({
     username,
     filterMediaClasses: IMAGE_FILTER,
     excludeUploads: true,
+    localItems,
   });
 
   // Content only — while the gallery is still loading the shell keeps the
@@ -180,6 +202,16 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
       promptBox={
         <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
           <div ref={promptContentRef}>
+            {!isSignedIn && (
+              <div className="mb-2 flex items-center justify-between gap-3 rounded border border-white/15 bg-ui-panel p-3 text-sm text-white/70">
+                <span>Generate images with your WaveSpeed API key. Images stay on this computer.</span>
+                {selectedProvider !== GenerationProvider.WaveSpeed && (
+                  <button type="button" onClick={useWaveSpeed} className="shrink-0 text-primary hover:underline">
+                    Use WaveSpeed
+                  </button>
+                )}
+              </div>
+            )}
             <PromptBoxImage
               useJobContext={() => {
                 return jobContext;
@@ -187,6 +219,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               uploadImage={UploadImageMedia}
               selectedModel={selectedImageModel}
               selectedProvider={selectedProvider}
+              canUseReferenceImages={isSignedIn}
               imageMediaId={imageMediaId}
               url={imageUrl ?? undefined}
               credits={imageCredits}

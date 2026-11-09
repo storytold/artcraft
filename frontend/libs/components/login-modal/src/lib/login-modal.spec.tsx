@@ -42,6 +42,18 @@ afterEach(() => {
 });
 
 describe("native login modal integration", () => {
+  it("remembers continuing without an account and skips the startup login prompt", async () => {
+    await act(async () => { render(<LoginModal />); });
+    fireEvent.click(screen.getByRole("button", { name: "Continue without an account" }));
+    expect(localStorage.getItem("artcraft.continueWithoutAccount")).toBe("1");
+    expect(useLoginModalStore.getState().isOpen).toBe(false);
+    cleanup();
+    await act(async () => { render(<LoginModal />); });
+    expect(useLoginModalStore.getState().isOpen).toBe(false);
+    await act(async () => { useLoginModalStore.getState().triggerRecheck(); });
+    expect(useLoginModalStore.getState().isOpen).toBe(true);
+  });
+
   it("shows website and QR login only on the login screen", async () => {
     await act(async () => { render(<LoginModal />); });
     expect(screen.getByText("Create your account")).toBeTruthy();

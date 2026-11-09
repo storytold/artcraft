@@ -48,6 +48,10 @@ async fn generate_image_native(
 
   let provider = request.provider.unwrap_or(GenerationProvider::Artcraft);
 
+  if let Err(error) = validate_image_provider_session(provider, &storyteller_creds_manager) {
+    return handle_error_behavior(&app, error).await;
+  }
+
   let result = match provider {
     GenerationProvider::Artcraft => {
       handle_artcraft(
@@ -67,6 +71,7 @@ async fn generate_image_native(
         &app_env_configs,
         &credential_cache,
         &storyteller_creds_manager,
+        &app.state(),
       ).await
     }
   };
@@ -78,6 +83,13 @@ async fn generate_image_native(
 }
 
 // ── Result mapping ──
+
+fn validate_image_provider_session(provider: GenerationProvider, manager: &StorytellerCredentialManager) -> Result<(), GenerateError> {
+  if provider != GenerationProvider::WaveSpeed && manager.get_signed_in_credentials()?.is_none() {
+    return Err(GenerateError::needs_storyteller_credentials());
+  }
+  Ok(())
+}
 
 async fn handle_success_behavior(
   app: &AppHandle,
@@ -143,6 +155,10 @@ async fn handle_error_behavior(
   let error_type = match &err {
     GenerateError::BadInput(_) => TauriGenerateImageErrorType::BadInput,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => TauriGenerateImageErrorType::NeedsFalApiKey,
+    GenerateError::MissingCredentials(MissingCredentialsReason::NeedsWaveSpeedApiKey) => {
+      ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::WaveSpeed, app);
+      TauriGenerateImageErrorType::NeedsWaveSpeedApiKey
+    },
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials) => TauriGenerateImageErrorType::NeedsGrokCredentials,
     GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials | MissingCredentialsReason::NeedsMidjourneyUserId | MissingCredentialsReason::NeedsMidjourneyUserInfo) => TauriGenerateImageErrorType::NeedsMidjourneyCredentials,
     GenerateError::MissingCredentials(_) => TauriGenerateImageErrorType::NeedsStorytellerCredentials,
@@ -190,4 +206,21 @@ async fn handle_error_behavior(
     error_type: Some(error_type),
     error_details: None,
   })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::core::state::data_dir::app_data_root::AppDataRoot;
+
+  #[test]
+  fn only_wavespeed_can_submit_images_without_an_artcraft_session() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let manager = StorytellerCredentialManager::initialize_empty(&root);
+    assert!(validate_image_provider_session(GenerationProvider::WaveSpeed, &manager).is_ok());
+    for provider in [GenerationProvider::Fal, GenerationProvider::Midjourney, GenerationProvider::Artcraft] {
+      assert!(matches!(validate_image_provider_session(provider, &manager), Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials))));
+    }
+  }
 }

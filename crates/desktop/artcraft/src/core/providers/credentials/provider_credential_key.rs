@@ -8,6 +8,8 @@ pub enum ProviderCredentialKey {
   // ========== API KEYS==========
 
   FalApiKey,
+  #[serde(rename = "wavespeed_api_key")]
+  WaveSpeedApiKey,
   ReplicateApiKey,
 
   // ========== WEB LOGINS ==========
@@ -24,6 +26,7 @@ impl ProviderCredentialKey {
     match self {
       // Api keys
       Self::FalApiKey => ProviderCredentialType::ApiKey,
+      Self::WaveSpeedApiKey => ProviderCredentialType::ApiKey,
       Self::ReplicateApiKey => ProviderCredentialType::ApiKey,
       // Web logins
       Self::GrokWebLogin => ProviderCredentialType::WebLogin,
@@ -37,6 +40,7 @@ impl ProviderCredentialKey {
     match self {
       // Api keys
       ProviderCredentialKey::FalApiKey => "fal.api_key.txt",
+      ProviderCredentialKey::WaveSpeedApiKey => "wavespeed.api_key.txt",
       ProviderCredentialKey::ReplicateApiKey => "replicate.api_key.txt",
       // Web logins
       ProviderCredentialKey::GrokWebLogin => "grok.web_login.toml",

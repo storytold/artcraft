@@ -30,6 +30,8 @@ function getServiceProviderName(provider: GenerationProvider) : string {
       return "Sora";
     case GenerationProvider.Fal:
       return "Fal";
+    case GenerationProvider.WaveSpeed:
+      return "WaveSpeed";
     case GenerationProvider.Grok:
       return "Grok";
     case GenerationProvider.Midjourney:

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MediaFilesApi } from "@storyteller/api";
+import { isLocalGeneration } from "@storyteller/tauri-api";
 
 // Workaround until the profile media-list endpoint returns prompt tokens:
 // resolve media token → prompt token via the batch media-files endpoint
@@ -84,7 +85,7 @@ export function useMediaPromptTokens(
 
   const cleaned: string[] = [];
   for (const t of mediaTokens) {
-    if (t) cleaned.push(t);
+    if (t && !isLocalGeneration(t)) cleaned.push(t);
   }
   // Stable cache key for the effect's dep list, order-independent.
   const key = [...new Set(cleaned)].sort().join(",");
@@ -94,6 +95,9 @@ export function useMediaPromptTokens(
   }, [key]);
 
   const result = new Map<string, string>();
+  for (const token of mediaTokens) {
+    if (token && isLocalGeneration(token)) result.set(token, "");
+  }
   for (const t of cleaned) {
     const promptToken = tokenCache.get(t);
     // Include "" entries so callers can tell "resolved, no prompt" (present)

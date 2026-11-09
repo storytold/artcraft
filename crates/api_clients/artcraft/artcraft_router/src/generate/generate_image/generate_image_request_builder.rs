@@ -114,6 +114,7 @@ impl GenerateImageRequestBuilder {
   /// `GenerateVideoRequestBuilder::build2`.
   pub fn build2(self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
+      (RouterProvider::WaveSpeed, _) => crate::generate::generate_image::providers::wavespeed::build_wavespeed(self),
       (RouterProvider::Midjourney, RouterImageModel::Midjourney7 | RouterImageModel::Midjourney7Niji | RouterImageModel::Midjourney8) => build_midjourney(self),
       (RouterProvider::Artcraft, RouterImageModel::Flux1Dev) => build_artcraft_flux_1_dev(self),
       (RouterProvider::Artcraft, RouterImageModel::Flux1Schnell) => build_artcraft_flux_1_schnell(self),

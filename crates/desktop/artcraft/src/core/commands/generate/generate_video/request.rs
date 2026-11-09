@@ -59,6 +59,10 @@ pub enum TauriVideoModel {
 
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
+  #[serde(rename = "seedance_2p5")]
+  Seedance2p5,
+  #[serde(rename = "minimax_h3")]
+  MinimaxH3,
 
   #[serde(rename = "sora_2")]
   Sora2,
@@ -84,6 +88,7 @@ pub enum TauriVideoModel {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct TauriGenerateVideoRequest {
+  pub wavespeed_mode: Option<wavespeed_client::VideoMode>,
   pub provider: Option<GenerationProvider>,
   pub model: Option<TauriVideoModel>,
 
@@ -143,10 +148,13 @@ impl SerializeMarker for TauriGenerateVideoResponse {}
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum TauriGenerateVideoErrorType {
+  BadInput,
   ModelNotSpecified,
   NoProviderAvailable,
   ServerError,
   NeedsFalApiKey,
+  #[serde(rename = "needs_wavespeed_api_key")]
+  NeedsWaveSpeedApiKey,
   FalError,
   NeedsStorytellerCredentials,
 }

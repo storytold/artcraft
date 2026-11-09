@@ -181,6 +181,7 @@ impl GenerateVideoRequestBuilder {
 
   pub fn build2(self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
+      (RouterProvider::WaveSpeed, _) => crate::generate::generate_video::providers::wavespeed::build::build_wavespeed_video(self),
       // Artcraft
       (RouterProvider::Artcraft, RouterVideoModel::GrokImagineVideo) => build_artcraft_grok_imagine_video(self),
       (RouterProvider::Artcraft, RouterVideoModel::GrokImagineVideo1p5) => build_artcraft_grok_imagine_video_1p5(self),

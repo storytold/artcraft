@@ -6,6 +6,7 @@ pub fn to_generation_service_provider(provider: GenerationProvider) -> Generatio
   match provider {
     GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
     GenerationProvider::Fal => GenerationServiceProvider::Fal,
+    GenerationProvider::WaveSpeed => GenerationServiceProvider::WaveSpeed,
     GenerationProvider::Grok => GenerationServiceProvider::Grok,
     GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
     GenerationProvider::Sora => GenerationServiceProvider::Sora,

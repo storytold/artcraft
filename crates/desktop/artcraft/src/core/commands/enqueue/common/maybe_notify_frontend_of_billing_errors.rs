@@ -30,6 +30,7 @@ fn billing_error(
   let provider = match reason.provider {
     BillingProvider::Artcraft => GenerationProvider::Artcraft,
     BillingProvider::Fal => GenerationProvider::Fal,
+    BillingProvider::WaveSpeed => GenerationProvider::WaveSpeed,
     BillingProvider::Kinovi => GenerationProvider::Artcraft, // NB: We don't support Kinovi yet.
     BillingProvider::Midjourney => GenerationProvider::Midjourney,
     BillingProvider::Sora => GenerationProvider::Sora,

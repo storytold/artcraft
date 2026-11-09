@@ -29,3 +29,4 @@ export * from "./lib/loader/buildModelsFromListing.js";
 export * from "./lib/classes/videoOptions.js";
 
 export { imageModelForProvider } from "./lib/classes/imageModelForProvider.js";
+export { videoModelForProvider } from "./lib/classes/waveSpeedVideoModels.js";

@@ -29,6 +29,10 @@ use crate::core::commands::flip_image::flip_image;
 use crate::core::commands::get_app_info_command::get_app_info_command;
 use crate::core::commands::load_without_cors_command::load_without_cors_command;
 use crate::core::commands::media_files::media_file_delete_command::media_file_delete_command;
+use crate::core::commands::media_files::list_local_generations_command::list_local_generations_command;
+use crate::core::commands::media_files::import_local_generation_command::import_local_generation_command;
+use crate::core::commands::providers::list_wavespeed_submissions_command::list_wavespeed_submissions_command;
+use crate::core::commands::providers::recover_wavespeed_submission_command::recover_wavespeed_submission_command;
 use crate::core::commands::platform_info_command::platform_info_command;
 use crate::core::commands::providers::deprecated::get_provider_order_command::get_provider_order_command;
 use crate::core::commands::providers::deprecated::set_provider_order_command::set_provider_order_command;
@@ -259,6 +263,10 @@ pub fn run() {
     load_without_cors_command,
     mark_task_as_dismissed_command,
     media_file_delete_command,
+    list_local_generations_command,
+    import_local_generation_command,
+    list_wavespeed_submissions_command,
+    recover_wavespeed_submission_command,
     midjourney_clear_credentials_command,
     midjourney_get_credential_info_command,
     midjourney_open_login_command,

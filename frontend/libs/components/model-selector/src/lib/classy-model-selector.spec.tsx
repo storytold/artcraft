@@ -36,6 +36,7 @@ beforeEach(() => {
   );
   useClassyModelSelectorStore.setState({
     selectedModels: { [PAGE]: INITIAL_MODEL },
+    selectedModelIds: {},
     selectedProviders: { [PAGE]: { [MIDJOURNEY_MODEL.id]: GenerationProvider.Artcraft } },
   });
 });
@@ -44,7 +45,8 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-  useClassyModelSelectorStore.setState({ selectedModels: {}, selectedProviders: {} });
+  useClassyModelSelectorStore.setState({ selectedModels: {}, selectedModelIds: {}, selectedProviders: {} });
+  localStorage.clear();
   useModelPickerStyleStore.getState().setStyle("grouped");
 });
 
@@ -82,6 +84,42 @@ it("still dismisses the grouped picker on an outside press without changing sele
   expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
   expect(useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[MIDJOURNEY_MODEL.id])
     .toBe(GenerationProvider.Artcraft);
+});
+
+it("restores the remembered model once asynchronous catalog hydration adds it", () => {
+  useClassyModelSelectorStore.setState({
+    selectedModels: {},
+    selectedModelIds: { [PAGE]: MIDJOURNEY_MODEL.tauriId },
+  });
+  const { rerender } = render(<ClassyModelSelector items={[]} page={PAGE} />);
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBeUndefined();
+  rerender(<ClassyModelSelector items={[ITEMS[0]]} page={PAGE} />);
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
+  expect(useClassyModelSelectorStore.getState().selectedModelIds[PAGE]).toBe(MIDJOURNEY_MODEL.tauriId);
+  rerender(<ClassyModelSelector items={ITEMS} page={PAGE} />);
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(MIDJOURNEY_MODEL);
+});
+
+it("replaces providers no longer supported by the hydrated model", () => {
+  useClassyModelSelectorStore.setState({
+    selectedProviders: { [PAGE]: { [INITIAL_MODEL.id]: GenerationProvider.Midjourney } },
+  });
+  render(<ClassyModelSelector items={ITEMS} page={PAGE} />);
+  expect(useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[INITIAL_MODEL.id])
+    .toBe(INITIAL_MODEL.getProviders()[0]);
+});
+
+it("refreshes a selected model with the current catalog instance while retaining its provider", () => {
+  useClassyModelSelectorStore.getState().setSelectedModel(PAGE, INITIAL_MODEL);
+  useClassyModelSelectorStore.getState().setSelectedProvider(PAGE, INITIAL_MODEL.id, GenerationProvider.WaveSpeed);
+  const { rerender } = render(<ClassyModelSelector items={ITEMS} page={PAGE} />);
+  const [fresh] = buildImageModelsFromListing([], [{ model: INITIAL_MODEL.tauriId }]);
+
+  rerender(<ClassyModelSelector items={[{ label: fresh.selectorName, model: fresh }]} page={PAGE} />);
+
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(fresh);
+  expect(useClassyModelSelectorStore.getState().selectedModelIds[PAGE]).toBe(fresh.tauriId);
+  expect(useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[fresh.id]).toBe(GenerationProvider.WaveSpeed);
 });
 
 async function openProviderPicker(style: "grouped" | "flat") {

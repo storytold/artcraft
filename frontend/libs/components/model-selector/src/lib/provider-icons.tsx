@@ -41,6 +41,8 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
       return "ArtCraft";
     case GenerationProvider.Fal:
       return "FAL";
+    case GenerationProvider.WaveSpeed:
+      return "WaveSpeed";
     case GenerationProvider.Grok:
       return "Grok";
     case GenerationProvider.Midjourney:

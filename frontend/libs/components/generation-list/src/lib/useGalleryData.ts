@@ -11,6 +11,7 @@ import {
 } from "@storyteller/common";
 import type { GalleryItem } from "./types";
 import { is3DMediaClass } from "./types";
+import { mergeLocalGalleryItems } from "./localGalleryItems";
 
 const PAGE_SIZE = 40;
 
@@ -58,11 +59,15 @@ export function useGalleryData(options: {
   // tell mesh objects from splat worlds apart, so the two 3D create pages pass
   // their own model ids to keep each feed showing only its own product.
   filterModelIds?: string[];
+  // Images kept on this computer (made without an account), shown with the library's items, or
+  // on their own when nobody is signed in.
+  localItems?: GalleryItem[];
 }) {
-  const { username, filterMediaClasses, excludeUploads, filterModelIds } =
+  const { username, filterMediaClasses, excludeUploads, filterModelIds, localItems } =
     options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [pageIndex, setPageIndex] = useState(0);
@@ -198,17 +203,26 @@ export function useGalleryData(options: {
   const refresh = useCallback(() => {
     setItems([]);
     setPageIndex(0);
-    setHasMore(true);
+    setHasMore(!!username);
     isLoadingRef.current = false;
     loadItems(true);
-  }, [loadItems]);
+  }, [loadItems, username]);
 
   const removeItem = useCallback((id: string) => {
+    setRemovedIds((prev) => new Set([...prev, id]));
     setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const mergedItems = useMemo(
+    () => mergeLocalGalleryItems(items, localItems?.filter((item) =>
+      !removedIds.has(item.id) &&
+      filterMediaClasses.includes(item.mediaClass as FilterMediaClasses),
+    ), { remoteComplete: !hasMore }),
+    [items, localItems, hasMore, removedIds, filterMediaClasses],
+  );
+
   return {
-    items,
+    items: mergedItems,
     isLoading,
     isInitialLoading,
     hasMore,

@@ -139,39 +139,24 @@ export function ClassyModelSelector({
   showProviderSelection = true,
   ...popoverProps
 }: ClassyModelSelectorProps) {
-  const { selectedModels, setSelectedModel, setSelectedProvider } =
+  const { selectedModels, selectedModelIds, setSelectedModel, restoreSelectedModel, setSelectedProvider } =
     useClassyModelSelectorStore();
   const itemModels: Model[] = items
     .map((item) => item.model)
     .filter((model) => model !== undefined);
   const selectedModel =
-    selectedModels[page] || defaultModelForPage(itemModels, page);
+    selectedModels[page] ||
+    itemModels.find((model) => model.tauriId === selectedModelIds[page]) ||
+    defaultModelForPage(itemModels, page);
   const selectedProvider = useSelectedProviderForModel(page, selectedModel?.id);
   const selectedProvidersByModel = useClassyModelSelectorStore(
     (s) => s.selectedProviders[page] ?? {},
   );
 
-  // For the first mount, make sure the selected model is set for other components to listen
   useEffect(() => {
-    // Initialize selected model if not set
-    if (!selectedModels[page] && items[0]) {
-      setSelectedModel(page, defaultModelForPage(itemModels, page));
-    }
-  }, []);
-
-  // The backend listing hydrates asynchronously and rebuilds the model
-  // instances with API capabilities. Swap a stale selected instance for the
-  // fresh one so capability-driven UI (keyframes, references, pickers)
-  // reflects the API data without needing a manual re-select.
-  useEffect(() => {
-    const selected = selectedModels[page];
-    if (!selected) return;
-    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
-    if (fresh !== undefined && fresh !== selected) {
-      setSelectedModel(page, fresh);
-    }
+    restoreSelectedModel(page, itemModels);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selectedModels, page]);
+  }, [items, page, selectedModels[page], selectedModelIds[page]]);
 
   // Initialize defaults and replace providers removed from the catalog.
   useEffect(() => {

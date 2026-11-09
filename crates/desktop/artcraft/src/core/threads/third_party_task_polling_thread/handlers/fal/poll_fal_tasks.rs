@@ -5,7 +5,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::threads::third_party_task_polling_thread::handlers::fal::handle_fal_complete::handle_fal_complete;
-use crate::core::threads::third_party_task_polling_thread::handlers::fal::handle_fal_failure::handle_fal_failure;
+use crate::core::threads::third_party_task_polling_thread::handlers::handle_provider_failure::handle_provider_failure;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::tauri::tasks::task_status::TaskStatus;
 use fal_client::creds::fal_api_key::FalApiKey;
@@ -67,7 +67,7 @@ async fn poll_single_fal_task(
     Some(url) => url.as_str(),
     None => {
       warn!("[FalPolling] Task {} has no queue_status_url, marking as failed", task.id.as_str());
-      handle_fal_failure(
+      handle_provider_failure(
         app_handle,
         task_database,
         task,
@@ -111,7 +111,7 @@ async fn poll_single_fal_task(
     Some(url) => url,
     None => {
       warn!("[FalPolling] Task {} completed but has no response URL, marking as failed", task.id.as_str());
-      handle_fal_failure(
+      handle_provider_failure(
         app_handle,
         task_database,
         task,

@@ -21,7 +21,7 @@ import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import Konva from "konva";
 import { ContextMenuContainer } from "./components/ui/ContextMenu";
 import InpaintToolBar from "./components/ui/InpaintToolBar";
-import { ImageModel } from "@storyteller/model-list";
+import { imageModelForProvider } from "@storyteller/model-list";
 import {
   useCanvas2dPageModelList,
   ClassyModelSelector,
@@ -407,7 +407,7 @@ const PageDraw = ({
   } = useSceneStore(useShallow(selector));
 
   const promptStoreProvider = usePrompt2DStore;
-  const generationCount = promptStoreProvider((state) => state.generationCount);
+  const storedGenerationCount = promptStoreProvider((state) => state.generationCount);
   const setGenerationCount = promptStoreProvider(
     (state) => state.setGenerationCount,
   );
@@ -423,11 +423,17 @@ const PageDraw = ({
   const generateInFlightRef = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const selectedImageModel: ImageModel | undefined =
-    useSelectedImageModel(PAGE_ID);
+  const catalogModel = useSelectedImageModel(PAGE_ID);
 
   const selectedProvider: GenerationProvider | undefined =
-    useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+    useSelectedProviderForModel(PAGE_ID, catalogModel?.id);
+
+  const selectedImageModel = useMemo(
+    () => imageModelForProvider(catalogModel, selectedProvider, 1),
+    [catalogModel, selectedProvider],
+  );
+  const generationCount = selectedImageModel?.isValidGenerationCount(storedGenerationCount)
+    ? storedGenerationCount : selectedImageModel?.defaultGenerationCount ?? storedGenerationCount;
 
   const supportsMaskedInpainting =
     selectedImageModel?.usesInpaintingMask ?? false;

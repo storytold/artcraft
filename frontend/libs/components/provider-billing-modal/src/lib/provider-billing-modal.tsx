@@ -31,6 +31,7 @@ export function ProviderBillingModal({
 
   switch (provider) {
     case GenerationProvider.Fal:
+    case GenerationProvider.WaveSpeed:
     case GenerationProvider.Grok:
     case GenerationProvider.Midjourney:
     case GenerationProvider.Sora:

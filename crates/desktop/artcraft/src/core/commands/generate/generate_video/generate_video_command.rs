@@ -29,6 +29,8 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use enums::common::generation_provider::GenerationProvider;
 use log::{error, info, warn};
 use tauri::{AppHandle, State};
+use crate::core::commands::generate::generate_video::wavespeed::handle_wavespeed_video;
+use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
 
 #[tauri::command]
 pub async fn generate_video_command(request: OmniRequest, app: AppHandle) -> OmniResult {
@@ -69,6 +71,8 @@ async fn generate_video_native(
     request.start_frame_image_media_token = request.image_media_token.clone();
   }
 
+  let is_wavespeed = request.provider == Some(GenerationProvider::WaveSpeed);
+
   let result = handle_request(
     request,
     &app,
@@ -88,6 +92,11 @@ async fn generate_video_native(
 
       notify_frontend_of_errors(&app, &err).await;
 
+      let maybe_detail_message = match &err {
+        GenerateError::BadInput(reason) if is_wavespeed => Some(format!("{reason:?}")),
+        _ => None,
+      };
+
       let mut status = CommandErrorStatus::ServerError;
       let mut error_type = TauriGenerateVideoErrorType::ServerError;
       let mut error_message = "A server error occurred. Please try again. If it continues, please tell our staff about the problem.";
@@ -98,6 +107,10 @@ async fn generate_video_native(
           error_type = TauriGenerateVideoErrorType::ModelNotSpecified;
           error_message = "No model specified for video generation";
         }
+        GenerateError::BadInput(_) if is_wavespeed => {
+          status = CommandErrorStatus::BadRequest;
+          error_type = TauriGenerateVideoErrorType::BadInput;
+        },
         GenerateError::NoProviderAvailable => {
           status = CommandErrorStatus::ServerError;
           error_type = TauriGenerateVideoErrorType::NoProviderAvailable;
@@ -107,6 +120,12 @@ async fn generate_video_native(
           status = CommandErrorStatus::Unauthorized;
           error_type = TauriGenerateVideoErrorType::NeedsFalApiKey;
           error_message = "You need to set a FAL api key";
+        },
+        GenerateError::MissingCredentials(MissingCredentialsReason::NeedsWaveSpeedApiKey) => {
+          ShowProviderLoginModalEvent::send_for_provider(GenerationProvider::WaveSpeed, &app);
+          status = CommandErrorStatus::Unauthorized;
+          error_type = TauriGenerateVideoErrorType::NeedsWaveSpeedApiKey;
+          error_message = "Add your WaveSpeed API key in Settings → Accounts.";
         },
         GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials) => {
           status = CommandErrorStatus::Unauthorized;
@@ -118,7 +137,7 @@ async fn generate_video_native(
 
       Err(CommandErrorResponseWrapper {
         status,
-        error_message: Some(error_message.to_string()),
+        error_message: Some(maybe_detail_message.unwrap_or_else(|| error_message.to_string())),
         error_type: Some(error_type),
         error_details: None,
       })
@@ -154,6 +173,10 @@ async fn handle_request(
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
 
+  if request.provider != Some(GenerationProvider::WaveSpeed) && storyteller_creds_manager.get_signed_in_credentials()?.is_none() {
+    return Err(GenerateError::needs_storyteller_credentials());
+  }
+
   let model = match request.model {
     Some(model) => model,
     None => {
@@ -173,6 +196,9 @@ async fn handle_request(
   info!("generate video with {:?} via provider {:?}", &model, &provider);
 
   let result = match provider {
+    GenerationProvider::WaveSpeed => {
+      handle_wavespeed_video(&request, app_env_configs, app_data_root, &app.state(), storyteller_creds_manager).await
+    },
     GenerationProvider::Grok => {
       handle_grok_video(
         &request,

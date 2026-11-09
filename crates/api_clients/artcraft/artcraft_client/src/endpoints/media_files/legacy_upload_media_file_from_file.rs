@@ -14,6 +14,7 @@ use log::debug;
 use reqwest::multipart::{Form, Part};
 use serde_derive::{Deserialize, Serialize};
 use std::path::Path;
+use std::time::Duration;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -47,6 +48,13 @@ pub struct LegacyUploadMediaFileFromFileArgs<'a, P: AsRef<Path>> {
 pub async fn legacy_upload_media_file_from_file<P: AsRef<Path>>(
   args: LegacyUploadMediaFileFromFileArgs<'_, P>,
 ) -> Result<UploadImageMediaFileSuccessResponse, StorytellerError> {
+  legacy_upload_media_file_from_file_with_idempotency_token(args, &generate_random_uuid()).await
+}
+
+pub async fn legacy_upload_media_file_from_file_with_idempotency_token<P: AsRef<Path>>(
+  args: LegacyUploadMediaFileFromFileArgs<'_, P>,
+  idempotency_token: &str,
+) -> Result<UploadImageMediaFileSuccessResponse, StorytellerError> {
   
   validate_args(&args)?;
 
@@ -57,6 +65,9 @@ pub async fn legacy_upload_media_file_from_file<P: AsRef<Path>>(
   //let mut file = File::open(path)?;
 
   let client = storyteller_client_builder(args.api_host)
+      .connect_timeout(Duration::from_secs(10))
+      .timeout(Duration::from_secs(600))
+      .retry(reqwest::retry::never())
       .build()
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 
@@ -65,7 +76,7 @@ pub async fn legacy_upload_media_file_from_file<P: AsRef<Path>>(
   let file_name = args.path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let mut form = Form::new()
-      .text("uuid_idempotency_token", generate_random_uuid())
+      .text("uuid_idempotency_token", idempotency_token.to_string())
       .part("file", Part::bytes(file_bytes).file_name(file_name));
 
   //if args.is_intermediate_system_file {

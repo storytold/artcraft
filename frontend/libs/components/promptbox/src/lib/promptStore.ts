@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { CommonAspectRatio } from "@storyteller/model-list";
 import { CommonResolution } from "@storyteller/model-list";
 import { CommonQuality } from "@storyteller/model-list";
@@ -129,7 +130,7 @@ interface PromptImageStore {
   setCommonQuality: (quality: CommonQuality | undefined) => void;
 }
 
-export const usePromptImageStore = create<PromptImageStore>()((set) => ({
+export const usePromptImageStore = create<PromptImageStore>()(persist((set) => ({
   prompt: "",
   aspectRatio: "wide",
   resolution: "1k",
@@ -148,6 +149,9 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   setCommonAspectRatio: (commonAspectRatio) => set({ commonAspectRatio }),
   setCommonResolution: (commonResolution) => set({ commonResolution }),
   setCommonQuality: (commonQuality) => set({ commonQuality }),
+}), {
+  name: "artcraft-image-generation-count",
+  partialize: (state) => ({ generationCount: state.generationCount }),
 }));
 
 // ----- Video Prompt Box Store -----

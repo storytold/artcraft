@@ -7,6 +7,8 @@ pub enum RouterProvider {
   Artcraft,
   Midjourney,
   Fal,
+  #[serde(rename = "wavespeed")]
+  WaveSpeed,
   GmiCloud,
   GrokApi,
   KinoviWeb,

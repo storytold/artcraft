@@ -22,6 +22,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
+wavespeed_client.workspace = true
 toml.workspace = true
 browser_emulation.workspace = true
 cookie_store_wrapper = { workspace = true, features = ["wreq"] }

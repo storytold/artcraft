@@ -426,6 +426,7 @@ dependencies = [
  "url",
  "url_utils",
  "uuid_utils",
+ "wavespeed_client",
  "web_base64",
  "worldlabs_consumer_client",
 ]
@@ -543,6 +544,7 @@ dependencies = [
  "tokio",
  "url_utils",
  "uuid 1.22.0",
+ "wavespeed_client",
  "worldlabs_api_client",
  "wreq",
 ]
@@ -10249,6 +10251,17 @@ dependencies = [
  "hashbrown 0.15.2",
  "indexmap 2.13.0",
  "semver",
+]
+
+[[package]]
+name = "wavespeed_client"
+version = "0.0.1"
+dependencies = [
+ "reqwest 0.12.23",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]
