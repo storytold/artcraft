@@ -24,13 +24,13 @@ log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_derive.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "io-std", "io-util", "fs"] }
 
 # Logging
 env_logger.workspace = true
 
-# System dirs
-dirs = "5.0"
+# System dirs (aligned with crates/desktop/artcraft)
+dirs = "6.0"
 
 # Token generation
 uuid.workspace = true
@@ -38,8 +38,11 @@ uuid.workspace = true
 # URL encoding for query params
 urlencoding = "2.1"
 
-# HTTP client for raw requests
-reqwest = { version = "0.12", features = ["json"] }
+# HTTP client for raw requests (workspace-pinned client config)
+reqwest = { workspace = true, features = ["json", "multipart"] }
 
 # MCP / JSON-RPC
 # Using manual JSON-RPC implementation over stdio for minimal dependencies
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
-use uuid::Uuid;
 
 use artcraft_api_defs::generate::image::edit::flux_pro_kontext_max_edit_image::{FluxProKontextMaxEditImageRequest, FluxProKontextMaxEditImageNumImages};
 use artcraft_api_defs::generate::image::edit::gpt_image_1_edit_image::{GptImage1EditImageRequest, GptImage1EditImageImageSize, GptImage1EditImageNumImages, GptImage1EditImageImageQuality};
@@ -20,6 +19,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
+use crate::tools::safety::{audit, idempotency_token, rate_limit, require_confirm};
 
 pub fn tools() -> Vec<Tool> {
     vec![
@@ -31,9 +31,11 @@ pub fn tools() -> Vec<Tool> {
                 "properties": {
                     "model": { "type": "string" },
                     "prompt": { "type": "string" },
-                    "image_media_token": { "type": "string" }
+                    "image_media_token": { "type": "string" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
                 },
-                "required": ["model", "prompt", "image_media_token"]
+                "required": ["model", "prompt", "image_media_token", "confirm"]
             })),
         },
         Tool {
@@ -42,9 +44,10 @@ pub fn tools() -> Vec<Tool> {
             input_schema: Some(json!({
                 "type": "object",
                 "properties": {
-                    "image_media_token": { "type": "string" }
+                    "image_media_token": { "type": "string" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
                 },
-                "required": ["image_media_token"]
+                "required": ["image_media_token", "confirm"]
             })),
         },
         Tool {
@@ -56,9 +59,11 @@ pub fn tools() -> Vec<Tool> {
                     "model": { "type": "string" },
                     "prompt": { "type": "string" },
                     "image_media_token": { "type": "string" },
-                    "mask_media_token": { "type": "string" }
+                    "mask_media_token": { "type": "string" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
                 },
-                "required": ["prompt", "image_media_token"]
+                "required": ["prompt", "image_media_token", "confirm"]
             })),
         },
         Tool {
@@ -70,9 +75,11 @@ pub fn tools() -> Vec<Tool> {
                     "image_media_token": { "type": "string" },
                     "horizontal_angle": { "type": "number" },
                     "vertical_angle": { "type": "number" },
-                    "zoom": { "type": "number" }
+                    "zoom": { "type": "number" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
                 },
-                "required": ["image_media_token"]
+                "required": ["image_media_token", "confirm"]
             })),
         },
         Tool {
@@ -82,9 +89,11 @@ pub fn tools() -> Vec<Tool> {
                 "type": "object",
                 "properties": {
                     "video_media_token": { "type": "string" },
-                    "prompt": { "type": "string" }
+                    "prompt": { "type": "string" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
                 },
-                "required": ["video_media_token", "prompt"]
+                "required": ["video_media_token", "prompt", "confirm"]
             })),
         },
     ]
@@ -98,23 +107,26 @@ pub async fn edit_image(arguments: Value, client: &ArtCraftClient) -> Result<Vec
     let image_token = arguments["image_media_token"].as_str()
         .ok_or_else(|| anyhow!("image_media_token is required"))?;
 
+    require_confirm(&arguments, "spend credits on image editing")?;
+    rate_limit("artcraft_edit_image")?;
     let image_media_token = MediaFileToken::new_from_str(image_token);
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let (job_token, success) = match model_str.to_lowercase().as_str() {
         "flux_pro_kontext_max" | "flux_pro_kontext" | "kontext" | "flux" => {
             let request = FluxProKontextMaxEditImageRequest {
-                uuid_idempotency_token: idempotency_token,
+                uuid_idempotency_token: idem,
                 prompt: Some(prompt.to_string()),
                 image_media_token,
                 num_images: Some(FluxProKontextMaxEditImageNumImages::One),
             };
             let response = flux_pro_kontext_max_edit_image(&client.api_host, client.creds_ref(), request).await?;
+            audit("edit_image", model_str, "queued");
             (response.inference_job_token.as_str().to_string(), response.success)
         }
         "gpt_image_1" | "gpt_image" | "gpt" | "openai" => {
             let request = GptImage1EditImageRequest {
-                uuid_idempotency_token: idempotency_token,
+                uuid_idempotency_token: idem,
                 prompt: Some(prompt.to_string()),
                 image_media_tokens: Some(vec![image_media_token]),
                 image_size: Some(GptImage1EditImageImageSize::Square),
@@ -126,7 +138,7 @@ pub async fn edit_image(arguments: Value, client: &ArtCraftClient) -> Result<Vec
         }
         "gemini_25_flash" | "gemini" | "google" => {
             let request = Gemini25FlashEditImageRequest {
-                uuid_idempotency_token: idempotency_token,
+                uuid_idempotency_token: idem,
                 prompt: Some(prompt.to_string()),
                 image_media_tokens: Some(vec![image_media_token]),
                 num_images: Some(Gemini25FlashEditImageNumImages::One),
@@ -153,11 +165,13 @@ pub async fn remove_background(arguments: Value, client: &ArtCraftClient) -> Res
     let image_token = arguments["image_media_token"].as_str()
         .ok_or_else(|| anyhow!("image_media_token is required"))?;
 
+    require_confirm(&arguments, "spend credits on background removal")?;
+    rate_limit("artcraft_remove_background")?;
     let media_file_token = Some(MediaFileToken::new_from_str(image_token));
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let request = RemoveImageBackgroundRequest {
-        uuid_idempotency_token: idempotency_token,
+        uuid_idempotency_token: idem,
         media_file_token,
     };
 
@@ -182,12 +196,14 @@ pub async fn inpaint_image(arguments: Value, client: &ArtCraftClient) -> Result<
     let mask_token = arguments["mask_media_token"].as_str()
         .ok_or_else(|| anyhow!("mask_media_token is required"))?;
 
+    require_confirm(&arguments, "spend credits on inpainting")?;
+    rate_limit("artcraft_inpaint_image")?;
     let image_media_token = MediaFileToken::new_from_str(image_token);
     let mask_media_token = MediaFileToken::new_from_str(mask_token);
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let request = FluxDevJuggernautInpaintImageRequest {
-        uuid_idempotency_token: idempotency_token,
+        uuid_idempotency_token: idem,
         prompt: Some(prompt.to_string()),
         image_media_token,
         mask_media_token,
@@ -211,11 +227,13 @@ pub async fn edit_image_angle(arguments: Value, client: &ArtCraftClient) -> Resu
     let image_token = arguments["image_media_token"].as_str()
         .ok_or_else(|| anyhow!("image_media_token is required"))?;
 
+    require_confirm(&arguments, "spend credits on angle editing")?;
+    rate_limit("artcraft_edit_image_angle")?;
     let image_media_token = MediaFileToken::new_from_str(image_token);
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let request = Flux2LoraEditImageAngleRequest {
-        uuid_idempotency_token: idempotency_token,
+        uuid_idempotency_token: idem,
         image_media_token,
         horizontal_angle: arguments["horizontal_angle"].as_f64(),
         vertical_angle: arguments["vertical_angle"].as_f64(),
@@ -243,11 +261,13 @@ pub async fn edit_video(arguments: Value, client: &ArtCraftClient) -> Result<Vec
     let prompt = arguments["prompt"].as_str()
         .ok_or_else(|| anyhow!("prompt is required"))?;
 
+    require_confirm(&arguments, "spend credits on video editing")?;
+    rate_limit("artcraft_edit_video")?;
     let source_video_media_token = Some(MediaFileToken::new_from_str(video_token));
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let request = BeebleSwitchXEditVideoRequest {
-        uuid_idempotency_token: idempotency_token,
+        uuid_idempotency_token: idem,
         source_video_media_token,
         reference_image_media_token: None,
         prompt: Some(prompt.to_string()),

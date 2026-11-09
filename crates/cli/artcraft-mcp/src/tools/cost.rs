@@ -11,6 +11,11 @@ use enums::common::generation_provider::GenerationProvider;
 
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
+use crate::tools::generate::{
+    parse_aspect_ratio, parse_image_model, parse_quality, parse_resolution, parse_splat_model,
+    parse_video_model,
+};
+use crate::tools::safety::bounded_u64;
 
 pub fn tools() -> Vec<Tool> {
     vec![
@@ -27,23 +32,24 @@ pub fn tools() -> Vec<Tool> {
                     },
                     "model": {
                         "type": "string",
-                        "description": "Model name"
+                        "description": "Model name (same ids accepted by the generate tools)"
                     },
                     "generation_mode": {
                         "type": "string",
-                        "enum": ["text_to_image", "image_edit", "text_to_video", "start_frame_to_video", "reference_image_to_video"],
-                        "description": "Generation mode"
+                        "enum": ["text_to_image", "image_edit", "text_to_video", "start_frame_to_video", "start_and_end_frame_to_video", "reference_image_to_video"],
+                        "description": "Generation mode (must match the media_type)"
                     },
                     "input_image_count": {
                         "type": "integer",
-                        "description": "Number of input reference images"
+                        "description": "Number of input reference images (1-16)"
                     },
                     "aspect_ratio": { "type": "string" },
                     "resolution": { "type": "string" },
                     "quality": { "type": "string" },
-                    "duration_seconds": { "type": "integer" },
-                    "batch_count": { "type": "integer" },
-                    "generate_audio": { "type": "boolean" }
+                    "duration_seconds": { "type": "integer", "description": "Video duration (1-600)" },
+                    "batch_count": { "type": "integer", "description": "Batch size (1-8)" },
+                    "generate_audio": { "type": "boolean" },
+                    "has_reference_image": { "type": "boolean", "description": "Splat only: whether a reference image is supplied" }
                 },
                 "required": ["media_type", "model"]
             })),
@@ -68,30 +74,18 @@ pub fn tools() -> Vec<Tool> {
         },
         Tool {
             name: "artcraft_list_image_models".to_string(),
-            description: "List all available image generation models with their capabilities.".to_string(),
+            description: "List all available image generation models.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
-                "properties": {
-                    "provider": {
-                        "type": "string",
-                        "enum": ["artcraft", "all"],
-                        "description": "Filter by provider (default: artcraft)"
-                    }
-                }
+                "properties": {}
             })),
         },
         Tool {
             name: "artcraft_list_video_models".to_string(),
-            description: "List all available video generation models with their capabilities.".to_string(),
+            description: "List all available video generation models.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
-                "properties": {
-                    "provider": {
-                        "type": "string",
-                        "enum": ["artcraft", "all"],
-                        "description": "Filter by provider (default: artcraft)"
-                    }
-                }
+                "properties": {}
             })),
         },
     ]
@@ -106,26 +100,30 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
 
     match media_type {
         "image" => {
-            let model = crate::tools::generate::parse_image_model(model_str)?;
-            let generation_mode = arguments["generation_mode"].as_str().unwrap_or("text_to_image");
-
-            let mode = match generation_mode {
-                "text_to_image" => ImageGenerationMode::TextToImage,
-                "image_edit" => {
-                    let count = arguments["input_image_count"].as_u64().unwrap_or(1) as u32;
+            let model = parse_image_model(model_str)?;
+            let mode = match arguments["generation_mode"].as_str() {
+                None => ImageGenerationMode::TextToImage,
+                Some("text_to_image") => ImageGenerationMode::TextToImage,
+                Some("image_edit") => {
+                    let count = bounded_u64(&arguments, "input_image_count", 1, 16)?.unwrap_or(1) as u32;
                     ImageGenerationMode::ImageEdit { count }
                 }
-                _ => ImageGenerationMode::TextToImage,
+                Some(other) => {
+                    return Err(anyhow!(
+                        "Invalid generation_mode '{}' for image. Expected text_to_image or image_edit.",
+                        other
+                    ))
+                }
             };
 
             let request = EstimateImageCostRequest {
                 model,
                 provider: GenerationProvider::Artcraft,
                 generation_mode: mode,
-                aspect_ratio: crate::tools::generate::parse_aspect_ratio(arguments["aspect_ratio"].as_str()),
-                resolution: crate::tools::generate::parse_resolution(arguments["resolution"].as_str()),
-                quality: crate::tools::generate::parse_quality(arguments["quality"].as_str()),
-                image_batch_count: arguments["batch_count"].as_u64().map(|v| v as u16),
+                aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?,
+                resolution: parse_resolution(arguments["resolution"].as_str())?,
+                quality: parse_quality(arguments["quality"].as_str())?,
+                image_batch_count: bounded_u64(&arguments, "batch_count", 1, 8)?.map(|v| v as u16),
             };
 
             let response = estimate_image_cost::estimate_image_cost(
@@ -148,28 +146,32 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
             Ok(vec![ToolContent { content_type: "text".to_string(), text }])
         }
         "video" => {
-            let model = crate::tools::generate::parse_video_model(model_str)?;
-            let generation_mode = arguments["generation_mode"].as_str().unwrap_or("text_to_video");
-
-            let mode = match generation_mode {
-                "text_to_video" => VideoGenerationMode::TextToVideo,
-                "start_frame_to_video" => VideoGenerationMode::StartFrameToVideo,
-                "start_and_end_frame_to_video" => VideoGenerationMode::StartAndEndFrameToVideo,
-                "reference_image_to_video" => {
-                    let count = arguments["input_image_count"].as_u64().unwrap_or(1) as u32;
+            let model = parse_video_model(model_str)?;
+            let mode = match arguments["generation_mode"].as_str() {
+                None => VideoGenerationMode::TextToVideo,
+                Some("text_to_video") => VideoGenerationMode::TextToVideo,
+                Some("start_frame_to_video") => VideoGenerationMode::StartFrameToVideo,
+                Some("start_and_end_frame_to_video") => VideoGenerationMode::StartAndEndFrameToVideo,
+                Some("reference_image_to_video") => {
+                    let count = bounded_u64(&arguments, "input_image_count", 1, 16)?.unwrap_or(1) as u32;
                     VideoGenerationMode::ReferenceImageToVideo { count }
                 }
-                _ => VideoGenerationMode::TextToVideo,
+                Some(other) => {
+                    return Err(anyhow!(
+                        "Invalid generation_mode '{}' for video. Expected text_to_video, start_frame_to_video, start_and_end_frame_to_video, or reference_image_to_video.",
+                        other
+                    ))
+                }
             };
 
             let request = EstimateVideoCostRequest {
                 model,
                 provider: GenerationProvider::Artcraft,
                 generation_mode: mode,
-                aspect_ratio: crate::tools::generate::parse_aspect_ratio(arguments["aspect_ratio"].as_str()),
-                resolution: crate::tools::generate::parse_resolution(arguments["resolution"].as_str()),
-                duration_seconds: arguments["duration_seconds"].as_u64().map(|v| v as u16),
-                video_batch_count: arguments["batch_count"].as_u64().map(|v| v as u16),
+                aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?,
+                resolution: parse_resolution(arguments["resolution"].as_str())?,
+                duration_seconds: bounded_u64(&arguments, "duration_seconds", 1, 600)?.map(|v| v as u16),
+                video_batch_count: bounded_u64(&arguments, "batch_count", 1, 8)?.map(|v| v as u16),
                 generate_audio: arguments["generate_audio"].as_bool(),
             };
 
@@ -201,7 +203,7 @@ pub async fn estimate_cost(arguments: Value, client: &ArtCraftClient) -> Result<
 
 pub async fn estimate_splat_cost(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
     let model_str = arguments["model"].as_str().unwrap_or("marble_1p1_plus");
-    let model = crate::tools::generate::parse_splat_model(model_str)?;
+    let model = parse_splat_model(model_str)?;
     let has_reference_image = arguments["has_reference_image"].as_bool();
 
     let request = EstimateSplatCostRequest {
@@ -298,6 +300,7 @@ pub async fn list_video_models(_arguments: Value, _client: &ArtCraftClient) -> R
         "flux_3_draft - Flux 3 Draft preview",
         "grok_imagine_video - xAI Grok Imagine Video",
         "grok_imagine_video_1p5 - xAI Grok Imagine Video 1.5",
+        "happy_horse_1p0 - Happy Horse 1.0",
     ];
 
     let mut lines = vec!["Available video models:".to_string()];

@@ -20,6 +20,7 @@ mod account;
 mod social;
 mod referrals;
 mod http;
+pub(crate) mod safety;
 
 pub fn get_all_tools() -> Vec<Tool> {
     let mut tools = Vec::new();

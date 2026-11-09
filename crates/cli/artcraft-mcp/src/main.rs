@@ -1,6 +1,5 @@
-use std::io::{self, BufRead, Write};
-
-use log::info;
+use log::{error, info};
+use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 mod auth;
 mod client;
@@ -16,26 +15,47 @@ async fn main() {
     let mut mcp_server = server::McpServer::new();
 
     let stdin = io::stdin();
+    let mut reader = BufReader::new(stdin);
     let mut stdout = io::stdout();
-    let reader = stdin.lock();
+    let mut line = String::new();
 
-    for line in reader.lines() {
-        match line {
-            Ok(json_line) => {
-                if json_line.trim().is_empty() {
+    loop {
+        line.clear();
+        match reader.read_line(&mut line).await {
+            Ok(0) => {
+                info!("Stdin closed, shutting down");
+                break;
+            }
+            Ok(_) => {
+                let json_line = line.trim();
+                if json_line.is_empty() {
                     continue;
                 }
 
-                let response = mcp_server.handle_request(&json_line).await;
-
-                if let Some(resp) = response {
-                    let json_response = serde_json::to_string(&resp).unwrap();
-                    writeln!(stdout, "{}", json_response).unwrap();
-                    stdout.flush().unwrap();
+                if let Some(resp) = mcp_server.handle_request(json_line).await {
+                    let json_response = match serde_json::to_string(&resp) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            error!("Failed to serialize response: {}", e);
+                            continue;
+                        }
+                    };
+                    if let Err(e) = stdout.write_all(json_response.as_bytes()).await {
+                        error!("Failed to write response: {}", e);
+                        break;
+                    }
+                    if let Err(e) = stdout.write_all(b"\n").await {
+                        error!("Failed to write response: {}", e);
+                        break;
+                    }
+                    if let Err(e) = stdout.flush().await {
+                        error!("Failed to flush response: {}", e);
+                        break;
+                    }
                 }
             }
             Err(e) => {
-                eprintln!("Error reading line: {}", e);
+                error!("Error reading stdin: {}", e);
                 break;
             }
         }

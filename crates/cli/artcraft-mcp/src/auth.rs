@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use artcraft_client::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -18,6 +18,15 @@ pub fn load_credentials() -> Option<StorytellerCredentialSet> {
 
     let session_path = cred_dir.join(SESSION_FILE);
     let avt_path = cred_dir.join(AVT_FILE);
+
+    if session_path.exists() || avt_path.exists() {
+        warn!(
+            "Using plaintext credential files under {:?}. These files contain live \
+             session cookies: keep them private, do not share or commit them, and \
+             prefer OS keychain storage where available.",
+            cred_dir
+        );
+    }
 
     let mut session = load_session_cookie(&session_path);
     let mut avt = load_avt_cookie(&avt_path);
@@ -45,47 +54,60 @@ pub fn load_credentials() -> Option<StorytellerCredentialSet> {
 }
 
 fn load_session_cookie(path: &PathBuf) -> Option<StorytellerSessionCookie> {
+    load_secret_file(path, "session").map(StorytellerSessionCookie::new)
+}
+
+fn load_avt_cookie(path: &PathBuf) -> Option<StorytellerAvtCookie> {
+    load_secret_file(path, "avt").map(StorytellerAvtCookie::new)
+}
+
+fn load_secret_file(path: &Path, label: &str) -> Option<String> {
     if !path.exists() {
         return None;
     }
+
+    check_credential_file_permissions(path);
 
     match fs::read_to_string(path) {
         Ok(content) => {
             let token = content.trim();
             if token.is_empty() {
-                warn!("Session file is empty: {:?}", path);
+                warn!("{} file is empty: {:?}", label, path);
                 return None;
             }
-            info!("Loaded session cookie from file");
-            Some(StorytellerSessionCookie::new(token.to_string()))
+            info!("Loaded {} cookie from file", label);
+            Some(token.to_string())
         }
         Err(e) => {
-            warn!("Failed to read session file {:?}: {}", path, e);
+            warn!("Failed to read {} file {:?}: {}", label, path, e);
             None
         }
     }
 }
 
-fn load_avt_cookie(path: &PathBuf) -> Option<StorytellerAvtCookie> {
-    if !path.exists() {
-        return None;
-    }
-
-    match fs::read_to_string(path) {
-        Ok(content) => {
-            let token = content.trim();
-            if token.is_empty() {
-                warn!("AVT file is empty: {:?}", path);
-                return None;
+#[cfg(unix)]
+fn check_credential_file_permissions(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    match fs::metadata(path) {
+        Ok(meta) => {
+            let mode = meta.permissions().mode() & 0o777;
+            if mode & 0o077 != 0 {
+                warn!(
+                    "Credential file {:?} has permissive mode {:o}; group/other users can \
+                     read your session. Run `chmod 600 {:?}` to restrict it.",
+                    path, mode, path
+                );
             }
-            info!("Loaded AVT cookie from file");
-            Some(StorytellerAvtCookie::new(token.to_string()))
         }
         Err(e) => {
-            warn!("Failed to read AVT file {:?}: {}", path, e);
-            None
+            warn!("Failed to stat credential file {:?}: {}", path, e);
         }
     }
+}
+
+#[cfg(not(unix))]
+fn check_credential_file_permissions(_path: &Path) {
+    // Windows ACL verification is out of scope; per-user profile isolation applies.
 }
 
 fn load_credentials_from_cookie_store(path: &PathBuf) -> Option<(Option<StorytellerSessionCookie>, Option<StorytellerAvtCookie>)> {
@@ -141,4 +163,59 @@ fn load_credentials_from_cookie_store(path: &PathBuf) -> Option<(Option<Storytel
     }
 
     Some((session, avt))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn load_secret_file_returns_none_when_missing() {
+        let path = PathBuf::from("definitely/does/not/exist_7f3a1c.txt");
+        assert!(load_secret_file(&path, "session").is_none());
+    }
+
+    #[test]
+    fn load_secret_file_trims_whitespace() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        writeln!(f, "  session_token_value  ").unwrap();
+        assert_eq!(
+            load_secret_file(&f.path().to_path_buf(), "session"),
+            Some("session_token_value".to_string())
+        );
+    }
+
+    #[test]
+    fn load_secret_file_rejects_empty() {
+        let f = tempfile::NamedTempFile::new().unwrap();
+        assert!(load_secret_file(&f.path().to_path_buf(), "session").is_none());
+    }
+
+    #[test]
+    fn cookie_store_parses_session_and_visitor() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        write!(
+            f,
+            r#"[{{"raw_cookie": "session=abc123; Path=/"}}, {{"raw_cookie": "visitor=avt456; Path=/"}}]"#
+        )
+        .unwrap();
+        let (session, avt) = load_credentials_from_cookie_store(&f.path().to_path_buf()).unwrap();
+        assert!(session.is_some());
+        assert!(avt.is_some());
+    }
+
+    #[test]
+    fn cookie_store_rejects_non_array() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        write!(f, r#"{{"not": "an array"}}"#).unwrap();
+        assert!(load_credentials_from_cookie_store(&f.path().to_path_buf()).is_none());
+    }
+
+    #[test]
+    fn cookie_store_rejects_invalid_json() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        write!(f, "not json at all").unwrap();
+        assert!(load_credentials_from_cookie_store(&f.path().to_path_buf()).is_none());
+    }
 }

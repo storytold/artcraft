@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
-use uuid::Uuid;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
@@ -33,278 +32,193 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
+use crate::tools::safety::{
+    audit, bounded_array, bounded_f64, bounded_str, bounded_u64, idempotency_token, rate_limit,
+    require_confirm,
+};
+
+const MAX_PROMPT_LEN: usize = 8000;
+const MAX_TOKEN_ARRAY: usize = 16;
+const MAX_BATCH_COUNT: u64 = 8;
+const MAX_DURATION_SECONDS: u64 = 600;
 
 pub fn tools() -> Vec<Tool> {
     vec![
         Tool {
             name: "artcraft_generate_image".to_string(),
-            description: "Generate images using ArtCraft's unified OmniGen API. Supports 18+ models including Flux, GPT-Image, Grok Imagine, Midjourney 7/8, Nano Banana, and Seedream 5.0.".to_string(),
+            description: "Generate images using ArtCraft's unified OmniGen API. PAID action (spends credits); requires confirm: true.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
                 "properties": {
                     "model": {
                         "type": "string",
-                        "description": "Model to use (e.g., 'flux_1_dev', 'flux_1_schnell', 'gpt_image_1', 'seedream_5p0_pro', 'grok_imagine_image', 'midjourney_8', 'nano_banana_pro')"
+                        "description": "Model id (e.g., 'flux_1_dev', 'gpt_image_1', 'seedream_5p0_pro', 'midjourney_8', 'nano_banana_pro')"
                     },
                     "prompt": {
                         "type": "string",
-                        "description": "Text prompt for generation"
+                        "description": "Text prompt (max 8000 chars)"
                     },
                     "image_media_tokens": {
                         "type": "array",
                         "items": { "type": "string" },
-                        "description": "Optional input image media tokens for image-to-image editing"
+                        "description": "Optional input image media tokens for image-to-image (max 16)"
                     },
                     "aspect_ratio": {
                         "type": "string",
-                        "description": "Aspect ratio: 'square', 'wide_16_9', 'tall_9_16', 'wide_21_9', 'tall_9_21', 'standard_4_3', 'standard_3_4'"
+                        "description": "Aspect ratio: 'square', 'wide_16_9', 'tall_9_16', 'wide_21_9', 'tall_9_21', 'wide_4_3', 'tall_3_4', 'wide_3_2', 'tall_2_3', 'wide_5_4', 'tall_4_5', 'wide', 'tall', 'square_hd', 'auto'"
                     },
                     "resolution": {
                         "type": "string",
-                        "description": "Resolution preset ('1k', '2k', '3k', '4k', 'half_k')"
+                        "description": "Resolution preset: 'half_k', 'one_k', 'two_k', 'three_k', 'four_k', 'four_eighty_p', 'seven_twenty_p', 'ten_eighty_p' (aliases: 480p, 720p, 1080p, 1k-4k)"
                     },
                     "quality": {
                         "type": "string",
-                        "description": "Quality: 'low', 'medium', 'high', 'ultra'"
+                        "description": "Quality: 'low', 'medium', 'high', 'xhigh', 'max', 'auto'"
                     },
                     "image_batch_count": {
                         "type": "integer",
-                        "description": "Number of images to generate (default: 1)"
+                        "description": "Number of images to generate (1-8, default 1)"
                     },
-                    "adjust_horizontal_angle": {
-                        "type": "number",
-                        "description": "Horizontal angle adjustment (for angle manipulation models)"
-                    },
-                    "adjust_vertical_angle": {
-                        "type": "number",
-                        "description": "Vertical angle adjustment (for angle manipulation models)"
-                    },
-                    "adjust_zoom": {
-                        "type": "number",
-                        "description": "Zoom adjustment (for angle manipulation models)"
-                    }
+                    "adjust_horizontal_angle": { "type": "number", "description": "Horizontal angle -180..180" },
+                    "adjust_vertical_angle": { "type": "number", "description": "Vertical angle -180..180" },
+                    "adjust_zoom": { "type": "number", "description": "Zoom adjustment 0..10" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token for safe retries" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid generation." }
                 },
-                "required": ["model", "prompt"]
+                "required": ["model", "prompt", "confirm"]
             })),
         },
         Tool {
             name: "artcraft_generate_video".to_string(),
-            description: "Generate videos using ArtCraft's unified OmniGen API. Supports 25+ models including MiniMax H3, Seedance 2.5, Kling 3.0, Sora 2, Veo 3.1, Vidu Q3, Flux 3, and Grok Imagine.".to_string(),
+            description: "Generate videos using ArtCraft's unified OmniGen API. PAID action (spends credits); requires confirm: true.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
                 "properties": {
                     "model": {
                         "type": "string",
-                        "description": "Model to use (e.g., 'minimax_h3', 'seedance_2p5', 'kling_3p0_pro', 'sora_2_pro', 'veo_3p1', 'vidu_q3', 'flux_3', 'grok_imagine_video')"
+                        "description": "Model id (e.g., 'minimax_h3', 'seedance_2p5', 'kling_3p0_pro', 'sora_2_pro', 'veo_3p1', 'vidu_q3')"
                     },
-                    "prompt": {
-                        "type": "string",
-                        "description": "Text prompt for generation"
-                    },
-                    "negative_prompt": {
-                        "type": "string",
-                        "description": "Negative prompt (for supported models)"
-                    },
-                    "start_frame_image_media_token": {
-                        "type": "string",
-                        "description": "Starting keyframe image token"
-                    },
-                    "end_frame_image_media_token": {
-                        "type": "string",
-                        "description": "Ending keyframe image token"
-                    },
-                    "reference_image_media_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Reference image tokens"
-                    },
-                    "reference_video_media_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Reference video tokens"
-                    },
-                    "reference_audio_media_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Reference audio tokens"
-                    },
-                    "reference_character_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Reference character tokens to mention in prompt as @CharacterName"
-                    },
-                    "aspect_ratio": {
-                        "type": "string",
-                        "description": "Aspect ratio ('16:9', '9:16', 'square', etc.)"
-                    },
-                    "resolution": {
-                        "type": "string",
-                        "description": "Resolution preset ('1k', '2k', '720p', '1080p')"
-                    },
-                    "bitrate": {
-                        "type": "string",
-                        "enum": ["normal", "high"],
-                        "description": "Bitrate quality: 'normal' or 'high'"
-                    },
-                    "quality": {
-                        "type": "string",
-                        "description": "Quality: 'low', 'medium', 'high', 'ultra'"
-                    },
-                    "duration_seconds": {
-                        "type": "integer",
-                        "description": "Duration in seconds"
-                    },
-                    "video_batch_count": {
-                        "type": "integer",
-                        "description": "Number of videos to generate (default: 1)"
-                    },
-                    "generate_audio": {
-                        "type": "boolean",
-                        "description": "Whether to generate native sound effects/audio"
-                    }
+                    "prompt": { "type": "string", "description": "Text prompt (max 8000 chars)" },
+                    "negative_prompt": { "type": "string", "description": "Negative prompt (max 8000 chars)" },
+                    "start_frame_image_media_token": { "type": "string", "description": "Starting keyframe image token" },
+                    "end_frame_image_media_token": { "type": "string", "description": "Ending keyframe image token" },
+                    "reference_image_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Reference image tokens (max 16)" },
+                    "reference_video_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Reference video tokens (max 16)" },
+                    "reference_audio_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Reference audio tokens (max 16)" },
+                    "reference_character_tokens": { "type": "array", "items": { "type": "string" }, "description": "Reference character tokens (max 16)" },
+                    "aspect_ratio": { "type": "string", "description": "Aspect ratio: 'wide_16_9', 'tall_9_16', 'square', etc." },
+                    "resolution": { "type": "string", "description": "Resolution preset ('one_k'-'four_k', '480p'-'1080p')" },
+                    "bitrate": { "type": "string", "enum": ["normal", "high"], "description": "Bitrate quality" },
+                    "quality": { "type": "string", "description": "Quality: 'low', 'medium', 'high', 'xhigh', 'max', 'auto'" },
+                    "duration_seconds": { "type": "integer", "description": "Duration in seconds (1-600)" },
+                    "video_batch_count": { "type": "integer", "description": "Number of videos (1-8, default 1)" },
+                    "generate_audio": { "type": "boolean", "description": "Whether to generate native sound" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid generation." }
                 },
-                "required": ["model", "prompt"]
+                "required": ["model", "prompt", "confirm"]
             })),
         },
         Tool {
             name: "artcraft_generate_audio".to_string(),
-            description: "Generate music, remix audio, or synthesize sound effects using ArtCraft's OmniGen Audio API. Supports Suno Music, Suno Remix, Suno Sounds, Suno Sample, and Seed Audio 1.0.".to_string(),
+            description: "Generate music, remix audio, or synthesize sound effects via OmniGen Audio (Suno Music/Remix/Sounds/Sample, Seed Audio). PAID action; requires confirm: true.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
                 "properties": {
-                    "model": {
-                        "type": "string",
-                        "description": "Model: 'suno_music', 'suno_remix', 'suno_sounds', 'suno_sample', 'seed_audio_1p0' (default: suno_music)"
-                    },
-                    "prompt": {
-                        "type": "string",
-                        "description": "Lyrics or text prompt for the audio generation"
-                    },
-                    "style_prompt": {
-                        "type": "string",
-                        "description": "Genre/style tags (e.g. 'synthwave, electronic, upbeat 120bpm')"
-                    },
-                    "audio_media_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Reference audio or remix source media tokens"
-                    },
-                    "image_media_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Optional reference image for image-to-audio (Seed Audio)"
-                    },
-                    "keep_lyrics": {
-                        "type": "boolean",
-                        "description": "Whether to retain original lyrics (Suno Remix)"
-                    },
-                    "is_instrumental": {
-                        "type": "boolean",
-                        "description": "Whether to generate instrumental music without vocals"
-                    },
-                    "is_loopable": {
-                        "type": "boolean",
-                        "description": "Whether sound effect should cleanly loop (Suno Sounds)"
-                    },
-                    "bpm": {
-                        "type": "integer",
-                        "description": "Tempo in beats per minute (e.g. 120)"
-                    },
-                    "musical_key": {
-                        "type": "string",
-                        "description": "Musical key ('c_major', 'a_minor', 'auto', etc.)"
-                    },
-                    "sample_rate_hz": {
-                        "type": "integer",
-                        "description": "Sample rate in Hz: 8000, 16000, 24000, 32000, 44100, 48000 (Seed Audio)"
-                    },
-                    "speed": {
-                        "type": "number",
-                        "description": "Playback speed multiplier 0.5 - 2.0 (Seed Audio)"
-                    },
-                    "volume": {
-                        "type": "number",
-                        "description": "Volume multiplier 0.5 - 2.0 (Seed Audio)"
-                    },
-                    "pitch": {
-                        "type": "number",
-                        "description": "Pitch shift in semitones -12 to 12 (Seed Audio)"
-                    }
+                    "model": { "type": "string", "description": "'suno_music', 'suno_remix', 'suno_sounds', 'suno_sample', 'seed_audio_1p0' (default: suno_music)" },
+                    "prompt": { "type": "string", "description": "Lyrics or text prompt (max 8000 chars)" },
+                    "style_prompt": { "type": "string", "description": "Genre/style tags (max 2000 chars)" },
+                    "audio_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Reference/remix source audio tokens (max 16)" },
+                    "image_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Reference image tokens for image-to-audio (max 16)" },
+                    "keep_lyrics": { "type": "boolean", "description": "Retain original lyrics (Suno Remix)" },
+                    "is_instrumental": { "type": "boolean", "description": "Generate instrumental without vocals" },
+                    "is_loopable": { "type": "boolean", "description": "Cleanly looping sound effect (Suno Sounds)" },
+                    "bpm": { "type": "integer", "description": "Tempo in BPM (30-300)" },
+                    "musical_key": { "type": "string", "description": "Musical key ('c_major', 'a_minor', ..., 'auto')" },
+                    "sample_rate_hz": { "type": "integer", "description": "Sample rate: 8000/16000/24000/32000/44100/48000" },
+                    "speed": { "type": "number", "description": "Speed multiplier 0.5-2.0" },
+                    "volume": { "type": "number", "description": "Volume multiplier 0.5-2.0" },
+                    "pitch": { "type": "number", "description": "Pitch shift in semitones (-12 to 12)" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid generation." }
                 },
-                "required": ["prompt"]
+                "required": ["prompt", "confirm"]
             })),
         },
         Tool {
             name: "artcraft_generate_3d_object".to_string(),
-            description: "Generate 3D meshes using ArtCraft's OmniGen Mesh API. Supports Hunyuan 3D v2/v3/v3.1 (Pro, Rapid, Part, Topology) and Tripo3D H3.1 with multi-view camera inputs.".to_string(),
+            description: "Generate 3D meshes via OmniGen Mesh (Hunyuan 3D v2/v3/v3.1, Tripo3D). PAID action; requires confirm: true.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
                 "properties": {
-                    "model": {
-                        "type": "string",
-                        "description": "Model to use: 'hunyuan_3d_3', 'hunyuan_3d_3p1_pro', 'hunyuan_3d_3p1_rapid', 'hunyuan_3d_3_sketch', 'hunyuan_3d_3p1_part', 'hunyuan_3d_3p1_topology', 'tripo_3d_h3p1' (default: hunyuan_3d_3)"
-                    },
-                    "prompt": { "type": "string", "description": "Text prompt for text-to-3D" },
-                    "image_media_token": { "type": "string", "description": "Primary input image (image-to-3D or sketch-to-3D)" },
-                    "front_image_media_token": { "type": "string", "description": "Front camera view for multi-view input" },
-                    "back_image_media_token": { "type": "string", "description": "Back camera view for multi-view input" },
-                    "left_image_media_token": { "type": "string", "description": "Left camera view for multi-view input" },
-                    "right_image_media_token": { "type": "string", "description": "Right camera view for multi-view input" },
-                    "input_mesh_media_file_token": { "type": "string", "description": "Input mesh for retopology (Topology) or semantic part splitting (Part)" },
+                    "model": { "type": "string", "description": "'hunyuan_3d_2p0', 'hunyuan_3d_2p1', 'hunyuan_3d_3', 'hunyuan_3d_3_sketch', 'hunyuan_3d_3p1_pro', 'hunyuan_3d_3p1_rapid', 'hunyuan_3d_3p1_part', 'hunyuan_3d_3p1_topology', 'tripo_3d_h3p1' (default: hunyuan_3d_3)" },
+                    "prompt": { "type": "string", "description": "Text prompt for text-to-3D (max 8000 chars)" },
+                    "image_media_token": { "type": "string", "description": "Primary input image" },
+                    "reference_image_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Additional reference images (max 16)" },
+                    "front_image_media_token": { "type": "string", "description": "Front view" },
+                    "back_image_media_token": { "type": "string", "description": "Back view" },
+                    "left_image_media_token": { "type": "string", "description": "Left view" },
+                    "right_image_media_token": { "type": "string", "description": "Right view" },
+                    "input_mesh_media_file_token": { "type": "string", "description": "Input mesh for retopology/parts" },
                     "output_type": { "type": "string", "enum": ["normal", "low_poly", "geometry"], "description": "Mesh output type" },
-                    "quality": { "type": "string", "enum": ["standard", "detailed"], "description": "Quality level" },
                     "polygon_type": { "type": "string", "enum": ["triangle", "quad"], "description": "Polygon type" },
-                    "target_face_count": { "type": "integer", "description": "Target face/polygon count" }
-                }
+                    "texture_quality": { "type": "string", "enum": ["standard", "detailed"], "description": "Texture quality" },
+                    "geometry_quality": { "type": "string", "enum": ["standard", "detailed"], "description": "Geometry quality" },
+                    "enable_pbr": { "type": "boolean", "description": "Enable PBR materials" },
+                    "enable_texture": { "type": "boolean", "description": "Enable textures" },
+                    "target_face_count": { "type": "integer", "description": "Target face count (100-10000000)" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid generation." }
+                },
+                "required": ["confirm"]
             })),
         },
         Tool {
             name: "artcraft_generate_splat".to_string(),
-            description: "Generate 3D Gaussian splat worlds using ArtCraft's OmniGen Splat API. Supports WorldLabs Marble (0.1, 1.0, 1.1) and TripoSplat with multi-view and 360 panoramic inputs.".to_string(),
+            description: "Generate 3D Gaussian splat worlds via OmniGen Splat (WorldLabs Marble, TripoSplat). PAID action; requires confirm: true.".to_string(),
             input_schema: Some(json!({
                 "type": "object",
                 "properties": {
-                    "model": {
-                        "type": "string",
-                        "description": "Model to use: 'marble_1p1', 'marble_1p1_plus', 'marble_1p0', 'marble_1p0_draft', 'marble_0p1_plus', 'marble_0p1_mini', 'triposplat' (default: marble_1p1_plus)"
-                    },
-                    "prompt": { "type": "string", "description": "Text prompt describing the 3D world" },
+                    "model": { "type": "string", "description": "'marble_0p1_mini', 'marble_0p1_plus', 'marble_1p0', 'marble_1p0_draft', 'marble_1p1', 'marble_1p1_plus', 'triposplat' (default: marble_1p1_plus)" },
+                    "prompt": { "type": "string", "description": "Text prompt describing the 3D world (max 8000 chars)" },
                     "image_media_token": { "type": "string", "description": "Primary reference image" },
-                    "reference_image_media_tokens": {
-                        "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Multiple reference images for multi-view splat generation"
-                    },
+                    "reference_image_media_tokens": { "type": "array", "items": { "type": "string" }, "description": "Multi-view reference images (max 16)" },
                     "reference_video_media_token": { "type": "string", "description": "Optional reference video" },
-                    "is_panoramic": { "type": "boolean", "description": "Whether the input image is a 360-degree equirectangular panorama" },
-                    "disable_recaption": { "type": "boolean", "description": "Whether to bypass automatic prompt recaptioning" }
-                }
+                    "is_panoramic": { "type": "boolean", "description": "Input is a 360-degree equirectangular panorama" },
+                    "disable_recaption": { "type": "boolean", "description": "Bypass automatic prompt recaptioning" },
+                    "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
+                    "confirm": { "type": "boolean", "description": "Must be true to confirm this paid generation." }
+                },
+                "required": ["confirm"]
             })),
         },
     ]
 }
 
 pub async fn generate_image(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
+    require_confirm(&arguments, "spend credits on image generation")?;
+    rate_limit("artcraft_generate_image")?;
+
     let model_str = arguments["model"].as_str()
         .ok_or_else(|| anyhow!("model is required"))?;
-    let prompt = arguments["prompt"].as_str()
+    let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?
         .ok_or_else(|| anyhow!("prompt is required"))?;
 
     let model = parse_image_model(model_str)?;
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let request = OmniGenImageCostAndGenerateRequest {
-        idempotency_token: Some(idempotency_token),
+        idempotency_token: Some(idem),
         model: Some(model),
         prompt: Some(prompt.to_string()),
-        image_media_tokens: parse_media_tokens(&arguments["image_media_tokens"]),
-        resolution: parse_resolution(arguments["resolution"].as_str()),
-        aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str()),
-        quality: parse_quality(arguments["quality"].as_str()),
-        image_batch_count: arguments["image_batch_count"].as_u64().map(|v| v as u16),
-        adjust_horizontal_angle: arguments["adjust_horizontal_angle"].as_f64(),
-        adjust_vertical_angle: arguments["adjust_vertical_angle"].as_f64(),
-        adjust_zoom: arguments["adjust_zoom"].as_f64(),
+        image_media_tokens: parse_media_tokens(bounded_array(&arguments, "image_media_tokens", MAX_TOKEN_ARRAY)?)?,
+        resolution: parse_resolution(arguments["resolution"].as_str())?,
+        aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?,
+        quality: parse_quality(arguments["quality"].as_str())?,
+        image_batch_count: bounded_u64(&arguments, "image_batch_count", 1, MAX_BATCH_COUNT)?.map(|v| v as u16),
+        adjust_horizontal_angle: bounded_f64(&arguments, "adjust_horizontal_angle", -180.0, 180.0)?,
+        adjust_vertical_angle: bounded_f64(&arguments, "adjust_vertical_angle", -180.0, 180.0)?,
+        adjust_zoom: bounded_f64(&arguments, "adjust_zoom", 0.0, 10.0)?,
     };
 
     let response = omni_gen_image_generate(
@@ -312,6 +226,7 @@ pub async fn generate_image(arguments: Value, client: &ArtCraftClient) -> Result
         client.creds_ref(),
         request,
     ).await?;
+    audit("generate_image", model_str, if response.success { "success" } else { "failure" });
 
     Ok(vec![ToolContent {
         content_type: "text".to_string(),
@@ -325,32 +240,36 @@ pub async fn generate_image(arguments: Value, client: &ArtCraftClient) -> Result
 }
 
 pub async fn generate_video(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
+    require_confirm(&arguments, "spend credits on video generation")?;
+    rate_limit("artcraft_generate_video")?;
+
     let model_str = arguments["model"].as_str()
         .ok_or_else(|| anyhow!("model is required"))?;
-    let prompt = arguments["prompt"].as_str()
+    let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?
         .ok_or_else(|| anyhow!("prompt is required"))?;
+    let negative_prompt = bounded_str(&arguments, "negative_prompt", MAX_PROMPT_LEN)?;
 
     let model = parse_video_model(model_str)?;
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
 
     let request = OmniGenVideoCostAndGenerateRequest {
-        idempotency_token: Some(idempotency_token),
+        idempotency_token: Some(idem),
         model: Some(model),
         prompt: Some(prompt.to_string()),
-        negative_prompt: arguments["negative_prompt"].as_str().map(|s| s.to_string()),
+        negative_prompt: negative_prompt.map(|s| s.to_string()),
         start_frame_image_media_token: parse_media_token(arguments["start_frame_image_media_token"].as_str()),
         end_frame_image_media_token: parse_media_token(arguments["end_frame_image_media_token"].as_str()),
-        reference_image_media_tokens: parse_media_tokens(&arguments["reference_image_media_tokens"]),
-        reference_video_media_tokens: parse_media_tokens(&arguments["reference_video_media_tokens"]),
-        reference_audio_media_tokens: parse_media_tokens(&arguments["reference_audio_media_tokens"]),
-        reference_character_tokens: parse_character_tokens(&arguments["reference_character_tokens"]),
-        resolution: parse_resolution(arguments["resolution"].as_str()),
-        aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str()),
-        bitrate: parse_bitrate(arguments["bitrate"].as_str()),
-        maybe_output_format: parse_video_output_format(arguments["output_format"].as_str()),
-        quality: parse_quality(arguments["quality"].as_str()),
-        duration_seconds: arguments["duration_seconds"].as_u64().map(|v| v as u16),
-        video_batch_count: arguments["video_batch_count"].as_u64().map(|v| v as u16),
+        reference_image_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_image_media_tokens", MAX_TOKEN_ARRAY)?)?,
+        reference_video_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_video_media_tokens", MAX_TOKEN_ARRAY)?)?,
+        reference_audio_media_tokens: parse_media_tokens(bounded_array(&arguments, "reference_audio_media_tokens", MAX_TOKEN_ARRAY)?)?,
+        reference_character_tokens: parse_character_tokens(bounded_array(&arguments, "reference_character_tokens", MAX_TOKEN_ARRAY)?)?,
+        resolution: parse_resolution(arguments["resolution"].as_str())?,
+        aspect_ratio: parse_aspect_ratio(arguments["aspect_ratio"].as_str())?,
+        bitrate: parse_bitrate(arguments["bitrate"].as_str())?,
+        maybe_output_format: parse_video_output_format(arguments["output_format"].as_str())?,
+        quality: parse_quality(arguments["quality"].as_str())?,
+        duration_seconds: bounded_u64(&arguments, "duration_seconds", 1, MAX_DURATION_SECONDS)?.map(|v| v as u16),
+        video_batch_count: bounded_u64(&arguments, "video_batch_count", 1, MAX_BATCH_COUNT)?.map(|v| v as u16),
         generate_audio: arguments["generate_audio"].as_bool(),
         estimate_only: None,
     };
@@ -360,6 +279,7 @@ pub async fn generate_video(arguments: Value, client: &ArtCraftClient) -> Result
         client.creds_ref(),
         request,
     ).await?;
+    audit("generate_video", model_str, if response.success { "success" } else { "failure" });
 
     Ok(vec![ToolContent {
         content_type: "text".to_string(),
@@ -373,29 +293,41 @@ pub async fn generate_video(arguments: Value, client: &ArtCraftClient) -> Result
 }
 
 pub async fn generate_audio(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
-    let prompt = arguments["prompt"].as_str()
+    require_confirm(&arguments, "spend credits on audio generation")?;
+    rate_limit("artcraft_generate_audio")?;
+
+    let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?
         .ok_or_else(|| anyhow!("prompt is required"))?;
     let model_str = arguments["model"].as_str().unwrap_or("suno_music");
-
     let model = parse_audio_model(model_str)?;
-    let idempotency_token = Uuid::new_v4().to_string();
+    let idem = idempotency_token(&arguments)?;
+
+    let sample_rate_hz = match bounded_u64(&arguments, "sample_rate_hz", 8000, 48000)? {
+        Some(rate) => {
+            if ![8000, 16000, 24000, 32000, 44100, 48000].contains(&rate) {
+                return Err(anyhow!("sample_rate_hz must be one of 8000, 16000, 24000, 32000, 44100, 48000"));
+            }
+            Some(rate as u32)
+        }
+        None => None,
+    };
 
     let request = OmniGenAudioCostAndGenerateRequest {
-        idempotency_token: Some(idempotency_token),
+        idempotency_token: Some(idem),
         model: Some(model),
         prompt: Some(prompt.to_string()),
-        style_prompt: arguments["style_prompt"].as_str().map(|s| s.to_string()),
-        audio_media_tokens: parse_media_tokens(&arguments["audio_media_tokens"]),
-        image_media_tokens: parse_media_tokens(&arguments["image_media_tokens"]),
+        style_prompt: bounded_str(&arguments, "style_prompt", 2000)?.map(|s| s.to_string()),
+        audio_media_tokens: parse_media_tokens(bounded_array(&arguments, "audio_media_tokens", MAX_TOKEN_ARRAY)?)?,
+        image_media_tokens: parse_media_tokens(bounded_array(&arguments, "image_media_tokens", MAX_TOKEN_ARRAY)?)?,
         keep_lyrics: arguments["keep_lyrics"].as_bool(),
         is_instrumental: arguments["is_instrumental"].as_bool(),
         is_loopable: arguments["is_loopable"].as_bool(),
-        bpm: arguments["bpm"].as_u64().map(|v| v as u16),
-        musical_key: parse_musical_key(arguments["musical_key"].as_str()),
-        sample_rate_hz: arguments["sample_rate_hz"].as_u64().map(|v| v as u32),
-        speed: arguments["speed"].as_f64(),
-        volume: arguments["volume"].as_f64(),
-        pitch: arguments["pitch"].as_f64(),
+        bpm: bounded_u64(&arguments, "bpm", 30, 300)?.map(|v| v as u16),
+        musical_key: parse_musical_key(arguments["musical_key"].as_str())?,
+        sample_rate_hz,
+        speed: bounded_f64(&arguments, "speed", 0.5, 2.0)?,
+        volume: bounded_f64(&arguments, "volume", 0.5, 2.0)?,
+        pitch: bounded_f64(&arguments, "pitch", -12.0, 12.0)?,
     };
 
     let response = omni_gen_audio_generate(
@@ -403,6 +335,7 @@ pub async fn generate_audio(arguments: Value, client: &ArtCraftClient) -> Result
         client.creds_ref(),
         request,
     ).await?;
+    audit("generate_audio", model_str, if response.success { "success" } else { "failure" });
 
     Ok(vec![ToolContent {
         content_type: "text".to_string(),
@@ -416,15 +349,17 @@ pub async fn generate_audio(arguments: Value, client: &ArtCraftClient) -> Result
 }
 
 pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
+    require_confirm(&arguments, "spend credits on 3D mesh generation")?;
+    rate_limit("artcraft_generate_3d_object")?;
+
     let model_str = arguments["model"].as_str().unwrap_or("hunyuan_3d_3");
     let model = parse_mesh_model(model_str)?;
 
-    let prompt = arguments["prompt"].as_str().map(|s| s.to_string());
-    let idempotency_token = Uuid::new_v4().to_string();
+    let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.map(|s| s.to_string());
+    let idem = idempotency_token(&arguments)?;
 
-    // Primary image token can come from image_media_token or reference_image_media_tokens
     let primary_image = parse_media_token(arguments["image_media_token"].as_str());
-    let mut ref_images = parse_media_tokens(&arguments["reference_image_media_tokens"]).unwrap_or_default();
+    let mut ref_images = parse_media_tokens(bounded_array(&arguments, "reference_image_media_tokens", MAX_TOKEN_ARRAY)?)?.unwrap_or_default();
     if let Some(img) = primary_image {
         if !ref_images.contains(&img) {
             ref_images.insert(0, img);
@@ -433,7 +368,7 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
     let ref_images_opt = if ref_images.is_empty() { None } else { Some(ref_images) };
 
     let request = OmniGenMeshCostAndGenerateRequest {
-        idempotency_token: Some(idempotency_token),
+        idempotency_token: Some(idem),
         model: Some(model),
         prompt,
         reference_image_media_tokens: ref_images_opt,
@@ -442,13 +377,13 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
         left_image_media_token: parse_media_token(arguments["left_image_media_token"].as_str()),
         right_image_media_token: parse_media_token(arguments["right_image_media_token"].as_str()),
         input_mesh_media_token: parse_media_token(arguments["input_mesh_media_file_token"].as_str()),
-        mesh_output_type: parse_mesh_output_type(arguments["output_type"].as_str()),
-        polygon_type: parse_polygon_type(arguments["polygon_type"].as_str()),
-        face_count: arguments["target_face_count"].as_u64(),
+        mesh_output_type: parse_mesh_output_type(arguments["output_type"].as_str())?,
+        polygon_type: parse_polygon_type(arguments["polygon_type"].as_str())?,
+        face_count: bounded_u64(&arguments, "target_face_count", 100, 10_000_000)?,
         enable_pbr: arguments["enable_pbr"].as_bool(),
         enable_texture: arguments["enable_texture"].as_bool(),
-        texture_quality: parse_mesh_quality(arguments["texture_quality"].as_str()),
-        geometry_quality: parse_mesh_quality(arguments["geometry_quality"].as_str()),
+        texture_quality: parse_mesh_quality_named(&arguments, "texture_quality")?,
+        geometry_quality: parse_mesh_quality_named(&arguments, "geometry_quality")?,
     };
 
     let response = omni_gen_mesh_generate(
@@ -456,6 +391,7 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
         client.creds_ref(),
         request,
     ).await?;
+    audit("generate_3d_object", model_str, if response.success { "success" } else { "failure" });
 
     Ok(vec![ToolContent {
         content_type: "text".to_string(),
@@ -469,14 +405,17 @@ pub async fn generate_3d_object(arguments: Value, client: &ArtCraftClient) -> Re
 }
 
 pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result<Vec<ToolContent>> {
+    require_confirm(&arguments, "spend credits on splat generation")?;
+    rate_limit("artcraft_generate_splat")?;
+
     let model_str = arguments["model"].as_str().unwrap_or("marble_1p1_plus");
     let model = parse_splat_model(model_str)?;
 
-    let prompt = arguments["prompt"].as_str().map(|s| s.to_string());
-    let idempotency_token = Uuid::new_v4().to_string();
+    let prompt = bounded_str(&arguments, "prompt", MAX_PROMPT_LEN)?.map(|s| s.to_string());
+    let idem = idempotency_token(&arguments)?;
 
     let primary_image = parse_media_token(arguments["image_media_token"].as_str());
-    let mut ref_images = parse_media_tokens(&arguments["reference_image_media_tokens"]).unwrap_or_default();
+    let mut ref_images = parse_media_tokens(bounded_array(&arguments, "reference_image_media_tokens", MAX_TOKEN_ARRAY)?)?.unwrap_or_default();
     if let Some(img) = primary_image {
         if !ref_images.contains(&img) {
             ref_images.insert(0, img);
@@ -485,7 +424,7 @@ pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result
     let ref_images_opt = if ref_images.is_empty() { None } else { Some(ref_images) };
 
     let request = OmniGenSplatCostAndGenerateRequest {
-        idempotency_token: Some(idempotency_token),
+        idempotency_token: Some(idem),
         model: Some(model),
         prompt,
         reference_image_media_tokens: ref_images_opt,
@@ -499,6 +438,7 @@ pub async fn generate_splat(arguments: Value, client: &ArtCraftClient) -> Result
         client.creds_ref(),
         request,
     ).await?;
+    audit("generate_splat", model_str, if response.success { "success" } else { "failure" });
 
     Ok(vec![ToolContent {
         content_type: "text".to_string(),
@@ -633,122 +573,249 @@ pub fn parse_splat_model(model_str: &str) -> Result<CommonSplatModel> {
     Ok(model)
 }
 
-pub fn parse_aspect_ratio(ratio: Option<&str>) -> Option<CommonAspectRatio> {
-    ratio.and_then(|r| match r.to_lowercase().as_str() {
-        "square" | "1:1" | "1_1" => Some(CommonAspectRatio::Square),
-        "wide_16_9" | "16:9" | "16_9" => Some(CommonAspectRatio::WideSixteenByNine),
-        "tall_9_16" | "9:16" | "9_16" => Some(CommonAspectRatio::TallNineBySixteen),
-        "wide_21_9" | "21:9" | "21_9" => Some(CommonAspectRatio::WideTwentyOneByNine),
-        "tall_9_21" | "9:21" | "9_21" => Some(CommonAspectRatio::TallNineByTwentyOne),
-        "wide_4_3" | "4:3" | "4_3" => Some(CommonAspectRatio::WideFourByThree),
-        "tall_3_4" | "3:4" | "3_4" => Some(CommonAspectRatio::TallThreeByFour),
-        "wide_3_2" | "3:2" | "3_2" => Some(CommonAspectRatio::WideThreeByTwo),
-        "tall_2_3" | "2:3" | "2_3" => Some(CommonAspectRatio::TallTwoByThree),
-        "wide_5_4" | "5:4" | "5_4" => Some(CommonAspectRatio::WideFiveByFour),
-        "tall_4_5" | "4:5" | "4_5" => Some(CommonAspectRatio::TallFourByFive),
-        "auto" => Some(CommonAspectRatio::Auto),
-        "wide" => Some(CommonAspectRatio::Wide),
-        "tall" => Some(CommonAspectRatio::Tall),
-        "square_hd" | "squarehd" => Some(CommonAspectRatio::SquareHd),
-        _ => None,
-    })
+/// Strict optional parsers: absent -> Ok(None); present-but-unknown -> Err.
+pub fn parse_aspect_ratio(ratio: Option<&str>) -> Result<Option<CommonAspectRatio>> {
+    match ratio {
+        None => Ok(None),
+        Some(r) => match r.to_lowercase().as_str() {
+            "square" | "1:1" | "1_1" => Ok(Some(CommonAspectRatio::Square)),
+            "wide_16_9" | "16:9" | "16_9" => Ok(Some(CommonAspectRatio::WideSixteenByNine)),
+            "tall_9_16" | "9:16" | "9_16" => Ok(Some(CommonAspectRatio::TallNineBySixteen)),
+            "wide_21_9" | "21:9" | "21_9" => Ok(Some(CommonAspectRatio::WideTwentyOneByNine)),
+            "tall_9_21" | "9:21" | "9_21" => Ok(Some(CommonAspectRatio::TallNineByTwentyOne)),
+            "wide_4_3" | "4:3" | "4_3" => Ok(Some(CommonAspectRatio::WideFourByThree)),
+            "tall_3_4" | "3:4" | "3_4" => Ok(Some(CommonAspectRatio::TallThreeByFour)),
+            "wide_3_2" | "3:2" | "3_2" => Ok(Some(CommonAspectRatio::WideThreeByTwo)),
+            "tall_2_3" | "2:3" | "2_3" => Ok(Some(CommonAspectRatio::TallTwoByThree)),
+            "wide_5_4" | "5:4" | "5_4" => Ok(Some(CommonAspectRatio::WideFiveByFour)),
+            "tall_4_5" | "4:5" | "4_5" => Ok(Some(CommonAspectRatio::TallFourByFive)),
+            "auto" => Ok(Some(CommonAspectRatio::Auto)),
+            "wide" => Ok(Some(CommonAspectRatio::Wide)),
+            "tall" => Ok(Some(CommonAspectRatio::Tall)),
+            "square_hd" | "squarehd" => Ok(Some(CommonAspectRatio::SquareHd)),
+            _ => Err(anyhow!("Unknown aspect_ratio: {}", r)),
+        },
+    }
 }
 
-pub fn parse_resolution(res: Option<&str>) -> Option<CommonResolution> {
-    res.and_then(|r| match r.to_lowercase().as_str() {
-        "low" | "half_k" | "halfk" | "480p" => Some(CommonResolution::HalfK),
-        "medium" | "one_k" | "1k" | "720p" => Some(CommonResolution::OneK),
-        "high" | "two_k" | "2k" | "1080p" => Some(CommonResolution::TwoK),
-        "ultra" | "three_k" | "3k" | "4k" | "four_k" => Some(CommonResolution::FourK),
-        _ => None,
-    })
+pub fn parse_resolution(res: Option<&str>) -> Result<Option<CommonResolution>> {
+    match res {
+        None => Ok(None),
+        Some(r) => match r.to_lowercase().as_str() {
+            "half_k" | "halfk" | "0.5k" => Ok(Some(CommonResolution::HalfK)),
+            "one_k" | "1k" => Ok(Some(CommonResolution::OneK)),
+            "two_k" | "2k" => Ok(Some(CommonResolution::TwoK)),
+            "three_k" | "3k" => Ok(Some(CommonResolution::ThreeK)),
+            "four_k" | "4k" => Ok(Some(CommonResolution::FourK)),
+            "four_eighty_p" | "480p" => Ok(Some(CommonResolution::FourEightyP)),
+            "seven_twenty_p" | "720p" => Ok(Some(CommonResolution::SevenTwentyP)),
+            "ten_eighty_p" | "1080p" => Ok(Some(CommonResolution::TenEightyP)),
+            _ => Err(anyhow!("Unknown resolution: {}", r)),
+        },
+    }
 }
 
-pub fn parse_quality(quality: Option<&str>) -> Option<CommonQuality> {
-    quality.and_then(|q| match q.to_lowercase().as_str() {
-        "low" => Some(CommonQuality::Low),
-        "medium" => Some(CommonQuality::Medium),
-        "high" => Some(CommonQuality::High),
-        _ => None,
-    })
+pub fn parse_quality(quality: Option<&str>) -> Result<Option<CommonQuality>> {
+    match quality {
+        None => Ok(None),
+        Some(q) => match q.to_lowercase().as_str() {
+            "low" => Ok(Some(CommonQuality::Low)),
+            "medium" => Ok(Some(CommonQuality::Medium)),
+            "high" => Ok(Some(CommonQuality::High)),
+            "xhigh" | "x_high" | "extra_high" => Ok(Some(CommonQuality::XHigh)),
+            "max" => Ok(Some(CommonQuality::Max)),
+            "auto" => Ok(Some(CommonQuality::Auto)),
+            _ => Err(anyhow!("Unknown quality: {}", q)),
+        },
+    }
 }
 
-pub fn parse_bitrate(bitrate: Option<&str>) -> Option<CommonBitrate> {
-    bitrate.and_then(|b| match b.to_lowercase().as_str() {
-        "high" => Some(CommonBitrate::High),
-        "normal" => Some(CommonBitrate::Normal),
-        _ => None,
-    })
+pub fn parse_bitrate(bitrate: Option<&str>) -> Result<Option<CommonBitrate>> {
+    match bitrate {
+        None => Ok(None),
+        Some(b) => match b.to_lowercase().as_str() {
+            "high" => Ok(Some(CommonBitrate::High)),
+            "normal" => Ok(Some(CommonBitrate::Normal)),
+            _ => Err(anyhow!("Unknown bitrate: {}", b)),
+        },
+    }
 }
 
-pub fn parse_video_output_format(format: Option<&str>) -> Option<CommonVideoOutputFormat> {
-    format.and_then(|f| match f.to_lowercase().as_str() {
-        "mp4" => Some(CommonVideoOutputFormat::Mp4),
-        "mov" => Some(CommonVideoOutputFormat::Mov),
-        _ => None,
-    })
+pub fn parse_video_output_format(format: Option<&str>) -> Result<Option<CommonVideoOutputFormat>> {
+    match format {
+        None => Ok(None),
+        Some(f) => match f.to_lowercase().as_str() {
+            "mp4" => Ok(Some(CommonVideoOutputFormat::Mp4)),
+            "mov" => Ok(Some(CommonVideoOutputFormat::Mov)),
+            _ => Err(anyhow!("Unknown output_format: {}", f)),
+        },
+    }
 }
 
-pub fn parse_musical_key(key: Option<&str>) -> Option<CommonMusicalKey> {
-    key.and_then(|k| match k.to_lowercase().as_str() {
-        "c_major" => Some(CommonMusicalKey::CMajor),
-        "c_minor" => Some(CommonMusicalKey::CMinor),
-        "d_major" => Some(CommonMusicalKey::DMajor),
-        "d_minor" => Some(CommonMusicalKey::DMinor),
-        "f_major" => Some(CommonMusicalKey::FMajor),
-        "f_minor" => Some(CommonMusicalKey::FMinor),
-        "g_major" => Some(CommonMusicalKey::GMajor),
-        "g_minor" => Some(CommonMusicalKey::GMinor),
-        "a_major" => Some(CommonMusicalKey::AMajor),
-        "a_minor" => Some(CommonMusicalKey::AMinor),
-        "b_major" => Some(CommonMusicalKey::BMajor),
-        "b_minor" => Some(CommonMusicalKey::BMinor),
-        "auto" => Some(CommonMusicalKey::Auto),
-        _ => None,
-    })
+pub fn parse_musical_key(key: Option<&str>) -> Result<Option<CommonMusicalKey>> {
+    match key {
+        None => Ok(None),
+        Some(k) => match k.to_lowercase().as_str() {
+            "c_major" => Ok(Some(CommonMusicalKey::CMajor)),
+            "c_minor" => Ok(Some(CommonMusicalKey::CMinor)),
+            "d_major" => Ok(Some(CommonMusicalKey::DMajor)),
+            "d_minor" => Ok(Some(CommonMusicalKey::DMinor)),
+            "f_major" => Ok(Some(CommonMusicalKey::FMajor)),
+            "f_minor" => Ok(Some(CommonMusicalKey::FMinor)),
+            "g_major" => Ok(Some(CommonMusicalKey::GMajor)),
+            "g_minor" => Ok(Some(CommonMusicalKey::GMinor)),
+            "a_major" => Ok(Some(CommonMusicalKey::AMajor)),
+            "a_minor" => Ok(Some(CommonMusicalKey::AMinor)),
+            "b_major" => Ok(Some(CommonMusicalKey::BMajor)),
+            "b_minor" => Ok(Some(CommonMusicalKey::BMinor)),
+            "auto" => Ok(Some(CommonMusicalKey::Auto)),
+            _ => Err(anyhow!("Unknown musical_key: {}", k)),
+        },
+    }
 }
 
-pub fn parse_mesh_output_type(ot: Option<&str>) -> Option<CommonMeshOutputType> {
-    ot.and_then(|o| match o.to_lowercase().as_str() {
-        "normal" => Some(CommonMeshOutputType::Normal),
-        "low_poly" | "lowpoly" => Some(CommonMeshOutputType::LowPoly),
-        "geometry" => Some(CommonMeshOutputType::Geometry),
-        _ => None,
-    })
+pub fn parse_mesh_output_type(ot: Option<&str>) -> Result<Option<CommonMeshOutputType>> {
+    match ot {
+        None => Ok(None),
+        Some(o) => match o.to_lowercase().as_str() {
+            "normal" => Ok(Some(CommonMeshOutputType::Normal)),
+            "low_poly" | "lowpoly" => Ok(Some(CommonMeshOutputType::LowPoly)),
+            "geometry" => Ok(Some(CommonMeshOutputType::Geometry)),
+            _ => Err(anyhow!("Unknown output_type: {}", o)),
+        },
+    }
 }
 
-pub fn parse_mesh_quality(q: Option<&str>) -> Option<CommonMeshQuality> {
-    q.and_then(|s| match s.to_lowercase().as_str() {
-        "standard" => Some(CommonMeshQuality::Standard),
-        "detailed" => Some(CommonMeshQuality::Detailed),
-        _ => None,
-    })
+pub fn parse_mesh_quality(q: Option<&str>) -> Result<Option<CommonMeshQuality>> {
+    match q {
+        None => Ok(None),
+        Some(s) => match s.to_lowercase().as_str() {
+            "standard" => Ok(Some(CommonMeshQuality::Standard)),
+            "detailed" => Ok(Some(CommonMeshQuality::Detailed)),
+            _ => Err(anyhow!("Unknown mesh quality: {}", s)),
+        },
+    }
 }
 
-pub fn parse_polygon_type(pt: Option<&str>) -> Option<CommonPolygonType> {
-    pt.and_then(|p| match p.to_lowercase().as_str() {
-        "triangle" => Some(CommonPolygonType::Triangle),
-        "quad" => Some(CommonPolygonType::Quad),
-        _ => None,
-    })
+fn parse_mesh_quality_named(args: &Value, name: &str) -> Result<Option<CommonMeshQuality>> {
+    parse_mesh_quality(args.get(name).and_then(|v| v.as_str()))
+        .map_err(|e| anyhow!("{}: {}", name, e))
+}
+
+pub fn parse_polygon_type(pt: Option<&str>) -> Result<Option<CommonPolygonType>> {
+    match pt {
+        None => Ok(None),
+        Some(p) => match p.to_lowercase().as_str() {
+            "triangle" => Ok(Some(CommonPolygonType::Triangle)),
+            "quad" => Ok(Some(CommonPolygonType::Quad)),
+            _ => Err(anyhow!("Unknown polygon_type: {}", p)),
+        },
+    }
 }
 
 pub fn parse_media_token(token: Option<&str>) -> Option<MediaFileToken> {
     token.map(|t| MediaFileToken::new_from_str(t))
 }
 
-pub fn parse_media_tokens(value: &Value) -> Option<Vec<MediaFileToken>> {
-    value.as_array().map(|arr| {
-        arr.iter()
-            .filter_map(|v| v.as_str().map(|s| MediaFileToken::new_from_str(s)))
-            .collect()
-    })
+pub fn parse_media_tokens(value: Option<&Vec<Value>>) -> Result<Option<Vec<MediaFileToken>>> {
+    match value {
+        None => Ok(None),
+        Some(arr) => {
+            let tokens = arr
+                .iter()
+                .map(|v| {
+                    v.as_str()
+                        .map(MediaFileToken::new_from_str)
+                        .ok_or_else(|| anyhow!("media tokens must be strings"))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(Some(tokens))
+        }
+    }
 }
 
-pub fn parse_character_tokens(value: &Value) -> Option<Vec<CharacterToken>> {
-    value.as_array().map(|arr| {
-        arr.iter()
-            .filter_map(|v| v.as_str().map(|s| CharacterToken::new_from_str(s)))
-            .collect()
-    })
+pub fn parse_character_tokens(value: Option<&Vec<Value>>) -> Result<Option<Vec<CharacterToken>>> {
+    match value {
+        None => Ok(None),
+        Some(arr) => {
+            let tokens = arr
+                .iter()
+                .map(|v| {
+                    v.as_str()
+                        .map(CharacterToken::new_from_str)
+                        .ok_or_else(|| anyhow!("character tokens must be strings"))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(Some(tokens))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod model_parsers {
+        use super::*;
+
+        #[test]
+        fn parses_known_and_rejects_unknown() {
+            assert!(matches!(parse_image_model("flux_1_dev"), Ok(CommonImageModel::Flux1Dev)));
+            assert!(matches!(parse_image_model("FLUX-PRO-1.1"), Ok(CommonImageModel::FluxPro11)));
+            assert!(parse_image_model("flux_3").is_err());
+            assert!(parse_image_model("gpt_image_2p5_flare").is_err());
+            assert!(matches!(parse_video_model("seedance_2p5"), Ok(CommonVideoModel::Seedance2p5)));
+            assert!(parse_video_model("seedance_2p0_u").is_err());
+            assert!(matches!(parse_mesh_model("tripo_3d_h3p1"), Ok(CommonMeshModel::Tripo3dH3p1)));
+            assert!(matches!(parse_splat_model("marble_1p1_plus"), Ok(CommonSplatModel::Marble1p1Plus)));
+            assert!(matches!(parse_audio_model("suno_music"), Ok(CommonAudioModel::SunoMusic)));
+        }
+    }
+
+    mod option_parsers {
+        use super::*;
+
+        #[test]
+        fn aspect_ratio_accepts_all_aliases() {
+            for s in ["square", "wide_16_9", "16:9", "tall_9_16", "wide_21_9", "wide_4_3",
+                      "tall_3_4", "wide_3_2", "tall_2_3", "wide_5_4", "tall_4_5", "auto",
+                      "wide", "tall", "square_hd"] {
+                assert!(parse_aspect_ratio(Some(s)).unwrap().is_some(), "{}", s);
+            }
+            assert_eq!(parse_aspect_ratio(None).unwrap(), None);
+            assert!(parse_aspect_ratio(Some("wide_sixteen_by_nine")).is_err());
+            assert!(parse_aspect_ratio(Some("bogus")).is_err());
+        }
+
+        #[test]
+        fn resolution_maps_3k_and_4k_distinctly() {
+            assert!(matches!(parse_resolution(Some("3k")).unwrap(), Some(CommonResolution::ThreeK)));
+            assert!(matches!(parse_resolution(Some("4k")).unwrap(), Some(CommonResolution::FourK)));
+            assert!(matches!(parse_resolution(Some("480p")).unwrap(), Some(CommonResolution::FourEightyP)));
+            assert!(matches!(parse_resolution(Some("720p")).unwrap(), Some(CommonResolution::SevenTwentyP)));
+            assert!(matches!(parse_resolution(Some("1080p")).unwrap(), Some(CommonResolution::TenEightyP)));
+            assert!(parse_resolution(Some("auto_2k")).is_err());
+        }
+
+        #[test]
+        fn quality_covers_full_enum() {
+            assert!(matches!(parse_quality(Some("auto")).unwrap(), Some(CommonQuality::Auto)));
+            assert!(matches!(parse_quality(Some("max")).unwrap(), Some(CommonQuality::Max)));
+            assert!(matches!(parse_quality(Some("xhigh")).unwrap(), Some(CommonQuality::XHigh)));
+            assert!(parse_quality(Some("standard")).is_err());
+            assert!(parse_quality(Some("ultra")).is_err());
+        }
+
+        #[test]
+        fn other_option_parsers_strict() {
+            assert!(matches!(parse_bitrate(Some("normal")).unwrap(), Some(CommonBitrate::Normal)));
+            assert!(parse_bitrate(Some("ludicrous")).is_err());
+            assert!(matches!(parse_video_output_format(Some("mp4")).unwrap(), Some(CommonVideoOutputFormat::Mp4)));
+            assert!(parse_video_output_format(Some("avi")).is_err());
+            assert!(parse_musical_key(Some("h_sharp")).is_err());
+            assert!(matches!(parse_mesh_output_type(Some("low_poly")).unwrap(), Some(CommonMeshOutputType::LowPoly)));
+            assert!(parse_mesh_output_type(Some("blob")).is_err());
+            assert!(parse_polygon_type(Some("ngon")).is_err());
+        }
+    }
 }
