@@ -24,7 +24,7 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -39,11 +39,12 @@ jobs:
         shell: cmd
 
       - name: setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
       - name: install frontend dependencies
+        shell: pwsh
         run: |
           # Navigate to the frontend directory to install dependencies
           cd ./frontend
@@ -63,6 +64,7 @@ jobs:
           npm list --depth=0 | findstr nx
 
       - name: Pre-build frontend to avoid Tauri build issues
+        shell: pwsh
         run: |
           # Build the frontend app from the correct directory
           cd ./frontend

@@ -1,13 +1,17 @@
+//! The saved Midjourney login (`midjourney_cookies.toml`): the browser cookies captured at
+//! sign-in, the account they belong to, and when they were last refreshed or failed.
+
+use std::io::Write;
+use std::path::Path;
+
 use browser_emulation::browser_profile::BrowserProfile;
 use chrono::{DateTime, Utc};
 use cookie_store_wrapper::cookie_store::CookieStore;
 use serde::{Deserialize, Serialize};
-use std::io::Write;
-use std::path::Path;
 use tempfile::NamedTempFile;
 use uuid_utils::uuid::generate_random_uuid;
 
-use crate::services::midjourney::utils::midjourney_browser_profile::MIDJOURNEY_USER_AGENT;
+use crate::utils::midjourney_browser_profile::MIDJOURNEY_USER_AGENT;
 
 /// Midjourney's slice of ArtCraftX's credential format. Other accounts retain
 /// their existing storage. Websocket tokens are deliberately never persisted.

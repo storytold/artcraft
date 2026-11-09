@@ -29,10 +29,10 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
@@ -84,7 +84,7 @@ jobs:
           echo "Starting certificate import process..."
 
           # Create certificate file
-          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
 
           # Debug: Check if certificate file exists and has content
           echo "Certificate file info:"
@@ -93,25 +93,25 @@ jobs:
 
           # Debug: Check certificate contents without password (just structure)
           echo "Certificate structure (may show error if password protected):"
-          openssl pkcs12 -info -in certificate.p12 -passin pass:$APPLE_CERTIFICATE_PASSWORD -noout || echo "Could not read certificate structure"
+          openssl pkcs12 -info -in certificate.p12 -passin pass:"$APPLE_CERTIFICATE_PASSWORD" -noout || echo "Could not read certificate structure"
 
           # Debug: Try to list what's in the p12 file
           echo "Attempting to list certificate contents:"
           security cms -D -i certificate.p12 || echo "Not a CMS file, trying PKCS12..."
-          openssl pkcs12 -in certificate.p12 -passin pass:$APPLE_CERTIFICATE_PASSWORD -info -nodes 2>&1 | head -20 || echo "Failed to read PKCS12 contents"
+          openssl pkcs12 -in certificate.p12 -passin pass:"$APPLE_CERTIFICATE_PASSWORD" -info -nodes 2>&1 | head -20 || echo "Failed to read PKCS12 contents"
 
           # Debug: Extract certificate details to verify type and expiration
           echo "Extracting certificate details..."
           # Extract just the certificate portion and examine it
-          openssl pkcs12 -in certificate.p12 -passin pass:$APPLE_CERTIFICATE_PASSWORD -nokeys 2>/dev/null | openssl x509 -text -noout | grep -E "(Subject:|Issuer:|Not Before|Not After)" || echo "Failed to parse certificate details"
+          openssl pkcs12 -in certificate.p12 -passin pass:"$APPLE_CERTIFICATE_PASSWORD" -nokeys 2>/dev/null | openssl x509 -text -noout | grep -E "(Subject:|Issuer:|Not Before|Not After)" || echo "Failed to parse certificate details"
 
           # Also try to see what type of certificate this is
           echo "Certificate type check:"
-          openssl pkcs12 -in certificate.p12 -passin pass:$APPLE_CERTIFICATE_PASSWORD -nokeys 2>/dev/null | openssl x509 -text -noout | grep -E "(CN=|OU=)" || echo "Could not determine certificate type"
+          openssl pkcs12 -in certificate.p12 -passin pass:"$APPLE_CERTIFICATE_PASSWORD" -nokeys 2>/dev/null | openssl x509 -text -noout | grep -E "(CN=|OU=)" || echo "Could not determine certificate type"
 
           # Debug: Check if private key exists
           echo "Checking for private key..."
-          openssl pkcs12 -in certificate.p12 -passin pass:$APPLE_CERTIFICATE_PASSWORD -nocerts -nodes 2>&1 | grep -E "(PRIVATE KEY|RSA KEY)" | head -5 || echo "No private key found"
+          openssl pkcs12 -in certificate.p12 -passin pass:"$APPLE_CERTIFICATE_PASSWORD" -nocerts -nodes 2>&1 | grep -E "(PRIVATE KEY|RSA KEY)" | head -5 || echo "No private key found"
 
           # Create temporary keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
@@ -139,6 +139,7 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
 
           # Add the keychain to the search list
+          # shellcheck disable=SC2046
           security list-keychains -d user -s build.keychain $(security list-keychains -d user | sed 's/^[[:space:]]*"//;s/"$//')
 
           # List all certificates to debug
@@ -181,11 +182,11 @@ jobs:
           security find-certificate -c "Learning Machines" build.keychain -p | openssl x509 -text -noout | grep -E "(Subject:|CN=)" || echo "Could not parse certificate"
 
           # Set the correct signing identity
-          echo "APPLE_SIGNING_IDENTITY=Developer ID Application: Learning Machines LLC (DJ6XS33FX8)" >> $GITHUB_ENV
+          echo "APPLE_SIGNING_IDENTITY=Developer ID Application: Learning Machines LLC (DJ6XS33FX8)" >> "$GITHUB_ENV"
           echo "Proceeding with identity: Developer ID Application: Learning Machines LLC (DJ6XS33FX8)"
 
           # Also set the team ID
-          echo "APPLE_DEVELOPMENT_TEAM=DJ6XS33FX8" >> $GITHUB_ENV
+          echo "APPLE_DEVELOPMENT_TEAM=DJ6XS33FX8" >> "$GITHUB_ENV"
 
       - name: Pre-build frontend to avoid Tauri build issues
         run: |
@@ -200,6 +201,7 @@ jobs:
           npx nx run artcraft:build
 
           echo "Checking build output..."
+          # shellcheck disable=SC2012
           ls -la apps/artcraft/dist/ | head -10
 
           # Update Tauri config to skip the build (since we already built)

@@ -1,7 +1,7 @@
 {
   "name": "@frontend/source",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
   "scripts": {
     "test:desktop-session": "node tools/testing/desktop-session.mjs",
     "perf:desktop": "node tools/performance/run.mjs"
