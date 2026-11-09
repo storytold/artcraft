@@ -144,145 +144,145 @@ Paid, destructive, privacy-changing, and local-file tools require the caller to 
 ## Available Tools (61)
 
 ### Generation
-| Tool | Description |
-|---|---|
-| `artcraft_generate_image` | Generate images from text prompts (Flux, Midjourney, Nano Banana, Seedream, GPT, Grok) |
-| `artcraft_generate_video` | Generate videos from text (Seedance, Kling, Sora, Veo, Grok) |
-| `artcraft_generate_3d_object` | Convert images to 3D models (Hunyuan 3D) |
-| `artcraft_generate_splat` | Generate Gaussian Splat 3D worlds (WorldLabs Marble) |
-| `artcraft_generate_audio` | Generate music/SFX (Suno Music/Remix/Sounds/Sample, Seed Audio) |
+| Tool                          | Description                                                                            |
+|-------------------------------|----------------------------------------------------------------------------------------|
+| `artcraft_generate_image`     | Generate images from text prompts (Flux, Midjourney, Nano Banana, Seedream, GPT, Grok) |
+| `artcraft_generate_video`     | Generate videos from text (Seedance, Kling, Sora, Veo, Grok)                           |
+| `artcraft_generate_3d_object` | Convert images to 3D models (Hunyuan 3D)                                               |
+| `artcraft_generate_splat`     | Generate Gaussian Splat 3D worlds (WorldLabs Marble)                                   |
+| `artcraft_generate_audio`     | Generate music/SFX (Suno Music/Remix/Sounds/Sample, Seed Audio)                        |
 
 ### Editing
-| Tool | Description |
-|---|---|
-| `artcraft_edit_image` | Re-edit an existing image |
-| `artcraft_remove_background` | Remove background from an image |
-| `artcraft_inpaint_image` | Inpaint specific regions of an image |
-| `artcraft_edit_image_angle` | Manipulate camera angle of an image |
-| `artcraft_edit_video` | Edit a video using Beeble SwitchX |
+| Tool                         | Description                          |
+|------------------------------|--------------------------------------|
+| `artcraft_edit_image`        | Re-edit an existing image            |
+| `artcraft_remove_background` | Remove background from an image      |
+| `artcraft_inpaint_image`     | Inpaint specific regions of an image |
+| `artcraft_edit_image_angle`  | Manipulate camera angle of an image  |
+| `artcraft_edit_video`        | Edit a video using Beeble SwitchX    |
 
 ### Media Management
-| Tool | Description |
-|---|---|
-| `artcraft_upload_image` | Upload a local image for use as reference |
-| `artcraft_upload_video` | Upload a local video for use as reference |
-| `artcraft_upload_audio` | Upload a local audio file |
-| `artcraft_get_media_file` | Get details about a media file |
-| `artcraft_download_media_file` | Download a media file to a local folder |
-| `artcraft_list_media_files` | List all your media files |
-| `artcraft_search_media` | Search session or featured media |
-| `artcraft_delete_media_file` | Delete a media file |
-| `artcraft_rename_media_file` | Rename a media file |
-| `artcraft_set_media_visibility` | Set media to public or private |
+| Tool                            | Description                               |
+|---------------------------------|-------------------------------------------|
+| `artcraft_upload_image`         | Upload a local image for use as reference |
+| `artcraft_upload_video`         | Upload a local video for use as reference |
+| `artcraft_upload_audio`         | Upload a local audio file                 |
+| `artcraft_get_media_file`       | Get details about a media file            |
+| `artcraft_download_media_file`  | Download a media file to a local folder   |
+| `artcraft_list_media_files`     | List all your media files                 |
+| `artcraft_search_media`         | Search session or featured media          |
+| `artcraft_delete_media_file`    | Delete a media file                       |
+| `artcraft_rename_media_file`    | Rename a media file                       |
+| `artcraft_set_media_visibility` | Set media to public or private            |
 
 ### Jobs
-| Tool | Description |
-|---|---|
+| Tool                      | Description                      |
+|---------------------------|----------------------------------|
 | `artcraft_get_job_status` | Check status of a generation job |
-| `artcraft_list_jobs` | List all session jobs |
-| `artcraft_terminate_job` | Cancel a running or pending job |
+| `artcraft_list_jobs`      | List all session jobs            |
+| `artcraft_terminate_job`  | Cancel a running or pending job  |
 
 ### Cost & Models
-| Tool | Description |
-|---|---|
-| `artcraft_estimate_cost` | Estimate cost before generating |
-| `artcraft_estimate_splat_cost` | Estimate Gaussian splat cost |
-| `artcraft_list_image_models` | List available image models |
-| `artcraft_list_video_models` | List available video models |
+| Tool                           | Description                     |
+|--------------------------------|---------------------------------|
+| `artcraft_estimate_cost`       | Estimate cost before generating |
+| `artcraft_estimate_splat_cost` | Estimate Gaussian splat cost    |
+| `artcraft_list_image_models`   | List available image models     |
+| `artcraft_list_video_models`   | List available video models     |
 
 ### Characters
-| Tool | Description |
-|---|---|
+| Tool                        | Description                               |
+|-----------------------------|-------------------------------------------|
 | `artcraft_create_character` | Create a character from a reference image |
-| `artcraft_list_characters` | List all your characters |
-| `artcraft_get_character` | Get character details |
-| `artcraft_delete_character` | Delete a character |
+| `artcraft_list_characters`  | List all your characters                  |
+| `artcraft_get_character`    | Get character details                     |
+| `artcraft_delete_character` | Delete a character                        |
 
 ### Voice & TTS
-| Tool | Description |
-|---|---|
-| `artcraft_tts_generate` | Generate speech from text |
-| `artcraft_tts_search_models` | Discover available TTS voices |
-| `artcraft_voice_convert` | Convert voice using a trained model |
-| `artcraft_list_voice_conversion_models` | List voice conversion models |
-| `artcraft_create_voice` | Create a custom voice |
-| `artcraft_list_voices` | List available voices |
-| `artcraft_create_voice_dataset` | Create a voice training dataset |
-| `artcraft_upload_voice_sample` | Add a sample to a voice dataset |
+| Tool                                    | Description                         |
+|-----------------------------------------|-------------------------------------|
+| `artcraft_tts_generate`                 | Generate speech from text           |
+| `artcraft_tts_search_models`            | Discover available TTS voices       |
+| `artcraft_voice_convert`                | Convert voice using a trained model |
+| `artcraft_list_voice_conversion_models` | List voice conversion models        |
+| `artcraft_create_voice`                 | Create a custom voice               |
+| `artcraft_list_voices`                  | List available voices               |
+| `artcraft_create_voice_dataset`         | Create a voice training dataset     |
+| `artcraft_upload_voice_sample`          | Add a sample to a voice dataset     |
 
 ### Prompts & Weights
-| Tool | Description |
-|---|---|
-| `artcraft_create_prompt` | Save a prompt for reuse |
-| `artcraft_get_prompt` | Retrieve a saved prompt |
-| `artcraft_list_weights` | List available model weights (LoRAs) |
-| `artcraft_search_weights` | Search weights by keyword |
-| `artcraft_get_weight` | Get weight details |
-| `artcraft_delete_weight` | Delete a model weight |
+| Tool                      | Description                          |
+|---------------------------|--------------------------------------|
+| `artcraft_create_prompt`  | Save a prompt for reuse              |
+| `artcraft_get_prompt`     | Retrieve a saved prompt              |
+| `artcraft_list_weights`   | List available model weights (LoRAs) |
+| `artcraft_search_weights` | Search weights by keyword            |
+| `artcraft_get_weight`     | Get weight details                   |
+| `artcraft_delete_weight`  | Delete a model weight                |
 
 ### Studio
-| Tool | Description |
-|---|---|
+| Tool                   | Description                                    |
+|------------------------|------------------------------------------------|
 | `artcraft_studio_gen2` | Video style transfer / image+video compositing |
 
 ### Account
-| Tool | Description |
-|---|---|
-| `artcraft_get_session_info` | Get current user info |
-| `artcraft_get_credits` | Check credit balance |
-| `artcraft_get_subscription` | Check subscription tier and limits |
-| `artcraft_create_checkout_session` | Stripe checkout for a credit pack (paid, confirm) |
+| Tool                                    | Description                                        |
+|-----------------------------------------|----------------------------------------------------|
+| `artcraft_get_session_info`             | Get current user info                              |
+| `artcraft_get_credits`                  | Check credit balance                               |
+| `artcraft_get_subscription`             | Check subscription tier and limits                 |
+| `artcraft_create_checkout_session`      | Stripe checkout for a credit pack (paid, confirm)  |
 | `artcraft_create_subscription_checkout` | Stripe checkout for a subscription (paid, confirm) |
-| `artcraft_get_billing_portal_url` | Stripe customer portal link |
+| `artcraft_get_billing_portal_url`       | Stripe customer portal link                        |
 
 ### Social
-| Tool | Description |
-|---|---|
-| `artcraft_create_bookmark` | Bookmark a media file |
-| `artcraft_list_bookmarks` | List your bookmarks |
-| `artcraft_rate_media` | Rate a media file (thumbs up/down) |
-| `artcraft_create_comment` | Comment on a media file |
-| `artcraft_list_comments` | List comments on a media file |
-| `artcraft_list_tags` | List tags on a media file |
-| `artcraft_set_tags` | Add or remove tags on a media file |
+| Tool                       | Description                        |
+|----------------------------|------------------------------------|
+| `artcraft_create_bookmark` | Bookmark a media file              |
+| `artcraft_list_bookmarks`  | List your bookmarks                |
+| `artcraft_rate_media`      | Rate a media file (thumbs up/down) |
+| `artcraft_create_comment`  | Comment on a media file            |
+| `artcraft_list_comments`   | List comments on a media file      |
+| `artcraft_list_tags`       | List tags on a media file          |
+| `artcraft_set_tags`        | Add or remove tags on a media file |
 
 ### Referrals
-| Tool | Description |
-|---|---|
-| `artcraft_create_referral_code` | Create a referral code |
-| `artcraft_list_referral_codes` | View your referral codes |
+| Tool                            | Description              |
+|---------------------------------|--------------------------|
+| `artcraft_create_referral_code` | Create a referral code   |
+| `artcraft_list_referral_codes`  | View your referral codes |
 
 ---
 
 ## Supported Image Models
 
-| Model | Best For |
-|---|---|
-| `flux_1_dev` | General-purpose, prompt adherence (default) |
-| `flux_1_schnell` | Fast generation |
-| `flux_pro_1p1` / `flux_pro_1p1_ultra` | Cinematic, commercial quality |
-| `flux_2_lora_angles` | Camera angle manipulation |
-| `nano_banana_pro` | Multi-image composition (up to 14), editing, 1K/2K/4K |
-| `seedream_4` / `seedream_4p5` | Anime, illustration |
-| `seedream_5_lite` | Lightweight Seedream 5 |
-| `midjourney_7` / `midjourney_8` | Photorealistic, artistic (requires linked MJ account) |
-| `midjourney_7_niji` | Anime-style Midjourney |
-| `gpt_image_1` / `gpt_image_1p5` / `gpt_image_2` | Semantic adherence, text rendering |
-| `grok_imagine_image` / `grok_imagine_image_q` | Stylized, dynamic scenes |
+| Model                                           | Best For                                              |
+|-------------------------------------------------|-------------------------------------------------------|
+| `flux_1_dev`                                    | General-purpose, prompt adherence (default)           |
+| `flux_1_schnell`                                | Fast generation                                       |
+| `flux_pro_1p1` / `flux_pro_1p1_ultra`           | Cinematic, commercial quality                         |
+| `flux_2_lora_angles`                            | Camera angle manipulation                             |
+| `nano_banana_pro`                               | Multi-image composition (up to 14), editing, 1K/2K/4K |
+| `seedream_4` / `seedream_4p5`                   | Anime, illustration                                   |
+| `seedream_5_lite`                               | Lightweight Seedream 5                                |
+| `midjourney_7` / `midjourney_8`                 | Photorealistic, artistic (requires linked MJ account) |
+| `midjourney_7_niji`                             | Anime-style Midjourney                                |
+| `gpt_image_1` / `gpt_image_1p5` / `gpt_image_2` | Semantic adherence, text rendering                    |
+| `grok_imagine_image` / `grok_imagine_image_q`   | Stylized, dynamic scenes                              |
 
 ## Supported Video Models
 
-| Model | Best For |
-|---|---|
-| `seedance_2p0` | General-purpose video (default) |
-| `seedance_2p0_fast` | Quick prototyping |
-| `seedance_2p0_bpu` / `seedance_2p0_bpu_fast` | BytePlus ultra quality final renders |
-| `kling_3p0_standard` / `kling_3p0_pro` | Complex motion, high fidelity |
-| `kling_2p1_pro` / `kling_2p1_master` | Legacy Kling 2.1 |
-| `veo_3` / `veo_3_fast` | Cinematic realism |
-| `veo_3p1` / `veo_3p1_fast` | Improved prompt adherence |
-| `sora_2` / `sora_2_pro` | Long continuous scenes |
-| `grok_imagine_video` / `grok_imagine_video_1p5` | Grok video generation |
+| Model                                           | Best For                             |
+|-------------------------------------------------|--------------------------------------|
+| `seedance_2p0`                                  | General-purpose video (default)      |
+| `seedance_2p0_fast`                             | Quick prototyping                    |
+| `seedance_2p0_bpu` / `seedance_2p0_bpu_fast`    | BytePlus ultra quality final renders |
+| `kling_3p0_standard` / `kling_3p0_pro`          | Complex motion, high fidelity        |
+| `kling_2p1_pro` / `kling_2p1_master`            | Legacy Kling 2.1                     |
+| `veo_3` / `veo_3_fast`                          | Cinematic realism                    |
+| `veo_3p1` / `veo_3p1_fast`                      | Improved prompt adherence            |
+| `sora_2` / `sora_2_pro`                         | Long continuous scenes               |
+| `grok_imagine_video` / `grok_imagine_video_1p5` | Grok video generation                |
 
 ## Supported Aspect Ratios
 

@@ -187,19 +187,6 @@ mod tests {
     assert!(load_secret_file(&f.path().to_path_buf(), "session").is_none());
   }
 
-  fn api_url() -> Url {
-    Url::parse(&ApiHost::Storyteller.to_api_hostname_and_scheme()).unwrap()
-  }
-
-  fn write_store(url: &Url, raws: &[&str]) -> tempfile::NamedTempFile {
-    let mut store = CookieStore::default();
-    let cookies: Vec<cookie_store::RawCookie> = raws.iter().map(|r| cookie_store::RawCookie::parse(*r).unwrap().into_owned()).collect();
-    store.store_response_cookies(cookies.into_iter(), url);
-    let mut f = tempfile::NamedTempFile::new().unwrap();
-    cookie_store::serde::json::save(&store, &mut f).unwrap();
-    f
-  }
-
   #[test]
   fn cookie_store_parses_session_and_visitor() {
     let url = api_url();
@@ -233,5 +220,18 @@ mod tests {
     let mut f = tempfile::NamedTempFile::new().unwrap();
     write!(f, "not json at all").unwrap();
     assert!(load_credentials_from_cookie_store(&f.path().to_path_buf(), &api_url()).is_none());
+  }
+
+  fn api_url() -> Url {
+    Url::parse(&ApiHost::Storyteller.to_api_hostname_and_scheme()).unwrap()
+  }
+
+  fn write_store(url: &Url, raws: &[&str]) -> tempfile::NamedTempFile {
+    let mut store = CookieStore::default();
+    let cookies: Vec<cookie_store::RawCookie> = raws.iter().map(|r| cookie_store::RawCookie::parse(*r).unwrap().into_owned()).collect();
+    store.store_response_cookies(cookies.into_iter(), url);
+    let mut f = tempfile::NamedTempFile::new().unwrap();
+    cookie_store::serde::json::save(&store, &mut f).unwrap();
+    f
   }
 }

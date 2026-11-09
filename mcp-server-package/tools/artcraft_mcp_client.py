@@ -221,7 +221,13 @@ class McpClient:
 
         on_event(token, state, text) is invoked when a job reaches a terminal
         state. Uses the single-job endpoint; one request per outstanding job
-        per round."""
+        per round.
+
+        A McpError raised while polling a job (transport failure or a tool
+        error such as an invalid token) is treated as terminal for that job:
+        it is recorded as "complete_failure", reported via on_event with
+        state "error", and not retried. Jobs still pending at timeout_s are
+        recorded as "timeout"."""
         deadline = time.time() + timeout_s
         pending = set(job_tokens)
         final = {}
