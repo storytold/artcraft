@@ -42,7 +42,7 @@ pub fn tools() -> Vec<Tool> {
               },
               "aspect_ratio": { "type": "string" },
               "resolution": { "type": "string" },
-              "quality": { "type": "string" },
+              "quality": { "type": "string", "description": "Image estimates only — ignored for video/splat" },
               "duration_seconds": { "type": "integer", "description": "Video duration (1-600)" },
               "batch_count": { "type": "integer", "description": "Batch size (1-8)" },
               "generate_audio": { "type": "boolean" },

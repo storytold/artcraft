@@ -45,8 +45,8 @@ This skill encapsulates best practices, workflows, and standards defined by the 
 ## 📋 Automated Verification Checklist
 
 Before pushing code or submitting a PR:
-- [ ] Check secrets hygiene — credential/cookie/token files must stay untracked (`~/Artcraft/credentials/`, `.env`, `secrets/`). Scan staged text for tokens before committing (e.g. `git diff --cached | grep -inE 'session=|visitor=|api[_-]?key|bearer'`).
+- [ ] Check secrets hygiene — credential/cookie/token files must stay untracked (`~/Artcraft/credentials/`, `.env`, `secrets/`). List staged files containing token-like text without printing the values: `git diff --cached -G'session=|visitor=|api[_-]?key|bearer' --name-only`.
 - [ ] Check path portability — no machine-specific paths (`C:\Users\<name>`, `/home/<name>`, `F:\`) in committed docs or code; resolve paths dynamically (`Path.home()`, `dirs::`, env vars).
-- [ ] Run the repo verifiers for whatever you touched: `sh .devin/scripts/verify-crate.sh <crate>` (Rust), `sh .devin/scripts/verify-frontend.sh` (frontend), `PYTHONUTF8=1 python -m py_compile tools/*.py && PYTHONUTF8=1 python tools/test_artcraft_mcp_client.py` (`mcp-server-package/`).
-- [ ] Sync branch with `upstream/main` (`sh .devin/scripts/check-upstream.sh`, then `git merge upstream/main`).
+- [ ] Run the repo verifiers for whatever you touched: `cargo fmt --check -p <crate> && cargo clippy -p <crate> --no-deps && cargo nextest run -p <crate>` (Rust — falls back to `cargo test -p <crate>` if nextest is not installed), `cd frontend/apps/artcraft && npx eslint <files>` (frontend), `cd mcp-server-package && PYTHONUTF8=1 python -m py_compile tools/*.py && PYTHONUTF8=1 python tools/test_artcraft_mcp_client.py` (Python suite).
+- [ ] Sync branch with `upstream/main` (`git fetch upstream && git merge upstream/main`; `git log --oneline HEAD..upstream/main` shows what's incoming).
 - [ ] Submit PR using `gh pr create` with full description template.

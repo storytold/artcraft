@@ -35,6 +35,9 @@ def get_target_configs():
     home = os.path.expanduser("~")
     if sys.platform == "darwin":
         claude_dir = os.path.join(home, "Library", "Application Support", "Claude")
+    elif sys.platform.startswith("linux"):
+        config_home = os.environ.get("XDG_CONFIG_HOME", os.path.join(home, ".config"))
+        claude_dir = os.path.join(config_home, "Claude")
     else:
         appdata = os.environ.get("APPDATA", os.path.join(home, "AppData", "Roaming"))
         claude_dir = os.path.join(appdata, "Claude")

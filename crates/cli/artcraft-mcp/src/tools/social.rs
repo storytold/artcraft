@@ -149,8 +149,8 @@ pub async fn rate_media(arguments: Value, client: &ArtCraftClient) -> Result<Vec
       "entity_type": ENTITY_TYPE_MEDIA_FILE,
       "rating_value": rating_value,
   });
-  let response = raw_json_post(&url, body, client.creds_ref()).await?;
   rate_limit("artcraft_rate_media")?;
+  let response = raw_json_post(&url, body, client.creds_ref()).await?;
   audit("rate_media", media_token, rating_value);
 
   let count = response.get("new_positive_rating_count_for_entity").and_then(|v| v.as_u64());
@@ -178,8 +178,8 @@ pub async fn create_comment(arguments: Value, client: &ArtCraftClient) -> Result
       "entity_type": ENTITY_TYPE_MEDIA_FILE,
       "uuid_idempotency_token": idem,
   });
-  let response = raw_json_post(&url, body, client.creds_ref()).await?;
   rate_limit("artcraft_create_comment")?;
+  let response = raw_json_post(&url, body, client.creds_ref()).await?;
 
   let comment_token = response.get("comment_token").and_then(|v| v.as_str());
   Ok(vec![ToolContent {
@@ -255,8 +255,8 @@ pub async fn set_tags(arguments: Value, client: &ArtCraftClient) -> Result<Vec<T
     other => return Err(anyhow!("Unknown action: {}. Expected 'add', 'set', or 'clear'.", other)),
   };
 
-  raw_json_post(&url, body, client.creds_ref()).await?;
   rate_limit("artcraft_set_tags")?;
+  raw_json_post(&url, body, client.creds_ref()).await?;
   audit("set_tags", media_token, action);
 
   Ok(vec![ToolContent { content_type: "text".to_string(), text: format!("{} media {}.", verb, media_token) }])

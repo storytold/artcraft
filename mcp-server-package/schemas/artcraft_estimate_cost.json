@@ -51,6 +51,7 @@
         "type": "string"
       },
       "quality": {
+        "description": "Image estimates only — ignored for video/splat",
         "type": "string"
       },
       "resolution": {

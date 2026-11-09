@@ -58,3 +58,8 @@ defaults. The server reports the failure as a tool result with
 `isError: true` (a successful JSON-RPC response carrying an error
 payload), not a JSON-RPC `-32602` invalid-params error; check
 `result.isError`/`content[].text` rather than only the error field.
+
+Caveat on `artcraft_estimate_cost`: `quality` only affects *image*
+estimates — the video/splat estimate API has no quality field, so a
+bad `quality` value passes unnoticed there. An estimate is not a
+substitute for validating the generation call itself.
