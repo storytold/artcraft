@@ -27,7 +27,7 @@ explicit approval, then call the paid tool with `confirm: true`.
 `artcraft_create_checkout_session` creates a Stripe checkout for a credit
 pack:
 
-| `pack_slug`       | Credits |
+| `credits_pack`    | Credits |
 |-------------------|---------|
 | `artcraft_1000`   | 1,000   |
 | `artcraft_2500`   | 2,500   |

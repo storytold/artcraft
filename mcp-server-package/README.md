@@ -105,7 +105,7 @@ Exit code 0 = everything works; non-zero prints which check failed.
 }
 ```
 
-Or run `python setup_mcp.py` to write the config for supported clients.
+Or run `python mcp-server-package/setup_mcp.py` from the repository root to write the config for supported clients.
 
 ---
 

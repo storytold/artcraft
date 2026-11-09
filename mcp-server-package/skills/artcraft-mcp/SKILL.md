@@ -34,8 +34,11 @@ than guessing (see references/*.md for the valid values).
 
 ### Mandatory pre-generation flow
 
-1. Run `artcraft_estimate_cost` (no confirm needed).
-2. Report the estimate: *"This will cost ~X credits ($Y.YY). Shall I proceed?"*
+1. Run `artcraft_estimate_cost` (no confirm needed). **It only covers
+   `media_type` image/video/splat** — for audio and 3D-mesh generation no
+   estimate tool exists; skip to step 2 describing what will run.
+2. Report the estimate (or the plan, when no estimate exists):
+   *"This will cost ~X credits ($Y.YY). Shall I proceed?"*
 3. **Wait for the user's answer.** Only then call the generation tool with
    `confirm: true`. Never auto-proceed on a paid action.
 
@@ -109,7 +112,7 @@ required; optional `generation_mode`, `input_image_count`, `aspect_ratio`,
 ### Account & billing
 `artcraft_get_session_info`, `artcraft_get_credits`,
 `artcraft_get_subscription` — read-only.
-`artcraft_create_checkout_session` (`pack_slug`: `artcraft_1000` …
+`artcraft_create_checkout_session` (`credits_pack`: `artcraft_1000` …
 `artcraft_50000`) and `artcraft_create_subscription_checkout`
 (`plan`: `artcraft_basic`|`artcraft_pro`|`artcraft_max`; `cadence`:
 `monthly`|`yearly`) — both paid, need `confirm`.
@@ -122,7 +125,7 @@ required; optional `generation_mode`, `input_image_count`, `aspect_ratio`,
   `vertical_angle`, `zoom`).
 - **Characters**: `create/list/get/delete_character`.
 - **Prompts**: `artcraft_create_prompt` (`text`), `artcraft_get_prompt`.
-- **TTS**: `artcraft_tts_generate` (`inference_text`, `tts_model_token`),
+- **TTS**: `artcraft_tts_generate` (`text`, `tts_model_token`),
   `artcraft_tts_search_models`.
 - **Voice**: `artcraft_voice_convert`, `list_voice_conversion_models`,
   `create_voice`, `list_voices`, `create_voice_dataset`,
@@ -131,7 +134,7 @@ required; optional `generation_mode`, `input_image_count`, `aspect_ratio`,
 - **Social**: `create/list_bookmarks`, `rate_media`, `create/list_comments`,
   `list/set_tags`.
 - **Referrals**: `create/list_referral_codes`.
-- **Studio**: `artcraft_studio_gen2` (`image_file`/`video_file`, paid).
+- **Studio**: `artcraft_studio_gen2` (`image_media_token` + `video_media_token`, paid).
 
 ## Standard workflow
 

@@ -85,7 +85,7 @@ If this file exists, you don't need to create the credential files manually.
 Open your MCP config file. On Windows, this is typically:
 
 ```
-C:\Users\YourUsername\.windsurf\mcp_config.json
+C:\Users\YourUsername\.codeium\windsurf\mcp_config.json
 ```
 
 Add the following entry inside the `mcpServers` object:
@@ -139,7 +139,7 @@ If you get an error about missing credentials, double-check Step 2.
 
 ## Safety Gates
 
-Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true` — MCP clients ask for your approval first. Generation and editing tools also accept an `idempotency_token` so retries can't double-charge. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories.
+Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true`. Important nuance: the server can only check that `confirm` arrived as `true` — **it cannot verify a human approved.** Approval is the client's job (MCP clients typically ask first); automation scripts in `tools/` send `confirm` on your behalf, so treat running them as the approval. Generation and editing tools also accept an `idempotency_token` so retries can't double-charge. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories.
 
 ## Available Tools (61)
 

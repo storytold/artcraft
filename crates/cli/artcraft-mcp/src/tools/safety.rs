@@ -113,6 +113,12 @@ pub fn validate_filename_component(name: &str) -> Result<()> {
   if name.chars().any(|c| c.is_control()) {
     bail!("filename contains control characters");
   }
+  // Path::components() only splits on the platform separator — on Unix,
+  // "sub\dir.png" and "C:\Windows\x.dll" are single valid components.
+  // Reject both separators and drive-letter colons explicitly.
+  if name.contains('/') || name.contains('\\') || name.contains(':') {
+    bail!("filename must be a plain file name without directories");
+  }
   let path = Path::new(name);
   if path.is_absolute() {
     bail!("filename must not be an absolute path");

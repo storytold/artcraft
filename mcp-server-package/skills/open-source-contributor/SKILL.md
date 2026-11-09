@@ -8,7 +8,7 @@ This skill encapsulates best practices, workflows, and standards defined by the 
 ## 🏛️ The 10 Pillars of Open Source Governance
 
 ### 1. How to Contribute to Open Source (`/how-to-contribute/`)
-- **Fork & Sync**: Always maintain an `upstream` remote pointing to the main project (`storytold/artcraft.git`) and an `origin` remote pointing to your fork (`theCosmicCrafter/artcraft-1.git`).
+- **Fork & Sync**: Always maintain an `upstream` remote pointing to the main project (`storytold/artcraft.git`) and an `origin` remote pointing to your own fork (`<your-username>/<your-fork>.git`).
 - **Clean Commits**: Keep commit messages concise, imperative, and structured following Conventional Commits (`feat(mcp):`, `docs(mcp):`, `fix(mcp):`).
 - **PR Protocol**: Include a structured PR description using `PULL_REQUEST_TEMPLATE.md` with an executive summary, itemized changelog, and verification checklist.
 

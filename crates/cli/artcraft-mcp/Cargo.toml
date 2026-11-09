@@ -41,6 +41,11 @@ urlencoding = "2.1"
 # HTTP client for raw requests (workspace-pinned client config)
 reqwest = { workspace = true, features = ["json", "multipart"] }
 
+# Desktop cookie store (.cookies) — same crate/format the Tauri plugin writes,
+# so domain/path/expiry matching behaves identically to the desktop app
+cookie_store = { version = "0.21", features = ["serde"] }
+url.workspace = true
+
 # MCP / JSON-RPC
 # Using manual JSON-RPC implementation over stdio for minimal dependencies
 

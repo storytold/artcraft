@@ -24,7 +24,7 @@ Parameters: `prompt` (lyrics/description, ≤8000 chars), `style_prompt`
 
 | Parameter           | Notes                                       |
 |---------------------|---------------------------------------------|
-| `inference_text`    | Text to synthesize                          |
+| `text`              | Text to synthesize                          |
 | `tts_model_token`   | TTS model/weight token                      |
 
 Discover models with `artcraft_tts_search_models` (`query`, `limit`) —

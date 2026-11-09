@@ -43,6 +43,7 @@ Inputs: `prompt` or `image_media_token`; plus
 
 ## Cost estimate
 
-`artcraft_estimate_splat_cost` takes `model` + `has_reference_image`.
-For meshes, use `artcraft_estimate_cost` (`media_type: "splat"`) where
-applicable or estimate via the generation job.
+`artcraft_estimate_splat_cost` covers splat models only (`model` +
+`has_reference_image`) — it rejects mesh models like `hunyuan_3d_3`.
+There is no mesh-cost estimate tool; ask the user to approve a mesh
+generation based on the plan, not an estimate.

@@ -192,7 +192,7 @@ pub async fn upload_audio(arguments: Value, client: &ArtCraftClient) -> Result<V
 
   let api_hostname = client.api_host.to_api_hostname_and_scheme();
   let url = format!("{}/v1/media_files/upload/audio", api_hostname);
-  let fields = vec![("maybe_visibility".to_string(), "public".to_string())];
+  let fields = vec![("maybe_visibility".to_string(), "private".to_string())];
   let response = raw_multipart_upload(&url, bytes, file_name, fields, client.creds_ref()).await?;
   audit("upload_audio", path.to_string_lossy().as_ref(), "success");
 
