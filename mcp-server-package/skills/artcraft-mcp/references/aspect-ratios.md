@@ -1,27 +1,57 @@
-# Supported Aspect Ratios
+# Aspect Ratios, Resolution & Quality
 
-When using image and video generation tools on the ArtCraft MCP server, you can supply an `aspect_ratio` parameter to enforce specific dimensions.
+## `aspect_ratio`
 
-## Automatic / Dynamic
-- `auto`: Default automatic sizing based on the prompt or reference images.
-- `auto_2k` / `auto_3k` / `auto_4k`: Automatic aspect ratio targeting specific higher resolutions.
+| Value        | Aliases   | Shape                |
+|--------------|-----------|----------------------|
+| `square`     | `1:1`     | 1:1                  |
+| `square_hd`  | `squarehd`| 1:1 HD               |
+| `wide_16_9`  | `16:9`    | Widescreen 16:9      |
+| `tall_9_16`  | `9:16`    | Portrait 9:16        |
+| `wide_21_9`  | `21:9`    | Ultrawide 21:9       |
+| `tall_9_21`  | `9:21`    | Vertical ultrawide   |
+| `wide_4_3`   | `4:3`     | Classic TV           |
+| `tall_3_4`   | `3:4`     | Portrait classic     |
+| `wide_3_2`   | `3:2`     | Photo standard       |
+| `tall_2_3`   | `2:3`     | Portrait photo       |
+| `wide_5_4`   | `5:4`     | Slightly wide        |
+| `tall_4_5`   | `4:5`     | Social portrait      |
+| `wide`       |           | Generic wide         |
+| `tall`       |           | Generic tall         |
+| `auto`       |           | Model default        |
 
-## Standard Shapes
-- `square` (1:1)
-- `square_hd`: High Definition Square.
-- `wide`: Generic wide ratio.
-- `tall`: Generic tall ratio.
+## `resolution`
 
-## Specific Wide Ratios
-- `wide_three_by_two` (3:2)
-- `wide_four_by_three` (4:3)
-- `wide_five_by_four` (5:4)
-- `wide_sixteen_by_nine` (16:9) - standard widescreen.
-- `wide_twenty_one_by_nine` (21:9) - ultrawide cinematic.
+| Value           | Aliases | Pixels   |
+|-----------------|---------|----------|
+| `half_k`        | `0.5k`  | ~0.5K    |
+| `one_k`         | `1k`    | ~1K      |
+| `two_k`         | `2k`    | ~2K      |
+| `three_k`       | `3k`    | ~3K      |
+| `four_k`        | `4k`    | ~4K      |
+| `four_eighty_p` | `480p`  | 480p     |
+| `seven_twenty_p`| `720p`  | 720p     |
+| `ten_eighty_p`  | `1080p` | 1080p    |
 
-## Specific Tall Ratios
-- `tall_two_by_three` (2:3)
-- `tall_three_by_four` (3:4)
-- `tall_four_by_five` (4:5)
-- `tall_nine_by_sixteen` (9:16) - standard vertical video (e.g., Shorts, TikTok).
-- `tall_nine_by_twenty_one` (9:21) - ultra-tall.
+## `quality`
+
+`low` | `medium` | `high` | `xhigh` | `max` | `auto`
+
+## `bitrate` (video only)
+
+`normal` | `high`
+
+## Other enums
+
+- `output_type` (mesh): `normal` | `low_poly` | `geometry`
+- `polygon_type` (mesh): `triangle` | `quad`
+- `texture_quality`, `geometry_quality` (mesh): `standard` | `detailed`
+- `video output format`: `mp4` | `mov`
+- `media_type` (cost): `image` | `video` | `splat`
+- `generation_mode` (cost):
+  - image: `text_to_image` | `image_edit`
+  - video: `text_to_video` | `start_frame_to_video` |
+    `start_and_end_frame_to_video` | `reference_image_to_video`
+
+Unknown values for any of these are rejected with an explicit
+invalid-params error — nothing silently defaults.

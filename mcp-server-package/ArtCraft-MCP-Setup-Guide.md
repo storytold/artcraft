@@ -9,9 +9,17 @@ The ArtCraft MCP Server is a standalone executable that connects your AI coding 
 ## What You Need
 
 ### 1. The Executable
-A single file: **`artcraft-mcp.exe`** (~12 MB)
+A single file: **`artcraft-mcp.exe`** (~12 MB release build)
 
-This is a fully self-contained Rust binary. No runtime dependencies, no DLLs, no Python, no Node.js required. Place it anywhere on your system.
+This is a fully self-contained Rust binary. No runtime dependencies, no DLLs, no Python, no Node.js required. The binary is not checked into the repo — build it from source:
+
+```bash
+# from the repository root (Rust toolchain required)
+cargo build --release -p artcraft-mcp
+# → target/release/artcraft-mcp.exe
+```
+
+Place it anywhere on your system once built.
 
 ### 2. An ArtCraft Account
 You need an active ArtCraft account with valid session credentials. The server authenticates using your ArtCraft session cookies.
@@ -48,6 +56,8 @@ C:\Users\YourUsername\Artcraft\credentials\
 ```
 
 Each file should contain only the raw cookie token value (no quotes, no formatting, just the token string).
+
+**Security:** these are live session credentials — treat them like a password. Keep the files readable only by your account (`chmod 600` on macOS/Linux; the server warns when they are group/world-readable). Never commit them, paste them into chats, or share them.
 
 ### Method B: ArtCraft Desktop App (Automatic)
 
@@ -127,7 +137,11 @@ If you get an error about missing credentials, double-check Step 2.
 
 ---
 
-## Available Tools (40+)
+## Safety Gates
+
+Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true` — MCP clients ask for your approval first. Generation and editing tools also accept an `idempotency_token` so retries can't double-charge. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories.
+
+## Available Tools (61)
 
 ### Generation
 | Tool | Description |
@@ -136,6 +150,7 @@ If you get an error about missing credentials, double-check Step 2.
 | `artcraft_generate_video` | Generate videos from text (Seedance, Kling, Sora, Veo, Grok) |
 | `artcraft_generate_3d_object` | Convert images to 3D models (Hunyuan 3D) |
 | `artcraft_generate_splat` | Generate Gaussian Splat 3D worlds (WorldLabs Marble) |
+| `artcraft_generate_audio` | Generate music/SFX (Suno Music/Remix/Sounds/Sample, Seed Audio) |
 
 ### Editing
 | Tool | Description |
@@ -153,6 +168,7 @@ If you get an error about missing credentials, double-check Step 2.
 | `artcraft_upload_video` | Upload a local video for use as reference |
 | `artcraft_upload_audio` | Upload a local audio file |
 | `artcraft_get_media_file` | Get details about a media file |
+| `artcraft_download_media_file` | Download a media file to a local folder |
 | `artcraft_list_media_files` | List all your media files |
 | `artcraft_search_media` | Search session or featured media |
 | `artcraft_delete_media_file` | Delete a media file |
@@ -170,6 +186,7 @@ If you get an error about missing credentials, double-check Step 2.
 | Tool | Description |
 |---|---|
 | `artcraft_estimate_cost` | Estimate cost before generating |
+| `artcraft_estimate_splat_cost` | Estimate Gaussian splat cost |
 | `artcraft_list_image_models` | List available image models |
 | `artcraft_list_video_models` | List available video models |
 
@@ -214,6 +231,9 @@ If you get an error about missing credentials, double-check Step 2.
 | `artcraft_get_session_info` | Get current user info |
 | `artcraft_get_credits` | Check credit balance |
 | `artcraft_get_subscription` | Check subscription tier and limits |
+| `artcraft_create_checkout_session` | Stripe checkout for a credit pack (paid, confirm) |
+| `artcraft_create_subscription_checkout` | Stripe checkout for a subscription (paid, confirm) |
+| `artcraft_get_billing_portal_url` | Stripe customer portal link |
 
 ### Social
 | Tool | Description |
@@ -256,7 +276,7 @@ If you get an error about missing credentials, double-check Step 2.
 |---|---|
 | `seedance_2p0` | General-purpose video (default) |
 | `seedance_2p0_fast` | Quick prototyping |
-| `seedance_2p0_u` / `seedance_2p0_bpu` | Ultra high quality final renders |
+| `seedance_2p0_bpu` / `seedance_2p0_bpu_fast` | BytePlus ultra quality final renders |
 | `kling_3p0_standard` / `kling_3p0_pro` | Complex motion, high fidelity |
 | `kling_2p1_pro` / `kling_2p1_master` | Legacy Kling 2.1 |
 | `veo_3` / `veo_3_fast` | Cinematic realism |
@@ -266,7 +286,7 @@ If you get an error about missing credentials, double-check Step 2.
 
 ## Supported Aspect Ratios
 
-`square`, `wide_three_by_two`, `wide_four_by_three`, `wide_sixteen_by_nine`, `wide_twenty_one_by_nine`, `tall_two_by_three`, `tall_three_by_four`, `tall_four_by_five`, `tall_nine_by_sixteen`, `tall_nine_by_twenty_one`, `auto`, `auto_2k`, `auto_3k`, `auto_4k`
+`square`, `square_hd`, `wide_3_2`, `wide_4_3`, `wide_5_4`, `wide_16_9`, `wide_21_9`, `wide`, `tall_2_3`, `tall_3_4`, `tall_4_5`, `tall_9_16`, `tall_9_21`, `tall`, `auto` (ratio aliases like `16:9` also parse)
 
 ---
 
@@ -303,4 +323,4 @@ If you get an error about missing credentials, double-check Step 2.
 
 ---
 
-*ArtCraft MCP Server v0.1.0 | Protocol: 2025-03-26*
+*ArtCraft MCP Server v0.1.0 | MCP protocol: 2024-11-05 & 2025-03-26 (negotiated at initialize)*

@@ -1,42 +1,48 @@
-# Supported 3D and Gaussian Splat Models
+# 3D Mesh & Gaussian Splat Models
 
-The ArtCraft MCP server supports generating 3D assets and Gaussian Splats from images and text.
+## `artcraft_generate_3d_object` — mesh generation
 
----
+| Model                     | Aliases                | Notes                        |
+|---------------------------|------------------------|------------------------------|
+| `hunyuan_3d_2p0`          | `hunyuan-3d-2.0`       | Hunyuan 3D v2.0              |
+| `hunyuan_3d_2p1`          | `hunyuan-3d-2.1`       | Hunyuan 3D v2.1              |
+| `hunyuan_3d_3`            | `hunyuan_3d`           | Hunyuan 3D v3 (default)      |
+| `hunyuan_3d_3_sketch`     |                        | Sketch-conditioned v3        |
+| `hunyuan_3d_3p1_pro`      | `hunyuan-3d-3.1-pro`   | v3.1 pro quality             |
+| `hunyuan_3d_3p1_rapid`    | `hunyuan-3d-3.1-rapid` | v3.1 fast                    |
+| `hunyuan_3d_3p1_part`     |                        | Part-level decomposition     |
+| `hunyuan_3d_3p1_topology` |                        | Smart retopology             |
+| `tripo_3d_h3p1`           | `tripo`, `tripo_3d`    | Tripo3D H3.1                 |
 
-## 1. 3D Mesh Object Generation (`artcraft_generate_3d_object`)
-Converts static 2D images or multi-view captures into fully realized 3D mesh assets.
+Inputs: `prompt` (text-to-3D) or `image_media_token` (image-to-3D).
+Multi-view: `front/back/left/right_image_media_token`.
+Retopology/parts: `input_mesh_media_file_token`.
 
-### Available Models & Versions:
-* **Hunyuan 3D**: `2.0` (Default), `2.1` (Higher geometry fidelity and texture resolution).
-* **Tripo3D**: `tripo_h3_1` (State-of-the-art fast 3D reconstruction).
+Mesh options:
+- `output_type`: `normal` | `low_poly` | `geometry`
+- `polygon_type`: `triangle` | `quad`
+- `texture_quality` / `geometry_quality`: `standard` | `detailed`
+- `enable_pbr`, `enable_texture`: booleans
+- `target_face_count`: integer 100-10,000,000
 
-### Parameters:
-* **`media_file_token`** (Required): The token of the primary input image. (Upload via `artcraft_upload_image`).
-* **`model` / `version`** (Optional): Model version selection.
-* **Multi-View Reference Tokens** (Optional): `back_media_file_token`, `left_media_file_token`, `right_media_file_token` for full 360° geometry consistency.
-* **Retopology & Materials** (Optional):
-  * `enable_pbr`: Generate physically-based rendering roughness/metallic maps.
-  * `enable_texture`: Texture synthesis toggle.
-  * `face_count`: Target polygon count (e.g. 10000, 50000).
-  * `texture_quality`: `standard` or `high`.
-  * `geometry_quality`: `draft`, `standard`, `ultra`.
+## `artcraft_generate_splat` — Gaussian splat worlds
 
----
+| Model             | Aliases          | Notes                  |
+|-------------------|------------------|------------------------|
+| `marble_0p1_mini` | `marble-0.1-mini`| Marble 0.1 mini        |
+| `marble_0p1_plus` |                  | Marble 0.1 plus        |
+| `marble_1p0`      | `marble-1.0`     | Marble 1.0             |
+| `marble_1p0_draft`|                  | Marble 1.0 draft       |
+| `marble_1p1`      | `marble-1.1`     | Marble 1.1             |
+| `marble_1p1_plus` |                  | Marble 1.1+ (default)  |
+| `triposplat`      | `tripo_splat`    | TripoSplat             |
 
-## 2. WorldLabs Marble Gaussian Splatting (`artcraft_generate_splat`)
-Generates high-fidelity interactive 3D radiance fields (Gaussian Splats) from text descriptions, reference images, or both.
+Inputs: `prompt` or `image_media_token`; plus
+`reference_image_media_tokens` (max 16), `reference_video_media_token`,
+`is_panoramic` (360° equirectangular), `disable_recaption`.
 
-### Available Models & Versions:
-* **`marble_0p1_mini` / `mini`**: Fast prototyping of scene layouts.
-* **`marble_0p1_plus` / `plus`**: Standard production-grade radiance fields.
-* **`marble_1p0` / `marble_1p1`**: Next-gen WorldLabs Marble splatting models with high spatial depth and complex lighting.
+## Cost estimate
 
-### Parameters:
-* **`image_media_file_token`**: Reference image to seed scene layout.
-* **`prompt`**: Natural language scene description.
-* **`is_panoramic`**: Set to `true` for 360° equirectangular environment splats.
-* **`camera_distance` / `camera_height` / `camera_pitch`**: Initial viewing camera coordinates.
-
-### Pre-generation Cost Check:
-* Always run `artcraft_estimate_splat_cost` with the target `version` (e.g. `marble_0p1_plus`, `marble_1p1`) to report exact credit costs before execution.
+`artcraft_estimate_splat_cost` takes `model` + `has_reference_image`.
+For meshes, use `artcraft_estimate_cost` (`media_type: "splat"`) where
+applicable or estimate via the generation job.

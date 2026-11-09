@@ -1,60 +1,60 @@
-# Supported Video Models
+# Video Models
 
-The ArtCraft MCP server supports the following video generation models via the `model` parameter in the `generate_video` tool.
+Accepted `model` values for `artcraft_generate_video` (and video
+`media_type` in `artcraft_estimate_cost`). Unknown values are rejected
+with an explicit error.
 
-## General Usage Rules
-When generating video, the agent MUST adhere to these rules:
-- **`prompt`**: Mandatory. Detail the scene, camera movement (e.g., "pan left", "zoom in"), subject action, and lighting.
-- **`duration`**: Video length in seconds. Typically 5 (default) or 10. Some advanced models support 15.
-- **Image-to-Video Workflow**: To animate a static image, use `upload_media` to upload the image and retrieve its `MediaFileToken`. Pass this token to `start_frame_media_token` (or `image_reference_tokens`). Most top-tier models (Kling, Seedance, Veo) natively support Image-to-Video.
-- **Video-to-Video Workflow**: Upload a source video and pass its token to `video_reference_tokens` to use it as a style or motion reference.
+| Model                     | Aliases                    | Notes                          |
+|---------------------------|----------------------------|--------------------------------|
+| `seedance_2p0`            | `seedance-2.0`             | General purpose (default)      |
+| `seedance_2p0_fast`       | `seedance-2.0-fast`        | Quick drafts                   |
+| `seedance_2p0_bp`         | `seedance-2.0-byteplus`    | BytePlus tier                  |
+| `seedance_2p0_bp_fast`    |                            | BytePlus fast                  |
+| `seedance_2p0_bpu`        |                            | BytePlus ultra quality         |
+| `seedance_2p0_bpu_fast`   |                            | BytePlus ultra fast            |
+| `seedance_2p0_mini`       |                            | Seedance 2.0 mini              |
+| `seedance_2p0_bp_mini`    |                            | BytePlus mini                  |
+| `seedance_2p0_bpu_mini`   |                            | BytePlus ultra mini            |
+| `seedance_2p5_preview`    |                            | Seedance 2.5 preview           |
+| `seedance_2p5`            | `seedance-2.5`             | Seedance 2.5                   |
+| `seedance_2p5_u`          | `seedance-2.5-ultra`       | Seedance 2.5 ultra             |
+| `seedance_1p5_pro`        | `seedance-1.5-pro`         | Legacy 1.5                     |
+| `seedance_1p0_lite`       | `seedance-1.0-lite`        | Legacy 1.0 lite                |
+| `kling_3p0_standard`      | `kling-3.0-standard`       | Kling 3.0 standard             |
+| `kling_3p0_pro`           | `kling-3.0-pro`            | Kling 3.0 pro, complex motion  |
+| `kling_2p6_pro`           | `kling-2.6-pro`            | Kling 2.6                      |
+| `kling_2p5_turbo_pro`     | `kling-2.5-turbo-pro`      | Kling 2.5 turbo                |
+| `kling_2p1_pro`           | `kling-2.1-pro`            | Kling 2.1                      |
+| `kling_2p1_master`        | `kling-2.1-master`         | Kling 2.1 master               |
+| `kling_1p6_pro`           | `kling-1.6-pro`            | Kling 1.6                      |
+| `sora_2`                  | `sora-2`                   | OpenAI Sora 2                  |
+| `sora_2_pro`              | `sora-2-pro`               | Sora 2 pro, long scenes        |
+| `veo_2`                   | `veo-2`                    | Google Veo 2                   |
+| `veo_3`                   | `veo-3`                    | Veo 3, cinematic realism       |
+| `veo_3_fast`              | `veo-3-fast`               | Veo 3 fast                     |
+| `veo_3p1`                 | `veo-3.1`                  | Veo 3.1, prompt adherence      |
+| `veo_3p1_fast`            | `veo-3.1-fast`             | Veo 3.1 fast                   |
+| `veo_3p1_lite`            | `veo-3.1-lite`             | Veo 3.1 lite                   |
+| `vidu_q3`                 | `vidu-q3`                  | Vidu Q3                        |
+| `vidu_q3_turbo`           | `vidu-q3-turbo`            | Vidu Q3 turbo                  |
+| `minimax_h3`              | `hailuo_h3`                | MiniMax Hailuo 3               |
+| `minimax_h3_turbo`        | `minimax-h3-turbo`         | MiniMax H3 turbo               |
+| `minimax_h3_ultra`        | `minimax-h3-ultra`         | MiniMax H3 ultra               |
+| `flux_3`                  | `flux-3`                   | Flux video 3                   |
+| `flux_3_draft`            | `flux-3-draft`             | Flux 3 draft                   |
+| `grok_imagine_video`      | `grok_video`               | Grok video (linked account)    |
+| `grok_imagine_video_1p5`  | `grok-imagine-video-1.5`   | Grok video 1.5                 |
+| `happy_horse_1p0`         | `happy-horse-1.0`          | Happy Horse                    |
 
-## Seedance (Default Family)
-- **`seedance_2p0`**: (Default model) High quality general-purpose video generation. Supports text-to-video and image-to-video.
-- **`seedance_2p0_fast`**: Faster variant for quick prototyping.
-- **`seedance_2p0_bp` / `seedance_2p0_bp_fast`**: BytePlus variants for different backend infrastructure.
-- **`seedance_2p0_u` / `seedance_2p0_u_fast`**: Ultra high quality variants for final renders.
-- **`seedance_2p0_bpu` / `seedance_2p0_bpu_fast`**: BytePlus Ultra variants.
-- **`seedance_2p5` / `seedance_2p5_fast`**: Next-generation Seedance 2.5 with enhanced temporal consistency.
-- **`seedance_2p5_bp` / `seedance_2p5_u`**: Seedance 2.5 BytePlus and Ultra quality variants.
+## Other parameters
 
-## Kling
-Kling models excel at realistic physics, fluid motion, and adherence to complex prompts.
-- **`kling_3p0_standard` / `kling_3p0_pro`**: Newest state-of-the-art Kling 3.0 models. Highly recommended for complex motion and high-fidelity output.
-- **`kling_2p6_pro` / `kling_2p5_turbo_pro`**: Highly capable Kling 2.x models.
-- **`kling_2p1_pro` / `kling_2p1_master`**: Legacy Kling 2.1 models.
-- **`kling_1p6_pro`**: Oldest supported Kling model.
-
-## Veo
-Google's Veo models are exceptional for cinematic realism, accurate lighting, and consistent physics.
-- **`veo_3` / `veo_3_fast`**: State-of-the-art Veo models. Strong support for complex cinematic prompts and image-to-video.
-- **`veo_3p1` / `veo_3p1_fast`**: Incremental improvements on Veo 3 for better prompt adherence.
-- **`veo_2`**: Legacy Veo 2 model.
-
-## Sora
-- **`sora_2` / `sora_2_pro`**: OpenAI's Sora 2 video generation models. Exceptional for long, continuous, consistent scenes with high detail.
-
-## Grok
-- **`grok_imagine_video`**: Standard Grok video model.
-- **`grok_imagine_video_1p5`**: Updated Grok video model for better motion and clarity.
-
-## Wan (Alibaba)
-- **`wan_3p0`**: Alibaba's Wan 3.0 high-fidelity video generation model.
-- **`wan_3p0_prime`**: Enhanced quality Wan 3.0 variant for complex motion dynamics.
-
-## MiniMax (Hailuo)
-- **`minimax_h3`**: MiniMax H3 cinematic video generation.
-- **`minimax_h3_turbo`**: High-speed MiniMax H3 model.
-- **`minimax_h3_ultra`**: Maximum resolution and detail MiniMax H3 model.
-
-## Beeble
-- **`switch_x`**: Beeble SwitchX model specialized in relighting, scene location change, and subject replacement.
-
-## Video Output Format Options
-ArtCraft supports specifying output video containers:
-- **`mp4`**: Default high-compatibility H.264 container.
-- **`mov`**: Apple QuickTime ProRes/Alpha-compatible format.
-
-## Experimental / Others
-- **`happy_horse_1p0`**: Experimental/specialized model.
-- **`preview_model` / `preview_model_fast`**: Temporary model rollout slots used for beta testing new models.
+- `duration_seconds`: integer 1-600
+- `bitrate`: `normal` | `high`
+- `quality`: `low` | `medium` | `high` | `xhigh` | `max` | `auto`
+- `aspect_ratio`, `resolution`: see [aspect-ratios.md](aspect-ratios.md)
+- `video_batch_count`: integer 1-8 (default 1)
+- `generate_audio`: boolean — native soundtrack where the model supports it
+- Keyframes/refs: `start_frame_image_media_token`,
+  `end_frame_image_media_token`, `reference_image_media_tokens`,
+  `reference_video_media_tokens`, `reference_audio_media_tokens`,
+  `reference_character_tokens` (arrays of `m_`/`char_` tokens, max 16)

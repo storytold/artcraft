@@ -1,49 +1,47 @@
-# Supported Image Models
+# Image Models
 
-The ArtCraft MCP server supports a wide variety of image models via the `model` parameter in the `generate_image` tool.
+Accepted `model` values for `artcraft_generate_image` (and image
+`media_type` in `artcraft_estimate_cost`). Aliases in parentheses also
+parse. Unknown values are rejected with an explicit error.
 
-## General Usage Rules
-When generating images, the agent MUST adhere to these rules:
-- **`prompt`**: Mandatory. Detail the subject, style, lighting, and composition.
-- **`aspect_ratio`**: Optional but highly recommended. Valid options: `square`, `wide_three_by_two`, `wide_sixteen_by_nine`, `wide_twenty_one_by_nine`, `tall_two_by_three`, `tall_nine_by_sixteen`. Defaults to `square` if omitted.
-- **`quality`**: Optional. Valid options: `standard`, `high`. 
-- **`image_batch_count`**: Number of images to generate (1 to 4).
-- **`generation_mode`** (Used mainly in cost estimation): `text_to_image` or `image_edit`.
+| Model                  | Aliases                | Notes                                  |
+|------------------------|------------------------|----------------------------------------|
+| `flux_1_dev`           | `flux1dev`             | General purpose, prompt adherence      |
+| `flux_1_schnell`       | `flux1schnell`         | Fast generation                        |
+| `flux_pro_1p1`         | `flux-pro-1.1`         | Cinematic quality                      |
+| `flux_pro_1p1_ultra`   | `flux-pro-1.1-ultra`   | Highest fidelity Flux                  |
+| `gpt_image_1`          | `gpt-image-1`          | Semantic adherence, text rendering     |
+| `gpt_image_1p5`        | `gpt-image-1.5`        | Improved GPT image                     |
+| `gpt_image_2`          | `gpt-image-2`          | Latest GPT image                       |
+| `grok_imagine_image`   | `grok_imagine`         | Stylized, dynamic                      |
+| `grok_imagine_image_q` |                        | Higher quality Grok                    |
+| `midjourney_7`         | `mj7`                  | Photorealistic (linked MJ account)     |
+| `midjourney_7_niji`    |                        | Anime-style Midjourney 7               |
+| `midjourney_8`         | `mj8`                  | Latest Midjourney (linked MJ account)  |
+| `nano_banana`          | `nanobanana`           | Editing/composition                    |
+| `nano_banana_2`        | `nanobanana2`          | v2 editing/composition                 |
+| `nano_banana_pro`      | `nanobananapro`        | Multi-image composition (up to 16 refs)|
+| `seedream_4`           | `seedream4`            | Anime/illustration                     |
+| `seedream_4p5`         | `seedream4p5`          | Improved Seedream                      |
+| `seedream_5_lite`      | `seedream5lite`        | Lightweight Seedream 5                 |
+| `seedream_5p0_pro`     | `seedream_5_pro`       | Seedream 5 Pro                         |
+| `seedream_5p0_pro_u`   |                        | Seedream 5 Pro Ultra                   |
+| `flux_2_lora_angles`   |                        | Camera-angle editing (see below)       |
+| `qwen_edit_2511_angles`|                        | Camera-angle editing (see below)       |
 
-## Flux Models
-- **`flux_1_dev`**: (Default model). Excellent general-purpose generation. Best for prompt adherence and realistic details.
-- **`flux_1_schnell`**: Fast variant of Flux 1. Use when speed is preferred over ultra-fine details.
-- **`flux_pro_1p1` / `flux_pro_1p1_ultra`**: Professional and ultra-high-quality variants. Use for cinematic or highly polished commercial outputs.
-- **`flux_2_lora_angles`**: LoRA fine-tuned variant. Use when specific camera angles or character poses are requested.
-- **`flux_3` / `flux_3_pro`**: Next-generation Flux 3 architectures with advanced lighting and detail rendition.
+## Camera-angle editing
 
-## Nano Banana (Gemini)
-Nano Banana models are unique in their support for advanced composition and editing.
-- **`nano_banana_pro`**: Pro variant. 
-  - **Capabilities**: Supports multi-image composition (up to 14 inputs), single image editing, and targeting specific resolutions (1K/2K/4K).
-  - **Editing Workflow**: To edit an existing image, use `upload_media` to get a `MediaFileToken`, then pass it to the `image_reference_tokens` parameter. Specify the edit instructions clearly in the `prompt`.
-  - **Composition Workflow**: Upload multiple images, pass their comma-separated tokens to `image_reference_tokens`, and describe how to combine them in the `prompt`.
+For angle orbits prefer the dedicated `artcraft_edit_image_angle` tool
+(`image_media_token`, `horizontal_angle`, `vertical_angle`, `zoom`,
+`confirm`). The `flux_2_lora_angles` / `qwen_edit_2511_angles` image models
+also accept `adjust_horizontal_angle` / `adjust_vertical_angle` /
+`adjust_zoom` on `artcraft_generate_image`.
 
-## Seedream
-- **`seedream_4` / `seedream_4p5`**: Highly aesthetic, anime, and illustration-friendly generation models. Best used with anime-style prompts.
-- **`seedream_5` / `seedream_5_lite`**: Core Seedream 5 releases for high-fidelity stylized generation.
-- **`seedream_5_pro` / `seedream_5_ultra`**: Pro and Ultra Seedream 5 models with fine-grained color dynamic range and composition control.
+## Other parameters
 
-## Midjourney
-Midjourney models require a linked `midjourney.web_login.toml` credential.
-- **`midjourney_7` / `midjourney_8`**: Extremely high-quality photorealistic and artistic models. Do NOT use complex paragraph prompts; use comma-separated keywords and stylistic terms.
-- **`midjourney_7_niji`**: Specially tuned for anime and illustrative styles.
-
-## GPT / DALL-E
-- **`gpt_image_1` / `gpt_image_1p5` / `gpt_image_2`**: GPT-powered image generation models. Excellent for highly specific semantic adherence and text rendering.
-- **`gpt_image_2p5_flare`**: High-speed GPT Image 2.5 model supporting up to 4K resolutions (`1k`, `2k`, `3k`, `4k`).
-- **`gpt_image_2p5_sunburst`**: Premium high-detail GPT Image 2.5 model for complex artistic composition.
-
-## Quality & Resolution Enhancements
-ArtCraft supports extended quality and resolution selectors:
-- **`resolution`**: `1k`, `2k`, `3k`, `4k`
-- **`quality`**: `auto`, `max`, `x_high`, `high`, `medium`, `low`
-
-## Grok
-- **`grok_imagine_image`**: Standard Grok image model. Good for stylized and dynamic scenes.
-- **`grok_imagine_image_q`**: Higher quality Grok image model variant.
+- `aspect_ratio`: see [aspect-ratios.md](aspect-ratios.md)
+- `resolution`: `half_k`, `one_k`, `two_k`, `three_k`, `four_k`,
+  `four_eighty_p`/`480p`, `seven_twenty_p`/`720p`, `ten_eighty_p`/`1080p`
+- `quality`: `low`, `medium`, `high`, `xhigh`, `max`, `auto`
+- `image_batch_count`: integer 1-8 (default 1)
+- `image_media_tokens`: array of `m_` tokens, max 16

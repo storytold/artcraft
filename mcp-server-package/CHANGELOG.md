@@ -1,8 +1,62 @@
 # Changelog
 
-All notable changes to the **ArtCraft Model Context Protocol (MCP) Server** project will be documented in this file.
+All notable changes to the **ArtCraft Model Context Protocol (MCP) Server**
+package will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+Server version is `0.1.0` (`crates/cli/artcraft-mcp/Cargo.toml`); MCP protocol
+2024-11-05 and 2025-03-26 are negotiated at initialize.
+
+---
+
+## [Unreleased]
+
+### Security
+- **Credential hardening**: session/visitor tokens are never returned in tool
+  output; credential files warn on permissive (group/world-readable) permissions.
+- **Path traversal fix**: `artcraft_download_media_file` sanitizes filenames
+  (no separators/`..`/absolute paths) and confines writes to allow-listed
+  directories with a size cap.
+- **Local file read restrictions**: `artcraft_upload_*` and
+  `artcraft_upload_voice_sample` require `confirm: true` and enforce an
+  allowed-directory check, extension allowlist, and size cap.
+- **Paid/destructive gates**: generation, editing, checkout, delete,
+  visibility, and terminate tools all require `confirm: true`; paid
+  generation accepts a caller `idempotency_token` for safe retries.
+- Bounded inputs: batch counts, durations, prompt lengths, token arrays,
+  and list limits now reject out-of-range values instead of truncating.
+
+### Changed
+- **Protocol correctness**: MCP wire types serialize camelCase
+  (`inputSchema`, `isError`, `serverInfo`); `arguments` defaults to `{}`;
+  protocol version negotiates between 2024-11-05 and 2025-03-26.
+- **Strict parsing**: unknown models, aspect ratios, resolutions, quality,
+  bitrate, pack slugs, and job statuses now return invalid-params errors
+  (no silent defaults; `3k`/`4k` map to distinct resolutions).
+- **Real endpoints**: job status uses `GET /v1/jobs/job/{token}`,
+  termination `DELETE /v1/jobs/job/{token}`, characters use `/v1/character/*`,
+  bookmarks `/v1/user_bookmarks/*`, tags `/v1/tags/media_file/*`,
+  comments `/v1/comments/*`, studio `/v1/studio_gen2/enqueue` — verified
+  against `artcraft_api_defs` and frontend API classes.
+- **Shared HTTP**: one reqwest client with timeouts and response-body caps;
+  structured errors preserve status + truncated body; URL encoding on all
+  path/query interpolation.
+- **Async I/O**: non-blocking tokio stdio loop; tools list cached in a
+  `OnceLock` instead of rebuilt per request.
+- **Python suite**: all six tools rewritten on the shared
+  `artcraft_mcp_client.py` (correct tool names/params, `isError` handling,
+  drained stderr, missing-`arguments` default); healthcheck exits non-zero
+  on failure.
+- **Schemas**: all 61 `schemas/*.json` regenerated from the live
+  `tools/list` (`inputSchema` shape) via `generate_schemas.py`; a parity
+  test keeps them in sync.
+
+### Added
+- 26 Rust unit tests (parsers, path validation, confirm/idempotency,
+  credential parsing) + Python integration test suite
+  (`test_artcraft_mcp_client.py`, 12 tests including schema parity).
+- `docs:` refreshed — README, setup guide, TOOLS.md, SKILL.md and
+  references now match the implemented 61-tool surface.
 
 ---
 

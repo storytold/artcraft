@@ -10,12 +10,21 @@ import json
 import argparse
 
 def find_mcp_binary():
+    env_path = os.environ.get("ARTCRAFT_MCP_PATH")
+    if env_path and os.path.exists(env_path):
+        return os.path.abspath(env_path)
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(script_dir)
     candidates = [
         os.path.join(script_dir, "bin", "artcraft-mcp.exe"),
         os.path.join(script_dir, "artcraft-mcp.exe"),
         os.path.join(script_dir, "bin", "artcraft-mcp"),
         os.path.join(script_dir, "artcraft-mcp"),
+        os.path.join(repo_root, "target", "release", "artcraft-mcp.exe"),
+        os.path.join(repo_root, "target", "release", "artcraft-mcp"),
+        os.path.join(repo_root, "target", "debug", "artcraft-mcp.exe"),
+        os.path.join(repo_root, "target", "debug", "artcraft-mcp"),
     ]
     for c in candidates:
         if os.path.exists(c):

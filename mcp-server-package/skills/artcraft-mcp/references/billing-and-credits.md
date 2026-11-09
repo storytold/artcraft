@@ -1,65 +1,51 @@
-# Billing, Credits & Cost Estimation Reference
+# Billing, Credits & Cost Estimation
 
-The ArtCraft MCP server provides tools to inspect wallet balances, quote generation costs before running jobs, and generate secure Stripe checkout flows.
+## Read-only (no confirm needed)
 
----
+| Tool                              | Returns                                      |
+|-----------------------------------|----------------------------------------------|
+| `artcraft_get_credits`            | Wallet credit balances                       |
+| `artcraft_get_subscription`       | Current plan tier, limits, renewal           |
+| `artcraft_get_session_info`       | Non-sensitive session profile fields         |
+| `artcraft_get_billing_portal_url` | Stripe portal URL (manage cards/invoices)    |
 
-## 1. Credit Balance Inspection (`artcraft_get_credits`)
+## Pre-generation estimates (free)
 
-Queries the authenticated user's wallet balances across free, monthly, and banked credit pools.
+`artcraft_estimate_cost` — required: `media_type` (`image`|`video`|`splat`)
+and `model`. Optional: `generation_mode`, `input_image_count`,
+`aspect_ratio`, `resolution`, `quality`, `duration_seconds`, `batch_count`,
+`generate_audio`, `has_reference_image`.
 
-### Usage:
-- No arguments required (defaults to `"artcraft"` namespace).
-- Returns:
-  - **Free credits**: Daily or promo credits.
-  - **Monthly credits**: Credits renewed with active subscription tier.
-  - **Banked credits**: Purchased credit packs that do not expire.
-  - **Sum total credits**: Total available spending balance.
+`artcraft_estimate_splat_cost` — required: `model`; optional
+`has_reference_image`.
 
----
+Best practice: estimate, report credits + USD cents to the user, get
+explicit approval, then call the paid tool with `confirm: true`.
 
-## 2. Pre-Generation Cost Estimation
+## Credit top-ups (paid — `confirm: true` required)
 
-Always estimate costs before launching resource-heavy jobs to prevent running out of credits.
+`artcraft_create_checkout_session` creates a Stripe checkout for a credit
+pack:
 
-### A. General Media Estimation (`artcraft_estimate_cost`)
-Supports Image, Video, 3D Mesh, and Voice pipelines.
-- **Parameters**:
-  - `model`: Model identifier (e.g. `seedance_2p0`, `flux_1_dev`, `tripo_h3_1`).
-  - `provider`: Provider identifier (e.g. `artcraft`, `fal`, `midjourney`).
-  - `generation_mode`: Mode (`text_to_image`, `image_to_video`, `text_to_video`, etc.).
-  - `duration_seconds`: Video duration (5, 10, 15s).
-  - `image_batch_count`: Batch size (1-4).
+| `pack_slug`       | Credits |
+|-------------------|---------|
+| `artcraft_1000`   | 1,000   |
+| `artcraft_2500`   | 2,500   |
+| `artcraft_5000`   | 5,000   |
+| `artcraft_10000`  | 10,000  |
+| `artcraft_25000`  | 25,000  |
+| `artcraft_50000`  | 50,000  |
 
-### B. Gaussian Splat Estimation (`artcraft_estimate_splat_cost`)
-Specifically quotes WorldLabs Marble radiance field costs based on resolution and model tier.
-- **Parameters**:
-  - `version`: Splat model version (`marble_0p1_mini`, `marble_0p1_plus`, `marble_1p0`, `marble_1p1`).
-  - `is_panoramic`: Boolean (panoramic captures require additional processing credits).
+Unknown slugs are rejected — there is no silent fallback to a larger pack.
 
----
+## Subscriptions (paid — `confirm: true` required)
 
-## 3. Stripe Checkout & Top-Ups
+`artcraft_create_subscription_checkout`:
 
-When a user's credit balance is low or they want to subscribe to higher generation limits:
+| Parameter | Values                                          |
+|-----------|--------------------------------------------------|
+| `plan`    | `artcraft_basic`, `artcraft_pro`, `artcraft_max` |
+| `cadence` | `monthly` (default), `yearly`                    |
 
-### A. Credit Pack Top-Up (`artcraft_create_checkout_session`)
-Generates an instant, direct Stripe checkout session link.
-- **Credit Pack Slugs**:
-  - `artcraft_1000` (1,000 Credits)
-  - `artcraft_2500` (2,500 Credits)
-  - `artcraft_5000` (5,000 Credits — Default)
-  - `artcraft_10000` (10,000 Credits)
-  - `artcraft_25000` (25,000 Credits)
-  - `artcraft_50000` (50,000 Credits)
-
-### B. Tier Subscriptions (`artcraft_create_subscription_checkout`)
-Generates a Stripe recurring checkout link for ArtCraft plans.
-- **Plans**: `artcraft_basic`, `artcraft_pro`, `artcraft_max`
-- **Cadence**: `monthly` (default) or `yearly`
-
-### C. Customer Billing Portal (`artcraft_get_billing_portal_url`)
-Returns a secure Stripe Customer Portal redirect URL where the user can:
-- Update credit card / payment methods
-- Download PDF tax invoices and receipts
-- Upgrade, downgrade, or cancel recurring subscriptions
+Both checkout tools return a Stripe URL — the user completes payment in
+the browser. Generation never charges until the paid tool itself runs.

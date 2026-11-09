@@ -1,51 +1,44 @@
-# Supported Audio & Voice Synthesis Models
+# Audio, TTS & Voice Models
 
-The ArtCraft MCP server provides end-to-end audio, musical composition, and voice synthesis capabilities through native Model Context Protocol tools.
+## `artcraft_generate_audio` (paid, `confirm` required)
 
----
+| Model            | Aliases           | Use for                        |
+|------------------|-------------------|--------------------------------|
+| `suno_music`     | `suno`, `music`   | Full songs (default)           |
+| `suno_remix`     | `remix`           | Remix an uploaded track        |
+| `suno_sounds`    | `sounds`, `sfx`   | Sound effects / one-shots      |
+| `suno_sample`    | `sample`          | Sample-style generation        |
+| `seed_audio_1p0` | `seed_audio`      | Seed Audio 1.0                 |
 
-## 1. Suno AI Music & Ambient Audio (`artcraft_generate_audio`)
+Parameters: `prompt` (lyrics/description, ≤8000 chars), `style_prompt`
+(genre tags ≤2000), `audio_media_tokens` / `image_media_tokens` (≤16),
+`keep_lyrics`, `is_instrumental`, `is_loopable`, `bpm` (30-300),
+`musical_key`, `sample_rate_hz` (8000/16000/24000/32000/44100/48000),
+`speed`/`volume` (0.5-2.0), `pitch` (-12..12).
 
-Enqueues generative audio and musical track generation powered by Suno AI.
+`musical_key` values: `auto`, `c_major`, `c_minor`, `d_major`, `d_minor`,
+`f_major`, `f_minor`, `g_major`, `g_minor`, `a_major`, `a_minor`,
+`b_major`, `b_minor`. (Only these variants exist — no E keys.)
 
-### Parameters:
-- **`prompt`** (Required): Detailed text description of the music, sonic texture, instruments, or lyrics.
-  - *Instrumental example*: `"Late night lo-fi chillhop beat, warm rhodes chords, dusty vinyl crackle, gentle sidechain bass, 85 bpm"`
-  - *Vocal example*: `"[Verse 1]\nNeon signs flicker in the rain...\n[Chorus]\nLost in the frequency tonight"`
-- **`tags`** (Optional): Genre, mood, or instrumentation styling tags (e.g. `"synthwave, retro, 80s analog, uptempo"`).
-- **`duration_seconds`** (Optional): Duration in seconds (e.g. 30, 60, 120).
-- **`is_custom`** (Optional): Boolean flag (`true` when providing structured lyrics/sections).
+## `artcraft_tts_generate` (paid)
 
-### Agent Best Practices:
-1. Always advise users whether they want an instrumental track or vocal composition.
-2. Pre-generate or format lyric tags (`[Verse]`, `[Chorus]`, `[Drop]`, `[Outro]`) to improve musical structure.
+| Parameter           | Notes                                       |
+|---------------------|---------------------------------------------|
+| `inference_text`    | Text to synthesize                          |
+| `tts_model_token`   | TTS model/weight token                      |
 
----
+Discover models with `artcraft_tts_search_models` (`query`, `limit`) —
+it searches the weights catalog for `text_to_speech` entries.
 
-## 2. Text-to-Speech (`artcraft_tts_generate`)
+## Voice tools
 
-Synthesizes realistic spoken speech from text scripts.
-
-### Parameters:
-- **`text`** (Required): Spoken script text.
-- **`voice_token`** (Optional): Target voice profile token.
-- **`model`** (Optional): Underlying TTS acoustic model.
-
-### Related Discovery Tools:
-- **`artcraft_tts_search_models`**: Query available TTS voices and linguistic models.
-- **`artcraft_list_voices`**: View the user's custom saved voices and system stock voices.
-
----
-
-## 3. Voice Conversion & Cloning (`artcraft_voice_convert`)
-
-Converts existing vocal tracks into target character voices using neural voice conversion.
-
-### Parameters:
-- **`source_audio_media_token`** (Required): Media token of input vocal audio (upload via `artcraft_upload_audio`).
-- **`target_voice_token`** (Required): Voice token to transform speech into.
-- **`model`** (Optional): Voice conversion pipeline model.
-
-### Voice Sample Onboarding:
-- Use **`artcraft_upload_voice_sample`** to upload clean, dry spoken audio samples for training custom voice models.
-- Use **`artcraft_create_voice_dataset`** to aggregate uploaded samples into a trainable dataset.
+- `artcraft_voice_convert` — convert audio via a trained voice model
+  (`audio_media_token`, `model_token`, paid/confirm).
+- `artcraft_list_voice_conversion_models` — list available models.
+- `artcraft_create_voice` (`name`, `description`, `confirm`) /
+  `artcraft_list_voices` / `artcraft_get_voice` (if present) — manage
+  custom voices.
+- `artcraft_create_voice_dataset` (`name`, `confirm`) /
+  `artcraft_upload_voice_sample` (`file_path`, `dataset_token`, `confirm`)
+  — build a dataset from local audio files (audio extension allowlist,
+  size cap applies).
