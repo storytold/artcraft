@@ -3,113 +3,99 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcRequest {
-    pub jsonrpc: String,
-    pub id: Option<Value>,
-    pub method: String,
-    #[serde(default)]
-    pub params: Option<Value>,
+  pub jsonrpc: String,
+  pub id: Option<Value>,
+  pub method: String,
+  #[serde(default)]
+  pub params: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JsonRpcResponse {
-    pub jsonrpc: String,
-    pub id: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<JsonRpcError>,
+  pub jsonrpc: String,
+  pub id: Option<Value>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub result: Option<Value>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub error: Option<JsonRpcError>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JsonRpcError {
-    pub code: i32,
-    pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Value>,
+  pub code: i32,
+  pub message: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub data: Option<Value>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InitializeResult {
-    pub protocol_version: String,
-    pub capabilities: ServerCapabilities,
-    pub server_info: ServerInfo,
+  pub protocol_version: String,
+  pub capabilities: ServerCapabilities,
+  pub server_info: ServerInfo,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerCapabilities {
-    pub tools: ToolCapabilities,
+  pub tools: ToolCapabilities,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolCapabilities {
-    pub list_changed: bool,
+  pub list_changed: bool,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ServerInfo {
-    pub name: String,
-    pub version: String,
+  pub name: String,
+  pub version: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Tool {
-    pub name: String,
-    pub description: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_schema: Option<Value>,
+  pub name: String,
+  pub description: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub input_schema: Option<Value>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ToolsListResult {
-    pub tools: Vec<Tool>,
+  pub tools: Vec<Tool>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ToolCallRequest {
-    pub name: String,
-    #[serde(default)]
-    pub arguments: Value,
+  pub name: String,
+  #[serde(default)]
+  pub arguments: Value,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolCallResult {
-    pub content: Vec<ToolContent>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_error: Option<bool>,
+  pub content: Vec<ToolContent>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub is_error: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ToolContent {
-    #[serde(rename = "type")]
-    pub content_type: String,
-    pub text: String,
+  #[serde(rename = "type")]
+  pub content_type: String,
+  pub text: String,
 }
 
 impl JsonRpcResponse {
-    pub fn success(id: Option<Value>, result: Value) -> Self {
-        Self {
-            jsonrpc: "2.0".to_string(),
-            id,
-            result: Some(result),
-            error: None,
-        }
-    }
+  pub fn success(id: Option<Value>, result: Value) -> Self {
+    Self { jsonrpc: "2.0".to_string(), id, result: Some(result), error: None }
+  }
 
-    pub fn error(id: Option<Value>, code: i32, message: String) -> Self {
-        Self {
-            jsonrpc: "2.0".to_string(),
-            id,
-            result: None,
-            error: Some(JsonRpcError {
-                code,
-                message,
-                data: None,
-            }),
-        }
-    }
+  pub fn error(id: Option<Value>, code: i32, message: String) -> Self {
+    Self { jsonrpc: "2.0".to_string(), id, result: None, error: Some(JsonRpcError { code, message, data: None }) }
+  }
 }
