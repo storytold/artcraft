@@ -17,6 +17,6 @@ concurrency:
 
 jobs:
   sonarcloud:
-    # Tracked at @main so org-wide CI improvements propagate without PR churn.
-    uses: storytold/craft-common-actions/.github/workflows/sonarcloud.yml@main
+    # Tracked at @ci/harden-runner so org-wide CI improvements propagate without PR churn.
+    uses: storytold/craft-common-actions/.github/workflows/sonarcloud.yml@ci/harden-runner
     secrets: inherit
