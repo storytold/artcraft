@@ -17,7 +17,7 @@ Verifies binary discovery, protocol handshake, credential presence, tools
 list, and live API calls (credits + cost estimate).
 
 ```bash
-PYTHONUTF8=1 python artcraft_healthcheck.py
+PYTHONUTF8=1 python tools/artcraft_healthcheck.py
 ```
 
 Prints `[PASS]`/`[FAIL]`/`[WARN]` per check; **exits non-zero on any
@@ -28,7 +28,7 @@ failure** (safe for CI smoke tests).
 ## artcraft_cost_estimator.py — credits & estimates (read-only)
 
 ```bash
-PYTHONUTF8=1 python artcraft_cost_estimator.py \
+PYTHONUTF8=1 python tools/artcraft_cost_estimator.py \
   --image-model flux_1_dev --count 2 \
   --video-model seedance_2p0 --duration 8 \
   --aspect-ratio wide_16_9
@@ -49,7 +49,7 @@ Also prints credit balance and active subscription.
 ## artcraft_runner.py — batch video/image generation (paid)
 
 ```bash
-PYTHONUTF8=1 python artcraft_runner.py \
+PYTHONUTF8=1 python tools/artcraft_runner.py \
   --image keyframe.png \
   --prompt "Slow dolly through a neon market" \
   --model seedance_2p0 --copies 2 --duration 5 \
@@ -73,7 +73,7 @@ Polls `artcraft_get_job_status` per job and downloads each `m_` result.
 ## artcraft_3d_runner.py — mesh & splat (paid)
 
 ```bash
-PYTHONUTF8=1 python artcraft_3d_runner.py \
+PYTHONUTF8=1 python tools/artcraft_3d_runner.py \
   --image character.png --mode both --version 3 --splat-version 1.1 \
   --out-dir ~/ArtCraft/3D_Assets
 ```
@@ -96,7 +96,7 @@ Uploads a source image and enqueues 4 angle-shift edits
 (`artcraft_edit_image_angle`): ±30° orbits, +20° pitch, 1.4× zoom.
 
 ```bash
-PYTHONUTF8=1 python artcraft_angle_matrix.py \
+PYTHONUTF8=1 python tools/artcraft_angle_matrix.py \
   --image subject.png --out-dir ~/ArtCraft/angle_matrix
 ```
 
@@ -111,7 +111,7 @@ PYTHONUTF8=1 python artcraft_angle_matrix.py \
 ## artcraft_audio_weaver.py — music & SFX (paid)
 
 ```bash
-PYTHONUTF8=1 python artcraft_audio_weaver.py \
+PYTHONUTF8=1 python tools/artcraft_audio_weaver.py \
   --prompt "Rainy lo-fi, vinyl crackle" --style "lofi,ambient" \
   --bpm 85 --instrumental --out-dir ~/ArtCraft/audio
 ```
@@ -153,7 +153,7 @@ Useful helpers: `call_tool` / `call_text` (raise `McpError` on JSON-RPC and
 ## test_artcraft_mcp_client.py — integration tests
 
 ```bash
-PYTHONUTF8=1 python test_artcraft_mcp_client.py
+PYTHONUTF8=1 python tools/test_artcraft_mcp_client.py
 ```
 
 Spawns the real binary: handshake, tools/list surface, schema shape,

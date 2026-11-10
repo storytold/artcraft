@@ -45,6 +45,7 @@ pub fn tools() -> Vec<Tool> {
           "type": "object",
           "properties": {
               "image_media_token": { "type": "string" },
+              "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
               "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
           },
           "required": ["image_media_token", "confirm"]
