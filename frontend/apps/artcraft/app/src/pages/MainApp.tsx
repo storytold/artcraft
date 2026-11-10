@@ -152,7 +152,7 @@ export const MainApp = ({ sceneToken }: Props) => {
   // Session probe (runs once per shell mount).
   useEffect(() => {
     const usersApi = new UsersApi();
-    usersApi.GetSession().then((result) => {
+    void usersApi.GetSession().then((result) => {
       console.log(
         `User Info | Username: ${result.data?.user?.username}, Token: ${result.data?.user?.user_token}`,
       );

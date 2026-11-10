@@ -84,7 +84,7 @@ export const BaseImageSelector = ({
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const mediaToken = newState.data || "";
-              (async () => {
+              void (async () => {
                 let finalUrl = reader.result as string;
                 let thumbnailUrlTemplate = undefined;
                 try {

@@ -38,7 +38,7 @@ export const useActiveJobs = () => {
       // then set new one with new interval
       clearInterval(curr.timer);
       const newTimer = setInterval(() => {
-        PollRecentJobs();
+        void PollRecentJobs();
       }, newTimeInterval);
       return {
         timer: newTimer,
@@ -72,7 +72,7 @@ export const useActiveJobs = () => {
   useSignalEffect(() => {
     // if active jobs is not initiated, do do a first pull;
     if (!activeJobs.value) {
-      PollRecentJobs();
+      void PollRecentJobs();
       return;
     }
     // if there are no active jobs, stop making polls
@@ -115,7 +115,7 @@ export const useActiveJobs = () => {
 
         //else make and set timer
         const newTimer = setInterval(() => {
-          PollRecentJobs();
+          void PollRecentJobs();
         }, curr.interval);
         return {
           ...curr,
