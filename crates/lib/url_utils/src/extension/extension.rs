@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 /// A file extension that can be either a compile-time constant or a runtime-parsed value.
 ///
@@ -16,7 +17,7 @@ use std::fmt;
 /// assert_eq!(ext.without_period(), "mp4");
 /// assert_eq!(ext.with_period(), ".mp4");
 /// ```
-#[derive(Clone, Eq, Hash)]
+#[derive(Clone, Eq)]
 pub struct Extension {
   /// The extension without the leading period, e.g. "png", "mp4".
   value: Cow<'static, str>,
@@ -64,6 +65,14 @@ impl Extension {
 impl PartialEq for Extension {
   fn eq(&self, other: &Self) -> bool {
     self.value == other.value
+  }
+}
+
+// Hashes what `eq` compares, so equal extensions always hash alike (a derived `Hash` would also
+// hash `dotted`, which `eq` ignores).
+impl Hash for Extension {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.value.hash(state);
   }
 }
 
@@ -124,6 +133,22 @@ mod tests {
   fn equality() {
     let a = Extension::new("png");
     assert_eq!(a, PNG);
+  }
+
+  #[test]
+  fn equal_extensions_hash_alike() {
+    use std::collections::hash_map::DefaultHasher;
+    fn hash_of(ext: &Extension) -> u64 {
+      let mut h = DefaultHasher::new();
+      ext.hash(&mut h);
+      h.finish()
+    }
+    // `eq` looks only at the bare extension, so a constant whose dotted form was written
+    // differently is still equal, and must land in the same hash bucket.
+    const ODD: Extension = Extension::from_static("png", "PNG");
+    assert_eq!(ODD, PNG);
+    assert_eq!(hash_of(&ODD), hash_of(&PNG));
+    assert_eq!(hash_of(&Extension::new("png")), hash_of(&PNG));
   }
 
   #[test]
