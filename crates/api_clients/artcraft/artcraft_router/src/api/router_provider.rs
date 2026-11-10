@@ -11,4 +11,5 @@ pub enum RouterProvider {
   GrokApi,
   KinoviWeb,
   WorldLabs,
+  OpenRouter,
 }

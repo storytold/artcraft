@@ -39,6 +39,10 @@ pub struct CompletionData {
 
   /// The media class of the generated output.
   pub media_class: TaskMediaFileClass,
+
+  /// Every image, when they were kept on this computer (signed out) rather than uploaded: there's
+  /// no library batch to look them up in.
+  pub local_images: Vec<GeneratedImage>,
 }
 
 /// Notify the frontend that a third-party job has completed, sending the
@@ -228,6 +232,10 @@ async fn collect_generated_images(
   maybe_creds: Option<&StorytellerCredentialSet>,
   completion: &CompletionData,
 ) -> Vec<GeneratedImage> {
+  if !completion.local_images.is_empty() {
+    return completion.local_images.clone();
+  }
+
   // If we have a batch token, try to fetch all files in the batch.
   if let Some(batch_token) = &completion.maybe_batch_token {
     match list_batch_generated_redux_media_files(api_host, maybe_creds, batch_token).await {
@@ -257,7 +265,7 @@ async fn collect_generated_images(
   }]
 }
 
-fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
+pub(crate) fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
   match task_type {
     TaskType::ImageGeneration => GenerationAction::GenerateImage,
     TaskType::VideoGeneration => GenerationAction::GenerateVideo,
@@ -285,6 +293,7 @@ fn provider_to_generation_service(provider: GenerationProvider) -> GenerationSer
     GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
     GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
     GenerationProvider::Runway => GenerationServiceProvider::Runway,
+    GenerationProvider::OpenRouter => GenerationServiceProvider::OpenRouter,
   }
 }
 
@@ -345,5 +354,27 @@ fn task_model_type_to_generation_model(model: TaskModelType) -> Option<Generatio
     TaskModelType::WorldlabsMarble => Some(GenerationModel::WorldlabsMarble),
     TaskModelType::WorldlabsMarble0p1Mini => Some(GenerationModel::WorldlabsMarble0p1Mini),
     TaskModelType::WorldlabsMarble0p1Plus => Some(GenerationModel::WorldlabsMarble0p1Plus),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn every_task_type_maps_to_its_generation_action() {
+    let expected = [
+      (TaskType::ImageGeneration, "generate_image"),
+      (TaskType::ImageInpaintEdit, "image_inpaint_edit"),
+      (TaskType::VideoGeneration, "generate_video"),
+      (TaskType::AudioGeneration, "generate_audio"),
+      (TaskType::ObjectGeneration, "image_to_3d"),
+      (TaskType::GaussianGeneration, "generate_gaussian"),
+      (TaskType::BackgroundRemoval, "remove_background"),
+    ];
+    assert_eq!(expected.len(), TaskType::all_variants().len());
+    for (task_type, action) in expected {
+      assert_eq!(serde_json::to_value(task_type_to_generation_action(task_type)).unwrap(), action, "{task_type:?}");
+    }
   }
 }

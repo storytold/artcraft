@@ -28,6 +28,7 @@ use crate::core::commands::generate::generate_video::generate_video_command::gen
 use crate::core::commands::flip_image::flip_image;
 use crate::core::commands::get_app_info_command::get_app_info_command;
 use crate::core::commands::load_without_cors_command::load_without_cors_command;
+use crate::core::commands::media_files::list_local_generations_command::list_local_generations_command;
 use crate::core::commands::media_files::media_file_delete_command::media_file_delete_command;
 use crate::core::commands::platform_info_command::platform_info_command;
 use crate::core::commands::providers::deprecated::get_provider_order_command::get_provider_order_command;
@@ -41,6 +42,7 @@ use crate::core::commands::task_queue::tasks_nuke_all_command::tasks_nuke_all_co
 use crate::core::lifecycle::startup::handle_tauri_startup::handle_tauri_startup;
 use crate::core::lifecycle::startup::setup_main_window::setup_main_window;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::state::openrouter_jobs::OpenRouterJobs;
 use crate::core::state::app_preferences::app_preferences_manager::load_app_preferences_or_default;
 use crate::core::state::artcraft_platform_info::ArtcraftPlatformInfo;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -152,6 +154,8 @@ pub fn run() {
   let artcraft_usage_tracker = ArtcraftUsageTracker::new();
   let artcraft_usage_tracker_2 = artcraft_usage_tracker.clone();
 
+  let openrouter_jobs = OpenRouterJobs::saved_in(&app_data_root);
+
   println!("Initializing backend runtime...");
 
   let builder = tauri::Builder::default()
@@ -220,6 +224,7 @@ pub fn run() {
     .manage(storyteller_creds_manager_3)
     .manage(worldlabs_bearer_bridge)
     .manage(provider_credential_cache)
+    .manage(openrouter_jobs)
     .manage(worldlabs_creds_manager);
 
   // TODO: Break this out into another module, because RustRover/IntelliJ lags with these macros.
@@ -258,6 +263,7 @@ pub fn run() {
     grok_open_login_command,
     load_without_cors_command,
     mark_task_as_dismissed_command,
+    list_local_generations_command,
     media_file_delete_command,
     midjourney_clear_credentials_command,
     midjourney_get_credential_info_command,

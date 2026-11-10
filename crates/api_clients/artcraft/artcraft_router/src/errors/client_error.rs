@@ -12,6 +12,7 @@ pub enum ClientType {
   GrokApi,
   KinoviWeb,
   WorldLabs,
+  OpenRouter,
 }
 
 impl Display for ClientType {
@@ -24,6 +25,7 @@ impl Display for ClientType {
       Self::GrokApi => write!(f, "GrokApi"),
       Self::KinoviWeb => write!(f, "KinoviWeb"),
       Self::WorldLabs => write!(f, "WorldLabs"),
+      Self::OpenRouter => write!(f, "OpenRouter"),
     }
   }
 }
@@ -51,6 +53,8 @@ pub enum ClientError {
 
   /// KinoviWeb only accepts URLs for media inputs, not media tokens.
   KinoviWebOnlySupportsUrls,
+
+  OpenRouterOnlySupportsUrls,
 
   /// The Fal endpoint requires a webhook URL but the caller built the client
   /// in polling/queue mode (no webhook URL). Returned by webhook-only
@@ -95,6 +99,9 @@ impl Display for ClientError {
       }
       Self::KinoviWebOnlySupportsUrls => {
         write!(f, "KinoviWeb only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
+      }
+      Self::OpenRouterOnlySupportsUrls => {
+        write!(f, "OpenRouter only supports image URLs for image inputs, not media tokens")
       }
       Self::WebhookUrlRequired => {
         write!(f, "This Fal endpoint only supports webhook dispatch; the caller built RouterFalClient in polling-only mode (no webhook URL)")

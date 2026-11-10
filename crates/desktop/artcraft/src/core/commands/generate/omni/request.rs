@@ -121,7 +121,17 @@ fn canonical_model_id(model: &str) -> &str {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
+  use crate::core::commands::generate::omni::dispatch::decode_native;
   use serde_json::json;
+
+  #[test]
+  fn openrouter_requests_take_the_native_router_path() {
+    let request: OmniRequest = serde_json::from_value(json!({"model": "nano_banana_pro", "provider": "open_router", "prompt": "a fox"})).unwrap();
+    assert!(!request.uses_artcraft());
+    let native: TauriGenerateImageRequest = decode_native(request).unwrap();
+    assert_eq!(native.provider, Some(GenerationProvider::OpenRouter));
+  }
 
   #[test]
   fn catalog_parity_new_models_and_options_reach_the_api_unchanged() {

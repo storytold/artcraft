@@ -357,10 +357,12 @@ fn item_actions<'a>(view: &FeedView<'_>, item: &FeedItem, prompt: Option<&String
   if item.prompt_token.is_some() && item.kind != MediaKind::Audio {
     buttons.push((Icon::RotateCw, "Recreate", FeedAction::Recreate(item.token.clone())));
   }
-  if view.make_video && item.kind == MediaKind::Image {
+  if view.make_video && item.kind == MediaKind::Image && !item.is_local() {
     buttons.push((Icon::Video, "Make Video", FeedAction::MakeVideo(item.token.clone())));
   }
-  buttons.push((Icon::Link, "Share", FeedAction::Share(item.token.clone())));
+  if !item.is_local() {
+    buttons.push((Icon::Link, "Share", FeedAction::Share(item.token.clone())));
+  }
   buttons.push((Icon::Download, "Download", FeedAction::Download(item.token.clone())));
   buttons
 }

@@ -5,6 +5,7 @@ use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
+use crate::client::router_openrouter_client::RouterOpenRouterClient;
 use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
@@ -17,6 +18,7 @@ pub enum RouterClient {
   GrokApi(RouterGrokApiClient),
   KinoviWeb(RouterKinoviWebClient),
   WorldLabs(RouterWorldLabsClient),
+  OpenRouter(RouterOpenRouterClient),
 }
 
 impl RouterClient {
@@ -73,6 +75,14 @@ impl RouterClient {
       RouterClient::WorldLabs(client) => Ok(client),
       RouterClient::Multi(multi) => multi.get_worldlabs_client_ref(),
       _ => Err(ClientError::ClientNotConfigured(ClientType::WorldLabs)),
+    }
+  }
+
+  pub fn get_openrouter_client_ref(&self) -> Result<&RouterOpenRouterClient, ClientError> {
+    match self {
+      RouterClient::OpenRouter(client) => Ok(client),
+      RouterClient::Multi(multi) => multi.get_openrouter_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::OpenRouter)),
     }
   }
 }

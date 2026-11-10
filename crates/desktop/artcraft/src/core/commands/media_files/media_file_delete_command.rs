@@ -15,6 +15,7 @@ use serde_derive::{Deserialize, Serialize};
 use artcraft_client::endpoints::media_files::delete_media_file::delete_media_file;
 use tauri::{AppHandle, State};
 use tokens::tokens::media_files::MediaFileToken;
+use local_generations::{delete as delete_local_generation, is_local_token};
 
 #[derive(Deserialize)]
 pub struct MediaFileDeleteRequest {
@@ -35,6 +36,7 @@ pub async fn media_file_delete_command(
   app: AppHandle,
   request: MediaFileDeleteRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
+  app_data_root: State<'_, AppDataRoot>,
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
 ) -> ResponseOrErrorMessage<MediaFileDeleteSuccessResponse> {
 
@@ -44,6 +46,7 @@ pub async fn media_file_delete_command(
     request,
     &app,
     &app_env_configs,
+    &app_data_root,
     &storyteller_creds_manager,
   ).await;
 
@@ -61,8 +64,18 @@ pub async fn handle_request(
   request: MediaFileDeleteRequest,
   app: &AppHandle,
   app_env_configs: &AppEnvConfigs,
+  app_data_root: &AppDataRoot,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> AnyhowResult<()> {
+
+  // Images made without an account are files on this computer, not library items.
+  if is_local_token(request.media_file_token.as_str()) {
+    if !delete_local_generation(app_data_root.path(), request.media_file_token.as_str()) {
+      return Err(anyhow::anyhow!("no such local image"));
+    }
+    MediaFileDeletedEvent { media_file_token: request.media_file_token }.send_infallible(app);
+    return Ok(());
+  }
 
   let creds = storyteller_creds_manager.get_credentials()?;
 

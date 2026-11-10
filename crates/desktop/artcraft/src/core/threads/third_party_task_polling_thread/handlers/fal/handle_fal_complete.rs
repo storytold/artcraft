@@ -4,8 +4,12 @@ use crate::core::threads::third_party_task_polling_thread::events::notify_fronte
 };
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
+use crate::core::events::functional_events::text_to_image_generation_complete_event::GeneratedImage;
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::auto_download::{auto_download_task_urls, clear_auto_download_checkpoint};
+use crate::core::threads::third_party_task_polling_thread::handlers::fal::handle_fal_failure::handle_fal_failure;
+use crate::core::utils::local_generations::{keep_local_generation_as, kept_asset_urls, KeptGeneration};
+use local_generations::{image_extension_for, LocalGenerationDetails};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
@@ -40,6 +44,13 @@ use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 use uuid_utils::uuid::generate_random_uuid;
+
+const SIGNED_OUT_NON_IMAGE_REASON: &str = "Video, audio and 3D results need an ArtCraft account. Sign in, then generate again.";
+const UNKEEPABLE_RESULT_REASON: &str = "FAL returned a result that isn't a PNG, JPEG, WebP or GIF image, so it can't be kept on this computer.";
+/// Result downloads run on the polling thread, so a stalled CDN mustn't hold it up for long (the
+/// same limits as `download_url_with_filename`).
+const DOWNLOAD_CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(600);
 
 pub async fn handle_fal_complete(
   app_handle: &AppHandle,
@@ -76,8 +87,7 @@ async fn handle_fal_complete_inner(
   task: &Task,
   job_response: PollJobResponse,
 ) -> Result<(), Box<dyn std::error::Error>> {
-  let creds = storyteller_creds_manager.get_credentials()?
-    .ok_or("No Storyteller credentials available")?;
+  let maybe_creds = storyteller_creds_manager.get_signed_in_credentials()?;
 
   let extracted = job_response.extracted_contents;
 
@@ -89,6 +99,10 @@ async fn handle_fal_complete_inner(
     //warn!("[FalComplete] Raw body: {}", &job_response.raw_body[..job_response.raw_body.len().min(500)]);
     return Ok(());
   }
+
+  let Some(creds) = maybe_creds else {
+    return keep_fal_results_locally(app_handle, app_env_configs, app_data_root, task_database, task, &urls, media_class).await;
+  };
 
   // Save local copies before uploading or announcing completion.
   let download_urls = urls.iter().map(|url| reqwest::Url::parse(url)).collect::<Result<Vec<_>, _>>()?;
@@ -113,11 +127,12 @@ async fn handle_fal_complete_inner(
   };
 
   let mut maybe_primary_media_file_token: Option<MediaFileToken> = None;
+  let client = download_client(DOWNLOAD_TIMEOUT)?;
 
   for (i, url) in urls.iter().enumerate() {
     info!("[FalComplete] Downloading result {} from: {}", i, url);
 
-    let download_path = download_file(url, app_data_root, i).await?;
+    let download_path = download_file(&client, url, app_data_root, i).await?;
 
     info!("[FalComplete] Uploading result {} to backend...", i);
 
@@ -176,6 +191,7 @@ async fn handle_fal_complete_inner(
         maybe_thumbnail_url_template,
         maybe_batch_token,
         media_class,
+        local_images: Vec::new(),
       };
 
       notify_frontend_of_completion(
@@ -193,7 +209,123 @@ async fn handle_fal_complete_inner(
   Ok(())
 }
 
+/// Signed out: keeps fal's results on this computer and completes the task with their asset URLs.
+async fn keep_fal_results_locally(
+  app_handle: &AppHandle,
+  app_env_configs: &AppEnvConfigs,
+  app_data_root: &AppDataRoot,
+  task_database: &TaskDatabase,
+  task: &Task,
+  urls: &[String],
+  media_class: TaskMediaFileClass,
+) -> Result<(), Box<dyn std::error::Error>> {
+  if let Some(reason) = signed_out_refusal(media_class) {
+    handle_fal_failure(app_handle, task_database, task, reason).await;
+    return Ok(());
+  }
+
+  info!("[FalComplete] Signed out: keeping {} result(s) for task {} on this computer", urls.len(), task.id.as_str());
+
+  let maybe_kept = match keep_fal_results(&download_client(DOWNLOAD_TIMEOUT)?, app_data_root, task, urls).await {
+    Ok(kept) => Some(kept),
+    Err(err) if err.is::<UnkeepableFalResult>() => {
+      warn!("[FalComplete] Task {}: {:?}", task.id.as_str(), err);
+      None
+    },
+    Err(err) => return Err(err),
+  };
+  let Some(kept) = maybe_kept else {
+    handle_fal_failure(app_handle, task_database, task, UNKEEPABLE_RESULT_REASON).await;
+    return Ok(());
+  };
+  let primary = kept.first().ok_or("FAL returned no results")?;
+
+  let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
+    db: task_database.get_connection(),
+    task_id: &task.id,
+    maybe_batch_token: None,
+    maybe_primary_media_file_token: Some(&primary.token),
+    maybe_primary_media_file_class: Some(media_class),
+    maybe_primary_media_file_cdn_url: Some(primary.asset_url.as_str()),
+    maybe_primary_media_file_thumbnail_url_template: None,
+  }).await?;
+
+  if updated {
+    // Only once the task is complete: retrying a failed copy must not keep the results again.
+    if let Err(err) = auto_download_task_urls(app_handle, task, &kept_asset_urls(&kept)).await {
+      error!("[FalComplete] Couldn't save copies of task {}: {:?}", task.id.as_str(), err);
+    }
+    clear_auto_download_checkpoint(app_handle, task);
+    let completion = CompletionData {
+      primary_media_file_token: primary.token.clone(),
+      maybe_cdn_url: Some(primary.asset_url.clone()),
+      maybe_thumbnail_url_template: None,
+      maybe_batch_token: None,
+      media_class,
+      local_images: kept.iter().map(|k| GeneratedImage { media_token: k.token.clone(), cdn_url: k.asset_url.clone(), maybe_thumbnail_template: None }).collect(),
+    };
+    notify_frontend_of_completion(app_handle, &app_env_configs.storyteller_host, None, task, &completion).await;
+  }
+
+  Ok(())
+}
+
+/// Downloads fal's results and keeps them in `local_generations/`. Nothing is kept until every
+/// download succeeds, and ids come from the task and result index, so a retry (eg. after a failed
+/// status update) overwrites instead of keeping the same image twice.
+async fn keep_fal_results(client: &reqwest::Client, app_data_root: &AppDataRoot, task: &Task, urls: &[String]) -> Result<Vec<KeptGeneration>, Box<dyn std::error::Error>> {
+  let mut downloads = Vec::with_capacity(urls.len());
+  for url in urls {
+    downloads.push(client.get(url).send().await?.error_for_status()?.bytes().await?);
+  }
+  if let Some((url, _)) = urls.iter().zip(&downloads).find(|(url, bytes)| image_extension_for(bytes, url_extension(url)).is_none()) {
+    return Err(Box::new(UnkeepableFalResult { url: url.clone() }));
+  }
+  let mut kept = Vec::with_capacity(urls.len());
+  for (i, (url, bytes)) in urls.iter().zip(downloads).enumerate() {
+    // fal's task records no prompt text (its prompt record needs an account).
+    let details = LocalGenerationDetails { prompt: "", model_id: task.model_type.as_ref().map(|m| m.to_str()).unwrap_or_default(), provider: task.provider.to_str() };
+    let seed = format!("{}_{}", task.id.as_str(), i);
+    kept.push(keep_local_generation_as(app_data_root, &seed, &bytes, url_extension(url), details)?);
+  }
+  Ok(kept)
+}
+
+/// A result that downloaded but isn't an image that can be kept, so retrying can't help.
+#[derive(Debug)]
+struct UnkeepableFalResult {
+  url: String,
+}
+
+impl std::fmt::Display for UnkeepableFalResult {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+
+impl std::error::Error for UnkeepableFalResult {}
+
+/// Only images can be kept on this computer; anything else fails the task with this reason.
+fn signed_out_refusal(media_class: TaskMediaFileClass) -> Option<&'static str> {
+  match media_class {
+    TaskMediaFileClass::Image => None,
+    _ => Some(SIGNED_OUT_NON_IMAGE_REASON),
+  }
+}
+
 // ── Helpers ──
+
+/// A client for fetching results, giving up after `overall` (`DOWNLOAD_TIMEOUT` outside tests).
+fn download_client(overall: Duration) -> reqwest::Result<reqwest::Client> {
+  reqwest::Client::builder().connect_timeout(DOWNLOAD_CONNECT_TIMEOUT).timeout(overall).build()
+}
+
+/// The file extension in a result URL (`bin` when it has none).
+fn url_extension(url: &str) -> &'static str {
+  url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
+    .map(|ext| ext.as_extension_without_period())
+    .unwrap_or("bin")
+}
 
 /// Collect downloadable media URLs from the extracted response contents.
 fn collect_media_urls(
@@ -240,16 +372,15 @@ fn collect_media_urls(
 }
 
 async fn download_file(
+  client: &reqwest::Client,
   url: &str,
   app_data_root: &AppDataRoot,
   index: usize,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-  let response = reqwest::get(url).await?;
+  let response = client.get(url).send().await?;
   let bytes = response.bytes().await?;
 
-  let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
-    .map(|ext| ext.as_extension_without_period())
-    .unwrap_or("bin");
+  let extension = url_extension(url);
 
   let tempdir = app_data_root.temp_dir().path();
   let filename = format!("fal_{}_{}.{}", generate_random_uuid(), index, extension);
@@ -346,4 +477,117 @@ async fn try_upload(
   };
 
   Ok(media_token)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use enums::tauri::tasks::task_model_type::TaskModelType;
+  use enums::tauri::tasks::task_status::TaskStatus;
+  use tokio::io::{AsyncReadExt, AsyncWriteExt};
+  use tokio::net::TcpListener;
+  use tokens::tokens::sqlite::tasks::TaskId;
+
+  #[test]
+  fn signed_out_video_and_3d_results_need_an_account() {
+    assert_eq!(signed_out_refusal(TaskMediaFileClass::Image), None);
+    for class in [TaskMediaFileClass::Video, TaskMediaFileClass::Dimensional] {
+      assert!(signed_out_refusal(class).is_some_and(|reason| reason.contains("ArtCraft account")), "{class:?}");
+    }
+  }
+
+  #[tokio::test]
+  async fn nothing_is_kept_until_every_result_downloads() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let base = server(vec![(200, "first"), (500, "error")]).await;
+    let urls = [format!("{base}/first.png"), format!("{base}/second.png")];
+    assert!(keep_fal_results(&client(), &root, &task(), &urls).await.is_err());
+    assert!(local_generations::list(root.path()).is_empty(), "a retry would keep the first image twice");
+  }
+
+  #[tokio::test]
+  async fn keeping_the_same_results_again_keeps_nothing_new() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let base = server(vec![(200, "first"), (200, "second"), (200, "first"), (200, "second")]).await;
+    let urls = [format!("{base}/first.png"), format!("{base}/second.png")];
+    let task = task();
+    let kept = keep_fal_results(&client(), &root, &task, &urls).await.unwrap();
+    let again = keep_fal_results(&client(), &root, &task, &urls).await.unwrap();
+    let tokens = |kept: &[KeptGeneration]| kept.iter().map(|k| k.token.as_str().to_owned()).collect::<Vec<_>>();
+    assert_eq!(tokens(&again), tokens(&kept), "a retry after a failed status update reuses the ids");
+    assert_eq!(local_generations::list(root.path()).len(), 2);
+  }
+
+  #[tokio::test]
+  async fn a_stalled_download_gives_up_instead_of_holding_up_polling() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let base = stalled_server().await;
+    let short = download_client(Duration::from_millis(200)).unwrap();
+    let result = tokio::time::timeout(Duration::from_secs(10), keep_fal_results(&short, &root, &task(), &[format!("{base}/stalled.png")])).await;
+    assert!(matches!(result, Ok(Err(_))), "the download must time out on its own");
+    assert!(local_generations::list(root.path()).is_empty());
+  }
+
+  #[tokio::test]
+  async fn results_that_arent_images_are_refused_before_anything_is_kept() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let base = server(vec![(200, "first"), (200, "not an image")]).await;
+    let urls = [format!("{base}/first.png"), format!("{base}/result")];
+    let Err(err) = keep_fal_results(&client(), &root, &task(), &urls).await else { panic!("expected a refusal") };
+    assert!(err.is::<UnkeepableFalResult>(), "retrying can't help, so the task must fail: {err}");
+    assert!(local_generations::list(root.path()).is_empty());
+  }
+
+  fn client() -> reqwest::Client {
+    download_client(DOWNLOAD_TIMEOUT).unwrap()
+  }
+
+  /// Accepts connections and never answers.
+  async fn stalled_server() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move {
+      let mut held = Vec::new();
+      while let Ok((socket, _)) = listener.accept().await {
+        held.push(socket);
+      }
+    });
+    base
+  }
+
+  fn task() -> Task {
+    Task {
+      id: TaskId::generate(),
+      status: TaskStatus::Pending,
+      task_type: TaskType::ImageGeneration,
+      model_type: Some(TaskModelType::NanoBanana),
+      provider: GenerationProvider::Fal,
+      provider_job_id: None,
+      queue_status_url: None,
+      queue_response_url: None,
+      prompt_token: None,
+      frontend_caller: None,
+      frontend_subscriber_id: None,
+      frontend_subscriber_payload: None,
+    }
+  }
+
+  async fn server(responses: Vec<(u16, &'static str)>) -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move {
+      for (status, body) in responses {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = [0; 4096];
+        socket.read(&mut request).await.unwrap();
+        let response = format!("HTTP/1.1 {status} Test\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+        socket.write_all(response.as_bytes()).await.unwrap();
+      }
+    });
+    base
+  }
 }

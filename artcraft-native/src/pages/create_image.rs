@@ -70,11 +70,22 @@ impl CreateImagePage {
       let backend = env.backend;
       self.cost.update_with(ui, &fields, |key, fields| backend.estimate_provider_cost(provider, key, fields));
     }
+    let offer_openrouter = !env.signed_in && provider.needs_artcraft_account();
     let mut feed = std::mem::take(&mut self.feed);
     let mut box_height = self.box_height;
-    common::create_shell(ui, env, MediaKind::Image, "Create Image", "Add a prompt, then generate", &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref(), provider));
+    common::create_shell(ui, env, MediaKind::Image, "Create Image", "Add a prompt, then generate", offer_openrouter, &mut feed, &mut box_height, |ui, env| self.prompt_box(ui, env, model.as_ref(), provider));
     self.feed = feed;
     self.box_height = box_height;
+  }
+
+  /// Runs the selected model on OpenRouter; one OpenRouter can't run swaps for the default.
+  pub fn use_openrouter(&mut self) {
+    let mut id = self.settings.model.clone().unwrap_or_else(|| DEFAULT_IMAGE_MODEL.to_owned());
+    if !Provider::for_model(&id).contains(&Provider::OpenRouter) {
+      id = DEFAULT_IMAGE_MODEL.to_owned();
+      self.settings.model = Some(id.clone());
+    }
+    self.settings.providers.insert(id, Provider::OpenRouter);
   }
 
   /// The provider `model` runs on: the user's pick, else its default.
@@ -214,7 +225,7 @@ impl CreateImagePage {
     let Some(model) = model else {
       return;
     };
-    if !env.signed_in {
+    if !env.signed_in && provider.needs_artcraft_account() {
       env.requests.push(AppRequest::SignIn);
       return;
     }
@@ -225,6 +236,10 @@ impl CreateImagePage {
     }
     if self.refs.any_uploading() {
       env.toasts.error("Please wait for your references to finish uploading");
+      return;
+    }
+    if provider == Provider::Artcraft && self.refs.images.iter().any(|r| r.token.is_none()) {
+      env.toasts.error("Reference images added while signed out aren't in your library. Please add them again.");
       return;
     }
     // Other providers take the references as links (when the model takes references there).
@@ -320,4 +335,37 @@ impl CreateImagePage {
 
 fn max_images_message(max: usize) -> String {
   format!("Max {max} image reference{}", if max == 1 { "" } else { "s" })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn openrouter_keeps_a_model_it_runs() {
+    let mut p = page(None);
+    p.use_openrouter();
+    assert_eq!(p.settings.model, None, "the default stays selected");
+    assert_eq!(p.provider(&model(DEFAULT_IMAGE_MODEL)), Provider::OpenRouter, "the default runs on OpenRouter");
+    let mut p = page(Some("gpt_image_2"));
+    p.use_openrouter();
+    assert_eq!(p.settings.model.as_deref(), Some("gpt_image_2"));
+    assert_eq!(p.provider(&model("gpt_image_2")), Provider::OpenRouter);
+  }
+
+  #[test]
+  fn openrouter_swaps_a_model_it_cant_run_for_the_default() {
+    let mut p = page(Some("seedream_4"));
+    p.use_openrouter();
+    assert_eq!(p.settings.model.as_deref(), Some(DEFAULT_IMAGE_MODEL), "seedream_4 isn't on OpenRouter");
+    assert_eq!(p.provider(&model(DEFAULT_IMAGE_MODEL)), Provider::OpenRouter);
+  }
+
+  fn page(model: Option<&str>) -> CreateImagePage {
+    CreateImagePage::new(ImageSettings { model: model.map(str::to_owned), ..Default::default() })
+  }
+
+  fn model(id: &str) -> ModelInfo {
+    ModelInfo { id: id.into(), ..Default::default() }
+  }
 }

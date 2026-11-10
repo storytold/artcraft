@@ -3,6 +3,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::threads::third_party_task_polling_thread::handlers::fal::poll_fal_tasks::poll_fal_tasks;
+use crate::core::threads::third_party_task_polling_thread::handlers::openrouter::poll_openrouter_tasks::{poll_openrouter_tasks, prune_openrouter_jobs};
 use crate::core::utils::task_database_pending_statuses::TASK_DATABASE_PENDING_STATUSES;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
@@ -63,6 +64,8 @@ async fn poll_iteration(
 
   let tasks = task_list.tasks;
 
+  prune_openrouter_jobs(app_handle, &tasks);
+
   if tasks.is_empty() {
     let sleep_duration = if *has_ever_seen_third_party_jobs {
       SLEEP_THIRD_PARTY_JOBS_SEEN
@@ -79,19 +82,35 @@ async fn poll_iteration(
     .filter(|t| t.provider == GenerationProvider::Fal)
     .collect();
 
-  let non_fal_tasks: Vec<&Task> = tasks.iter()
-    .filter(|t| t.provider != GenerationProvider::Fal)
+  let openrouter_tasks: Vec<&Task> = tasks.iter()
+    .filter(|t| t.provider == GenerationProvider::OpenRouter)
     .collect();
 
-  if !non_fal_tasks.is_empty() {
-    for task in &non_fal_tasks {
+  let other_tasks: Vec<&Task> = tasks.iter()
+    .filter(|t| t.provider != GenerationProvider::Fal && t.provider != GenerationProvider::OpenRouter)
+    .collect();
+
+  if !other_tasks.is_empty() {
+    for task in &other_tasks {
       warn!(
-        "[ThirdPartyPolling] Skipping non-FAL task: id={}, provider={:?}, type={:?}",
+        "[ThirdPartyPolling] Skipping task for an unpolled provider: id={}, provider={:?}, type={:?}",
         task.id.as_str(),
         task.provider,
         task.task_type,
       );
     }
+  }
+
+  if !openrouter_tasks.is_empty() {
+    poll_openrouter_tasks(
+      app_handle,
+      app_env_configs,
+      app_data_root,
+      task_database,
+      storyteller_creds_manager,
+      credential_cache,
+      &openrouter_tasks,
+    ).await;
   }
 
   if fal_tasks.is_empty() {

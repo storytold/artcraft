@@ -255,13 +255,13 @@ impl Lightbox {
     }
     ui.horizontal_wrapped(|ui| {
       ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
-      if item.kind == MediaKind::Image && widgets::button(ui, Some(Icon::Video), "Make Video", widgets::Kind::Accent, w, theme::CONTROL_H).clicked() {
+      if item.kind == MediaKind::Image && !item.is_local() && widgets::button(ui, Some(Icon::Video), "Make Video", widgets::Kind::Accent, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::MakeVideo);
       }
       if widgets::button(ui, Some(Icon::Download), "Download", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::Download);
       }
-      if widgets::button(ui, Some(Icon::Link), "Share", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
+      if !item.is_local() && widgets::button(ui, Some(Icon::Link), "Share", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::Share);
       }
       if widgets::button(ui, Some(Icon::Trash), "Delete", widgets::Kind::Danger, w, theme::CONTROL_H).clicked() {

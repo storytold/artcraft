@@ -132,6 +132,8 @@ mod tests {
   use super::*;
   use crate::core::state::app_preferences::preferred_download_directory::PreferredDownloadDirectory;
   use crate::core::state::app_preferences::preferred_download_filename::PreferredDownloadFilename;
+  use crate::core::utils::local_generations::{keep_local_generation_as, kept_asset_urls};
+  use local_generations::LocalGenerationDetails;
   use enums::common::generation_provider::GenerationProvider;
   use enums::tauri::tasks::{task_model_type::TaskModelType, task_status::TaskStatus, task_type::TaskType};
   use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -261,6 +263,22 @@ mod tests {
     finish_tx.send(()).unwrap();
     assert_eq!(completion.await.unwrap(), "abcdef");
     server.await.unwrap();
+  }
+
+  #[tokio::test]
+  async fn kept_local_generations_are_copied_to_the_download_folder() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let details = || LocalGenerationDetails { prompt: "a fox", model_id: "nano_banana", provider: "fal" };
+    let kept = vec![
+      keep_local_generation_as(&root, "task_1_0", b"one", "png", details()).unwrap(),
+      keep_local_generation_as(&root, "task_1_1", b"two", "png", details()).unwrap(),
+    ];
+    download_generated_results(&root, &preferences(&root), &task(GenerationProvider::Fal), &kept_asset_urls(&kept))
+      .await
+      .unwrap();
+    assert_eq!(std::fs::read_to_string(dir.path().join("chosen/midjourney_8_result_1.png")).unwrap(), "one");
+    assert_eq!(std::fs::read_to_string(dir.path().join("chosen/midjourney_8_result_2.png")).unwrap(), "two");
   }
 
   fn preferences(root: &AppDataRoot) -> AppPreferences {

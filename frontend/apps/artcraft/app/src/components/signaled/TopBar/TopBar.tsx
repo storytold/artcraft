@@ -38,10 +38,12 @@ import {
   GalleryAutoplayToggle,
   GallerySelectToggle,
   GalleryViewToggle,
+  localGenerationsToGalleryItems,
 } from "@storyteller/ui-generation-list";
+import { useLocalGenerations } from "@storyteller/tauri-api";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import {
   applyMakeVideoFromImage,
@@ -181,6 +183,10 @@ const CreditsCoinWithStatus = ({
 
 export const TopBar = ({ pageName }: Props) => {
   useSignals();
+
+  // Images made without an account live on this computer: the library lists them too.
+  const localImages = useLocalGenerations();
+  const localGalleryItems = useMemo(() => localGenerationsToGalleryItems(localImages), [localImages]);
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
@@ -712,6 +718,7 @@ export const TopBar = ({ pageName }: Props) => {
         onRecreateClicked={handleRecreateFromGallery}
         onDeleteMedia={galleryModalDeleteMedia}
         subscribeToMediaEvents={galleryModalSubscribeToMediaEvents}
+        localItems={localGalleryItems}
       />
 
       <ProviderSetupModal />

@@ -5,6 +5,7 @@ use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
+use crate::client::router_openrouter_client::RouterOpenRouterClient;
 use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 
 pub struct MultiRouterClientBuilder {
@@ -15,6 +16,7 @@ pub struct MultiRouterClientBuilder {
   grok_api_client: Option<RouterGrokApiClient>,
   kinovi_web_client: Option<RouterKinoviWebClient>,
   worldlabs_client: Option<RouterWorldLabsClient>,
+  openrouter_client: Option<RouterOpenRouterClient>,
 }
 
 impl MultiRouterClientBuilder {
@@ -27,6 +29,7 @@ impl MultiRouterClientBuilder {
       grok_api_client: None,
       kinovi_web_client: None,
       worldlabs_client: None,
+      openrouter_client: None,
     }
   }
 
@@ -60,6 +63,11 @@ impl MultiRouterClientBuilder {
     self
   }
 
+  pub fn set_openrouter_client(mut self, client: RouterOpenRouterClient) -> Self {
+    self.openrouter_client = Some(client);
+    self
+  }
+
   pub fn set_midjourney_client(mut self, client: RouterMidjourneyClient) -> Self {
     self.midjourney_client = Some(client);
     self
@@ -74,6 +82,7 @@ impl MultiRouterClientBuilder {
       grok_api_client: self.grok_api_client,
       kinovi_web_client: self.kinovi_web_client,
       worldlabs_client: self.worldlabs_client,
+      openrouter_client: self.openrouter_client,
     }
   }
 }

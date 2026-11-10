@@ -2,6 +2,8 @@ import { Modal } from "@storyteller/ui-modal";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowRightIcon, WandSparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
+import { ProviderCredentialKey, SetProviderApiKey } from "@storyteller/tauri-api";
 import { useState } from "react";
 import { useShowProviderLoginModalEvent } from "@storyteller/tauri-events";
 import { GenerationProvider } from "@storyteller/common";
@@ -13,6 +15,7 @@ export function ProviderSetupModal({
 }: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
+  const [apiKey, setApiKey] = useState("");
 
   useShowProviderLoginModalEvent(async (event) => {
     // Retained native handlers can still emit these events for old tasks.
@@ -24,6 +27,7 @@ export function ProviderSetupModal({
     }
     console.log("Show provider login modal event received from Tauri:", event);
     setProvider(event.provider);
+    setApiKey("");
     setShowModal(true);
   });
 
@@ -34,6 +38,9 @@ export function ProviderSetupModal({
 
   let modalDescription;
   switch (provider) {
+    case GenerationProvider.OpenRouter:
+      modalDescription = `Paste your ${serviceProviderName} API key (openrouter.ai/keys) to generate with the image models on your own ${serviceProviderName} account. Generations are billed by ${serviceProviderName}, not with ArtCraft credits.`;
+      break;
     case GenerationProvider.Grok:
       modalDescription = `You can add your ${serviceProviderName} account to ArtCraft by simply logging in. Use can then use it directly within Artcraft. You can add all of your AI accounts to Artcraft to use them all in one place and build the ultimate AI art tool.`;
       break;
@@ -43,6 +50,7 @@ export function ProviderSetupModal({
   }
 
   const modalButtonText = `Set up ${serviceProviderName}`;
+  const needsApiKey = provider === GenerationProvider.OpenRouter;
 
   const buttonOnClick = async () => {
     switch (provider) {
@@ -54,6 +62,9 @@ export function ProviderSetupModal({
         break;
       case GenerationProvider.Fal:
         break; // TODO: None yet.
+      case GenerationProvider.OpenRouter:
+        await SetProviderApiKey(ProviderCredentialKey.OpenRouterApiKey, apiKey);
+        break;
       default:
         break;
     }
@@ -87,10 +98,22 @@ export function ProviderSetupModal({
           </p>
         </div>
 
+        {needsApiKey && (
+          <Input
+            type="password"
+            autoComplete="off"
+            aria-label={`${serviceProviderName} API key`}
+            placeholder={`${serviceProviderName} API key`}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        )}
+
         <Button
           className="h-10 px-4"
           icon={ArrowRightIcon}
           iconFlip={true}
+          disabled={needsApiKey && !apiKey.trim()}
           onClick={() => {
             buttonOnClick();
           }}
@@ -126,6 +149,8 @@ function getServiceProviderName(provider: GenerationProvider) : string {
       return "PixVerse";
     case GenerationProvider.Runway:
       return "Runway";
+    case GenerationProvider.OpenRouter:
+      return "OpenRouter";
     case GenerationProvider.Artcraft:
     default:
       return "Artcraft";

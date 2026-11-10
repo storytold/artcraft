@@ -27,21 +27,21 @@ The workspace's default member is the Tauri app, so pass `-p artcraft_native`.
 
 ## Architecture
 
-| Module             | What it does                                                                   |
-|--------------------|--------------------------------------------------------------------------------|
-| `backend`          | Tokio runtime and every API call; results come back to the UI as `Event`s      |
-| `backend::wire`    | Lenient response shapes; new server enum values can't break decoding           |
-| `backend::session` | Credentials: own file, Tauri cookie import, env config                         |
-| `backend::media_cache` | Thumbnails and previews: downloaded and decoded off-thread, evicted when unused |
-| `backend::audio`   | One clip at a time: reference previews, feed tracks (pause, seek, volume), waveforms |
-| `backend::providers` | Midjourney and fal: accounts, submitting, and a worker that finishes jobs into the library |
-| `models`           | Model catalog from OmniGen listings, plus names, families and limits           |
-| `prompt_box`       | The shared prompt box: editor, reference deck, keyframes, pickers, model selector |
-| `pages`            | Create Image, Video and Audio, Home, Library, and the shared page shell        |
-| `feed`             | Generation feed: running, failed and finished jobs, library paging, grid and list |
-| `overlays`         | Lightbox, library picker, sign-in, settings, provider setup and the Midjourney sign-in window |
-| `shell`            | Custom title bar, sidebar flush to the window edge, content panel header       |
-| `theme`, `ui`      | Tokens, Lucide-style icons, widgets, toasts, window chrome (drag, resize, caption buttons) |
+| Module                 | What it does                                                                                           |
+|------------------------|--------------------------------------------------------------------------------------------------------|
+| `backend`              | Tokio runtime and every API call; results come back to the UI as `Event`s                              |
+| `backend::wire`        | Lenient response shapes; new server enum values can't break decoding                                   |
+| `backend::session`     | Credentials: own file, Tauri cookie import, env config                                                 |
+| `backend::media_cache` | Thumbnails and previews: downloaded and decoded off-thread, evicted when unused                        |
+| `backend::audio`       | One clip at a time: reference previews, feed tracks (pause, seek, volume), waveforms                   |
+| `backend::providers`   | Midjourney, fal and OpenRouter: accounts, submitting, and a worker that finishes jobs into the library |
+| `models`               | Model catalog from OmniGen listings, plus names, families and limits                                   |
+| `prompt_box`           | The shared prompt box: editor, reference deck, keyframes, pickers, model selector                      |
+| `pages`                | Create Image, Video and Audio, Home, Library, and the shared page shell                                |
+| `feed`                 | Generation feed: running, failed and finished jobs, library paging, grid and list                      |
+| `overlays`             | Lightbox, library picker, sign-in, settings, provider setup and the Midjourney sign-in window          |
+| `shell`                | Custom title bar, sidebar flush to the window edge, content panel header                               |
+| `theme`, `ui`          | Tokens, Lucide-style icons, widgets, toasts, window chrome (drag, resize, caption buttons)             |
 
 How the backend works:
 
@@ -54,38 +54,40 @@ How the backend works:
   with lenient structs.
 - **Identity headers.** Every request sends the desktop identity headers: `Origin` and
   `User-Agent`.
-- **Other providers.** Images can also run on Midjourney (your own account) or fal (your own API
-  key), through `artcraft_router` like the Tauri app. The accounts live in the same files
+- **Other providers.** Images can also run on Midjourney (your own account), fal or OpenRouter
+  (your own API key), through `artcraft_router` like the Tauri app. OpenRouter answers with the
+  images themselves, so the worker sends its requests and saves the images until they're uploaded;
+  `OPENROUTER_CUSTOM_API_BASE` points it at a stub server for local testing. The accounts live in the same files
   (`~/Artcraft/credentials`), so connecting in either app works in both. Those jobs are tracked in
   `~/Artcraft/state/native_provider_jobs.json` and their results uploaded into your library, resuming
   after a restart.
 
 ## Prompt box parity
 
-| Feature                                                         | Status                                  |
-|-----------------------------------------------------------------|-----------------------------------------|
-| Auto-growing prompt (~4 lines), expand/collapse, resize grip    | Done                                    |
-| Focus mode (fullscreen editor with deck and toolbar)            | Done                                    |
-| Length counter, red over the model's limit                      | Done                                    |
-| Enter to generate (setting; Shift+Enter for a new line)         | Done                                    |
-| `@Image1` / `@Video1` / `@Audio1` highlight and autocomplete    | Done                                    |
-| Reference deck: fan, +N badge, hover-expand, reorder, clear all | Done                                    |
-| Keyframe slots: first/last frame, tilt, swap                    | Done                                    |
-| Upload, pick from library, drag & drop, paste image             | Done (video uploads must be MP4)        |
-| Model selector with families, logos, capability badges          | Done                                    |
-| Aspect ratio, resolution, quality, count                        | Done                                    |
-| Bitrate, output format, duration slider, sound, input mode      | Done                                    |
-| Live credit cost on the generate button                         | Done                                    |
-| Validation: starting frame, text-only banner, limits, uploads   | Done                                    |
-| Clear all (confirms when references are attached)               | Done                                    |
-| `@Character` mentions and the Characters modal (create/edit/delete) | Done                                |
-| Provider choice (Midjourney direct, fal), "Select Provider"     | Done (images; video runs on ArtCraft)   |
-| In-app video playback                                           | Done with FFmpeg on the PATH; otherwise opens in the system player |
-| Audio reference playback (click to play/stop)                   | Done                                    |
-| Animated video previews in the feed (with a stills toggle)      | Done                                    |
-| Audio: style, instrumental, keep lyrics, loop                   | Done                                    |
-| Audio: Beat & Key (BPM, musical key) and Tuning (sample rate, speed, volume, pitch) | Done                |
-| Audio references (play, 600 s cap) or one image, never both     | Done                                    |
+| Feature                                                                             | Status                                                             |
+|-------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| Auto-growing prompt (~4 lines), expand/collapse, resize grip                        | Done                                                               |
+| Focus mode (fullscreen editor with deck and toolbar)                                | Done                                                               |
+| Length counter, red over the model's limit                                          | Done                                                               |
+| Enter to generate (setting; Shift+Enter for a new line)                             | Done                                                               |
+| `@Image1` / `@Video1` / `@Audio1` highlight and autocomplete                        | Done                                                               |
+| Reference deck: fan, +N badge, hover-expand, reorder, clear all                     | Done                                                               |
+| Keyframe slots: first/last frame, tilt, swap                                        | Done                                                               |
+| Upload, pick from library, drag & drop, paste image                                 | Done (video uploads must be MP4)                                   |
+| Model selector with families, logos, capability badges                              | Done                                                               |
+| Aspect ratio, resolution, quality, count                                            | Done                                                               |
+| Bitrate, output format, duration slider, sound, input mode                          | Done                                                               |
+| Live credit cost on the generate button                                             | Done                                                               |
+| Validation: starting frame, text-only banner, limits, uploads                       | Done                                                               |
+| Clear all (confirms when references are attached)                                   | Done                                                               |
+| `@Character` mentions and the Characters modal (create/edit/delete)                 | Done                                                               |
+| Provider choice (Midjourney direct, fal, OpenRouter), "Select Provider"             | Done (images; video runs on ArtCraft)                              |
+| In-app video playback                                                               | Done with FFmpeg on the PATH; otherwise opens in the system player |
+| Audio reference playback (click to play/stop)                                       | Done                                                               |
+| Animated video previews in the feed (with a stills toggle)                          | Done                                                               |
+| Audio: style, instrumental, keep lyrics, loop                                       | Done                                                               |
+| Audio: Beat & Key (BPM, musical key) and Tuning (sample rate, speed, volume, pitch) | Done                                                               |
+| Audio references (play, 600 s cap) or one image, never both                         | Done                                                               |
 
 Feed and lightbox:
 

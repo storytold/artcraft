@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { CommonAspectRatio } from "@storyteller/model-list";
 import { CommonResolution } from "@storyteller/model-list";
 import { CommonQuality } from "@storyteller/model-list";
@@ -129,26 +130,36 @@ interface PromptImageStore {
   setCommonQuality: (quality: CommonQuality | undefined) => void;
 }
 
-export const usePromptImageStore = create<PromptImageStore>()((set) => ({
-  prompt: "",
-  aspectRatio: "wide",
-  resolution: "1k",
-  useSystemPrompt: true,
-  referenceImages: [],
-  generationCount: 1,
-  commonAspectRatio: undefined,
-  commonResolution: undefined,
-  commonQuality: undefined,
-  setPrompt: (prompt) => set({ prompt }),
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setResolution: (resolution) => set({ resolution }),
-  setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  setGenerationCount: (generationCount) => set({ generationCount }),
-  setCommonAspectRatio: (commonAspectRatio) => set({ commonAspectRatio }),
-  setCommonResolution: (commonResolution) => set({ commonResolution }),
-  setCommonQuality: (commonQuality) => set({ commonQuality }),
-}));
+export const usePromptImageStore = create<PromptImageStore>()(
+  persist(
+    (set) => ({
+      prompt: "",
+      aspectRatio: "wide",
+      resolution: "1k",
+      useSystemPrompt: true,
+      referenceImages: [],
+      generationCount: 1,
+      commonAspectRatio: undefined,
+      commonResolution: undefined,
+      commonQuality: undefined,
+      setPrompt: (prompt) => set({ prompt }),
+      setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+      setResolution: (resolution) => set({ resolution }),
+      setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
+      setReferenceImages: (referenceImages) => set({ referenceImages }),
+      setGenerationCount: (generationCount) => set({ generationCount }),
+      setCommonAspectRatio: (commonAspectRatio) => set({ commonAspectRatio }),
+      setCommonResolution: (commonResolution) => set({ commonResolution }),
+      setCommonQuality: (commonQuality) => set({ commonQuality }),
+    }),
+    {
+      name: "artcraft-image-generation-count",
+      // Each generation is billed, so the count survives restarts rather
+      // than silently resetting to the model default.
+      partialize: (s) => ({ generationCount: s.generationCount }),
+    },
+  ),
+);
 
 // ----- Video Prompt Box Store -----
 export type VideoInputMode = "keyframe" | "reference";

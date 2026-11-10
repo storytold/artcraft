@@ -32,11 +32,30 @@ pub enum SetupAction {
   Close,
   ConnectMidjourney,
   SaveFalKey,
+  SaveOpenRouterKey,
 }
 
-/// "Set up {provider}": Midjourney signs in through its window; fal takes an API key here (the
-/// Tauri app has no place for it yet).
-pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut String) -> Option<SetupAction> {
+/// The API keys being typed, in Settings and the setup dialog.
+#[derive(Default)]
+pub struct KeyInputs {
+  pub fal: String,
+  pub openrouter: String,
+}
+
+impl KeyInputs {
+  /// The input for an API-key provider; `None` for the others.
+  fn for_provider(&mut self, provider: Provider) -> Option<&mut String> {
+    match provider {
+      Provider::Fal => Some(&mut self.fal),
+      Provider::OpenRouter => Some(&mut self.openrouter),
+      Provider::Artcraft | Provider::Midjourney => None,
+    }
+  }
+}
+
+/// "Set up {provider}": Midjourney signs in through its window; fal and OpenRouter take an API
+/// key here.
+pub fn setup_dialog(ctx: &egui::Context, provider: Provider, keys: &mut KeyInputs) -> Option<SetupAction> {
   let name = provider.label();
   let mut action = None;
   let close = widgets::modal(ctx, Id::new("provider-setup"), 460.0, |ui| {
@@ -54,18 +73,27 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
     ui.label(egui::RichText::new(format!("Add your {name} account to ArtCraft!")).size(14.0).family(theme::medium()));
     ui.add_space(10.0);
     let description = match provider {
+      Provider::OpenRouter => format!("Paste your {name} API key (openrouter.ai/keys) to generate with the image models on your own {name} account. Generations are billed by {name}, not with ArtCraft credits."),
       Provider::Fal => format!("Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
       _ => format!("You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
     };
     ui.label(egui::RichText::new(description).size(13.0).color(theme::MUTED));
     ui.add_space(16.0);
-    if provider == Provider::Fal {
-      text_field(ui, fal_key, true, "FAL API key");
-      ui.add_space(10.0);
-    }
-    let ready = provider != Provider::Fal || !fal_key.trim().is_empty();
+    let key = keys.for_provider(provider);
+    let ready = match key {
+      Some(key) => {
+        text_field(ui, key, true, &format!("{name} API key"));
+        ui.add_space(10.0);
+        !key.trim().is_empty()
+      },
+      None => true,
+    };
     if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(Icon::ChevronRight), &format!("Set up {name}"), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
-      action = Some(if provider == Provider::Fal { SetupAction::SaveFalKey } else { SetupAction::ConnectMidjourney });
+      action = Some(match provider {
+        Provider::Fal => SetupAction::SaveFalKey,
+        Provider::OpenRouter => SetupAction::SaveOpenRouterKey,
+        Provider::Artcraft | Provider::Midjourney => SetupAction::ConnectMidjourney,
+      });
     }
   });
   if close && action.is_none() {
@@ -80,6 +108,8 @@ pub struct AccountsView {
   pub midjourney: Option<String>,
   /// The saved fal key, masked.
   pub fal_key_hint: Option<String>,
+  /// The saved OpenRouter key, masked.
+  pub openrouter_key_hint: Option<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -88,10 +118,12 @@ pub enum AccountAction {
   DisconnectMidjourney,
   SaveFalKey,
   RemoveFalKey,
+  SaveOpenRouterKey,
+  RemoveOpenRouterKey,
 }
 
-/// The provider accounts in Settings (`MidjourneyAccountBlock`, plus the fal key).
-pub fn accounts_section(ui: &mut Ui, view: &AccountsView, fal_key: &mut String) -> Option<AccountAction> {
+/// The provider accounts in Settings (`MidjourneyAccountBlock`, plus the fal and OpenRouter keys).
+pub fn accounts_section(ui: &mut Ui, view: &AccountsView, keys: &mut KeyInputs) -> Option<AccountAction> {
   let mut action = None;
   let detail = match view.midjourney.as_deref() {
     Some("") => "Connected",
@@ -103,26 +135,38 @@ pub fn accounts_section(ui: &mut Ui, view: &AccountsView, fal_key: &mut String) 
     action = Some(if view.midjourney.is_some() { AccountAction::DisconnectMidjourney } else { AccountAction::ConnectMidjourney });
   }
   ui.add_space(10.0);
-  match &view.fal_key_hint {
-    Some(hint) => {
-      if account_row(ui, "FAL API key", hint, |ui| widgets::button(ui, None, "Remove", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked()) {
-        action = Some(AccountAction::RemoveFalKey);
-      }
-    },
-    None => {
-      account_row(ui, "FAL API key", "Not set", |_| false);
-      ui.add_space(6.0);
-      ui.horizontal(|ui| {
-        let save_w = 90.0;
-        ui.allocate_ui(vec2(ui.available_width() - save_w - 8.0, theme::CONTROL_H), |ui| text_field(ui, fal_key, true, "Paste your FAL API key"));
-        let enabled = !fal_key.trim().is_empty();
-        if ui.add_enabled_ui(enabled, |ui| widgets::button(ui, None, "Save", widgets::Kind::Secondary, save_w, theme::CONTROL_H)).inner.clicked() {
-          action = Some(AccountAction::SaveFalKey);
-        }
-      });
-    },
+  if let Some(key_action) = api_key_rows(ui, "FAL", view.fal_key_hint.as_deref(), &mut keys.fal) {
+    action = Some(if key_action == KeyAction::Save { AccountAction::SaveFalKey } else { AccountAction::RemoveFalKey });
+  }
+  ui.add_space(10.0);
+  if let Some(key_action) = api_key_rows(ui, "OpenRouter", view.openrouter_key_hint.as_deref(), &mut keys.openrouter) {
+    action = Some(if key_action == KeyAction::Save { AccountAction::SaveOpenRouterKey } else { AccountAction::RemoveOpenRouterKey });
   }
   action
+}
+
+#[derive(PartialEq)]
+enum KeyAction {
+  Save,
+  Remove,
+}
+
+/// A provider's API key: the masked key with Remove, or an input with Save.
+fn api_key_rows(ui: &mut Ui, name: &str, hint: Option<&str>, input: &mut String) -> Option<KeyAction> {
+  let label = format!("{name} API key");
+  if let Some(hint) = hint {
+    let remove = account_row(ui, &label, hint, |ui| widgets::button(ui, None, "Remove", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked());
+    return remove.then_some(KeyAction::Remove);
+  }
+  account_row(ui, &label, "Not set", |_| false);
+  ui.add_space(6.0);
+  ui.horizontal(|ui| {
+    let save_w = 90.0;
+    ui.allocate_ui(vec2(ui.available_width() - save_w - 8.0, theme::CONTROL_H), |ui| text_field(ui, input, true, &format!("Paste your {name} API key")));
+    let enabled = !input.trim().is_empty();
+    ui.add_enabled_ui(enabled, |ui| widgets::button(ui, None, "Save", widgets::Kind::Secondary, save_w, theme::CONTROL_H)).inner.clicked().then_some(KeyAction::Save)
+  })
+  .inner
 }
 
 /// A mono label over a detail line, with its button at the right. Returns the button's click.
