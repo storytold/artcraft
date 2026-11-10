@@ -22,7 +22,6 @@ import { CameraSettingsModal } from "@storyteller/ui-camera-settings-modal";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  CommandSuccessStatus,
   GenerateImage,
   GenerateImageRequest,
 } from "@storyteller/tauri-api";
