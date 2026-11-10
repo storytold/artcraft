@@ -93,7 +93,7 @@ impl MidjourneyCredentialManager {
     let _guard = self.mutation.lock().await;
     // Remove every format, so a later startup cannot migrate a logged-out account.
     for path in self.legacy_paths.iter().chain([&self.credential_path]) {
-      match std::fs::remove_file(path) {
+      match tokio::fs::remove_file(path).await {
         Ok(()) => {},
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {},
         Err(err) => return Err(err.into()),

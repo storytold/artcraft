@@ -1,5 +1,3 @@
-use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use log::{info, warn};
@@ -68,13 +66,7 @@ pub async fn download_media_file<P: AsRef<Path>>(
   let bytes = download_bytes(cdn_url).await?;
 
   // 4. Write to disk.
-  let mut file = fs::File::create(&output_path)
-    .map_err(|err| StorytellerError::Client(ClientError::IoError(err)))?;
-
-  file.write_all(&bytes)
-    .map_err(|err| StorytellerError::Client(ClientError::IoError(err)))?;
-
-  file.flush()
+  tokio::fs::write(&output_path, &bytes).await
     .map_err(|err| StorytellerError::Client(ClientError::IoError(err)))?;
 
   info!("Downloaded {} bytes to {:?}", bytes.len(), output_path);
