@@ -12,6 +12,7 @@ from artcraft_mcp_client import McpClient, McpError, find_mcp_executable
 
 
 def main():
+    """Run binary, protocol, discovery, auth, and cost checks; exit non-zero on any failure."""
     print("=" * 65)
     print("   ArtCraft MCP Diagnostic & Health Check Suite")
     print("=" * 65)

@@ -23,6 +23,7 @@ PRESETS = [
 
 
 def main():
+    """Parse args, upload the reference image, enqueue one edit job per angle preset, download results."""
     parser = argparse.ArgumentParser(
         description="ArtCraft Camera Angle Orbit Matrix Generator (paid; runs with confirm)"
     )
@@ -34,6 +35,7 @@ def main():
     job_labels = {}
 
     def on_done(token, state, text):
+        """Per-job terminal-state callback: save each render named after its angle preset."""
         label = job_labels.get(token, token)
         if state == "complete_success":
             print(f"[+] {label} completed.", flush=True)

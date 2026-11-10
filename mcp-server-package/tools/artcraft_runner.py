@@ -18,6 +18,7 @@ DEFAULT_OUT_DIR = os.path.expanduser("~/ArtCraft/downloads")
 
 
 def main():
+    """Parse args, optionally upload a start frame, enqueue video jobs, and download results."""
     parser = argparse.ArgumentParser(
         description="ArtCraft MCP Batch & Automation Runner (paid generation; runs with confirm)"
     )
@@ -33,6 +34,7 @@ def main():
     job_labels = {}
 
     def on_done(token, state, text):
+        """Per-job terminal-state callback: download the media on success, report otherwise."""
         label = job_labels.get(token, token)
         if state == "complete_success":
             print(f"[+] {label} completed.", flush=True)

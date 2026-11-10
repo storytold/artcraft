@@ -94,6 +94,7 @@ class McpClient:
     """One stdio JSON-RPC session with an artcraft-mcp process."""
 
     def __init__(self, exe_path=None, client_name="artcraft-python-tools", quiet=True):
+        """Spawn the server, start stderr draining, and run the initialize handshake."""
         self.exe_path = exe_path or find_mcp_executable()
         if not self.exe_path:
             raise FileNotFoundError(
@@ -123,6 +124,7 @@ class McpClient:
         self._initialize(client_name)
 
     def _drain_stderr(self):
+        """Consume server stderr on a thread so the pipe can never fill and deadlock."""
         try:
             for line in self.proc.stderr:
                 line = line.rstrip("\n")
@@ -133,9 +135,11 @@ class McpClient:
             pass
 
     def stderr_text(self):
+        """Return the captured stderr tail (up to STDERR_TAIL_LINES) for error context."""
         return "\n".join(self.stderr_tail)
 
     def send_request(self, method, params=None):
+        """Write one JSON-RPC request and read its response; raises McpError on transport failure."""
         msg = {"jsonrpc": "2.0", "id": self.req_id, "method": method}
         if params is not None:
             msg["params"] = params
@@ -157,6 +161,7 @@ class McpClient:
         return res
 
     def _initialize(self, client_name):
+        """Perform the MCP initialize/initialized handshake and record serverInfo."""
         res = self.send_request(
             "initialize",
             {
@@ -191,6 +196,7 @@ class McpClient:
         return result
 
     def call_text(self, name, arguments=None, **kwargs):
+        """call_tool + flatten the result's text content into one string."""
         return result_text(self.call_tool(name, arguments, **kwargs))
 
     # ---- convenience helpers -------------------------------------------------
@@ -206,9 +212,11 @@ class McpClient:
         return extract_token("media", text)
 
     def get_job_status_text(self, job_token):
+        """Fetch one job's status text via artcraft_get_job_status."""
         return self.call_text("artcraft_get_job_status", {"job_token": job_token})
 
     def download(self, media_token, download_dir=None, filename=None):
+        """Download a media token via artcraft_download_media_file; return the saved path."""
         args = {"media_token": media_token}
         if download_dir:
             args["download_dir"] = str(download_dir)
@@ -256,6 +264,7 @@ class McpClient:
         return final
 
     def close(self):
+        """Close all pipes and terminate the server process (kill on timeout)."""
         for stream in (self.proc.stdin, self.proc.stdout, self.proc.stderr):
             try:
                 if stream:
@@ -269,9 +278,11 @@ class McpClient:
             self.proc.kill()
 
     def __enter__(self):
+        """Context-manager entry: returns self."""
         return self
 
     def __exit__(self, *exc):
+        """Context-manager exit: close the server process."""
         self.close()
 
 
@@ -282,11 +293,13 @@ def result_text(result):
 
 
 def extract_token(kind, text):
+    """Return the first token of the given kind (media|job|prompt) found in text, or None."""
     m = TOKEN_PATTERNS[kind].search(text)
     return m.group(0) if m else None
 
 
 def extract_all_tokens(kind, text):
+    """Return every token of the given kind (media|job|prompt) found in text."""
     return TOKEN_PATTERNS[kind].findall(text)
 
 

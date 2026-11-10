@@ -12,6 +12,7 @@ from artcraft_mcp_client import McpClient, McpError
 
 
 def main():
+    """Print credit balance, subscription, and image/video cost estimates for the given models."""
     parser = argparse.ArgumentParser(description="ArtCraft Credit & Cost Estimator")
     parser.add_argument("--video-model", type=str, default="seedance_2p0", help="Video model id")
     parser.add_argument("--image-model", type=str, default="flux_1_dev", help="Image model id")

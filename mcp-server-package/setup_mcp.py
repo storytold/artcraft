@@ -10,6 +10,7 @@ import json
 import argparse
 
 def find_mcp_binary():
+    """Locate the artcraft-mcp executable via ARTCRAFT_MCP_PATH or known build/package locations."""
     env_path = os.environ.get("ARTCRAFT_MCP_PATH")
     if env_path and os.path.exists(env_path):
         return os.path.abspath(env_path)
@@ -32,6 +33,7 @@ def find_mcp_binary():
     return None
 
 def get_target_configs():
+    """Return [(client_name, config_path)] for each supported MCP client on this platform."""
     home = os.path.expanduser("~")
     if sys.platform == "darwin":
         claude_dir = os.path.join(home, "Library", "Application Support", "Claude")
@@ -56,6 +58,7 @@ def get_target_configs():
     return configs
 
 def register_mcp(config_path, client_name, exe_path):
+    """Write the artcraft entry into one client's MCP config, backing up any existing file."""
     if not os.path.exists(os.path.dirname(config_path)):
         return False
     
@@ -98,6 +101,7 @@ def register_mcp(config_path, client_name, exe_path):
         return False
 
 def main():
+    """Locate the binary, register it with every detected MCP client, print a manual snippet if none."""
     print("=== ArtCraft MCP One-Click Setup Utility ===")
     exe_path = find_mcp_binary()
     if not exe_path:

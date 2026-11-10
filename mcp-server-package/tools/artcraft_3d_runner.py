@@ -29,6 +29,7 @@ SPLAT_MODELS = {
 
 
 def main():
+    """Parse args, upload an optional source image, enqueue mesh/splat jobs, and download results."""
     parser = argparse.ArgumentParser(
         description="ArtCraft 3D Mesh & Gaussian Splat Generator (paid; runs with confirm)"
     )
@@ -44,6 +45,7 @@ def main():
     job_labels = {}
 
     def on_done(token, state, text):
+        """Per-job terminal-state callback: download the media on success, report otherwise."""
         label = job_labels.get(token, token)
         if state == "complete_success":
             print(f"[+] {label} completed.", flush=True)

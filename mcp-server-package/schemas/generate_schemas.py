@@ -22,6 +22,7 @@ from artcraft_mcp_client import McpClient, McpError, find_mcp_executable
 
 
 def main():
+    """Fetch live tools/list, write one JSON per tool, and delete schemas for removed tools."""
     schema_dir = os.path.dirname(os.path.abspath(__file__))
     client = McpClient(client_name="artcraft-schema-generator")
 

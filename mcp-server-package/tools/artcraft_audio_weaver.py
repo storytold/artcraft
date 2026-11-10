@@ -17,6 +17,7 @@ DEFAULT_OUT_DIR = os.path.expanduser("~/ArtCraft/audio")
 
 
 def main():
+    """Parse args, upload an optional audio reference, enqueue the generation job, download results."""
     parser = argparse.ArgumentParser(
         description="ArtCraft Audio & Voice Weaver (paid; runs with confirm)"
     )
@@ -40,6 +41,7 @@ def main():
     job_token = None
 
     def on_done(token, state, text):
+        """Per-job terminal-state callback: download the media on success, report otherwise."""
         if state == "complete_success":
             print(f"[+] Job {token} completed.", flush=True)
             media = extract_token("media", text)
