@@ -39,7 +39,7 @@ export const PendingCard = memo(function PendingCard({
     <div className="group relative aspect-square w-full overflow-hidden rounded-[3px] bg-white/[0.03]">
       <div className="animate-shimmer h-full w-full" />
       {batchCount != null && batchCount > 1 && (
-        <div className="absolute left-2 right-2 top-2 z-10 bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
+        <div className="absolute start-2 end-2 top-2 z-10 bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
           Generating {batchCount} {batchNoun(mediaClass)} · Results may appear
           one at a time
         </div>
@@ -57,7 +57,10 @@ export const PendingCard = memo(function PendingCard({
       </div>
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent px-3 pb-2.5 pt-8">
         <div className="flex items-start gap-2">
-          <p className="line-clamp-3 min-w-0 flex-1 text-xs leading-relaxed text-white/80">
+          <p
+            dir="auto"
+            className="line-clamp-3 min-w-0 flex-1 text-xs leading-relaxed text-white/80"
+          >
             {prompt}
           </p>
           {recreateSlot}

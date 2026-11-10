@@ -38,7 +38,7 @@ export const Input = React.forwardRef(
           {icon && (
             <DynamicIcon
               icon={icon}
-              className={twMerge("text-md absolute pl-3 pt-3", iconClassName)}
+              className={twMerge("text-md absolute ps-3 pt-3", iconClassName)}
             />
           )}
           <input
@@ -49,7 +49,7 @@ export const Input = React.forwardRef(
               "bg-ui-panel text-base-fg placeholder-base-fg/40",
               "border border-ui-panel-border transition-colors duration-150 ease-in-out hover:border-white/40 focus:border-white focus:!outline-none",
               "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-ui-panel-border",
-              icon && "pl-10",
+              icon && "ps-10",
               isError && "border-red-500 focus:border-red-500",
               inputClassName,
             )}

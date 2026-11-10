@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import {
   PopoverMenu,
   type PopoverItem,
@@ -76,6 +77,7 @@ function ProviderTooltipContent({
   allowedProviders: GenerationProvider[];
   onFinished?: () => void;
 }) {
+  const { t: tr } = useTranslation();
   const { setSelectedModel, setSelectedProvider } =
     useClassyModelSelectorStore();
   const selectedProvider = useSelectedProviderForModel(page, modelId);
@@ -93,7 +95,7 @@ function ProviderTooltipContent({
   return (
     <div className="flex flex-col gap-1">
       <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
-        Select Provider
+        {tr("Select Provider")}
       </div>
       <div className="flex flex-col gap-0">
         {allowedProviders.map((p) => (
@@ -109,7 +111,7 @@ function ProviderTooltipContent({
             type="button"
             className={`group flex cursor-pointer items-center justify-between rounded-[3px] px-2 py-2 transition-all ${
               selectedProvider === p
-                ? "bg-ui-controls/70 border-l-4 border-primary"
+                ? "bg-ui-controls/70 border-s-4 border-primary"
                 : "hover:bg-ui-controls/50"
             }`}
           >
@@ -118,7 +120,7 @@ function ProviderTooltipContent({
               {getProviderDisplayName(p)}
             </span>
             {selectedProvider === p && (
-              <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center text-white">
+              <span className="ms-2 flex h-5 w-5 shrink-0 items-center justify-center text-white">
                 <CheckIcon aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
               </span>
             )}
@@ -139,6 +141,7 @@ export function ClassyModelSelector({
   showProviderSelection = true,
   ...popoverProps
 }: ClassyModelSelectorProps) {
+  const { t: tr } = useTranslation();
   const { selectedModels, setSelectedModel, setSelectedProvider } =
     useClassyModelSelectorStore();
   const itemModels: Model[] = items
@@ -206,6 +209,7 @@ export function ClassyModelSelector({
 
         return {
           ...item,
+          badges: item.badges?.map((badge) => ({ ...badge, label: tr(badge.label) })),
           selected: isSameModel(item.model as Model | undefined, selectedModel),
           hoverTooltip: hasMultipleProviders
             ? (close: () => void) => (
@@ -229,7 +233,7 @@ export function ClassyModelSelector({
                     : undefined;
                   const iconProvider = prov ?? allowedProviders[0];
                   return iconProvider ? (
-                    <div className="mr-1 p-1.5 bg-ui-controls/60 group-hover:bg-ui-controls/80 transition-colors">
+                    <div className="me-1 p-1.5 bg-ui-controls/60 group-hover:bg-ui-controls/80 transition-colors">
                       <span className="text-base-fg/70 group-hover:text-base-fg/90 text-lg">
                         {getProviderIcon(iconProvider)}
                       </span>
@@ -241,7 +245,7 @@ export function ClassyModelSelector({
             isSameModel(item.model as Model | undefined, selectedModel) &&
             selectedProvider &&
             hasMultipleProviders ? (
-              <div className="mr-1 p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
+              <div className="me-1 p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
                 <span className="text-base-fg/70 group-hover:text-base-fg/90 text-lg">
                   {getProviderIcon(selectedProvider)}
                 </span>
@@ -258,6 +262,7 @@ export function ClassyModelSelector({
       providersByModel,
       providerTooltipDelayMs,
       showProviderSelection,
+      tr,
     ],
   );
 
@@ -282,13 +287,13 @@ export function ClassyModelSelector({
       ? getCreatorIcon(selectedModel.creator)
       : modelList.find((i) => i.selected)?.icon;
     return (
-      <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+      <Tooltip content={tr("Model")} position="top" className="z-50" closeOnClick>
         <PopoverMenu
           items={embeddedList}
           onSelect={handleModelSelect}
           mode="toggle"
           richList
-          panelTitle="Select Model"
+          panelTitle={tr("Select Model")}
           panelClassName="w-[280px]"
           maxListHeight={maxListHeight}
           buttonClassName="max-w-48"
@@ -306,14 +311,14 @@ export function ClassyModelSelector({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-base-fg/90 text-base font-semibold">Model</span>
+      <span className="text-base-fg/90 text-base font-semibold">{tr("Model")}</span>
       <PopoverMenu
         items={modelList}
         onSelect={handleModelSelect}
         mode="hoverSelect"
         maxListHeight={maxListHeight}
         {...popoverProps}
-        buttonClassName="rounded-[3px] bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
+        buttonClassName="rounded-[3px] bg-ui-controls text-start shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {
           const modelTitle =
             selectedItem?.label ?? selectedModel?.selectorName ?? "";
@@ -329,7 +334,7 @@ export function ClassyModelSelector({
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-base-fg/60 text-[13px] -mt-[1px]">
-                  <span>via</span>
+                  <span>{tr("via")}</span>
                   {providerIcon && (
                     <span className="opacity-70">{providerIcon}</span>
                   )}

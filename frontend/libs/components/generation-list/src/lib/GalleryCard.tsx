@@ -189,7 +189,10 @@ export const GalleryCard = memo(function GalleryCard({
       >
         {isAudio ? (
           <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
-            <p className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85">
+            <p
+              dir="auto"
+              className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85"
+            >
               {title || item.label}
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
@@ -221,7 +224,7 @@ export const GalleryCard = memo(function GalleryCard({
       {/* Selection checkbox chip (select mode only) */}
       {selectMode && item.fullImage && (
         <div
-          className={`pointer-events-none absolute left-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-[3px] border transition-colors ${
+          className={`pointer-events-none absolute start-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-[3px] border transition-colors ${
             selected
               ? "border-primary-400 bg-primary-400 text-white"
               : "border-white/60 bg-black/40 text-transparent"
@@ -235,7 +238,7 @@ export const GalleryCard = memo(function GalleryCard({
           in the lightbox). Top-right so it never collides with the selection
           checkbox chip at top-left. */}
       {lastViewed && (
-        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-[3px] bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+        <div className="pointer-events-none absolute end-2 top-2 z-10 flex items-center gap-1 rounded-[3px] bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
           <EyeIcon />
           Last viewed
         </div>

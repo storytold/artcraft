@@ -53,7 +53,7 @@ export const PendingRow = memo(function PendingRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
           {prompt.trim() ? (
-            <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">
+            <p dir="auto" className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">
               {prompt}
             </p>
           ) : (

@@ -71,7 +71,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
           <DynamicIcon icon={item.icon} />
         </div>
         <span className="min-w-0">
-          <span className="block truncate text-[13px] font-semibold text-white">
+          <span dir="auto" className="block truncate text-[13px] font-semibold text-white">
             {item.name}
           </span>
           <span className="block truncate text-xs text-white/50">

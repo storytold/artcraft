@@ -142,7 +142,7 @@ export const ImageWatermarkRemover = () => {
                         setImageUrl("");
                         setImageDimensions(null);
                       }}
-                      className="absolute right-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
+                      className="absolute end-3 top-3 z-10 border border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
                       Switch Image
                     </Button>

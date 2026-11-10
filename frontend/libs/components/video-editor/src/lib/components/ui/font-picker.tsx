@@ -117,14 +117,14 @@ export function FontPicker({
         }}
       >
         <div className="relative px-3 py-1.5">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 shrink-0 opacity-50" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-3.5 shrink-0 opacity-50" />
           <Input
             ref={searchInputRef}
             placeholder={`Search ${activeTabLabel}...`}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             size="xs"
-            className="w-full pl-5 bg-transparent border-none! shadow-none!"
+            className="w-full ps-5 bg-transparent border-none! shadow-none!"
           />
         </div>
         <div className="flex border-b px-3">

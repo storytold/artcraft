@@ -56,7 +56,7 @@ export default function ProfileDropdown() {
       >
         <Menu.Items
           static
-          className="absolute right-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-[3px] border border-white/15 bg-[#101014] focus:outline-none"
+          className="absolute end-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-[3px] border border-white/15 bg-[#101014] focus:outline-none rtl:origin-top-left"
         >
           <Menu.Item key={0}>
             {({ active }) => (

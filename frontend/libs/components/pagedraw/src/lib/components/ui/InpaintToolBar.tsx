@@ -18,7 +18,7 @@ const InpaintToolBar = ({
       <div className="glass flex w-[400px] items-center gap-2 rounded-xl p-2">
         <div className="flex rounded-lg border border-white/10 bg-white/5">
           <button
-            className={`rounded-l-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-s-lg px-4 py-2 text-sm font-medium transition-colors ${
               operation === "add"
                 ? "bg-white/20 text-white"
                 : "text-white/60 hover:bg-white/10 hover:text-white"
@@ -28,7 +28,7 @@ const InpaintToolBar = ({
             Add
           </button>
           <button
-            className={`rounded-r-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-e-lg px-4 py-2 text-sm font-medium transition-colors ${
               operation === "minus"
                 ? "bg-white/20 text-white"
                 : "text-white/60 hover:bg-white/10 hover:text-white"

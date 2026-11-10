@@ -1,3 +1,4 @@
+import { setLocale } from "@storyteller/i18n";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginModal } from "./login-modal";
@@ -33,8 +34,9 @@ beforeEach(() => {
     throw new Error(`Unexpected command: ${command}`);
   });
 });
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  await setLocale("en");
   expect(forbiddenFetch).not.toHaveBeenCalled();
   expect(localStorage.getItem("artcraft_signed_session")).toBeNull();
   vi.unstubAllGlobals();
@@ -42,6 +44,22 @@ afterEach(() => {
 });
 
 describe("native login modal integration", () => {
+  it("preserves entered signup fields and translates validation when language changes", async () => {
+    await act(async () => { render(<LoginModal />); });
+    const username = screen.getByPlaceholderText("Username") as HTMLInputElement;
+    fireEvent.change(username, { target: { value: "My用户名" } });
+    fireEvent.change(screen.getByPlaceholderText("Min. 8 characters"), { target: { value: "local-test-password" } });
+    fireEvent.change(screen.getByPlaceholderText("Re-enter password"), { target: { value: "different-password" } });
+    fireEvent.submit(username.closest("form")!);
+    expect(screen.getByText("Passwords do not match.")).toBeTruthy();
+    await act(() => setLocale("zh-CN"));
+    expect(screen.getByText("创建账号")).toBeTruthy();
+    expect((screen.getByPlaceholderText("用户名") as HTMLInputElement).value).toBe("My用户名");
+    expect((screen.getByPlaceholderText("至少 8 个字符") as HTMLInputElement).value).toBe("local-test-password");
+    expect(screen.getByText("两次输入的密码不一致。")).toBeTruthy();
+    await act(() => setLocale("en"));
+    expect(screen.getByText("Passwords do not match.")).toBeTruthy();
+  });
   it("shows website and QR login only on the login screen", async () => {
     await act(async () => { render(<LoginModal />); });
     expect(screen.getByText("Create your account")).toBeTruthy();

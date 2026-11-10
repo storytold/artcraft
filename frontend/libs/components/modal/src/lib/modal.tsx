@@ -1076,7 +1076,7 @@ export const Modal = ({
                   >
                     <animated.div
                       className={twMerge(
-                        "w-full max-w-lg rounded-none relative border border-ui-panel-border bg-ui-modal text-left align-middle z-[70]",
+                        "w-full max-w-lg rounded-none relative border border-ui-panel-border bg-ui-modal text-start align-middle z-[70]",
                         childPadding && !expanded ? "p-4" : "",
                         className,
                         "!transition-none", // Always disable CSS transitions for spring animations
@@ -1170,7 +1170,7 @@ export const Modal = ({
                         {renderResizeHandles()}
                       </div>
                       {(showClose || expandable) && (
-                        <div className="absolute top-0 right-0 m-2.5 z-[80] flex items-center gap-2">
+                        <div className="absolute top-0 end-0 m-2.5 z-[80] flex items-center gap-2">
                           {expandable && <Modal.ExpandButton />}
                           {showClose && <CloseButton onClick={onClose} />}
                         </div>

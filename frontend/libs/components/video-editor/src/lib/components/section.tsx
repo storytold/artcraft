@@ -135,7 +135,7 @@ export function SectionHeader({
   const innerContent = isInteractive ? (
     <button
       type="button"
-      className="min-w-0 flex-1 flex items-center gap-2 h-full cursor-pointer text-left"
+      className="min-w-0 flex-1 flex items-center gap-2 h-full cursor-pointer text-start"
       onClick={handleClick}
     >
       {leading}

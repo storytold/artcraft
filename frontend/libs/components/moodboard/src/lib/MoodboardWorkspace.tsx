@@ -96,7 +96,7 @@ const TopLeftCluster = ({
   mode: ViewMode;
   onChange: (m: ViewMode) => void;
 }) => (
-  <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 rounded-2xl border border-ui-divider p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+  <div className="glass absolute start-3 top-3 z-40 flex items-center gap-0.5 rounded-2xl border border-ui-divider p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
     <BoardPicker />
     <div className="mx-0.5 h-5 w-px bg-ui-divider" />
     {OPTIONS.map((opt) => {
@@ -190,7 +190,7 @@ const TopRightCluster = ({
   onSave?: () => void;
   endSlot?: ReactNode;
 }) => (
-  <div className="pointer-events-none absolute right-3 top-3 z-40 flex items-center gap-2">
+  <div className="pointer-events-none absolute end-3 top-3 z-40 flex items-center gap-2">
     <div className="glass pointer-events-auto flex items-center rounded-xl border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
       {saveStatus !== null && onSave && (
         <SaveButton status={saveStatus} onSave={onSave} />

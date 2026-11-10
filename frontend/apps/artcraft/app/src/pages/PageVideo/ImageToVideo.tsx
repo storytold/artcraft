@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
 import {
@@ -56,6 +57,7 @@ interface ImageToVideoProps {
 }
 
 const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
+  const { t } = useTranslation();
   const imageToVideoModelList = useImageToVideoPageModelList();
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
@@ -183,8 +185,8 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
   return (
     <DesktopCreatePageShell
       hasContent={hasContent}
-      emptyStateTitle="Create Video"
-      emptyStateSubtitle="Choose an image, add a prompt, then generate"
+      emptyStateTitle={t("Create Video")}
+      emptyStateSubtitle={t("Choose an image, add a prompt, then generate")}
       bottomOffset={promptHeight + 40}
       listContent={
         <DesktopGenerationGallery

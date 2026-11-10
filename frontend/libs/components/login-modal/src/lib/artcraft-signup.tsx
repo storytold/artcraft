@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import React, { useState, useEffect } from "react";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
@@ -31,6 +32,7 @@ export const ArtCraftSignUp = ({
   errorMessage,
   isLoading = false,
 }: ArtCraftSignUpProps) => {
+  const { t } = useTranslation();
   const [localError, setLocalError] = useState<string | undefined>(undefined);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -82,24 +84,24 @@ export const ArtCraftSignUp = ({
       {localError && (
         <div className="flex items-center justify-center gap-2 border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
           <TriangleAlertIcon />
-          {localError}
+          {t(localError)}
         </div>
       )}
 
       {isSignUp ? (
         <>
           <div className="space-y-2">
-            <label className={FIELD_LABEL}>Username</label>
+            <label className={FIELD_LABEL}>{t("Username")}</label>
             <Input
               name="username"
-              placeholder="Username"
+              placeholder={t("Username")}
               required
               autoComplete="off"
               inputClassName={FIELD_INPUT}
             />
           </div>
           <div className="space-y-2">
-            <label className={FIELD_LABEL}>Email</label>
+            <label className={FIELD_LABEL}>{t("Email")}</label>
             <Input
               name="email"
               type="email"
@@ -112,10 +114,10 @@ export const ArtCraftSignUp = ({
         </>
       ) : (
         <div className="space-y-2">
-          <label className={FIELD_LABEL}>Email or Username</label>
+          <label className={FIELD_LABEL}>{t("Email or Username")}</label>
           <Input
             name="usernameOrEmail"
-            placeholder="you@example.com or username"
+            placeholder={t("you@example.com or username")}
             required
             autoComplete="off"
             inputClassName={FIELD_INPUT}
@@ -124,20 +126,21 @@ export const ArtCraftSignUp = ({
       )}
 
       <div className="space-y-2">
-        <label className={FIELD_LABEL}>Password</label>
+        <label className={FIELD_LABEL}>{t("Password")}</label>
         <div className="relative">
           <Input
             name="password"
             type={showPassword ? "text" : "password"}
-            placeholder="Min. 8 characters"
+            placeholder={t("Min. 8 characters")}
             required
             autoComplete="off"
-            inputClassName={`${FIELD_INPUT} pr-12`}
+            inputClassName={`${FIELD_INPUT} pe-12`}
           />
           <button
             type="button"
+            aria-label={t(showPassword ? "Hide password" : "Show password")}
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+            className="absolute end-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
             tabIndex={-1}
           >
             <DynamicIcon icon={showPassword ? EyeOffIcon : EyeIcon} />
@@ -147,20 +150,21 @@ export const ArtCraftSignUp = ({
 
       {isSignUp && (
         <div className="space-y-2">
-          <label className={FIELD_LABEL}>Confirm Password</label>
+          <label className={FIELD_LABEL}>{t("Confirm Password")}</label>
           <div className="relative">
             <Input
               name="confirmPassword"
               type={showConfirm ? "text" : "password"}
-              placeholder="Re-enter password"
+              placeholder={t("Re-enter password")}
               required
               autoComplete="off"
-              inputClassName={`${FIELD_INPUT} pr-12`}
+              inputClassName={`${FIELD_INPUT} pe-12`}
             />
             <button
               type="button"
-              onClick={() => setShowConfirm((v) => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+              aria-label={t(showConfirm ? "Hide password" : "Show password")}
+            onClick={() => setShowConfirm((v) => !v)}
+              className="absolute end-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
               tabIndex={-1}
             >
               <DynamicIcon icon={showConfirm ? EyeOffIcon : EyeIcon} />
@@ -178,21 +182,21 @@ export const ArtCraftSignUp = ({
           {isLoading ? (
             <LoaderCircleIcon className="animate-spin" />
           ) : isSignUp ? (
-            "Sign up"
+            t("Sign up")
           ) : (
-            "Log in"
+            t("Log in")
           )}
         </Button>
       </div>
 
       <div className="mt-4 text-center text-sm text-white/60">
-        {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+        {isSignUp ? t("Already have an account?") : t("Don't have an account?")}{" "}
         <button
           type="button"
           onClick={onToggleMode}
           className="font-semibold text-primary transition-colors hover:text-primary-400"
         >
-          {isSignUp ? "Log in" : "Sign up"}
+          {isSignUp ? t("Log in") : t("Sign up")}
         </button>
       </div>
     </form>

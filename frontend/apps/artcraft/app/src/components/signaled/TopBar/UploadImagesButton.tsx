@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImagesIcon, UploadIcon } from "lucide-react";
@@ -10,11 +11,12 @@ interface Props {
 }
 
 export const UploadImagesButton = ({ className }: Props) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <Tooltip content="Upload images" position="bottom" delay={300}>
+      <Tooltip content={t("Upload images")} position="bottom" delay={300}>
         <Button
           variant="secondary"
           icon={UploadIcon}
@@ -30,7 +32,7 @@ export const UploadImagesButton = ({ className }: Props) => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSuccess={() => setIsOpen(false)}
-        title="Upload an Image"
+        title={t("Upload an Image")}
         titleIcon={ImagesIcon}
       />
     </>

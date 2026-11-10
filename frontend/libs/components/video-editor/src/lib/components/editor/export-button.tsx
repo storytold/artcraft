@@ -243,7 +243,7 @@ function ExportPopover({
   };
 
   return (
-    <PopoverContent className="bg-ui-controls mr-4 flex w-80 flex-col p-0">
+    <PopoverContent className="bg-ui-controls me-4 flex w-80 flex-col p-0">
       {exportResult && !exportResult.success ? (
         <ExportError
           error={exportResult.error || "Unknown error occurred"}
@@ -278,13 +278,13 @@ function ExportPopover({
                           }
                         }}
                       >
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <RadioGroupItem value="mp4" id="mp4" />
                           <Label htmlFor="mp4">
                             MP4 (H.264) - Better compatibility
                           </Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <RadioGroupItem value="webm" id="webm" />
                           <Label htmlFor="webm">
                             WebM (VP9) - Smaller file size
@@ -307,19 +307,19 @@ function ExportPopover({
                           }
                         }}
                       >
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <RadioGroupItem value="low" id="low" />
                           <Label htmlFor="low">Low - Smallest file size</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <RadioGroupItem value="medium" id="medium" />
                           <Label htmlFor="medium">Medium - Balanced</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <RadioGroupItem value="high" id="high" />
                           <Label htmlFor="high">High - Recommended</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <RadioGroupItem value="very_high" id="very_high" />
                           <Label htmlFor="very_high">
                             Very high - Largest file size
@@ -334,7 +334,7 @@ function ExportPopover({
                       <SectionTitle>Audio</SectionTitle>
                     </SectionHeader>
                     <SectionContent>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
                           id="include-audio"
                           checked={shouldIncludeAudio}
@@ -355,7 +355,7 @@ function ExportPopover({
                     </SectionHeader>
                     <SectionContent>
                       <div className="flex flex-col gap-2">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <Checkbox
                             id="save-to-disk"
                             checked={saveToDisk}
@@ -367,7 +367,7 @@ function ExportPopover({
                             Save to disk
                           </Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
                           <Checkbox
                             id="save-to-library"
                             checked={saveToLibrary}
@@ -515,7 +515,7 @@ function DestinationRow({
         </span>
       </div>
       {status === "error" && error && (
-        <p className="text-destructive ml-6 text-[11px]">{error}</p>
+        <p className="text-destructive ms-6 text-[11px]">{error}</p>
       )}
     </div>
   );

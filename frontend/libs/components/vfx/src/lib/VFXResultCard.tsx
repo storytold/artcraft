@@ -77,7 +77,7 @@ export const VFXResultCard = ({
           </div>
         ) : null}
         {data.title && data.status === "complete" && (
-          <div className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium uppercase tracking-wider text-white/80 backdrop-blur-sm">
+          <div className="absolute start-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium uppercase tracking-wider text-white/80 backdrop-blur-sm">
             Output
           </div>
         )}
@@ -180,7 +180,7 @@ const SidePanelMedia = ({ label, url, isVideo }: SidePanelMediaProps) => (
     ) : (
       <img src={url} alt={label} className="h-full w-full object-cover" />
     )}
-    <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/80 backdrop-blur-sm">
+    <span className="absolute start-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/80 backdrop-blur-sm">
       {label}
     </span>
   </div>
