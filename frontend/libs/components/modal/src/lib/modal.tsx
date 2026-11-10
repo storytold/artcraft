@@ -541,6 +541,7 @@ export const Modal = ({
             return cloneElement(typedChild, {
               children: (
                 <div
+                  role="presentation"
                   style={{ cursor: "move", userSelect: "none" }}
                   onMouseDown={handleDragStart}
                 >
@@ -561,6 +562,7 @@ export const Modal = ({
             return cloneElement(typedChildren, {
               children: (
                 <div
+                  role="presentation"
                   style={{ cursor: "move", userSelect: "none" }}
                   onMouseDown={handleDragStart}
                 >
@@ -743,6 +745,7 @@ export const Modal = ({
 
     return handles.map((h) => (
       <div
+        role="presentation"
         key={h.dir}
         className={`${baseClass} ${h.className}`}
         style={{ cursor: cursorMap[h.dir] }}

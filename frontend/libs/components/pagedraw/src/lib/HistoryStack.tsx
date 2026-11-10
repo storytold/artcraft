@@ -8,6 +8,7 @@ import {
   isActionReminderOpen,
   showActionReminder,
 } from "@storyteller/ui-action-reminder-modal";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 export type { ImageBundle };
 
@@ -183,6 +184,9 @@ export const HistoryStack = ({
                       for removal. Hovering reveals a striped overlay and a
                       centered trash affordance. */}
                   <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={clickOnEnterOrSpace}
                     className="group relative w-full cursor-pointer"
                     title={
                       tileCount > 1
@@ -308,6 +312,9 @@ export const HistoryStack = ({
                       />
                     )}
                     <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={clickOnEnterOrSpace}
                       className="absolute -right-0 -top-0 flex h-5 w-5 items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
                       onClick={(e) => {
                         e.stopPropagation();

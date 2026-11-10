@@ -4,6 +4,7 @@ import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
 import { useStoryboardStore, type Board } from "./StoryboardStore";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 const PIXELS_PER_SECOND = 80;
 const MIN_BLOCK_WIDTH = 40;
@@ -457,6 +458,9 @@ const ThumbnailItem = ({
   onDragEnd,
 }: ThumbnailItemProps) => (
   <div
+    role="button"
+    tabIndex={0}
+    onKeyDown={clickOnEnterOrSpace}
     draggable
     onDragStart={(e) => onDragStart(e, index)}
     onDragOver={(e) => {

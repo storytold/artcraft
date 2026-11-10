@@ -2739,6 +2739,7 @@ export const GalleryModal = React.memo(
                         {folderMenuOpen && (
                           <>
                             <div
+                              role="presentation"
                               className="fixed inset-0 z-[58]"
                               onClick={() => setFolderMenuOpen(false)}
                             />
@@ -3573,6 +3574,7 @@ export const GalleryModal = React.memo(
                       <>
                         {/* Backdrop to close */}
                         <div
+                          role="presentation"
                           className="fixed inset-0 z-[59]"
                           onClick={() => setBulkFolderPopoverOpen(false)}
                         />
@@ -3716,6 +3718,7 @@ export const GalleryModal = React.memo(
           createPortal(
             <>
               <div
+                role="presentation"
                 className="fixed inset-0 z-[9998]"
                 onClick={() => setContextMenu(null)}
                 onContextMenu={(e) => {

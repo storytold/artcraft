@@ -89,6 +89,7 @@ export default function SplitPane({
       </div>
 
       <div
+        role="presentation"
         className="w-1 cursor-col-resize select-none bg-white/20
                    transition hover:bg-white/30"
         onMouseDown={beginDrag}

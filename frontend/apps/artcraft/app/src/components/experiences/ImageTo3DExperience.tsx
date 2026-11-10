@@ -38,6 +38,7 @@ import {
 } from "@storyteller/ui-pricing-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CreateEmptyState } from "~/components/generation-feed/CreateEmptyState";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
@@ -599,6 +600,9 @@ export const ImageTo3DExperience = ({
     <div className="flex justify-center">
       {uploadedPreview ? (
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={clickOnEnterOrSpace}
           className={twMerge(
             "group relative cursor-pointer overflow-hidden border border-white/30 bg-black/30 transition-all hover:border-white/60",
             hasResults ? "aspect-square w-24" : "aspect-square w-48",
@@ -754,6 +758,9 @@ export const ImageTo3DExperience = ({
 
     const worldImageThumbnail = (img: WorldImage) => (
       <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={clickOnEnterOrSpace}
         key={img.id}
         className={twMerge(
           "group relative aspect-square overflow-hidden rounded-[3px] border border-white/30 bg-black/30 transition-all",
@@ -1202,6 +1209,7 @@ export const ImageTo3DExperience = ({
 
       {previewImage && (
         <div
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
           onClick={() => setPreviewImage(null)}
         >
