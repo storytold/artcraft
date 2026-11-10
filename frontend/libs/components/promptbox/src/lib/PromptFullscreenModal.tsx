@@ -62,7 +62,7 @@ export const PromptFullscreenModal = ({
   dropZoneProps,
   dropOverlay,
 }: PromptFullscreenModalProps) => {
-  const overLimit = isFinite(maxLength) && promptLength > maxLength;
+  const overLimit = Number.isFinite(maxLength) && promptLength > maxLength;
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Focus the editor and drop the caret at the end once the overlay opens.
@@ -111,7 +111,7 @@ export const PromptFullscreenModal = ({
               overLimit ? "text-red-500" : "text-base-fg/40"
             }`}
           >
-            {promptLength} / {isFinite(maxLength) ? maxLength : "∞"}
+            {promptLength} / {Number.isFinite(maxLength) ? maxLength : "∞"}
           </span>
         </div>
         {imagePromptRow && <div className="shrink-0">{imagePromptRow}</div>}

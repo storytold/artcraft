@@ -260,7 +260,7 @@ export const PromptBoxEdit = ({
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (Number.isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -438,9 +438,9 @@ export const PromptBoxEdit = ({
                 />
                 <PromptFullscreenButton onClick={openFullscreen} />
                 <span
-                  className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
+                  className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${Number.isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
                 >
-                  {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
+                  {prompt.length} / {Number.isFinite(maxLen) ? maxLen : "∞"}
                 </span>
               </div>
             </div>

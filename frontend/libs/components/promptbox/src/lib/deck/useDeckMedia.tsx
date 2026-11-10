@@ -68,7 +68,7 @@ const randomId = () => Math.random().toString(36).substring(7);
 
 // A non-finite duration cap means "no limit" — leave it out of the message.
 const videoLimitMessage = (maxVideos: number, maxTotalSec: number) =>
-  isFinite(maxTotalSec)
+  Number.isFinite(maxTotalSec)
     ? `Max ${maxVideos} videos / ${maxTotalSec}s total`
     : `Max ${maxVideos} video${maxVideos === 1 ? "" : "s"}`;
 

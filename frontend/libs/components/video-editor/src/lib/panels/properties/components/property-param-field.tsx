@@ -194,7 +194,7 @@ function NumberParamField({
       maxFractionDigits,
     }),
     parse: (input) => {
-      const parsed = parseFloat(input);
+      const parsed = Number.parseFloat(input);
       if (Number.isNaN(parsed)) return null;
       return clampDisplayValue(snapToStep({ value: parsed, step }));
     },

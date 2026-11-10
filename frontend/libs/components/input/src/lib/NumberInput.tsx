@@ -22,10 +22,10 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     const newValue = event.target.value;
     if (
       newValue === "" ||
-      (!isNaN(Number(newValue)) && Number(newValue) <= 100)
+      (!Number.isNaN(Number(newValue)) && Number(newValue) <= 100)
     ) {
       setInputValue(newValue);
-      const numericValue = parseFloat(newValue);
+      const numericValue = Number.parseFloat(newValue);
       if (newValue !== "") {
         onChange(Math.round(numericValue * 100) / 100);
       }

@@ -313,7 +313,7 @@ export const VideoWatermarkRemover = () => {
                             step="0.01"
                             value={volume}
                             onChange={(e) =>
-                              setVolume(parseFloat(e.target.value))
+                              setVolume(Number.parseFloat(e.target.value))
                             }
                             className="w-20 accent-white"
                           />

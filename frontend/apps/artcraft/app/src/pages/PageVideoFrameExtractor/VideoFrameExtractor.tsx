@@ -614,7 +614,7 @@ export const VideoFrameExtractor = () => {
                             step="0.01"
                             value={volume}
                             onChange={(e) =>
-                              setVolume(parseFloat(e.target.value))
+                              setVolume(Number.parseFloat(e.target.value))
                             }
                             className="w-20 accent-white"
                           />
@@ -714,7 +714,7 @@ export const VideoFrameExtractor = () => {
                               setNumFrames(
                                 Math.max(
                                   1,
-                                  Math.min(50, parseInt(e.target.value) || 1),
+                                  Math.min(50, Number.parseInt(e.target.value) || 1),
                                 ),
                               )
                             }
@@ -737,7 +737,7 @@ export const VideoFrameExtractor = () => {
                             value={frameDistance}
                             onChange={(e) =>
                               setFrameDistance(
-                                Math.max(1, parseInt(e.target.value) || 1),
+                                Math.max(1, Number.parseInt(e.target.value) || 1),
                               )
                             }
                             className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"
