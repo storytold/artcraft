@@ -1079,15 +1079,10 @@ class Scene {
       }
       throw error;
     }
-    return new Promise((resolve) => {
-      new SplatMesh({
-        fileBytes: buffer,
-        onLoad: (mesh) => {
-          resolve(mesh);
-          onComplete();
-        },
-      });
-    });
+    const mesh = new SplatMesh({ fileBytes: buffer });
+    await mesh.initialized;
+    onComplete();
+    return mesh;
   }
 
   /**
