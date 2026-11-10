@@ -31,8 +31,15 @@ pub async fn third_party_task_polling_thread(
 ) -> ! {
   let mut has_ever_seen_third_party_jobs = false;
   let mut last_cleanup = None;
+  let mut last_restore = None;
 
   loop {
+    if last_restore.is_none_or(|last: std::time::Instant| last.elapsed() >= Duration::from_secs(60)) {
+      if let Err(error) = crate::core::utils::provider_submission::restore_submissions(&app_data_root, &task_database, &app_env_configs.storyteller_host.to_api_hostname_and_scheme()).await {
+        warn!("Could not recover WaveSpeed submission receipts: {error}");
+      }
+      last_restore = Some(std::time::Instant::now());
+    }
     if last_cleanup.is_none_or(|last: std::time::Instant| last.elapsed() >= Duration::from_secs(600)) {
       if let Err(error) = super::handlers::provider_cache_cleanup::cleanup_provider_cache(&app_data_root, &task_database).await {
         warn!("Could not clean abandoned provider cache: {error}");
@@ -65,9 +72,6 @@ async fn poll_iteration(
   credential_cache: &ProviderCredentialLoadingCache,
   has_ever_seen_third_party_jobs: &mut bool,
 ) -> Result<(), PollError> {
-  if let Err(error) = crate::core::utils::provider_submission::restore_submissions(app_data_root, task_database, &app_env_configs.storyteller_host.to_api_hostname_and_scheme()).await {
-    warn!("Could not recover WaveSpeed submission receipts: {error}");
-  }
   let task_list = list_non_artcraft_pending_tasks(ListNonArtcraftPendingTasksArgs {
     db: task_database.get_connection(),
     task_statuses: &TASK_DATABASE_PENDING_STATUSES,

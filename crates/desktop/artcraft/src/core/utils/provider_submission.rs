@@ -54,9 +54,11 @@ impl ProviderSubmission {
       ensure!(success.provider == GenerationProvider::WaveSpeed && success.provider_job_id.is_some(), "Invalid saved acceptance receipt");
       let job_id = success.provider_job_id.as_deref().unwrap();
       let maybe_task = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs { db: database.get_connection(), provider: success.provider, provider_job_id: job_id }).await?;
-      if maybe_task.is_some_and(|task| !TASK_DATABASE_PENDING_STATUSES.contains(&task.status)) {
-        ProviderImageContext::remove(root, job_id)?;
-        remove_submission(root, job_id)?;
+      if let Some(task) = maybe_task {
+        if !TASK_DATABASE_PENDING_STATUSES.contains(&task.status) {
+          ProviderImageContext::remove(root, job_id)?;
+          remove_submission(root, job_id)?;
+        }
         return Ok(());
       }
       self.save_context(root)?;
@@ -87,6 +89,7 @@ impl ProviderSubmission {
 }
 
 pub async fn restore_submissions(root: &AppDataRoot, database: &TaskDatabase, api_host: &str) -> Result<()> {
+  let mut maybe_error = None;
   for entry in std::fs::read_dir(directory(root)?)? {
     let entry = entry?;
     if entry.path().extension().and_then(|value| value.to_str()) != Some("json") || !entry.file_type()?.is_file() {
@@ -98,11 +101,18 @@ pub async fn restore_submissions(root: &AppDataRoot, database: &TaskDatabase, ap
         if receipt.api_host != api_host { continue; }
         if let Err(error) = receipt.restore_task(root, database, api_host).await {
           warn!("Could not restore accepted WaveSpeed submission: {error}");
+          maybe_error = Some(error);
         }
       },
-      Err(error) => warn!("Could not read WaveSpeed submission receipt: {error}"),
+      Err(error) => {
+        warn!("Could not read WaveSpeed submission receipt: {error}");
+        if let Err(error) = std::fs::rename(entry.path(), entry.path().with_extension("invalid")) {
+          warn!("Could not quarantine invalid submission receipt: {error}");
+        }
+      },
     }
   }
+  if let Some(error) = maybe_error { return Err(error); }
   Ok(())
 }
 
@@ -121,8 +131,10 @@ pub fn remove_submission(root: &AppDataRoot, job_id: &str) -> Result<()> {
 }
 
 fn read_receipt(path: &Path) -> Result<ProviderSubmission> {
-  ensure!(std::fs::metadata(path)?.len() <= 4 * 1024 * 1024, "Submission receipt is too large");
-  Ok(serde_json::from_slice(&std::fs::read(path)?)?)
+  let bytes = crate::core::utils::read_bounded_file::read_bounded_file(path, 4 * 1024 * 1024)?;
+  let receipt: ProviderSubmission = serde_json::from_slice(&bytes)?;
+  ensure!(receipt.version == 1, "Unsupported submission receipt version");
+  Ok(receipt)
 }
 
 fn default_task_type() -> TaskType {
@@ -216,6 +228,8 @@ mod tests {
     assert!(attach_prediction(&root, "../escape", "job_recovery", HOST).is_err());
     assert!(attach_prediction(&root, &receipt.id, "job_recovery", "other").is_err());
     attach_prediction(&root, &receipt.id, "job_recovery", HOST).unwrap();
+    let accepted = read_receipt(&directory(&root).unwrap().join(format!("{}.json", receipt.id))).unwrap();
+    assert_eq!(accepted.maybe_success.as_ref().and_then(|success| success.provider_job_id.as_deref()), Some("job_recovery"));
     restore_submissions(&root, &database, HOST).await.unwrap();
     let task = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs { db: database.get_connection(), provider: GenerationProvider::WaveSpeed, provider_job_id: "job_recovery" }).await.unwrap().unwrap();
     assert_eq!(task.task_type, TaskType::VideoGeneration);

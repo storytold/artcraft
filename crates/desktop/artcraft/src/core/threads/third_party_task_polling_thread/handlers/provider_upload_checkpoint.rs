@@ -28,6 +28,8 @@ pub(super) struct UploadCheckpoint {
   pub identity: CompletionIdentity,
   maybe_batch_token: Option<BatchGenerationToken>,
   files: Vec<FileProgress>,
+  #[serde(default)]
+  maybe_upload_account: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -52,7 +54,7 @@ impl UploadCheckpoint {
     let checkpoint = match Self::load(path)? {
       Some(checkpoint) => checkpoint,
       None => {
-        let checkpoint = Self { version: 1, identity: identity.clone(), maybe_batch_token: (urls.len() > 1).then(BatchGenerationToken::generate), files: urls.iter().map(|url| FileProgress { url: url.clone(), idempotency_token: generate_random_uuid(), maybe_media_token: None }).collect() };
+        let checkpoint = Self { version: 1, identity: identity.clone(), maybe_batch_token: (urls.len() > 1).then(BatchGenerationToken::generate), files: urls.iter().map(|url| FileProgress { url: url.clone(), idempotency_token: generate_random_uuid(), maybe_media_token: None }).collect(), maybe_upload_account: None };
         save(path, &checkpoint)?;
         checkpoint
       },
@@ -64,11 +66,11 @@ impl UploadCheckpoint {
   }
 
   pub fn load(path: &Path) -> Result<Option<Self>, TransferError> {
-    match std::fs::read(path) {
+    match crate::core::utils::read_bounded_file::read_bounded_file(path, 4 * 1024 * 1024) {
       Ok(bytes) => {
         let checkpoint: Self = serde_json::from_slice(&bytes)?;
         if checkpoint.version != 1 || checkpoint.files.is_empty() {
-          return Err("Invalid provider upload checkpoint".into());
+          return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid provider upload checkpoint").into());
         }
         Ok(Some(checkpoint))
       },
@@ -79,6 +81,18 @@ impl UploadCheckpoint {
 
   pub fn urls(&self) -> Vec<String> {
     self.files.iter().map(|file| file.url.clone()).collect()
+  }
+
+  pub fn bind_upload_account(&mut self, path: &Path, account: &str) -> Result<(), TransferError> {
+    match self.maybe_upload_account.as_deref() {
+      Some(original) if original != account => return Err("Sign in to the original ArtCraft account to resume this upload".into()),
+      Some(_) => return Ok(()),
+      None if self.files.iter().any(|file| file.maybe_media_token.is_some()) => return Err("This older upload has no recorded account; refusing to reuse its cloud media".into()),
+      None => {},
+    }
+    self.maybe_upload_account = Some(account.into());
+    save(path, self)?;
+    Ok(())
   }
 }
 
@@ -115,6 +129,27 @@ fn save(path: &Path, checkpoint: &UploadCheckpoint) -> Result<(), TransferError>
 mod provider_upload_recovery_tests {
   use super::*;
   use std::sync::{Arc, Mutex};
+
+  #[tokio::test]
+  async fn upload_progress_cannot_be_reused_by_another_account() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("checkpoint.json");
+    let identity = identity(GenerationProvider::WaveSpeed);
+    let urls = vec!["first".into(), "second".into()];
+    let mut checkpoint = UploadCheckpoint::prepare(&path, &identity, &urls).unwrap();
+    checkpoint.bind_upload_account(&path, "user_a").unwrap();
+    assert!(resume_uploads(&path, &identity, &urls, |plan| async move {
+      if plan.index == 0 { Ok(MediaFileToken::new_from_str("mf_a")) } else { Err("interrupted".into()) }
+    }).await.is_err());
+    let mut saved = UploadCheckpoint::load(&path).unwrap().unwrap();
+    assert!(saved.bind_upload_account(&path, "user_b").is_err());
+    saved.bind_upload_account(&path, "user_a").unwrap();
+    let result = resume_uploads(&path, &identity, &urls, |plan| async move {
+      assert_eq!(plan.index, 1);
+      Ok(MediaFileToken::new_from_str("mf_a_second"))
+    }).await.unwrap();
+    assert_eq!(result.0.as_str(), "mf_a");
+  }
 
   #[tokio::test]
   async fn restart_skips_confirmed_results_and_reuses_lost_response_identity() {

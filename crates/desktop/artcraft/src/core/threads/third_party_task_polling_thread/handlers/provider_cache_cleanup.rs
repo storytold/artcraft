@@ -5,15 +5,17 @@ use crate::core::utils::provider_image_context::ProviderImageContext;
 use crate::core::utils::provider_submission::remove_submission;
 use crate::core::utils::task_database_pending_statuses::TASK_DATABASE_PENDING_STATUSES;
 use super::provider_upload_checkpoint::UploadCheckpoint;
-use sqlite_tasks::queries::get_task_status::get_task_status;
+use enums::tauri::tasks::task_status::TaskStatus;
+use log::warn;
+use std::collections::HashMap;
 use std::path::Path;
 use std::time::{Duration, SystemTime};
-use tokens::tokens::sqlite::tasks::TaskId;
 
 const ABANDONED_FILE_AGE: Duration = Duration::from_secs(24 * 60 * 60);
 
 pub async fn cleanup_provider_cache(root: &AppDataRoot, database: &TaskDatabase) -> anyhow::Result<()> {
   let directory = root.state_dir().path();
+  let statuses: HashMap<String, String> = sqlite_tasks::queries::list_task_statuses::list_task_statuses(database.get_connection()).await?.into_iter().collect();
   for entry in std::fs::read_dir(directory)? {
     let entry = entry?;
     let filename = entry.file_name();
@@ -28,7 +30,13 @@ pub async fn cleanup_provider_cache(root: &AppDataRoot, database: &TaskDatabase)
     }
     let checkpoint_path = directory.join(format!("provider_upload_{task_id}.json"));
     let media_path = checkpoint_path.with_extension("media");
-    let maybe_status = get_task_status(database.get_connection(), &TaskId::new_from_str(task_id)).await?;
+    let maybe_status = match statuses.get(task_id).map(|status| TaskStatus::from_str(status)).transpose() {
+      Ok(status) => status,
+      Err(error) => {
+        warn!("Skipping provider cache with unknown task status: {error}");
+        continue;
+      },
+    };
     if maybe_status.is_some_and(|status| !TASK_DATABASE_PENDING_STATUSES.contains(&status)) {
       if let Ok(Some(checkpoint)) = UploadCheckpoint::load(&checkpoint_path) {
         if checkpoint.identity.task_id == task_id {

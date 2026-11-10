@@ -119,6 +119,11 @@ pub async fn handle_request(
   app_env_configs: &AppEnvConfigs
 ) -> Result<(), ArtcraftError> {
   let app_prefs = app_prefs.get_clone()?;
+  download_with_preferences(request, &app_prefs, app_data_root).await?;
+  Ok(())
+}
+
+async fn download_with_preferences(request: DownloadUrlRequest, app_prefs: &AppPreferences, app_data_root: &AppDataRoot) -> Result<PathBuf, ArtcraftError> {
 
   let maybe_source = if local_generations::is_asset_url(&request.url) { Some(local_generations::resolve_asset_url(app_data_root, &request.url)?) } else { None };
   if request.maybe_filename.is_some() && maybe_source.is_none() {
@@ -139,7 +144,7 @@ pub async fn handle_request(
 
   info!("downloaded to: {:?}", download_path);
 
-  Ok(())
+  Ok(download_path)
 }
 
 fn copy_local_image(source: &Path, directory: &Path, filename: &str, explicit_filename: bool) -> Result<PathBuf, ArtcraftError> {
@@ -166,6 +171,23 @@ fn copy_local_image(source: &Path, directory: &Path, filename: &str, explicit_fi
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[tokio::test]
+  async fn explicit_names_reject_remote_urls_and_copy_registered_local_assets() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(temporary.path()).unwrap();
+    let destination = temporary.path().join("chosen");
+    let request = DownloadUrlRequest { url: Url::parse("https://example.com/image.png").unwrap(), maybe_model: None, maybe_batch_index: None, maybe_directory: Some(destination.clone()), maybe_filename: Some("saved.png".into()) };
+    assert!(download_with_preferences(request, &AppPreferences::default(), &root).await.is_err());
+    assert!(!destination.exists());
+    let source = temporary.path().join("source.png");
+    image::DynamicImage::new_rgb8(2, 2).save(&source).unwrap();
+    let local = local_generations::keep_as(&root, "download", &source, "a wave", "flux_1_dev", "wavespeed").unwrap();
+    let request = DownloadUrlRequest { url: local.asset_url, maybe_model: None, maybe_batch_index: None, maybe_directory: Some(destination.clone()), maybe_filename: Some("saved.png".into()) };
+    let saved = download_with_preferences(request, &AppPreferences::default(), &root).await.unwrap();
+    assert_eq!(saved, destination.join("saved.png"));
+    assert_eq!(std::fs::read(saved).unwrap(), std::fs::read(source).unwrap());
+  }
 
   #[test]
   fn local_save_as_refuses_executable_or_unsafe_filenames() {

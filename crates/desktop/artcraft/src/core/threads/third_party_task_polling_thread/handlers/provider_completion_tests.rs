@@ -96,7 +96,7 @@ async fn lost_upload_response_then_restart_reuses_identity_and_skips_confirmed_r
       let config = &config;
       let creds = &creds;
       async move {
-        let download = download_file(&plan.url, root.temp_dir().path()).await?;
+        let download = super::super::provider_transfer::download_with_client(&reqwest::Client::new(), &plan.url, root.temp_dir().path(), 1024).await?;
         upload_to_backend(creds, config, download.path(), None, plan.maybe_batch_token.as_ref(), TaskMediaFileClass::Image, GenerationProvider::WaveSpeed, &plan.idempotency_token).await
       }
     })

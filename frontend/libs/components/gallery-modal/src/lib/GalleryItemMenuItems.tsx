@@ -10,7 +10,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import { isLocalGeneration } from "@storyteller/tauri-api";
+import { isLocalGeneration } from "@storyteller/common";
 import { GalleryItem } from "./gallery-modal";
 import { GalleryFolder } from "./GalleryDraggableItem";
 import { compareFolders } from "./folderUtils";

@@ -45,6 +45,7 @@ describe("gallery tile menu", () => {
 describe("gallery tile in select mode", () => {
   it("won't pick an image kept on this computer", () => {
     const onClick = renderSelectTile(LOCAL_ID);
+    expect((screen.getByRole("button", { name: "tile" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "tile" }));
     expect(onClick).not.toHaveBeenCalled();
     expect(screen.queryByText("Added")).toBeNull();

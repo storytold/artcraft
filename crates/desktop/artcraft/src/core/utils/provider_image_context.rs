@@ -29,7 +29,7 @@ impl ProviderImageContext {
   }
 
   pub fn load(root: &AppDataRoot, job_id: &str) -> Result<Option<Self>> {
-    match std::fs::read(path(root, job_id)?) {
+    match crate::core::utils::read_bounded_file::read_bounded_file(&path(root, job_id)?, 4 * 1024 * 1024) {
       Ok(bytes) => Ok(Some(serde_json::from_slice(&bytes)?)),
       Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
       Err(error) => Err(error.into()),

@@ -26,7 +26,7 @@ export function WaveSpeedAccountBlock() {
       setApiKey("");
       setConnected(true);
     } catch {
-      setError("Could not save your WaveSpeed API key. Please try again.");
+      setError("Could not save your WaveSpeed API key. Unlock your system keychain or Secret Service, then try again.");
     } finally {
       setBusy(false);
     }

@@ -1,13 +1,21 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use reqwest::Client;
 use tempfile::NamedTempFile;
+use super::public_media_client::{public_media_client, validate_media_url};
 
 const MAX_TRANSFER_BYTES: u64 = 1024 * 1024 * 1024;
 
 pub(super) async fn cache_downloads(checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+  for url in urls { validate_media_url(url)?; }
+  cache_downloads_with_client(&public_media_client()?, checkpoint_path, urls).await
+}
+
+async fn cache_downloads_with_client(client: &Client, checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+  if urls.is_empty() || urls.len() > wavespeed_client::MAX_OUTPUTS {
+    return Err("Invalid provider output count".into());
+  }
   let directory = checkpoint_path.with_extension("media");
   std::fs::create_dir_all(&directory)?;
   let mut paths = Vec::with_capacity(urls.len());
@@ -18,7 +26,7 @@ pub(super) async fn cache_downloads(checkpoint_path: &Path, urls: &[String]) -> 
       Ok(metadata) if metadata.is_file() && metadata.len() > 0 && metadata.len() <= MAX_TRANSFER_BYTES => {},
       Ok(_) => return Err("Invalid cached provider media".into()),
       Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-        let download = download_file(url, &directory).await?;
+        let download = download_with_client(client, url, &directory, MAX_TRANSFER_BYTES).await?;
         download.as_file().sync_all()?;
         download.persist_noclobber(&path)?;
       },
@@ -37,13 +45,11 @@ pub(super) fn clear_cached_downloads(checkpoint_path: &Path) -> Result<(), std::
   }
 }
 
-pub(super) async fn download_file(url: &str, directory: &Path) -> Result<NamedTempFile, Box<dyn std::error::Error>> {
-  let client = Client::builder().connect_timeout(Duration::from_secs(10)).timeout(Duration::from_secs(600)).build()?;
-  download_with_client(&client, url, directory, MAX_TRANSFER_BYTES).await
-}
-
-async fn download_with_client(client: &Client, url: &str, directory: &Path, max_bytes: u64) -> Result<NamedTempFile, Box<dyn std::error::Error>> {
+pub(super) async fn download_with_client(client: &Client, url: &str, directory: &Path, max_bytes: u64) -> Result<NamedTempFile, Box<dyn std::error::Error>> {
   let mut response = client.get(url).send().await?.error_for_status()?;
+  if !response.status().is_success() {
+    return Err("Provider output redirects are not permitted".into());
+  }
   if response.content_length().is_some_and(|length| length > max_bytes) {
     return Err("Provider output exceeds transfer size limit".into());
   }
@@ -67,8 +73,35 @@ async fn download_with_client(client: &Client, url: &str, directory: &Path, max_
 #[cfg(test)]
 mod provider_transfer_tests {
   use super::*;
+  use std::time::Duration;
   use tokio::io::{AsyncReadExt, AsyncWriteExt};
   use tokio::net::TcpListener;
+
+  #[tokio::test]
+  async fn rejects_private_targets_and_excess_outputs_before_creating_cache_files() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("checkpoint.json");
+    assert!(cache_downloads(&path, &["http://127.0.0.1/result".into()]).await.is_err());
+    assert!(cache_downloads(&path, &vec!["https://example.com/result".into(); wavespeed_client::MAX_OUTPUTS + 1]).await.is_err());
+    assert!(!path.with_extension("media").exists());
+  }
+
+  #[tokio::test]
+  async fn redirects_are_not_followed_or_saved_as_media() {
+    let directory = tempfile::tempdir().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/redirect", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+      let (mut socket, _) = listener.accept().await.unwrap();
+      let mut request = [0; 4096];
+      socket.read(&mut request).await.unwrap();
+      socket.write_all(b"HTTP/1.1 302 Found\r\nLocation: http://169.254.169.254/\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").await.unwrap();
+    });
+    let client = Client::builder().redirect(reqwest::redirect::Policy::none()).build().unwrap();
+    assert!(download_with_client(&client, &url, directory.path(), 1024).await.is_err());
+    server.await.unwrap();
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 0);
+  }
 
   #[tokio::test]
   async fn cached_output_survives_restart_after_provider_url_expires() {
@@ -82,10 +115,11 @@ mod provider_transfer_tests {
       socket.read(&mut request).await.unwrap();
       socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\nmedia").await.unwrap();
     });
-    let files = cache_downloads(&path, &[url.clone()]).await.unwrap();
+    let client = Client::new();
+    let files = cache_downloads_with_client(&client, &path, &[url.clone()]).await.unwrap();
     server.await.unwrap();
     assert_eq!(std::fs::read(&files[0]).unwrap(), b"media");
-    assert_eq!(cache_downloads(&path, &[url]).await.unwrap(), files);
+    assert_eq!(cache_downloads_with_client(&client, &path, &[url]).await.unwrap(), files);
     clear_cached_downloads(&path).unwrap();
     assert!(!files[0].exists());
   }

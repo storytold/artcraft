@@ -1,4 +1,4 @@
-import { isLocalGeneration } from "@storyteller/tauri-api";
+import { isLocalGeneration } from "@storyteller/common";
 import type { GalleryItem } from "@storyteller/ui-generation-list";
 import { is3DMediaClass } from "@storyteller/ui-generation-list";
 

@@ -105,6 +105,6 @@ export function videoModelForProvider(
     sizeOptions,
     supportsCommonAspectRatio: true,
     defaultAspectRatio: "wide_sixteen_by_nine",
-    maxPromptLength: model.tauriId === "minimax_h3" ? 7000 : model.tauriId === "seedance_1p0_lite" ? 2000 : model.maxPromptLength,
+    maxPromptLength: model.tauriId.startsWith("kling_") ? 2500 : model.tauriId === "minimax_h3" ? 7000 : model.tauriId === "seedance_1p0_lite" ? 2000 : model.maxPromptLength,
   });
 }

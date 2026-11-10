@@ -36,3 +36,17 @@ it("lists again when the window regains focus", async () => {
   });
   expect(invoke).toHaveBeenCalledWith("list_local_generations_command");
 });
+
+it("shares one refresh and listener set between hook consumers", async () => {
+  const first = renderHook(() => useLocalGenerations());
+  const second = renderHook(() => useLocalGenerations());
+  await act(() => Promise.resolve());
+  expect(invoke).toHaveBeenCalledTimes(1);
+  first.unmount();
+  invoke.mockClear();
+  await act(async () => listeners.get("generation-complete-event")?.());
+  expect(invoke).toHaveBeenCalledTimes(1);
+  second.unmount();
+  await act(() => Promise.resolve());
+  expect(listeners.size).toBe(0);
+});

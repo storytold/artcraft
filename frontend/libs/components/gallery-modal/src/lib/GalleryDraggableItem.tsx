@@ -13,7 +13,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { toast } from "@storyteller/ui-toaster";
-import { isLocalGeneration } from "@storyteller/tauri-api";
+import { isLocalGeneration } from "@storyteller/common";
 
 type ModalMode = "select" | "view";
 
@@ -246,6 +246,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   const itemButton = (
     <button
       type="button"
+      disabled={unpickable}
       tabIndex={-1}
       className={twMerge(
         "w-full group relative overflow-visible border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",

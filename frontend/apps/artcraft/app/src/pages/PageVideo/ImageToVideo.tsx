@@ -18,7 +18,7 @@ import {
   useSelectedProviderForModel,
   useClassyModelSelectorStore,
 } from "@storyteller/ui-model-selector";
-import { VideoModel } from "@storyteller/model-list";
+import { VideoModel, videoModelForProvider } from "@storyteller/model-list";
 import { useImageToVideoStore } from "./ImageToVideoStore";
 import {
   useVideoGenerationCompleteEvent,
@@ -220,10 +220,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
           <div ref={promptContentRef}>
             <PromptBoxErrorBoundary>
               {!isSignedIn && (
-                <div className="mb-2 text-sm text-base-fg/70">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded border border-ui-panel-border bg-ui-panel p-3 text-sm text-base-fg/70">
                   Generate videos with your WaveSpeed key. Results stay on this computer. Sign in to attach media.
-                  {selectedProvider !== GenerationProvider.WaveSpeed && <button type="button" className="ml-2 text-primary" onClick={() => {
-                    const model = imageToVideoModelList.find((item) => item.model instanceof VideoModel && item.model.getProviders().includes(GenerationProvider.WaveSpeed) && !item.model.requiresImage)?.model;
+                  {selectedProvider !== GenerationProvider.WaveSpeed && <button type="button" className="min-h-9 shrink-0 cursor-pointer rounded px-3 py-2 text-primary hover:bg-ui-controls focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onClick={() => {
+                    const model = imageToVideoModelList.find((item) => item.model instanceof VideoModel && item.model.getProviders().includes(GenerationProvider.WaveSpeed) && !videoModelForProvider(item.model, GenerationProvider.WaveSpeed)?.requiresImage)?.model;
                     if (!model) return;
                     const store = useClassyModelSelectorStore.getState();
                     store.setSelectedModel(PAGE_ID, model);

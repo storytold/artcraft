@@ -9,13 +9,14 @@ export interface LocalGenerationLike {
   model_id: string;
   created_at: string;
   media_class?: "image" | "video";
+  thumbnail_url?: string | null;
 }
 
 export function localGenerationsToGalleryItems(images: LocalGenerationLike[]): GalleryItem[] {
   return images.map((image) => ({
     id: image.id,
     label: image.prompt || "Image Generation",
-    thumbnail: image.media_class === "video" ? null : image.url,
+    thumbnail: image.media_class === "video" ? null : image.thumbnail_url ?? image.url,
     fullImage: image.url,
     createdAt: image.created_at,
     mediaClass: image.media_class ?? "image",

@@ -63,6 +63,7 @@ futures = "0.3"
 image = "0.25.5"
 indexmap.workspace = true
 log.workspace = true
+keyring = { version = "3.6.3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust", "vendored"] }
 once_cell.workspace = true
 os_info = { version = "3.12.0", default-features = false }
 rand.workspace = true

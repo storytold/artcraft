@@ -221,7 +221,7 @@ fn dimensions(ratio: Option<RouterAspectRatio>) -> Result<String, ArtcraftRouter
     Some("4:5") => (1024, 1280),
     Some("9:16") => (576, 1024),
     Some("9:21") => (576, 1344),
-    _ => unreachable!(),
+    other => return Err(unsupported_option("aspect_ratio", format!("{other:?}"))),
   };
   Ok(format!("{width}*{height}"))
 }
@@ -237,9 +237,11 @@ fn seedream_dimensions(maybe_ratio: Option<RouterAspectRatio>, maybe_resolution:
     Some(RouterAspectRatio::Auto2k | RouterAspectRatio::Auto3k | RouterAspectRatio::Auto4k) => None,
     other => other,
   };
-  let ratio = aspect_ratio(ratio, false)?.unwrap();
-  let (width, height) = ratio.split_once(':').unwrap();
-  let ratio = width.parse::<f64>().unwrap() / height.parse::<f64>().unwrap();
+  let ratio = aspect_ratio(ratio, false)?.and_then(|ratio| {
+    let (width, height) = ratio.split_once(':')?;
+    Some(width.parse::<f64>().ok()? / height.parse::<f64>().ok()?)
+  }).filter(|ratio| ratio.is_finite() && *ratio > 0.0)
+    .ok_or_else(|| unsupported_option("aspect_ratio", format!("{maybe_ratio:?}")))?;
   let round = |value: f64| {
     let units = value / 64.0;
     if target == 4096.0 { units.floor() as u32 * 64 } else { units.ceil() as u32 * 64 }
@@ -304,7 +306,7 @@ mod tests {
   fn only_gpt_image_2p5_supports_the_extended_portrait_ratio() {
     for image_inputs in [None, Some(ImageListRef::Urls(vec!["https://example.com/ref.png".into()]))] {
       let builder = GenerateImageRequestBuilder { model: RouterImageModel::GptImage2, aspect_ratio: Some(RouterAspectRatio::TallNineByTwentyOne), image_inputs: image_inputs.clone(), ..base_builder() };
-      assert!(builder.build2().is_err());
+      assert!(matches!(builder.build2(), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "aspect_ratio", value })) if value == "9:21"));
       let landscape = build(GenerateImageRequestBuilder { model: RouterImageModel::GptImage2, aspect_ratio: Some(RouterAspectRatio::WideTwentyOneByNine), image_inputs: image_inputs.clone(), ..base_builder() });
       assert_eq!(landscape.request.maybe_aspect_ratio.as_deref(), Some("21:9"));
       for model in [RouterImageModel::GptImage2p5Flare, RouterImageModel::GptImage2p5Sunburst] {
@@ -338,7 +340,7 @@ mod tests {
   #[test]
   fn single_output_models_reject_batches_instead_of_submitting_multiple_paid_jobs() {
     for &(model, _, _) in &MODELS[2..] {
-      assert!(GenerateImageRequestBuilder { model, image_batch_count: Some(2), ..base_builder() }.build2().is_err());
+      assert!(matches!(GenerateImageRequestBuilder { model, image_batch_count: Some(2), ..base_builder() }.build2(), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "image_batch_count", value })) if value == "This WaveSpeed endpoint supports at most 1 image(s)"));
     }
   }
 

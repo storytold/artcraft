@@ -54,3 +54,8 @@ it("preserves local video media class without treating its MP4 as an image thumb
   expect(item.thumbnail).toBeNull();
   expect(item.fullImage).toContain("video.mp4");
 });
+it("uses the bounded local thumbnail without changing the full image URL", () => {
+  const [item] = localGenerationsToGalleryItems([{ id: "local_file_image", url: "asset://localhost/full.png", thumbnail_url: "asset://localhost/thumb.png", prompt: "a wave", model_id: "flux_1_dev", created_at: "2026-11-10T00:00:00Z" }]);
+  expect(item.thumbnail).toBe("asset://localhost/thumb.png");
+  expect(item.fullImage).toBe("asset://localhost/full.png");
+});

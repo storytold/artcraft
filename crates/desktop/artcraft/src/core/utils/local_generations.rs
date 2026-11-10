@@ -41,12 +41,17 @@ pub struct LocalGeneration {
   pub provider: String,
   pub created_at: DateTime<Utc>,
   pub media_class: String,
+  pub thumbnail_url: Option<Url>,
 }
 
 #[derive(Deserialize, Serialize)]
 struct Metadata {
+  #[serde(default = "metadata_version")]
+  version: u8,
   id: String,
   filename: String,
+  #[serde(default)]
+  maybe_thumbnail_filename: Option<String>,
   prompt: String,
   model_id: String,
   provider: String,
@@ -85,9 +90,14 @@ fn keep_media_as(root: &AppDataRoot, seed: &str, source: &Path, prompt: &str, mo
   } else {
     Some(read_image_bytes(source)?)
   };
-  let extension = match &maybe_bytes {
-    Some(bytes) => validate_image(bytes).map_err(|_| InvalidLocalImage)?,
-    None => "mp4",
+  let (extension, maybe_thumbnail_bytes) = match &maybe_bytes {
+    Some(bytes) => {
+      let (extension, decoded) = decode_image(bytes).map_err(|_| InvalidLocalImage)?;
+      let mut thumbnail = Cursor::new(Vec::new());
+      decoded.thumbnail(512, 512).write_to(&mut thumbnail, ImageFormat::Png)?;
+      (extension, Some(thumbnail.into_inner()))
+    },
+    None => ("mp4", None),
   };
   let filename = format!("{id}.{extension}");
   let image_path = directory.join(&filename);
@@ -110,7 +120,15 @@ fn keep_media_as(root: &AppDataRoot, seed: &str, source: &Path, prompt: &str, mo
   }
 
   let created_at = fs::metadata(&image_path)?.modified()?.into();
-  let metadata = Metadata { id: id.clone(), filename, prompt: prompt.into(), model_id: model_id.into(), provider: provider.into(), created_at, media_class: if video { "video".into() } else { "image".into() } };
+  let maybe_thumbnail_filename = if let Some(bytes) = maybe_thumbnail_bytes {
+    let name = format!("{id}_thumbnail.png");
+    let mut temporary = NamedTempFile::new_in(&directory)?;
+    temporary.write_all(&bytes)?;
+    temporary.as_file().sync_all()?;
+    temporary.persist(directory.join(&name))?;
+    Some(name)
+  } else { None };
+  let metadata = Metadata { version: 1, id: id.clone(), filename, maybe_thumbnail_filename, prompt: prompt.into(), model_id: model_id.into(), provider: provider.into(), created_at, media_class: if video { "video".into() } else { "image".into() } };
   let encoded = serde_json::to_vec(&metadata)?;
   if encoded.len() as u64 > MAX_METADATA_BYTES {
     bail!("Local generation metadata is too large");
@@ -143,11 +161,17 @@ pub fn list(root: &AppDataRoot) -> Result<Vec<LocalGeneration>> {
     };
     let result = read_metadata(&directory, id).and_then(|metadata| {
       let kept = kept_generation(&directory, &metadata)?;
-      Ok(LocalGeneration { id: metadata.id, url: kept.asset_url, prompt: metadata.prompt, model_id: metadata.model_id, provider: metadata.provider, created_at: metadata.created_at, media_class: metadata.media_class })
+      let thumbnail_url = metadata.maybe_thumbnail_filename.as_ref().and_then(|name| confined_file(&directory, &directory.join(name)).and_then(|path| asset_url(&path)).ok());
+      Ok(LocalGeneration { id: metadata.id, url: kept.asset_url, prompt: metadata.prompt, model_id: metadata.model_id, provider: metadata.provider, created_at: metadata.created_at, media_class: metadata.media_class, thumbnail_url })
     });
     match result {
       Ok(image) => images.push(image),
-      Err(_) => warn!("Ignoring invalid local generation metadata"),
+      Err(error) => {
+        warn!("Quarantining invalid local generation metadata: {error}");
+        if let Err(error) = fs::rename(&path, path.with_extension("invalid")) {
+          warn!("Could not quarantine local generation metadata: {error}");
+        }
+      },
     }
   }
   images.sort_by(|left, right| right.created_at.cmp(&left.created_at).then_with(|| left.id.cmp(&right.id)));
@@ -162,6 +186,12 @@ pub fn delete(root: &AppDataRoot, id: &str) -> Result<()> {
     return Ok(());
   }
   let metadata = read_metadata(&directory, id)?;
+  if let Some(name) = &metadata.maybe_thumbnail_filename {
+    let path = directory.join(name);
+    if path.try_exists()? {
+      fs::remove_file(confined_file(&directory, &path)?)?;
+    }
+  }
   let image_path = directory.join(&metadata.filename);
   match fs::symlink_metadata(&image_path) {
     Ok(_) => {
@@ -240,6 +270,7 @@ fn read_metadata(directory: &Path, id: &str) -> Result<Metadata> {
   let path = directory.join(format!("{id}.json"));
   confined_file(directory, &path)?;
   let metadata: Metadata = serde_json::from_slice(&read_bounded(&path, MAX_METADATA_BYTES)?)?;
+  if metadata.version != 1 { bail!("Unsupported local generation metadata version"); }
   let extensions: &[&str] = match metadata.media_class.as_str() {
     "image" => &["png", "jpg", "webp", "gif"],
     "video" => &["mp4"],
@@ -247,6 +278,9 @@ fn read_metadata(directory: &Path, id: &str) -> Result<Metadata> {
   };
   if metadata.id != id || !extensions.iter().any(|extension| metadata.filename == format!("{id}.{extension}")) {
     bail!("Invalid local generation metadata");
+  }
+  if metadata.maybe_thumbnail_filename.as_ref().is_some_and(|name| name != &format!("{id}_thumbnail.png")) {
+    bail!("Invalid local thumbnail filename");
   }
   Ok(metadata)
 }
@@ -276,6 +310,10 @@ fn validate_id(id: &str) -> Result<()> {
   Ok(())
 }
 
+fn metadata_version() -> u8 {
+  1
+}
+
 fn validate_details(metadata: &Metadata, prompt: &str, model_id: &str, provider: &str) -> Result<()> {
   if metadata.prompt != prompt || metadata.model_id != model_id || metadata.provider != provider {
     bail!("Local generation identity changed");
@@ -297,6 +335,10 @@ fn read_bounded(path: &Path, limit: u64) -> Result<Vec<u8>> {
 }
 
 fn validate_image(bytes: &[u8]) -> Result<&'static str> {
+  decode_image(bytes).map(|(extension, _)| extension)
+}
+
+fn decode_image(bytes: &[u8]) -> Result<(&'static str, image::DynamicImage)> {
   let format = image::guess_format(bytes)?;
   let extension = match format {
     ImageFormat::Png => "png",
@@ -311,8 +353,8 @@ fn validate_image(bytes: &[u8]) -> Result<&'static str> {
   limits.max_image_height = Some(32_768);
   limits.max_alloc = Some(256 * 1024 * 1024);
   reader.limits(limits);
-  reader.decode().context("Invalid local image bytes")?;
-  Ok(extension)
+  let decoded = reader.decode().context("Invalid local image bytes")?;
+  Ok((extension, decoded))
 }
 
 fn read_image_bytes(path: &Path) -> Result<Vec<u8>> {
@@ -424,6 +466,24 @@ fn decode_path(encoded: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  #[test]
+  fn local_images_have_bounded_thumbnails_and_delete_removes_both_files() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(temporary.path()).unwrap();
+    let source = temporary.path().join("large.png");
+    image::DynamicImage::new_rgb8(1024, 768).save(&source).unwrap();
+    let kept = keep_as(&root, "thumbnail", &source, "a wave", "flux_1_dev", "wavespeed").unwrap();
+    let images = list(&root).unwrap();
+    assert!(images[0].thumbnail_url.is_some());
+    assert_ne!(images[0].thumbnail_url.as_ref(), Some(&images[0].url));
+    let metadata = read_metadata(&local_directory(&root, false).unwrap(), kept.token.as_str()).unwrap();
+    let thumbnail = local_directory(&root, false).unwrap().join(metadata.maybe_thumbnail_filename.unwrap());
+    let decoded = image::open(&thumbnail).unwrap();
+    assert_eq!((decoded.width(), decoded.height()), (512, 384));
+    delete(&root, kept.token.as_str()).unwrap();
+    assert!(!thumbnail.exists());
+    assert!(list(&root).unwrap().is_empty());
+  }
   use image::{DynamicImage, ImageFormat};
   use tempfile::TempDir;
 

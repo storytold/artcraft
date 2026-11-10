@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@storyteller/ui-button";
 import { ListWaveSpeedSubmissions, RecoverWaveSpeedSubmission, type UncertainWaveSpeedSubmission } from "@storyteller/tauri-api";
 
 export function WaveSpeedSubmissionRecovery() {
@@ -16,12 +17,12 @@ export function WaveSpeedSubmissionRecovery() {
     finally { setBusy(false); }
   };
   return <div className="flex flex-col gap-2 text-sm">
-    <button type="button" disabled={busy} onClick={check} className="text-left underline">Check unfinished submissions</button>
+    <Button type="button" variant="secondary" disabled={busy} onClick={check} className="min-h-9 cursor-pointer">Check unfinished submissions</Button>
     {message && <p role="status">{message}</p>}
     {submissions.map((submission) => <div key={submission.id} className="flex flex-col gap-2 rounded border border-ui-panel-border p-2">
       <span>{submission.model_id}: {submission.prompt.slice(0, 120)}</span>
-      <input aria-label={`Prediction ID for ${submission.id}`} value={predictionIds[submission.id] ?? ""} onChange={(event) => setPredictionIds((previous) => ({ ...previous, [submission.id]: event.target.value }))} className="rounded bg-transparent px-2 py-1" />
-      <button type="button" disabled={busy || !predictionIds[submission.id]?.trim()} onClick={async () => {
+      <input aria-label={`Prediction ID for ${submission.id}`} disabled={busy} value={predictionIds[submission.id] ?? ""} onChange={(event) => setPredictionIds((previous) => ({ ...previous, [submission.id]: event.target.value }))} className="min-h-9 rounded border border-ui-panel-border bg-transparent px-3 py-2 text-base-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" />
+      <Button type="button" disabled={busy || !predictionIds[submission.id]?.trim()} className="min-h-9 cursor-pointer" onClick={async () => {
         setBusy(true);
         try {
           await RecoverWaveSpeedSubmission(submission.id, predictionIds[submission.id]);
@@ -30,7 +31,7 @@ export function WaveSpeedSubmissionRecovery() {
           window.dispatchEvent(new Event("task-queue-update"));
         } catch { setMessage("Could not recover that prediction. Check the ID and your WaveSpeed API key."); }
         finally { setBusy(false); }
-      }}>Recover prediction</button>
+      }}>Recover prediction</Button>
     </div>)}
   </div>;
 }

@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { CommandResult } from "../common/CommandStatus";
 
 export interface LocalGeneration {
@@ -14,25 +14,30 @@ export interface LocalGeneration {
   /** RFC 3339. */
   created_at: string;
   media_class?: "image" | "video";
+  thumbnail_url?: string | null;
 }
 
-const LOCAL_GENERATION_ID = /^local_file_[A-Za-z0-9_]+$/;
-
-/**
- * Whether `id` names an image kept on this computer rather than a library media token. Library
- * actions (use as reference, animate, remix) can't take these; download and delete still work.
- */
-export const isLocalGeneration = (id: string): boolean => LOCAL_GENERATION_ID.test(id);
+export { isLocalGeneration } from "@storyteller/common";
 
 interface ListLocalGenerationsSuccess extends CommandResult {
-  payload: { images: LocalGeneration[] };
+  payload: { images: LocalGeneration[]; next_cursor?: number | null };
 }
 
 /** Newest first; empty when the list can't be read. */
 export const ListLocalGenerations = async (): Promise<LocalGeneration[]> => {
   try {
-    const result = (await invoke("list_local_generations_command")) as ListLocalGenerationsSuccess;
-    return result.status === "success" ? result.payload?.images ?? [] : [];
+    const images: LocalGeneration[] = [];
+    let cursor: number | undefined;
+    do {
+      const result = await (cursor === undefined ? invoke("list_local_generations_command") : invoke("list_local_generations_command", { request: { cursor } })) as ListLocalGenerationsSuccess;
+      if (result.status !== "success") return [];
+      images.push(...(result.payload?.images ?? []));
+      const next = result.payload?.next_cursor;
+      if (next == null) return images;
+      if (next <= (cursor ?? 0)) throw new Error("Invalid local-library cursor");
+      cursor = next;
+    } while (cursor !== undefined);
+    return images;
   } catch (e) {
     console.error("Couldn't list local generations", e);
     return [];
@@ -44,32 +49,51 @@ export const ListLocalGenerations = async (): Promise<LocalGeneration[]> => {
 const REFRESH_EVENTS = ["generation-complete-event", "text_to_image_generation_complete_event", "video_generation_complete_event", "media_file_deleted_event"];
 
 /** The local images, kept current as generations finish and files are deleted. */
-export const useLocalGenerations = (): LocalGeneration[] => {
-  const [images, setImages] = useState<LocalGeneration[]>([]);
+let localImages: LocalGeneration[] = [];
+const subscribers = new Set<() => void>();
+let stopListening: (() => void) | undefined;
 
-  useEffect(() => {
+function subscribe(listener: () => void) {
+  subscribers.add(listener);
+  if (!stopListening) {
     let active = true;
-    let requestNumber = 0;
+    let refreshing = false;
+    let refreshAgain = false;
     const refresh = async () => {
-      const currentRequest = ++requestNumber;
-      const nextImages = await ListLocalGenerations();
-      if (active && currentRequest === requestNumber) setImages(nextImages);
+      if (refreshing) { refreshAgain = true; return; }
+      refreshing = true;
+      do {
+        refreshAgain = false;
+        const images = await ListLocalGenerations();
+        if (active) {
+          localImages = images;
+          subscribers.forEach((subscriber) => subscriber());
+        }
+      } while (active && refreshAgain);
+      refreshing = false;
     };
     const unlisteners: Promise<UnlistenFn | undefined>[] = REFRESH_EVENTS.map((name) =>
       listen(name, () => { void refresh(); }).catch(() => undefined),
     );
-    const onFocus = () => { refresh(); };
+    const onFocus = () => { void refresh(); };
     window.addEventListener("focus", onFocus);
-    refresh();
-    return () => {
+    stopListening = () => {
       active = false;
       unlisteners.forEach((unlistener) => { void unlistener.then((stop) => stop?.()); });
       window.removeEventListener("focus", onFocus);
     };
-  }, []);
+    void refresh();
+  }
+  return () => {
+    subscribers.delete(listener);
+    if (!subscribers.size) {
+      stopListening?.();
+      stopListening = undefined;
+    }
+  };
+}
 
-  return images;
-};
+export const useLocalGenerations = (): LocalGeneration[] => useSyncExternalStore(subscribe, () => localImages);
 
 export const ImportLocalGeneration = async (id: string): Promise<string> => {
   const result = await invoke("import_local_generation_command", { request: { id } }) as CommandResult & { payload?: { media_file_token: string }; error_message?: string };

@@ -74,6 +74,21 @@ pub enum BadInputReason {
   WrongImageArguments(String),
 }
 
+impl BadInputReason {
+  pub fn user_message(&self) -> String {
+    match self {
+      Self::WrongImageArguments(message) => message.clone(),
+      Self::NoModelSpecified => "Select a model before generating.".into(),
+      Self::InvalidNumberOfInputImages { min, max, .. } => format!("Use between {min} and {max} reference images."),
+      Self::InvalidNumberOfRequestedImages { min, max, .. } => format!("Request between {min} and {max} images."),
+      Self::RequiredSourceImageNotProvided => "Add a starting image before generating.".into(),
+      Self::RequiredSourceImageMaskNotProvided => "Add the required image mask.".into(),
+      Self::BothImageMaskMediaTokenAndBytesSupplied => "Provide only one source for the image mask.".into(),
+      Self::Base64DecodeError | Self::CannotDetermineImageMimeType => "The input image could not be read. Use a supported image file.".into(),
+    }
+  }
+}
+
 #[derive(Debug)]
 pub enum MissingCredentialsReason {
   NeedsGrokCredentials,
@@ -252,6 +267,7 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::Provider(ProviderError::Storyteller(e)) => Self::ProviderFailure(ProviderFailureReason::StorytellerError(e)),
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
       ArtcraftRouterError::Provider(ProviderError::WaveSpeed(wavespeed_client::WaveSpeedError::Authentication | wavespeed_client::WaveSpeedError::InvalidApiKey)) => Self::MissingCredentials(MissingCredentialsReason::NeedsWaveSpeedApiKey),
+      ArtcraftRouterError::Provider(ProviderError::WaveSpeed(wavespeed_client::WaveSpeedError::Rejected { message, .. })) => Self::BadInput(BadInputReason::WrongImageArguments(format!("WaveSpeed rejected the request: {message}"))),
       ArtcraftRouterError::Provider(ProviderError::WaveSpeed(error)) => Self::ProviderFailure(ProviderFailureReason::WaveSpeed(error)),
       ArtcraftRouterError::Provider(ProviderError::GmiCloud(_)) => Self::ArtcraftRouterNotYetSupportedProvider("gmicloud"),
       ArtcraftRouterError::Provider(ProviderError::Grok(_)) => Self::ArtcraftRouterNotYetSupportedProvider("grok_api"),

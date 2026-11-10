@@ -6,6 +6,7 @@ import { VIDEO_MODELS } from "@storyteller/model-list";
 import { GenerateVideo } from "@storyteller/tauri-api";
 import { PromptBoxVideo } from "./PromptBoxVideo";
 import { useCharactersStore, usePromptVideoStore } from "./promptStore";
+const deckOptions = vi.hoisted(() => vi.fn());
 
 vi.mock("@storyteller/tauri-api", () => ({ GenerateVideo: vi.fn().mockResolvedValue({ status: "success", payload: {} }) }));
 vi.mock("@storyteller/api", () => ({ CharactersApi: vi.fn() }));
@@ -21,7 +22,7 @@ vi.mock("@storyteller/ui-button", () => ({
 }));
 vi.mock("./deck/ReferenceDeck", () => ({ ReferenceDeck: () => null }));
 vi.mock("./deck/KeyframeCards", () => ({ KeyframeCards: () => null }));
-vi.mock("./deck/useDeckMedia", () => ({ useDeckMedia: () => ({ uploadingImages: [] }) }));
+vi.mock("./deck/useDeckMedia", () => ({ useDeckMedia: (options: unknown) => { deckOptions(options); return { uploadingImages: [] }; } }));
 vi.mock("./deck/usePromptBoxDrop", () => ({
   PromptBoxDropOverlay: () => null,
   usePromptBoxDrop: () => ({ dropZoneProps: {}, fullscreenDropZoneProps: {} }),
@@ -86,4 +87,22 @@ it("routes Seedance editing through the explicit mode and one reference video", 
   act(() => usePromptVideoStore.setState({ referenceVideos: [{ id: "v", mediaToken: "mf_source", url: "https://example.com/source.mp4", duration: 5, file: new File([], "source.mp4") }] }));
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
   expect(GenerateVideo).toHaveBeenLastCalledWith(expect.objectContaining({ wavespeed_mode: "edit", reference_video_media_tokens: ["mf_source"], prompt: "Edit @Video 1 with dramatic lighting" }));
+});
+
+it("explains why frame-only WaveSpeed models need a signed-in account", () => {
+  const model = VIDEO_MODELS.find((entry) => entry.tauriId === "kling_1p6_pro")!;
+  render(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={model} selectedProvider={GenerationProvider.WaveSpeed} canUseReferenceMedia={false} />);
+  expect(screen.getByRole("status").textContent).toContain("Sign in to attach the starting frame");
+  expect((screen.getByRole("button", { name: "Generate" }) as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("limits reference clips without capping edit or extension source videos", () => {
+  usePromptVideoStore.setState({ inputMode: "reference" });
+  const model = VIDEO_MODELS.find((entry) => entry.tauriId === "seedance_2p0")!;
+  render(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={model} selectedProvider={GenerationProvider.WaveSpeed} />);
+  expect(deckOptions).toHaveBeenLastCalledWith(expect.objectContaining({ maxVideoTotalSec: 15 }));
+  for (const mode of ["edit", "extend"]) {
+    fireEvent.change(screen.getByRole("combobox", { name: "WaveSpeed video mode" }), { target: { value: mode } });
+    expect(deckOptions).toHaveBeenLastCalledWith(expect.objectContaining({ maxVideoTotalSec: Infinity, maxVideos: 1 }));
+  }
 });

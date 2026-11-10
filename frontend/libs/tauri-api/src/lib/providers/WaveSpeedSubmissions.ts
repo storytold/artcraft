@@ -4,9 +4,18 @@ import { CommandResult } from "../common/CommandStatus";
 export interface UncertainWaveSpeedSubmission { id: string; prompt: string; model_id: string; task_type: string }
 
 export async function ListWaveSpeedSubmissions(): Promise<UncertainWaveSpeedSubmission[]> {
-  const result = await invoke<CommandResult & { payload?: { submissions: UncertainWaveSpeedSubmission[] } }>("list_wavespeed_submissions_command");
-  if (result.status !== "success") throw new Error("Could not load WaveSpeed submission recovery");
-  return result.payload?.submissions ?? [];
+  const submissions: UncertainWaveSpeedSubmission[] = [];
+  let cursor: number | undefined;
+  do {
+    const result = await invoke<CommandResult & { payload?: { submissions: UncertainWaveSpeedSubmission[]; next_cursor?: number | null } }>("list_wavespeed_submissions_command", cursor === undefined ? undefined : { request: { cursor } });
+    if (result.status !== "success") throw new Error("Could not load WaveSpeed submission recovery");
+    submissions.push(...(result.payload?.submissions ?? []));
+    const next = result.payload?.next_cursor;
+    if (next == null) return submissions;
+    if (next <= (cursor ?? 0)) throw new Error("Invalid submission cursor");
+    cursor = next;
+  } while (cursor !== undefined);
+  return submissions;
 }
 
 export async function RecoverWaveSpeedSubmission(id: string, predictionId: string): Promise<void> {

@@ -87,7 +87,7 @@ import {
   useMediaPromptTokens,
   usePrompts,
 } from "@storyteller/ui-generation-list";
-import { isLocalGeneration } from "@storyteller/tauri-api";
+import { isLocalGeneration } from "@storyteller/common";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {

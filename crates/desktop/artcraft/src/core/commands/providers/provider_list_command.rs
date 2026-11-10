@@ -71,7 +71,7 @@ pub async fn provider_list_command(
       ProviderCredentialPayload::ApiKey(data) => {
         ProviderCredentialDetails {
           maybe_key_start: Some(redact_key(data.as_str())),
-          maybe_full_key: Some(data.as_str().to_string()),
+          maybe_full_key: (key != ProviderCredentialKey::WaveSpeedApiKey).then(|| data.as_str().to_string()),
           maybe_email_address: None,
           maybe_username: None,
         }
@@ -101,7 +101,7 @@ fn redact_key(key: &str) -> String {
   if key.len() <= REDACTED_KEY_VISIBLE_CHARS {
     "********".to_string()
   } else {
-    let visible = &key[..REDACTED_KEY_VISIBLE_CHARS];
+    let visible: String = key.chars().take(REDACTED_KEY_VISIBLE_CHARS).collect();
     format!("{}********", visible)
   }
 }

@@ -28,7 +28,7 @@ pub fn build_wavespeed_video_mode(builder: GenerateVideoRequestBuilder, mode: Vi
   let max_prompt_length = match model {
     VideoModel::MinimaxH3 => 7000,
     VideoModel::Seedance10Lite => 2000,
-    VideoModel::Kling16Pro | VideoModel::Kling21Pro | VideoModel::Kling21Master | VideoModel::Kling2p5TurboPro => 2500,
+    VideoModel::Kling16Pro | VideoModel::Kling21Pro | VideoModel::Kling21Master | VideoModel::Kling2p5TurboPro | VideoModel::Kling2p6Pro | VideoModel::Kling3p0Standard | VideoModel::Kling3p0Pro => 2500,
     _ => usize::MAX,
   };
   if prompt.chars().count() > max_prompt_length {
@@ -160,7 +160,7 @@ fn build_advanced(mut builder: GenerateVideoRequestBuilder, mode: VideoMode) -> 
   let maybe_end = builder.end_frame.take();
   let planned = build_wavespeed_video_mode(builder, VideoMode::Generate)?;
   let VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::WaveSpeed(mut planned)) = planned else {
-    unreachable!()
+    return Err(unsupported("mode", "The requested WaveSpeed mode could not be planned"));
   };
   planned.request.mode = mode;
   planned.request.reference_images = images;
@@ -302,6 +302,14 @@ mod tests {
       assert!(image.request.maybe_image.is_some());
       let text = GenerateVideoRequestBuilder { model, ..base_builder() }.build2();
       assert_eq!(text.is_ok(), mapped.endpoint(false).is_some(), "{model:?}");
+    }
+  }
+
+  #[test]
+  fn kling_prompt_rejections_identify_the_exact_invalid_field() {
+    for model in [RouterVideoModel::Kling16Pro, RouterVideoModel::Kling21Pro, RouterVideoModel::Kling21Master, RouterVideoModel::Kling2p5TurboPro, RouterVideoModel::Kling2p6Pro, RouterVideoModel::Kling3p0Standard, RouterVideoModel::Kling3p0Pro] {
+      let builder = GenerateVideoRequestBuilder { model, prompt: Some("x".repeat(2501)), ..base_builder() };
+      assert!(matches!(builder.build2(), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "prompt", value })) if value == "Prompt exceeds this WaveSpeed model's maximum length"));
     }
   }
 

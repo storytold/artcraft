@@ -203,10 +203,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
         <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
           <div ref={promptContentRef}>
             {!isSignedIn && (
-              <div className="mb-2 flex items-center justify-between gap-3 rounded border border-white/15 bg-ui-panel p-3 text-sm text-white/70">
-                <span>Generate images with your WaveSpeed API key. Images stay on this computer.</span>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded border border-ui-panel-border bg-ui-panel p-3 text-sm text-base-fg/70">
+                <span className="min-w-0">Generate images with your WaveSpeed API key. Images stay on this computer.</span>
                 {selectedProvider !== GenerationProvider.WaveSpeed && (
-                  <button type="button" onClick={useWaveSpeed} className="shrink-0 text-primary hover:underline">
+                  <button type="button" onClick={useWaveSpeed} className="min-h-9 shrink-0 cursor-pointer rounded px-3 py-2 text-primary hover:bg-ui-controls focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
                     Use WaveSpeed
                   </button>
                 )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MediaFilesApi } from "@storyteller/api";
-import { isLocalGeneration } from "@storyteller/tauri-api";
+import { isLocalGeneration } from "@storyteller/common";
 
 // Workaround until the profile media-list endpoint returns prompt tokens:
 // resolve media token → prompt token via the batch media-files endpoint

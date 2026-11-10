@@ -52,7 +52,14 @@ it("includes MiniMax H3 and Seedance 2.5 before a backend catalog loads", () => 
   const h3 = VIDEO_MODELS.find((model) => model.tauriId === "minimax_h3")!;
   const seedance = VIDEO_MODELS.find((model) => model.tauriId === "seedance_2p5")!;
   expect(h3.getProviders()).toContain(GenerationProvider.WaveSpeed);
+  expect(h3.getProviders()).not.toContain(GenerationProvider.Artcraft);
+  expect(seedance.getProviders()).not.toContain(GenerationProvider.Artcraft);
   expect(seedance.getProviders()).toContain(GenerationProvider.WaveSpeed);
   expect(videoModelForProvider(h3, GenerationProvider.WaveSpeed)?.resolutionOptions).toEqual(["2K"]);
   expect(videoModelForProvider(seedance, GenerationProvider.WaveSpeed)?.durationOptions).toContain(30);
+});
+
+it.each(Object.keys(WAVESPEED_VIDEO_MODELS).filter((id) => id.startsWith("kling_")))("caps %s prompts at the backend limit", (id) => {
+  const model = VIDEO_MODELS.find((entry) => entry.tauriId === id)!;
+  expect(videoModelForProvider(model, GenerationProvider.WaveSpeed)?.maxPromptLength).toBe(2500);
 });

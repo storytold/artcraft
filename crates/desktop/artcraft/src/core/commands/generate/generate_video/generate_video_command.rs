@@ -93,7 +93,7 @@ async fn generate_video_native(
       notify_frontend_of_errors(&app, &err).await;
 
       let maybe_detail_message = match &err {
-        GenerateError::BadInput(reason) if is_wavespeed => Some(format!("{reason:?}")),
+        GenerateError::BadInput(reason) if is_wavespeed => Some(reason.user_message()),
         _ => None,
       };
 

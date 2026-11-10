@@ -1,4 +1,5 @@
-use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
+use crate::core::commands::response::shorthand::ResponseOrErrorType;
+use crate::core::commands::response::provider_command_error::ProviderCommandError;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::GenerationServiceProvider;
@@ -13,12 +14,16 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, LazyLock, Mutex, Weak};
+use tokio::sync::Mutex as AsyncMutex;
 use tauri::{AppHandle, State};
 use tempfile::NamedTempFile;
 use tokens::tokens::media_files::MediaFileToken;
 use uuid_utils::uuid::generate_random_uuid;
 
-static IMPORT_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+static IMPORT_LOCKS: LazyLock<Mutex<HashMap<PathBuf, Weak<AsyncMutex<()>>>>> = LazyLock::new(Default::default);
 
 #[derive(Deserialize)]
 pub struct ImportLocalGenerationRequest {
@@ -37,9 +42,16 @@ struct ImportReceipt {
   maybe_media_token: Option<MediaFileToken>,
 }
 
+/// Upload one registered local image using a verified ArtCraft session, retaining
+/// the local original. Returns its cloud token or a typed authentication, input,
+/// storage, or provider error. Local video import is not supported.
 #[tauri::command]
-pub async fn import_local_generation_command(request: ImportLocalGenerationRequest, app: AppHandle, root: State<'_, AppDataRoot>, configs: State<'_, AppEnvConfigs>, manager: State<'_, StorytellerCredentialManager>) -> ResponseOrErrorMessage<ImportLocalGenerationResponse> {
-  let token = import_image(&request.id, &root, &configs, &manager).await.map_err(|error| error.to_string())?;
+pub async fn import_local_generation_command(request: ImportLocalGenerationRequest, app: AppHandle, root: State<'_, AppDataRoot>, configs: State<'_, AppEnvConfigs>, manager: State<'_, StorytellerCredentialManager>) -> ResponseOrErrorType<ImportLocalGenerationResponse, ProviderCommandError> {
+  if manager.get_signed_in_credentials().map_err(|error| ProviderCommandError::StorageError.response(error.to_string()))?.is_none() {
+    return Err(ProviderCommandError::AuthenticationRequired.response("Sign in to ArtCraft before uploading a local image"));
+  }
+  resolve_token(&root, &request.id).map_err(|error| ProviderCommandError::InvalidInput.response(error.to_string()))?;
+  let token = import_image(&request.id, &root, &configs, &manager).await.map_err(|error| ProviderCommandError::ProviderError.response(error.to_string()))?;
   GenerationCompleteEvent { action: None, service: GenerationServiceProvider::WaveSpeed, model: None }.send_infallible(&app);
   Ok(ImportLocalGenerationResponse { media_file_token: token }.into())
 }
@@ -52,11 +64,12 @@ async fn import_image(id: &str, root: &AppDataRoot, configs: &AppEnvConfigs, man
   anyhow::ensure!(session.success && session.logged_in, "Sign in to ArtCraft before uploading a local image");
   let user = session.user.ok_or_else(|| anyhow::anyhow!("ArtCraft did not return the signed-in user"))?;
   let directory = root.path().join("local_imports").join(URL_SAFE_NO_PAD.encode(format!("{}:{}", configs.storyteller_host.to_api_hostname_and_scheme(), user.user_token.as_str())));
-  let _guard = IMPORT_LOCK.lock().await;
   std::fs::create_dir_all(&directory)?;
   anyhow::ensure!(!std::fs::symlink_metadata(directory.parent().unwrap())?.file_type().is_symlink() && !std::fs::symlink_metadata(&directory)?.file_type().is_symlink(), "Import receipt directory must not be a symlink");
   let path = directory.join(format!("{id}.json"));
-  let mut receipt: ImportReceipt = match std::fs::read(&path) {
+  let lock = import_lock(&path)?;
+  let _guard = lock.lock().await;
+  let mut receipt: ImportReceipt = match crate::core::utils::read_bounded_file::read_bounded_file(&path, 64 * 1024) {
     Ok(bytes) => serde_json::from_slice(&bytes)?,
     Err(error) if error.kind() == std::io::ErrorKind::NotFound => ImportReceipt { idempotency_token: generate_random_uuid(), maybe_media_token: None },
     Err(error) => return Err(error.into()),
@@ -69,6 +82,17 @@ async fn import_image(id: &str, root: &AppDataRoot, configs: &AppEnvConfigs, man
   receipt.maybe_media_token = Some(response.media_file_token.clone());
   save_receipt(&path, &receipt)?;
   Ok(response.media_file_token)
+}
+
+fn import_lock(path: &Path) -> anyhow::Result<Arc<AsyncMutex<()>>> {
+  let mut locks = IMPORT_LOCKS.lock().map_err(|_| anyhow::anyhow!("Import lock is unavailable"))?;
+  locks.retain(|_, lock| lock.strong_count() > 0);
+  if let Some(lock) = locks.get(path).and_then(Weak::upgrade) {
+    return Ok(lock);
+  }
+  let lock = Arc::new(AsyncMutex::new(()));
+  locks.insert(path.into(), Arc::downgrade(&lock));
+  Ok(lock)
 }
 
 fn save_receipt(path: &std::path::Path, receipt: &ImportReceipt) -> anyhow::Result<()> {

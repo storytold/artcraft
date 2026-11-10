@@ -27,7 +27,6 @@ use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
-use super::provider_transfer::download_file;
 use super::provider_transfer::{cache_downloads, clear_cached_downloads};
 use super::provider_upload_checkpoint::{resume_uploads, CompletionIdentity, UploadCheckpoint};
 
@@ -40,7 +39,18 @@ mod provider_completion_tests;
 
 pub async fn try_resume_saved_completion(app_handle: &AppHandle, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task) -> Result<bool, Box<dyn std::error::Error>> {
   let path = checkpoint_path(app_data_root, task)?;
-  let Some(checkpoint) = UploadCheckpoint::load(&path)? else {
+  let loaded = match UploadCheckpoint::load(&path).map_err(|error| {
+    let invalid = error.is::<serde_json::Error>() || error.downcast_ref::<std::io::Error>().is_some_and(|error| error.kind() == std::io::ErrorKind::InvalidData);
+    (invalid, error.to_string())
+  }) {
+    Ok(loaded) => loaded,
+    Err((true, error)) => {
+      super::handle_provider_failure::handle_provider_failure(app_handle, task_database, task, &format!("Saved upload progress is unreadable; recovery stopped to avoid duplicate uploads: {error}")).await;
+      return Ok(true);
+    },
+    Err((false, error)) => return Err(error.into()),
+  };
+  let Some(checkpoint) = loaded else {
     return Ok(false);
   };
   if checkpoint.identity != completion_identity(app_env_configs, task, checkpoint.identity.media_class) {
@@ -53,7 +63,8 @@ pub async fn try_resume_saved_completion(app_handle: &AppHandle, app_env_configs
 pub async fn handle_provider_complete(app_handle: &AppHandle, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task, urls: Vec<String>, media_class: TaskMediaFileClass) -> Result<(), Box<dyn std::error::Error>> {
   if urls.is_empty() {
     warn!("[ProviderComplete] Task {} completed but no downloadable media found in response", task.id.as_str());
-    return Err("Provider completed without downloadable media".into());
+    super::handle_provider_failure::handle_provider_failure(app_handle, task_database, task, "Provider completed without downloadable media").await;
+    return Ok(());
   }
   let path = checkpoint_path(app_data_root, task)?;
   let identity = completion_identity(app_env_configs, task, media_class);
@@ -91,6 +102,14 @@ pub async fn handle_provider_complete(app_handle: &AppHandle, app_env_configs: &
     return Ok(());
   }
   let creds = maybe_creds.ok_or("Sign in to finish saving this generation to ArtCraft")?;
+  let session_cookie = creds.session.as_ref().ok_or("Sign in to finish saving this generation to ArtCraft")?;
+  let session = artcraft_client::utils::login_challenge_client::LoginChallengeClient::new(&app_env_configs.storyteller_host)?.session(session_cookie.as_str()).await?;
+  if !session.success || !session.logged_in {
+    return Err("Sign in to finish saving this generation to ArtCraft".into());
+  }
+  let user = session.user.ok_or("ArtCraft did not return the signed-in user")?;
+  let mut checkpoint = UploadCheckpoint::prepare(&path, &identity, &urls)?;
+  checkpoint.bind_upload_account(&path, user.user_token.as_str())?;
 
   // Use the prompt token from the task record (created at generation time).
   let maybe_prompt_token = task.prompt_token.as_ref().map(|s| PromptToken::new_from_str(s));

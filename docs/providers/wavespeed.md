@@ -1,5 +1,22 @@
 # WaveSpeed
 
+## Quick start
+
+You need the desktop app, a WaveSpeed account with credits, and an API key.
+An ArtCraft account is optional for text-only image/video generation, but required
+for uploaded frames/references and cloud-library features.
+
+1. Obtain a key from [WaveSpeed API Keys](https://wavespeed.ai/accesskey).
+2. Open **Settings → Accounts → WaveSpeed**, paste the key, and choose **Save key**.
+   The key is saved in the OS credential store, not a plaintext app file. Unlock
+   your system keychain/Secret Service if prompted.
+3. Select an image or text-to-video model and choose **WaveSpeed** as its provider.
+4. Enter a prompt, such as `A watercolor lighthouse on a quiet rocky coast`.
+5. Generate once. Your WaveSpeed credits are charged by WaveSpeed. Without an
+   ArtCraft login, the result appears in the library on this computer.
+
+## Models and local media
+
 WaveSpeed is available for image and video generation in the desktop app.
 Add your WaveSpeed API key in **Settings → Accounts**, then select **WaveSpeed**
 as the model's provider. Generations use your WaveSpeed account credits.
@@ -15,25 +32,65 @@ starting/ending frames or reference media. Other providers still require an
 ArtCraft session before submission.
 The app remembers the selected model, provider, and image count across restarts.
 
-Supported image models: FLUX Dev/Schnell, FLUX 1.1 Pro/Ultra, Nano Banana/2/Pro,
-Seedream 4/4.5/5 Lite, and GPT Image 1.5/2/2.5 Flare/2.5 Sunburst. Each model uses
-its own reference-image, aspect-ratio, resolution, and quality limits. FLUX
-Dev/Schnell support batches of up to four; other image endpoints produce one image.
+Image defaults are square, medium quality where selectable, and the resolution
+shown first. Basic ratios are 1:1, 4:3, 16:9, 3:4, and 9:16. Extended ratios also
+include 3:2, 2:3, 5:4, 4:5, and 21:9. Native means there is no resolution control.
 
-Supported video models: MiniMax H3, Seedance 1 Lite/1.5 Pro/2/2 Fast/2.5,
-Kling 1.6 Pro/2.1 Pro/2.1 Master/2.5 Turbo Pro/2.6 Pro/3 Standard/3 Pro,
-Sora 2/2 Pro, and Veo 3/3 Fast/3.1/3.1 Fast. MiniMax H3 uses the official
-`minimax/h3` endpoints at 2K; Seedance 2.5 supports 4–30 second clips up to 4K.
-Video requests produce one clip and support text or starting/ending frames where
-available. Kling 1.6 Pro, 2.1 Pro, and 3 currently require a starting frame.
+| Image model            | Max batch | Max references | Resolution choices | Ratios             |
+|------------------------|-----------|----------------|--------------------|--------------------|
+| FLUX Dev               | 4         | 1              | Native             | Basic              |
+| FLUX Schnell           | 4         | 1              | Native             | Basic              |
+| FLUX 1.1 Pro           | 1         | 0              | Native             | Basic              |
+| FLUX 1.1 Pro Ultra     | 1         | 0              | Native             | Basic              |
+| Nano Banana            | 1         | 10             | Native             | Extended           |
+| Nano Banana 2          | 1         | 14             | 1K, 0.5K, 2K, 4K   | Extended           |
+| Nano Banana Pro        | 1         | 14             | 1K, 2K, 4K         | Extended           |
+| Seedream 4             | 1         | 10             | 2K, 3K, 4K         | Extended           |
+| Seedream 4.5           | 1         | 10             | 2K, 3K, 4K         | Extended           |
+| Seedream 5 Lite        | 1         | 10             | 2K, 3K, 4K         | Extended           |
+| GPT Image 1.5          | 1         | 10             | Native             | 1:1, 3:2, 2:3      |
+| GPT Image 2            | 1         | 16             | 1K, 2K, 4K         | Extended           |
+| GPT Image 2.5 Flare    | 1         | 16             | 1K, 2K, 4K         | Extended plus 9:21 |
+| GPT Image 2.5 Sunburst | 1         | 16             | 1K, 2K, 4K         | Extended plus 9:21 |
+
+Videos produce one clip per request and default to 16:9. Resolution defaults to
+720p when available, otherwise the first choice below; Native has no resolution
+control. All models accept one starting frame, required for rows marked Yes.
+Sora/Veo offer 16:9 and 9:16; Kling also offers 1:1; Seedance/MiniMax also offer
+4:3, 3:4, and 21:9. MiniMax H3 and Seedance 2.5 are available only through WaveSpeed.
+
+| Video model         | Duration (default)    | Resolutions           | Frame required | End frame |
+|---------------------|-----------------------|-----------------------|----------------|-----------|
+| Kling 1.6 Pro       | 5, 10 (5s)            | Native                | Yes            | Yes       |
+| Kling 2.1 Pro       | 5, 10 (5s)            | Native                | Yes            | No        |
+| Kling 2.1 Master    | 5, 10 (5s)            | Native                | No             | No        |
+| Kling 2.5 Turbo Pro | 5, 10 (5s)            | Native                | No             | Yes       |
+| Kling 2.6 Pro       | 5, 10 (5s)            | Native                | No             | Yes       |
+| Kling 3 Standard    | 3–15 (5s)             | Native                | Yes            | Yes       |
+| Kling 3 Pro         | 3–15 (5s)             | Native                | Yes            | Yes       |
+| Seedance 1 Lite     | 2–12 (5s)             | 720p                  | No             | Yes       |
+| Seedance 1.5 Pro    | 4–12 (5s)             | 480p, 720p, 1080p     | No             | Yes       |
+| Seedance 2          | 4–15 (5s)             | 480p, 720p, 1080p, 4K | No             | Yes       |
+| Seedance 2 Fast     | 4–15 (5s)             | 480p, 720p, 1080p, 4K | No             | Yes       |
+| Seedance 2.5        | 4–30 (5s)             | 480p, 720p, 1080p, 4K | No             | Yes       |
+| MiniMax H3          | 4–15 (5s)             | 2K                    | No             | Yes       |
+| Sora 2              | 4, 8, 12, 16, 20 (4s) | 720p                  | No             | No        |
+| Sora 2 Pro          | 4, 8, 12, 16, 20 (4s) | 720p, 1080p           | No             | No        |
+| Veo 3               | 4, 6, 8 (8s)          | 720p, 1080p           | No             | No        |
+| Veo 3 Fast          | 4, 6, 8 (8s)          | 720p, 1080p           | No             | No        |
+| Veo 3.1             | 4, 6, 8 (8s)          | 720p, 1080p, 4K       | No             | Yes       |
+| Veo 3.1 Fast        | 4, 6, 8 (8s)          | 720p, 1080p, 4K       | No             | Yes       |
+
+Kling prompts are limited to 2,500 characters. Sign in to attach required frames.
 Kling 2.6 ending-frame generation requires sound to be disabled.
 Veo outputs above 720p require an eight-second duration.
 WaveSpeed **Seedance 2.0** additionally supports Omni Reference, Edit video, and
 Extend video. Choose Omni Reference, then select the WaveSpeed mode. Reference
 mode accepts up to nine images, three videos, and three audio clips. Edit and
 extend require exactly one input video; extend does not accept image/audio
-references. Video and audio references are limited to 15 seconds combined per
-kind, checked against cloud media metadata before submission. Edit may also use
+references. Reference-mode video and audio inputs are limited to 15 seconds
+combined per kind, checked against cloud media metadata before submission.
+Edit/Extend source videos do not inherit that reference-video limit. Edit may also use
 image/audio references. Prompt mentions use `@Image 1`, `@Video 1`, and `@Audio 1`.
 These modes are not exposed for other models without verified endpoint contracts.
 Masks remain unsupported.
@@ -48,13 +105,16 @@ and videos use the existing download, ArtCraft upload, and gallery notification 
 when signed in. Media submitted without an account remains local even if you
 sign in before they complete.
 Upload progress, batch identity, and per-result idempotency keys are saved before
-uploading. Restarted jobs skip confirmed uploads and reuse keys after lost responses;
+uploading and bound to the verified ArtCraft account. Sign back in to that account
+to resume after an account switch. Restarted jobs skip confirmed uploads and reuse keys after lost responses;
 this relies on the ArtCraft server honoring those keys. Captured completion URLs
 can be resumed without polling WaveSpeed again or retaining its API key.
 Completed output bytes are cached atomically before upload and retained until the
 task database confirms completion. Upload retries and automatic downloads reuse
 these bytes even when the provider URL has expired. Transfers stream with HTTP
-error checking, a 1 GiB limit, and finite timeouts. Local-library images additionally
+error checking, a 1 GiB per-file limit, at most 16 outputs, and finite timeouts.
+Output URLs must be HTTP(S) with public-network destinations. Redirects and
+private-network addresses are rejected. Local-library images additionally
 require valid PNG, JPEG, WebP, or GIF bytes within image decoding limits.
 An abrupt process kill can leave an unfinished temporary file behind.
 Late provider responses cannot change a task that is already terminal or cancelled.
@@ -77,20 +137,21 @@ On startup and every ten minutes, the polling thread removes caches for confirme
 terminal/cancelled tasks and provider partial downloads older than 24 hours. It
 preserves pending outputs, uncertain submission receipts, and unrelated files.
 
-## Validation before release
+## Troubleshooting
 
-Automated tests use temporary storage and loopback HTTP fixtures, not paid
-generation. Manually verify signed-out image/video generation, restart during a
-download, Save As collisions, local deletion, account switching, cloud import,
-and each Seedance mode on supported desktop platforms before release. Provider
-generation tests spend credits and require explicit approval.
+| Problem                      | What to do                                                                   |
+|------------------------------|------------------------------------------------------------------------------|
+| No API key                   | Add a key in Settings → Accounts → WaveSpeed.                                |
+| Authentication failed        | Replace the key with an active WaveSpeed API key.                            |
+| Insufficient credits         | Check your WaveSpeed balance; ArtCraft credits do not fund these requests.   |
+| Credential store unavailable | Unlock your system keychain or enable an unlocked Secret Service on Linux.   |
+| Rate limit                   | Wait; polling backs off and respects WaveSpeed's numeric Retry-After value.  |
+| Uncertain submission         | Check WaveSpeed History and recover the existing prediction ID in Settings.  |
+| Original account required    | Sign in to the ArtCraft account that started the cloud upload.               |
+| Invalid local media          | Use a supported PNG/JPEG/WebP/GIF image or MP4 video within the size limits. |
+| Unreadable upload progress   | Recovery stops to avoid duplicate uploads; check the cloud/provider history. |
 
-Real ArtCraft server deduplication remains unverified. An opt-in ignored test,
-`live_artcraft_image_upload_idempotency_contract`, uploads a tiny PNG twice with
-one key and checks that both responses return the same media token. Run only with
-approval and a dedicated test account using `ARTCRAFT_LIVE_UPLOAD_TEST=1` and
-`ARTCRAFT_TEST_SESSION` in the environment. It creates cloud media and does not
-prove the video/legacy endpoints honor the same contract.
+See [release checks](../testing/wavespeed.md) for developer-only validation steps.
 
 API references: [Nano Banana Pro](https://wavespeed.ai/docs/docs-api/google/google-nano-banana-pro-text-to-image),
 [Seedream 4.5](https://wavespeed.ai/docs/docs-api/bytedance/bytedance-seedream-v4.5),

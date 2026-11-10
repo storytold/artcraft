@@ -1,0 +1,17 @@
+# WaveSpeed release checks
+
+Automated tests use temporary storage and loopback HTTP fixtures, not paid
+generation. Before release, manually verify signed-out image/video generation,
+restart during a download, Save As collisions, local deletion, account switching,
+cloud import, and Seedance modes on supported desktop platforms.
+
+Real ArtCraft server deduplication has not been verified by local fixtures. The
+ignored `live_artcraft_image_upload_idempotency_contract` test uploads a tiny PNG
+twice with one key and checks that both responses return the same media token.
+Run only with explicit approval and a dedicated test account using
+`ARTCRAFT_LIVE_UPLOAD_TEST=1` and `ARTCRAFT_TEST_SESSION` in the environment. It
+creates cloud media and does not prove video/legacy endpoint deduplication.
+
+OS keychain migration tests use a mock credential store. Manually verify Keychain
+on macOS, Credential Manager on Windows, and an unlocked Secret Service on Linux,
+including missing/locked-store errors. No plaintext fallback is permitted.

@@ -492,6 +492,7 @@ export const PromptBoxVideo = ({
 
   const maxVideoCount = isWaveSpeedReference && waveSpeedMode !== "reference" ? 1 : selectedModel?.maxReferenceVideos ?? 3;
   const maxAudioCount = isWaveSpeedReference && waveSpeedMode === "extend" ? 0 : selectedModel?.maxReferenceAudios ?? 2;
+  const maxVideoTotalSec = isWaveSpeedReference && waveSpeedMode !== "reference" ? Infinity : selectedModel?.maxVideoRefDuration ?? 15;
 
   const deck = useDeckMedia({
     referenceImages,
@@ -502,7 +503,7 @@ export const PromptBoxVideo = ({
     referenceVideos,
     setReferenceVideos,
     maxVideos: maxVideoCount,
-    maxVideoTotalSec: selectedModel?.maxVideoRefDuration ?? 15,
+    maxVideoTotalSec,
     referenceAudios,
     setReferenceAudios,
     maxAudios: maxAudioCount,
@@ -696,7 +697,6 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const maxVideoTotalSec = selectedModel?.maxVideoRefDuration ?? 15;
   const maxAudioTotalSec = selectedModel?.maxAudioRefDuration ?? 15;
   const totalVideoRefSeconds = referenceVideos.reduce(
     (sum, video) => sum + video.duration,
@@ -709,7 +709,7 @@ export const PromptBoxVideo = ({
 
   const refDeckGroupHints = {
     image: `${referenceImages.length}/${maxImageCount}`,
-    video: `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}/${maxVideoTotalSec}s`,
+    video: `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}${Number.isFinite(maxVideoTotalSec) ? `/${maxVideoTotalSec}` : ""}s`,
     audio: `${referenceAudios.length}/${maxAudioCount} · ${totalAudioRefSeconds}/${maxAudioTotalSec}s`,
   };
 
@@ -1359,7 +1359,7 @@ export const PromptBoxVideo = ({
       setReferenceAudios([]);
       setEndFrameImage(undefined);
       setReferenceVideos(referenceVideos.slice(0, event.target.value === "reference" ? 3 : 1));
-    }} className="rounded border border-ui-controls-border bg-ui-controls px-2 py-1 text-sm">
+    }} className="min-h-9 cursor-pointer rounded border border-ui-controls-border bg-ui-controls px-2 py-1 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
       <option value="reference">Reference</option><option value="edit">Edit video</option><option value="extend">Extend video</option>
     </select>}
     </>
@@ -1378,7 +1378,10 @@ export const PromptBoxVideo = ({
           {...drop.dropZoneProps}
         >
           {dropOverlay}
-          {selectedModel?.textToVideoSupported === false && (
+          {!canUseReferenceMedia && selectedModel?.requiresImage && (
+            <p role="status" className="mb-2 text-sm text-base-fg/70">Sign in to attach the starting frame required by this model, or select a text-to-video model.</p>
+          )}
+          {canUseReferenceMedia && selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon
                 
@@ -1598,7 +1601,7 @@ export const PromptBoxVideo = ({
                 <div>
                   <GenerateIconButton
                     onClick={handleEnqueue}
-                    disabled={!prompt.trim()}
+                    disabled={!prompt.trim() || (!canUseReferenceMedia && selectedModel?.requiresImage)}
                     loading={isEnqueueing}
                     credits={credits}
                   />

@@ -62,6 +62,12 @@ impl ProviderCredentialLoadingCache {
     // Cache miss or expired — load from disk.
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
 
+    if key == ProviderCredentialKey::WaveSpeedApiKey {
+      return super::wavespeed_keychain::load(&super::wavespeed_keychain::entry(&file_path).map_err(|_| ProviderCredentialLoadingCacheError::SecureStorage)?, &file_path)
+        .map(|data| data.map(ProviderCredentialPayload::ApiKey))
+        .map_err(|_| ProviderCredentialLoadingCacheError::SecureStorage);
+    }
+
     if !file_path.exists() {
       return Ok(None);
     }
@@ -106,8 +112,12 @@ impl ProviderCredentialLoadingCache {
 
     match (&payload, key.get_type()) {
       (ProviderCredentialPayload::ApiKey(data), ProviderCredentialType::ApiKey) => {
-        data.save_to_file(&file_path)
-          .map_err(ProviderCredentialLoadingCacheError::ApiKeyError)?;
+        if key == ProviderCredentialKey::WaveSpeedApiKey {
+          super::wavespeed_keychain::save(&super::wavespeed_keychain::entry(&file_path).map_err(|_| ProviderCredentialLoadingCacheError::SecureStorage)?, &file_path, data)
+            .map_err(|_| ProviderCredentialLoadingCacheError::SecureStorage)?;
+        } else {
+          data.save_to_file(&file_path).map_err(ProviderCredentialLoadingCacheError::ApiKeyError)?;
+        }
       }
       (ProviderCredentialPayload::WebLogin(data), ProviderCredentialType::WebLogin) => {
         data.save_to_file(&file_path)
@@ -142,6 +152,10 @@ impl ProviderCredentialLoadingCache {
   
   pub fn delete_credentials(&self, key: ProviderCredentialKey) -> Result<(), ProviderCredentialLoadingCacheError> {
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
+    if key == ProviderCredentialKey::WaveSpeedApiKey {
+      super::wavespeed_keychain::delete(&super::wavespeed_keychain::entry(&file_path).map_err(|_| ProviderCredentialLoadingCacheError::SecureStorage)?, &file_path)
+        .map_err(|_| ProviderCredentialLoadingCacheError::SecureStorage)?;
+    }
     
     if file_path.exists() {
       std::fs::remove_file(file_path)
@@ -161,6 +175,7 @@ pub enum ProviderCredentialLoadingCacheError {
   WebLoginError(WebLoginDataError),
   TypeMismatch,
   LockPoisoned,
+  SecureStorage,
 }
 
 impl Error for ProviderCredentialLoadingCacheError {
@@ -182,6 +197,7 @@ impl Display for ProviderCredentialLoadingCacheError {
       Self::WebLoginError(e) => write!(f, "Web login error: {}", e),
       Self::TypeMismatch => write!(f, "Credential type does not match key type"),
       Self::LockPoisoned => write!(f, "Internal lock poisoned"),
+      Self::SecureStorage => write!(f, "Could not access the system credential store. Unlock your keychain or Secret Service and try again."),
     }
   }
 }

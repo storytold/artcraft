@@ -10,14 +10,14 @@ export const VIDEO_MODELS: VideoModel[] = [
     category: "video", creator: ModelCreator.Hailuo, selectorName: "MiniMax H3",
     selectorDescription: "2K video with starting and ending frames", selectorBadges: [],
     startFrame: true, endFrame: true, requiresImage: false,
-    providers: [GenerationProvider.Artcraft, GenerationProvider.WaveSpeed],
+    providers: [GenerationProvider.WaveSpeed],
   }),
   new VideoModel({
     id: "seedance_2p5", tauriId: "seedance_2p5", fullName: "Seedance 2.5",
     category: "video", creator: ModelCreator.Bytedance, selectorName: "Seedance 2.5",
     selectorDescription: "Video up to 30 seconds with native audio", selectorBadges: [],
     startFrame: true, endFrame: true, requiresImage: false,
-    providers: [GenerationProvider.Artcraft, GenerationProvider.WaveSpeed],
+    providers: [GenerationProvider.WaveSpeed],
   }),
   new VideoModel({
     id: "grok_video",
