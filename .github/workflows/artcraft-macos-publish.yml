@@ -10,6 +10,13 @@ on:
 # This workflow creates Universal macOS builds with signing certificate support.
 # On each push to the release branches it will create or update a GitHub release, build your app, and upload the artifacts to the release.
 
+# One release build per branch at a time. A run in progress is never cancelled, because it may
+# already have created or uploaded to the draft release. If more pushes arrive while one runs,
+# GitHub keeps only the newest as pending, so the next build is of the latest commit.
+concurrency:
+  group: macos-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish-artcraft:
     permissions:
@@ -28,6 +35,8 @@ jobs:
           #   args: ''
 
     runs-on: ${{ matrix.platform }}
+    # Successful builds took 10-22 min (2026-04 to 2026-11).
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
 
