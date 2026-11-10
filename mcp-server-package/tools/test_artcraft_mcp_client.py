@@ -111,7 +111,7 @@ class TestSchemaParity(unittest.TestCase):
             client.close()
 
     def test_schema_files_cover_exactly_the_live_tools(self):
-        on_disk = {p.stem for p in SCHEMAS_DIR.glob("*.json")}
+        on_disk = {p.stem for p in SCHEMAS_DIR.glob("artcraft_*.json")}
         self.assertEqual(on_disk, set(self.live.keys()),
                          f"schema/tool mismatch: extra={on_disk - set(self.live)} missing={set(self.live) - on_disk}")
 

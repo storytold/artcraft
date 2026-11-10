@@ -57,14 +57,13 @@ pub fn tools() -> Vec<Tool> {
       input_schema: Some(json!({
           "type": "object",
           "properties": {
-              "model": { "type": "string" },
               "prompt": { "type": "string" },
               "image_media_token": { "type": "string" },
               "mask_media_token": { "type": "string" },
               "idempotency_token": { "type": "string", "description": "Optional client idempotency token" },
               "confirm": { "type": "boolean", "description": "Must be true to confirm this paid edit." }
           },
-          "required": ["prompt", "image_media_token", "confirm"]
+          "required": ["prompt", "image_media_token", "mask_media_token", "confirm"]
       })),
     },
     Tool {

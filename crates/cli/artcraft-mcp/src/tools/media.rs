@@ -366,7 +366,15 @@ pub async fn download_media_file(arguments: Value, client: &ArtCraftClient) -> R
   let mut file = tokio::fs::File::create(&target_file_path).await?;
   let mut total: u64 = 0;
   let mut write_result: Result<()> = Ok(());
-  while let Some(chunk) = resp.chunk().await? {
+  loop {
+    let chunk = match resp.chunk().await {
+      Ok(Some(chunk)) => chunk,
+      Ok(None) => break,
+      Err(e) => {
+        write_result = Err(e.into());
+        break;
+      },
+    };
     if total + chunk.len() as u64 > MAX_DOWNLOAD_BYTES {
       write_result = Err(anyhow!("download exceeded {} byte limit", MAX_DOWNLOAD_BYTES));
       break;

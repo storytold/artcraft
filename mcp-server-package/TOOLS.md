@@ -81,7 +81,7 @@ PYTHONUTF8=1 python tools/artcraft_3d_runner.py \
 | Flag              | Default             | Notes                                   |
 |-------------------|---------------------|-----------------------------------------|
 | `--image`         | —                   | Reference image (needed for mesh i2i)   |
-| `--mode`          | `both`              | `object` | `splat` | `both`          |
+| `--mode`          | `both`              | `object` \| `splat` \| `both`            |
 | `--prompt`        | —                   | Text prompt (mesh t2i3d or splat)       |
 | `--version`       | `3`                 | Mesh: `2.0` `2.1` `3` `3.1` (or model id)|
 | `--splat-version` | `1.1`               | Splat: `mini` `plus` `1.0` `1.1` (or id)|

@@ -17,9 +17,6 @@
       "mask_media_token": {
         "type": "string"
       },
-      "model": {
-        "type": "string"
-      },
       "prompt": {
         "type": "string"
       }
@@ -27,6 +24,7 @@
     "required": [
       "prompt",
       "image_media_token",
+      "mask_media_token",
       "confirm"
     ],
     "type": "object"
