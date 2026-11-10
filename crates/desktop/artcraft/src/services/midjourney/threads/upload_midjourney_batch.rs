@@ -119,7 +119,7 @@ pub(super) async fn upload_midjourney_batch(maybe_app_handle: Option<&AppHandle>
     }
   }
 
-  if let Err(err) = std::fs::remove_file(MidjourneyUploadCheckpoint::path(app_data_root, local_task)) {
+  if let Err(err) = tokio::fs::remove_file(MidjourneyUploadCheckpoint::path(app_data_root, local_task)).await {
     log::warn!("Could not remove completed Midjourney upload checkpoint: {}", err);
   }
   Ok(())
