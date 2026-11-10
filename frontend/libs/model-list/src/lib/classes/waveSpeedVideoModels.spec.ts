@@ -39,7 +39,7 @@ it.each(Object.keys(WAVESPEED_VIDEO_MODELS))("keeps %s selectable and applies Wa
   expect(direct.durationOptions).toEqual(caps.durations);
   expect(resolveVideoDuration(direct, 90, false)).toBeLessThanOrEqual(Math.max(...caps.durations));
   expect(resolveVideoGenerationCount(direct, 4)).toBe(1);
-  expect(direct.resolutionOptions).toEqual(caps.resolutions);
+  expect(direct.resolutionOptions).toEqual(caps.resolutions.length ? caps.resolutions : undefined);
   expect(direct.endFrame).toBe(caps.endFrame);
   expect(direct.requiresImage).toBe(caps.imageRequired);
   expect(direct.supportsReferenceMode).toBe(id === "seedance_2p0");

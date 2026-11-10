@@ -1685,6 +1685,10 @@ export const GalleryModal = React.memo(
               return result.status === "fulfilled" &&
                 !(result.value && typeof result.value === "object" && "status" in result.value && result.value.status !== "success");
             }));
+            const failedCount = ids.length - idSet.size;
+            if (failedCount > 0) {
+              toast.error(`Failed to delete ${failedCount} item${failedCount === 1 ? "" : "s"}.`);
+            }
             setDeletedItemIds((prev) => new Set([...prev, ...idSet]));
             setRemoteItems((prev) => prev.filter((it) => !idSet.has(it.id)));
             for (const [key, entry] of galleryCacheMap.entries()) {
@@ -1693,13 +1697,14 @@ export const GalleryModal = React.memo(
                 items: entry.items.filter((it) => !idSet.has(it.id)),
               });
             }
-            clearBulkSelection();
+            setBulkSelectedIds((previous) => new Set([...previous].filter((id) => !idSet.has(id))));
+            setBulkFolderPopoverOpen(false);
           } finally {
             isActionReminderOpen.value = false;
           }
         },
       });
-    }, [bulkSelectedIds, clearBulkSelection, onDeleteMedia]);
+    }, [bulkSelectedIds, onDeleteMedia]);
 
     // Load the full folder tree (paginated, newest first).
     const loadFolders = useCallback(async () => {

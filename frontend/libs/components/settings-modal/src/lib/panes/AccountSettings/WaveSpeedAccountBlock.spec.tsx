@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ClearWaveSpeedApiKey, HasWaveSpeedApiKey, SetWaveSpeedApiKey } from "@storyteller/tauri-api";
 import { WaveSpeedAccountBlock } from "./WaveSpeedAccountBlock";
+import userEvent from "@testing-library/user-event";
 
 vi.mock("@storyteller/tauri-api", () => ({
   ClearWaveSpeedApiKey: vi.fn(),
@@ -47,4 +48,21 @@ it("shows an error when saving fails without showing a connected state", async (
   fireEvent.click(screen.getByRole("button", { name: "Save key" }));
   expect((await screen.findByRole("alert")).textContent).toContain("Could not save");
   expect(screen.queryByRole("button", { name: "Disconnect" })).toBeNull();
+});
+
+it("supports labelled keyboard key entry and Enter activation without exposing the saved secret", async () => {
+  const user = userEvent.setup();
+  render(<WaveSpeedAccountBlock />);
+  const input = screen.getByLabelText("WaveSpeed API key") as HTMLInputElement;
+  await waitFor(() => expect(input.disabled).toBe(false));
+  input.focus();
+  await user.keyboard("keyboard-key");
+  await user.tab();
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Save key" }));
+  await user.keyboard("{Enter}");
+  await screen.findByText("WaveSpeed (API key saved)");
+  expect(SetWaveSpeedApiKey).toHaveBeenCalledWith("keyboard-key");
+  expect(input.value).toBe("");
+  expect(input.type).toBe("password");
+  expect(input.className).toContain("focus-visible:outline");
 });

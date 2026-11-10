@@ -89,7 +89,7 @@ export function videoModelForProvider(
     generateWithSound: capabilities.audioToggle && !(model.tauriId === "kling_2p6_pro" && hasEndFrame),
     generationCountOptions: [1],
     defaultGenerationCount: 1,
-    resolutionOptions: capabilities.resolutions,
+    resolutionOptions: capabilities.resolutions.length ? capabilities.resolutions : undefined,
     defaultResolution: capabilities.resolutions.includes("720p") ? "720p" : capabilities.resolutions[0],
     supportsReferenceMode: model.tauriId === "seedance_2p0",
     maxReferenceImages: model.tauriId === "seedance_2p0" ? 9 : 0,

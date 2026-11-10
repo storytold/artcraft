@@ -443,7 +443,7 @@ export const PromptBoxVideo = ({
   };
 
   const resolutionPickerOptions: PopoverItem[] | null =
-    selectedModel?.resolutionOptions
+    selectedModel?.resolutionOptions?.length
       ? selectedModel.resolutionOptions.map((r) => ({
           label: r,
           selected: r === resolution,

@@ -6,12 +6,15 @@ import { VIDEO_MODELS } from "@storyteller/model-list";
 import { GenerateVideo } from "@storyteller/tauri-api";
 import { PromptBoxVideo } from "./PromptBoxVideo";
 import { useCharactersStore, usePromptVideoStore } from "./promptStore";
+import userEvent from "@testing-library/user-event";
 const deckOptions = vi.hoisted(() => vi.fn());
 
 vi.mock("@storyteller/tauri-api", () => ({ GenerateVideo: vi.fn().mockResolvedValue({ status: "success", payload: {} }) }));
 vi.mock("@storyteller/api", () => ({ CharactersApi: vi.fn() }));
 vi.mock("@storyteller/google-analytics", () => ({ gtagEvent: vi.fn() }));
-vi.mock("@storyteller/ui-popover", () => ({ PopoverMenu: () => null }));
+vi.mock("@storyteller/ui-popover", () => ({ PopoverMenu: ({ panelTitle, items = [] }: { panelTitle: string; items?: { label: string }[] }) => (
+  <select aria-label={panelTitle}>{items.map((item) => <option key={item.label}>{item.label}</option>)}</select>
+) }));
 vi.mock("@storyteller/ui-sliderv2", () => ({ SliderV2: () => null }));
 vi.mock("@storyteller/ui-tooltip", () => ({ Tooltip: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@storyteller/ui-button", () => ({
@@ -96,6 +99,15 @@ it("explains why frame-only WaveSpeed models need a signed-in account", () => {
   expect((screen.getByRole("button", { name: "Generate" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
+it("hides empty Kling resolution controls while preserving Seedance options", () => {
+  const kling = VIDEO_MODELS.find((entry) => entry.tauriId === "kling_1p6_pro")!;
+  const { rerender } = render(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={kling} selectedProvider={GenerationProvider.WaveSpeed} />);
+  expect(screen.queryByRole("combobox", { name: "Resolution" })).toBeNull();
+  const seedance = VIDEO_MODELS.find((entry) => entry.tauriId === "seedance_2p0")!;
+  rerender(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={seedance} selectedProvider={GenerationProvider.WaveSpeed} />);
+  expect((screen.getByRole("combobox", { name: "Resolution" }) as HTMLSelectElement).options.length).toBeGreaterThan(0);
+});
+
 it("limits reference clips without capping edit or extension source videos", () => {
   usePromptVideoStore.setState({ inputMode: "reference" });
   const model = VIDEO_MODELS.find((entry) => entry.tauriId === "seedance_2p0")!;
@@ -105,4 +117,18 @@ it("limits reference clips without capping edit or extension source videos", () 
     fireEvent.change(screen.getByRole("combobox", { name: "WaveSpeed video mode" }), { target: { value: mode } });
     expect(deckOptions).toHaveBeenLastCalledWith(expect.objectContaining({ maxVideoTotalSec: Infinity, maxVideos: 1 }));
   }
+});
+
+it("keeps the labelled WaveSpeed mode control keyboard-focusable with a visible focus style", async () => {
+  vi.useRealTimers();
+  const user = userEvent.setup();
+  usePromptVideoStore.setState({ inputMode: "reference" });
+  const model = VIDEO_MODELS.find((entry) => entry.tauriId === "seedance_2p0")!;
+  render(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={model} selectedProvider={GenerationProvider.WaveSpeed} />);
+  const select = screen.getByRole("combobox", { name: "WaveSpeed video mode" });
+  for (let count = 0; count < 20 && document.activeElement !== select; count += 1) await user.tab();
+  expect(document.activeElement).toBe(select);
+  expect(select.className).toContain("focus-visible:outline");
+  await user.selectOptions(select, "edit");
+  expect((select as HTMLSelectElement).value).toBe("edit");
 });

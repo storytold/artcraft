@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GalleryItem } from "./gallery-modal";
 import { GalleryModal } from "./gallery-modal";
@@ -6,13 +6,44 @@ import { galleryModalVisibleViewMode } from "./galleryModalSignals";
 import { GalleryModalApi, UsersApi } from "@storyteller/api";
 import { GalleryDraggableItem } from "./GalleryDraggableItem";
 import { GalleryItemMenuItems } from "./GalleryItemMenuItems";
+import { showActionReminder } from "@storyteller/ui-action-reminder-modal";
+import { toast } from "@storyteller/ui-toaster";
 
 const LOCAL_ID = "local_file_3f2a9c1e_4b7d_4e8a_9c2f_1a2b3c4d5e6f";
 const LIBRARY_ID = "m_abc123";
 
 vi.mock("@storyteller/ui-lightbox-modal", () => ({ LightboxModal: () => null }));
 vi.mock("@storyteller/google-analytics", () => ({ gtagEvent: vi.fn() }));
-afterEach(() => { cleanup(); vi.restoreAllMocks(); galleryModalVisibleViewMode.value = false; vi.unstubAllGlobals(); });
+vi.mock("@storyteller/ui-toaster", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("@storyteller/ui-action-reminder-modal", async () => {
+  const { signal } = await import("@preact/signals-react");
+  return { showActionReminder: vi.fn(), isActionReminderOpen: signal(false) };
+});
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); galleryModalVisibleViewMode.value = false; vi.unstubAllGlobals(); });
+
+it.each(["rejection", "failure response"])("retains failed bulk deletions for retry and reports a %s", async (failure) => {
+  vi.spyOn(UsersApi.prototype, "GetSession").mockResolvedValue({ success: false });
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  galleryModalVisibleViewMode.value = true;
+  const first = { ...item(LOCAL_ID), label: "first tile" };
+  const second = { ...item(`${LOCAL_ID}_second`), label: "second tile" };
+  const onDeleteMedia = vi.fn().mockResolvedValueOnce({ status: "success" });
+  if (failure === "rejection") onDeleteMedia.mockRejectedValueOnce(new Error("offline"));
+  else onDeleteMedia.mockResolvedValueOnce({ status: "error" });
+  render(<GalleryModal mode="view" isOpen localItems={[first, second]} onDeleteMedia={onDeleteMedia} />);
+  for (const label of [first.label, second.label]) {
+    const tile = await screen.findByRole("button", { name: label });
+    fireEvent.click(tile.closest("[data-media-id]")!.querySelector(".absolute.left-2.top-2")!);
+  }
+  expect(screen.getByText("2 selected")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+  const confirm = vi.mocked(showActionReminder).mock.calls.at(-1)![0];
+  await act(async () => { await confirm.onPrimaryAction!(); });
+  await waitFor(() => expect(screen.getByText("1 selected")).toBeTruthy());
+  expect(screen.queryByRole("button", { name: first.label })).toBeNull();
+  expect(screen.getByRole("button", { name: second.label })).toBeTruthy();
+  expect(toast.error).toHaveBeenCalledWith("Failed to delete 1 item.");
+});
 
 it("shows saved local images in the signed-out library", async () => {
   vi.spyOn(UsersApi.prototype, "GetSession").mockResolvedValue({ success: false });

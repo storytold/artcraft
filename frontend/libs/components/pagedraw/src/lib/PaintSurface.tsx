@@ -90,6 +90,7 @@ export const PaintSurface = ({
   const selector = useMemo(
     () => (s: SceneState) => ({
       baseImageBitmap: s.baseImageBitmap,
+      outputAspectRatio: s.outputAspectRatio,
       brushOpacity: s.brushOpacity,
       currentShape: s.currentShape,
       shapeColor: s.shapeColor,

@@ -48,7 +48,7 @@ pub struct CompletionData {
 /// This is the cross-cutting equivalent of the Storyteller-specific
 /// `maybe_handle_frontend_caller_notification` — it works for any provider.
 pub async fn notify_frontend_of_completion(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   task: &Task,
@@ -98,7 +98,7 @@ pub async fn notify_frontend_of_completion(
 // ── Per-type handlers ──
 
 async fn notify_image_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   task: &Task,
@@ -121,7 +121,7 @@ async fn notify_image_generation(
 }
 
 async fn notify_image_edit(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   task: &Task,
@@ -148,7 +148,7 @@ async fn notify_image_edit(
 }
 
 fn notify_video_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -167,7 +167,7 @@ fn notify_video_generation(
 }
 
 fn notify_object_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -186,7 +186,7 @@ fn notify_object_generation(
 }
 
 fn notify_gaussian_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -205,7 +205,7 @@ fn notify_gaussian_generation(
 }
 
 fn notify_background_removal(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {

@@ -5,6 +5,8 @@ use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::provider_image_context::ProviderImageContext;
 use crate::core::utils::task_database_pending_statuses::TASK_DATABASE_PENDING_STATUSES;
 use anyhow::{ensure, Result};
+use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
+use artcraft_router::errors::provider_error::ProviderError;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use enums::tauri::tasks::task_type::TaskType;
@@ -45,6 +47,27 @@ impl ProviderSubmission {
     self.save(root)?;
     self.save_context(root)?;
     Ok(())
+  }
+
+  pub fn handle_submission_result<T>(&self, root: &AppDataRoot, result: Result<T, ArtcraftRouterError>) -> Result<T, ArtcraftRouterError> {
+    if let Err(ArtcraftRouterError::Provider(ProviderError::WaveSpeed(error)) | ArtcraftRouterError::ProviderBillingError(ProviderError::WaveSpeed(error))) = &result {
+      if error.is_definitive_submission_rejection() {
+        if let Err(error) = self.discard(root) {
+          warn!("Could not discard rejected WaveSpeed submission receipt: {error}");
+        }
+      }
+    }
+    result
+  }
+
+  fn discard(&self, root: &AppDataRoot) -> Result<()> {
+    ensure!(self.maybe_success.is_none(), "Accepted submissions must be recovered, not discarded");
+    ensure!(!self.id.is_empty() && self.id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-'), "Invalid submission receipt ID");
+    match std::fs::remove_file(directory(root)?.join(format!("{}.json", self.id))) {
+      Ok(()) => Ok(()),
+      Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+      Err(error) => Err(error.into()),
+    }
   }
 
   pub async fn restore_task(&self, root: &AppDataRoot, database: &TaskDatabase, api_host: &str) -> Result<()> {
@@ -189,6 +212,34 @@ mod tests {
   use sqlite_tasks::queries::list_non_artcraft_pending_tasks::{list_non_artcraft_pending_tasks, ListNonArtcraftPendingTasksArgs};
 
   const HOST: &str = "https://api.storyteller.ai";
+
+  #[test]
+  fn rejected_receipts_are_discarded_but_uncertain_outcomes_are_preserved() {
+    use wavespeed_client::WaveSpeedError;
+    let temporary = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(temporary.path()).unwrap();
+    for task_type in [TaskType::ImageGeneration, TaskType::VideoGeneration] {
+      for status in [200, 400, 401, 402, 403, 422, 429, 500] {
+        let receipt = begin(&root, task_type);
+        let path = directory(&root).unwrap().join(format!("{}.json", receipt.id));
+        let error = match status {
+          200 | 401 | 403 => WaveSpeedError::Authentication { http_status: status },
+          402 => WaveSpeedError::Billing { http_status: status },
+          400 | 422 => WaveSpeedError::Rejected { http_status: status, code: status, message: String::new() },
+          429 => WaveSpeedError::RateLimited { http_status: status, maybe_retry_after_secs: None, message: String::new() },
+          _ => WaveSpeedError::Http { status, message: String::new() },
+        };
+        let result: Result<(), ArtcraftRouterError> = Err(ProviderError::WaveSpeed(error).into());
+        assert!(receipt.handle_submission_result(&root, result).is_err());
+        assert_eq!(path.exists(), matches!(status, 200 | 500));
+        if path.exists() { std::fs::remove_file(path).unwrap(); }
+      }
+      let mut receipt = begin(&root, task_type);
+      receipt.accept(&root, &success(task_type)).unwrap();
+      assert!(receipt.discard(&root).is_err());
+      remove_submission(&root, "job_recovery").unwrap();
+    }
+  }
 
   #[tokio::test]
   async fn accepted_submission_survives_database_failure_restart_and_concurrent_replay() {

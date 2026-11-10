@@ -12,6 +12,8 @@ Signed-out users also need a library without an ArtCraft cloud identity.
   Signing in later does not silently upload an explicitly local generation.
 - Persist submission receipts before creation and never automatically repeat a
   creation POST with uncertain acceptance. Recover its ID from provider History.
+- Remove unaccepted receipts only for explicit HTTP rejections. Preserve HTTP
+  provenance separately from error codes embedded in successful responses.
 - Persist output bytes and upload progress before cloud transfer. Stable upload
   keys are reused only for the same task, provider, API host, and verified account.
   Confirmed cloud uploads are not repeated. Server-side deduplication remains an

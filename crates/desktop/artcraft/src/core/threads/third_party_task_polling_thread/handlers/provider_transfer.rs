@@ -8,14 +8,14 @@ use super::public_media_client::{public_media_client, validate_media_url};
 const MAX_TRANSFER_BYTES: u64 = 1024 * 1024 * 1024;
 
 pub(super) async fn cache_downloads(checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
-  for url in urls { validate_media_url(url)?; }
   cache_downloads_with_client(&public_media_client()?, checkpoint_path, urls).await
 }
 
-async fn cache_downloads_with_client(client: &Client, checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+pub(super) async fn cache_downloads_with_client(client: &Client, checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
   if urls.is_empty() || urls.len() > wavespeed_client::MAX_OUTPUTS {
     return Err("Invalid provider output count".into());
   }
+  for url in urls { validate_media_url(url)?; }
   let directory = checkpoint_path.with_extension("media");
   std::fs::create_dir_all(&directory)?;
   let mut paths = Vec::with_capacity(urls.len());
@@ -108,14 +108,15 @@ mod provider_transfer_tests {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("checkpoint.json");
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let url = format!("http://{}/result.png", listener.local_addr().unwrap());
+    let address = listener.local_addr().unwrap();
+    let url = format!("http://media.example:{}/result.png", address.port());
     let server = tokio::spawn(async move {
       let (mut socket, _) = listener.accept().await.unwrap();
       let mut request = [0; 4096];
       socket.read(&mut request).await.unwrap();
       socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\nmedia").await.unwrap();
     });
-    let client = Client::new();
+    let client = Client::builder().no_proxy().resolve("media.example", address).build().unwrap();
     let files = cache_downloads_with_client(&client, &path, &[url.clone()]).await.unwrap();
     server.await.unwrap();
     assert_eq!(std::fs::read(&files[0]).unwrap(), b"media");

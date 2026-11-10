@@ -74,13 +74,13 @@ pub async fn auto_download_task_urls(app: &AppHandle, task: &Task, urls: &[Url])
   download_generated_results(&app.state::<AppDataRoot>(), &prefs, task, urls).await
 }
 
-pub async fn auto_download_task_files(app: &AppHandle, task: &Task, urls: &[Url], files: &[PathBuf]) -> AnyhowResult<()> {
+pub async fn auto_download_task_files(app: &AppHandle<impl tauri::Runtime>, task: &Task, urls: &[Url], files: &[PathBuf]) -> AnyhowResult<()> {
   ensure!(urls.len() == files.len(), "Cached result count does not match provider output");
   let prefs = app.state::<AppPreferencesManager>().get_clone()?;
   download_results(&app.state::<AppDataRoot>(), &prefs, task, urls, Some(files)).await
 }
 
-pub fn clear_auto_download_checkpoint(app: &AppHandle, task: &Task) {
+pub fn clear_auto_download_checkpoint(app: &AppHandle<impl tauri::Runtime>, task: &Task) {
   let path = checkpoint_path(&app.state::<AppDataRoot>(), task);
   if let Err(err) = std::fs::remove_file(path) {
     if err.kind() != std::io::ErrorKind::NotFound {

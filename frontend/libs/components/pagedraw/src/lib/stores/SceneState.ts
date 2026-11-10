@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { Node, NodeType } from "../Node";
 import { ImageBundle, BaseSelectorImage } from "../types";
 import { Model3DParams } from "../utilities/render3DModel";
+import { outputDimensions } from "../utilities/outputDimensions";
 
 // Generation counter for in-flight base-image loads. Incremented on every
 // setBaseImageInfo call so that a stale `<img>.onload` from a superseded
@@ -307,7 +308,8 @@ export interface SceneState {
   toggleLock: (nodeIds: string[]) => void;
 
   aspectRatioType: AspectRatioType;
-  setAspectRatioType: (type: AspectRatioType) => void;
+  outputAspectRatio?: string;
+  setAspectRatioType: (type: AspectRatioType, outputAspectRatio?: string) => void;
   getAspectRatioDimensions: () => { width: number; height: number };
 
   historyImageBundles: ImageBundle[];
@@ -365,6 +367,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   pendingGenerations: [],
 
   aspectRatioType: AspectRatioType.NONE,
+  outputAspectRatio: undefined,
 
   // Actions
   addNode: (node: Node) => {
@@ -1117,6 +1120,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       eraserSize: state.eraserSize,
       fillColor: state.fillColor,
       aspectRatioType: state.aspectRatioType,
+      outputAspectRatio: state.outputAspectRatio,
       version: "2.0",
     };
 
@@ -1183,6 +1187,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         eraserSize: sceneData.eraserSize || 16,
         fillColor: sceneData.fillColor || "white",
         aspectRatioType: sceneData.aspectRatioType || AspectRatioType.NONE,
+        outputAspectRatio: sceneData.outputAspectRatio,
       });
 
       isRestoring = false;
@@ -1358,8 +1363,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     get().saveState();
   },
 
-  setAspectRatioType: (type: AspectRatioType) => {
-    set({ aspectRatioType: type });
+  setAspectRatioType: (type: AspectRatioType, outputAspectRatio?: string) => {
+    set({ aspectRatioType: type, outputAspectRatio });
     get().saveState();
   },
 
@@ -1367,12 +1372,16 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     const bitmap = get().baseImageBitmap;
 
     if (bitmap) {
-      return { width: bitmap.width, height: bitmap.height };
+      return outputDimensions({ width: bitmap.width, height: bitmap.height }, get().outputAspectRatio);
     }
 
     const info = get().baseImageInfo;
     if (info?.isBlankCanvas && info.blankCanvasWidth && info.blankCanvasHeight) {
-      return { width: info.blankCanvasWidth, height: info.blankCanvasHeight };
+      return outputDimensions({ width: info.blankCanvasWidth, height: info.blankCanvasHeight }, get().outputAspectRatio);
+    }
+
+    if (get().outputAspectRatio) {
+      return outputDimensions({ width: 1024, height: 683 }, get().outputAspectRatio);
     }
 
     const { aspectRatioType } = get();

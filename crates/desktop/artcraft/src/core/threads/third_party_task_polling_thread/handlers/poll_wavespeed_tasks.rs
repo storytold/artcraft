@@ -6,7 +6,9 @@ use tauri::AppHandle;
 use wavespeed_client::{Prediction, PredictionStatus, WaveSpeedClient, WaveSpeedError};
 use futures::{stream, StreamExt};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
+use std::future::Future;
 
 use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
 use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
@@ -57,44 +59,62 @@ pub async fn poll_wavespeed_tasks(app_handle: &AppHandle, app_env_configs: &AppE
     },
     _ => return,
   };
-  let owned_tasks: Vec<Task> = tasks.iter().map(|task| (*task).clone()).collect();
-  let mut results = stream::iter(owned_tasks).map(|task: Task| {
+  poll_with_predictions(app_handle, app_env_configs, app_data_root, task_database, storyteller_creds_manager, tasks, &POLL_BACKOFF, |id| {
     let client = client.clone();
+    async move { client.get_prediction(&id).await }
+  }).await;
+}
+
+async fn poll_with_predictions<F, Fut>(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, tasks: &[&Task], backoff: &Mutex<PollBackoff>, fetch: F)
+where
+  F: Fn(String) -> Fut,
+  Fut: Future<Output = Result<Prediction, WaveSpeedError>>,
+{
+  let owned_tasks: Vec<Task> = tasks.iter().map(|task| (*task).clone()).collect();
+  let rate_limited = AtomicBool::new(false);
+  let mut results = stream::iter(owned_tasks).map(|task: Task| {
+    let fetch = &fetch;
+    let rate_limited = &rate_limited;
     async move {
+      if rate_limited.load(Ordering::Relaxed) { return None; }
       let result = match task.provider_job_id.as_deref() {
-        Some(id) => client.get_prediction(id).await,
+        Some(id) => fetch(id.to_owned()).await,
         None => Err(WaveSpeedError::InvalidResponse("missing prediction ID")),
       };
-      (task, result)
+      match poll_outcome(result) {
+        PollOutcome::Completed(outputs) => {
+          let media_class = if task.task_type == TaskType::VideoGeneration { TaskMediaFileClass::Video } else { TaskMediaFileClass::Image };
+          if let Err(error) = handle_provider_complete(app_handle, app_env_configs, app_data_root, task_database, storyteller_creds_manager, &task, outputs, media_class).await {
+            error!("[WaveSpeedPolling] Could not save task {}: {error}", task.id.as_str());
+          }
+          None
+        },
+        PollOutcome::Failed(reason) => {
+          handle_provider_failure(app_handle, task_database, &task, &reason).await;
+          None
+        },
+        PollOutcome::Pending => None,
+        PollOutcome::Retry(error) => {
+          if matches!(error, WaveSpeedError::RateLimited { .. }) { rate_limited.store(true, Ordering::Relaxed); }
+          Some(error)
+        },
+      }
     }
   }).buffer_unordered(4);
   let mut transient_failure = false;
-  while let Some((task, result)) = results.next().await {
-    let task = &task;
-    match poll_outcome(result) {
-      PollOutcome::Completed(outputs) => {
-        let media_class = if task.task_type == TaskType::VideoGeneration { TaskMediaFileClass::Video } else { TaskMediaFileClass::Image };
-        if let Err(error) = handle_provider_complete(app_handle, app_env_configs, app_data_root, task_database, storyteller_creds_manager, task, outputs, media_class).await {
-          error!("[WaveSpeedPolling] Could not save task {}: {error}", task.id.as_str());
-        }
-      },
-      PollOutcome::Failed(reason) => {
-        handle_provider_failure(app_handle, task_database, task, &reason).await;
-      },
-      PollOutcome::Pending => {},
-      PollOutcome::Retry(WaveSpeedError::RateLimited { maybe_retry_after_secs, .. }) => {
-        if let Ok(mut backoff) = POLL_BACKOFF.lock() { backoff.delay(maybe_retry_after_secs); }
-        return;
-      },
-      PollOutcome::Retry(error) => {
-        transient_failure = true;
-        warn!("[WaveSpeedPolling] Task {}: {error}", task.id.as_str());
-      },
+  let mut maybe_retry_after_secs = None;
+  while let Some(maybe_error) = results.next().await {
+    if let Some(error) = maybe_error {
+      if let WaveSpeedError::RateLimited { maybe_retry_after_secs: Some(seconds), .. } = &error {
+        maybe_retry_after_secs = Some(maybe_retry_after_secs.unwrap_or(0).max(*seconds));
+      }
+      transient_failure = true;
+      warn!("[WaveSpeedPolling] {error}");
     }
   }
-  if let Ok(mut backoff) = POLL_BACKOFF.lock() {
+  if let Ok(mut backoff) = backoff.lock() {
     if transient_failure {
-      backoff.delay(None);
+      backoff.delay(maybe_retry_after_secs);
     } else {
       backoff.failures = 0;
       backoff.maybe_until = None;
@@ -123,6 +143,70 @@ fn poll_outcome(result: Result<Prediction, WaveSpeedError>) -> PollOutcome {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use super::super::handle_provider_complete::provider_completion_tests::{pending_task, test_app};
+  use super::super::provider_upload_checkpoint::{CompletionIdentity, UploadCheckpoint};
+  use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
+  use artcraft_client::utils::api_host::ApiHost;
+  use enums::common::generation_provider::GenerationProvider;
+  use enums::tauri::tasks::task_status::TaskStatus;
+  use sqlite_tasks::queries::get_task_by_provider_and_provider_job_id::{get_task_by_provider_and_provider_job_id, GetTaskByProviderAndProviderJobIdArgs};
+
+  #[tokio::test]
+  async fn rate_limits_stop_scheduling_further_prediction_requests() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let database = TaskDatabase::connect(&root).await.unwrap();
+    let app = test_app(&root);
+    let config = AppEnvConfigs { storyteller_host: ApiHost::Localhost { port: 1 } };
+    let credentials = StorytellerCredentialManager::initialize_empty(&root);
+    let mut tasks = Vec::new();
+    for index in 0..20 { tasks.push(pending_task(&database, &format!("limited_{index}")).await); }
+    let requests = std::sync::atomic::AtomicUsize::new(0);
+    let backoff = Mutex::new(PollBackoff { failures: 0, maybe_until: None });
+    poll_with_predictions(app.handle(), &config, &root, &database, &credentials, &tasks.iter().collect::<Vec<_>>(), &backoff, |_| {
+      requests.fetch_add(1, Ordering::Relaxed);
+      async { Err(WaveSpeedError::RateLimited { http_status: 429, maybe_retry_after_secs: Some(10), message: String::new() }) }
+    }).await;
+    assert!((1..=4).contains(&requests.load(Ordering::Relaxed)));
+    assert!(backoff.lock().unwrap().maybe_until.unwrap() > Instant::now());
+  }
+
+  #[tokio::test]
+  async fn polling_updates_real_task_states_for_completed_empty_failed_missing_and_transient_predictions() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let database = TaskDatabase::connect(&root).await.unwrap();
+    let app = test_app(&root);
+    let config = AppEnvConfigs { storyteller_host: ApiHost::Localhost { port: 1 } };
+    let credentials = StorytellerCredentialManager::initialize_empty(&root);
+    let mut tasks = Vec::new();
+    for job in ["completed", "empty", "failed", "missing", "transient", "pending", "limited"] {
+      tasks.push(pending_task(&database, job).await);
+    }
+    let completed = &tasks[0];
+    let url = "https://example.com/result.png".to_owned();
+    let path = root.state_dir().path().join(format!("provider_upload_{}.json", completed.id.as_str()));
+    UploadCheckpoint::prepare(&path, &CompletionIdentity { task_id: completed.id.to_string(), provider: GenerationProvider::WaveSpeed, maybe_provider_job_id: completed.provider_job_id.clone(), api_host: config.storyteller_host.to_api_hostname_and_scheme(), media_class: TaskMediaFileClass::Image }, &[url.clone()]).unwrap();
+    std::fs::create_dir_all(path.with_extension("media")).unwrap();
+    image::DynamicImage::new_rgb8(2, 2).save(path.with_extension("media").join("0.png")).unwrap();
+    let backoff = Mutex::new(PollBackoff { failures: 0, maybe_until: None });
+    poll_with_predictions(app.handle(), &config, &root, &database, &credentials, &tasks.iter().collect::<Vec<_>>(), &backoff, |id| async move {
+      match id.as_str() {
+        "missing" => Err(WaveSpeedError::Http { status: 404, message: String::new() }),
+        "transient" => Err(WaveSpeedError::Http { status: 503, message: String::new() }),
+        "limited" => Err(WaveSpeedError::RateLimited { http_status: 429, maybe_retry_after_secs: Some(42), message: String::new() }),
+        _ => Ok(Prediction { id: id.clone(), status: match id.as_str() { "failed" => PredictionStatus::Failed, "pending" => PredictionStatus::Processing, _ => PredictionStatus::Completed }, outputs: if id == "completed" { vec!["https://example.com/result.png".into()] } else { vec![] }, maybe_error: None }),
+      }
+    }).await;
+    for task in &tasks {
+      let job = task.provider_job_id.as_deref().unwrap();
+      let saved = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs { db: database.get_connection(), provider: GenerationProvider::WaveSpeed, provider_job_id: job }).await.unwrap().unwrap();
+      let expected = match job { "completed" => TaskStatus::CompleteSuccess, "transient" | "pending" | "limited" => TaskStatus::Started, _ => TaskStatus::CompleteFailure };
+      assert_eq!(saved.status, expected, "{job}");
+    }
+    assert!(backoff.lock().unwrap().maybe_until.unwrap().duration_since(Instant::now()) > Duration::from_secs(40));
+    assert!(!path.exists());
+  }
 
   #[test]
   fn completed_empty_failed_missing_and_transient_predictions_have_distinct_outcomes() {

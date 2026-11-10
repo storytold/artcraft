@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GenerationProvider } from "@storyteller/api-enums";
-import { IMAGE_MODELS, imageModelForProvider } from "@storyteller/model-list";
+import { CommonAspectRatio, IMAGE_MODELS, imageModelForProvider } from "@storyteller/model-list";
 import { toast } from "@storyteller/ui-toaster";
 import { PromptBox2D } from "./PromptBox2D";
 import { usePrompt2DStore } from "./promptStore";
@@ -90,6 +90,28 @@ it("normalizes settings on a WaveSpeed model switch and omits unsupported resolu
   expect(screen.queryByRole("combobox", { name: "Resolution" })).toBeNull();
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
   expect(onGenerateClick).toHaveBeenCalledWith("edit this image", expect.objectContaining({ resolution: undefined, aspectRatio: "square" }));
+});
+
+it("synchronizes the canvas callback with defaults, exact picker ratios and provider switches", () => {
+  const model = IMAGE_MODELS.find((entry) => entry.tauriId === "seedream_4")!;
+  const onAspectRatioChange = vi.fn();
+  const props = {
+    selectedImageModel: imageModelForProvider(model, GenerationProvider.WaveSpeed, 1),
+    selectedProvider: GenerationProvider.WaveSpeed,
+    onAspectRatioChange,
+    onGenerateClick: vi.fn(),
+    EncodeImageBitmapToBase64: vi.fn(),
+    usePrompt2DStore,
+  };
+  const { rerender } = render(<PromptBox2D {...props} />);
+  expect(onAspectRatioChange).toHaveBeenLastCalledWith(CommonAspectRatio.Square);
+  fireEvent.change(screen.getByRole("combobox", { name: "Aspect Ratio" }), { target: { value: "16:9 (Wide)" } });
+  expect(onAspectRatioChange).toHaveBeenLastCalledWith(CommonAspectRatio.WideSixteenByNine);
+  const gpt = IMAGE_MODELS.find((entry) => entry.tauriId === "gpt_image_1p5")!;
+  rerender(<PromptBox2D {...props} selectedImageModel={imageModelForProvider(gpt, GenerationProvider.WaveSpeed, 1)} />);
+  expect(onAspectRatioChange).toHaveBeenLastCalledWith(CommonAspectRatio.Square);
+  rerender(<PromptBox2D {...props} selectedImageModel={model} selectedProvider={GenerationProvider.Artcraft} />);
+  expect(onAspectRatioChange).toHaveBeenLastCalledWith("wide");
 });
 
 it("rejects stale extra references instead of exceeding the endpoint's total reference limit", () => {

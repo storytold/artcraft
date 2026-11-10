@@ -303,6 +303,7 @@ const PageDraw = ({
     () => (state: SceneState) => ({
       baseImageInfo: state.baseImageInfo,
       baseImageBitmap: state.baseImageBitmap,
+      outputAspectRatio: state.outputAspectRatio,
       drawNodes: state.drawNodes,
       inpaintLineNodes: state.inpaintLineNodes,
       selectedNodeIds: state.selectedNodeIds,
@@ -358,6 +359,7 @@ const PageDraw = ({
   const {
     baseImageInfo,
     baseImageBitmap,
+    outputAspectRatio,
     drawNodes,
     inpaintLineNodes,
     selectedNodeIds,
@@ -813,7 +815,7 @@ const PageDraw = ({
     bakeDirtyRef.current = true;
     bakedCompositeRef.current = null;
     scheduleCompositeBake();
-  }, [drawNodes, baseImageBitmap, scheduleCompositeBake]);
+  }, [drawNodes, baseImageBitmap, outputAspectRatio, scheduleCompositeBake]);
 
   useEffect(
     () => () => {
@@ -1117,11 +1119,11 @@ const PageDraw = ({
             return AspectRatioType.NONE;
         }
       };
-      setAspectRatioType(ratioToType(ratio));
+      setAspectRatioType(ratioToType(ratio), selectedProvider === GenerationProvider.WaveSpeed ? ratio : undefined);
       await new Promise((resolve) => requestAnimationFrame(resolve));
       onFitPressed();
     },
-    [setAspectRatioType, onFitPressed],
+    [setAspectRatioType, onFitPressed, selectedProvider],
   );
 
   const handleMenuAction = useCallback(

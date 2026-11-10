@@ -29,7 +29,7 @@ import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 
-export type AspectRatio = "wide" | "tall" | "square";
+export type AspectRatio = "wide" | "tall" | "square" | CommonAspectRatio;
 
 export interface PromptBox2DProps {
   uploadImage?: UploadImageFn;
@@ -108,6 +108,9 @@ export const PromptBox2D = ({
     ? commonAspectRatio : selectedImageModel?.defaultAspectRatio;
   const effectiveResolution = commonResolution && selectedImageModel?.resolutions.includes(commonResolution)
     ? commonResolution : selectedImageModel?.defaultResolution;
+  useEffect(() => {
+    onAspectRatioChange?.(isWaveSpeed ? effectiveAspectRatio ?? CommonAspectRatio.Auto : aspectRatio);
+  }, [isWaveSpeed, effectiveAspectRatio, aspectRatio, onAspectRatioChange]);
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
 
   const referenceImages = usePrompt2DStore((s) => s.referenceImages);
@@ -182,8 +185,7 @@ export const PromptBox2D = ({
   });
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value = selectedItem.label.toLowerCase() as AspectRatio;
-    onAspectRatioChange?.(value);
+    const value = selectedItem.label.toLowerCase() as "wide" | "tall" | "square";
     setAspectRatio(value);
     setAspectRatioList((prev) =>
       prev.map((item) => ({

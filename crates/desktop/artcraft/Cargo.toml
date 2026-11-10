@@ -93,6 +93,7 @@ tauri-plugin-opener = "2"
 
 [dev-dependencies]
 serial_test = "3.2.0"
+tauri = { workspace = true, features = ["test"] }
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

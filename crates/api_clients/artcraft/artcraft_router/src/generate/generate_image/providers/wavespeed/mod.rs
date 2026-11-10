@@ -281,7 +281,7 @@ mod tests {
       let request = build(GenerateImageRequestBuilder { model, ..base_builder() });
       assert_eq!(request.model.endpoint(false), endpoint);
       let too_many = GenerateImageRequestBuilder { model, image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/ref.png".into(); max_refs + 1])), ..base_builder() };
-      assert!(too_many.build2().is_err(), "{model:?}");
+      assert!(matches!(too_many.build2(), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "image_inputs", value })) if value == format!("This WaveSpeed model supports at most {max_refs} reference images")), "{model:?}");
       if max_refs == 0 {
         continue;
       }
@@ -370,14 +370,29 @@ mod tests {
 
   #[test]
   fn rejects_invalid_options_before_submission() {
-    for builder in [GenerateImageRequestBuilder { image_batch_count: Some(0), ..base_builder() }, GenerateImageRequestBuilder { image_batch_count: Some(5), ..base_builder() }, GenerateImageRequestBuilder { prompt: None, ..base_builder() }, GenerateImageRequestBuilder { model: RouterImageModel::GptImage1, ..base_builder() }, GenerateImageRequestBuilder { resolution: Some(RouterResolution::FourK), ..base_builder() }, GenerateImageRequestBuilder { model: RouterImageModel::GptImage2, quality: Some(RouterQuality::Max), ..base_builder() }, GenerateImageRequestBuilder { model: RouterImageModel::NanoBananaPro, resolution: Some(RouterResolution::HalfK), ..base_builder() }, GenerateImageRequestBuilder { model: RouterImageModel::FluxPro11, aspect_ratio: Some(RouterAspectRatio::WideThreeByTwo), ..base_builder() }] {
-      assert!(builder.build2().is_err());
+    assert!(matches!(GenerateImageRequestBuilder { image_batch_count: Some(0), ..base_builder() }.build2(), Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations))));
+    assert!(matches!(GenerateImageRequestBuilder { prompt: None, ..base_builder() }.build2(), Err(ArtcraftRouterError::InvalidInput(message)) if message == "WaveSpeed requires a prompt"));
+    assert!(matches!(GenerateImageRequestBuilder { model: RouterImageModel::GptImage1, ..base_builder() }.build2(), Err(ArtcraftRouterError::UnsupportedModel(model)) if model == "GptImage1"));
+    for (builder, expected_field, expected_value) in [
+      (GenerateImageRequestBuilder { image_batch_count: Some(5), ..base_builder() }, "image_batch_count", "This WaveSpeed endpoint supports at most 4 image(s)"),
+      (GenerateImageRequestBuilder { resolution: Some(RouterResolution::FourK), ..base_builder() }, "resolution", "FourK"),
+      (GenerateImageRequestBuilder { model: RouterImageModel::GptImage2, quality: Some(RouterQuality::Max), ..base_builder() }, "quality", "Max"),
+      (GenerateImageRequestBuilder { model: RouterImageModel::NanoBananaPro, resolution: Some(RouterResolution::HalfK), ..base_builder() }, "resolution", "HalfK"),
+      (GenerateImageRequestBuilder { model: RouterImageModel::FluxPro11, aspect_ratio: Some(RouterAspectRatio::WideThreeByTwo), ..base_builder() }, "aspect_ratio", "Some(WideThreeByTwo)"),
+    ] {
+      match builder.build2() {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field, value })) => {
+          assert_eq!(field, expected_field);
+          assert_eq!(value, expected_value);
+        },
+        _ => panic!("Expected rejection for {expected_field}={expected_value}"),
+      }
     }
   }
 
   #[test]
   fn maps_billing_errors_to_the_wavespeed_provider() {
-    let error = ArtcraftRouterError::from(ProviderError::WaveSpeed(wavespeed_client::WaveSpeedError::Billing));
+    let error = ArtcraftRouterError::from(ProviderError::WaveSpeed(wavespeed_client::WaveSpeedError::Billing { http_status: 402 }));
     assert!(matches!(error, ArtcraftRouterError::ProviderBillingError(ProviderError::WaveSpeed(_))));
   }
 

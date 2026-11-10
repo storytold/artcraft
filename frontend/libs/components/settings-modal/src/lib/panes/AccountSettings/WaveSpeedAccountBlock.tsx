@@ -65,7 +65,7 @@ export function WaveSpeedAccountBlock() {
           onChange={(event) => setApiKey(event.target.value)}
           placeholder={connected ? "Replace API key" : "Enter WaveSpeed API key"}
           disabled={busy}
-          className="min-w-0 flex-1 rounded border border-ui-panel-border bg-transparent px-3 py-2"
+          className="min-w-0 flex-1 rounded border border-ui-panel-border bg-transparent px-3 py-2 text-base-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         />
         <Button disabled={busy || !apiKey.trim()} onClick={save}>Save key</Button>
       </div>

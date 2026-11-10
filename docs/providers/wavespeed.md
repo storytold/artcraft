@@ -132,6 +132,9 @@ whose acceptance response was never recorded is **not** resubmitted. In
 **Settings → Accounts → WaveSpeed → Check unfinished submissions**, paste the
 matching prediction ID from WaveSpeed History to resume it without another paid
 generation. Receipts are scoped to the original ArtCraft API host.
+Explicit HTTP authentication, billing, validation, and rate-limit rejections do
+not stay in the unfinished list. Timeouts, server errors, and ambiguous success
+envelopes retain their receipts because acceptance cannot be ruled out.
 
 On startup and every ten minutes, the polling thread removes caches for confirmed
 terminal/cancelled tasks and provider partial downloads older than 24 hours. It

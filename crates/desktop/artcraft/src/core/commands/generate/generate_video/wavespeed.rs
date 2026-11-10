@@ -89,7 +89,7 @@ pub async fn handle_wavespeed_video(request: &TauriGenerateVideoRequest, app_env
   };
   let context = ProviderImageContext { prompt: request.prompt.clone().unwrap_or_default(), model_id: serde_json::to_value(tauri_video_model_to_generation_model(model)).map_err(anyhow::Error::from)?.as_str().unwrap_or("unknown").to_owned(), local_only: maybe_creds.is_none() };
   let mut receipt = ProviderSubmission::begin(app_data_root, context, TaskType::VideoGeneration, app_env_configs.storyteller_host.to_api_hostname_and_scheme(), request.frontend_caller, request.frontend_subscriber_id.clone(), request.frontend_subscriber_payload.clone())?;
-  let GenerateVideoResponse::WaveSpeed(response) = generation.send_request(&RouterClient::WaveSpeed(client)).await? else {
+  let GenerateVideoResponse::WaveSpeed(response) = receipt.handle_submission_result(app_data_root, generation.send_request(&RouterClient::WaveSpeed(client)).await)? else {
     return Err(GenerateError::ResponseHadNoJobTokens);
   };
   let success = TaskEnqueueSuccess { task_type: TaskType::VideoGeneration, model: Some(tauri_video_model_to_generation_model(model)), provider: GenerationProvider::WaveSpeed, provider_job_id: Some(response.prediction_id), maybe_queue_status_url: None, maybe_queue_response_url: None, maybe_prompt_token };
@@ -158,6 +158,51 @@ fn reference_video_limit(mode: wavespeed_client::VideoMode) -> Option<u64> {
 mod tests {
   use super::*;
   use wavespeed_client::VideoMode;
+  use crate::core::threads::third_party_task_polling_thread::handlers::handle_provider_complete::provider_completion_tests::{binary_server, media_response};
+  use artcraft_client::utils::api_host::ApiHost;
+  use tokens::tokens::media_files::MediaFileToken;
+
+  #[tokio::test]
+  async fn generation_rejects_missing_credentials_signed_out_references_and_local_tokens_before_submission() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let config = AppEnvConfigs { storyteller_host: ApiHost::Localhost { port: 1 } };
+    let credentials = StorytellerCredentialManager::initialize_empty(&root);
+    let cache = ProviderCredentialLoadingCache::with_test_credentials(root.clone(), ProviderCredentialKey::WaveSpeedApiKey, None);
+    for (media, expected) in [(serde_json::json!({}), "key"), (serde_json::json!({"reference_video_media_tokens":["mf_video"]}), "login"), (serde_json::json!({"start_frame_image_media_token":"local_file_saved"}), "local")] {
+      let mut request = serde_json::json!({"provider":"wavespeed","model":"seedance_2p0","prompt":"a bird"});
+      request.as_object_mut().unwrap().extend(media.as_object().unwrap().clone());
+      let request = serde_json::from_value(request).unwrap();
+      let error = handle_wavespeed_video(&request, &config, &root, &cache, &credentials).await.err().expect("request must be rejected before submission");
+      match expected {
+        "key" => assert!(matches!(error, GenerateError::MissingCredentials(MissingCredentialsReason::NeedsWaveSpeedApiKey))),
+        "login" => assert!(matches!(error, GenerateError::MissingCredentials(_))),
+        _ => assert!(matches!(error, GenerateError::BadInput(BadInputReason::WrongImageArguments(message)) if message.contains("Upload local media"))),
+      }
+    }
+  }
+
+  #[tokio::test]
+  async fn resolves_reference_metadata_and_enforces_type_and_combined_duration_over_http() {
+    for (class, durations, expected_error) in [("image", vec![Some(5000)], Some("wrong media type")), ("video", vec![None], Some("unavailable")), ("video", vec![Some(0)], Some("unavailable")), ("video", vec![Some(8000), Some(8000)], Some("15 seconds")), ("video", vec![Some(8000), Some(7000)], None)] {
+      let (address, server) = binary_server(durations.iter().map(|duration| (200, media_response(class, *duration).into_bytes())).collect()).await;
+      let config = AppEnvConfigs { storyteller_host: ApiHost::Localhost { port: u32::from(address.port()) } };
+      let tokens = Some(durations.iter().enumerate().map(|(index, _)| MediaFileToken::new_from_str(&format!("mf_reference_{index}"))).collect());
+      let result = resolve_references(&tokens, &config, MediaFileClass::Video, 3, Some(15000)).await;
+      if let Some(expected) = expected_error {
+        assert!(matches!(result, Err(GenerateError::BadInput(BadInputReason::WrongImageArguments(message))) if message.contains(expected)));
+      } else {
+        assert_eq!(result.unwrap().unwrap(), vec!["https://example.com/result.png"; 2]);
+      }
+      let requests = server.await.unwrap();
+      assert!(requests.iter().all(|request| request.starts_with("GET /v1/media_files/")));
+    }
+    let config = AppEnvConfigs { storyteller_host: ApiHost::Localhost { port: 1 } };
+    let local = Some(vec![MediaFileToken::new_from_str("local_file_saved")]);
+    assert!(matches!(resolve_references(&local, &config, MediaFileClass::Video, 3, Some(15000)).await, Err(GenerateError::BadInput(_))));
+    let excessive = Some(vec![MediaFileToken::new_from_str("mf_reference"); 4]);
+    assert!(matches!(resolve_references(&excessive, &config, MediaFileClass::Video, 3, Some(15000)).await, Err(GenerateError::BadInput(BadInputReason::WrongImageArguments(message))) if message == "Too many WaveSpeed references"));
+  }
 
   #[test]
   fn source_videos_do_not_inherit_the_reference_duration_limit() {

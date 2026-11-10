@@ -41,6 +41,7 @@ pub mod video_model;
 pub use video_model::VideoModel;
 
 #[derive(Clone)]
+/// Authenticated prediction client. Creation requests are never retried automatically.
 pub struct WaveSpeedClient {
   client: Client,
   authorization: HeaderValue,
@@ -48,6 +49,7 @@ pub struct WaveSpeedClient {
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
+/// Image creation payload; optional fields must match the selected model endpoint.
 pub struct GenerateImageRequest {
   pub prompt: String,
   #[serde(rename = "size", skip_serializing_if = "Option::is_none")]
@@ -67,6 +69,7 @@ pub struct GenerateImageRequest {
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
+/// Video creation payload; `mode` selects an endpoint and is not sent in JSON.
 pub struct GenerateVideoRequest {
   #[serde(skip)]
   pub mode: VideoMode,
@@ -134,19 +137,20 @@ pub enum PredictionStatus {
 }
 
 #[derive(Debug, Error)]
+/// Provider failures, preserving HTTP provenance separately from API envelope codes.
 pub enum WaveSpeedError {
   #[error("Invalid WaveSpeed API key")]
   InvalidApiKey,
   #[error("WaveSpeed authentication failed; check your API key")]
-  Authentication,
+  Authentication { http_status: u16 },
   #[error("WaveSpeed credits are insufficient")]
-  Billing,
+  Billing { http_status: u16 },
   #[error("WaveSpeed returned HTTP {status}: {message}")]
   Http { status: u16, message: String },
   #[error("WaveSpeed rejected the request ({code}): {message}")]
-  Rejected { code: u16, message: String },
+  Rejected { http_status: u16, code: u16, message: String },
   #[error("WaveSpeed rate limit reached: {message}")]
-  RateLimited { maybe_retry_after_secs: Option<u64>, message: String },
+  RateLimited { http_status: u16, maybe_retry_after_secs: Option<u64>, message: String },
   #[error("WaveSpeed returned API code {code}: {message}")]
   Api { code: u16, message: String },
   #[error("Invalid WaveSpeed response: {0}")]
@@ -210,12 +214,12 @@ impl WaveSpeedClient {
     let status = response.status().as_u16();
     let maybe_retry_after_secs = response.headers().get(reqwest::header::RETRY_AFTER).and_then(|value| value.to_str().ok()).and_then(|value| value.parse::<u64>().ok());
     if response.content_length().is_some_and(|length| length > MAX_RESPONSE_BYTES as u64) {
-      return Err(WaveSpeedError::InvalidResponse("response body is too large"));
+      return Err(http_rejection(status, "response body is too large".into(), maybe_retry_after_secs).unwrap_or(WaveSpeedError::InvalidResponse("response body is too large")));
     }
     let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await? {
+    while let Some(chunk) = response.chunk().await.map_err(|error| http_rejection(status, "could not read error response".into(), maybe_retry_after_secs).unwrap_or(WaveSpeedError::Transport(error)))? {
       if bytes.len().saturating_add(chunk.len()) > MAX_RESPONSE_BYTES {
-        return Err(WaveSpeedError::InvalidResponse("response body is too large"));
+        return Err(http_rejection(status, "response body is too large".into(), maybe_retry_after_secs).unwrap_or(WaveSpeedError::InvalidResponse("response body is too large")));
       }
       bytes.extend_from_slice(&chunk);
     }
@@ -223,10 +227,10 @@ impl WaveSpeedClient {
     let code = if (200..300).contains(&status) { envelope.as_ref().map(|value| value.code).unwrap_or(status) } else { status };
     let message = envelope.as_ref().ok().and_then(|value| value.maybe_message.clone()).unwrap_or_default();
     match code {
-      401 | 403 => return Err(WaveSpeedError::Authentication),
-      402 => return Err(WaveSpeedError::Billing),
-      400 | 422 => return Err(WaveSpeedError::Rejected { code, message }),
-      429 => return Err(WaveSpeedError::RateLimited { maybe_retry_after_secs, message }),
+      401 | 403 => return Err(WaveSpeedError::Authentication { http_status: status }),
+      402 => return Err(WaveSpeedError::Billing { http_status: status }),
+      400 | 422 => return Err(WaveSpeedError::Rejected { http_status: status, code, message }),
+      429 => return Err(WaveSpeedError::RateLimited { http_status: status, maybe_retry_after_secs, message }),
       200..=299 => {},
       _ if !(200..300).contains(&status) => return Err(WaveSpeedError::Http { status, message }),
       _ => return Err(WaveSpeedError::Api { code, message }),
@@ -240,6 +244,28 @@ impl WaveSpeedClient {
       return Err(WaveSpeedError::InvalidResponse("too many output files"));
     }
     Ok(prediction)
+  }
+}
+
+fn http_rejection(status: u16, message: String, maybe_retry_after_secs: Option<u64>) -> Option<WaveSpeedError> {
+  match status {
+    401 | 403 => Some(WaveSpeedError::Authentication { http_status: status }),
+    402 => Some(WaveSpeedError::Billing { http_status: status }),
+    400 | 422 => Some(WaveSpeedError::Rejected { http_status: status, code: status, message }),
+    429 => Some(WaveSpeedError::RateLimited { http_status: status, maybe_retry_after_secs, message }),
+    _ => None,
+  }
+}
+
+impl WaveSpeedError {
+  /// True only for explicit HTTP rejections, never successful envelopes or uncertain failures.
+  pub fn is_definitive_submission_rejection(&self) -> bool {
+    let status = match self {
+      Self::Authentication { http_status } | Self::Billing { http_status }
+      | Self::Rejected { http_status, .. } | Self::RateLimited { http_status, .. } => *http_status,
+      _ => return false,
+    };
+    matches!(status, 400 | 401 | 402 | 403 | 422 | 429)
   }
 }
 
@@ -334,11 +360,28 @@ mod tests {
   #[tokio::test]
   async fn preserves_validation_messages_and_rate_limit_retry_delay() {
     let (client, server) = mock_client(422, r#"{"code":422,"message":"duration is invalid","data":null}"#);
-    assert!(matches!(client.get_prediction("task-123").await, Err(WaveSpeedError::Rejected { code: 422, message }) if message == "duration is invalid"));
+    assert!(matches!(client.get_prediction("task-123").await, Err(WaveSpeedError::Rejected { http_status: 422, code: 422, message }) if message == "duration is invalid"));
     server.join().unwrap();
     let (client, server) = mock_client(429, r#"{"code":429,"message":"slow down","data":null}"#);
-    assert!(matches!(client.get_prediction("task-123").await, Err(WaveSpeedError::RateLimited { maybe_retry_after_secs: Some(42), message }) if message == "slow down"));
+    assert!(matches!(client.get_prediction("task-123").await, Err(WaveSpeedError::RateLimited { http_status: 429, maybe_retry_after_secs: Some(42), message }) if message == "slow down"));
     server.join().unwrap();
+  }
+
+  #[tokio::test]
+  async fn only_explicit_http_rejections_are_safe_to_discard() {
+    for status in [400, 401, 402, 403, 422, 429, 408, 500, 503] {
+      let body = format!("{{\"code\":{status},\"data\":null}}");
+      let (client, server) = mock_client(status, body.clone());
+      let error = client.generate_image(ImageModel::FluxSchnell, &GenerateImageRequest::default()).await.unwrap_err();
+      assert_eq!(error.is_definitive_submission_rejection(), matches!(status, 400 | 401 | 402 | 403 | 422 | 429));
+      server.join().unwrap();
+      let (client, server) = mock_client(200, body);
+      assert!(!client.generate_image(ImageModel::FluxSchnell, &GenerateImageRequest::default()).await.unwrap_err().is_definitive_submission_rejection());
+      server.join().unwrap();
+    }
+    let (client, server) = mock_client(401, "x".repeat(MAX_RESPONSE_BYTES + 1));
+    assert!(client.generate_image(ImageModel::FluxSchnell, &GenerateImageRequest::default()).await.unwrap_err().is_definitive_submission_rejection());
+    let _ = server.join();
   }
 
   #[tokio::test]

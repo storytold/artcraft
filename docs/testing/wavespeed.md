@@ -5,6 +5,14 @@ generation. Before release, manually verify signed-out image/video generation,
 restart during a download, Save As collisions, local deletion, account switching,
 cloud import, and Seedance modes on supported desktop platforms.
 
+The completion integration tests use Tauri's mock runtime, real temporary SQLite
+storage, and local HTTP servers for both signed-out local results and signed-in
+uploads. They exercise media validation, automatic downloads, verified-account
+binding, task completion, notification, and checkpoint cleanup. Polling tests
+assert persisted task states for completed, outputless, failed, missing, pending,
+transient-error, and rate-limited predictions. These fixtures do not prove live
+service behavior or replace desktop visual/contrast checks.
+
 Real ArtCraft server deduplication has not been verified by local fixtures. The
 ignored `live_artcraft_image_upload_idempotency_contract` test uploads a tiny PNG
 twice with one key and checks that both responses return the same media token.

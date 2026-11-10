@@ -65,7 +65,7 @@ async fn handle_wavespeed(request: &TauriGenerateImageRequest, api_key: &str, ap
   let maybe_prompt_token = create_prompt_record(&router_request, &app_env_configs.storyteller_host, storyteller_creds_manager).await;
   let context = ProviderImageContext { prompt: request.prompt.clone().unwrap_or_default(), model_id: serde_json::to_value(tauri_image_model_to_generation_model(tauri_model)).map_err(anyhow::Error::from)?.as_str().unwrap_or("unknown").to_owned(), local_only: !signed_in };
   let mut receipt = ProviderSubmission::begin(app_data_root, context, TaskType::ImageGeneration, app_env_configs.storyteller_host.to_api_hostname_and_scheme(), request.frontend_caller, request.frontend_subscriber_id.clone(), request.frontend_subscriber_payload.clone())?;
-  let response = generation_request.send_request(&RouterClient::WaveSpeed(client)).await?;
+  let response = receipt.handle_submission_result(app_data_root, generation_request.send_request(&RouterClient::WaveSpeed(client)).await)?;
   let GenerateImageResponse::WaveSpeed(payload) = response else {
     return Err(GenerateError::ResponseHadNoJobTokens);
   };

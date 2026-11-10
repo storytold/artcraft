@@ -27,7 +27,7 @@ use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
-use super::provider_transfer::{cache_downloads, clear_cached_downloads};
+use super::provider_transfer::{cache_downloads_with_client, clear_cached_downloads};
 use super::provider_upload_checkpoint::{resume_uploads, CompletionIdentity, UploadCheckpoint};
 
 const MAX_UPLOAD_RETRIES: u32 = 5;
@@ -35,9 +35,9 @@ const INITIAL_RETRY_DELAY_SECS: u64 = 10;
 
 #[cfg(test)]
 #[path = "provider_completion_tests.rs"]
-mod provider_completion_tests;
+pub(crate) mod provider_completion_tests;
 
-pub async fn try_resume_saved_completion(app_handle: &AppHandle, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task) -> Result<bool, Box<dyn std::error::Error>> {
+pub async fn try_resume_saved_completion(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task) -> Result<bool, Box<dyn std::error::Error>> {
   let path = checkpoint_path(app_data_root, task)?;
   let loaded = match UploadCheckpoint::load(&path).map_err(|error| {
     let invalid = error.is::<serde_json::Error>() || error.downcast_ref::<std::io::Error>().is_some_and(|error| error.kind() == std::io::ErrorKind::InvalidData);
@@ -60,7 +60,12 @@ pub async fn try_resume_saved_completion(app_handle: &AppHandle, app_env_configs
   Ok(true)
 }
 
-pub async fn handle_provider_complete(app_handle: &AppHandle, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task, urls: Vec<String>, media_class: TaskMediaFileClass) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_provider_complete(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task, urls: Vec<String>, media_class: TaskMediaFileClass) -> Result<(), Box<dyn std::error::Error>> {
+  let client = super::public_media_client::public_media_client()?;
+  handle_provider_complete_with_client(app_handle, app_env_configs, app_data_root, task_database, storyteller_creds_manager, task, urls, media_class, &client).await
+}
+
+async fn handle_provider_complete_with_client(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task, urls: Vec<String>, media_class: TaskMediaFileClass, client: &reqwest::Client) -> Result<(), Box<dyn std::error::Error>> {
   if urls.is_empty() {
     warn!("[ProviderComplete] Task {} completed but no downloadable media found in response", task.id.as_str());
     super::handle_provider_failure::handle_provider_failure(app_handle, task_database, task, "Provider completed without downloadable media").await;
@@ -69,7 +74,7 @@ pub async fn handle_provider_complete(app_handle: &AppHandle, app_env_configs: &
   let path = checkpoint_path(app_data_root, task)?;
   let identity = completion_identity(app_env_configs, task, media_class);
   UploadCheckpoint::prepare(&path, &identity, &urls)?;
-  let files = cache_downloads(&path, &urls).await?;
+  let files = cache_downloads_with_client(client, &path, &urls).await?;
   let maybe_context = if task.provider == GenerationProvider::WaveSpeed { task.provider_job_id.as_deref().map(|job_id| ProviderImageContext::load(app_data_root, job_id)).transpose()?.flatten() } else { None };
   let maybe_creds = storyteller_creds_manager.get_signed_in_credentials()?;
   if should_keep_locally(task.provider, media_class, maybe_context.as_ref(), maybe_creds.is_some()) {
@@ -185,7 +190,7 @@ fn keep_local_images(root: &AppDataRoot, task: &Task, files: &[PathBuf], maybe_c
     .collect()
 }
 
-fn cleanup_completion(app: &AppHandle, root: &AppDataRoot, task: &Task, path: &Path) {
+fn cleanup_completion(app: &AppHandle<impl tauri::Runtime>, root: &AppDataRoot, task: &Task, path: &Path) {
   if let Err(error) = clear_cached_downloads(path) {
     warn!("Could not remove cached provider media: {error}");
   }

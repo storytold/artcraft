@@ -10,7 +10,7 @@ use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskAr
 use tauri::AppHandle;
 use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
 
-pub async fn handle_provider_failure(app_handle: &AppHandle, task_database: &TaskDatabase, task: &Task, reason: &str) -> bool {
+pub async fn handle_provider_failure(app_handle: &AppHandle<impl tauri::Runtime>, task_database: &TaskDatabase, task: &Task, reason: &str) -> bool {
   info!("[ProviderPolling] Marking task {} as failed: {}", task.id.as_str(), reason);
 
   let update_result = update_task_status(UpdateTaskArgs { db: task_database.get_connection(), task_id: &task.id, status: TaskStatus::CompleteFailure }).await;

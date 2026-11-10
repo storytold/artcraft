@@ -286,9 +286,9 @@ mod tests {
         assert!(planned.request.maybe_aspect_ratio.is_none());
       }
     }
-    assert!(build_wavespeed_video_mode(GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p0, ..base_builder() }, VideoMode::Edit).is_err());
-    assert!(build_wavespeed_video_mode(GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p0Fast, ..base_builder() }, VideoMode::Reference).is_err());
-    assert!(build_wavespeed_video_mode(GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p0, reference_images: Some(ImageListRef::Urls(vec!["url".into(); 10])), ..base_builder() }, VideoMode::Reference).is_err());
+    assert!(matches!(build_wavespeed_video_mode(GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p0, ..base_builder() }, VideoMode::Edit), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "video", value })) if value == "Edit and extend require exactly one input video"));
+    assert!(matches!(build_wavespeed_video_mode(GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p0Fast, ..base_builder() }, VideoMode::Reference), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "mode", value })) if value == "WaveSpeed reference, edit, and extend modes currently require Seedance 2.0 without starting frames, characters, or negative prompts"));
+    assert!(matches!(build_wavespeed_video_mode(GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p0, reference_images: Some(ImageListRef::Urls(vec!["url".into(); 10])), ..base_builder() }, VideoMode::Reference), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "references", value })) if value == "Seedance 2.0 accepts up to 9 images, 3 videos, and 3 audio clips"));
   }
 
   const MODELS: &[RouterVideoModel] = &[RouterVideoModel::Kling16Pro, RouterVideoModel::Kling21Pro, RouterVideoModel::Kling21Master, RouterVideoModel::Kling2p5TurboPro, RouterVideoModel::Kling2p6Pro, RouterVideoModel::Kling3p0Standard, RouterVideoModel::Kling3p0Pro, RouterVideoModel::Seedance10Lite, RouterVideoModel::Seedance1p5Pro, RouterVideoModel::Seedance2p0, RouterVideoModel::Seedance2p0Fast, RouterVideoModel::Seedance2p5, RouterVideoModel::MinimaxH3, RouterVideoModel::Sora2, RouterVideoModel::Sora2Pro, RouterVideoModel::Veo3, RouterVideoModel::Veo3Fast, RouterVideoModel::Veo3p1, RouterVideoModel::Veo3p1Fast];
@@ -356,7 +356,7 @@ mod tests {
     for generate_audio in [None, Some(false), Some(true)] {
       let builder = GenerateVideoRequestBuilder { model: RouterVideoModel::Kling2p6Pro, start_frame: Some(ImageRef::Url("https://example.com/start.png".into())), end_frame: Some(ImageRef::Url("https://example.com/end.png".into())), generate_audio, ..base_builder() };
       if generate_audio == Some(true) {
-        assert!(builder.build2().is_err());
+        assert!(matches!(builder.build2(), Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "generate_audio", value })) if value == "WaveSpeed Kling 2.6 requires sound to be disabled when using an ending frame"));
       } else {
         assert_eq!(build(builder).request.maybe_sound, Some(false));
       }
@@ -377,8 +377,23 @@ mod tests {
 
   #[test]
   fn rejects_unsupported_video_parameters_before_submission() {
-    for builder in [GenerateVideoRequestBuilder { video_batch_count: Some(2), ..base_builder() }, GenerateVideoRequestBuilder { duration_seconds: Some(3), ..base_builder() }, GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p5, duration_seconds: Some(31), ..base_builder() }, GenerateVideoRequestBuilder { prompt: None, ..base_builder() }, GenerateVideoRequestBuilder { model: RouterVideoModel::Veo2, ..base_builder() }, GenerateVideoRequestBuilder { end_frame: Some(ImageRef::Url("https://example.com/end.png".into())), ..base_builder() }, GenerateVideoRequestBuilder { model: RouterVideoModel::Veo3p1, duration_seconds: Some(4), resolution: Some(RouterResolution::FourK), ..base_builder() }, GenerateVideoRequestBuilder { model: RouterVideoModel::MinimaxH3, resolution: Some(RouterResolution::SevenTwentyP), ..base_builder() }] {
-      assert!(builder.build2().is_err());
+    assert!(matches!(GenerateVideoRequestBuilder { prompt: None, ..base_builder() }.build2(), Err(ArtcraftRouterError::InvalidInput(message)) if message == "WaveSpeed requires a video prompt"));
+    assert!(matches!(GenerateVideoRequestBuilder { model: RouterVideoModel::Veo2, ..base_builder() }.build2(), Err(ArtcraftRouterError::UnsupportedModel(model)) if model == "Veo2"));
+    for (builder, expected_field, expected_value) in [
+      (GenerateVideoRequestBuilder { video_batch_count: Some(2), ..base_builder() }, "video_batch_count", "WaveSpeed video endpoints accept one video per request"),
+      (GenerateVideoRequestBuilder { duration_seconds: Some(3), ..base_builder() }, "duration_seconds", "Unsupported duration 3 for Seedance1p5Pro"),
+      (GenerateVideoRequestBuilder { model: RouterVideoModel::Seedance2p5, duration_seconds: Some(31), ..base_builder() }, "duration_seconds", "Unsupported duration 31 for Seedance2p5"),
+      (GenerateVideoRequestBuilder { end_frame: Some(ImageRef::Url("https://example.com/end.png".into())), ..base_builder() }, "end_frame", "This WaveSpeed endpoint does not support an ending frame without a supported starting frame"),
+      (GenerateVideoRequestBuilder { model: RouterVideoModel::Veo3p1, duration_seconds: Some(4), resolution: Some(RouterResolution::FourK), ..base_builder() }, "duration_seconds", "High resolution Veo videos require an 8 second duration"),
+      (GenerateVideoRequestBuilder { model: RouterVideoModel::MinimaxH3, resolution: Some(RouterResolution::SevenTwentyP), ..base_builder() }, "resolution", "720p"),
+    ] {
+      match builder.build2() {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field, value })) => {
+          assert_eq!(field, expected_field);
+          assert_eq!(value, expected_value);
+        },
+        _ => panic!("Expected rejection for {expected_field}={expected_value}"),
+      }
     }
   }
 
