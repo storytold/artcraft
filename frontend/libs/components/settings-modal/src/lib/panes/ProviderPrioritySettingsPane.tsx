@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useState, ReactNode } from "react";
 import {
   DndContext,
@@ -115,6 +116,8 @@ const getProviderIcon = (provider: Provider): ReactNode => {
 };
 
 export const ProviderPrioritySettingsPane = () => {
+  const { t: translateUI } = useTranslation();
+
   const [items, setItems] = useState<ProviderItem[]>([]);
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -188,11 +191,7 @@ export const ProviderPrioritySettingsPane = () => {
   return (
     <div className="space-y-4 pt-3">
       <div>
-        <p className="text-xs text-base-fg/70 mb-4">
-          Drag and drop to reorder model provider priority. Higher items will be
-          tried first. You can use this to control favorite services and
-          spending.
-        </p>
+        <p className="text-xs text-base-fg/70 mb-4">{translateUI("Drag and drop to reorder model provider priority. Higher items will be tried first. You can use this to control favorite services and spending.")}</p>
       </div>
 
       <DndContext
@@ -217,9 +216,7 @@ export const ProviderPrioritySettingsPane = () => {
 
       {isUpdating && (
         <div className="mt-4 flex animate-pulse items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/70">
-          <LoaderCircleIcon className="animate-spin" />
-          Updating...
-        </div>
+          <LoaderCircleIcon className="animate-spin" />{translateUI("Updating...")}</div>
       )}
     </div>
   );

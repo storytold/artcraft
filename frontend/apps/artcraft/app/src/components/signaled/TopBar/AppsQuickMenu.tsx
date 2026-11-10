@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import {
@@ -10,12 +11,14 @@ import {
 } from "~/config/appMenu";
 
 export const AppsQuickMenu = () => {
+  const { t: translateUI } = useTranslation();
+
   const generateApps = useGenerateApps();
   const editApps = useEditApps();
   return (
     <div className="grid w-[680px] grid-cols-2 gap-3">
-      <AppsQuickMenuSection title="Create" apps={generateApps} />
-      <AppsQuickMenuSection title="Edit" apps={editApps} />
+      <AppsQuickMenuSection title={translateUI("Create")} apps={generateApps} />
+      <AppsQuickMenuSection title={translateUI("Edit")} apps={editApps} />
     </div>
   );
 };
@@ -26,7 +29,9 @@ const AppsQuickMenuSection = ({
 }: {
   title: string;
   apps: FullAppItem[];
-}) => (
+}) => {
+  const { t: translateUI } = useTranslation();
+  return (
   <div>
     <h3 className="hud-label mb-2 px-2 text-base-fg/50">{title}</h3>
     <div className="space-y-0.5">
@@ -56,7 +61,7 @@ const AppsQuickMenuSection = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <div className="truncate text-[13px] font-medium">
-                  {app.label}
+                  {translateUI(app.label)}
                 </div>
                 {app.badge && (
                   <span
@@ -65,12 +70,12 @@ const AppsQuickMenuSection = ({
                       getBadgeStyles(app.badge),
                     )}
                   >
-                    {app.badge}
+                    {translateUI(app.badge)}
                   </span>
                 )}
               </div>
               <div className="truncate text-[11px] text-base-fg/60">
-                {app.description}
+                {translateUI(app.description)}
               </div>
             </div>
           </button>
@@ -78,4 +83,5 @@ const AppsQuickMenuSection = ({
       })}
     </div>
   </div>
-);
+  );
+};

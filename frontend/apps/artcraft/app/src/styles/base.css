@@ -92,6 +92,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Taiwan UI uses the operating system's Traditional Chinese forms. Keep Han strokes
+   out of tiny, widely tracked Latin HUD labels; no downloaded or bundled font needed. */
+html:lang(zh-TW) body,
+html:lang(zh-TW) h1,
+html:lang(zh-TW) h2,
+html:lang(zh-TW) h3,
+html:lang(zh-TW) h4 {
+  font-family: "Segoe UI", "Microsoft JhengHei UI", "Microsoft JhengHei",
+    "PingFang TC", "Noto Sans CJK TC", system-ui, sans-serif;
+  letter-spacing: normal;
+  -webkit-font-smoothing: auto;
+}
+
+html:lang(zh-TW) .hud-label,
+html:lang(zh-TW) .font-mono {
+  font-family: "Geist Mono", "Microsoft JhengHei UI", "Microsoft JhengHei",
+    "PingFang TC", "Noto Sans CJK TC", monospace;
+  letter-spacing: 0.025em;
+  line-height: 1.5;
+}
+
+html:lang(zh-TW) .hud-label {
+  font-size: 0.8125rem;
+}
+
+html:lang(zh-TW) .text-xs,
+html:lang(zh-TW) [class~="text-[9px]"],
+html:lang(zh-TW) [class~="text-[10px]"],
+html:lang(zh-TW) [class~="text-[11px]"] {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 ::selection {
   background: #2d81ff;
   color: #ffffff;

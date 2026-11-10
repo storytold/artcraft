@@ -1,9 +1,12 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useState, useEffect } from "react";
 import { GetOpenAIApiKey, SetOpenAIApiKey } from "@storyteller/tauri-api";
 import { Input } from "@storyteller/ui-input";
 
 
 export const OpenAIApiKeyBlock = () => {
+  const { t: translateUI } = useTranslation();
+
   const [openAIApiKey, setOpenAIApiKey] = useState<string | undefined>(
     undefined
   );
@@ -38,11 +41,11 @@ export const OpenAIApiKeyBlock = () => {
 
   return (
     <div className="flex justify-between items-center">
-      <span>Open AI API Key:</span>
+      <span>{translateUI("Open AI API Key:")}</span>
       <Input
         value={openAIApiKey}
         onChange={(e) => syncOpenAIApiKey(e.target.value)}
-        placeholder="Enter Open AI API key"
+        placeholder={translateUI("Enter Open AI API key")}
       />
 
       {/*<Button

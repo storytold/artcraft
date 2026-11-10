@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import {
@@ -25,6 +26,8 @@ const FILENAME_OPTIONS = [
 ];
 
 export const DownloadsSettingsPane = () => {
+  const { t: translateUI } = useTranslation();
+
   const [preferences, setPreferences] = useState<
     AppPreferencesPayload | undefined
   >(undefined);
@@ -147,11 +150,8 @@ export const DownloadsSettingsPane = () => {
     <div className="space-y-4 pt-3 text-base-fg">
       {settingsError && <p role="alert" className="text-red-400">{settingsError}</p>}
       <div className="space-y-2">
-        <Label htmlFor="download-path">Default Download Directory</Label>
-        <p className="text-xs opacity-70">
-          This is where downloads are placed after downloading. The current path
-          is:
-        </p>
+        <Label htmlFor="download-path">{translateUI("Default Download Directory")}</Label>
+        <p className="text-xs opacity-70">{translateUI("This is where downloads are placed after downloading. The current path is:")}</p>
         <div className="mt-1 border border-ui-panel-border bg-ui-sunken px-3 py-2 text-base-fg">
           <pre className="whitespace-pre-wrap break-all font-mono text-xs">
             {currentDownloadLabel}
@@ -160,24 +160,16 @@ export const DownloadsSettingsPane = () => {
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" onClick={openDirectoryPicker}>
-          <FolderIcon />
-          Choose Directory
-        </Button>
+          <FolderIcon />{translateUI("Choose Directory")}</Button>
         <Button variant="destructive" onClick={clearDirectory}>
-          <RotateCcwIcon />
-          Use Default
-        </Button>
+          <RotateCcwIcon />{translateUI("Use Default")}</Button>
         <Button variant="secondary" onClick={showDirectory}>
-          <SearchIcon />
-          Show Directory
-        </Button>
+          <SearchIcon />{translateUI("Show Directory")}</Button>
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <Label htmlFor="auto-download">Auto Download</Label>
-          <p className="text-xs opacity-70">
-            Downloads to your system the minute generations complete
-          </p>
+          <Label htmlFor="auto-download">{translateUI("Auto Download")}</Label>
+          <p className="text-xs opacity-70">{translateUI("Downloads to your system the minute generations complete")}</p>
         </div>
         <Switch
           id="auto-download"
@@ -189,15 +181,8 @@ export const DownloadsSettingsPane = () => {
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <Label htmlFor="ask-location-before-download">
-            Ask location before download
-          </Label>
-          <p className="text-xs opacity-70">
-            When on, a system file picker appears every time you download from
-            the lightbox or anywhere in the app, letting you choose the save
-            location for that file. When off, downloads go straight to the
-            default download directory above.
-          </p>
+          <Label htmlFor="ask-location-before-download">{translateUI("Ask location before download")}</Label>
+          <p className="text-xs opacity-70">{translateUI("When on, a system file picker appears every time you download from the lightbox or anywhere in the app, letting you choose the save location for that file. When off, downloads go straight to the default download directory above.")}</p>
         </div>
         <Switch
           id="ask-location-before-download"
@@ -207,14 +192,14 @@ export const DownloadsSettingsPane = () => {
         />
       </div>
       <fieldset disabled={!preferences || saving} className="flex flex-col gap-2 border-0 p-0">
-        <Label htmlFor="download-filename-mode">Preferred download naming scheme</Label>
+        <Label htmlFor="download-filename-mode">{translateUI("Preferred download naming scheme")}</Label>
         <p className="text-xs opacity-70">
-          {"The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files."}
+          {translateUI("The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files.")}
         </p>
         <div className="max-w-xs">
           <Select
             id="download-filename-mode"
-            options={FILENAME_OPTIONS}
+            options={FILENAME_OPTIONS.map((option) => ({ ...option, label: translateUI(option.label) }))}
             value={filenameMode}
             onChange={(value) => {
               setFormatError(null);
@@ -228,7 +213,7 @@ export const DownloadsSettingsPane = () => {
         </div>
         {filenameMode === "custom" && (
           <>
-            <Label htmlFor="download-filename-format">Custom format</Label>
+            <Label htmlFor="download-filename-format">{translateUI("Custom format")}</Label>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 id="download-filename-format"
@@ -239,12 +224,12 @@ export const DownloadsSettingsPane = () => {
                 spellCheck={false}
                 className="min-w-0 flex-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-xs outline-none focus:border-base-fg/40"
               />
-              <Button variant="secondary" onClick={saveCustomFormat}>Save format</Button>
+              <Button variant="secondary" onClick={saveCustomFormat}>{translateUI("Save format")}</Button>
             </div>
             <p className="text-xs opacity-70">
               {"Tokens: {model}, {date}, {YYYY}, {YY}, {MM}, {DD}, {HH}, {mm}, {SS}, {batch_index}. The file extension is added automatically. Batch numbers are added automatically if omitted."}
             </p>
-            <p className="text-xs opacity-70">Changes apply after you click Save format.</p>
+            <p className="text-xs opacity-70">{translateUI("Changes apply after you click Save format.")}</p>
           </>
         )}
         {formatError && <p role="alert" className="text-xs text-red-400">{formatError}</p>}

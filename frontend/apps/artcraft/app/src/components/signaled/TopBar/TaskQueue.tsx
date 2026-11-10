@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { findDesktopModel } from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
@@ -149,6 +150,8 @@ const PromptLine = ({
 };
 
 const CopyPromptButton = ({ prompt }: { prompt: string }) => {
+  const { t: translateUI } = useTranslation();
+
   const [copied, setCopied] = useState(false);
   return (
     <Tooltip
@@ -161,7 +164,7 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
     >
       <button
         className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
-        aria-label="Copy prompt"
+        aria-label={translateUI("Copy prompt")}
         onClick={(e) => {
           e.stopPropagation();
           navigator.clipboard.writeText(prompt);
@@ -185,6 +188,8 @@ const InProgressCard = ({
   task: InProgressTask;
   onDismiss?: () => void;
 }) => {
+  const { t: translateUI } = useTranslation();
+
   const progressPercent = Math.max(0, Math.min(100, Math.round(task.progress)));
   const isAlmostDone = task.progress >= 95;
   const timeLabel = isAlmostDone
@@ -199,7 +204,7 @@ const InProgressCard = ({
     <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden">
       <img
         src={task.refImageUrls![0]}
-        alt="Reference"
+        alt={translateUI("Reference")}
         className="h-full w-full object-cover opacity-50"
         onError={(e) => {
           e.currentTarget.style.display = "none";
@@ -237,7 +242,7 @@ const InProgressCard = ({
               {task.title}
               {isSeedance2 && (
                 <Tooltip
-                  content="Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages."
+                  content={translateUI("Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.")}
                   position="top"
                   strategy="fixed"
                   className="w-[200px] text-wrap bg-yellow-400/60"
@@ -279,7 +284,7 @@ const InProgressCard = ({
           {onDismiss && (
             <button
               className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
-              aria-label="Dismiss"
+              aria-label={translateUI("Dismiss")}
               onClick={(e) => {
                 e.stopPropagation();
                 onDismiss();
@@ -303,6 +308,8 @@ const CompletedCard = ({
   onClick?: () => void;
   onDismiss?: () => void;
 }) => {
+  const { t: translateUI } = useTranslation();
+
   return (
     <div
       className="flex cursor-pointer items-center gap-2.5 p-2 transition-colors hover:bg-ui-controls/40"
@@ -327,9 +334,7 @@ const CompletedCard = ({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
-            Done
-          </div>
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">{translateUI("Done")}</div>
         )}
       </div>
       <div className="min-w-0 flex-1">
@@ -353,7 +358,7 @@ const CompletedCard = ({
         {onDismiss && (
           <button
             className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
-            aria-label="Dismiss"
+            aria-label={translateUI("Dismiss")}
             onClick={(e) => {
               e.stopPropagation();
               onDismiss();
@@ -395,6 +400,8 @@ const FailedCard = ({
   task: FailedTask;
   onDismiss?: () => void;
 }) => {
+  const { t: translateUI } = useTranslation();
+
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
   const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
@@ -402,7 +409,7 @@ const FailedCard = ({
     <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden">
       <img
         src={task.refImageUrls![0]}
-        alt="Reference"
+        alt={translateUI("Reference")}
         className="h-full w-full object-cover opacity-50"
         onError={(e) => {
           e.currentTarget.style.display = "none";
@@ -491,7 +498,7 @@ const FailedCard = ({
           {onDismiss && (
             <button
               className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
-              aria-label="Dismiss"
+              aria-label={translateUI("Dismiss")}
               onClick={(e) => {
                 e.stopPropagation();
                 onDismiss();
@@ -507,6 +514,8 @@ const FailedCard = ({
 };
 
 export const TaskQueue = () => {
+  const { t: translateUI } = useTranslation();
+
   const [isModalOpen, setModalOpen] = useState(false);
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
   const [completed, setCompleted] = useState<CompletedTask[]>([]);
@@ -548,9 +557,7 @@ export const TaskQueue = () => {
       isOpen: true,
       title: "Clear completed tasks?",
       message: (
-        <span className="text-sm text-white/80">
-          This will remove all completed tasks from the task queue.
-        </span>
+        <span className="text-sm text-white/80">{translateUI("This will remove all completed tasks from the task queue.")}</span>
       ),
       primaryActionText: "Clear completed",
       primaryActionIcon: BrushIcon,
@@ -568,9 +575,7 @@ export const TaskQueue = () => {
       isOpen: true,
       title: "Clear stale tasks?",
       message: (
-        <span className="text-sm text-white/80">
-          This will remove all stale/stuck in-progress tasks from the queue.
-        </span>
+        <span className="text-sm text-white/80">{translateUI("This will remove all stale/stuck in-progress tasks from the queue.")}</span>
       ),
       primaryActionText: "Clear stale",
       primaryActionIcon: Trash2Icon,
@@ -587,9 +592,7 @@ export const TaskQueue = () => {
       isOpen: true,
       title: "Clear failed tasks?",
       message: (
-        <span className="text-sm text-white/80">
-          This will remove all failed/cancelled tasks from the queue.
-        </span>
+        <span className="text-sm text-white/80">{translateUI("This will remove all failed/cancelled tasks from the queue.")}</span>
       ),
       primaryActionText: "Clear failed",
       primaryActionIcon: Trash2Icon,
@@ -606,10 +609,7 @@ export const TaskQueue = () => {
       isOpen: true,
       title: "Remove all tasks?",
       message: (
-        <span className="text-sm text-white/80">
-          This will remove ALL tasks (completed and in-progress) from the queue.
-          This cannot be undone.
-        </span>
+        <span className="text-sm text-white/80">{translateUI("This will remove ALL tasks (completed and in-progress) from the queue. This cannot be undone.")}</span>
       ),
       primaryActionText: "Nuke all",
       primaryActionIcon: BombIcon,
@@ -1005,7 +1005,7 @@ export const TaskQueue = () => {
 
   return (
     <>
-      <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
+      <Tooltip content={translateUI("Task Queue")} position="bottom" closeOnClick={true}>
         <div className="relative">
           {badgeCount > 0 && (
             <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center bg-white px-1 font-mono text-[10px] font-semibold text-black ring-2 ring-[#0b0b0c]">
@@ -1034,16 +1034,13 @@ export const TaskQueue = () => {
                     {hasNothing ? (
                       <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                         <div className="flex items-center gap-2.5 text-sm opacity-60">
-                          <ListChecksIcon /> No tasks yet
-                        </div>
+                          <ListChecksIcon />{translateUI(" No tasks yet")}</div>
                       </div>
                     ) : (
                       <div>
                         {inProgress.length > 0 && (
                           <div className="mb-4">
-                            <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
-                              In Progress
-                            </div>
+                            <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">{translateUI("In Progress")}</div>
                             {inProgress.map((t) => (
                               <InProgressCard
                                 key={t.id}
@@ -1060,18 +1057,14 @@ export const TaskQueue = () => {
                         {failed.length > 0 && (
                           <div className="mb-4">
                             <div className="mb-1 flex items-center justify-between px-1">
-                              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">
-                                Failed
-                              </div>
+                              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">{translateUI("Failed")}</div>
                               <button
                                 className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
                                 onClick={() => handleClearFailed()}
                               >
                                 <XIcon
                                   
-                                  className="mr-1" />
-                                Clear failed
-                              </button>
+                                  className="mr-1" />{translateUI("Clear failed")}</button>
                             </div>
                             {failed.map((t) => (
                               <FailedCard
@@ -1085,18 +1078,14 @@ export const TaskQueue = () => {
                         {completed.length > 0 && (
                           <div>
                             <div className="mb-1 flex items-center justify-between px-1">
-                              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
-                                Completed
-                              </div>
+                              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">{translateUI("Completed")}</div>
                               <button
                                 className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
                                 onClick={() => handleClearCompleted()}
                               >
                                 <XIcon
                                   
-                                  className="mr-1" />
-                                Clear completed
-                              </button>
+                                  className="mr-1" />{translateUI("Clear completed")}</button>
                             </div>
                             {completed.map((t) => (
                               <CompletedCard
@@ -1145,9 +1134,7 @@ export const TaskQueue = () => {
                           setModalOpen(true);
                           close();
                         }}
-                      >
-                        Show all
-                      </Button>
+                      >{translateUI("Show all")}</Button>
                     </div>
                   </div>
                 </div>
@@ -1165,36 +1152,28 @@ export const TaskQueue = () => {
         <div className="flex h-full flex-col">
           <div className="border-b border-ui-panel-border bg-ui-panel">
             <div className="flex items-center justify-between p-3">
-              <h2 className="text-lg font-semibold">Task Queue</h2>
+              <h2 className="text-lg font-semibold">{translateUI("Task Queue")}</h2>
               <div className="flex items-center gap-2">
                 <Button
                   className="flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
-                  <BrushIcon  className="mr-1.5" />
-                  Clear completed
-                </Button>
+                  <BrushIcon  className="mr-1.5" />{translateUI("Clear completed")}</Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
-                  Clear stale
-                </Button>
+                  <Trash2Icon  className="mr-1.5" />{translateUI("Clear stale")}</Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
-                  Clear failed
-                </Button>
+                  <Trash2Icon  className="mr-1.5" />{translateUI("Clear failed")}</Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
-                  <BombIcon  className="mr-1.5" />
-                  Remove all
-                </Button>
+                  <BombIcon  className="mr-1.5" />{translateUI("Remove all")}</Button>
                 <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />
                 <CloseButton onClick={() => setModalOpen(false)} />
               </div>
@@ -1204,16 +1183,13 @@ export const TaskQueue = () => {
             {hasNothing ? (
               <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                 <div className="flex items-center gap-2.5 text-sm opacity-60">
-                  <ListChecksIcon /> No tasks yet
-                </div>
+                  <ListChecksIcon />{translateUI(" No tasks yet")}</div>
               </div>
             ) : (
               <div>
                 {inProgress.length > 0 && (
                   <div className="mb-4">
-                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
-                      In Progress
-                    </div>
+                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">{translateUI("In Progress")}</div>
                     {inProgress.map((t) => (
                       <InProgressCard
                         key={t.id}
@@ -1227,9 +1203,7 @@ export const TaskQueue = () => {
                 )}
                 {failed.length > 0 && (
                   <div className="mb-4">
-                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">
-                      Failed
-                    </div>
+                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">{translateUI("Failed")}</div>
                     {failed.map((t) => (
                       <FailedCard
                         key={t.id}
@@ -1241,9 +1215,7 @@ export const TaskQueue = () => {
                 )}
                 {completed.length > 0 && (
                   <div>
-                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
-                      Completed
-                    </div>
+                    <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">{translateUI("Completed")}</div>
                     {completed.map((t) => (
                       <CompletedCard
                         key={t.id}
