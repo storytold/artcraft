@@ -253,7 +253,7 @@ async fn download_file(
   let filename = format!("fal_{}_{}.{}", generate_random_uuid(), index, extension);
   let download_path = tempdir.join(filename);
 
-  tokio::fs::write(&download_path, &bytes).await?;
+  tokio::fs::write(&download_path, bytes).await?;
 
   Ok(download_path)
 }

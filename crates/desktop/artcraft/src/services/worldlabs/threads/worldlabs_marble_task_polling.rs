@@ -376,7 +376,7 @@ async fn download_spz(
 
   info!("Writing to path: {:?}", download_path);
 
-  tokio::fs::write(&download_path, &image_bytes).await?;
+  tokio::fs::write(&download_path, image_bytes).await?;
 
   Ok(download_path)
 }

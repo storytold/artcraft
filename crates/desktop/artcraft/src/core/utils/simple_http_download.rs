@@ -20,7 +20,7 @@ pub async fn simple_http_download<P: AsRef<Path>>(url: &Url, download_path: P) -
   //let response : Response = reqwest::get(url).await?;
   let bytes = response.bytes().await?;
 
-  tokio::fs::write(download_path, &bytes).await?;
+  tokio::fs::write(download_path, bytes).await?;
 
   Ok(())
 }
