@@ -74,8 +74,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Title</label>
+          <label htmlFor="storyboard-title" className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Title</label>
           <input
+            id="storyboard-title"
             type="text"
             value={board.title}
             onChange={(e) => onUpdate({ title: e.target.value })}
@@ -85,8 +86,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
+          <label htmlFor="storyboard-dialogue" className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
           <textarea
+            id="storyboard-dialogue"
             value={board.dialogue}
             onChange={(e) => onUpdate({ dialogue: e.target.value })}
             placeholder="Character dialogue..."
@@ -96,8 +98,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
+          <label htmlFor="storyboard-action" className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
           <textarea
+            id="storyboard-action"
             value={board.action}
             onChange={(e) => onUpdate({ action: e.target.value })}
             placeholder="On-screen action..."
@@ -107,8 +110,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
+          <label htmlFor="storyboard-notes" className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
           <textarea
+            id="storyboard-notes"
             value={board.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}
             placeholder="Director notes..."
@@ -118,8 +122,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Duration (seconds)</label>
+          <label htmlFor="storyboard-duration" className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Duration (seconds)</label>
           <input
+            id="storyboard-duration"
             type="number"
             min={0}
             step={0.5}
@@ -354,6 +359,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
 
         {/* Color picker */}
         <label className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-[3px] border border-white/15 hover:border-white/30" title="Stroke color">
+          <span className="sr-only">Stroke color</span>
           <span
             className="h-4 w-4 rounded-sm border border-white/20"
             style={{ background: color }}
