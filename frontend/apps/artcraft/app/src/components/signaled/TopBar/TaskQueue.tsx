@@ -512,8 +512,12 @@ export const TaskQueue = () => {
   const [completed, setCompleted] = useState<CompletedTask[]>([]);
   const [failed, setFailed] = useState<FailedTask[]>([]);
   const [lastReadAt, setLastReadAt] = useState<number>(() => {
-    const stored = localStorage.getItem("taskQueueLastReadAt");
-    return stored ? parseInt(stored, 10) : 0;
+    try {
+      const stored = localStorage.getItem("taskQueueLastReadAt");
+      return stored ? parseInt(stored, 10) : 0;
+    } catch {
+      return 0;
+    }
   });
 
   // remove unread state; unread tracking handled via IDs below
@@ -933,7 +937,11 @@ export const TaskQueue = () => {
     if (open) {
       const now = Date.now();
       setLastReadAt(now);
-      localStorage.setItem("taskQueueLastReadAt", String(now));
+      try {
+        localStorage.setItem("taskQueueLastReadAt", String(now));
+      } catch {
+        // ignore storage access errors
+      }
       setUnreadCompletedIds([]);
     }
   };
