@@ -1,6 +1,6 @@
 {
   "name": "artcraft_edit_image_angle",
-  "description": "Manipulate camera angle of an image using Flux 2 LoRA or Qwen.",
+  "description": "Manipulate camera angle of an image using Flux 2 LoRA.",
   "inputSchema": {
     "properties": {
       "confirm": {

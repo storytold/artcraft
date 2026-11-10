@@ -139,7 +139,7 @@ If you get an error about missing credentials, double-check Step 2.
 
 ## Safety Gates
 
-Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true`. Important nuance: the server can only check that `confirm` arrived as `true` — **it cannot verify a human approved.** Approval is the client's job (MCP clients typically ask first); automation scripts in `tools/` send `confirm` on your behalf, so treat running them as the approval. Generation and editing tools also accept an `idempotency_token` — if you omit it the server generates a fresh one per call, so for safe retries you must supply a token yourself and reuse the same token on each retry; otherwise a retry can start a second paid job. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories.
+Paid, destructive, privacy-changing, and local-file tools require the caller to pass `confirm: true`. Important nuance: the server can only check that `confirm` arrived as `true` — **it cannot verify a human approved.** Approval is the client's job (MCP clients typically ask first); automation scripts in `tools/` send `confirm` on your behalf, so treat running them as the approval. Generation and editing tools also accept an `idempotency_token` — if you omit it the server generates a fresh one per call, so for safe retries you must supply a token yourself and reuse the same token on each retry; otherwise a retry can start a second paid job. Uploads are restricted to allow-listed directories, file types, and size caps; downloads are confined to approved directories. One exception to the confirm gate: `artcraft_download_media_file` writes a *new* file without `confirm` — it is required only when the target path already exists and would be overwritten.
 
 ## Available Tools (61)
 
@@ -258,7 +258,7 @@ Paid, destructive, privacy-changing, and local-file tools require the caller to 
 
 | Model                                           | Best For                                              |
 |-------------------------------------------------|-------------------------------------------------------|
-| `flux_1_dev`                                    | General-purpose, prompt adherence (default)           |
+| `flux_1_dev`                                    | General-purpose, prompt adherence (suggested)         |
 | `flux_1_schnell`                                | Fast generation                                       |
 | `flux_pro_1p1` / `flux_pro_1p1_ultra`           | Cinematic, commercial quality                         |
 | `flux_2_lora_angles`                            | Camera angle manipulation                             |
@@ -274,7 +274,7 @@ Paid, destructive, privacy-changing, and local-file tools require the caller to 
 
 | Model                                           | Best For                             |
 |-------------------------------------------------|--------------------------------------|
-| `seedance_2p0`                                  | General-purpose video (default)      |
+| `seedance_2p0`                                  | General-purpose video (suggested)    |
 | `seedance_2p0_fast`                             | Quick prototyping                    |
 | `seedance_2p0_bpu` / `seedance_2p0_bpu_fast`    | BytePlus ultra quality final renders |
 | `kling_3p0_standard` / `kling_3p0_pro`          | Complex motion, high fidelity        |

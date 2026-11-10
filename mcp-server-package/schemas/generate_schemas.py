@@ -32,6 +32,10 @@ def main():
     finally:
         client.close()
 
+    if not tools:
+        print("tools/list returned no tools; refusing to delete existing schemas", file=sys.stderr)
+        sys.exit(1)
+
     names = set()
     written = 0
     for tool in tools:
@@ -50,7 +54,9 @@ def main():
 
     removed = 0
     for fname in os.listdir(schema_dir):
-        if fname.endswith(".json") and fname[:-5] not in names:
+        # Only files this script owns (artcraft_*.json) may be removed —
+        # leave any hand-placed JSON alone.
+        if fname.startswith("artcraft_") and fname.endswith(".json") and fname[:-5] not in names:
             os.remove(os.path.join(schema_dir, fname))
             print(f"removed stale schema: {fname}")
             removed += 1

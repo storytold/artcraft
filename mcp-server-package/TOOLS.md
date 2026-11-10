@@ -7,7 +7,7 @@ the shared client `artcraft_mcp_client.py`. They locate the binary via
 Paid actions and local file uploads are confirmed by running the script —
 the client sends `confirm: true` on your behalf.
 
-Every script accepts `-h/--help`. Run from any cwd with `PYTHONUTF8=1`.
+Every script accepts `-h/--help`. Run the examples from `mcp-server-package/` with `PYTHONUTF8=1`.
 
 ---
 
@@ -134,13 +134,17 @@ PYTHONUTF8=1 python tools/artcraft_audio_weaver.py \
 Import it for custom automation:
 
 ```python
+import time
 from artcraft_mcp_client import McpClient, extract_token
 
 with McpClient() as client:
     token = client.upload("cover.png", kind="image")          # confirm sent
     text  = client.call_text("artcraft_generate_image",
                              {"model": "flux_1_dev", "prompt": "a fox"},
-                             confirm=True, idempotency_token="run-001")
+                             confirm=True,
+                             # unique per logical job — reuse the same value
+                             # ONLY when retrying this exact job
+                             idempotency_token=f"fox-{int(time.time())}")
     job   = extract_token("job", text)
     client.wait_for_jobs([job])
 ```

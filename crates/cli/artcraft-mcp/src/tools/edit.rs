@@ -19,13 +19,13 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::client::ArtCraftClient;
 use crate::types::{Tool, ToolContent};
-use crate::tools::safety::{audit, idempotency_token, rate_limit, require_confirm};
+use crate::tools::safety::{audit, bounded_f64, idempotency_token, rate_limit, require_confirm};
 
 pub fn tools() -> Vec<Tool> {
   vec![
     Tool {
       name: "artcraft_edit_image".to_string(),
-      description: "Re-edit an image using Flux Pro Kontext Max, Gemini 2.5 Flash, GPT-Image 1, Qwen, or SeedEdit 3.".to_string(),
+      description: "Re-edit an image using Flux Pro Kontext Max, Gemini 2.5 Flash, or GPT-Image 1.".to_string(),
       input_schema: Some(json!({
           "type": "object",
           "properties": {
@@ -69,7 +69,7 @@ pub fn tools() -> Vec<Tool> {
     },
     Tool {
       name: "artcraft_edit_image_angle".to_string(),
-      description: "Manipulate camera angle of an image using Flux 2 LoRA or Qwen.".to_string(),
+      description: "Manipulate camera angle of an image using Flux 2 LoRA.".to_string(),
       input_schema: Some(json!({
           "type": "object",
           "properties": {
@@ -174,7 +174,7 @@ pub async fn edit_image_angle(arguments: Value, client: &ArtCraftClient) -> Resu
   let image_media_token = MediaFileToken::new_from_str(image_token);
   let idem = idempotency_token(&arguments)?;
 
-  let request = Flux2LoraEditImageAngleRequest { uuid_idempotency_token: idem, image_media_token, horizontal_angle: arguments["horizontal_angle"].as_f64(), vertical_angle: arguments["vertical_angle"].as_f64(), zoom: arguments["zoom"].as_f64(), num_images: Some(Flux2LoraEditImageAngleNumImages::One), image_size: Some(Flux2LoraEditImageAngleImageSize::Square) };
+  let request = Flux2LoraEditImageAngleRequest { uuid_idempotency_token: idem, image_media_token, horizontal_angle: bounded_f64(&arguments, "horizontal_angle", -180.0, 180.0)?, vertical_angle: bounded_f64(&arguments, "vertical_angle", -180.0, 180.0)?, zoom: bounded_f64(&arguments, "zoom", 0.0, 10.0)?, num_images: Some(Flux2LoraEditImageAngleNumImages::One), image_size: Some(Flux2LoraEditImageAngleImageSize::Square) };
 
   let response = flux_2_lora_edit_image_angle(&client.api_host, client.creds_ref(), request).await?;
 

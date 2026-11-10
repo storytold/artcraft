@@ -36,7 +36,7 @@ def main():
 
     try:
         client = McpClient(bin_path, client_name="artcraft-healthcheck")
-    except McpError as e:
+    except (McpError, OSError) as e:
         print(f"[FAIL] initialize: {e}")
         sys.exit(1)
 

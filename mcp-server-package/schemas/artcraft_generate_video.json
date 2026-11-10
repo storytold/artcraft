@@ -43,6 +43,14 @@
         "description": "Negative prompt (max 8000 chars)",
         "type": "string"
       },
+      "output_format": {
+        "description": "Container format",
+        "enum": [
+          "mp4",
+          "mov"
+        ],
+        "type": "string"
+      },
       "prompt": {
         "description": "Text prompt (max 8000 chars)",
         "type": "string"

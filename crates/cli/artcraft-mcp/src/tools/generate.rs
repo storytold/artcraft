@@ -106,6 +106,7 @@ pub fn tools() -> Vec<Tool> {
               "aspect_ratio": { "type": "string", "description": "Aspect ratio: 'wide_16_9', 'tall_9_16', 'square', etc." },
               "resolution": { "type": "string", "description": "Resolution preset ('one_k'-'four_k', '480p'-'1080p')" },
               "bitrate": { "type": "string", "enum": ["normal", "high"], "description": "Bitrate quality" },
+              "output_format": { "type": "string", "enum": ["mp4", "mov"], "description": "Container format" },
               "quality": { "type": "string", "description": "Quality: 'low', 'medium', 'high', 'xhigh', 'max', 'auto'" },
               "duration_seconds": { "type": "integer", "description": "Duration in seconds (1-600)" },
               "video_batch_count": { "type": "integer", "description": "Number of videos (1-8, default 1)" },
@@ -594,7 +595,7 @@ pub fn parse_mesh_quality(q: Option<&str>) -> Result<Option<CommonMeshQuality>> 
 }
 
 fn parse_mesh_quality_named(args: &Value, name: &str) -> Result<Option<CommonMeshQuality>> {
-  parse_mesh_quality(args.get(name).and_then(|v| v.as_str())).map_err(|e| anyhow!("{}: {}", name, e))
+  parse_mesh_quality(bounded_str(args, name, 64)?).map_err(|e| anyhow!("{}: {}", name, e))
 }
 
 pub fn parse_polygon_type(pt: Option<&str>) -> Result<Option<CommonPolygonType>> {

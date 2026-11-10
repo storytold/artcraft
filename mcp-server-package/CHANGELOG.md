@@ -76,8 +76,8 @@ Server version is `0.1.0` (`crates/cli/artcraft-mcp/Cargo.toml`); MCP protocol
   - Added retopology and PBR material synthesis controls (`enable_pbr`, `enable_texture`, `texture_quality`, `target_face_count`).
   - Added WorldLabs Marble 1.0 & 1.1 support with 360° panoramic mode (`is_panoramic`).
 - **Extended Model Coverage**:
-  - Video: MiniMax H3 / Turbo / Ultra, Seedance 2.5 / Fast / Ultra, Wan 3.0 / Prime, Kling 3.0 Pro, Sora 2, Beeble SwitchX.
-  - Image: Flux 3 / Pro, Seedream 5 Pro / Ultra, GPT Image 2.5 (Flare / Sunburst), Midjourney 8.
+  - Video: MiniMax H3 / Turbo / Ultra (`minimax_h3*`), Seedance 2.5 / Fast / Ultra (`seedance_2p5*`, `seedance_2p0_fast`), Kling 3.0 Pro, Sora 2, plus Beeble SwitchX for `artcraft_edit_video`.
+  - Image: Seedream 5 Pro / Ultra (`seedream_5p0_pro`, `seedream_5p0_pro_u`), GPT Image 1.5 / 2, Midjourney 8. (`flux_3` is a video model; `gpt_image_2p5_*` variants exist upstream but are not exposed by the MCP image parser.)
 - **Updated Schemas & Tool Definitions**:
   - 61 complete JSON-RPC tool schemas in `schemas/`.
   - Updated AI agent guidance in `skills/artcraft-mcp/SKILL.md` and reference tables.

@@ -121,7 +121,11 @@ class McpClient:
         self._stderr_thread.start()
 
         self.req_id = 1
-        self._initialize(client_name)
+        try:
+            self._initialize(client_name)
+        except Exception:
+            self.close()
+            raise
 
     def _drain_stderr(self):
         """Consume server stderr on a thread so the pipe can never fill and deadlock."""
@@ -172,10 +176,13 @@ class McpClient:
         )
         if "error" in res:
             raise McpError(f"initialize failed: {res['error']}")
-        self.proc.stdin.write(
-            json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n"
-        )
-        self.proc.stdin.flush()
+        try:
+            self.proc.stdin.write(
+                json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n"
+            )
+            self.proc.stdin.flush()
+        except (BrokenPipeError, OSError) as e:
+            raise McpError(f"initialized notification failed: {e}")
         self.server_info = res.get("result", {}).get("serverInfo", {})
 
     def call_tool(self, name, arguments=None, confirm=False, idempotency_token=None):
