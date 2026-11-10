@@ -68,7 +68,7 @@ export const DeckCard = ({
       el.volume = 0.2;
       audioRef.current = el;
       el.onended = () => setIsPlaying(false);
-      el.play();
+      void el.play();
       setIsPlaying(true);
     }
   }, [isPlaying, item.url, stopAudio]);

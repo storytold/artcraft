@@ -24,11 +24,11 @@ export const MidjourneyAccountBlock = () => {
   };
 
   useEffect(() => {
-    fetchSession();
+    void fetchSession();
   }, []);
 
   useRefreshAccountStateEvent(async (event: RefreshAccountStateEvent) => {
-    fetchSession();
+    void fetchSession();
   });
 
   const clearState = async() => {

@@ -270,7 +270,7 @@ export const UploadFiles3D = ({
   // B's key.
   useEffect(() => {
     if (previewStatus.type === "OK" && canvasRef.current) {
-      snapshotCanvasAsThumbnail({
+      void snapshotCanvasAsThumbnail({
         targetNode: canvasRef.current,
         resultCallback: (blob) => {
           const currentFile = fileEntries[previewIndex]?.file;
@@ -503,7 +503,7 @@ export const UploadFiles3D = ({
     // can only ever be a clean single-file submission; the excludedCount
     // check makes that invariant explicit rather than incidental.
     if (excludedCount === 0 && files.length === 1 && fileEntries.length === 1) {
-      upload3DObjects({
+      void upload3DObjects({
         title: files[0].name.slice(0, files[0].name.lastIndexOf(".")),
         assetFile: files[0],
         engineCategory,
@@ -521,7 +521,7 @@ export const UploadFiles3D = ({
     setIsUploading(true);
     setOverallProgress({ current: 0, total: files.length });
 
-    upload3DObjectsBatch({
+    void upload3DObjectsBatch({
       files,
       thumbnails: pendingThumbnails,
       engineCategory,
@@ -581,7 +581,7 @@ export const UploadFiles3D = ({
     setIsUploading(true);
     setOverallProgress({ current: 0, total: failedFiles.length });
 
-    upload3DObjectsBatch({
+    void upload3DObjectsBatch({
       files: failedFiles,
       thumbnails: failedThumbnails,
       engineCategory,
@@ -742,7 +742,7 @@ export const UploadFiles3D = ({
                         className="hidden items-center text-xs text-white/60 transition-colors hover:text-white group-hover:inline-flex"
                         onClick={(e) => {
                           e.stopPropagation();
-                          retrySingleFile(i);
+                          void retrySingleFile(i);
                         }}
                         title="Retry"
                       >

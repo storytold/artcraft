@@ -27,7 +27,7 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
       const prefs = await GetAppInfo();
       setAppInfo(prefs.payload);
     };
-    fetchData();
+    void fetchData();
   }, []);
 
   const handleVersionClick = () => {

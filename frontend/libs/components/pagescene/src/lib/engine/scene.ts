@@ -112,7 +112,7 @@ class Scene {
   initialize() {
     this.scene = new THREE.Scene();
     this.placeholder_manager = new LoadingPlaceHolderManager(this.scene);
-    this.placeholder_manager.initialize();
+    void this.placeholder_manager.initialize();
 
     this._createGrid();
     this._create_base_lighting();

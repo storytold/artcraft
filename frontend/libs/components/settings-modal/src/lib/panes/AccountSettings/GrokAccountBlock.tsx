@@ -24,11 +24,11 @@ export const GrokAccountBlock = () => {
   };
 
   useEffect(() => {
-    fetchSession();
+    void fetchSession();
   }, []);
 
   useRefreshAccountStateEvent(async (event: RefreshAccountStateEvent) => {
-    fetchSession();
+    void fetchSession();
   });
 
   const clearState = async() => {

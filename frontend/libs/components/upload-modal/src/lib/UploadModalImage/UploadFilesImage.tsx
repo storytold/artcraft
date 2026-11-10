@@ -117,7 +117,7 @@ export const UploadFilesImage = ({
       .filter((i) => i !== -1);
 
     if (files.length === 1 && fileEntries.length === 1) {
-      uploadImage({
+      void uploadImage({
         title: files[0].name.slice(0, files[0].name.lastIndexOf(".")),
         assetFile: files[0],
         progressCallback: onUploadProgress,
@@ -128,7 +128,7 @@ export const UploadFilesImage = ({
     setIsUploading(true);
     setOverallProgress({ current: 0, total: files.length });
 
-    uploadImagesBatch({
+    void uploadImagesBatch({
       files,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
         updateFileStatus(originalIndices[batchIndex], status, errorMessage),
@@ -159,7 +159,7 @@ export const UploadFilesImage = ({
     setIsUploading(true);
     setOverallProgress({ current: 0, total: failedFiles.length });
 
-    uploadImagesBatch({
+    void uploadImagesBatch({
       files: failedFiles,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
         updateFileStatus(failedIndices[batchIndex], status, errorMessage),
@@ -248,7 +248,7 @@ export const UploadFilesImage = ({
                           className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
-                            retrySingleFile(i);
+                            void retrySingleFile(i);
                           }}
                           title="Retry"
                         >

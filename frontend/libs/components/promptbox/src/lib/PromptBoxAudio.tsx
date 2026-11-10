@@ -352,7 +352,7 @@ export const PromptBoxAudio = ({
     if (e.key !== "Enter") return;
     if (enterToGenerate && !e.shiftKey) {
       e.preventDefault();
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 

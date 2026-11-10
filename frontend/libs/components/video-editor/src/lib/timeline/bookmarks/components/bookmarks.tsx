@@ -313,7 +313,7 @@ function BookmarkPopoverContent({
   }, [bookmark.color]);
 
   const handleRemove = () => {
-    editor.scenes.removeBookmark({ time });
+    void editor.scenes.removeBookmark({ time });
     onPopoverClose();
   };
 
@@ -334,7 +334,7 @@ function BookmarkPopoverContent({
       updates.duration = duration;
     }
     if (Object.keys(updates).length === 0) return;
-    editor.scenes.updateBookmark({ time, updates });
+    void editor.scenes.updateBookmark({ time, updates });
   };
   const maxDuration = mediaTimeToSeconds({
     time:

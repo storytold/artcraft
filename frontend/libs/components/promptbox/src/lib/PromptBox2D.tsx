@@ -347,7 +347,7 @@ export const PromptBox2D = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      handleGenerate();
+      void handleGenerate();
     }
   };
 

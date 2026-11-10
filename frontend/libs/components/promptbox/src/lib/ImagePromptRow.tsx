@@ -102,7 +102,7 @@ const AudioRefTile = ({
         el.volume = 0.2;
         audioRef.current = el;
         el.onended = () => setIsPlaying(false);
-        el.play();
+        void el.play();
         setIsPlaying(true);
       }
     },

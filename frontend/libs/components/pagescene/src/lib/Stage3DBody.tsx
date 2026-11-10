@@ -387,7 +387,7 @@ export const Stage3DBody = ({
   useEffect(() => {
     const handler = onImageDrop(
       (item: GalleryItem, position: { x: number; y: number }) => {
-        (async () => {
+        void (async () => {
           if (!editor) {
             console.warn("Cannot drop asset: editor engine not ready");
             return;

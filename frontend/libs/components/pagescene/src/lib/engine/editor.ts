@@ -190,7 +190,7 @@ class Editor {
     // Ammo.js WASM is a global side-effect script the physics path
     // depends on. The singleton ensures it's appended to document.body
     // exactly once, even across Editor re-construction.
-    ensureAmmoLoaded();
+    void ensureAmmoLoaded();
 
     // Version and name.
     this.version = 2.0;
@@ -667,9 +667,9 @@ class Editor {
     };
 
     if (!this.utils.isEmpty(cacheJson)) {
-      this.save_manager.loadCache(cacheJson).then(applyIfLoaded);
+      void this.save_manager.loadCache(cacheJson).then(applyIfLoaded);
     } else if (!this.utils.isEmpty(sceneToken)) {
-      this.save_manager.loadScene(sceneToken).then(applyIfLoaded);
+      void this.save_manager.loadScene(sceneToken).then(applyIfLoaded);
     } else {
       this.adapter.onSceneTitleChange?.({
         title: "Untitled New Scene",
@@ -1065,7 +1065,7 @@ class Editor {
     }
 
     this.lastFrameTime = frameTime;
-    this.renderSingleFrame();
+    void this.renderSingleFrame();
   }
 
   startRenderLoop() {

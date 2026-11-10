@@ -1040,7 +1040,7 @@ const PageDraw = ({
       await tryFit();
     };
 
-    autoFitCanvas();
+    void autoFitCanvas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseImageBitmap, baseImageInfo?.isBlankCanvas]);
 

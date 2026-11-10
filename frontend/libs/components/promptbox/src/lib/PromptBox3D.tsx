@@ -543,7 +543,7 @@ export const PromptBox3D = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 
