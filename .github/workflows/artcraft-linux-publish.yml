@@ -17,6 +17,30 @@ jobs:
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
+          allowed-endpoints: >
+            *.crates.io:443
+            *.github.com:443
+            *.githubusercontent.com:443
+            *.microsoft.com:443
+            *.rust-lang.org:443
+            *.ubuntu.com:80
+            *.ubuntu.com:443
+            api.github.com:443
+            archive.ubuntu.com:80
+            archive.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+            security.ubuntu.com:80
+            security.ubuntu.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -44,6 +68,30 @@ jobs:
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
+          allowed-endpoints: >
+            *.crates.io:443
+            *.github.com:443
+            *.githubusercontent.com:443
+            *.microsoft.com:443
+            *.rust-lang.org:443
+            *.ubuntu.com:80
+            *.ubuntu.com:443
+            api.github.com:443
+            archive.ubuntu.com:80
+            archive.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+            security.ubuntu.com:80
+            security.ubuntu.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -118,6 +166,30 @@ jobs:
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
+          allowed-endpoints: >
+            *.crates.io:443
+            *.github.com:443
+            *.githubusercontent.com:443
+            *.microsoft.com:443
+            *.rust-lang.org:443
+            *.ubuntu.com:80
+            *.ubuntu.com:443
+            api.github.com:443
+            archive.ubuntu.com:80
+            archive.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+            security.ubuntu.com:80
+            security.ubuntu.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -167,6 +239,30 @@ jobs:
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
+          allowed-endpoints: >
+            *.crates.io:443
+            *.github.com:443
+            *.githubusercontent.com:443
+            *.microsoft.com:443
+            *.rust-lang.org:443
+            *.ubuntu.com:80
+            *.ubuntu.com:443
+            api.github.com:443
+            archive.ubuntu.com:80
+            archive.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+            security.ubuntu.com:80
+            security.ubuntu.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -205,6 +301,30 @@ jobs:
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
+          allowed-endpoints: >
+            *.crates.io:443
+            *.github.com:443
+            *.githubusercontent.com:443
+            *.microsoft.com:443
+            *.rust-lang.org:443
+            *.ubuntu.com:80
+            *.ubuntu.com:443
+            api.github.com:443
+            archive.ubuntu.com:80
+            archive.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            crates.io:443
+            github.com:443
+            index.crates.io:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+            security.ubuntu.com:80
+            security.ubuntu.com:443
+            static.crates.io:443
+            static.rust-lang.org:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
