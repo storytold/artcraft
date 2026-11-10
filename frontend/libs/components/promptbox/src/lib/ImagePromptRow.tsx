@@ -269,12 +269,12 @@ export const ImagePromptRow = ({
 
     return (
       <div
-        role="button"
-        tabIndex={0}
         onKeyDown={clickOnEnterOrSpace}
         ref={setNodeRef}
         style={style}
         {...(allowReorder ? { ...attributes, ...listeners } : {})}
+        role="button"
+        tabIndex={0}
         className={twMerge(
           "glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 transition-opacity group",
           allowReorder
