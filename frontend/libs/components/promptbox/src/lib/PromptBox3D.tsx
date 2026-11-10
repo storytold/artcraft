@@ -509,13 +509,8 @@ export const PromptBox3D = ({
 
         console.log("generateResponse", generateResponse);
 
-        if (generateResponse.status === CommandSuccessStatus.Success) {
-          setIsEnqueueing(false);
-          return;
-        } else {
-          setIsEnqueueing(false);
-          return;
-        }
+        setIsEnqueueing(false);
+        return;
       }
 
       try {

@@ -104,7 +104,7 @@ export function LoginModal({
   };
 
   const handleDiscordJoin = () => {
-    window.open("https://discord.gg/75svZP2Vje", "_blank");
+    window.open("https://discord.gg/75svZP2Vje", "_blank", "noopener,noreferrer");
     setShowDiscord(false);
     setShowSuccess(true);
   };

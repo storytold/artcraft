@@ -403,7 +403,7 @@ const SIDEBAR_TAG_LIMIT = 5;
 
 const hashString = (s: string): number => {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = Math.imul(Math.imul(h, 31) + s.charCodeAt(i), 1); // int32 wrap
   return h;
 };
 
@@ -2710,7 +2710,6 @@ export const GalleryModal = React.memo(
                           }}
                           onBlur={handleConfirmRename}
                           className="text-lg font-semibold bg-transparent px-1.5 py-0 text-base-fg outline-none min-w-[6rem] caret-primary"
-                          autoFocus
                         />
                       ) : (
                         <h2

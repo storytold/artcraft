@@ -944,7 +944,7 @@ export const ImageTo3DExperience = ({
           <div
             className={twMerge(
               "mx-auto grid h-full w-full grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10",
-              variant === "world" ? "max-w-[1600px]" : "max-w-[1600px]",
+              "max-w-[1600px]",
             )}
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
@@ -1111,7 +1111,7 @@ export const ImageTo3DExperience = ({
               <div
                 className={twMerge(
                   "flex items-center justify-between gap-2.5",
-                  hasResults ? "mt-3" : "mt-3",
+                  "mt-3",
                 )}
               >
                 <ClassyModelSelector

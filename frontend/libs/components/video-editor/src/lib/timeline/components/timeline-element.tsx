@@ -47,7 +47,6 @@ import { mediaSupportsAudio } from "../../media/media-utils";
 import {
   canToggleSourceAudio,
   getSourceAudioActionLabel,
-  isSourceAudioSeparated,
 } from "../audio-separation";
 import { buildWaveformGainSamples, isElementMuted } from "../audio-state";
 import { getTimelinePixelsPerSecond } from "../pixel-utils";
@@ -346,8 +345,6 @@ export function TimelineElement({
     element.type === "video"
       ? getSourceAudioActionLabel({ element })
       : "Extract audio";
-  const isElementSourceAudioSeparated =
-    element.type === "video" && isSourceAudioSeparated({ element });
   const hasKeyframes = elementKeyframes.length > 0;
   const expansionHeight = getExpansionHeight({ rows: expandedRows });
   const baseTrackHeight = getTrackHeight({ type: track.type });
@@ -450,11 +447,7 @@ export function TimelineElement({
           {canToggleCurrentSourceAudio && (
             <ContextMenuItem
               icon={
-                <HugeiconsIcon
-                  icon={
-                    isElementSourceAudioSeparated ? ScissorIcon : ScissorIcon
-                  }
-                />
+                <HugeiconsIcon icon={ScissorIcon} />
               }
               onClick={(event: React.MouseEvent) => {
                 event.stopPropagation();

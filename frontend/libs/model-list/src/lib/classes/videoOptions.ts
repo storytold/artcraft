@@ -70,7 +70,7 @@ export function resolveVideoDuration(
         (distance === bestDistance && option > best)
         ? option
         : best;
-    });
+    }, model.durationOptions[0]);
   }
   return model.defaultDuration ?? null;
 }

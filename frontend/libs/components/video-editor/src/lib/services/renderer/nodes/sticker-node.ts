@@ -25,7 +25,7 @@ export function loadStickerSource({
   stickerId: string;
 }): Promise<CachedStickerSource> {
   const cached = stickerSourceCache.get(stickerId);
-  if (cached) return cached;
+  if (cached !== undefined) return cached;
 
   const promise = (async (): Promise<CachedStickerSource> => {
     const url = resolveStickerId({

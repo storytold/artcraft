@@ -26,7 +26,7 @@ export function getEarliestMainTrackElement({
     return element.startTime < earliestElement.startTime
       ? element
       : earliestElement;
-  });
+  }, elements[0]);
 }
 
 export function enforceMainTrackStart({
