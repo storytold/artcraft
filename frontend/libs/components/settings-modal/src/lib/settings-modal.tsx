@@ -138,7 +138,7 @@ export const SettingsModal = ({
       >
         <div className="h-[600px]">
           <div className="grid h-full grid-cols-12 gap-3">
-            <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
+            <div className="relative col-span-4 p-3 pt-2 after:absolute after:end-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
               <div className="flex items-center justify-between gap-2.5 py-0.5">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                   Settings
@@ -150,7 +150,7 @@ export const SettingsModal = ({
                   <button
                     key={section.id}
                     className={twMerge(
-                      "h-9 w-full px-2 text-left transition-colors duration-100",
+                      "h-9 w-full px-2 text-start transition-colors duration-100",
                       section.id === selectedSection
                         ? "bg-base-fg/10 text-base-fg"
                         : "text-base-fg/70 hover:bg-base-fg/[0.06] hover:text-base-fg",

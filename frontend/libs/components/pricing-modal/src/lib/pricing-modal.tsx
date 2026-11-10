@@ -73,7 +73,7 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
   return (
     <div className="min-h-0 flex-1 bg-[#101014] text-white">
       <div className="bg-primary text-white">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-2.5 pl-6 pr-14 md:pl-10">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-2.5 ps-6 pe-14 md:ps-10">
           <p className="pricing-hud flex items-center gap-2 font-bold">
             <TagIcon aria-hidden className="h-3.5 w-3.5" />
             Limited-time offer
@@ -156,7 +156,7 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
               Buy credits
             </Button>
           </div>
-          <div className="border-t border-white/15 p-6 md:border-l md:border-t-0 md:p-10">
+          <div className="border-t border-white/15 p-6 md:border-s md:border-t-0 md:p-10">
             <p className="pricing-hud text-white/40">† Footnote</p>
             <p className="mt-4 max-w-md leading-relaxed text-white/55">
               ArtCraft can be used without paying for a subscription. You can

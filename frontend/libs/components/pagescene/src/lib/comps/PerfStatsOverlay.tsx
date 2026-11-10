@@ -47,7 +47,7 @@ export function PerfStatsOverlay() {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none absolute bottom-2 left-2 z-50"
+      className="pointer-events-none absolute bottom-2 start-2 z-50"
     />
   );
 }

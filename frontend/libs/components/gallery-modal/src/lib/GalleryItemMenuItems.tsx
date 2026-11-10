@@ -146,7 +146,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
                 />
               </div>
             ) : (
-              <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
+              <div className="absolute start-full top-0 -ms-1 ps-2 z-50">
                 <div className="max-h-64 overflow-y-auto w-max min-w-36 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
                   <FolderList
                     item={item}

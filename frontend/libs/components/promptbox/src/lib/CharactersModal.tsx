@@ -276,7 +276,7 @@ const CharacterListView = ({
       title: "Delete character?",
       message: (
         <p className="text-sm text-white/70">
-          This will permanently delete <strong>{character.name}</strong>. This
+          This will permanently delete <strong><bdi>{character.name}</bdi></strong>. This
           action cannot be undone.
         </p>
       ),
@@ -390,7 +390,7 @@ const CharacterListView = ({
                 </div>
               </div>
               <div className="px-2 py-1.5 text-center">
-                <p className="truncate text-xs font-medium text-base-fg/50">
+                <p dir="auto" className="truncate text-xs font-medium text-base-fg/50">
                   {pending.name}
                 </p>
               </div>
@@ -426,7 +426,7 @@ const CharacterListView = ({
                     )}
                   </div>
                   <div className="px-2 py-1.5">
-                    <p className="truncate text-xs font-medium text-base-fg/80">
+                    <p dir="auto" className="truncate text-xs font-medium text-base-fg/80">
                       {character.name}
                     </p>
                   </div>
@@ -435,7 +435,7 @@ const CharacterListView = ({
                 {/* View / Edit / Delete overlay buttons. Hover-revealed on
                     desktop; always visible on touch devices (no hover). */}
                 {(character.maybe_avatar?.cdn_url || isUserCreated) && (
-                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                  <div className="absolute end-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                     {character.maybe_avatar?.cdn_url && (
                       <button
                         onClick={(e) => {
@@ -606,6 +606,7 @@ const EditCharacterView = ({
             <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
           <textarea
+            dir="auto"
             id="edit-character-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -867,7 +868,7 @@ const NewCharacterView = ({
                   e.stopPropagation();
                   removeImage(0);
                 }}
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
+                className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
               >
                 <XIcon  className="text-sm" />
               </button>
@@ -937,6 +938,7 @@ const NewCharacterView = ({
             <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
           <textarea
+            dir="auto"
             id="character-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}

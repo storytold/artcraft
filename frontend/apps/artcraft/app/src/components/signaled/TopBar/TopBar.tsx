@@ -169,7 +169,7 @@ const CreditsCoinWithStatus = ({
         <CoinsIcon className="text-[11px] text-primary" />
         {showBadge && (
           <span
-            className={`absolute -right-1.5 -top-1.5 flex h-3 w-3 items-center justify-center ring-1 ring-ui-panel ${badgeColorClass}`}
+            className={`absolute -end-1.5 -top-1.5 flex h-3 w-3 items-center justify-center ring-1 ring-ui-panel ${badgeColorClass}`}
           >
             <DynamicIcon icon={badgeIconDef} className="text-[7px]" />
           </span>
@@ -427,7 +427,7 @@ export const TopBar = ({ pageName }: Props) => {
   return (
     <>
       <header
-        className="fixed left-0 top-0 z-[60] w-full border-b border-ui-border bg-ui-panel"
+        className="fixed start-0 top-0 z-[60] w-full border-b border-ui-border bg-ui-panel"
         data-tauri-drag-region
       >
         <nav
@@ -439,7 +439,7 @@ export const TopBar = ({ pageName }: Props) => {
             className={`flex items-center gap-3 ${platform === "macos" ? "ml-14" : ""}`}
             data-tauri-drag-region
           >
-            {/* <div className="mr-2" data-tauri-drag-region>
+            {/* <div className="me-2" data-tauri-drag-region>
               <span className="sr-only" data-tauri-drag-region>
                 ArtCraft
               </span>

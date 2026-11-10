@@ -510,7 +510,7 @@ function AudioItem({ sound, isPlaying, onPlay }: AudioItemProps) {
     <div className="group flex items-center gap-3 opacity-100 hover:opacity-75">
       <button
         type="button"
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className="flex min-w-0 flex-1 items-center gap-3 text-start"
         onClick={handleClick}
       >
         <div className="bg-accent relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md">
@@ -523,14 +523,19 @@ function AudioItem({ sound, isPlaying, onPlay }: AudioItemProps) {
         </div>
 
         <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="truncate text-sm font-medium">{sound.name}</p>
-          <span className="text-muted-foreground block truncate text-xs">
+          <p dir="auto" className="truncate text-sm font-medium">
+            {sound.name}
+          </p>
+          <span
+            dir="auto"
+            className="text-muted-foreground block truncate text-xs"
+          >
             {sound.username}
           </span>
         </div>
       </button>
 
-      <div className="flex items-center gap-3 pr-2">
+      <div className="flex items-center gap-3 pe-2">
         <Button
           variant="text"
           size="icon"

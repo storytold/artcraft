@@ -61,10 +61,10 @@ export const SceneCard: React.FC<SceneCardProps> = ({
         onError={() => setLoadError(true)}
         loading="lazy"
       />
-      <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-t from-black/80 to-transparent" />
-      <div className="absolute bottom-[8px] left-[10px] text-start text-sm drop-shadow-md">
+      <div className="absolute start-0 top-0 h-full w-full bg-gradient-to-t from-black/80 to-transparent" />
+      <div className="absolute bottom-[8px] start-[10px] text-start text-sm drop-shadow-md">
         <div className="flex flex-col">
-          <span className="w-60 truncate text-sm font-medium">
+          <span dir="auto" className="w-60 truncate text-sm font-medium">
             {scene.name}
           </span>
           {showDate && (
@@ -75,7 +75,7 @@ export const SceneCard: React.FC<SceneCardProps> = ({
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 512 512"
-        className={`absolute right-1.5 top-1.5 h-[22px] w-[22px] transition-opacity duration-200 ease-in-out ${
+        className={`absolute end-1.5 top-1.5 h-[22px] w-[22px] transition-opacity duration-200 ease-in-out ${
           selectedSceneId === scene.token ? "opacity-100" : "opacity-0"
         }`}
       >

@@ -47,6 +47,7 @@ export const SmartSearchBar = ({
             const active = activeTags.includes(tag);
             return (
               <button
+                dir="auto"
                 key={tag}
                 type="button"
                 onClick={() => onToggleTag(tag)}

@@ -152,7 +152,7 @@ export const BaseImageSelector = ({
           />
         </div>
       </div>
-      <div className="fixed bottom-6 right-6 z-20 flex items-center gap-2">
+      <div className="fixed bottom-6 end-6 z-20 flex items-center gap-2">
         <CostCalculatorButton modelPage={ModelPage.ImageEditor} />
         <HelpMenuButton />
       </div>

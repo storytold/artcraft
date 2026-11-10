@@ -185,10 +185,10 @@ const SelectItem = React.forwardRef<
 >(({ className, children, variant = "default", ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
-    className={cn(selectItemVariants({ variant }), "pl-6 pr-2", className)}
+    className={cn(selectItemVariants({ variant }), "ps-6 pe-2", className)}
     {...props}
   >
-    <span className="absolute left-1.5 flex size-3.5 items-center justify-center">
+    <span className="absolute start-1.5 flex size-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
         <Check className="size-3.5" />
       </SelectPrimitive.ItemIndicator>

@@ -463,6 +463,14 @@ img {
   );
 }
 
+/* The browser puts the resize corner on the side of the text direction, which
+   follows the typed text (dir="auto"), not the document. */
+.promptbox-resize-wrap:has(:is(textarea, [contenteditable]):dir(rtl))::after {
+  right: auto;
+  left: 2px;
+  transform: scaleX(-1);
+}
+
 .scrollbar-hidden {
   -ms-overflow-style: none;
   /* IE and Edge */

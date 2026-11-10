@@ -498,7 +498,7 @@ function MediaDurationBadge({ duration }: { duration?: number }) {
   if (!duration) return null;
 
   return (
-    <div className="absolute right-1 bottom-1 rounded bg-black/70 px-1 text-xs text-white">
+    <div className="absolute end-1 bottom-1 rounded bg-black/70 px-1 text-xs text-white">
       {formatDuration({ duration })}
     </div>
   );

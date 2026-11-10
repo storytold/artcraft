@@ -276,7 +276,7 @@ export const ReferenceDeck = ({
         alwaysExpanded
           ? "relative max-w-full"
           : twMerge(
-              "absolute bottom-0 left-0 z-40 origin-bottom-left transition-all duration-200 ease-out",
+              "absolute bottom-0 start-0 z-40 origin-bottom-left transition-all rtl:origin-bottom-right duration-200 ease-out",
               expanded
                 ? "visible translate-y-0 scale-100 opacity-100"
                 : "pointer-events-none invisible translate-y-1 scale-95 opacity-0 [transition:opacity_.2s,transform_.2s,visibility_0s_.2s]",
@@ -439,7 +439,7 @@ export const ReferenceDeck = ({
             />
           ))}
           {overflowCount > 0 && (
-            <div className="pointer-events-none absolute -right-1 -top-1 z-10 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
+            <div className="pointer-events-none absolute -end-1 -top-1 z-10 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
               {items.length}
             </div>
           )}

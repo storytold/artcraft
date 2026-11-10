@@ -60,7 +60,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
                 {credits} Credits
               </span>
             </div>
-            <div className="text-right text-xs text-base-fg/60">
+            <div className="text-end text-xs text-base-fg/60">
               ≈ {formattedPrice} {currencyOption.value}
             </div>
           </div>

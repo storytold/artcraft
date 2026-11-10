@@ -61,7 +61,9 @@ export const FailedRow = memo(function FailedRow({
           {recreateSlot}
         </div>
         {prompt && (
-          <p className="mt-0.5 truncate text-xs text-white/45">{prompt}</p>
+          <p dir="auto" className="mt-0.5 truncate text-xs text-white/45">
+            {prompt}
+          </p>
         )}
         <div className="mt-1 flex items-center gap-1.5 text-xs text-white/40">
           {iconPath && (
@@ -71,7 +73,9 @@ export const FailedRow = memo(function FailedRow({
               className="h-3 w-3 shrink-0 icon-auto-contrast"
             />
           )}
-          <span className="truncate">{modelLabel}</span>
+          <span dir="auto" className="truncate">
+            {modelLabel}
+          </span>
           {failureMessage && failureMessage !== failureReason && (
             <>
               <span className="text-white/20">·</span>

@@ -113,7 +113,7 @@ export function DesktopLoginBridge({ onSuccess, onStart, onActiveChange }: { onS
 
   const remaining = challenge ? Math.max(0, Math.ceil((Date.parse(challenge.expires_at) - now) / 1000)) : 0;
   return <section aria-label="Website login" className="mb-6 border border-white/15 bg-white/[0.03] p-4 text-center">
-    {isActive && <div className="mb-4 text-left">
+    {isActive && <div className="mb-4 text-start">
       <button type="button" className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 transition-colors hover:text-white" onClick={back}>
         <ArrowLeftIcon size={16} aria-hidden="true" /> Back
       </button>

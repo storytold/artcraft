@@ -109,12 +109,12 @@ export const ItemInspector = ({
     >
       {/* Invisible drag strip along the top, matching the shared lightbox. */}
       <Modal.DragHandle>
-        <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+        <div className="absolute start-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
       </Modal.DragHandle>
 
       <div className="flex h-full gap-4">
         {/* Media panel — flexible width, dark plate, contained media. */}
-        <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
+        <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-s-xl bg-black/30">
           <Media item={item} />
 
           {hasPrev && <NavArrow side="left" onClick={onPrev} />}
@@ -124,7 +124,7 @@ export const ItemInspector = ({
         {/* Info + actions — fixed width, scrollable body, buttons pinned bottom. */}
         <div className="flex h-full w-[280px] shrink-0 flex-col">
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-2 text-base-fg">
-            <div className="flex items-center gap-2.5 border-b border-white/5 pb-3 pr-10">
+            <div className="flex items-center gap-2.5 border-b border-white/5 pb-3 pe-10">
               <span className="rounded-full border border-ui-panel-border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-base-fg/55">
                 {KIND_LABEL[item.kind]}
               </span>
@@ -161,7 +161,7 @@ export const ItemInspector = ({
                     onClick={() => onRemoveTag(tag)}
                     className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
                   >
-                    {tag}
+                    <bdi>{tag}</bdi>
                     <XIcon  className="h-2.5 w-2.5" />
                   </button>
                 ))}
@@ -304,7 +304,7 @@ const Media = ({ item }: { item: BoardItem }) => {
               <Favicon url={item.url} className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-medium text-base-fg">
+              <p dir="auto" className="text-base font-medium text-base-fg">
                 {item.title || hostnameOf(item.url)}
               </p>
               <p className="mt-1 truncate text-sm text-base-fg/55">{item.url}</p>

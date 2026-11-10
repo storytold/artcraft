@@ -175,7 +175,7 @@ const MenuItem = ({
     role="menuitem"
     onClick={onClick}
     className={[
-      "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+      "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-start text-sm transition-colors",
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       accent
         ? "text-primary hover:bg-ui-controls/50"
