@@ -72,11 +72,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     meshOnly: boolean,
     subscriberId?: string,
   ) => {
-    const id = subscriberId
-      ? subscriberId
-      : crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+    const id = subscriberId || uuidv4();
     const result: ImageTo3DResult = {
       id,
       mode,
@@ -111,8 +107,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
         : -1;
 
       if (targetIdx === -1) {
-        const generatedId =
-          crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
+        const generatedId = uuidv4();
         const result: ImageTo3DResult = {
           id: generatedId,
           subscriberId: generatedId,

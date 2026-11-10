@@ -70,10 +70,7 @@ const formatTime = (timestamp: number) => {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
-const generateId = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2, 10);
+const generateId = () => uuidv4();
 
 const WORLD_MODEL_PAGE = ModelPage.ImageTo3DWorld;
 const OBJECT_MODEL_PAGE = ModelPage.ImageTo3DObject;

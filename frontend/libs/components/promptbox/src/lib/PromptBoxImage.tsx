@@ -36,6 +36,7 @@ import {
   type DroppedFiles,
 } from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
+import { v4 as uuidv4 } from "uuid";
 
 interface PromptBoxImageProps {
   useJobContext: () => JobContextType;
@@ -92,7 +93,7 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -276,7 +277,7 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -376,9 +377,7 @@ export const PromptBoxImage = ({
 
     gtagEvent("enqueue_image");
 
-    const subscriberId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
+    const subscriberId = uuidv4();
 
     setTimeout(() => {
       console.debug("Turn off blocking of prompt box...");

@@ -16,6 +16,7 @@ import {
   AUDIO_FILE_TYPE_ERROR,
   isAudioFile,
 } from "./audioFiles";
+import { v4 as uuidv4 } from "uuid";
 
 /** Lets the prompt box push dropped/pasted files through the same upload
  *  path the row's own file inputs use. */
@@ -104,12 +105,12 @@ export const AudioReferenceRow = forwardRef<
       if (uploadAudio) {
         setIsUploadingAudio(true);
         await uploadAudio({
-          title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
+          title: `reference-audio-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refAudio: RefAudio = {
-                id: Math.random().toString(36).substring(7),
+                id: uuidv4(),
                 url: URL.createObjectURL(file),
                 file,
                 mediaToken: newState.data,
@@ -145,12 +146,12 @@ export const AudioReferenceRow = forwardRef<
 
     setIsUploadingImage(true);
     await uploadImage({
-      title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
+      title: `reference-image-${uuidv4()}`,
       assetFile: file,
       progressCallback: (newState) => {
         if (newState.status === UploaderStates.success && newState.data) {
           const refImage: RefImage = {
-            id: Math.random().toString(36).substring(7),
+            id: uuidv4(),
             url: URL.createObjectURL(file),
             file,
             mediaToken: newState.data,

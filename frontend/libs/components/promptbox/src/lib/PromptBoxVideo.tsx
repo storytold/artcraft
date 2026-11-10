@@ -59,6 +59,7 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
+import { v4 as uuidv4 } from "uuid";
 
 declare global {
   interface Window {
@@ -128,7 +129,7 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -333,7 +334,7 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -1217,9 +1218,7 @@ export const PromptBoxVideo = ({
     const enqueuePromises: Promise<unknown>[] = [];
 
     for (let i = 0; i < count; i++) {
-      const subscriberId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+      const subscriberId = uuidv4();
       subscriberIds.push(subscriberId);
       enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }

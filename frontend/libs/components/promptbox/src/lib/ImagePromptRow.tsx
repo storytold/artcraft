@@ -44,6 +44,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { UploadMediaFn } from "@storyteller/api";
+import { v4 as uuidv4 } from "uuid";
 export type { UploadMediaFn as UploadImageFn } from "@storyteller/api";
 type UploadImageFn = UploadMediaFn;
 
@@ -451,19 +452,17 @@ export const ImagePromptRow = ({
         break;
       }
 
-      const uploadId = Math.random().toString(36).substring(7);
+      const uploadId = uuidv4();
       setUploadingVideo({ id: uploadId, file });
 
       if (uploadVideo) {
         await uploadVideo({
-          title: `reference-video-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-video-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refVideo: RefVideo = {
-                id: Math.random().toString(36).substring(7),
+                id: uuidv4(),
                 url: URL.createObjectURL(file),
                 file,
                 mediaToken: newState.data,
@@ -483,7 +482,7 @@ export const ImagePromptRow = ({
         });
       } else {
         const refVideo: RefVideo = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: URL.createObjectURL(file),
           file,
           mediaToken: "",
@@ -565,19 +564,17 @@ export const ImagePromptRow = ({
         break;
       }
 
-      const uploadId = Math.random().toString(36).substring(7);
+      const uploadId = uuidv4();
       setUploadingAudio({ id: uploadId, file });
 
       if (uploadAudio) {
         await uploadAudio({
-          title: `reference-audio-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-audio-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refAudio: RefAudio = {
-                id: Math.random().toString(36).substring(7),
+                id: uuidv4(),
                 url: URL.createObjectURL(file),
                 file,
                 mediaToken: newState.data,
@@ -595,7 +592,7 @@ export const ImagePromptRow = ({
         });
       } else {
         const refAudio: RefAudio = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: URL.createObjectURL(file),
           file,
           mediaToken: "",
@@ -632,7 +629,7 @@ export const ImagePromptRow = ({
         : files.slice(0, availableSlots);
 
     filesToProcess.forEach(async (file) => {
-      const uploadId = Math.random().toString(36).substring(7);
+      const uploadId = uuidv4();
       if (uploadTarget === "end") {
         setUploadingEnd({ id: uploadId, file, previewUrl: "" });
       } else {
@@ -684,9 +681,7 @@ export const ImagePromptRow = ({
 
       if (uploadImage) {
         await uploadImage({
-          title: `reference-image-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-image-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
@@ -770,7 +765,7 @@ export const ImagePromptRow = ({
           }
           currentTotal += duration;
           newVideos.push({
-            id: Math.random().toString(36).substring(7),
+            id: uuidv4(),
             url: item.fullImage,
             file: new File([], "library-video"),
             mediaToken: item.id,
@@ -797,7 +792,7 @@ export const ImagePromptRow = ({
       const item = selectedItems[0];
       if (item && item.fullImage) {
         setEndFrameImage?.({
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: item.fullImage,
           file: new File([], "library-image"),
           mediaToken: item.id,
@@ -821,7 +816,7 @@ export const ImagePromptRow = ({
     selectedItems.slice(0, availableSlots).forEach((item) => {
       if (!item.fullImage) return;
       newRefs.push({
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: item.fullImage,
         file: new File([], "library-image"),
         mediaToken: item.id,
