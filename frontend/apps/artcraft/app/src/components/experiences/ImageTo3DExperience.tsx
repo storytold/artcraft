@@ -256,7 +256,7 @@ export const ImageTo3DExperience = ({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    handleFiles(event.target.files);
+    void handleFiles(event.target.files);
     event.target.value = "";
   };
 
@@ -264,7 +264,7 @@ export const ImageTo3DExperience = ({
     event.preventDefault();
     event.stopPropagation();
     setDragActive(false);
-    handleFiles(event.dataTransfer?.files);
+    void handleFiles(event.dataTransfer?.files);
   };
 
   const handlePickFromLibrary = () => {
@@ -716,7 +716,7 @@ export const ImageTo3DExperience = ({
                   e.stopPropagation();
                   setDragActive(false);
                   if (e.dataTransfer?.files)
-                    handleWorldFiles(
+                    void handleWorldFiles(
                       Array.from(e.dataTransfer.files).filter((f) =>
                         f.type.startsWith("image/"),
                       ),
@@ -1177,7 +1177,7 @@ export const ImageTo3DExperience = ({
         className="hidden"
         onChange={(e) => {
           if (e.target.files) {
-            handleWorldFiles(Array.from(e.target.files));
+            void handleWorldFiles(Array.from(e.target.files));
           }
           e.target.value = "";
         }}

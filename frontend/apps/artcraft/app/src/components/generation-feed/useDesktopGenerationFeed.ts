@@ -295,8 +295,8 @@ export function useDesktopGenerationFeed(options: {
       cancelled = true;
       clearInterval(intervalId);
       window.removeEventListener("task-queue-update", handleTaskUpdate);
-      unlistenComplete.then((f) => f());
-      unlistenFailed.then((f) => f());
+      void unlistenComplete.then((f) => f());
+      void unlistenFailed.then((f) => f());
     };
   }, [load]);
 
