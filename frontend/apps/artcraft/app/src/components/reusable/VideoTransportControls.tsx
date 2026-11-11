@@ -38,6 +38,7 @@ export const VideoTransportControls = ({
       </button>
       <button
         onClick={onTogglePlay}
+        aria-label={isPlaying ? "Pause" : "Play"}
         className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-white/20 transition-colors hover:bg-white/30"
       >
         <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="text-white" />
@@ -52,6 +53,7 @@ export const VideoTransportControls = ({
       <div className="mx-1 h-6 w-px bg-white/20" />
       <button
         onClick={onToggleMute}
+        aria-label={isMuted ? "Unmute" : "Mute"}
         className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
       >
         <DynamicIcon icon={isMuted ? VolumeXIcon : Volume2Icon} className="text-sm text-white" />
