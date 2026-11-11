@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { uploadImage } from "./utilities/uploadImage";
 import { uploadImagesBatch } from "./utilities/uploadImagesBatch";
 import {
@@ -10,7 +8,7 @@ import {
   UploaderState,
   UploaderStates,
 } from "../Types";
-import { UploadFileRow } from "../UploadFileRow";
+import { UploadFilesPanels } from "../UploadFilesPanels";
 
 interface FileEntry {
   file: File;
@@ -203,67 +201,24 @@ export const UploadFilesImage = ({
 
       {fileEntries.length > 0 && (
         isMulti ? (
-          <PanelGroup direction="horizontal">
-            <Panel defaultSize={33} minSize={20}>
-            <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-none border border-white/15 bg-black/30 p-2">
-              {fileEntries.map((entry, i) => (
-                <UploadFileRow
-                  key={i}
-                  entry={entry}
-                  selected={i === previewIndex}
-                  onSelect={() => setPreviewIndex(i)}
-                  onRemove={() => removeFile(i)}
-                  onRetry={() => void retrySingleFile(i)}
+          <UploadFilesPanels
+            entries={fileEntries}
+            previewIndex={previewIndex}
+            setPreviewIndex={setPreviewIndex}
+            onRemove={removeFile}
+            onRetry={(i) => void retrySingleFile(i)}
+          >
+            <div className="relative aspect-square w-full overflow-hidden rounded-none border border-white/15 bg-black/30 flex items-center justify-center">
+              {previewUrl && (
+                <img
+                  key={previewIndex}
+                  alt="Preview"
+                  className="m-auto max-h-full max-w-full object-contain"
+                  src={previewUrl}
                 />
-              ))}
-            </ul>
-            </Panel>
-
-            <PanelResizeHandle className="flex w-4 items-center justify-center">
-              <div
-                className="h-8 w-1 rounded-none bg-white/20 transition-colors hover:bg-white/40"
-                onPointerDown={(e) => e.stopPropagation()}
-              />
-            </PanelResizeHandle>
-
-            <Panel defaultSize={67} minSize={25}>
-            <div className="flex h-full flex-col gap-2">
-              <div className="relative aspect-square w-full overflow-hidden rounded-none border border-white/15 bg-black/30 flex items-center justify-center">
-                {previewUrl && (
-                  <img
-                    key={previewIndex}
-                    alt="Preview"
-                    className="m-auto max-h-full max-w-full object-contain"
-                    src={previewUrl}
-                  />
-                )}
-              </div>
-              <div className="flex items-center justify-center gap-3">
-                <Button
-                  variant="secondary"
-                  onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
-                  disabled={previewIndex === 0}
-                >
-                  <ChevronLeftIcon />
-                </Button>
-                <span className="text-sm opacity-60">
-                  {previewIndex + 1} / {fileEntries.length}
-                </span>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    setPreviewIndex((p) =>
-                      Math.min(fileEntries.length - 1, p + 1)
-                    )
-                  }
-                  disabled={previewIndex === fileEntries.length - 1}
-                >
-                  <ChevronRightIcon />
-                </Button>
-              </div>
+              )}
             </div>
-            </Panel>
-          </PanelGroup>
+          </UploadFilesPanels>
         ) : (
           previewUrl && (
             <div className="relative m-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-none border border-white/15 bg-black/30">

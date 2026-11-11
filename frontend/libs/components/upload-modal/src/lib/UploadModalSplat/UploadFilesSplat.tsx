@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { BoxIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { BoxIcon } from "lucide-react";
 import { WebGLRenderer, PerspectiveCamera } from "three";
 import { loadPreviewOnCanvas, snapshotCanvasAsThumbnail } from "../UploadModal3D/utilities";
 import { upload3DObjects } from "../UploadModal3D/utilities/upload3DObjects";
@@ -15,7 +14,7 @@ import {
   UploaderState,
   UploaderStates,
 } from "../Types";
-import { UploadFileRow } from "../UploadFileRow";
+import { UploadFilesPanels } from "../UploadFilesPanels";
 
 interface FileEntry {
   file: File;
@@ -332,76 +331,33 @@ export const UploadFilesSplat = ({
       )}
 
       {isMulti ? (
-        <PanelGroup direction="horizontal">
-          <Panel defaultSize={33} minSize={20}>
-          <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-none border border-white/15 bg-black/30 p-2">
-            {fileEntries.map((entry, i) => (
-              <UploadFileRow
-                key={i}
-                entry={entry}
-                selected={i === previewIndex}
-                onSelect={() => setPreviewIndex(i)}
-                onRemove={() => removeFile(i)}
-                onRetry={() => void retrySingleFile(i)}
-              />
-            ))}
-          </ul>
-          </Panel>
-
-          <PanelResizeHandle className="flex w-4 items-center justify-center">
-            <div
-              className="h-8 w-1 rounded-none bg-white/20 transition-colors hover:bg-white/40"
-              onPointerDown={(e) => e.stopPropagation()}
+        <UploadFilesPanels
+          entries={fileEntries}
+          previewIndex={previewIndex}
+          setPreviewIndex={setPreviewIndex}
+          onRemove={removeFile}
+          onRetry={(i) => void retrySingleFile(i)}
+        >
+          <div className="relative w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
+            <canvas
+              className="pointer-events-none h-full min-h-48 !w-full"
+              ref={canvasCallbackRef}
             />
-          </PanelResizeHandle>
-
-          <Panel defaultSize={67} minSize={25}>
-          <div className="flex h-full flex-col gap-2">
-            <div className="relative w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
-              <canvas
-                className="pointer-events-none h-full min-h-48 !w-full"
-                ref={canvasCallbackRef}
-              />
-              {!currentFile && (
-                <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
-                  <BoxIcon />
-                  Your model preview will appear here
-                </h6>
-              )}
-              {previewStatus.type.includes("Error") && (
-                <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
-                  {previewStatus.type}
-                  {previewStatus.message && <br />}
-                  {previewStatus.message}
-                </h6>
-              )}
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
-                disabled={previewIndex === 0}
-              >
-                <ChevronLeftIcon />
-              </Button>
-              <span className="text-sm opacity-60">
-                {previewIndex + 1} / {fileEntries.length}
-              </span>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  setPreviewIndex((p) =>
-                    Math.min(fileEntries.length - 1, p + 1)
-                  )
-                }
-                disabled={previewIndex === fileEntries.length - 1}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </div>
+            {!currentFile && (
+              <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
+                <BoxIcon />
+                Your model preview will appear here
+              </h6>
+            )}
+            {previewStatus.type.includes("Error") && (
+              <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
+                {previewStatus.type}
+                {previewStatus.message && <br />}
+                {previewStatus.message}
+              </h6>
+            )}
           </div>
-          </Panel>
-        </PanelGroup>
+        </UploadFilesPanels>
       ) : (
         <div className="relative m-auto w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
           <canvas
