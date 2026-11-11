@@ -61,7 +61,8 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }
             <X size={16} />
           </button>
           
-          <div 
+          <div
+            role="presentation"
             ref={sliderRef}
             className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-40 cursor-ns-resize"
             onMouseDown={handleMouseDown}

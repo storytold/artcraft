@@ -25,6 +25,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
 
   return (
     <div
+      role="presentation"
       className="border border-ui-panel-border bg-ui-controls flex w-full select-none items-center gap-3 rounded-none px-4 py-2 text-white"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}

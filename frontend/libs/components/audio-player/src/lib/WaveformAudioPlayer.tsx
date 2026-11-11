@@ -251,6 +251,7 @@ export function WaveformAudioPlayer({
 
   return (
     <div
+      role="presentation"
       ref={rootRef}
       className={`flex items-center gap-2.5 ${compact ? "px-2.5 py-2" : "px-3 py-2.5"} ${className}`}
       onClick={(event) => event.stopPropagation()}
@@ -273,6 +274,7 @@ export function WaveformAudioPlayer({
         )}
         {(waveState === "pending" || waveState === "failed") && (
           <div
+            role="presentation"
             className="absolute inset-0 flex cursor-pointer items-center gap-[1.5px]"
             onClick={handleBarSeek}
           >

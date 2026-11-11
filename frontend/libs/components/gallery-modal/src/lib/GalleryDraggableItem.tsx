@@ -13,6 +13,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { toast } from "@storyteller/ui-toaster";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 type ModalMode = "select" | "view";
 
@@ -336,6 +337,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
+          role="presentation"
           // Tile chrome stays under sticky page headers (e.g. the library
           // filter bar at z-10): z-[2]/z-[1] keep the in-tile ordering
           // (menu/checkbox above badges) without escaping the page layers.
@@ -376,6 +378,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         createPortal(
           <>
             <div
+              role="presentation"
               className="fixed inset-0 z-[9998]"
               onClick={() => setCtxMenu(null)}
               onContextMenu={(e) => {
@@ -408,6 +411,11 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* Bulk selection checkbox — top-left (only when a bulk handler is wired) */}
       {mode !== "select" && onBulkSelectToggle && (
         <div
+          role="checkbox"
+          aria-checked={bulkSelected}
+          aria-label={`Select ${item.label}`}
+          tabIndex={0}
+          onKeyDown={clickOnEnterOrSpace}
           className={twMerge(
             "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded-[3px] border-2 cursor-pointer transition-all duration-100",
             bulkSelected
@@ -415,7 +423,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               : "border-white/60 bg-black/40 hover:border-white",
             bulkSelectionMode
               ? "opacity-100"
-              : "opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100",
+              : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100",
           )}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {

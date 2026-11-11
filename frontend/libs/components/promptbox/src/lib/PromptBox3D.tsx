@@ -621,6 +621,7 @@ export const PromptBox3D = ({
         {onBuildModeChange && (
           <div className="flex">
             <div
+              role="presentation"
               className="glass glass-no-hover rounded-full p-1 shadow-xl"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
@@ -673,6 +674,7 @@ export const PromptBox3D = ({
           />
         )}
         <div
+          role="presentation"
           className={twMerge(
             "glass relative w-full p-4",
             isPromptBoxFocused && "border-primary",

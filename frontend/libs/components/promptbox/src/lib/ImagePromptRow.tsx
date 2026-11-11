@@ -19,7 +19,7 @@ import {
 } from "./common/imagePreview";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
-import { UploaderStates } from "@storyteller/common";
+import { UploaderStates, clickOnEnterOrSpace } from "@storyteller/common";
 import {
   AUDIO_FILE_ACCEPT,
   AUDIO_FILE_TYPE_ERROR,
@@ -269,9 +269,12 @@ export const ImagePromptRow = ({
 
     return (
       <div
+        onKeyDown={clickOnEnterOrSpace}
         ref={setNodeRef}
         style={style}
         {...(allowReorder ? { ...attributes, ...listeners } : {})}
+        role="button"
+        tabIndex={0}
         className={twMerge(
           "glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 transition-opacity group",
           allowReorder
@@ -864,6 +867,7 @@ export const ImagePromptRow = ({
         </>
       )}
       <div
+        role="presentation"
         className={twMerge(
           "absolute left-0 glass w-full rounded-t-[3px] flex",
           showVideoReferenceSection ? "-top-[144px]" : "-top-[72px]",
@@ -935,6 +939,9 @@ export const ImagePromptRow = ({
                     .slice(0, Math.max(0, maxImagePromptCount))
                     .map((image, index) => (
                       <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={clickOnEnterOrSpace}
                         key={image.id}
                         className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                         onClick={() => onImageClick?.(image)}
@@ -1064,6 +1071,9 @@ export const ImagePromptRow = ({
                 <div className="flex gap-2 items-center">
                   {endFrameImage ? (
                     <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={clickOnEnterOrSpace}
                       className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                       onClick={() => onImageClick?.(endFrameImage)}
                     >

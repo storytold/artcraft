@@ -561,6 +561,7 @@ export function Viewer3D({
 
   return (
     <div
+      role="presentation"
       className={`relative h-full w-full overflow-hidden rounded-l-xl bg-[#282828] ${className}`}
       onMouseDown={stopPropagation}
       onMouseMove={stopPropagation}
