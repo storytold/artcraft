@@ -4,7 +4,7 @@ import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Select } from "@storyteller/ui-select";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { BoneIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, LoaderIcon, RotateCwIcon, XIcon } from "lucide-react";
+import { BoneIcon, BoxIcon, ChevronLeftIcon, ChevronRightIcon, LoaderIcon, XIcon } from "lucide-react";
 import * as THREE from "three";
 import {
   convertFbxToGlb,
@@ -21,6 +21,7 @@ import {
   UploaderState,
   UploaderStates,
 } from "../Types";
+import { UploadStatus } from "../UploadStatus";
 
 interface FileEntry {
   file: File;
@@ -722,34 +723,10 @@ export const UploadFiles3D = ({
                       <XIcon />
                     </button>
                   )}
-                  {(entry.status === "uploading" ||
-                    entry.status === "converting") && (
-                    <LoaderIcon
-                      
-                      className="animate-spin opacity-60" />
-                  )}
-                  {entry.status === "success" && (
-                    <CheckIcon
-                      
-                      className="text-green-400" />
-                  )}
-                  {entry.status === "error" && (
-                    <span className="flex items-center gap-1">
-                      <CircleAlertIcon
-                        
-                        className="text-red-400" />
-                      <button
-                        className="hidden items-center text-xs text-white/60 transition-colors hover:text-white group-hover:inline-flex"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void retrySingleFile(i);
-                        }}
-                        title="Retry"
-                      >
-                        <RotateCwIcon />
-                      </button>
-                    </span>
-                  )}
+                  <UploadStatus
+                    status={entry.status}
+                    onRetry={() => void retrySingleFile(i)}
+                  />
                 </span>
               </li>
             ))}
