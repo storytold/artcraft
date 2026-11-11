@@ -420,7 +420,7 @@ export const VideoFrameExtractor = () => {
         const file = new File([blob], fileName, { type: "image/png" });
 
         const referenceImage: RefImage = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: frameUrl,
           file: file,
           mediaToken: uploadResponse.data,

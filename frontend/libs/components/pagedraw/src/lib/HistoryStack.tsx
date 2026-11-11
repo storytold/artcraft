@@ -9,6 +9,7 @@ import {
   showActionReminder,
 } from "@storyteller/ui-action-reminder-modal";
 import { clickOnEnterOrSpace } from "@storyteller/common";
+import { v4 as uuidv4 } from "uuid";
 
 export type { ImageBundle };
 
@@ -54,7 +55,7 @@ export const HistoryStack = ({
 
   // This is used to force image reloads in different sessions
   // and prevent fetching CORS-tainted images from cache
-  const sessionRandBuster = useRef(Math.random());
+  const sessionRandBuster = useRef(uuidv4());
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const prevPendingCountRef = useRef<number>(0);
 
