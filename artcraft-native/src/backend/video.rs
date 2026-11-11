@@ -414,6 +414,26 @@ mod tests {
     assert_eq!(output_size(info(2160, 3840)), (1080, 1920));
   }
 
+  #[test]
+  fn output_sizes_are_even_within_both_caps_and_keep_the_aspect_ratio() {
+    let sides = [2, 3, 7, 100, 719, 720, 1079, 1279, 1280, 1281, 1919, 1920, 1921, 2160, 3840, 8191, 65_535, 1 << 20];
+    for &width in &sides {
+      for &height in &sides {
+        let (w, h) = output_size(VideoInfo { width, height, fps: 24.0, duration: 5.0 });
+        let case = format!("{width}x{height} -> {w}x{h}");
+        assert!(w % 2 == 0 && h % 2 == 0 && w >= 2 && h >= 2, "both sides even, for `scale`: {case}");
+        assert!(w <= MAX_WIDTH && h <= MAX_HEIGHT, "within both caps: {case}");
+        assert!(w <= width.max(2) && h <= height.max(2), "never scaled up: {case}");
+        // One scale for both sides (the smaller of the two caps' wins), give or take rounding to
+        // even, except where a side is already at its 2 px floor.
+        if w > 2 && h > 2 {
+          let skew = (w as i128 * height as i128 - h as i128 * width as i128).abs();
+          assert!(skew <= 2 * (width as i128 + height as i128), "aspect ratio kept: {case}");
+        }
+      }
+    }
+  }
+
   /// Needs FFmpeg on the PATH: `cargo test -p artcraft_native -- --ignored`.
   #[test]
   #[ignore]
