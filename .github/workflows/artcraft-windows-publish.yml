@@ -33,6 +33,10 @@ jobs:
     # Successful builds took 17-36 min (2026-04 to 2026-11); one hung run used the full 6-hour default.
     timeout-minutes: 90
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v7
 
       - name: install Rust stable
