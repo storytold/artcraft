@@ -24,12 +24,21 @@ impl AppCredentialsDir {
   /// Session cookies, bearer and refresh tokens and API keys are plain files in here, so on Unix
   /// the directory is readable by its owner only (0700). Created with the default 0755, any other
   /// account on the machine could read them (home folders are 0755 on macOS). Folders made by
-  /// earlier versions are tightened too.
+  /// earlier versions are tightened too, and so are the files already in them (0600): a file's
+  /// mode belongs to the file, so a hard link to it made while the folder was still open would
+  /// otherwise keep it readable. Files written later can't be reached that way, since nobody else
+  /// can enter the folder any more. Symlinks are left alone rather than followed.
   pub fn restrict_to_owner(&self) -> std::io::Result<()> {
     #[cfg(unix)]
     {
       use std::os::unix::fs::PermissionsExt;
       std::fs::set_permissions(&self.path, std::fs::Permissions::from_mode(0o700))?;
+      for entry in std::fs::read_dir(&self.path)? {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+          std::fs::set_permissions(entry.path(), std::fs::Permissions::from_mode(0o600))?;
+        }
+      }
     }
     Ok(())
   }
@@ -123,5 +132,28 @@ mod tests {
     std::fs::set_permissions(&credentials, std::fs::Permissions::from_mode(0o755)).unwrap();
     let root = AppDataRoot::create_existing(dir.path()).unwrap();
     assert_eq!(mode(root.credentials_dir().path()), 0o700);
+  }
+
+  #[test]
+  fn existing_credential_files_are_made_private() {
+    // Earlier versions wrote the files 0644. A hard link made to one while the folder was open
+    // would still reach it after the folder is closed, unless the file itself is 0600.
+    let dir = tempfile::tempdir().unwrap();
+    let credentials = dir.path().join("credentials");
+    std::fs::create_dir(&credentials).unwrap();
+    let session = credentials.join("artcraft_session.txt");
+    std::fs::write(&session, "session").unwrap();
+    std::fs::set_permissions(&session, std::fs::Permissions::from_mode(0o644)).unwrap();
+    let elsewhere = dir.path().join("elsewhere");
+    std::fs::create_dir(&elsewhere).unwrap();
+    let outside = elsewhere.join("outside.txt");
+    std::fs::write(&outside, "not a credential").unwrap();
+    std::fs::set_permissions(&outside, std::fs::Permissions::from_mode(0o644)).unwrap();
+    std::os::unix::fs::symlink(&outside, credentials.join("link.txt")).unwrap();
+
+    AppDataRoot::create_existing(dir.path()).unwrap();
+
+    assert_eq!(mode(&session), 0o600);
+    assert_eq!(mode(&outside), 0o644, "a symlink's target outside the folder is left alone");
   }
 }
