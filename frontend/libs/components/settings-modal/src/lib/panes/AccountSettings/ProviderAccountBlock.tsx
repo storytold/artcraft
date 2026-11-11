@@ -66,7 +66,9 @@ export const ProviderAccountBlock = ({
 
   const handleButton = async () => {
     if (session?.payload?.can_clear_state) {
+      // A failed clear may have cleared part of the state; show what is left (Disconnect again retries).
       if (await clearState()) setSession(undefined);
+      else await fetchSession();
     } else {
       await openLogin();
     }
