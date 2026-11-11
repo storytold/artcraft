@@ -50,8 +50,9 @@ jobs:
           node-version: lts/*
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
         with:
+          toolchain: stable
           targets: ${{ matrix.platform == 'macos-latest-xlarge' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
@@ -229,7 +230,7 @@ jobs:
 
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
+        uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}

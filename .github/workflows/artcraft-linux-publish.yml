@@ -76,11 +76,11 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+      - uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: step-security/rust-cache@8871c8ba063416da7c32246932ea6ae08700453e # v2.9.2
         with:
           key: tauri-linux-${{ matrix.arch }}
           cache-on-failure: true
@@ -88,7 +88,7 @@ jobs:
         working-directory: frontend
       - run: ./node_modules/.bin/nx run artcraft:build
         working-directory: frontend
-      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
+      - uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
         with:
           projectPath: crates/desktop/artcraft
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config ${{ github.workspace }}/packaging/linux/tauri.conf.json
