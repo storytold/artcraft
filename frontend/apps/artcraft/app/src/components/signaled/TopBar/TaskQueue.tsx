@@ -513,7 +513,7 @@ export const TaskQueue = () => {
   const [failed, setFailed] = useState<FailedTask[]>([]);
   const [lastReadAt, setLastReadAt] = useState<number>(() => {
     const stored = localStorage.getItem("taskQueueLastReadAt");
-    return stored ? parseInt(stored, 10) : 0;
+    return stored ? Number.parseInt(stored, 10) : 0;
   });
 
   // remove unread state; unread tracking handled via IDs below

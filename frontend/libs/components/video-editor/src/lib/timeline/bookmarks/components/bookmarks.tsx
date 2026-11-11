@@ -404,7 +404,7 @@ function BookmarkPopoverContent({
             step={0.1}
             value={durationSeconds}
             onChange={(event) => {
-              const parsed = parseFloat(event.target.value);
+              const parsed = Number.parseFloat(event.target.value);
               const value = Number.isNaN(parsed)
                 ? 0
                 : clamp({

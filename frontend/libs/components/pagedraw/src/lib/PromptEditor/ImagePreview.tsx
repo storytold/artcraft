@@ -14,7 +14,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }
       const relativeY = clientY - rect.top;
       // Calculate inverse value (1.0 at top, 0.0 at bottom)
       const value = Math.max(0, Math.min(1, 1 - (relativeY / height)));
-      onUpdate(image.id, { weight: parseFloat(value.toFixed(1)) });
+      onUpdate(image.id, { weight: Number.parseFloat(value.toFixed(1)) });
     }
   };
 

@@ -60,6 +60,7 @@ import {
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { v4 as uuidv4 } from "uuid";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 declare global {
   interface Window {
@@ -931,19 +932,19 @@ export const PromptBoxVideo = ({
     for (const item of allMentionItems) {
       const imgMatch = item.label.match(/^@Image(\d+)$/);
       if (imgMatch) {
-        const idx = parseInt(imgMatch[1]) - 1;
+        const idx = Number.parseInt(imgMatch[1]) - 1;
         map[item.label] = IMAGE_COLORS[idx % IMAGE_COLORS.length];
         continue;
       }
       const vidMatch = item.label.match(/^@Video(\d+)$/);
       if (vidMatch) {
-        const idx = parseInt(vidMatch[1]) - 1;
+        const idx = Number.parseInt(vidMatch[1]) - 1;
         map[item.label] = VIDEO_COLORS[idx % VIDEO_COLORS.length];
         continue;
       }
       const audMatch = item.label.match(/^@Audio(\d+)$/);
       if (audMatch) {
-        const idx = parseInt(audMatch[1]) - 1;
+        const idx = Number.parseInt(audMatch[1]) - 1;
         map[item.label] = AUDIO_COLORS[idx % AUDIO_COLORS.length];
         continue;
       }
@@ -1045,7 +1046,7 @@ export const PromptBoxVideo = ({
       toast.error("Please enter a prompt to generate video");
       return;
     }
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -1412,11 +1413,7 @@ export const PromptBoxVideo = ({
                 />
               )}
               <PromptFullscreenButton onClick={openFullscreen} />
-              <span
-                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              <PromptLengthCounter prompt={prompt} maxLen={maxLen} />
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between gap-2">

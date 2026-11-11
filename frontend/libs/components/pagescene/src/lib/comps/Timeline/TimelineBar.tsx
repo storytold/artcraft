@@ -51,7 +51,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         onChange={(e) => {
           if (!editor) return;
           pauseTimeline(editor);
-          seekTimeline(editor, parseFloat(e.target.value));
+          seekTimeline(editor, Number.parseFloat(e.target.value));
         }}
         className="h-1 flex-1 cursor-pointer accent-white"
       />

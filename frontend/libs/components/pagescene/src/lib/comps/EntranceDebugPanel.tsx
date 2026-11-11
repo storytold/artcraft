@@ -45,7 +45,7 @@ export function EntranceDebugPanel() {
         max={12}
         step={0.25}
         value={scale}
-        onChange={(e) => apply(parseFloat(e.target.value))}
+        onChange={(e) => apply(Number.parseFloat(e.target.value))}
         className="w-full accent-primary"
       />
       <div className="mt-2 flex justify-between tabular-nums text-white/50">

@@ -129,7 +129,7 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
             min={0}
             step={0.5}
             value={board.duration}
-            onChange={(e) => onUpdate({ duration: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => onUpdate({ duration: Number.parseFloat(e.target.value) || 0 })}
             className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 font-mono text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"
           />
         </div>
@@ -604,7 +604,7 @@ const Timeline = ({
         const delta = ev.clientX - resizeRef.current.startX;
         const newDuration = Math.max(
           MIN_DURATION,
-          parseFloat((resizeRef.current.startDuration + delta / PIXELS_PER_SECOND).toFixed(1)),
+          Number.parseFloat((resizeRef.current.startDuration + delta / PIXELS_PER_SECOND).toFixed(1)),
         );
         onUpdateDuration(resizeRef.current.id, newDuration);
       };
