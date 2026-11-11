@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { uploadImage } from "./utilities/uploadImage";
 import { uploadImagesBatch } from "./utilities/uploadImagesBatch";
 import {
@@ -10,7 +10,7 @@ import {
   UploaderState,
   UploaderStates,
 } from "../Types";
-import { UploadStatus } from "../UploadStatus";
+import { UploadFileRow } from "../UploadFileRow";
 
 interface FileEntry {
   file: File;
@@ -207,35 +207,14 @@ export const UploadFilesImage = ({
             <Panel defaultSize={33} minSize={20}>
             <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-none border border-white/15 bg-black/30 p-2">
               {fileEntries.map((entry, i) => (
-                <li
+                <UploadFileRow
                   key={i}
-                  className={`group flex items-center justify-between gap-1.5 rounded-[3px] px-2 py-1 cursor-pointer text-sm transition-colors ${
-                    i === previewIndex ? "bg-white/10" : "hover:bg-white/5"
-                  }`}
-                  onClick={() => setPreviewIndex(i)}
-                >
-                  <span className="truncate flex-1" title={entry.file.name}>
-                    {entry.file.name.slice(0, entry.file.name.lastIndexOf("."))}
-                  </span>
-                  <span className="shrink-0">
-                    {entry.status === "idle" && (
-                      <button
-                        className="opacity-40 hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFile(i);
-                        }}
-                        title="Remove"
-                      >
-                        <XIcon />
-                      </button>
-                    )}
-                    <UploadStatus
-                      status={entry.status}
-                      onRetry={() => void retrySingleFile(i)}
-                    />
-                  </span>
-                </li>
+                  entry={entry}
+                  selected={i === previewIndex}
+                  onSelect={() => setPreviewIndex(i)}
+                  onRemove={() => removeFile(i)}
+                  onRetry={() => void retrySingleFile(i)}
+                />
               ))}
             </ul>
             </Panel>
