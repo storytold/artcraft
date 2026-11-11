@@ -967,10 +967,10 @@ export function LightboxModal({
                                     tabIndex={isVideoRef ? undefined : 0}
                                     aria-label={
                                       isAudio
-                                        ? `${isPlayingThis ? "Pause" : "Play"} reference audio`
+                                        ? `${isPlayingThis ? "Pause" : "Play"} reference ${index + 1} audio`
                                         : isVideoRef
                                           ? undefined
-                                          : "Preview reference image"
+                                          : `Preview reference ${index + 1}`
                                     }
                                     onKeyDown={clickOnEnterOrSpace}
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
