@@ -39,7 +39,7 @@ impl LoginDialog {
         });
       });
       ui.add_space(4.0);
-      ui.label(egui::RichText::new("Use your ArtCraft account to generate images and videos.").color(theme::MUTED));
+      ui.label(egui::RichText::new(crate::i18n::t("Use your ArtCraft account to generate images and videos.")).color(theme::MUTED));
       ui.add_space(16.0);
       let width = ui.available_width();
       match &self.device {
@@ -48,7 +48,7 @@ impl LoginDialog {
           ui.add_space(6.0);
           ui.label(egui::RichText::new(code).size(28.0).family(theme::mono_bold()).color(theme::INK).extra_letter_spacing(4.0));
           ui.add_space(6.0);
-          ui.label(egui::RichText::new("Approve the sign-in in your browser and check the code matches. This window updates by itself.").color(theme::MUTED));
+          ui.label(egui::RichText::new(crate::i18n::t("Approve the sign-in in your browser and check the code matches. This window updates by itself.")).color(theme::MUTED));
           ui.add_space(10.0);
           ui.horizontal(|ui| {
             if widgets::button(ui, Some(Icon::ExternalLink), "Open page again", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
@@ -111,7 +111,7 @@ pub enum SettingsAction {
 
 /// The settings dialog (Settings → Misc and Accounts in the webapp). `fal_key` is the key being
 /// typed.
-pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, username: Option<&str>, credits: Option<u64>, accounts: &AccountsView, fal_key: &mut String, data_root: &std::path::Path) -> Option<SettingsAction> {
+pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, username: Option<&str>, credits: Option<u64>, accounts: &AccountsView, fal_key: &mut String, data_root: &std::path::Path, language: &mut crate::i18n::Language) -> Option<SettingsAction> {
   let mut action = None;
   let close = widgets::modal(ctx, Id::new("settings"), 520.0, |ui| {
     ui.horizontal(|ui| {
@@ -128,12 +128,28 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
     ui.horizontal(|ui| {
       ui.vertical(|ui| {
         ui.set_width(400.0);
-        ui.label(egui::RichText::new("Enter to generate").size(14.0).family(theme::medium()));
-        ui.label(egui::RichText::new("When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.").size(12.5).color(theme::MUTED));
+        ui.label(egui::RichText::new(crate::i18n::t("Enter to generate")).size(14.0).family(theme::medium()));
+        ui.label(egui::RichText::new(crate::i18n::t("When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.")).size(12.5).color(theme::MUTED));
       });
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if switch(ui, *enter_to_generate).clicked() {
           *enter_to_generate = !*enter_to_generate;
+        }
+      });
+    });
+    ui.add_space(6.0);
+    ui.horizontal(|ui| {
+      ui.vertical(|ui| {
+        ui.set_width(400.0);
+        ui.label(egui::RichText::new(crate::i18n::t("Language")).size(14.0).family(theme::medium()));
+      });
+      ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        for l in crate::i18n::Language::ALL {
+          let name = l.name();
+          if widgets::ghost(ui, Icon::Globe, Some(name), "Language", *language == *l).clicked() {
+            *language = *l;
+            crate::i18n::set_language(*l);
+          }
         }
       });
     });
@@ -142,9 +158,9 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
     ui.add_space(6.0);
     match username {
       Some(user) => {
-        ui.label(egui::RichText::new(format!("Signed in as @{user}")).size(14.0));
+        ui.label(egui::RichText::new(crate::i18n::tf("Signed in as @{}", &[user.to_string()])).size(14.0));
         if let Some(c) = credits {
-          ui.label(egui::RichText::new(format!("{} credits", group_thousands(c))).size(12.5).color(theme::MUTED));
+          ui.label(egui::RichText::new(crate::i18n::tf("{} credits", &[group_thousands(c).to_string()])).size(12.5).color(theme::MUTED));
         }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
@@ -171,7 +187,7 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
     ui.add_space(18.0);
     widgets::hud(ui, "About", theme::FAINT);
     ui.add_space(6.0);
-    ui.label(egui::RichText::new(format!("ArtCraft native {}", env!("CARGO_PKG_VERSION"))).size(13.0).color(theme::MUTED));
+    ui.label(egui::RichText::new(crate::i18n::tf("ArtCraft native {}", &[env!("CARGO_PKG_VERSION").to_string()])).size(13.0).color(theme::MUTED));
     if widgets::button(ui, Some(Icon::Folder), "Open data folder", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
       if let Err(err) = open::that(data_root) {
         log::warn!("Couldn't open {}: {err}", data_root.display());

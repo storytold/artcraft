@@ -168,7 +168,7 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
 
   if opts.fullscreen_button {
     let button = Rect::from_min_size(pos2(field_rect.right() - 24.0, field_rect.top()), vec2(24.0, 24.0));
-    let resp = ui.interact(button, id.with("fullscreen"), Sense::click()).on_hover_text("Focus mode").on_hover_cursor(egui::CursorIcon::PointingHand);
+    let resp = ui.interact(button, id.with("fullscreen"), Sense::click()).on_hover_text(crate::i18n::t("Focus mode")).on_hover_cursor(egui::CursorIcon::PointingHand);
     let p = ui.painter();
     p.rect_filled(button, theme::RADIUS, if resp.hovered() { theme::WASH_HOVER } else { theme::WASH });
     icons::paint(p, button.shrink(6.0), Icon::Maximize, if resp.hovered() { theme::INK } else { theme::DIM });
@@ -183,8 +183,8 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
     let count = prompt.chars().count();
     let over = limit.is_some_and(|max| count > max);
     let text = match limit {
-      Some(max) => format!("{count} / {max}"),
-      None => format!("{count} / \u{221e}"),
+      Some(max) => crate::i18n::tf("{} / {}", &[count.to_string(), max.to_string()]),
+      None => crate::i18n::tf("{} / \u{221e}", &[count.to_string()]),
     };
     let color = if over { Color32::from_rgb(0xef, 0x44, 0x44) } else { theme::FAINT };
     ui.painter().text(pos2(field_rect.right() - 16.0, field_rect.bottom() + 4.0), Align2::RIGHT_BOTTOM, text, FontId::new(10.0, FontFamily::Monospace), color);
