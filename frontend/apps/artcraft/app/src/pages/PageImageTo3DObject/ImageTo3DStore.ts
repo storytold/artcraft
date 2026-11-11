@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { MediaFilesApi, MediaUploadApi } from "@storyteller/api";
 import { v4 as uuidv4 } from "uuid";
 import { captureModelThumbnail } from "./captureModelThumbnail";
+import { completeGenerationResult } from "../Stores/completeGenerationResult";
 
 export interface PendingExternalImage {
   url: string;
@@ -96,40 +97,13 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
       mediaToken,
       maybeSubscriberId,
     });
-    const pending = maybeSubscriberId
-      ? get().results.find((r) => r.subscriberId === maybeSubscriberId)
-      : get().results.find((r) => r.status === "pending");
-
-    set((s) => {
-      const results = [...s.results];
-      const targetIdx = pending
-        ? results.findIndex((r) => r.subscriberId === pending.subscriberId)
-        : -1;
-
-      if (targetIdx === -1) {
-        const generatedId = uuidv4();
-        const result: ImageTo3DResult = {
-          id: generatedId,
-          subscriberId: generatedId,
-          mode: "image",
-          timestamp: Date.now(),
-          note: "Generated Model",
-          status: "completed",
-          modelUrl,
-          mediaToken,
-        };
-        return { results: [result, ...results] };
-      }
-
-      results[targetIdx] = {
-        ...results[targetIdx],
-        status: "completed",
+    set((s) => ({
+      results: completeGenerationResult(s.results, maybeSubscriberId, {
         modelUrl,
         mediaToken,
-      };
-
-      return { results };
-    });
+        note: "Generated Model",
+      }),
+    }));
   },
   uploadCoverImage: async (mediaToken: string, thumbnailDataUrl: string) => {
     try {
