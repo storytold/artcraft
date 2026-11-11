@@ -165,6 +165,7 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
 
 // ── 1:1 merge constructors (API capability > overlay; presentation ← overlay)
 
+/** Merge server image capabilities with frontend presentation and append supported desktop-native providers. */
 const mergedImageModel = (
   m: ListingImageModel,
   tauriId: string,
@@ -231,6 +232,7 @@ const mergedImageModel = (
   });
 };
 
+/** Merge server video capabilities with frontend presentation and append supported desktop-native providers. */
 const mergedVideoModel = (
   m: ListingVideoModel,
   tauriId: string,

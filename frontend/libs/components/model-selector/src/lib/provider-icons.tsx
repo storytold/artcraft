@@ -35,6 +35,7 @@ export const getProviderIcon = (
   );
 };
 
+/** Return the user-facing provider label, with an explicit fallback for unknown values. */
 export const getProviderDisplayName = (provider: GenerationProvider): string => {
   switch (provider) {
     case GenerationProvider.Artcraft:

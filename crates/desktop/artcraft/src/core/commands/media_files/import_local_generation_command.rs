@@ -56,6 +56,7 @@ pub async fn import_local_generation_command(request: ImportLocalGenerationReque
   Ok(ImportLocalGenerationResponse { media_file_token: token }.into())
 }
 
+/// Upload a registered local image with account-scoped durable progress while retaining its local original.
 async fn import_image(id: &str, root: &AppDataRoot, configs: &AppEnvConfigs, manager: &StorytellerCredentialManager) -> anyhow::Result<MediaFileToken> {
   let creds = manager.get_signed_in_credentials()?.ok_or_else(|| anyhow::anyhow!("Sign in to ArtCraft before uploading a local image"))?;
   let source = resolve_token(root, id)?;
@@ -84,6 +85,7 @@ async fn import_image(id: &str, root: &AppDataRoot, configs: &AppEnvConfigs, man
   Ok(response.media_file_token)
 }
 
+/// Share a per-receipt async lock without retaining unused entries indefinitely.
 fn import_lock(path: &Path) -> anyhow::Result<Arc<AsyncMutex<()>>> {
   let mut locks = IMPORT_LOCKS.lock().map_err(|_| anyhow::anyhow!("Import lock is unavailable"))?;
   locks.retain(|_, lock| lock.strong_count() > 0);
@@ -95,6 +97,7 @@ fn import_lock(path: &Path) -> anyhow::Result<Arc<AsyncMutex<()>>> {
   Ok(lock)
 }
 
+/// Atomically publish flushed import progress before or after a cloud upload.
 fn save_receipt(path: &std::path::Path, receipt: &ImportReceipt) -> anyhow::Result<()> {
   let mut temporary = NamedTempFile::new_in(path.parent().unwrap())?;
   temporary.write_all(&serde_json::to_vec(receipt)?)?;

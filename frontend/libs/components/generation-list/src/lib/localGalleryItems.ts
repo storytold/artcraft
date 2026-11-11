@@ -12,6 +12,7 @@ export interface LocalGenerationLike {
   thumbnail_url?: string | null;
 }
 
+/** Map local assets to gallery entries without using video files as image thumbnails. */
 export function localGenerationsToGalleryItems(images: LocalGenerationLike[]): GalleryItem[] {
   return images.map((image) => ({
     id: image.id,
@@ -50,6 +51,7 @@ export function mergeLocalGalleryItems<T extends { id: string; createdAt: string
   return [...remote, ...extra].sort((a, b) => timeOf(b) - timeOf(a));
 }
 
+/** Convert gallery timestamps to milliseconds for local/cloud ordering and pagination cutoffs. */
 function timeOf(item: { createdAt: string }): number {
   return new Date(item.createdAt).getTime();
 }

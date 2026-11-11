@@ -22,6 +22,7 @@ pub enum VideoModel {
 }
 
 impl VideoModel {
+  /// Select a text-to-video or image-to-video endpoint, returning none for unsupported modes.
   pub fn endpoint(self, image_to_video: bool) -> Option<&'static str> {
     Some(match (self, image_to_video) {
       (Self::Kling16Pro, true) => "kwaivgi/kling-v1.6-i2v-pro",
@@ -62,6 +63,7 @@ impl VideoModel {
     })
   }
 
+  /// List the exact supported durations used to validate video creation requests.
   pub fn durations(self) -> Vec<u16> {
     match self {
       Self::Kling3p0Standard | Self::Kling3p0Pro => (3..=15).collect(),
@@ -76,6 +78,7 @@ impl VideoModel {
     }
   }
 
+  /// Choose the default duration associated with this model endpoint.
   pub fn default_duration(self) -> u16 {
     match self {
       Self::Sora2 | Self::Sora2Pro => 4,
@@ -84,10 +87,12 @@ impl VideoModel {
     }
   }
 
+  /// Identify models whose image-to-video endpoint accepts an ending frame.
   pub fn supports_end_frame(self) -> bool {
     !matches!(self, Self::Kling21Pro | Self::Kling21Master | Self::Sora2 | Self::Sora2Pro | Self::Veo3 | Self::Veo3Fast)
   }
 
+  /// Identify models exposing a configurable audio-generation setting.
   pub fn supports_audio_toggle(self) -> bool {
     matches!(self, Self::Kling2p6Pro | Self::Kling3p0Standard | Self::Kling3p0Pro | Self::Seedance1p5Pro | Self::Seedance2p0 | Self::Seedance2p0Fast | Self::Seedance2p5 | Self::Veo3 | Self::Veo3Fast | Self::Veo3p1 | Self::Veo3p1Fast)
   }

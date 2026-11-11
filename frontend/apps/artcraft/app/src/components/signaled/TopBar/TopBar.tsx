@@ -182,6 +182,7 @@ const CreditsCoinWithStatus = ({
   );
 };
 
+/** Render desktop navigation and account controls, keeping sign-in available during signed-out generation. */
 export const TopBar = ({ pageName }: Props) => {
   useSignals();
 

@@ -34,6 +34,7 @@ pub struct ProviderSubmission {
 }
 
 impl ProviderSubmission {
+  /// Persist a bounded uncertain-submission receipt before sending a paid creation request.
   pub fn begin(root: &AppDataRoot, context: ProviderImageContext, task_type: TaskType, api_host: String, maybe_caller: Option<TauriCommandCaller>, maybe_subscriber_id: Option<String>, maybe_subscriber_payload: Option<String>) -> Result<Self> {
     let receipt = Self { version: 1, id: generate_random_uuid(), context, task_type, api_host, maybe_success: None, maybe_caller, maybe_subscriber_id, maybe_subscriber_payload };
     ensure!(serde_json::to_vec(&receipt)?.len() <= 1024 * 1024, "Submission metadata is too large");
@@ -41,6 +42,7 @@ impl ProviderSubmission {
     Ok(receipt)
   }
 
+  /// Record the accepted WaveSpeed job and its recovery context before local task insertion.
   pub fn accept(&mut self, root: &AppDataRoot, success: &TaskEnqueueSuccess) -> Result<()> {
     ensure!(success.provider == GenerationProvider::WaveSpeed && success.provider_job_id.is_some(), "Invalid WaveSpeed acceptance receipt");
     self.maybe_success = Some(success.clone());
@@ -49,6 +51,7 @@ impl ProviderSubmission {
     Ok(())
   }
 
+  /// Discard only explicit HTTP rejection receipts and preserve uncertain paid outcomes.
   pub fn handle_submission_result<T>(&self, root: &AppDataRoot, result: Result<T, ArtcraftRouterError>) -> Result<T, ArtcraftRouterError> {
     if let Err(ArtcraftRouterError::Provider(ProviderError::WaveSpeed(error)) | ArtcraftRouterError::ProviderBillingError(ProviderError::WaveSpeed(error))) = &result {
       if error.is_definitive_submission_rejection() {
@@ -60,6 +63,7 @@ impl ProviderSubmission {
     result
   }
 
+  /// Remove an unaccepted receipt by its validated ID; accepted jobs require recovery instead.
   fn discard(&self, root: &AppDataRoot) -> Result<()> {
     ensure!(self.maybe_success.is_none(), "Accepted submissions must be recovered, not discarded");
     ensure!(!self.id.is_empty() && self.id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-'), "Invalid submission receipt ID");
@@ -70,6 +74,7 @@ impl ProviderSubmission {
     }
   }
 
+  /// Restore accepted jobs only for their original API host, skipping already-tracked tasks.
   pub async fn restore_task(&self, root: &AppDataRoot, database: &TaskDatabase, api_host: &str) -> Result<()> {
     ensure!(self.version == 1, "Unsupported submission receipt version");
     ensure!(self.api_host == api_host, "Submission belongs to a different ArtCraft API host");
@@ -90,6 +95,7 @@ impl ProviderSubmission {
     Ok(())
   }
 
+  /// Persist generation metadata under the accepted provider job identity.
   fn save_context(&self, root: &AppDataRoot) -> Result<()> {
     if let Some(job_id) = self.maybe_success.as_ref().and_then(|success| success.provider_job_id.as_deref()) {
       ProviderImageContext::save_prepared(root, job_id, self.context.prepare(root)?)?;
@@ -97,6 +103,7 @@ impl ProviderSubmission {
     Ok(())
   }
 
+  /// Atomically replace a bounded receipt and flush its contents before returning.
   fn save(&self, root: &AppDataRoot) -> Result<()> {
     let directory = directory(root)?;
     let bytes = serde_json::to_vec(self)?;
@@ -111,6 +118,7 @@ impl ProviderSubmission {
   }
 }
 
+/// Replay accepted receipts without resubmission and quarantine unreadable receipt files.
 pub async fn restore_submissions(root: &AppDataRoot, database: &TaskDatabase, api_host: &str) -> Result<()> {
   let mut maybe_error = None;
   for entry in std::fs::read_dir(directory(root)?)? {
@@ -139,6 +147,7 @@ pub async fn restore_submissions(root: &AppDataRoot, database: &TaskDatabase, ap
   Ok(())
 }
 
+/// Remove receipt files matching a completed provider job without touching unrelated jobs.
 pub fn remove_submission(root: &AppDataRoot, job_id: &str) -> Result<()> {
   for entry in std::fs::read_dir(directory(root)?)? {
     let entry = entry?;
@@ -153,6 +162,7 @@ pub fn remove_submission(root: &AppDataRoot, job_id: &str) -> Result<()> {
   Ok(())
 }
 
+/// Bound receipt bytes and reject unsupported stored schema versions.
 fn read_receipt(path: &Path) -> Result<ProviderSubmission> {
   let bytes = crate::core::utils::read_bounded_file::read_bounded_file(path, 4 * 1024 * 1024)?;
   let receipt: ProviderSubmission = serde_json::from_slice(&bytes)?;
@@ -160,6 +170,7 @@ fn read_receipt(path: &Path) -> Result<ProviderSubmission> {
   Ok(receipt)
 }
 
+/// Interpret older receipts without an explicit task type as image generation.
 fn default_task_type() -> TaskType {
   TaskType::ImageGeneration
 }
@@ -172,6 +183,7 @@ pub struct UncertainSubmission {
   pub task_type: TaskType,
 }
 
+/// List unaccepted receipts scoped to the current ArtCraft API host.
 pub fn uncertain_submissions(root: &AppDataRoot, api_host: &str) -> Result<Vec<UncertainSubmission>> {
   let mut results = Vec::new();
   for entry in std::fs::read_dir(directory(root)?)? {
@@ -188,6 +200,7 @@ pub fn uncertain_submissions(root: &AppDataRoot, api_host: &str) -> Result<Vec<U
   Ok(results)
 }
 
+/// Attach a history prediction to an unchanged uncertain receipt without creating a paid job.
 pub fn attach_prediction(root: &AppDataRoot, id: &str, job_id: &str, api_host: &str) -> Result<()> {
   ensure!(!id.is_empty() && id.len() <= 64 && id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-'), "Invalid submission receipt ID");
   let mut receipt = read_receipt(&directory(root)?.join(format!("{id}.json")))?;
@@ -196,6 +209,7 @@ pub fn attach_prediction(root: &AppDataRoot, id: &str, job_id: &str, api_host: &
   receipt.accept(root, &success)
 }
 
+/// Create the owned receipt directory and reject a symlink at its location.
 fn directory(root: &AppDataRoot) -> Result<PathBuf> {
   let path = root.state_dir().path().join("wavespeed_submissions");
   std::fs::create_dir_all(&path)?;

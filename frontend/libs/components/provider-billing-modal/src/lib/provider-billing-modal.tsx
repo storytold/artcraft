@@ -10,6 +10,7 @@ interface ProviderBillingModalProps {
   isVideoPage?: boolean;
 }
 
+/** Display Artcraft billing or external-provider guidance in response to native billing events. */
 export function ProviderBillingModal({
   isVideoPage = false,
 }: ProviderBillingModalProps) {

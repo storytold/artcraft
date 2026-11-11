@@ -96,6 +96,7 @@ interface LightboxModalProps {
   initialIndex?: number;
 }
 
+/** Preview gallery media with navigation and available actions, keeping local assets out of server-only operations. */
 export function LightboxModal({
   isOpen,
   onClose,

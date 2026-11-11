@@ -37,6 +37,7 @@ const INITIAL_RETRY_DELAY_SECS: u64 = 10;
 #[path = "provider_completion_tests.rs"]
 pub(crate) mod provider_completion_tests;
 
+/// Resume durable outputs before polling again; fail corrupt progress rather than lose upload identities.
 pub async fn try_resume_saved_completion(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task) -> Result<bool, Box<dyn std::error::Error>> {
   let path = checkpoint_path(app_data_root, task)?;
   let loaded = match UploadCheckpoint::load(&path).map_err(|error| {
@@ -60,11 +61,13 @@ pub async fn try_resume_saved_completion(app_handle: &AppHandle<impl tauri::Runt
   Ok(true)
 }
 
+/// Finish provider outputs through the public-only downloader before notifying task completion.
 pub async fn handle_provider_complete(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task, urls: Vec<String>, media_class: TaskMediaFileClass) -> Result<(), Box<dyn std::error::Error>> {
   let client = super::public_media_client::public_media_client()?;
   handle_provider_complete_with_client(app_handle, app_env_configs, app_data_root, task_database, storyteller_creds_manager, task, urls, media_class, &client).await
 }
 
+/// Run download, local retention or verified-account upload, task completion, notification, and cleanup.
 async fn handle_provider_complete_with_client(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, task: &Task, urls: Vec<String>, media_class: TaskMediaFileClass, client: &reqwest::Client) -> Result<(), Box<dyn std::error::Error>> {
   if urls.is_empty() {
     warn!("[ProviderComplete] Task {} completed but no downloadable media found in response", task.id.as_str());
@@ -174,10 +177,12 @@ async fn handle_provider_complete_with_client(app_handle: &AppHandle<impl tauri:
 
 // ── Helpers ──
 
+/// Keep WaveSpeed image/video results local when requested at submission or when no account is signed in.
 fn should_keep_locally(provider: GenerationProvider, media_class: TaskMediaFileClass, maybe_context: Option<&ProviderImageContext>, signed_in: bool) -> bool {
   provider == GenerationProvider::WaveSpeed && matches!(media_class, TaskMediaFileClass::Image | TaskMediaFileClass::Video) && (maybe_context.is_some_and(|context| context.local_only) || !signed_in)
 }
 
+/// Store every output under a stable task/index identity with its original generation metadata.
 fn keep_local_images(root: &AppDataRoot, task: &Task, files: &[PathBuf], maybe_context: Option<&ProviderImageContext>) -> Result<Vec<GeneratedImage>, Box<dyn std::error::Error>> {
   files
     .iter()
@@ -190,6 +195,7 @@ fn keep_local_images(root: &AppDataRoot, task: &Task, files: &[PathBuf], maybe_c
     .collect()
 }
 
+/// Remove transfer caches, upload progress, receipts, and context after terminal handling.
 fn cleanup_completion(app: &AppHandle<impl tauri::Runtime>, root: &AppDataRoot, task: &Task, path: &Path) {
   if let Err(error) = clear_cached_downloads(path) {
     warn!("Could not remove cached provider media: {error}");
@@ -212,6 +218,7 @@ fn cleanup_completion(app: &AppHandle<impl tauri::Runtime>, root: &AppDataRoot, 
   clear_auto_download_checkpoint(app, task);
 }
 
+/// Validate the task ID before deriving its owned upload-checkpoint path.
 fn checkpoint_path(root: &AppDataRoot, task: &Task) -> Result<PathBuf, Box<dyn std::error::Error>> {
   if task.id.as_str().is_empty() || !task.id.as_str().bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-') {
     return Err("Invalid task ID for upload checkpoint".into());
@@ -219,10 +226,12 @@ fn checkpoint_path(root: &AppDataRoot, task: &Task) -> Result<PathBuf, Box<dyn s
   Ok(root.state_dir().path().join(format!("provider_upload_{}.json", task.id.as_str())))
 }
 
+/// Bind upload recovery to the task, provider job, API host, and media class.
 fn completion_identity(config: &AppEnvConfigs, task: &Task, media_class: TaskMediaFileClass) -> CompletionIdentity {
   CompletionIdentity { task_id: task.id.to_string(), provider: task.provider, maybe_provider_job_id: task.provider_job_id.clone(), api_host: config.storyteller_host.to_api_hostname_and_scheme(), media_class }
 }
 
+/// Retry rate-limited cloud uploads with the same durable key, leaving other failures resumable.
 async fn upload_to_backend(creds: &StorytellerCredentialSet, app_env_configs: &AppEnvConfigs, download_path: &Path, maybe_prompt_token: Option<&PromptToken>, maybe_batch_token: Option<&BatchGenerationToken>, media_class: TaskMediaFileClass, provider: GenerationProvider, idempotency_token: &str) -> Result<MediaFileToken, Box<dyn std::error::Error>> {
   let mut retry_delay_secs = INITIAL_RETRY_DELAY_SECS;
 
@@ -248,6 +257,7 @@ async fn upload_to_backend(creds: &StorytellerCredentialSet, app_env_configs: &A
   unreachable!()
 }
 
+/// Send one image, video, or legacy upload using the checkpoint identity supplied by the caller.
 async fn try_upload(creds: &StorytellerCredentialSet, app_env_configs: &AppEnvConfigs, download_path: &Path, maybe_prompt_token: Option<&PromptToken>, maybe_batch_token: Option<&BatchGenerationToken>, media_class: TaskMediaFileClass, provider: GenerationProvider, idempotency_token: &str) -> Result<MediaFileToken, StorytellerError> {
   let media_token = match media_class {
     TaskMediaFileClass::Video => {

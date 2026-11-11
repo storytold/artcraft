@@ -10,6 +10,7 @@ import { SetWaveSpeedApiKey } from "@storyteller/tauri-api";
 interface ProviderSetupModalProps {
 }
 
+/** Respond to native provider-login events with API-key setup or the supported provider login flow. */
 export function ProviderSetupModal({
 }: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
@@ -53,6 +54,7 @@ export function ProviderSetupModal({
 
   const modalButtonText = `Set up ${serviceProviderName}`;
 
+  /** Save WaveSpeed credentials before closing, or launch the supported browser-based provider login. */
   const buttonOnClick = async () => {
     if (provider === GenerationProvider.WaveSpeed) {
       setSaving(true);
@@ -139,6 +141,7 @@ export function ProviderSetupModal({
   );
 }
 
+/** Return the provider name used in connection guidance, falling back to Artcraft. */
 function getServiceProviderName(provider: GenerationProvider) : string {
   switch (provider) {
     case GenerationProvider.Grok:

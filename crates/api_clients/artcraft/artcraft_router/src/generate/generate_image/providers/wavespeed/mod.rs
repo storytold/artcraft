@@ -23,11 +23,13 @@ pub struct WaveSpeedImageRequest {
 }
 
 impl WaveSpeedImageRequest {
+  /// Submit one paid image prediction without retrying creation; return its tracking ID.
   pub async fn send(&self, client: &RouterWaveSpeedClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     let prediction = client.generate_image(self.model, &self.request).await.map_err(ProviderError::WaveSpeed)?;
     Ok(GenerateImageResponse::WaveSpeed(WaveSpeedImageResponsePayload { prediction_id: prediction.id }))
   }
 
+  /// Estimate known Flux batch prices and leave unverified model prices unspecified.
   pub fn estimate_cost(&self) -> ImageGenerationCostEstimate {
     let maybe_tenths_of_cent = match self.model {
       ImageModel::FluxDev => Some(12),
@@ -39,6 +41,7 @@ impl WaveSpeedImageRequest {
   }
 }
 
+/// Validate model-specific image inputs and options before constructing a WaveSpeed request.
 pub fn build_wavespeed(builder: GenerateImageRequestBuilder) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
   let model = map_model(builder.model)?;
   let prompt = builder.prompt.filter(|prompt| !prompt.trim().is_empty()).ok_or_else(|| ArtcraftRouterError::InvalidInput("WaveSpeed requires a prompt".into()))?;
@@ -120,6 +123,7 @@ pub fn build_wavespeed(builder: GenerateImageRequestBuilder) -> Result<ImageGene
   Ok(ImageGenerationDraftOrRequest::Request(ImageGenerationRequest::WaveSpeed(WaveSpeedImageRequest { model, request })))
 }
 
+/// Translate supported router image models; reject models without a WaveSpeed endpoint.
 fn map_model(model: RouterImageModel) -> Result<ImageModel, ArtcraftRouterError> {
   Ok(match model {
     RouterImageModel::Flux1Dev => ImageModel::FluxDev,
@@ -140,6 +144,7 @@ fn map_model(model: RouterImageModel) -> Result<ImageModel, ArtcraftRouterError>
   })
 }
 
+/// Resolve resolution-bearing aspect ratios and reject conflicting explicit resolutions.
 fn effective_resolution(maybe_resolution: Option<RouterResolution>, maybe_ratio: Option<RouterAspectRatio>, is_seedream: bool) -> Result<Option<RouterResolution>, ArtcraftRouterError> {
   let baked = match maybe_ratio {
     Some(RouterAspectRatio::Auto2k) => Some(RouterResolution::TwoK),
@@ -158,6 +163,7 @@ fn effective_resolution(maybe_resolution: Option<RouterResolution>, maybe_ratio:
   Ok(baked.or(maybe_resolution))
 }
 
+/// Reject resolution overrides for endpoints restricted to the default image size.
 fn require_default_resolution(maybe_resolution: Option<RouterResolution>) -> Result<(), ArtcraftRouterError> {
   match maybe_resolution {
     None | Some(RouterResolution::OneK) => Ok(()),
@@ -165,6 +171,7 @@ fn require_default_resolution(maybe_resolution: Option<RouterResolution>) -> Res
   }
 }
 
+/// Map supported quality options, rejecting unsupported model-specific quality levels.
 fn quality(model: ImageModel, maybe_quality: Option<RouterQuality>) -> Result<Option<String>, ArtcraftRouterError> {
   let supports_quality = matches!(model, ImageModel::GptImage1p5 | ImageModel::GptImage2 | ImageModel::GptImage2p5Flare | ImageModel::GptImage2p5Sunburst);
   if !supports_quality {
@@ -186,6 +193,7 @@ fn quality(model: ImageModel, maybe_quality: Option<RouterQuality>) -> Result<Op
   ))
 }
 
+/// Translate common image ratios, retaining source-image sizing for automatic edit requests.
 fn aspect_ratio(maybe_ratio: Option<RouterAspectRatio>, editing: bool) -> Result<Option<String>, ArtcraftRouterError> {
   use RouterAspectRatio as Ratio;
   Ok(
@@ -208,6 +216,7 @@ fn aspect_ratio(maybe_ratio: Option<RouterAspectRatio>, editing: bool) -> Result
   )
 }
 
+/// Map supported Flux ratios to explicit pixel sizes without panicking on invalid input.
 fn dimensions(ratio: Option<RouterAspectRatio>) -> Result<String, ArtcraftRouterError> {
   let (width, height) = match aspect_ratio(ratio, false)?.as_deref() {
     Some("1:1") => (1024, 1024),
@@ -226,6 +235,7 @@ fn dimensions(ratio: Option<RouterAspectRatio>) -> Result<String, ArtcraftRouter
   Ok(format!("{width}*{height}"))
 }
 
+/// Compute aligned Seedream sizes within the selected resolution and pixel budget.
 fn seedream_dimensions(maybe_ratio: Option<RouterAspectRatio>, maybe_resolution: Option<RouterResolution>) -> Result<String, ArtcraftRouterError> {
   let target: f64 = match maybe_resolution.unwrap_or(RouterResolution::TwoK) {
     RouterResolution::TwoK => 2048.0,
@@ -249,6 +259,7 @@ fn seedream_dimensions(maybe_ratio: Option<RouterAspectRatio>, maybe_resolution:
   Ok(format!("{}*{}", round(target * ratio.sqrt()), round(target / ratio.sqrt())))
 }
 
+/// Preserve the rejected option name and value in the router error contract.
 fn unsupported_option(field: &'static str, value: String) -> ArtcraftRouterError {
   ClientError::ModelDoesNotSupportOption { field, value }.into()
 }

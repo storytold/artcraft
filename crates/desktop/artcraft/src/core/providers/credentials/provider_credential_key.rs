@@ -22,6 +22,7 @@ pub enum ProviderCredentialKey {
 
 
 impl ProviderCredentialKey {
+  /// Identify the payload representation expected for each provider credential.
   pub fn get_type(&self) -> ProviderCredentialType {
     match self {
       // Api keys
@@ -36,6 +37,7 @@ impl ProviderCredentialKey {
     }
   }
 
+  /// Return the profile filename, including the legacy WaveSpeed migration identity.
   pub fn get_filename(&self) -> &'static str {
     match self {
       // Api keys

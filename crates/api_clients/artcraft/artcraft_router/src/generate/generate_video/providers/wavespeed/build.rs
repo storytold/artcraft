@@ -14,11 +14,13 @@ use crate::generate::generate_video::providers::wavespeed::request::WaveSpeedVid
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
+/// Choose generation or reference mode from the supplied inputs and validate the request.
 pub fn build_wavespeed_video(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let has_references = builder.reference_images.is_some() || builder.reference_videos.is_some() || builder.reference_audio.is_some();
   build_wavespeed_video_mode(builder, if has_references { VideoMode::Reference } else { VideoMode::Generate })
 }
 
+/// Plan an explicit WaveSpeed video mode, enforcing endpoint-specific options before billing.
 pub fn build_wavespeed_video_mode(builder: GenerateVideoRequestBuilder, mode: VideoMode) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   if mode != VideoMode::Generate {
     return build_advanced(builder, mode);
@@ -126,6 +128,7 @@ pub fn build_wavespeed_video_mode(builder: GenerateVideoRequestBuilder, mode: Vi
   Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::WaveSpeed(WaveSpeedVideoRequest { model, request })))
 }
 
+/// Validate Seedance reference, edit, and extend combinations and construct their endpoint payloads.
 fn build_advanced(mut builder: GenerateVideoRequestBuilder, mode: VideoMode) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   if !matches!(builder.model, RouterVideoModel::Seedance2p0) || builder.reference_character_tokens.is_some() || builder.start_frame.is_some() || builder.negative_prompt.is_some() {
     return Err(unsupported("mode", "WaveSpeed reference, edit, and extend modes currently require Seedance 2.0 without starting frames, characters, or negative prompts"));
@@ -177,6 +180,7 @@ fn build_advanced(mut builder: GenerateVideoRequestBuilder, mode: VideoMode) -> 
   Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::WaveSpeed(planned)))
 }
 
+/// Resolve supported router video models to their WaveSpeed endpoint identities.
 fn map_model(model: RouterVideoModel) -> Result<VideoModel, ArtcraftRouterError> {
   Ok(match model {
     RouterVideoModel::Kling16Pro => VideoModel::Kling16Pro,
@@ -202,6 +206,7 @@ fn map_model(model: RouterVideoModel) -> Result<VideoModel, ArtcraftRouterError>
   })
 }
 
+/// Accept resolved frame URLs and reject unresolved media-token inputs.
 fn image_url(maybe_image: Option<ImageRef>) -> Result<Option<String>, ArtcraftRouterError> {
   match maybe_image {
     None => Ok(None),
@@ -210,6 +215,7 @@ fn image_url(maybe_image: Option<ImageRef>) -> Result<Option<String>, ArtcraftRo
   }
 }
 
+/// Choose the model default or validate an explicit video resolution.
 fn resolution(model: VideoModel, maybe_resolution: Option<RouterResolution>) -> Result<Option<String>, ArtcraftRouterError> {
   let default_resolution = if model == VideoModel::MinimaxH3 { RouterResolution::TwoK } else { RouterResolution::SevenTwentyP };
   let value = match maybe_resolution.unwrap_or(default_resolution) {
@@ -234,6 +240,7 @@ fn resolution(model: VideoModel, maybe_resolution: Option<RouterResolution>) -> 
   Ok(Some(value.into()))
 }
 
+/// Map supported video ratios while allowing edit endpoints to inherit source geometry.
 fn aspect_ratio(model: VideoModel, maybe_ratio: Option<RouterAspectRatio>, editing: bool) -> Result<Option<String>, ArtcraftRouterError> {
   use RouterAspectRatio as Ratio;
   let value = match maybe_ratio {
@@ -257,6 +264,7 @@ fn aspect_ratio(model: VideoModel, maybe_ratio: Option<RouterAspectRatio>, editi
   Ok(Some(value.into()))
 }
 
+/// Construct a typed rejection that preserves the unsupported field and explanatory value.
 fn unsupported(field: &'static str, message: &str) -> ArtcraftRouterError {
   ClientError::ModelDoesNotSupportOption { field, value: message.into() }.into()
 }

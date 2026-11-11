@@ -4,10 +4,12 @@ use keyring::{Entry, Error};
 
 use super::payload::api_key::ApiKeyData;
 
+/// Scope the OS credential entry to the WaveSpeed service and the current profile path.
 pub(super) fn entry(legacy_path: &Path) -> Result<Entry, Error> {
   Entry::new("ai.artcraft.app.wavespeed", &legacy_path.to_string_lossy())
 }
 
+/// Load the secure key or migrate bounded legacy plaintext only after secure storage succeeds.
 pub(super) fn load(entry: &Entry, legacy_path: &Path) -> anyhow::Result<Option<ApiKeyData>> {
   match entry.get_password() {
     Ok(password) => {
@@ -28,11 +30,13 @@ pub(super) fn load(entry: &Entry, legacy_path: &Path) -> anyhow::Result<Option<A
   }
 }
 
+/// Write the OS key before removing legacy plaintext; cleanup errors still propagate.
 pub(super) fn save(entry: &Entry, legacy_path: &Path, data: &ApiKeyData) -> anyhow::Result<()> {
   entry.set_password(data.as_str())?;
   remove_legacy(legacy_path)
 }
 
+/// Remove the secure entry and legacy file; a cleanup failure may follow a successful deletion.
 pub(super) fn delete(entry: &Entry, legacy_path: &Path) -> anyhow::Result<()> {
   match entry.delete_credential() {
     Ok(()) | Err(Error::NoEntry) => {},
@@ -41,6 +45,7 @@ pub(super) fn delete(entry: &Entry, legacy_path: &Path) -> anyhow::Result<()> {
   remove_legacy(legacy_path)
 }
 
+/// Remove legacy plaintext, tolerating absence but preserving other filesystem failures.
 fn remove_legacy(path: &Path) -> anyhow::Result<()> {
   match std::fs::remove_file(path) {
     Ok(()) => Ok(()),

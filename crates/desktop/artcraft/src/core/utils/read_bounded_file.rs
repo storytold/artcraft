@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::{Error, ErrorKind, Read, Result};
 use std::path::Path;
 
+/// Reject nonregular or oversized metadata and cap bytes even if the file grows while reading.
 pub fn read_bounded_file(path: &Path, maximum: u64) -> Result<Vec<u8>> {
   let file = File::open(path)?;
   if !file.metadata()?.is_file() || file.metadata()?.len() > maximum {

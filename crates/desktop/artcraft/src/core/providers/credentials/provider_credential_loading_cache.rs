@@ -29,6 +29,7 @@ pub struct ProviderCredentialLoadingCache {
 }
 
 impl ProviderCredentialLoadingCache {
+  /// Create a shared credential cache with a five-minute lifetime for successful and absent reads.
   pub fn new(app_data_root: AppDataRoot) -> Self {
     Self {
       inner: Arc::new(RwLock::new(HashMap::new())),
@@ -39,6 +40,7 @@ impl ProviderCredentialLoadingCache {
     }
   }
 
+  /// Create a shared cache with an explicit expiration interval.
   pub fn new_with_ttl(app_data_root: AppDataRoot, ttl: Duration) -> Self {
     Self {
       inner: Arc::new(RwLock::new(HashMap::new())),
@@ -49,6 +51,7 @@ impl ProviderCredentialLoadingCache {
     }
   }
 
+  /// Seed credentials in memory so command tests never access a real OS credential store.
   #[cfg(test)]
   pub(crate) fn with_test_credentials(app_data_root: AppDataRoot, key: ProviderCredentialKey, maybe_payload: Option<ProviderCredentialPayload>) -> Self {
     let cache = Self::new(app_data_root);
@@ -56,6 +59,7 @@ impl ProviderCredentialLoadingCache {
     cache
   }
 
+  /// Return cached credentials or absence; retry storage failures instead of caching them.
   pub fn get_credentials(
     &self,
     key: ProviderCredentialKey,
@@ -63,6 +67,7 @@ impl ProviderCredentialLoadingCache {
     self.get_or_load(key, || self.load_credentials(key))
   }
 
+  /// Invalidate before writing storage; publish the new cached key only after all writes succeed.
   pub fn save_credentials(
     &self,
     key: ProviderCredentialKey,
@@ -70,6 +75,7 @@ impl ProviderCredentialLoadingCache {
   ) -> Result<(), ProviderCredentialLoadingCacheError> {
     let mut cache = self.inner.write()
       .map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
+    cache.remove(&key);
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
 
     info!("Saving credential to disk: {:?}", file_path);
@@ -105,9 +111,11 @@ impl ProviderCredentialLoadingCache {
     }
   }
   
+  /// Invalidate before deleting storage so partial cleanup failures cannot retain a removed key.
   pub fn delete_credentials(&self, key: ProviderCredentialKey) -> Result<(), ProviderCredentialLoadingCacheError> {
     let mut cache = self.inner.write()
       .map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
+    cache.remove(&key);
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
     if key == ProviderCredentialKey::WaveSpeedApiKey {
       super::wavespeed_keychain::delete(self.wavespeed_entry(&file_path)?.as_ref(), &file_path)
@@ -124,6 +132,7 @@ impl ProviderCredentialLoadingCache {
     Ok(())
   }
 
+  /// Serialize cache loads with mutations and cache only successful storage results.
   fn get_or_load(&self, key: ProviderCredentialKey, load: impl FnOnce() -> Result<Option<ProviderCredentialPayload>, ProviderCredentialLoadingCacheError>) -> Result<Option<ProviderCredentialPayload>, ProviderCredentialLoadingCacheError> {
     let mut cache = self.inner.write()
       .map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
@@ -137,6 +146,7 @@ impl ProviderCredentialLoadingCache {
     Ok(maybe_payload)
   }
 
+  /// Read WaveSpeed through the OS store and other providers through their existing credential files.
   fn load_credentials(&self, key: ProviderCredentialKey) -> Result<Option<ProviderCredentialPayload>, ProviderCredentialLoadingCacheError> {
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
     if key == ProviderCredentialKey::WaveSpeedApiKey {
@@ -155,6 +165,7 @@ impl ProviderCredentialLoadingCache {
     Ok(Some(payload))
   }
 
+  /// Create the profile-scoped secure entry, substituting a mock entry only in unit tests.
   fn wavespeed_entry(&self, path: &std::path::Path) -> Result<Arc<keyring::Entry>, ProviderCredentialLoadingCacheError> {
     #[cfg(test)]
     if let Some(entry) = &self.maybe_wavespeed_entry { return Ok(entry.clone()); }
@@ -166,6 +177,68 @@ impl ProviderCredentialLoadingCache {
 mod tests {
   use super::*;
   use std::sync::mpsc;
+
+  mod mutation_failures {
+    use super::*;
+
+    #[test]
+    fn failed_wave_speed_saves_reload_storage_instead_of_reusing_the_previous_key() {
+      for fail_cleanup in [false, true] {
+        let directory = tempfile::tempdir().unwrap();
+        let root = AppDataRoot::create_existing(directory.path()).unwrap();
+        let path = root.credentials_dir().path().join(ProviderCredentialKey::WaveSpeedApiKey.get_filename());
+        let entry = Arc::new(keyring::Entry::new_with_credential(Box::new(keyring::mock::MockCredential::default())));
+        let mut cache = ProviderCredentialLoadingCache::new(root);
+        cache.maybe_wavespeed_entry = Some(entry.clone());
+        let key = ProviderCredentialKey::WaveSpeedApiKey;
+        cache.save_credentials(key, payload("original")).unwrap();
+        if fail_cleanup {
+          std::fs::create_dir(&path).unwrap();
+        } else {
+          let credential: &keyring::mock::MockCredential = entry.get_credential().downcast_ref().unwrap();
+          credential.set_error(keyring::Error::NoStorageAccess(Box::new(std::io::Error::other("locked"))));
+        }
+        assert!(matches!(cache.save_credentials(key, payload("replacement")), Err(ProviderCredentialLoadingCacheError::SecureStorage)));
+        assert!(!cache.inner.read().unwrap().contains_key(&key));
+        if fail_cleanup {
+          assert_eq!(entry.get_password().unwrap(), "replacement");
+          assert!(cache.get_credentials(key).is_err());
+          std::fs::remove_dir(&path).unwrap();
+        }
+        assert_key(cache.get_credentials(key).unwrap(), if fail_cleanup { "replacement" } else { "original" });
+      }
+    }
+
+    #[test]
+    fn failed_wave_speed_deletes_cannot_keep_a_deleted_key_in_memory() {
+      for fail_cleanup in [false, true] {
+        let directory = tempfile::tempdir().unwrap();
+        let root = AppDataRoot::create_existing(directory.path()).unwrap();
+        let path = root.credentials_dir().path().join(ProviderCredentialKey::WaveSpeedApiKey.get_filename());
+        let entry = Arc::new(keyring::Entry::new_with_credential(Box::new(keyring::mock::MockCredential::default())));
+        let mut cache = ProviderCredentialLoadingCache::new(root);
+        cache.maybe_wavespeed_entry = Some(entry.clone());
+        let key = ProviderCredentialKey::WaveSpeedApiKey;
+        cache.save_credentials(key, payload("original")).unwrap();
+        if fail_cleanup {
+          std::fs::create_dir(&path).unwrap();
+        } else {
+          let credential: &keyring::mock::MockCredential = entry.get_credential().downcast_ref().unwrap();
+          credential.set_error(keyring::Error::NoStorageAccess(Box::new(std::io::Error::other("locked"))));
+        }
+        assert!(matches!(cache.delete_credentials(key), Err(ProviderCredentialLoadingCacheError::SecureStorage)));
+        assert!(!cache.inner.read().unwrap().contains_key(&key));
+        if fail_cleanup {
+          assert!(matches!(entry.get_password(), Err(keyring::Error::NoEntry)));
+          assert!(cache.get_credentials(key).is_err());
+          std::fs::remove_dir(&path).unwrap();
+          assert!(cache.get_credentials(key).unwrap().is_none());
+        } else {
+          assert_key(cache.get_credentials(key).unwrap(), "original");
+        }
+      }
+    }
+  }
 
   #[test]
   fn production_wave_speed_load_save_and_delete_share_a_cache_with_mock_keychain_storage() {

@@ -49,6 +49,7 @@ interface TextToImageProps {
   imageUrl?: string;
 }
 
+/** Compose image generation and merged local/cloud history, with WaveSpeed selection for signed-out users. */
 const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   useSignals();
   const isSignedIn = authentication.status.value === AUTH_STATUS.LOGGED_IN;
@@ -63,6 +64,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
 
+  /** Select WaveSpeed on the current compatible model or the first compatible model in the page catalog. */
   const useWaveSpeed = () => {
     const model = selectedImageModel?.getProviders().includes(GenerationProvider.WaveSpeed)
       ? selectedImageModel

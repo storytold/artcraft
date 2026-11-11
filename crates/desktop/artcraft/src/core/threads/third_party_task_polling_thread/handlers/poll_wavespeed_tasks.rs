@@ -35,6 +35,7 @@ enum PollOutcome {
 }
 
 impl PollBackoff {
+  /// Advance exponential polling backoff while honoring bounded provider retry delays.
   fn delay(&mut self, maybe_retry_after_secs: Option<u64>) {
     self.failures = self.failures.saturating_add(1);
     let seconds = maybe_retry_after_secs.unwrap_or(2u64.saturating_pow(self.failures.min(8))).clamp(2, 3600);
@@ -42,6 +43,7 @@ impl PollBackoff {
   }
 }
 
+/// Respect provider-wide backoff, load cached credentials, and poll pending jobs without creation requests.
 pub async fn poll_wavespeed_tasks(app_handle: &AppHandle, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, credential_cache: &ProviderCredentialLoadingCache, tasks: &[&Task]) {
   if tasks.is_empty() {
     return;
@@ -65,6 +67,7 @@ pub async fn poll_wavespeed_tasks(app_handle: &AppHandle, app_env_configs: &AppE
   }).await;
 }
 
+/// Bound concurrent polling/completion work and stop scheduling new requests after a rate limit.
 async fn poll_with_predictions<F, Fut>(app_handle: &AppHandle<impl tauri::Runtime>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds_manager: &StorytellerCredentialManager, tasks: &[&Task], backoff: &Mutex<PollBackoff>, fetch: F)
 where
   F: Fn(String) -> Fut,
@@ -122,6 +125,7 @@ where
   }
 }
 
+/// Separate completion, terminal failure, pending status, and retryable provider errors.
 fn poll_outcome(result: Result<Prediction, WaveSpeedError>) -> PollOutcome {
   match result {
     Ok(prediction) if prediction.status == PredictionStatus::Completed => {

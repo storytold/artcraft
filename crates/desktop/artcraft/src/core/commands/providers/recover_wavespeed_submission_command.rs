@@ -35,6 +35,7 @@ pub async fn recover_wavespeed_submission_command(request: RecoverWaveSpeedSubmi
   Ok(().into())
 }
 
+/// Reject mismatched or already-tracked prediction IDs before attaching a saved receipt.
 async fn attach_existing_prediction(request: &RecoverWaveSpeedSubmissionRequest, prediction: Prediction, root: &AppDataRoot, config: &AppEnvConfigs, database: &TaskDatabase) -> Result<(), CommandErrorResponseWrapper<ProviderCommandError, ()>> {
   if prediction.id != request.prediction_id {
     return Err(ProviderCommandError::InvalidInput.response("WaveSpeed returned a different prediction"));
@@ -49,6 +50,7 @@ async fn attach_existing_prediction(request: &RecoverWaveSpeedSubmissionRequest,
   Ok(())
 }
 
+/// Require a WaveSpeed API key and return the shared typed missing-key command error otherwise.
 fn require_key(payload: Option<ProviderCredentialPayload>) -> Result<ApiKeyData, CommandErrorResponseWrapper<ProviderCommandError, ()>> {
   match payload {
     Some(ProviderCredentialPayload::ApiKey(key)) => Ok(key),

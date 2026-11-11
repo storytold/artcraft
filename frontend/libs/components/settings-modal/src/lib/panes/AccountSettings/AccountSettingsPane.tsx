@@ -7,6 +7,7 @@ interface AccountSettingsPaneProps {
   globalAccountLogoutCallback: () => void;
 }
 
+/** Render Artcraft and supported direct-provider account controls, including WaveSpeed key management. */
 export const AccountSettingsPane = ({
   globalAccountLogoutCallback,
 }: AccountSettingsPaneProps) => {

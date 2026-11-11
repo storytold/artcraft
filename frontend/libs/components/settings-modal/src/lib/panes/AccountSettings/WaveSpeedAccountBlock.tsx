@@ -3,6 +3,7 @@ import { ClearWaveSpeedApiKey, HasWaveSpeedApiKey, SetWaveSpeedApiKey } from "@s
 import { Button } from "@storyteller/ui-button";
 import { WaveSpeedSubmissionRecovery } from "./WaveSpeedSubmissionRecovery";
 
+/** Manage the securely stored WaveSpeed key and expose uncertain-submission recovery without revealing saved secrets. */
 export function WaveSpeedAccountBlock() {
   const [apiKey, setApiKey] = useState("");
   const [connected, setConnected] = useState(false);
@@ -18,6 +19,7 @@ export function WaveSpeedAccountBlock() {
     return () => { active = false; };
   }, []);
 
+  /** Persist the entered key through the native secure store and clear the input only after success. */
   async function save() {
     setBusy(true);
     setError("");
@@ -32,6 +34,7 @@ export function WaveSpeedAccountBlock() {
     }
   }
 
+  /** Remove the saved key and update connection state only after native deletion succeeds. */
   async function disconnect() {
     setBusy(true);
     setError("");

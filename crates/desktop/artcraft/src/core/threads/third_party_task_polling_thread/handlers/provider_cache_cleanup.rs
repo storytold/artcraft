@@ -13,6 +13,7 @@ use std::time::{Duration, SystemTime};
 
 const ABANDONED_FILE_AGE: Duration = Duration::from_secs(24 * 60 * 60);
 
+/// Remove confirmed terminal caches and aged partial downloads while preserving pending work.
 pub async fn cleanup_provider_cache(root: &AppDataRoot, database: &TaskDatabase) -> anyhow::Result<()> {
   let directory = root.state_dir().path();
   let statuses: HashMap<String, String> = sqlite_tasks::queries::list_task_statuses::list_task_statuses(database.get_connection()).await?.into_iter().collect();
@@ -73,10 +74,12 @@ pub async fn cleanup_provider_cache(root: &AppDataRoot, database: &TaskDatabase)
   Ok(())
 }
 
+/// Check whether a filesystem entry exceeds the abandoned-transfer age threshold.
 fn old_enough(path: &Path) -> Result<bool, std::io::Error> {
   Ok(SystemTime::now().duration_since(std::fs::symlink_metadata(path)?.modified()?).is_ok_and(|age| age >= ABANDONED_FILE_AGE))
 }
 
+/// Delete a cache directory only when its current entry is a nonsymlink directory.
 fn remove_owned_directory(path: &Path) -> Result<(), std::io::Error> {
   match std::fs::symlink_metadata(path) {
     Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => std::fs::remove_dir_all(path),
@@ -86,6 +89,7 @@ fn remove_owned_directory(path: &Path) -> Result<(), std::io::Error> {
   }
 }
 
+/// Remove an owned cache file while treating absence as a completed cleanup.
 fn remove_file_if_present(path: &Path) -> Result<(), std::io::Error> {
   match std::fs::symlink_metadata(path) {
     Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => std::fs::remove_file(path),

@@ -284,6 +284,7 @@ interface PageDrawProps {
   showBottomRightControls?: boolean;
 }
 
+/** Coordinate canvas editing and generation with provider-specific options and local or cloud completion events. */
 const PageDraw = ({
   adapter,
   backgroundClassName = "bg-ui-background",

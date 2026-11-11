@@ -14,6 +14,7 @@ pub enum ProviderCommandError {
 }
 
 impl ProviderCommandError {
+  /// Wrap a stable provider command error code with its user-facing explanation.
   pub fn response(self, message: impl Into<String>) -> CommandErrorResponseWrapper<Self, ()> {
     let status = match self {
       Self::AuthenticationRequired | Self::MissingApiKey => CommandErrorStatus::Unauthorized,

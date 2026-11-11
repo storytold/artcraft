@@ -13,6 +13,7 @@ interface WaveSpeedVideoCapabilities {
   wideRatios: boolean;
 }
 
+/** Build an inclusive integer range for provider-supported video durations. */
 const range = (start: number, end: number) => Array.from({ length: end - start + 1 }, (_, index) => start + index);
 const KLING: WaveSpeedVideoCapabilities = {
   durations: [5, 10], defaultDuration: 5, resolutions: [],
@@ -51,6 +52,7 @@ export const WAVESPEED_VIDEO_MODELS: Readonly<Record<string, WaveSpeedVideoCapab
   veo_3p1_fast: { ...VEO, endFrame: true, resolutions: ["720p", "1080p", "4K"] },
 };
 
+/** Derive WaveSpeed capabilities without mutating the shared model; leave other providers unchanged. */
 export function videoModelForProvider(
   model: VideoModel | undefined,
   provider: GenerationProvider | undefined,

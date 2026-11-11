@@ -61,6 +61,7 @@ interface ImageToVideoProps {
   imageUrl?: string;
 }
 
+/** Compose video generation and local/cloud history while gating account-dependent media references on sign-in. */
 const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
   useSignals();
   const isSignedIn = authentication.status.value === AUTH_STATUS.LOGGED_IN;

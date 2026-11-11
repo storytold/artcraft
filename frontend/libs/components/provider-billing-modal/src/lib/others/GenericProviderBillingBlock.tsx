@@ -24,6 +24,7 @@ export function GenericProviderBillingBlock({
   );
 }
 
+/** Return the provider name used in billing guidance, falling back to Artcraft. */
 function getServiceProviderName(provider: GenerationProvider) : string {
   switch (provider) {
     case GenerationProvider.Sora:

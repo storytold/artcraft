@@ -111,6 +111,7 @@ interface PromptBoxVideoProps {
   modelSelector?: React.ReactNode;
 }
 
+/** Compose video generation controls using provider-specific keyframe, reference, editing, and duration capabilities. */
 export const PromptBoxVideo = ({
   canUseReferenceMedia = true,
   useJobContext,
@@ -521,6 +522,7 @@ export const PromptBoxVideo = ({
   const dropAcceptsVideos = isReferenceMode && maxVideoCount > 0;
   const dropAcceptsAudio = isReferenceMode && maxAudioCount > 0;
 
+  /** Route dropped media into available keyframes or reference decks while honoring reference access gates. */
   const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
     if (!canUseReferenceMedia) return;
     if (images.length > 0) {
@@ -1048,6 +1050,7 @@ export const PromptBoxVideo = ({
       prompt,
     ) ?? 1000;
 
+  /** Validate video inputs and submit the effective batch, preserving user-visible command errors. */
   const handleEnqueue = async () => {
     if (isWaveSpeedReference && waveSpeedMode !== "reference" && referenceVideos.length !== 1) {
       toast.error("Choose exactly one input video to edit or extend");
@@ -1099,6 +1102,7 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
+    /** Assemble one subscriber-tagged video request with provider-specific references, mode, and generation options. */
     const buildRequest = (subscriberId: string): GenerateVideoRequest => {
       let request: GenerateVideoRequest = {
         model: selectedModel,

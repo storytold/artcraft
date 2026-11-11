@@ -50,6 +50,7 @@ pub enum DownloadUrlErrorType {
   UnknownError,
 }
 
+/// Download a remote URL or copy a registered local asset using desktop preferences and typed errors.
 #[tauri::command]
 pub async fn download_url_command(
   request: DownloadUrlRequest,
@@ -111,6 +112,7 @@ pub async fn download_url_command(
   Ok(DownloadUrlSuccessResponse {}.into())
 }
 
+/// Apply current download preferences and return the resulting filesystem destination.
 pub async fn handle_request(
   request: DownloadUrlRequest,
   app: &AppHandle,
@@ -123,6 +125,7 @@ pub async fn handle_request(
   Ok(())
 }
 
+/// Resolve registered local assets and restrict explicit filenames to safe local copies.
 async fn download_with_preferences(request: DownloadUrlRequest, app_prefs: &AppPreferences, app_data_root: &AppDataRoot) -> Result<PathBuf, ArtcraftError> {
 
   let maybe_source = if local_generations::is_asset_url(&request.url) { Some(local_generations::resolve_asset_url(app_data_root, &request.url)?) } else { None };
@@ -147,6 +150,7 @@ async fn download_with_preferences(request: DownloadUrlRequest, app_prefs: &AppP
   Ok(download_path)
 }
 
+/// Copy validated local bytes to a safe filename without overwriting an existing destination.
 fn copy_local_image(source: &Path, directory: &Path, filename: &str, explicit_filename: bool) -> Result<PathBuf, ArtcraftError> {
   check_url_file_name_for_downloadability(filename)?;
   if explicit_filename {

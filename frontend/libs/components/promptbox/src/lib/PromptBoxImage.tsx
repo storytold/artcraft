@@ -66,6 +66,7 @@ interface PromptBoxImageProps {
   modelSelector?: ReactNode;
 }
 
+/** Build image requests from the selected provider capabilities, gating uploaded references on availability. */
 export const PromptBoxImage = ({
   useJobContext,
   uploadImage,
@@ -147,6 +148,7 @@ export const PromptBoxImage = ({
   // kind this box takes, and only when the model can use them at all.
   const dropAcceptsImages = canUseReferenceImages && !!selectedModel?.canUseImagePrompt;
 
+  /** Accept dropped image references only when supported and at least one reference slot remains. */
   const handleDroppedFiles = ({ images }: DroppedFiles) => {
     if (!dropAcceptsImages || images.length === 0) return;
     if (deck.availableImageSlots <= 0) {
@@ -210,6 +212,7 @@ export const PromptBoxImage = ({
     },
   ];
 
+  /** Render reference editing controls only when both the page and selected model permit image references. */
   const renderReferenceDeck = (alwaysExpanded?: boolean) =>
     canUseReferenceImages && selectedModel?.canUseImagePrompt ? (
       <ReferenceDeck
@@ -361,6 +364,7 @@ export const PromptBoxImage = ({
 
   const maxLen = selectedModel?.maxPromptLength ?? 1000;
 
+  /** Validate the image prompt, submit effective model/provider options, and expose command failures to the user. */
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
       console.warn("Cannot generate image: prompt is empty");

@@ -74,12 +74,14 @@ pub async fn auto_download_task_urls(app: &AppHandle, task: &Task, urls: &[Url])
   download_generated_results(&app.state::<AppDataRoot>(), &prefs, task, urls).await
 }
 
+/// Apply download preferences to cached outputs before task completion is persisted.
 pub async fn auto_download_task_files(app: &AppHandle<impl tauri::Runtime>, task: &Task, urls: &[Url], files: &[PathBuf]) -> AnyhowResult<()> {
   ensure!(urls.len() == files.len(), "Cached result count does not match provider output");
   let prefs = app.state::<AppPreferencesManager>().get_clone()?;
   download_results(&app.state::<AppDataRoot>(), &prefs, task, urls, Some(files)).await
 }
 
+/// Remove automatic-download progress after terminal task handling.
 pub fn clear_auto_download_checkpoint(app: &AppHandle<impl tauri::Runtime>, task: &Task) {
   let path = checkpoint_path(&app.state::<AppDataRoot>(), task);
   if let Err(err) = std::fs::remove_file(path) {
@@ -89,10 +91,12 @@ pub fn clear_auto_download_checkpoint(app: &AppHandle<impl tauri::Runtime>, task
   }
 }
 
+/// Download result URLs according to preferences using the same durable progress mechanism.
 async fn download_generated_results(root: &AppDataRoot, prefs: &AppPreferences, task: &Task, urls: &[Url]) -> AnyhowResult<()> {
   download_results(root, prefs, task, urls, None).await
 }
 
+/// Save every requested output before completion, retaining per-URL progress across interruptions.
 async fn download_results(root: &AppDataRoot, prefs: &AppPreferences, task: &Task, urls: &[Url], maybe_files: Option<&[PathBuf]>) -> AnyhowResult<()> {
   if !prefs.auto_download {
     return Ok(());

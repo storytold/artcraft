@@ -70,6 +70,7 @@ async function fetchMissing(mediaTokens: readonly string[]): Promise<void> {
 // absent from the map is still resolving (use `.has()` to distinguish that
 // from a resolved-but-promptless item). Triggers a batched fetch for any not
 // yet resolved.
+/** Resolve remote prompt tokens in batches; local IDs resolve to an empty prompt token without API calls. */
 export function useMediaPromptTokens(
   mediaTokens: readonly (string | null | undefined)[],
 ): Map<string, string> {

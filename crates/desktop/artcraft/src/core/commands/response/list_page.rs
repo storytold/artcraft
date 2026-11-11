@@ -8,6 +8,7 @@ pub struct ListPageRequest {
   pub maybe_cursor: Option<usize>,
 }
 
+/// Return a bounded offset page and a continuation cursor for the remaining entries.
 pub fn list_page<T>(items: Vec<T>, request: Option<ListPageRequest>) -> (Vec<T>, Option<usize>) {
   let request = request.unwrap_or_default();
   let limit = request.maybe_limit.unwrap_or(50).clamp(1, 100);

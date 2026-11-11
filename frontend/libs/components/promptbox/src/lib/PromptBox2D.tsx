@@ -57,6 +57,7 @@ export interface PromptBox2DProps {
   modelSelector?: React.ReactNode;
 }
 
+/** Render canvas-generation controls with provider-specific image options and reference limits. */
 export const PromptBox2D = ({
   uploadImage,
   selectedImageModel,
@@ -184,6 +185,7 @@ export const PromptBox2D = ({
     }
   });
 
+  /** Update both the legacy aspect-ratio value and the picker selection state. */
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     const value = selectedItem.label.toLowerCase() as "wide" | "tall" | "square";
     setAspectRatio(value);
@@ -289,6 +291,7 @@ export const PromptBox2D = ({
     setReferenceImages([]);
   };
 
+  /** Validate prompt and reference limits, then pass effective provider options to the canvas generation callback. */
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;

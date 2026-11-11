@@ -25,6 +25,7 @@ pub struct KeptGeneration {
 pub struct InvalidLocalImage;
 
 impl Display for InvalidLocalImage {
+  /// Describe invalid provider media without exposing local paths or downloaded contents.
   fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     formatter.write_str("Provider output is not supported, bounded media")
   }
@@ -60,14 +61,17 @@ struct Metadata {
   media_class: String,
 }
 
+/// Keep a validated image under a stable local identity, retaining its original bytes and thumbnail.
 pub fn keep_as(root: &AppDataRoot, seed: &str, source: &Path, prompt: &str, model_id: &str, provider: &str) -> Result<KeptGeneration> {
   keep_media_as(root, seed, source, prompt, model_id, provider, false)
 }
 
+/// Keep a bounded MP4 under a stable local identity without uploading it to ArtCraft.
 pub fn keep_video_as(root: &AppDataRoot, seed: &str, source: &Path, prompt: &str, model_id: &str, provider: &str) -> Result<KeptGeneration> {
   keep_media_as(root, seed, source, prompt, model_id, provider, true)
 }
 
+/// Persist media and metadata with stable identities, rejecting conflicting existing content.
 fn keep_media_as(root: &AppDataRoot, seed: &str, source: &Path, prompt: &str, model_id: &str, provider: &str, video: bool) -> Result<KeptGeneration> {
   if seed.is_empty() || seed.len() > 96 {
     bail!("Local generation seed is empty or too long");
@@ -147,6 +151,7 @@ fn keep_media_as(root: &AppDataRoot, seed: &str, source: &Path, prompt: &str, mo
   }
 }
 
+/// List valid registered media newest first and quarantine invalid metadata entries.
 pub fn list(root: &AppDataRoot) -> Result<Vec<LocalGeneration>> {
   let directory = local_directory(root, true)?;
   let mut images = Vec::new();
@@ -178,6 +183,7 @@ pub fn list(root: &AppDataRoot) -> Result<Vec<LocalGeneration>> {
   Ok(images)
 }
 
+/// Remove one registered generation, its thumbnail, and metadata; tolerate an already-absent entry.
 pub fn delete(root: &AppDataRoot, id: &str) -> Result<()> {
   validate_id(id)?;
   let directory = local_directory(root, true)?;
@@ -205,26 +211,31 @@ pub fn delete(root: &AppDataRoot, id: &str) -> Result<()> {
   Ok(())
 }
 
+/// Classify local-looking tokens by prefix; filesystem access must still validate the complete ID.
 pub fn is_local_token(id: &str) -> bool {
   id.starts_with(LOCAL_PREFIX)
 }
 
+/// Resolve a registered local token to a confined regular file inside the owned library.
 pub fn resolve_token(root: &AppDataRoot, id: &str) -> Result<PathBuf> {
   let directory = local_directory(root, false)?;
   let metadata = read_metadata(&directory, id)?;
   confined_file(&directory, &directory.join(metadata.filename))
 }
 
+/// Enforce the local image byte limit and decode a supported format with allocation limits.
 pub fn validate_image_file(path: &Path) -> Result<()> {
   let bytes = read_image_bytes(path)?;
   validate_image(&bytes).map_err(|_| InvalidLocalImage)?;
   Ok(())
 }
 
+/// Recognize local asset URL candidates without granting access to their filesystem paths.
 pub fn is_asset_url(url: &Url) -> bool {
   url.scheme() == "asset" || url.host_str() == Some("asset.localhost")
 }
 
+/// Validate a local asset origin and require a confined, registered original media file.
 pub fn resolve_asset_url(root: &AppDataRoot, url: &Url) -> Result<PathBuf> {
   let valid_origin = (url.scheme() == "asset" && url.host_str() == Some("localhost")) || (url.scheme() == "http" && url.host_str() == Some("asset.localhost"));
   if !valid_origin || !url.username().is_empty() || url.password().is_some() || url.port().is_some() || url.query().is_some() || url.fragment().is_some() {
@@ -242,6 +253,7 @@ pub fn resolve_asset_url(root: &AppDataRoot, url: &Url) -> Result<PathBuf> {
   Ok(path)
 }
 
+/// Encode a UTF-8 filesystem path using the platform-specific Tauri asset origin.
 pub fn asset_url(path: &Path) -> Result<Url> {
   let path = path.to_str().context("Local image path is not UTF-8")?;
   let encoded = path.as_bytes().iter().map(|byte| if byte.is_ascii_alphanumeric() || b"-_.!~*'()".contains(byte) { (*byte as char).to_string() } else { format!("%{byte:02X}") }).collect::<String>();
@@ -249,6 +261,7 @@ pub fn asset_url(path: &Path) -> Result<Url> {
   Ok(Url::parse(&format!("{origin}{encoded}"))?)
 }
 
+/// Locate or create the canonical local library while rejecting symlinked storage directories.
 fn local_directory(root: &AppDataRoot, create: bool) -> Result<PathBuf> {
   let directory = root.path().canonicalize()?.join("local_generations");
   if create {
@@ -265,6 +278,7 @@ fn local_directory(root: &AppDataRoot, create: bool) -> Result<PathBuf> {
   Ok(directory)
 }
 
+/// Read bounded versioned metadata and validate its ID, media class, and owned filenames.
 fn read_metadata(directory: &Path, id: &str) -> Result<Metadata> {
   validate_id(id)?;
   let path = directory.join(format!("{id}.json"));
@@ -285,11 +299,13 @@ fn read_metadata(directory: &Path, id: &str) -> Result<Metadata> {
   Ok(metadata)
 }
 
+/// Build the local token and asset URL only after checking the referenced media file.
 fn kept_generation(directory: &Path, metadata: &Metadata) -> Result<KeptGeneration> {
   let path = confined_file(directory, &directory.join(&metadata.filename))?;
   Ok(KeptGeneration { token: MediaFileToken::new_from_str(&metadata.id), asset_url: asset_url(&path)? })
 }
 
+/// Require a nonsymlink regular file whose canonical parent is the owned library directory.
 fn confined_file(directory: &Path, path: &Path) -> Result<PathBuf> {
   let metadata = fs::symlink_metadata(path)?;
   if metadata.file_type().is_symlink() || !metadata.is_file() || path.parent() != Some(directory) {
@@ -302,6 +318,7 @@ fn confined_file(directory: &Path, path: &Path) -> Result<PathBuf> {
   Ok(canonical)
 }
 
+/// Reject empty, oversized, or path-like suffixes before using a local token as a filename.
 fn validate_id(id: &str) -> Result<()> {
   let suffix = id.strip_prefix(LOCAL_PREFIX).context("Not a local generation token")?;
   if suffix.is_empty() || suffix.len() > 192 || !suffix.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_') {
@@ -310,10 +327,12 @@ fn validate_id(id: &str) -> Result<()> {
   Ok(())
 }
 
+/// Supply the legacy-compatible metadata version when an older record omits it.
 fn metadata_version() -> u8 {
   1
 }
 
+/// Reject replayed local identities with different prompt, model, or provider metadata.
 fn validate_details(metadata: &Metadata, prompt: &str, model_id: &str, provider: &str) -> Result<()> {
   if metadata.prompt != prompt || metadata.model_id != model_id || metadata.provider != provider {
     bail!("Local generation identity changed");
@@ -321,6 +340,7 @@ fn validate_details(metadata: &Metadata, prompt: &str, model_id: &str, provider:
   Ok(())
 }
 
+/// Check file length and streamed bytes before parsing local metadata.
 fn read_bounded(path: &Path, limit: u64) -> Result<Vec<u8>> {
   let file = File::open(path)?;
   if file.metadata()?.len() > limit {
@@ -334,10 +354,12 @@ fn read_bounded(path: &Path, limit: u64) -> Result<Vec<u8>> {
   Ok(bytes)
 }
 
+/// Decode a supported image and return its canonical extension.
 fn validate_image(bytes: &[u8]) -> Result<&'static str> {
   decode_image(bytes).map(|(extension, _)| extension)
 }
 
+/// Restrict image formats, dimensions, and allocation before decoding untrusted provider bytes.
 fn decode_image(bytes: &[u8]) -> Result<(&'static str, image::DynamicImage)> {
   let format = image::guess_format(bytes)?;
   let extension = match format {
@@ -357,6 +379,7 @@ fn decode_image(bytes: &[u8]) -> Result<(&'static str, image::DynamicImage)> {
   Ok((extension, decoded))
 }
 
+/// Read an image within the encoded-byte limit, rejecting files that grow beyond it.
 fn read_image_bytes(path: &Path) -> Result<Vec<u8>> {
   let file = File::open(path)?;
   if file.metadata()?.len() > MAX_IMAGE_BYTES {
@@ -370,10 +393,12 @@ fn read_image_bytes(path: &Path) -> Result<Vec<u8>> {
   Ok(bytes)
 }
 
+/// Treat legacy metadata without a media-class field as an image entry.
 fn image_class() -> String {
   "image".into()
 }
 
+/// Bound MP4 size and box traversal and require file-type, movie, and media-data boxes.
 pub fn validate_video_file(path: &Path) -> Result<()> {
   let mut file = File::open(path)?;
   let length = file.metadata()?.len();
@@ -424,6 +449,7 @@ pub fn validate_video_file(path: &Path) -> Result<()> {
   Ok(())
 }
 
+/// Compare file contents in bounded chunks before accepting an existing stable local identity.
 fn same_files(first: &Path, second: &Path) -> Result<bool> {
   let mut first = File::open(first)?;
   let mut second = File::open(second)?;
@@ -444,6 +470,7 @@ fn same_files(first: &Path, second: &Path) -> Result<bool> {
   }
 }
 
+/// Decode percent-escaped UTF-8 asset paths, rejecting malformed escapes.
 fn decode_path(encoded: &str) -> Result<String> {
   let bytes = encoded.as_bytes();
   let mut decoded = Vec::with_capacity(bytes.len());

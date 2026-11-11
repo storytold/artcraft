@@ -2,6 +2,7 @@ use crate::error::SqliteTasksError;
 use crate::queries::create_task::CreateTaskArgs;
 use tokens::tokens::sqlite::tasks::TaskId;
 
+/// Insert a provider job at most once and finish the statement before returning its stable task ID.
 pub async fn create_task_once(args: CreateTaskArgs<'_>) -> Result<TaskId, SqliteTasksError> {
   let job_id = args.provider_job_id.filter(|value| !value.is_empty()).ok_or_else(|| sqlx::Error::Protocol("A stable provider job ID is required for task recovery".into()))?;
   let task_id = TaskId::generate();

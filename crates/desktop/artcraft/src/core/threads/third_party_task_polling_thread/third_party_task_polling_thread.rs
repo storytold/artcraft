@@ -21,6 +21,7 @@ const SLEEP_THIRD_PARTY_JOBS_SEEN: Duration = Duration::from_secs(2);
 const SLEEP_BETWEEN_FAL_POLLS: Duration = Duration::from_secs(1);
 const SLEEP_ON_ERROR: Duration = Duration::from_secs(30);
 
+/// Continuously restore receipts, clean owned caches, and poll third-party work with bounded intervals.
 pub async fn third_party_task_polling_thread(
   app_handle: AppHandle,
   app_env_configs: AppEnvConfigs,
@@ -63,6 +64,7 @@ pub async fn third_party_task_polling_thread(
   }
 }
 
+/// Resume saved completions first, then dispatch remaining pending tasks to their provider pollers.
 async fn poll_iteration(
   app_handle: &AppHandle,
   app_env_configs: &AppEnvConfigs,

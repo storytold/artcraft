@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { ListWaveSpeedSubmissions, RecoverWaveSpeedSubmission, type UncertainWaveSpeedSubmission } from "@storyteller/tauri-api";
 
+/** Let users attach an existing prediction ID to an uncertain submission instead of submitting a paid job again. */
 export function WaveSpeedSubmissionRecovery() {
   const [submissions, setSubmissions] = useState<UncertainWaveSpeedSubmission[]>([]);
   const [predictionIds, setPredictionIds] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  /** Refresh uncertain submissions and explain whether manual recovery is available. */
   const check = async () => {
     setBusy(true);
     try {

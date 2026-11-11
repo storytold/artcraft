@@ -64,6 +64,7 @@ const FAILURE_REASON_LABEL: Record<string, string> = {
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
+/** Track desktop tasks of one media type and expose pending, failed, and newly completed gallery entries. */
 export function useDesktopGenerationFeed(options: {
   mediaType: "image" | "video";
 }) {
@@ -236,6 +237,7 @@ export function useDesktopGenerationFeed(options: {
       }
     };
 
+    /** Retry missing remote video previews within the grace period, never requesting local IDs from the media API. */
     const lookUpMissingThumbnailsOnce = async () => {
       const now = Date.now();
       const missing = newlyCompletedRef.current.filter((item) => {

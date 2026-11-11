@@ -47,6 +47,7 @@ pub(super) struct UploadPlan {
 }
 
 impl UploadCheckpoint {
+  /// Persist stable upload identities before transfer and reject changed task identities or result URLs.
   pub fn prepare(path: &Path, identity: &CompletionIdentity, urls: &[String]) -> Result<Self, TransferError> {
     if urls.is_empty() {
       return Err("No provider results to upload".into());
@@ -65,6 +66,7 @@ impl UploadCheckpoint {
     Ok(checkpoint)
   }
 
+  /// Load bounded versioned upload progress; return none only when no checkpoint exists.
   pub fn load(path: &Path) -> Result<Option<Self>, TransferError> {
     match crate::core::utils::read_bounded_file::read_bounded_file(path, 4 * 1024 * 1024) {
       Ok(bytes) => {
@@ -79,10 +81,12 @@ impl UploadCheckpoint {
     }
   }
 
+  /// Return output URLs in checkpoint order so retries retain their original upload identities.
   pub fn urls(&self) -> Vec<String> {
     self.files.iter().map(|file| file.url.clone()).collect()
   }
 
+  /// Persist the verified account before upload and reject cross-account or unsafe legacy reuse.
   pub fn bind_upload_account(&mut self, path: &Path, account: &str) -> Result<(), TransferError> {
     match self.maybe_upload_account.as_deref() {
       Some(original) if original != account => return Err("Sign in to the original ArtCraft account to resume this upload".into()),
@@ -96,6 +100,7 @@ impl UploadCheckpoint {
   }
 }
 
+/// Skip confirmed uploads and persist each returned token, reusing keys after uncertain responses.
 pub(super) async fn resume_uploads<F, Fut>(path: &Path, identity: &CompletionIdentity, urls: &[String], mut upload: F) -> Result<(MediaFileToken, Option<BatchGenerationToken>), TransferError>
 where
   F: FnMut(UploadPlan) -> Fut,
@@ -116,6 +121,7 @@ where
   Ok((primary, checkpoint.maybe_batch_token))
 }
 
+/// Flush upload progress to a temporary file and atomically replace its checkpoint.
 fn save(path: &Path, checkpoint: &UploadCheckpoint) -> Result<(), TransferError> {
   let parent = path.parent().ok_or("Checkpoint has no parent directory")?;
   let mut file = NamedTempFile::new_in(parent)?;

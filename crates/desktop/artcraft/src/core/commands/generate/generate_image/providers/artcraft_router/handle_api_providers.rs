@@ -45,6 +45,7 @@ pub async fn handle_api_key_provider(request: &TauriGenerateImageRequest, provid
 
 // ── FAL ──
 
+/// Submit validated image options once, preserving uncertain acceptance in a durable receipt.
 async fn handle_wavespeed(request: &TauriGenerateImageRequest, api_key: &str, app_env_configs: &AppEnvConfigs, storyteller_creds_manager: &StorytellerCredentialManager, app_data_root: &AppDataRoot) -> Result<TaskEnqueueSuccess, GenerateError> {
   let signed_in = storyteller_creds_manager.get_signed_in_credentials()?.is_some();
   validate_wavespeed_references(request, signed_in)?;
@@ -147,6 +148,7 @@ async fn handle_fal(
 
 // ── Helpers ──
 
+/// Resolve ordered cloud image references to CDN URLs for router providers.
 async fn resolve_image_inputs(request: &TauriGenerateImageRequest, api_host: &ApiHost) -> Result<Option<ImageListRef>, GenerateError> {
   let mut tokens: Vec<MediaFileToken> = Vec::new();
 
@@ -203,6 +205,7 @@ async fn create_prompt_record(
   }
 }
 
+/// Reject local or signed-out cloud references before a paid WaveSpeed image submission.
 fn validate_wavespeed_references(request: &TauriGenerateImageRequest, signed_in: bool) -> Result<(), GenerateError> {
   if !signed_in && (request.canvas_image_media_token.is_some() || request.scene_image_media_token.is_some() || request.image_media_tokens.as_ref().is_some_and(|tokens| !tokens.is_empty())) {
     return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Sign in to use uploaded image references with WaveSpeed".into())));

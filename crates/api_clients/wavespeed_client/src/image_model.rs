@@ -17,6 +17,7 @@ pub enum ImageModel {
 }
 
 impl ImageModel {
+  /// Select the documented creation or edit endpoint for this image model.
   pub fn endpoint(self, editing: bool) -> &'static str {
     match (self, editing) {
       (Self::FluxDev, _) => "wavespeed-ai/flux-dev",
@@ -46,6 +47,7 @@ impl ImageModel {
     }
   }
 
+  /// Return the model-specific input-image limit enforced before submission.
   pub fn max_reference_images(self) -> usize {
     match self {
       Self::FluxDev | Self::FluxSchnell => 1,
@@ -56,6 +58,7 @@ impl ImageModel {
     }
   }
 
+  /// Return the number of outputs supported by a single paid creation request.
   pub fn max_output_images(self) -> u16 {
     match self {
       Self::FluxDev | Self::FluxSchnell => 4,

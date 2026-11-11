@@ -96,6 +96,7 @@ export const getSelectedVideoModel = (
   return maybeModel as VideoModel;
 };
 
+/** Read the saved provider and normalize retired or incompatible choices against the selected model. */
 export const getSelectedProviderForModel = (
   page: ModelPage,
   modelId: string
@@ -132,6 +133,7 @@ export const useSelectedVideoModel = (
 };
 
 // TODO: This shouldn't be on a per-page basis.
+/** Subscribe to the normalized provider choice for a page/model pair; return undefined without a model ID. */
 export const useSelectedProviderForModel = (
   page: ModelPage,
   modelId: string | undefined
@@ -143,6 +145,7 @@ export const useSelectedProviderForModel = (
     ) : undefined
   );
 
+/** Redirect retired direct providers and reject unknown values, falling back when the model disallows a choice. */
 function resolveSelectedProvider(
   provider: GenerationProvider | undefined,
   model?: Model,

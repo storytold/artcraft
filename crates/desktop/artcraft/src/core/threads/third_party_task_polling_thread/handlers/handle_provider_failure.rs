@@ -10,6 +10,7 @@ use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskAr
 use tauri::AppHandle;
 use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
 
+/// Persist terminal failure before emitting its event, and never overwrite an already-terminal task.
 pub async fn handle_provider_failure(app_handle: &AppHandle<impl tauri::Runtime>, task_database: &TaskDatabase, task: &Task, reason: &str) -> bool {
   info!("[ProviderPolling] Marking task {} as failed: {}", task.id.as_str(), reason);
 

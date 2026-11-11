@@ -7,10 +7,12 @@ use super::public_media_client::{public_media_client, validate_media_url};
 
 const MAX_TRANSFER_BYTES: u64 = 1024 * 1024 * 1024;
 
+/// Cache bounded provider outputs using the public-only production media client.
 pub(super) async fn cache_downloads(checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
   cache_downloads_with_client(&public_media_client()?, checkpoint_path, urls).await
 }
 
+/// Validate output URLs and count, reusing durable cached bytes across retries.
 pub(super) async fn cache_downloads_with_client(client: &Client, checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
   if urls.is_empty() || urls.len() > wavespeed_client::MAX_OUTPUTS {
     return Err("Invalid provider output count".into());
@@ -37,6 +39,7 @@ pub(super) async fn cache_downloads_with_client(client: &Client, checkpoint_path
   Ok(paths)
 }
 
+/// Remove a checkpoint-owned media directory, tolerating an already-cleaned cache.
 pub(super) fn clear_cached_downloads(checkpoint_path: &Path) -> Result<(), std::io::Error> {
   match std::fs::remove_dir_all(checkpoint_path.with_extension("media")) {
     Ok(()) => Ok(()),
@@ -45,6 +48,7 @@ pub(super) fn clear_cached_downloads(checkpoint_path: &Path) -> Result<(), std::
   }
 }
 
+/// Stream a successful nonredirect response to an owned temporary file within a byte cap.
 pub(super) async fn download_with_client(client: &Client, url: &str, directory: &Path, max_bytes: u64) -> Result<NamedTempFile, Box<dyn std::error::Error>> {
   let mut response = client.get(url).send().await?.error_for_status()?;
   if !response.status().is_success() {

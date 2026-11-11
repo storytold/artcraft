@@ -48,6 +48,7 @@ pub struct ProviderCredentialDetails {
   pub maybe_username: Option<String>,
 }
 
+/// Report configured providers while withholding the complete WaveSpeed API key from the webview.
 #[tauri::command]
 pub async fn provider_list_command(
   credential_cache: State<'_, ProviderCredentialLoadingCache>,
@@ -97,6 +98,7 @@ pub async fn provider_list_command(
   Ok(ProviderListResponse { providers }.into())
 }
 
+/// Produce a short credential preview without slicing inside UTF-8 code points.
 fn redact_key(key: &str) -> String {
   if key.len() <= REDACTED_KEY_VISIBLE_CHARS {
     "********".to_string()

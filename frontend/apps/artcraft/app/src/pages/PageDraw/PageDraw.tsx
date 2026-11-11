@@ -18,6 +18,7 @@ import { UploadImageMedia } from "@storyteller/api";
 import { BaseImageSelector } from "./BaseImageSelector";
 
 // ─── Aspect ratio / resolution mappers ────────────────────────────────────────
+/** Normalize canvas aspect-ratio selections to supported request values; leave unrecognized values unset. */
 const mapAspectRatio = (ratio?: string): CommonAspectRatio | undefined => {
   if (Object.values(CommonAspectRatio).includes(ratio as CommonAspectRatio)) return ratio as CommonAspectRatio;
   switch (ratio) {
@@ -29,6 +30,7 @@ const mapAspectRatio = (ratio?: string): CommonAspectRatio | undefined => {
   }
 };
 
+/** Normalize canvas resolution tiers to request values; leave unrecognized values unset. */
 const mapResolution = (res?: string): CommonResolution | undefined => {
   if (Object.values(CommonResolution).includes(res as CommonResolution)) return res as CommonResolution;
   switch (res) {

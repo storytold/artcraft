@@ -8,6 +8,7 @@ use reqwest::{Client, Url};
 
 struct PublicDns;
 
+/// Build a bounded-time media client without proxies or redirects and with public-only DNS.
 pub(super) fn public_media_client() -> Result<Client, reqwest::Error> {
   Client::builder()
     .connect_timeout(Duration::from_secs(10))
@@ -18,6 +19,7 @@ pub(super) fn public_media_client() -> Result<Client, reqwest::Error> {
     .build()
 }
 
+/// Require HTTP(S), no userinfo, and public IP literals before downloading provider output.
 pub(super) fn validate_media_url(value: &str) -> anyhow::Result<Url> {
   let url = Url::parse(value)?;
   anyhow::ensure!(matches!(url.scheme(), "http" | "https") && url.host().is_some() && url.username().is_empty() && url.password().is_none(), "Provider output must be a public HTTP(S) URL");
@@ -30,6 +32,7 @@ pub(super) fn validate_media_url(value: &str) -> anyhow::Result<Url> {
 }
 
 impl Resolve for PublicDns {
+  /// Resolve hostnames to socket addresses, rejecting any private or reserved result.
   fn resolve(&self, name: Name) -> Resolving {
     Box::pin(async move {
       let addresses: Vec<_> = tokio::net::lookup_host((name.as_str(), 0)).await?.collect();
@@ -41,6 +44,7 @@ impl Resolve for PublicDns {
   }
 }
 
+/// Exclude private, local, documentation, transition, and reserved address ranges from transfers.
 fn is_public(address: IpAddr) -> bool {
   match address {
     IpAddr::V4(address) => {

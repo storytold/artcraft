@@ -50,6 +50,7 @@ function get3DCoverThumbnail(item: any): string | null {
   );
 }
 
+/** Load filtered cloud history and merge local entries in timestamp order, including when signed out. */
 export function useGalleryData(options: {
   username: string | null;
   filterMediaClasses: FilterMediaClasses[];

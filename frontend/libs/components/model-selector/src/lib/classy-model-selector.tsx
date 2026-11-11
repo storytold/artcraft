@@ -129,6 +129,7 @@ function ProviderTooltipContent({
   );
 }
 
+/** Render model and provider choices from the active catalog while persisting the page selection. */
 export function ClassyModelSelector({
   items,
   page,

@@ -37,6 +37,7 @@ interface LoginModalProps {
   videoSrc3D?: string;
 }
 
+/** Coordinate account authentication and onboarding while allowing an explicit choice to continue signed out. */
 export function LoginModal({
   onClose,
   onOpenChange,
@@ -211,6 +212,7 @@ export function LoginModal({
 
   const inOnboarding = showDiscord || showSuccess;
 
+  /** Invalidate pending authentication callbacks, remember the signed-out choice when storage permits, and close the modal. */
   const continueSignedOut = () => {
     authGeneration.current += 1;
     try {
@@ -382,6 +384,7 @@ function LoginShowcase({ videoUrl }: { videoUrl: string }) {
 
 export default LoginModal;
 
+/** Read the remembered signed-out choice, treating unavailable browser storage as no saved choice. */
 function continuesSignedOut(): boolean {
   try {
     return localStorage.getItem(CONTINUE_SIGNED_OUT_KEY) === "1";

@@ -12,6 +12,7 @@ pub struct WaveSpeedVideoRequest {
 }
 
 impl WaveSpeedVideoRequest {
+  /// Submit one paid video prediction and return its ID for read-only polling.
   pub async fn send(&self, client: &RouterWaveSpeedClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     let prediction = client.generate_video(self.model, &self.request).await.map_err(ProviderError::WaveSpeed)?;
     Ok(GenerateVideoResponse::WaveSpeed(WaveSpeedVideoResponsePayload { prediction_id: prediction.id }))

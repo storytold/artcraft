@@ -16,7 +16,7 @@ use enums::tauri::tasks::task_type::TaskType;
 use log::warn;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
-use wavespeed_client::WaveSpeedClient;
+use wavespeed_client::{VideoMode, WaveSpeedClient};
 
 use crate::core::api_adapters::models::video::tauri_video_model_to_generation_model::tauri_video_model_to_generation_model;
 use crate::core::api_adapters::models::video::tauri_video_model_to_router_model::tauri_video_model_to_router_model;
@@ -32,8 +32,10 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::utils::provider_image_context::ProviderImageContext;
 use crate::core::utils::provider_submission::ProviderSubmission;
+use crate::core::utils::local_generations::is_local_token;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
+/// Validate account/media access and submit a video once with a durable acceptance receipt.
 pub async fn handle_wavespeed_video(request: &TauriGenerateVideoRequest, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, credential_cache: &ProviderCredentialLoadingCache, storyteller_creds_manager: &StorytellerCredentialManager) -> Result<TaskEnqueueSuccess, GenerateError> {
   let maybe_creds = storyteller_creds_manager.get_signed_in_credentials()?;
   let model = request.model.ok_or_else(GenerateError::no_model_specified)?;
@@ -60,12 +62,12 @@ pub async fn handle_wavespeed_video(request: &TauriGenerateVideoRequest, app_env
   if has_references && maybe_creds.is_none() {
     return Err(GenerateError::needs_storyteller_credentials());
   }
-  let mode = request.wavespeed_mode.unwrap_or(if has_references { wavespeed_client::VideoMode::Reference } else { wavespeed_client::VideoMode::Generate });
+  let mode = request.wavespeed_mode.unwrap_or(if has_references { VideoMode::Reference } else { VideoMode::Generate });
   let video_limit = reference_video_limit(mode);
   let reference_images = resolve_references(&request.reference_image_media_tokens, app_env_configs, MediaFileClass::Image, 9, None).await?;
   let reference_videos = resolve_references(&request.reference_video_media_tokens, app_env_configs, MediaFileClass::Video, 3, video_limit).await?;
   let reference_audio = resolve_references(&request.reference_audio_media_tokens, app_env_configs, MediaFileClass::Audio, 3, Some(15000)).await?;
-  if tokens.iter().any(|token| crate::core::utils::local_generations::is_local_token(token.as_str())) {
+  if tokens.iter().any(|token| is_local_token(token.as_str())) {
     return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Local images must be uploaded before using them as video frames".into())));
   }
   let urls = map_media_file_tokens_to_cdn_urls(&tokens, &app_env_configs.storyteller_host).await?;
@@ -97,6 +99,7 @@ pub async fn handle_wavespeed_video(request: &TauriGenerateVideoRequest, app_env
   Ok(success)
 }
 
+/// Resolve cloud media URLs while validating reference counts, media classes, and duration budgets.
 async fn resolve_references(tokens: &Option<Vec<tokens::tokens::media_files::MediaFileToken>>, config: &AppEnvConfigs, class: MediaFileClass, maximum: usize, maybe_duration_limit: Option<u64>) -> Result<Option<Vec<String>>, GenerateError> {
   let Some(tokens) = tokens.as_ref().filter(|tokens| !tokens.is_empty()) else {
     return Ok(None);
@@ -104,7 +107,7 @@ async fn resolve_references(tokens: &Option<Vec<tokens::tokens::media_files::Med
   if tokens.len() > maximum {
     return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Too many WaveSpeed references".into())));
   }
-  if tokens.iter().any(|token| crate::core::utils::local_generations::is_local_token(token.as_str())) {
+  if tokens.iter().any(|token| is_local_token(token.as_str())) {
     return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Upload local media to your cloud library before using it as a reference".into())));
   }
   let mut urls = Vec::new();
@@ -117,12 +120,13 @@ async fn resolve_references(tokens: &Option<Vec<tokens::tokens::media_files::Med
   Ok(Some(urls))
 }
 
+/// Reject local tokens and signed-out cloud references before accessing provider credentials.
 fn validate_media_access(request: &TauriGenerateVideoRequest, signed_in: bool) -> Result<(), GenerateError> {
   let frames = [&request.start_frame_image_media_token, &request.end_frame_image_media_token];
   let references = [&request.reference_image_media_tokens, &request.reference_video_media_tokens, &request.reference_audio_media_tokens];
   let tokens = frames.into_iter().filter_map(Option::as_ref).chain(references.into_iter().filter_map(Option::as_ref).flatten());
   for token in tokens {
-    if crate::core::utils::local_generations::is_local_token(token.as_str()) {
+    if is_local_token(token.as_str()) {
       return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Upload local media to your cloud library before using it as a reference".into())));
     }
     if !signed_in {
@@ -132,6 +136,7 @@ fn validate_media_access(request: &TauriGenerateVideoRequest, signed_in: bool) -
   Ok(())
 }
 
+/// Validate media class and total duration, counting video references as at least two seconds each.
 fn validate_reference_metadata(expected: MediaFileClass, actual: MediaFileClass, maybe_duration: Option<u64>, maybe_limit: Option<u64>, total: &mut u64) -> Result<(), GenerateError> {
   if actual != expected {
     return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Reference has the wrong media type".into())));
@@ -147,9 +152,10 @@ fn validate_reference_metadata(expected: MediaFileClass, actual: MediaFileClass,
   Ok(())
 }
 
-fn reference_video_limit(mode: wavespeed_client::VideoMode) -> Option<u64> {
+/// Limit reference clips to fifteen seconds without applying that cap to edit or extend source videos.
+fn reference_video_limit(mode: VideoMode) -> Option<u64> {
   match mode {
-    wavespeed_client::VideoMode::Edit | wavespeed_client::VideoMode::Extend => None,
+    VideoMode::Edit | VideoMode::Extend => None,
     _ => Some(15000),
   }
 }
@@ -157,7 +163,6 @@ fn reference_video_limit(mode: wavespeed_client::VideoMode) -> Option<u64> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use wavespeed_client::VideoMode;
   use crate::core::threads::third_party_task_polling_thread::handlers::handle_provider_complete::provider_completion_tests::{binary_server, media_response};
   use artcraft_client::utils::api_host::ApiHost;
   use tokens::tokens::media_files::MediaFileToken;

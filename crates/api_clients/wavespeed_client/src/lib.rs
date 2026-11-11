@@ -169,6 +169,7 @@ struct ApiResponse {
 }
 
 impl WaveSpeedClient {
+  /// Validate a bearer key and create a timeout-bounded client with creation retries disabled.
   pub fn new(api_key: &str) -> Result<Self, WaveSpeedError> {
     let api_key = api_key.trim();
     if api_key.is_empty() {
@@ -180,12 +181,14 @@ impl WaveSpeedClient {
     Ok(Self { client, authorization, base_url: Url::parse(API_BASE).unwrap() })
   }
 
+  /// Send one non-idempotent image creation request; callers must preserve uncertain acceptance.
   pub async fn generate_image(&self, model: ImageModel, request: &GenerateImageRequest) -> Result<Prediction, WaveSpeedError> {
     let endpoint = model.endpoint(!request.images.is_empty() || request.maybe_image.is_some());
     let response = self.client.post(self.base_url.join(endpoint).unwrap()).header(AUTHORIZATION, self.authorization.clone()).json(request).send().await?;
     self.decode(response).await
   }
 
+  /// Poll a validated prediction ID without creating or resubmitting a paid job.
   pub async fn get_prediction(&self, prediction_id: &str) -> Result<Prediction, WaveSpeedError> {
     if prediction_id.is_empty() || !prediction_id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_') {
       return Err(WaveSpeedError::InvalidResponse("invalid prediction ID"));
@@ -195,6 +198,7 @@ impl WaveSpeedClient {
     self.decode(response).await
   }
 
+  /// Choose the model and mode endpoint and submit one non-idempotent video request.
   pub async fn generate_video(&self, model: VideoModel, request: &GenerateVideoRequest) -> Result<Prediction, WaveSpeedError> {
     let endpoint = match request.mode {
       VideoMode::Generate => model.endpoint(request.maybe_image.is_some()),
@@ -210,6 +214,7 @@ impl WaveSpeedClient {
     self.decode(response).await
   }
 
+  /// Bound response bytes, retain HTTP error provenance, and validate prediction identity and output count.
   async fn decode(&self, mut response: Response) -> Result<Prediction, WaveSpeedError> {
     let status = response.status().as_u16();
     let maybe_retry_after_secs = response.headers().get(reqwest::header::RETRY_AFTER).and_then(|value| value.to_str().ok()).and_then(|value| value.parse::<u64>().ok());
@@ -247,6 +252,7 @@ impl WaveSpeedClient {
   }
 }
 
+/// Recover definitive HTTP rejection details even when the error body cannot be read safely.
 fn http_rejection(status: u16, message: String, maybe_retry_after_secs: Option<u64>) -> Option<WaveSpeedError> {
   match status {
     401 | 403 => Some(WaveSpeedError::Authentication { http_status: status }),
@@ -270,6 +276,7 @@ impl WaveSpeedError {
 }
 
 impl PredictionStatus {
+  /// Recognize terminal provider failures while leaving unknown future statuses pending.
   pub fn is_failure(self) -> bool {
     matches!(self, Self::Failed | Self::Cancelled | Self::Timeout | Self::Deleted)
   }

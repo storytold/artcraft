@@ -60,6 +60,7 @@ export const downloadUrlToPath = async (url: string, path: string) => {
   await downloadTo(url, path);
 };
 
+/** Honor the download-location preference and cancellation, then download to an explicit or default destination. */
 export const downloadFileFromUrl = async (url: string, _mediaClass?: string, model?: string) => {
   console.log("GOT THE URL", url);
   try {
@@ -83,6 +84,7 @@ export const downloadFileFromUrl = async (url: string, _mediaClass?: string, mod
 // which the upload plugin can't fetch: the backend copies them into the chosen folder instead.
 const LOCAL_ASSET_URL = /^(asset:\/\/localhost|https?:\/\/asset\.localhost)\//;
 
+/** Copy local asset URLs through the native backend; use the download plugin for other URLs. */
 const downloadTo = async (url: string, path: string) => {
   if (LOCAL_ASSET_URL.test(url)) {
     const separatorIndex = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));

@@ -53,12 +53,14 @@ let localImages: LocalGeneration[] = [];
 const subscribers = new Set<() => void>();
 let stopListening: (() => void) | undefined;
 
+/** Share one local-library listener set across subscribers and release native/window listeners when the last leaves. */
 function subscribe(listener: () => void) {
   subscribers.add(listener);
   if (!stopListening) {
     let active = true;
     let refreshing = false;
     let refreshAgain = false;
+    /** Serialize library reloads, coalescing events into another pass and ignoring results after teardown. */
     const refresh = async () => {
       if (refreshing) { refreshAgain = true; return; }
       refreshing = true;
@@ -75,6 +77,7 @@ function subscribe(listener: () => void) {
     const unlisteners: Promise<UnlistenFn | undefined>[] = REFRESH_EVENTS.map((name) =>
       listen(name, () => { void refresh(); }).catch(() => undefined),
     );
+    /** Refresh local history when the desktop window regains focus. */
     const onFocus = () => { void refresh(); };
     window.addEventListener("focus", onFocus);
     stopListening = () => {
@@ -93,8 +96,10 @@ function subscribe(listener: () => void) {
   };
 }
 
+/** Subscribe to the shared local-library snapshot without allocating per-component native listeners. */
 export const useLocalGenerations = (): LocalGeneration[] => useSyncExternalStore(subscribe, () => localImages);
 
+/** Upload an existing local generation through the signed-in backend and return its remote media token. */
 export const ImportLocalGeneration = async (id: string): Promise<string> => {
   const result = await invoke("import_local_generation_command", { request: { id } }) as CommandResult & { payload?: { media_file_token: string }; error_message?: string };
   if (result.status !== "success" || !result.payload?.media_file_token) throw new Error(result.error_message ?? "Could not upload the local image");

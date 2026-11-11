@@ -62,6 +62,7 @@ interface GalleryDraggableItemProps {
   onRemoveFromFolder?: (itemIds: string[]) => void;
 }
 
+/** Render a gallery tile with preview and selection actions; local items cannot enter server-backed drag flows. */
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   item,
   mode,
@@ -194,6 +195,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [ctxMenu]);
 
+  /** Start drag tracking only for eligible primary-pointer remote media, leaving touch gestures to scroll. */
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     // Left button only — right/middle click must not trigger the click→lightbox
     // (right-click opens the context menu via onContextMenu instead).
@@ -230,6 +232,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
 
   // Single click path for the whole tile surface: open the lightbox, or toggle
   // selection when bulk-selecting / in select mode (handled by the host's onClick).
+  /** Dispatch an eligible tile click only when neither local nor global drag handling consumed it. */
   const handleButtonClick = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
     if (unpickable) return;

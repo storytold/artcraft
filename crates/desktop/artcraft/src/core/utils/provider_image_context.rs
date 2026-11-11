@@ -16,6 +16,7 @@ pub struct ProviderImageContext {
 }
 
 impl ProviderImageContext {
+  /// Serialize and flush generation context into a temporary file before provider submission.
   pub fn prepare(&self, root: &AppDataRoot) -> Result<NamedTempFile> {
     let mut file = NamedTempFile::new_in(root.state_dir().path())?;
     file.write_all(&serde_json::to_vec(self)?)?;
@@ -23,11 +24,13 @@ impl ProviderImageContext {
     Ok(file)
   }
 
+  /// Publish prepared context under the encoded provider job identity.
   pub fn save_prepared(root: &AppDataRoot, job_id: &str, prepared: NamedTempFile) -> Result<()> {
     prepared.persist(path(root, job_id)?)?;
     Ok(())
   }
 
+  /// Read bounded generation context, returning none only when its file is absent.
   pub fn load(root: &AppDataRoot, job_id: &str) -> Result<Option<Self>> {
     match crate::core::utils::read_bounded_file::read_bounded_file(&path(root, job_id)?, 4 * 1024 * 1024) {
       Ok(bytes) => Ok(Some(serde_json::from_slice(&bytes)?)),
@@ -36,6 +39,7 @@ impl ProviderImageContext {
     }
   }
 
+  /// Delete saved context after completion, treating an absent file as already cleaned.
   pub fn remove(root: &AppDataRoot, job_id: &str) -> Result<()> {
     match std::fs::remove_file(path(root, job_id)?) {
       Ok(()) => Ok(()),
@@ -45,6 +49,7 @@ impl ProviderImageContext {
   }
 }
 
+/// Validate job-ID length and encode it into a path-safe context filename.
 fn path(root: &AppDataRoot, job_id: &str) -> Result<PathBuf> {
   ensure!(!job_id.is_empty() && job_id.len() <= 128, "Invalid provider job ID");
   let encoded = URL_SAFE_NO_PAD.encode(job_id);

@@ -8,6 +8,7 @@ const RATIOS: Record<string, readonly [number, number]> = {
   wide_twenty_one_by_nine: [21, 9], tall_nine_by_twenty_one: [9, 21],
 };
 
+/** Fit a recognized aspect ratio to the source longest edge; preserve dimensions for unknown or absent ratios. */
 export function outputDimensions(source: { width: number; height: number }, ratio?: string) {
   const dimensions = ratio && Object.hasOwn(RATIOS, ratio) ? RATIOS[ratio] : undefined;
   if (!dimensions) return source;

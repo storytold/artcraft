@@ -53,6 +53,7 @@ impl StorytellerCredentialManager {
     self.holder.get_credentials()
   }
 
+  /// Return credentials only when they contain a session; visitor cookies alone are not a login.
   pub fn get_signed_in_credentials(&self) -> AnyhowResult<Option<StorytellerCredentialSet>> {
     Ok(self.get_credentials()?.filter(|credentials| credentials.session.is_some()))
   }

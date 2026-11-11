@@ -198,6 +198,7 @@ function SelectionDownloadBar({
 // record, make-video seeds the video page, share copies the public media
 // link, download saves via Tauri. stopPropagation keeps taps from also
 // opening the lightbox.
+/** Render only the quick actions available for this completed item, including local-only download restrictions. */
 function ItemActions({
   item,
   promptToken,
