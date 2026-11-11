@@ -45,11 +45,14 @@ export const ProviderAccountBlock = ({
     void fetchSession();
   });
 
+  /** Whether the stored credentials were cleared. */
   const clearState = async () => {
     try {
       await invoke(`${commandPrefix}_clear_credentials_command`);
+      return true;
     } catch (e) {
       console.error(`Error clearing ${name} credentials`, e);
+      return false;
     }
   };
 
@@ -63,8 +66,7 @@ export const ProviderAccountBlock = ({
 
   const handleButton = async () => {
     if (session?.payload?.can_clear_state) {
-      await clearState();
-      setSession(undefined);
+      if (await clearState()) setSession(undefined);
     } else {
       await openLogin();
     }

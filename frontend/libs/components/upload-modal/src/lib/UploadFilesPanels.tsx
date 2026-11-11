@@ -43,7 +43,7 @@ const UploadFileRow = ({ entry, selected, onSelect, onRemove, onRetry }: UploadF
         <span className="flex items-center gap-1">
           <CircleAlertIcon className="text-red-400" />
           <button
-            className="hidden items-center text-xs text-white/60 transition-colors hover:text-white group-hover:inline-flex"
+            className="inline-flex items-center text-xs text-white/60 opacity-0 transition hover:text-white group-hover:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               onRetry();
