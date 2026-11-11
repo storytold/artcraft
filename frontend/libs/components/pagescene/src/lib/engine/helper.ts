@@ -148,45 +148,11 @@ function removeObject3D(object3D) {
       return;
     }
 
-    // Finally remove the object from the scene
+    // Finally remove the object from the scene and free its GPU resources.
+    // Undo re-loads deleted objects from a snapshot (DeleteAction), so
+    // nothing reuses this instance.
     this.scene.scene.remove(obj);
-
-    obj.traverse(child => {
-      (child as THREE.Mesh)?.geometry?.dispose()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const childTexture = (child as any).texture;
-      if (Array.isArray(childTexture)) {
-        childTexture.forEach(mat => mat.dispose());
-      } else if (childTexture) {
-        childTexture.dispose();
-      }
-
-      const childMaterial = (child as THREE.Mesh).material;
-      if (Array.isArray(childMaterial)) {
-        childMaterial.forEach(mat => mat.dispose());
-      } else if (childMaterial) {
-        childMaterial.dispose();
-      }
-    })
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const objTexture = (obj as any).texture;
-    if (Array.isArray(objTexture)) {
-      objTexture.forEach(mat => mat.dispose());
-    } else if (objTexture) {
-      objTexture.dispose();
-    }
-
-    const objMaterial = (obj as THREE.Mesh).material;
-    if (Array.isArray(objMaterial)) {
-      objMaterial.forEach(mat => mat.dispose());
-    } else if (objMaterial) {
-      objMaterial.dispose();
-    }
-
-    if ((obj as THREE.Mesh).geometry) {
-      (obj as THREE.Mesh).geometry.dispose()
-    }
+    this.scene.disposeObject(obj);
 
     this.deps.bus.emit(new ObjectRemovedEvent(uuid));
     this.deps.clearSelected();

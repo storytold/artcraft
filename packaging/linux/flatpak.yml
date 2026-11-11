@@ -1,0 +1,32 @@
+app-id: ai.artcraft.app
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: artcraft
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --share=ipc
+  - --share=network
+  - --device=dri
+  - --filesystem=xdg-pictures
+  - --filesystem=xdg-videos
+  - --filesystem=xdg-download
+  # The app hardcodes its data to ~/Artcraft (settings, credentials, state).
+  # Persist it under ~/.var/app/ai.artcraft.app/Artcraft so data survives exits.
+  - --persist=Artcraft
+modules:
+  - name: artcraft
+    buildsystem: simple
+    build-commands:
+      - cp -a . /app/
+      - install -Dm644 /app/share/icons/hicolor/128x128/apps/artcraft.png /app/share/icons/hicolor/128x128/apps/ai.artcraft.app.png
+      - sed -i 's/^Icon=.*/Icon=ai.artcraft.app/' /app/share/applications/ai.artcraft.app.desktop
+      - mv /app/bin/artcraft /app/bin/artcraft.real
+      - install -Dm755 artcraft-wrapper /app/bin/artcraft
+    sources:
+      - type: dir
+        path: stage
+      - type: file
+        path: artcraft-wrapper

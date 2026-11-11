@@ -54,10 +54,8 @@ export function appendAlpha({
 
 function stripCssNoise({ text }: { text: string }): string {
   let cleaned = text.trim();
-  cleaned = cleaned
-    .replace(/\s*!important\s*/gi, "")
-    .replace(/;+\s*$/, "")
-    .trim();
+  cleaned = cleaned.replace(/!important/gi, " ").trim();
+  while (cleaned.endsWith(";")) cleaned = cleaned.slice(0, -1).trimEnd();
 
   const colonIndex = cleaned.indexOf(":");
   const parenIndex = cleaned.indexOf("(");

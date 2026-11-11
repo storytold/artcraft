@@ -8,6 +8,7 @@ import { useTutorialModalStore } from "./help-menu-store";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { getNewsPosts, markdownToHtml } from "@storyteller/markdown-content";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 export type HelpMenuButtonProps = {
   items?: TutorialItem[];
@@ -109,6 +110,9 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
     <div className="flex flex-col gap-4 mt-2 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
       {items.map((item) => (
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={clickOnEnterOrSpace}
           key={item.slug}
           onClick={() => setSelectedSlug(item.slug)}
           className="bg-white/5 hover:bg-white/[0.07] border border-white/15 hover:border-white/25 p-4 rounded-none cursor-pointer transition-colors group"

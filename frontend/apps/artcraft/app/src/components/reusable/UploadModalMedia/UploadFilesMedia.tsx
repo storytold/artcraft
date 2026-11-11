@@ -48,7 +48,7 @@ export const UploadFilesMedia = ({
       return;
     }
 
-    uploadPlane({
+    void uploadPlane({
       title: uploadTitle.value,
       assetFile: assetFile.value,
       progressCallback: onUploadProgress,

@@ -46,7 +46,9 @@ export function useFontAtlas({ open }: { open: boolean }) {
 
   const fontNames = useMemo(() => {
     if (!atlas) return [];
-    return [...Object.keys(atlas.fonts), ...SYSTEM_FONTS].sort();
+    return [...Object.keys(atlas.fonts), ...SYSTEM_FONTS].sort((a, b) =>
+      a.localeCompare(b),
+    );
   }, [atlas]);
 
   return { atlas, status, fontNames, retry };

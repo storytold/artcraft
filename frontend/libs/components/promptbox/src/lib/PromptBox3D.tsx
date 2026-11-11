@@ -22,7 +22,6 @@ import { CameraSettingsModal } from "@storyteller/ui-camera-settings-modal";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  CommandSuccessStatus,
   GenerateImage,
   GenerateImageRequest,
 } from "@storyteller/tauri-api";
@@ -509,13 +508,8 @@ export const PromptBox3D = ({
 
         console.log("generateResponse", generateResponse);
 
-        if (generateResponse.status === CommandSuccessStatus.Success) {
-          setIsEnqueueing(false);
-          return;
-        } else {
-          setIsEnqueueing(false);
-          return;
-        }
+        setIsEnqueueing(false);
+        return;
       }
 
       try {
@@ -627,6 +621,7 @@ export const PromptBox3D = ({
         {onBuildModeChange && (
           <div className="flex">
             <div
+              role="presentation"
               className="glass glass-no-hover rounded-full p-1 shadow-xl"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
@@ -679,6 +674,7 @@ export const PromptBox3D = ({
           />
         )}
         <div
+          role="presentation"
           className={twMerge(
             "glass relative w-full p-4",
             isPromptBoxFocused && "border-primary",

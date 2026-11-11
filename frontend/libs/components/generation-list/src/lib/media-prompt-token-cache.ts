@@ -87,7 +87,7 @@ export function useMediaPromptTokens(
     if (t) cleaned.push(t);
   }
   // Stable cache key for the effect's dep list, order-independent.
-  const key = [...new Set(cleaned)].sort().join(",");
+  const key = [...new Set(cleaned)].sort((a, b) => a.localeCompare(b)).join(",");
 
   useEffect(() => {
     if (key.length > 0) fetchMissing(key.split(","));

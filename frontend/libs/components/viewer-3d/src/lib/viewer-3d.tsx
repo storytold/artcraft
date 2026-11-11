@@ -9,6 +9,7 @@ import {
   NodeHierarchyHelper,
   createRigHelper,
 } from "./NodeHierarchyHelper";
+import { disposeObject3D } from "./disposeObject3D";
 
 // Dropdown value for the "no animation" choice (models rest in their bind /
 // T-pose). Clip values are their stringified index.
@@ -277,20 +278,14 @@ export function Viewer3D({
       ) {
         container.removeChild(rendererRef.current.domElement);
       }
-      rendererRef.current?.dispose();
       controlsRef.current?.dispose();
-
-      if (cubeRef.current) {
-        const cube = cubeRef.current;
-        if (cube.geometry) cube.geometry.dispose();
-        if (cube.material) {
-          if (Array.isArray(cube.material)) {
-            cube.material.forEach((m) => m.dispose());
-          } else {
-            cube.material.dispose();
-          }
-        }
-      }
+      // Free everything still in the scene (placeholder cube, grid, any
+      // model, Spark's auto-added splat renderer), then the context itself.
+      // The canvas is ours and already detached, so forcing the context
+      // loss frees it now instead of whenever the canvas is collected.
+      if (sceneRef.current) disposeObject3D(sceneRef.current);
+      rendererRef.current?.dispose();
+      rendererRef.current?.forceContextLoss();
     };
   }, []);
 
@@ -407,11 +402,18 @@ export function Viewer3D({
     const SPLAT_EXTENSIONS = ["spz", "ply", "splat", "ksplat"];
     const GLTF_EXTENSIONS = ["glb", "gltf", ""];
 
+    // Set by this effect's cleanup. A model that finishes loading after the
+    // URL changed or the viewer unmounted is freed instead of shown.
+    let cancelled = false;
+
     if (SPLAT_EXTENSIONS.includes(urlExtension)) {
       console.log(`[Viewer3D] splat format detected (.${urlExtension})`);
-      new SplatMesh({
-        url: modelUrl,
-        onLoad: (mesh) => {
+      void new SplatMesh({ url: modelUrl }).initialized
+        .then((mesh) => {
+          if (cancelled) {
+            mesh.dispose();
+            return;
+          }
           mesh.rotation.z = Math.PI;
           mesh.position.y = 1;
           scene.add(mesh);
@@ -431,8 +433,10 @@ export function Viewer3D({
           }
 
           console.log("Splat loaded");
-        },
-      });
+        })
+        .catch((error) =>
+          console.error("[Viewer3D] splat load failed:", error),
+        );
     } else if (!GLTF_EXTENSIONS.includes(urlExtension)) {
       // Known non-glTF model format with no loader wired here (obj, fbx,
       // pmx, …). Show the fallback shape rather than spamming a parse error.
@@ -450,6 +454,10 @@ export function Viewer3D({
       loader.load(
         modelUrl,
         (gltf) => {
+          if (cancelled) {
+            disposeObject3D(gltf.scene);
+            return;
+          }
           console.log("[Viewer3D] Model loaded successfully");
           const model = gltf.scene;
           onModelLoaded(model);
@@ -503,10 +511,12 @@ export function Viewer3D({
     }
 
     return () => {
+      cancelled = true;
       stopAnimations();
       removeSkeletonHelper();
-      if (loadedModelRef.current && sceneRef.current) {
-        sceneRef.current.remove(loadedModelRef.current);
+      if (loadedModelRef.current) {
+        loadedModelRef.current.removeFromParent();
+        disposeObject3D(loadedModelRef.current);
         loadedModelRef.current = null;
       }
     };
@@ -551,6 +561,7 @@ export function Viewer3D({
 
   return (
     <div
+      role="presentation"
       className={`relative h-full w-full overflow-hidden rounded-l-xl bg-[#282828] ${className}`}
       onMouseDown={stopPropagation}
       onMouseMove={stopPropagation}

@@ -122,7 +122,7 @@ export function GlobalFileDropHandler() {
         }
       };
 
-      setup();
+      void setup();
       return () => { unlisteners.forEach((fn) => fn()); };
 
     } else {

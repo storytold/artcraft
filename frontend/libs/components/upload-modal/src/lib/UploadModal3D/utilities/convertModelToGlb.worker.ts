@@ -28,7 +28,7 @@ const scope = self as unknown as {
   postMessage: (message: ConvertResponse, transfer?: Transferable[]) => void;
 };
 
-scope.onmessage = async (event) => {
+const convert = async (event: MessageEvent<ConvertRequest>) => {
   const { id, buffer, ext, name } = event.data;
   try {
     const glb = await convertModelBufferToGlb(buffer, ext, name);
@@ -38,4 +38,8 @@ scope.onmessage = async (event) => {
     const message = error instanceof Error ? error.message : String(error);
     scope.postMessage({ id, ok: false, error: message });
   }
+};
+
+scope.onmessage = (event) => {
+  void convert(event);
 };

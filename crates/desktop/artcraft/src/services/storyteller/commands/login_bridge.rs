@@ -19,6 +19,7 @@ use tokio::sync::Mutex;
 use uuid_utils::uuid::generate_random_uuid;
 
 use crate::core::threads::main_window_thread::persist_storyteller_cookies_task::get_credentials_from_cookie_store;
+use crate::services::storyteller::commands::password_auth_error_message::password_auth_error_message;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 const MAX_PENDING_CHALLENGES: usize = 8;
@@ -74,12 +75,27 @@ impl DesktopLoginError {
       origin, error.status, error.message
     );
     Self {
-      retryable: error
-        .status
-        .map(|s| s == 429 || s >= 500)
-        .unwrap_or(error.message == "Unable to reach the login server"),
+      retryable: is_retryable(&error),
       status: error.status,
-      message: format!("{}: {} (HTTP {:?})", origin, error.message, error.status),
+      message: format!("{}: {}", origin, error),
+    }
+  }
+
+  /// Password login/signup errors are shown to the user verbatim, so they say
+  /// what went wrong ("That username is already taken.") instead of the host.
+  fn from_password_auth(origin: &str, error: LoginChallengeClientError, is_signup: bool) -> Self {
+    warn!(
+      "Password auth failed: origin={} signup={} status={:?} reason={} error_type={:?}",
+      origin,
+      is_signup,
+      error.status,
+      error.message,
+      error.maybe_rejection.as_ref().and_then(|r| r.error_type.as_deref())
+    );
+    Self {
+      retryable: is_retryable(&error),
+      status: error.status,
+      message: password_auth_error_message(&error, is_signup),
     }
   }
 }
@@ -120,12 +136,13 @@ pub(super) async fn password_auth(
 ) -> Result<SessionUserInfo, DesktopLoginError> {
   let client = LoginChallengeClient::new(host)
     .map_err(|e| DesktopLoginError::from_client(&host.to_api_hostname_and_scheme(), e))?;
+  let is_signup = signup.is_some();
   let response = match (login, signup) {
     (Some(request), None) => client.password_login(&request).await,
     (None, Some(request)) => client.password_signup(&request).await,
     _ => return Err(DesktopLoginError::local("Invalid authentication request")),
   }
-  .map_err(|e| DesktopLoginError::from_client(&client.api_origin(), e))?;
+  .map_err(|e| DesktopLoginError::from_password_auth(&client.api_origin(), e, is_signup))?;
   let (response, cookie) = response;
   if !response.success {
     return Err(DesktopLoginError::local(
@@ -333,6 +350,13 @@ fn expired() -> DesktopLoginOutcome {
     maybe_failure_type: Some(LoginChallengeFailure::Expired),
     maybe_user: None,
   }
+}
+
+fn is_retryable(error: &LoginChallengeClientError) -> bool {
+  error
+    .status
+    .map(|s| s == 429 || s >= 500)
+    .unwrap_or(error.message == "Unable to reach the login server")
 }
 
 #[cfg(test)]

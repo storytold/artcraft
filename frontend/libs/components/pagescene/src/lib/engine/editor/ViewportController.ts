@@ -100,4 +100,12 @@ export class ViewportController {
     });
     this.observer.observe(this.container);
   }
+
+  // Stop observing on unmount. The container can outlive this editor (a
+  // scene change keeps it mounted), and a live observer would keep
+  // re-rendering the dead editor's scene on every resize.
+  dispose() {
+    this.observer?.disconnect();
+    this.observer = undefined;
+  }
 }

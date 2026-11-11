@@ -50,6 +50,7 @@ import {
 } from "./components/Model3DOverlay";
 import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
+import { v4 as uuidv4 } from "uuid";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
@@ -857,7 +858,7 @@ const PageDraw = ({
 
         const subscriberId: string =
           crypto?.randomUUID?.() ??
-          `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          `inpaint-${Date.now()}-${uuidv4()}`;
 
         adapter.onEnqueueMeta?.({
           prompt,

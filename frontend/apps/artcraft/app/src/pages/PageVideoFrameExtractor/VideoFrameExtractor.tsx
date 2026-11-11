@@ -420,7 +420,7 @@ export const VideoFrameExtractor = () => {
         const file = new File([blob], fileName, { type: "image/png" });
 
         const referenceImage: RefImage = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: frameUrl,
           file: file,
           mediaToken: uploadResponse.data,
@@ -515,6 +515,7 @@ export const VideoFrameExtractor = () => {
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
+                        role="presentation"
                         ref={progressBarRef}
                         className="group relative mb-3 h-3 cursor-pointer bg-white/15"
                         onClick={handleProgressBarClick}
@@ -526,6 +527,7 @@ export const VideoFrameExtractor = () => {
                           }}
                         />
                         <div
+                          role="presentation"
                           className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 cursor-ew-resize bg-yellow-400"
                           style={{
                             left: `${duration ? (startTime / duration) * 100 : 0}%`,

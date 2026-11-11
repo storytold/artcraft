@@ -3,10 +3,12 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { SplatFileType, SplatMesh } from "@sparkjsdev/spark";
-import { NodeHierarchyHelper } from "@storyteller/ui-viewer-3d";
+import { NodeHierarchyHelper, disposeObject3D } from "@storyteller/ui-viewer-3d";
 
 interface LoaderInterface {
   file: File;
+  // Blob URL for `file`, revoked when the preview is disposed.
+  fileUrl: string;
   camera: THREE.PerspectiveCamera;
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
@@ -31,9 +33,10 @@ interface PreviewReturn {
   // Show/hide the skeleton overlay (rigged GLBs only; no-op otherwise).
   // Defaults visible for mesh-less models so there's something to see.
   setSkeletonVisible: (visible: boolean) => void;
-  // Call when a newer preview supersedes this one (effect cleanup): any
-  // still-in-flight load's callbacks become no-ops.
-  cancel: () => void;
+  // Call when a newer preview supersedes this one or the preview goes away
+  // (effect cleanup): in-flight loads become no-ops, the animation loop
+  // stops, and the scene, renderer and blob URL are freed.
+  dispose: () => void;
 }
 
 export const loadPreviewOnCanvas = ({
@@ -83,6 +86,7 @@ export const loadPreviewOnCanvas = ({
   scene.add(light);
 
   let splatMesh: SplatMesh | null = null;
+  const fileUrl = URL.createObjectURL(file);
 
   // Supersession flag: each preview invocation owns one. The effect that
   // created this preview flips it in its cleanup, and every async loader
@@ -90,9 +94,6 @@ export const loadPreviewOnCanvas = ({
   // renderer, write status/animation/rig state into the NEXT preview, or
   // trigger a thumbnail snapshot of the wrong model.
   let cancelled = false;
-  const cancel = () => {
-    cancelled = true;
-  };
   const isCancelled = () => cancelled;
 
   // Animation playback state for GLBs with baked clips. The mixer is rooted
@@ -143,6 +144,7 @@ export const loadPreviewOnCanvas = ({
   if (file.name.endsWith(".glb")) {
     glbLoader({
       file,
+      fileUrl,
       scene,
       camera,
       renderer,
@@ -181,7 +183,15 @@ export const loadPreviewOnCanvas = ({
       },
     });
   } else if (file.name.endsWith(".pmd")) {
-    pmdLoader({ file, scene, camera, renderer, statusCallback, isCancelled });
+    pmdLoader({
+      file,
+      fileUrl,
+      scene,
+      camera,
+      renderer,
+      statusCallback,
+      isCancelled,
+    });
   } else if (
     file.name.endsWith(".png") ||
     file.name.endsWith(".jpg") ||
@@ -190,6 +200,7 @@ export const loadPreviewOnCanvas = ({
   ) {
     imagePlaneLoader({
       file,
+      fileUrl,
       scene,
       camera,
       renderer,
@@ -242,11 +253,26 @@ export const loadPreviewOnCanvas = ({
   };
   renderer.setAnimationLoop(animate);
 
-  return { renderer, camera, selectAnimation, setSkeletonVisible, cancel };
+  // The canvas is reused for the next file's preview, which hands that
+  // renderer this same WebGL context, so the context loss is forced only
+  // once the canvas has left the DOM (the modal closed).
+  const dispose = () => {
+    cancelled = true;
+    renderer.setAnimationLoop(null);
+    disposeObject3D(scene);
+    // A splat still decoding when the preview was superseded never made it
+    // into the scene.
+    if (splatMesh && !splatMesh.parent) splatMesh.dispose();
+    URL.revokeObjectURL(fileUrl);
+    renderer.dispose();
+    if (!canvas.isConnected) renderer.forceContextLoss();
+  };
+
+  return { renderer, camera, selectAnimation, setSkeletonVisible, dispose };
 };
 
 const glbLoader = ({
-  file,
+  fileUrl,
   camera,
   scene,
   renderer,
@@ -257,7 +283,7 @@ const glbLoader = ({
 }: LoaderInterface) => {
   const loader = new GLTFLoader();
   loader.load(
-    URL.createObjectURL(file),
+    fileUrl,
     (data) => {
       if (isCancelled?.()) return;
       // Inspect BEFORE re-parenting (the loop below moves children out of
@@ -403,7 +429,7 @@ const pmdLoader = ({
 };
 
 const imagePlaneLoader = ({
-  file,
+  fileUrl,
   scene,
   statusCallback,
   isCancelled,
@@ -411,7 +437,7 @@ const imagePlaneLoader = ({
   const geometry = new THREE.PlaneGeometry(1, 1);
   const loader = new THREE.TextureLoader();
   const texture = loader.load(
-    URL.createObjectURL(file),
+    fileUrl,
     undefined,
     undefined,
     (loaderError) => {

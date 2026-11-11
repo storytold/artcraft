@@ -163,12 +163,13 @@ export const UploadFiles3D = ({
     });
   };
 
+  // Tears down the current preview: stops its loop, cancels in-flight
+  // loads and frees its scene and renderer (see loadPreviewOnCanvas).
+  const disposePreviewRef = useRef<(() => void) | null>(null);
   const disposeRenderer = () => {
-    if (rendererRef.current) {
-      rendererRef.current.setAnimationLoop(null);
-      rendererRef.current.dispose();
-      rendererRef.current = null;
-    }
+    disposePreviewRef.current?.();
+    disposePreviewRef.current = null;
+    rendererRef.current = null;
   };
 
   // Normalize a non-GLB model to GLB in the background. Completion swaps the
@@ -245,7 +246,7 @@ export const UploadFiles3D = ({
       return;
     }
 
-    const { renderer, camera, selectAnimation, setSkeletonVisible, cancel } =
+    const { renderer, camera, selectAnimation, setSkeletonVisible, dispose } =
       loadPreviewOnCanvas({
         file: currentFile,
         canvas: canvasRef.current,
@@ -258,17 +259,15 @@ export const UploadFiles3D = ({
         },
       });
     rendererRef.current = renderer;
+    disposePreviewRef.current = dispose;
     cameraRef.current = camera;
     selectAnimationRef.current = selectAnimation;
     setSkeletonVisibleRef.current = setSkeletonVisible;
 
-    return () => {
-      // Cancel BEFORE disposing: an in-flight load's callbacks must not
-      // render on the disposed renderer or write into the next preview's
-      // status/animation/rig state (or its thumbnail).
-      cancel();
-      disposeRenderer();
-    };
+    // dispose() cancels first: an in-flight load's callbacks must not
+    // render on the disposed renderer or write into the next preview's
+    // status/animation/rig state (or its thumbnail).
+    return disposeRenderer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewIndex, filesVersion]);
 
