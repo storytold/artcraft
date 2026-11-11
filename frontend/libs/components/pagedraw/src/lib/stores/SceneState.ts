@@ -1165,7 +1165,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
                 console.error("Failed to restore image:", error);
               }
             };
-            loadImage();
+            void loadImage();
           }
 
           return node;

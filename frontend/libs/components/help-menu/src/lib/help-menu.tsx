@@ -43,7 +43,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
         console.warn("Failed to fetch news feed, using bundled content.", e);
       }
     };
-    fetchNews();
+    void fetchNews();
   }, []);
 
   const selectedPost = useMemo(
@@ -316,7 +316,7 @@ export function HelpMenuButton({
       });
     };
 
-    run();
+    void run();
 
     return () => {
       if (progressTimerRef.current) {

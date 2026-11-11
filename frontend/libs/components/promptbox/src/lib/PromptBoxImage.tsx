@@ -460,7 +460,7 @@ export const PromptBoxImage = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 

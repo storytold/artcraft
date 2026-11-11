@@ -21,7 +21,7 @@ export function useFontAtlas({ open }: { open: boolean }) {
     if (!open || atlas) return;
 
     setStatus("loading");
-    loadFontAtlas().then((data) => {
+    void loadFontAtlas().then((data) => {
       if (data) {
         setAtlas(data);
         setStatus("idle");
@@ -34,7 +34,7 @@ export function useFontAtlas({ open }: { open: boolean }) {
   const retry = useCallback(() => {
     clearFontAtlasCache();
     setStatus("loading");
-    loadFontAtlas().then((data) => {
+    void loadFontAtlas().then((data) => {
       if (data) {
         setAtlas(data);
         setStatus("idle");

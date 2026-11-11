@@ -40,7 +40,7 @@ export const ArtcraftAccountBlock = ({
         setIsCheckingArtcraftSession(false);
       }
     };
-    fetchSession();
+    void fetchSession();
   }, []);
 
   const handleArtcraftButton = async () => {

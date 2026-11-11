@@ -948,7 +948,7 @@ export const GalleryModal = React.memo(
       // couldn't see it — making the library button appear broken.
       galleryModalDraggingUnder.value = false;
       let cancelled = false;
-      (async () => {
+      void (async () => {
         setUsernameError(false);
         const name = await fetchCurrentUsername();
         if (cancelled) return;
