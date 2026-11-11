@@ -31,7 +31,6 @@ import { ModalTransformController } from "./editor/ModalTransformController";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
 import { usePageSceneStore } from "../PageSceneStore";
-import { ensureAmmoLoaded } from "./ammoLoader";
 import { EngineEventBus } from "./events/EngineEventBus";
 import { EngineStoreBridge } from "./EngineStoreBridge";
 import {
@@ -187,11 +186,6 @@ class Editor {
     this.adapter = adapter;
     this.can_initialize = true;
     this.stats = new Stats();
-    // Ammo.js WASM is a global side-effect script the physics path
-    // depends on. The singleton ensures it's appended to document.body
-    // exactly once, even across Editor re-construction.
-    void ensureAmmoLoaded();
-
     // Version and name.
     this.version = 2.0;
     // Clock, scene and camera essentials.
