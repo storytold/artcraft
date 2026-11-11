@@ -245,7 +245,7 @@ export const ControlPanelSceneObject = () => {
       if (value === "" || value === "-" || value === ".") {
         return true;
       }
-      return !/^-?[0-9]*(.[0-9]*)?$/.test(value);
+      return !/^-?\d*(\.\d*)?$/.test(value);
     });
 
   const handlePositionChange = (xyz: Record<string, string>) => {

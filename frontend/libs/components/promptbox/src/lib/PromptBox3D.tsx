@@ -22,7 +22,6 @@ import { CameraSettingsModal } from "@storyteller/ui-camera-settings-modal";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  CommandSuccessStatus,
   GenerateImage,
   GenerateImageRequest,
 } from "@storyteller/tauri-api";
@@ -509,13 +508,8 @@ export const PromptBox3D = ({
 
         console.log("generateResponse", generateResponse);
 
-        if (generateResponse.status === CommandSuccessStatus.Success) {
-          setIsEnqueueing(false);
-          return;
-        } else {
-          setIsEnqueueing(false);
-          return;
-        }
+        setIsEnqueueing(false);
+        return;
       }
 
       try {
