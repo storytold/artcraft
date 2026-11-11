@@ -946,14 +946,15 @@ impl ScreenshotRequest {
 
 /// `artcraft_<token>.<ext>`, the extension taken from the URL. Both come from the server and a
 /// multi-file download joins the name onto the chosen folder, so the token keeps only letters,
-/// digits, `-` and `_` (anything else, path separators and dots included, becomes `_`).
+/// digits, `-` and `_` (anything else, path separators and dots included, becomes `_`), and the
+/// extension is 1 to 4 ASCII letters or digits, else the kind's default.
 fn file_name_for(item: &FeedItem) -> String {
   let fallback = match item.kind {
     MediaKind::Image => "png",
     MediaKind::Video => "mp4",
     MediaKind::Audio => "mp3",
   };
-  let ext = item.full_url.rsplit('.').next().filter(|e| e.len() <= 4 && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or(fallback);
+  let ext = item.full_url.rsplit('.').next().filter(|e| (1..=4).contains(&e.len()) && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or(fallback);
   let token: String = item.token.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
   format!("artcraft_{token}.{ext}")
 }
@@ -969,6 +970,26 @@ mod tests {
       assert!(!name.contains(['/', '\\']) && !name.contains(".."), "token {token:?} gave {name:?}");
     }
     assert_eq!(file_name_for(&item("m_abc-123", "https://cdn.example/f.png")), "artcraft_m_abc-123.png");
+  }
+
+  #[test]
+  fn download_extensions_from_the_url_are_filtered_too() {
+    for url in [
+      "https://cdn.example/f.mp4/../../x",
+      "https://cdn.example/f.mp4\\..\\x",
+      "https://cdn.example/f.m:p4",
+      "https://cdn.example/f.toolong",
+      "https://cdn.example/f.",
+      "https://cdn.example/no-extension",
+    ] {
+      assert_eq!(file_name_for(&item("m_1", url)), "artcraft_m_1.mp4", "url {url:?}");
+    }
+  }
+
+  #[test]
+  fn empty_tokens_still_give_a_usable_name() {
+    assert_eq!(file_name_for(&item("", "https://cdn.example/f.webm")), "artcraft_.webm");
+    assert_eq!(file_name_for(&item("…", "https://cdn.example/f.webm")), "artcraft__.webm", "one `_` per character, never empty");
   }
 
   fn item(token: &str, full_url: &str) -> FeedItem {
