@@ -3,6 +3,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { focusEditorAtEnd } from "./focusEditorAtEnd";
 import { PromptBoxDropZoneProps } from "./deck/usePromptBoxDrop";
+import { isOverPromptLimit } from "./PromptLengthCounter";
 
 // Shared "focus mode" overlay for prompt editors. Reuses @storyteller/ui-modal
 // (Trello-card style: centered panel + blurred backdrop) and renders whatever
@@ -62,7 +63,7 @@ export const PromptFullscreenModal = ({
   dropZoneProps,
   dropOverlay,
 }: PromptFullscreenModalProps) => {
-  const overLimit = Number.isFinite(maxLength) && promptLength > maxLength;
+  const overLimit = isOverPromptLimit(promptLength, maxLength);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Focus the editor and drop the caret at the end once the overlay opens.

@@ -26,6 +26,7 @@ import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 export type AspectRatio = "wide" | "tall" | "square";
 
@@ -281,7 +282,7 @@ export const PromptBox2D = ({
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
-    if (Number.isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -442,11 +443,7 @@ export const PromptBox2D = ({
                 onBlur={() => {}}
               />
               <PromptFullscreenButton onClick={openFullscreen} />
-              <span
-                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${Number.isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {Number.isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              <PromptLengthCounter prompt={prompt} maxLen={maxLen} />
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between gap-2">
