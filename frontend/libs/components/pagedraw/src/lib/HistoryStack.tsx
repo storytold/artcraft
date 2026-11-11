@@ -312,9 +312,7 @@ export const HistoryStack = ({
                       />
                     )}
                     <div
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={clickOnEnterOrSpace}
+                      role="presentation"
                       className="absolute -right-0 -top-0 flex h-5 w-5 items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
                       onClick={(e) => {
                         e.stopPropagation();

@@ -963,8 +963,8 @@ export function LightboxModal({
                                   }
                                 >
                                   <div
-                                    role="button"
-                                    tabIndex={0}
+                                    role={isVideoRef ? "presentation" : "button"}
+                                    tabIndex={isVideoRef ? undefined : 0}
                                     onKeyDown={clickOnEnterOrSpace}
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
                                     onClick={() => {

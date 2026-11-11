@@ -413,6 +413,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         <div
           role="checkbox"
           aria-checked={bulkSelected}
+          aria-label={`Select ${item.label}`}
           tabIndex={0}
           onKeyDown={clickOnEnterOrSpace}
           className={twMerge(
@@ -422,7 +423,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               : "border-white/60 bg-black/40 hover:border-white",
             bulkSelectionMode
               ? "opacity-100"
-              : "opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100",
+              : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100",
           )}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
