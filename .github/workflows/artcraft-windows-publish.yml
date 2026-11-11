@@ -74,7 +74,7 @@ jobs:
         shell: cmd
 
       - name: setup node
-        uses: actions/setup-node@0a44ba7841725637a54e2801669c06500c541b61 # v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: lts/*
 
@@ -127,7 +127,7 @@ jobs:
           $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@fce9c6108b31ea247710505d3aaaa893ee6768d4 # v0.5.18
+        uses: tauri-apps/tauri-action@6a45448f17a006facb105cc5257b3edbc353038a # v0.5.18
         env:
           # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
           RUSTFLAGS: "-C target-feature=+crt-static"
