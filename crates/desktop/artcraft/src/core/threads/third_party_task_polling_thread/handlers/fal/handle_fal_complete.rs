@@ -31,8 +31,6 @@ use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{
   update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs,
 };
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
 use tauri::AppHandle;
@@ -255,8 +253,7 @@ async fn download_file(
   let filename = format!("fal_{}_{}.{}", generate_random_uuid(), index, extension);
   let download_path = tempdir.join(filename);
 
-  let mut file = File::create(&download_path)?;
-  file.write_all(&bytes)?;
+  tokio::fs::write(&download_path, bytes).await?;
 
   Ok(download_path)
 }

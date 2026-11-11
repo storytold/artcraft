@@ -19,6 +19,7 @@ tokens.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 log.workspace = true
+tokio = { workspace = true, features = ["fs"] }
 
 # TODO(bt,2025-07-09): Update sqlx ASAP. We're stuck on 0.7 because of the complex use of internal types and macros in the database crate.
 # We're going to embed in-memory SQLite
