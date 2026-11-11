@@ -1587,6 +1587,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           role="textbox"
           aria-multiline="true"
           aria-label={placeholder || "Prompt"}
+          tabIndex={disabled ? -1 : 0}
           ref={editorRef}
           contentEditable={!disabled}
           onInput={handleInput}
