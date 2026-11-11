@@ -259,7 +259,7 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
     let (fill, border) = if selected { (theme::ACCENT_400, theme::ACCENT_400) } else { (Color32::from_black_alpha(102), theme::fade(Color32::WHITE, 0.6)) };
     ui.painter().rect(chip, theme::RADIUS, fill, Stroke::new(1.0, border), egui::StrokeKind::Inside);
     if selected {
-      icons::paint(ui.painter(), chip.shrink(4.0), Icon::Check, Color32::WHITE);
+      icons::paint(ui.painter(), chip.shrink(4.0), Icon::Check, theme::ACCENT_ON);
     }
   }
   if view.last_viewed == Some(item.token.as_str()) {

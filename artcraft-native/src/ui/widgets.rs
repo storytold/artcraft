@@ -161,7 +161,7 @@ pub fn generate_button(ui: &mut Ui, enabled: bool, loading: bool, tip: &str) -> 
     (true, false) => theme::ACCENT,
   };
   ui.painter().circle_filled(rect.center(), 18.0, fill);
-  let ink = if enabled { Color32::WHITE } else { theme::fade(Color32::WHITE, 0.5) };
+  let ink = if enabled { theme::ACCENT_ON } else { theme::fade(theme::ACCENT_ON, 0.5) };
   let inner = Rect::from_center_size(rect.center(), vec2(18.0, 18.0));
   if loading {
     icons::paint_spinner(ui, inner, ink);
@@ -201,7 +201,7 @@ pub fn button(ui: &mut Ui, icon: Option<Icon>, text: &str, kind: Kind, width: f3
   let hovered = resp.hovered() && enabled;
   let (fill, stroke, ink) = match kind {
     Kind::Primary => (theme::fade(theme::INVERT_BG, if hovered { 0.88 } else { 1.0 }), Stroke::NONE, theme::INVERT_FG),
-    Kind::Accent => (if hovered { theme::ACCENT_400 } else { theme::ACCENT }, Stroke::NONE, Color32::WHITE),
+    Kind::Accent => (if hovered { theme::ACCENT_400 } else { theme::ACCENT }, Stroke::NONE, theme::ACCENT_ON),
     Kind::Danger => (theme::fade(theme::DANGER, if hovered { 0.85 } else { 1.0 }), Stroke::NONE, Color32::WHITE),
     Kind::Secondary if hovered => (theme::INVERT_BG, Stroke::NONE, theme::INVERT_FG),
     Kind::Secondary => (Color32::TRANSPARENT, Stroke::new(1.0, theme::LINE_STRONG), theme::INK),
