@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { listen } from "@tauri-apps/api/event";
 import { MediaFilesApi, MediaUploadApi } from "@storyteller/api";
 import { v4 as uuidv4 } from "uuid";
-import { completeGenerationResult } from "../Stores/completeGenerationResult";
+import { completeGenerationAction } from "../Stores/completeGenerationResult";
 
 export type ImageTo3DWorldResult = {
   id: string;
@@ -68,24 +68,7 @@ export const useImageTo3DWorldStore = create<ImageTo3DWorldState>(
       set((s) => ({ results: [result, ...s.results] }));
       return id;
     },
-    completeGeneration: (
-      modelUrl: string,
-      mediaToken: string,
-      maybeSubscriberId?: string,
-    ) => {
-      console.log("[ImageTo3DWorldStore] completeGeneration", {
-        modelUrl,
-        mediaToken,
-        maybeSubscriberId,
-      });
-      set((s) => ({
-        results: completeGenerationResult(s.results, maybeSubscriberId, {
-          modelUrl,
-          mediaToken,
-          note: "Generated World",
-        }),
-      }));
-    },
+    completeGeneration: completeGenerationAction(set, "ImageTo3DWorldStore", "Generated World"),
     uploadCoverFromPreview: async (mediaToken: string) => {
       try {
         const result = get().results.find((r) => r.mediaToken === mediaToken);

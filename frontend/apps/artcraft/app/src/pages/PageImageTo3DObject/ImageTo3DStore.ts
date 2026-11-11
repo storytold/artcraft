@@ -3,7 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { MediaFilesApi, MediaUploadApi } from "@storyteller/api";
 import { v4 as uuidv4 } from "uuid";
 import { captureModelThumbnail } from "./captureModelThumbnail";
-import { completeGenerationResult } from "../Stores/completeGenerationResult";
+import { completeGenerationAction } from "../Stores/completeGenerationResult";
 
 export interface PendingExternalImage {
   url: string;
@@ -87,24 +87,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     set((s) => ({ results: [result, ...s.results] }));
     return id;
   },
-  completeGeneration: (
-    modelUrl: string,
-    mediaToken: string,
-    maybeSubscriberId?: string,
-  ) => {
-    console.log("[ImageTo3DStore] completeGeneration", {
-      modelUrl,
-      mediaToken,
-      maybeSubscriberId,
-    });
-    set((s) => ({
-      results: completeGenerationResult(s.results, maybeSubscriberId, {
-        modelUrl,
-        mediaToken,
-        note: "Generated Model",
-      }),
-    }));
-  },
+  completeGeneration: completeGenerationAction(set, "ImageTo3DStore", "Generated Model"),
   uploadCoverImage: async (mediaToken: string, thumbnailDataUrl: string) => {
     try {
       // Check if already uploaded

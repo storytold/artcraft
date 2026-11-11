@@ -34,3 +34,17 @@ export function completeGenerationResult<T extends GenerationResult>(
   next[index] = { ...next[index], status: "completed", modelUrl, mediaToken };
   return next;
 }
+
+/** A store's `completeGeneration`: logs the finished job under `store` and applies completeGenerationResult. */
+export function completeGenerationAction<T extends GenerationResult>(
+  set: (update: (state: { results: T[] }) => { results: T[] }) => void,
+  store: string,
+  note: string,
+) {
+  return (modelUrl: string, mediaToken: string, maybeSubscriberId?: string) => {
+    console.log(`[${store}] completeGeneration`, { modelUrl, mediaToken, maybeSubscriberId });
+    set((s) => ({
+      results: completeGenerationResult(s.results, maybeSubscriberId, { modelUrl, mediaToken, note }),
+    }));
+  };
+}
