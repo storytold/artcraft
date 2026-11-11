@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
 
       - name: install wreq dependencies
         run: |
@@ -61,7 +61,7 @@ jobs:
           npm cache clean --force
 
           echo "Installing all workspace dependencies..."
-          npm ci
+          npm ci --ignore-scripts
 
           echo "=== Version Information ==="
           echo "Node version:"
@@ -101,7 +101,7 @@ jobs:
           $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
           # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
           RUSTFLAGS: "-C target-feature=+crt-static"

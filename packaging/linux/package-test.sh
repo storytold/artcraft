@@ -37,11 +37,11 @@ rpmbuild --define "_topdir $work/rpmbuild" -bb rpmbuild/SPECS/artcraft.spec
 find rpmbuild/RPMS -name '*.rpm' -exec cp {} target/x86_64-unknown-linux-gnu/release/bundle/rpm/ \;
 printf 'appimage fixture\n' > target/x86_64-unknown-linux-gnu/release/bundle/appimage/ArtCraft.AppImage
 "$script" x86_64 x86_64-unknown-linux-gnu
-for format in deb rpm AppImage AppImage.zsync tar.gz; do test -s "dist/release/artcraft-0.42.0-linux-x86_64.$format"; done
+for format in deb rpm AppImage AppImage.zsync tar.gz; do [[ -s "dist/release/artcraft-0.42.0-linux-x86_64.$format" ]]; done
 mkdir unpacked
 tar -xzf dist/release/artcraft-0.42.0-linux-x86_64.tar.gz -C unpacked
-test -x unpacked/artcraft-0.42.0-linux-x86_64/bin/artcraft
-test -f unpacked/artcraft-0.42.0-linux-x86_64/share/applications/ai.artcraft.app.desktop
+[[ -x unpacked/artcraft-0.42.0-linux-x86_64/bin/artcraft ]]
+[[ -f unpacked/artcraft-0.42.0-linux-x86_64/share/applications/ai.artcraft.app.desktop ]]
 rm target/x86_64-unknown-linux-gnu/release/bundle/rpm/*.rpm
 if "$script" x86_64 x86_64-unknown-linux-gnu; then
   echo 'Packaging accepted a missing RPM' >&2
