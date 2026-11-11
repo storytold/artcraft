@@ -279,6 +279,23 @@ mod tests {
   }
 
   #[test]
+  fn huge_canvases_in_tiny_files_are_refused_without_allocating() {
+    // About 300 bytes claiming 65535 x 65535 per frame: 16 GiB for one canvas. Getting past this
+    // assert without an abort is the test; the still path hits image's default allocation limit.
+    let huge = gif(u16::MAX, u16::MAX, 20, 10);
+    assert!(huge.len() < 512);
+    assert!(decode_frames(&huge).is_none());
+    assert!(decode(&huge).is_none(), "too large even for a still");
+  }
+
+  #[test]
+  fn canvases_at_the_limit_still_animate() {
+    let frames = decode_frames(&gif(MAX_DECODED_SIDE as u16, MAX_DECODED_SIDE as u16, 3, 10)).expect("a canvas at the limit animates");
+    assert_eq!(frames.len(), 3);
+    assert!(frames.iter().all(|(image, _)| image.size[0].max(image.size[1]) <= ANIMATED_SIDE as usize), "frames are thumbnailed");
+  }
+
+  #[test]
   fn frames_past_the_source_budget_are_not_read() {
     // 610 frames of 20 ms against a budget of 600 (`ANIMATED_MAX_SOURCE_FRAMES`).
     let frames = decode_frames(&gif(1, 1, 610, 2)).expect("animated");
