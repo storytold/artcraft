@@ -23,22 +23,10 @@ pub async fn worldlabs_clear_credentials_command(
 }
 
 fn clear_creds(
-  root: &AppDataRoot,
+  _root: &AppDataRoot,
   creds: &WorldlabsCredentialManager,
 ) -> AnyhowResult<()> {
 
   info!("Clearing credentials...");
-  creds.clear_credentials()?;
-  
-  info!("Persisting to disk...");
-  creds.persist_to_disk()?;
-
-  let creds_path = root.credentials_dir().get_worldlabs_state_path();
-  
-  if creds_path.exists() {
-    info!("Removing from disk...");
-    std::fs::remove_file(creds_path)?;
-  }
-  
-  Ok(())
+  creds.clear_credentials()
 }
