@@ -137,7 +137,8 @@ async fn check_login_window(
 
   info!("Heuristic count is ({}); we're likely done.", heuristic_count);
 
-  info!("Current cookies (len {}): {:?}", cookie_store.len(), cookie_store.to_cookie_string());
+  // Never log cookie values: they are full session credentials.
+  info!("Captured {} cookies from login window.", cookie_store.len());
 
   //let response = get_user_info(GetUserInfoRequest {
   //  hostname: MidjourneyHostname::Standard,
