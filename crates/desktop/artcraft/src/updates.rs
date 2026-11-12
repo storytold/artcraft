@@ -255,6 +255,8 @@ mod tests {
     let config: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).expect("release configuration");
     assert_eq!(config["version"].as_str(), Some(ARTCRAFT_VERSION));
     assert_eq!(config["identifier"].as_str(), Some(APP.bundle_id().as_str()));
+    let mac: serde_json::Value = serde_json::from_str(include_str!("../tauri-mac.conf.json")).expect("macOS release configuration");
+    assert_eq!(mac["version"].as_str(), Some(ARTCRAFT_VERSION), "the macOS build must report the same version");
   }
 
   #[test]
