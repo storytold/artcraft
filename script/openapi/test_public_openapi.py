@@ -178,15 +178,8 @@ class PublicSpecTests(unittest.TestCase):
         comments = self.spec["paths"]["/v1/comments/list/{entity_type}/{entity_token}"]["get"]
         comment_names = [parameter["name"] for parameter in comments["parameters"] if parameter["in"] == "path"]
         self.assertEqual(comment_names, ["entity_type", "entity_token"])
-        for path in (
-            "/v1/omni_api/upload/audio",
-            "/v1/omni_api/upload/image",
-            "/v1/omni_api/upload/video",
-            "/v1/media_files/upload/audio",
-        ):
-            body = self.spec["paths"][path]["post"]["requestBody"]
-            self.assertIn("multipart/form-data", body["content"], path)
-            self.assertIn("$ref", body["content"]["multipart/form-data"]["schema"], path)
+        self._assert_upload_posts_keep_their_input()
+        self._assert_no_page_size_maximum()
         weights = self.spec["paths"]["/v1/weights/search"]["get"]
         weight_names = [parameter["name"] for parameter in weights.get("parameters") or []]
         self.assertIn("search_term", weight_names)
@@ -236,6 +229,61 @@ class PublicSpecTests(unittest.TestCase):
         copies = [line.strip() for line in script.splitlines() if line.strip().startswith("cp ")]
         self.assertIn("cp ./frontend/api.json ./build/api.json", copies)
         self.assertFalse(any("upstream" in line for line in copies))
+
+    def _assert_upload_posts_keep_their_input(self):
+        """The 24 upload POSTs keep the form utoipa had labeled as a path parameter."""
+        uploads = (
+            "/v1/image_studio/scene_snapshot",
+            "/v1/media_files/upload",
+            "/v1/media_files/upload/audio",
+            "/v1/media_files/upload/image",
+            "/v1/media_files/upload/new_engine_asset",
+            "/v1/media_files/upload/new_scene",
+            "/v1/media_files/upload/new_video",
+            "/v1/media_files/upload/pmx",
+            "/v1/media_files/upload/project/editor_2d/new",
+            "/v1/media_files/upload/project/editor_2d/update/{token}",
+            "/v1/media_files/upload/project/mood_board/new",
+            "/v1/media_files/upload/project/mood_board/update/{token}",
+            "/v1/media_files/upload/project/scene_3d/new",
+            "/v1/media_files/upload/project/scene_3d/update/{token}",
+            "/v1/media_files/upload/project/video_timeline/new",
+            "/v1/media_files/upload/project/video_timeline/update/{token}",
+            "/v1/media_files/upload/saved_scene/{token}",
+            "/v1/media_files/upload/scene_snapshot",
+            "/v1/media_files/upload/spz",
+            "/v1/media_files/upload/studio_shot",
+            "/v1/media_files/upload/video",
+            "/v1/omni_api/upload/audio",
+            "/v1/omni_api/upload/image",
+            "/v1/omni_api/upload/video",
+        )
+        self.assertEqual(len(uploads), 24)
+        for path in uploads:
+            operation = self.spec["paths"][path]["post"]
+            names = [
+                parameter["name"]
+                for parameter in operation.get("parameters") or []
+                if parameter.get("in") == "path"
+            ]
+            self.assertNotIn("request", names, path)
+            body = operation["requestBody"]
+            content = body["content"]["multipart/form-data"]
+            self.assertIn("schema", content, path)
+
+    def _assert_no_page_size_maximum(self):
+        """page_size documents the cap. The schema does not reject a larger value."""
+        found = False
+        for operations in self.spec["paths"].values():
+            for operation in operations.values():
+                if not isinstance(operation, dict):
+                    continue
+                for parameter in operation.get("parameters") or []:
+                    if parameter.get("name") != "page_size":
+                        continue
+                    found = True
+                    self.assertNotIn("maximum", parameter.get("schema") or {})
+        self.assertTrue(found)
 
     def _assert_query_names(self, operation, names):
         """The operation's query parameters are exactly ``names``, in that order."""
