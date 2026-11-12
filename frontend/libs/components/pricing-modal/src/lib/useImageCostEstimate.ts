@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model, ImageModel } from "@storyteller/model-list";
+import { Model, ImageModel, autoAspectRatio, matchSourceAspectRatio } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import {
   usePromptImageStore,
@@ -45,6 +45,7 @@ export function useImageCostEstimate(
   const imageQuality = usePromptImageStore((s) => s.commonQuality);
 
   // Canvas2D store
+  const sourceImageDimensions = usePrompt2DStore((s) => s.sourceImageDimensions);
   const prompt2DAspectRatio = usePrompt2DStore((s) => s.aspectRatio);
   const prompt2DResolution = usePrompt2DStore((s) => s.resolution);
   const prompt2DReferenceImages = usePrompt2DStore((s) => s.referenceImages);
@@ -84,7 +85,14 @@ export function useImageCostEstimate(
         generationCount = imageGenerationCount;
         break;
       case ModelPage.Canvas2D:
-        legacyAspectRatioStr = prompt2DAspectRatio;
+        if (prompt2DAspectRatio === "auto") {
+          // Use the same source dimensions and model options as generation.
+          aspectRatioStr = sourceImageDimensions
+            ? matchSourceAspectRatio(imageModel, sourceImageDimensions.width, sourceImageDimensions.height)
+            : autoAspectRatio(imageModel);
+        } else {
+          legacyAspectRatioStr = prompt2DAspectRatio;
+        }
         resolutionStr = prompt2DResolution;
         referenceImageCount = prompt2DReferenceImages.length + 1;
         generationCount = prompt2DGenerationCount;
@@ -161,6 +169,7 @@ export function useImageCostEstimate(
     imageReferenceImages.length,
     imageGenerationCount,
     imageQuality,
+    sourceImageDimensions,
     prompt2DAspectRatio,
     prompt2DResolution,
     prompt2DReferenceImages.length,

@@ -105,7 +105,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
               ? !req.disableSystemPrompt
               : undefined,
           batch_size: req.imageCount,
-          aspect_ratio: mapAspectRatio(req.aspectRatio),
+          aspect_ratio: req.commonAspectRatio ?? mapAspectRatio(req.aspectRatio),
           resolution: mapResolution(req.imageResolution),
           frontend_caller: req.frontendCaller,
           frontend_subscriber_id: req.frontendSubscriberId,
@@ -119,6 +119,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
           model: req.model,
           image_media_tokens: req.imageMediaToken ? [req.imageMediaToken] : undefined,
           inpainting_mask_image_raw_bytes: req.maskImageRawBytes,
+          aspect_ratio: req.commonAspectRatio ?? mapAspectRatio(req.aspectRatio),
           prompt: req.prompt,
           batch_size: req.imageCount,
           frontend_caller: req.frontendCaller,
