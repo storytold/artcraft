@@ -25,6 +25,7 @@ export class AddMediaAssetCommand extends Command {
 
   execute(): CommandResult | undefined {
     const editor = EditorCore.getInstance();
+    if (editor.project.getActiveOrNull()?.metadata.id !== this.projectId) return;
     this.savedAssets = [...editor.media.getAssets()];
 
     editor.media.setAssets({
@@ -42,6 +43,7 @@ export class AddMediaAssetCommand extends Command {
   undo(): void {
     if (!this.savedAssets) return;
     const editor = EditorCore.getInstance();
+    if (editor.project.getActiveOrNull()?.metadata.id !== this.projectId) return;
     editor.media.setAssets({ assets: this.savedAssets });
 
     // If execute() ratcheted the project FPS up to accommodate this
