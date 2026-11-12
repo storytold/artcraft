@@ -4,6 +4,7 @@ import { ImagesIcon, MusicIcon, VideoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { toast } from "@storyteller/ui-toaster";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
+import { isAudioFile } from "../common/audioFiles";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -175,7 +176,11 @@ export function usePromptBoxDrop({
     const rejectedKinds = new Set<DropKind>();
     let unknownCount = 0;
     for (const file of files) {
-      const kind = kindOfMime(file.type) ?? kindOfPath(file.name);
+      // Some platforms report M4A as video/mp4; use the same audio guard
+      // as the reference picker before trusting that container MIME type.
+      const kind = isAudioFile(file)
+        ? "audio"
+        : (kindOfMime(file.type) ?? kindOfPath(file.name));
       if (kind === null) {
         unknownCount++;
       } else if (!acceptsKind(kind)) {
