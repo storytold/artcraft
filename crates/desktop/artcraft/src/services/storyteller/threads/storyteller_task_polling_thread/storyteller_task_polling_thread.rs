@@ -119,7 +119,7 @@ async fn polling_loop(
             TaskStatus::CompleteFailure => continue, // NB: We're done with this task.
             _ => {}
           }
-          handle_failed_job(app_handle, job, task, task_database).await?;
+          handle_failed_job(app_handle, app_env_configs, creds.as_ref(), job, task, task_database).await?;
         }
         _ => continue,
       }
