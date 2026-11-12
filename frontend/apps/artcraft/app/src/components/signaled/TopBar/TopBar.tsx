@@ -546,7 +546,7 @@ export const TopBar = ({ pageName }: Props) => {
                     {sumTotalCredits.toLocaleString()}
                   </span>
                 }
-                buttonClassName="h-8 px-3 ps-2.5 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-[3px] gap-1.5"
+                buttonClassName="h-8 px-3 ps-2.5 max-[359px]:px-1 max-[359px]:ps-1 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-[3px] gap-1.5"
                 panelClassName="mt-2 bg-[#101014] border border-white/15 text-white rounded-[3px]"
               >
                 {(close) => (
