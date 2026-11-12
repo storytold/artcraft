@@ -1,0 +1,72 @@
+name: Android APK
+
+# Builds a sideloadable ArtCraft APK from artcraft-native (egui) via cargo-ndk + Gradle.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "artcraft-native/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "script/android/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "artcraft-native/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "script/android/**"
+      - ".github/workflows/android.yml"
+
+env:
+  NDK_VERSION: 27.2.12479018
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android
+
+      # BoringSSL (wreq) is compiled from source for Android.
+      - name: Install native build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build nasm clang libclang-dev pkg-config
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK platform and NDK
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;${NDK_VERSION}"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build the APK
+        run: bash script/android/build_apk.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ArtCraft-android-apk
+          path: dist/ArtCraft.apk
+          if-no-files-found: error

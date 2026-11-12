@@ -1,0 +1,5 @@
+.gradle/
+build/
+local.properties
+# The Rust library is built by script/android/build_apk.sh (or CI) into here.
+app/src/main/jniLibs/

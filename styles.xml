@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="Theme.ArtCraft" parent="Theme.AppCompat.NoActionBar">
+    <item name="android:windowBackground">@android:color/black</item>
+    <item name="android:statusBarColor">#0a0a0c</item>
+    <item name="android:navigationBarColor">#0a0a0c</item>
+    <item name="android:windowLightStatusBar">false</item>
+  </style>
+</resources>
