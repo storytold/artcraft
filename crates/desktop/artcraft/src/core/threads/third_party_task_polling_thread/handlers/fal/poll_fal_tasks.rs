@@ -11,10 +11,14 @@ use enums::tauri::tasks::task_status::TaskStatus;
 use fal_client::creds::fal_api_key::FalApiKey;
 use fal_client::polling::poll_job_response::poll_job_response::{poll_job_response, PollJobResponseArgs};
 use fal_client::polling::poll_job_status::poll_job_status::{poll_job_status, FalJobStatus, PollJobStatusArgs};
+use futures::stream::{self, StreamExt};
 use log::{error, info, warn};
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use tauri::AppHandle;
+
+/// Maximum number of FAL jobs polled concurrently in one polling pass.
+const MAX_CONCURRENT_POLLS: usize = 4;
 
 pub async fn poll_fal_tasks(
   app_handle: &AppHandle,
@@ -33,25 +37,31 @@ pub async fn poll_fal_tasks(
     }
   };
 
-  for task in fal_tasks {
-    let result = poll_single_fal_task(
-      app_handle,
-      app_env_configs,
-      app_data_root,
-      task_database,
-      storyteller_creds_manager,
-      &api_key,
-      task,
-    ).await;
+  let api_key = &api_key;
 
-    if let Err(err) = result {
-      error!(
-        "[FalPolling] Error processing task {}: {:?}",
-        task.id.as_str(),
-        err,
-      );
-    }
-  }
+  // Each task is independent, so poll them concurrently rather than paying
+  // the sum of every round trip.
+  stream::iter(fal_tasks.iter().copied())
+    .for_each_concurrent(MAX_CONCURRENT_POLLS, |task| async move {
+      let result = poll_single_fal_task(
+        app_handle,
+        app_env_configs,
+        app_data_root,
+        task_database,
+        storyteller_creds_manager,
+        api_key,
+        task,
+      ).await;
+
+      if let Err(err) = result {
+        error!(
+          "[FalPolling] Error processing task {}: {:?}",
+          task.id.as_str(),
+          err,
+        );
+      }
+    })
+    .await;
 }
 
 async fn poll_single_fal_task(
