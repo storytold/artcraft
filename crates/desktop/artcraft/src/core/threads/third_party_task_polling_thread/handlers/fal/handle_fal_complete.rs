@@ -242,7 +242,7 @@ async fn download_file(
   app_data_root: &AppDataRoot,
   index: usize,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-  let response = reqwest::get(url).await?;
+  let response = reqwest::get(url).await?.error_for_status()?;
   let bytes = response.bytes().await?;
 
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
@@ -343,4 +343,53 @@ async fn try_upload(
   };
 
   Ok(media_token)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use tokio::io::{AsyncReadExt, AsyncWriteExt};
+  use tokio::net::TcpListener;
+
+  /// A result URL that answers with an error (expired, or a CDN hiccup) is a failed download, not a
+  /// file: the error page used to be saved and then uploaded as the task's image or video.
+  #[tokio::test]
+  async fn error_responses_are_not_saved_as_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let (url, server) = serve_once("404 Not Found", b"<html>Not Found</html>").await;
+    assert!(download_file(&url, &root, 0).await.is_err());
+    server.await.unwrap();
+    assert_eq!(std::fs::read_dir(root.temp_dir().path()).unwrap().count(), 0, "no file is left to upload");
+  }
+
+  #[tokio::test]
+  async fn successful_responses_are_saved_as_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let body = b"\x89PNG\r\n\x1a\n result bytes";
+    let (url, server) = serve_once("200 OK", body).await;
+    let path = download_file(&url, &root, 3).await.expect("a 200 is a download");
+    server.await.unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), body);
+    assert_eq!(path.parent().unwrap(), root.temp_dir().path());
+    let name = path.file_name().unwrap().to_str().unwrap();
+    assert!(name.starts_with("fal_") && name.ends_with("_3.png"), "got {name}");
+  }
+
+  /// Answers one request on a local port with `status` and `body`; returns the URL of a `.png`
+  /// result on it.
+  async fn serve_once(status: &'static str, body: &'static [u8]) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/result.png", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+      let (mut socket, _) = listener.accept().await.unwrap();
+      let mut request = [0; 4096];
+      socket.read(&mut request).await.unwrap();
+      let head = format!("HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+      socket.write_all(head.as_bytes()).await.unwrap();
+      socket.write_all(body).await.unwrap();
+    });
+    (url, server)
+  }
 }
